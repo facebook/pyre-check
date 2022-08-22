@@ -10,7 +10,6 @@ import testslide
 
 from ...tests import setup
 from ..async_server_connection import (
-    connect,
     connect_in_text_mode,
     MemoryBytesReader,
     MemoryBytesWriter,
@@ -59,19 +58,6 @@ class MemoryIOTest(testslide.TestCase):
 
 
 class AsyncConnectionTest(testslide.TestCase):
-    async def _test_binary_connect(self, socket_path: Path) -> None:
-        async with connect(socket_path) as (input_channel, output_channel):
-            await output_channel.write("abc\n".encode("utf-8"))
-            result = (await input_channel.readline()).decode("utf-8").strip()
-            self.assertEqual("abc", result)
-
-            await output_channel.write("xyzuvw\n".encode("utf-8"))
-            result = (await input_channel.read_until(b"z")).decode("utf-8")
-            self.assertEqual("xyz", result)
-
-            result = (await input_channel.read_exactly(2)).decode("utf-8")
-            self.assertEqual("uv", result)
-
     async def _test_text_connect(self, socket_path: Path) -> None:
         async with connect_in_text_mode(socket_path) as (input_channel, output_channel):
             await output_channel.write("abc\n")
@@ -89,22 +75,21 @@ class AsyncConnectionTest(testslide.TestCase):
     async def test_connect(self) -> None:
         with setup.spawn_unix_stream_server(EchoServerRequestHandler) as socket_path:
             # Connect to test server from the main thread
-            await self._test_binary_connect(socket_path)
             await self._test_text_connect(socket_path)
 
     @setup.async_test
     async def test_read_until(self) -> None:
         with setup.spawn_unix_stream_server(EchoServerRequestHandler) as socket_path:
             # Intentionally use a small buffer size, to test over-sized reads
-            async with connect(socket_path, buffer_size=64) as (
+            async with connect_in_text_mode(socket_path, buffer_size=64) as (
                 input_channel,
                 output_channel,
             ):
                 # Try reading ~4MB of data from the input channel, and verify that
                 # `read_until` do not choke.
-                message = b"a" * (2**14) + b"\n"
+                message = "a" * (2**14) + "\n"
                 await output_channel.write(message)
-                result = await input_channel.read_until(b"\n")
+                result = await input_channel.read_until("\n")
                 self.assertEqual(message, result)
 
     async def test_text_errors(self) -> None:

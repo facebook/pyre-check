@@ -264,7 +264,7 @@ class StreamBytesWriter(BytesWriter):
 
 
 @contextlib.asynccontextmanager
-async def connect(
+async def _connect(
     socket_path: Path, buffer_size: Optional[int] = None
 ) -> AsyncIterator[Tuple[BytesReader, BytesWriter]]:
     """
@@ -314,7 +314,7 @@ async def connect_in_text_mode(
     operates in text mode. Read/write APIs of the streams uses UTF-8 encoded
     `str` instead of `bytes`.
     """
-    async with connect(socket_path, buffer_size) as (bytes_reader, bytes_writer):
+    async with _connect(socket_path, buffer_size) as (bytes_reader, bytes_writer):
         yield (
             TextReader(bytes_reader, encoding="utf-8"),
             TextWriter(bytes_writer, encoding="utf-8"),

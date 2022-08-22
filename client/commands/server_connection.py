@@ -15,7 +15,7 @@ class ConnectionFailure(Exception):
 
 
 @contextlib.contextmanager
-def connect(
+def _connect(
     socket_path: Path,
 ) -> Iterator[Tuple[BinaryIO, BinaryIO]]:
     """
@@ -59,7 +59,7 @@ def connect_in_text_mode(
     that the streams will automatically be flushed once the newline character
     is encountered.
     """
-    with connect(socket_path) as (input_channel, output_channel):
+    with _connect(socket_path) as (input_channel, output_channel):
         yield (
             io.TextIOWrapper(
                 input_channel,
