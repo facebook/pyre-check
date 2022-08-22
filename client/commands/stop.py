@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 from .. import configuration as configuration_module
-from . import commands, connections, daemon, frontend_configuration, start
+from . import commands, connections, daemon_socket, frontend_configuration, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ def remove_socket_if_exists(socket_path: Path) -> None:
 
 
 def run_stop(configuration: frontend_configuration.Base) -> commands.ExitCode:
-    socket_path = daemon.get_default_socket_path(
+    socket_path = daemon_socket.get_default_socket_path(
         project_root=configuration.get_global_root(),
         relative_local_root=configuration.get_relative_local_root(),
     )

@@ -13,7 +13,7 @@ import tabulate
 from typing_extensions import TypedDict
 
 from .. import command_arguments, log
-from . import commands, connections, daemon, stop
+from . import commands, connections, daemon_socket, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -217,13 +217,13 @@ def find_all_servers_under(socket_root: Path) -> AllServerStatus:
 
 
 def run_list(output_format: str) -> commands.ExitCode:
-    server_status = find_all_servers_under(daemon.get_default_socket_root())
+    server_status = find_all_servers_under(daemon_socket.get_default_socket_root())
     _print_server_status(server_status, output_format)
     return commands.ExitCode.SUCCESS
 
 
 def run_stop() -> commands.ExitCode:
-    for socket_path in get_pyre_socket_files(daemon.get_default_socket_root()):
+    for socket_path in get_pyre_socket_files(daemon_socket.get_default_socket_root()):
         _stop_server(socket_path)
     LOG.info("Done\n")
     return commands.ExitCode.SUCCESS

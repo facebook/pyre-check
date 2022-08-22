@@ -9,7 +9,7 @@ from pathlib import Path
 
 import testslide
 
-from ..daemon import get_socket_path
+from ..daemon_socket import get_socket_path
 
 
 class SocketTest(testslide.TestCase):

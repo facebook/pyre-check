@@ -20,7 +20,7 @@ from . import (
     backend_arguments,
     commands,
     connections,
-    daemon,
+    daemon_socket,
     frontend_configuration,
     server_event,
     start,
@@ -159,7 +159,7 @@ def run_incremental(
     configuration: frontend_configuration.Base,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> ExitStatus:
-    socket_path = daemon.get_default_socket_path(
+    socket_path = daemon_socket.get_default_socket_path(
         project_root=configuration.get_global_root(),
         relative_local_root=configuration.get_relative_local_root(),
     )

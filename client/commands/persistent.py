@@ -35,7 +35,7 @@ from . import (
     background,
     commands,
     connections,
-    daemon,
+    daemon_socket,
     expression_level_coverage,
     find_symbols,
     frontend_configuration,
@@ -1538,7 +1538,7 @@ class PyreQueryHandler(background.Task):
 
     async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
         start_arguments = server_start_options.start_arguments
-        socket_path = daemon.get_default_socket_path(
+        socket_path = daemon_socket.get_default_socket_path(
             project_root=Path(start_arguments.base_arguments.global_root),
             relative_local_root=start_arguments.base_arguments.relative_local_root,
         )
@@ -1940,7 +1940,7 @@ class PyreServerHandler(background.Task):
     async def _run(self, server_start_options: PyreServerStartOptions) -> None:
         server_identifier = server_start_options.server_identifier
         start_arguments = server_start_options.start_arguments
-        socket_path = daemon.get_default_socket_path(
+        socket_path = daemon_socket.get_default_socket_path(
             project_root=Path(start_arguments.base_arguments.global_root),
             relative_local_root=start_arguments.base_arguments.relative_local_root,
         )

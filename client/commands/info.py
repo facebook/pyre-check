@@ -10,7 +10,7 @@ from typing import Optional
 import dataclasses_json
 
 from .. import command_arguments, configuration as configuration_module, version
-from . import commands, daemon, frontend_configuration
+from . import commands, daemon_socket, frontend_configuration
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class Info(dataclasses_json.DataClassJsonMixin):
             binary_version = configuration.get_binary_version()
         except Exception:
             binary_version = None
-        socket_path = daemon.get_default_socket_path(
+        socket_path = daemon_socket.get_default_socket_path(
             project_root=configuration.get_global_root(),
             relative_local_root=configuration.get_relative_local_root(),
         )

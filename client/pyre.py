@@ -1104,7 +1104,7 @@ def start(
     use_lazy_module_tracking: bool,
 ) -> int:
     """
-    Starts a pyre server as a daemon.
+    Starts a pyre server as a daemon_socket.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = configuration_module.create_configuration(

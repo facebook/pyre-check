@@ -17,7 +17,7 @@ from . import (
     commands,
     connections,
     coverage,
-    daemon,
+    daemon_socket,
     frontend_configuration,
     language_server_protocol as lsp,
     query,
@@ -293,7 +293,7 @@ def run_query(
     query_text: str,
     print_summary: bool = False,
 ) -> commands.ExitCode:
-    socket_path = daemon.get_default_socket_path(
+    socket_path = daemon_socket.get_default_socket_path(
         project_root=configuration.get_global_root(),
         relative_local_root=configuration.get_relative_local_root(),
     )
