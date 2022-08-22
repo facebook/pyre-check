@@ -81,6 +81,11 @@ let format_as_json ~integers ~normals () =
 let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   let normals =
     if metadata then
+      let normals_with_sandcastle_alias =
+        match Sys.getenv "SANDCASTLE_ALIAS" with
+        | Some sandcastle_alias -> ("sandcastle_alias", sandcastle_alias) :: normals
+        | None -> normals
+      in
       [
         "binary", Sys.argv.(0);
         "root", GlobalState.global_state.project_name;
@@ -89,17 +94,23 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
         "identifier", GlobalState.global_state.log_identifier;
         "project_root", GlobalState.global_state.project_root;
       ]
-      @ normals
+      @ normals_with_sandcastle_alias
     else
       normals
   in
   let integers =
     if metadata then
+      let integers_with_sandcastle_instance_id =
+        match Sys.getenv "SANDCASTLE_INSTANCE_ID" with
+        | Some sandcastle_instance_id ->
+            ("sandcastle_instance_id", int_of_string sandcastle_instance_id) :: integers
+        | None -> integers
+      in
       [
         "time", Unix.time () |> Int.of_float;
         "start_time", GlobalState.global_state.start_time |> Int.of_float;
       ]
-      @ integers
+      @ integers_with_sandcastle_instance_id
     else
       integers
   in
@@ -222,17 +233,6 @@ let log_model_query_outputs
   Log.log ~section "Model Query `%s` generated %d models." model_query_name generated_models_count;
   let integers = ["models_generated", generated_models_count] in
   let normals = ["model_query_name", model_query_name] in
-  let integers =
-    match Sys.getenv "SANDCASTLE_INSTANCE_ID" with
-    | Some sandcastle_instance_id ->
-        ("sandcastle_instance_id", int_of_string sandcastle_instance_id) :: integers
-    | None -> integers
-  in
-  let normals =
-    match Sys.getenv "SANDCASTLE_ALIAS" with
-    | Some sandcastle_alias -> ("sandcastle_alias", sandcastle_alias) :: normals
-    | None -> normals
-  in
   sample ~integers ~normals () |> log ~flush "perfpipe_pysa_dsl_model_query_output"
 
 
