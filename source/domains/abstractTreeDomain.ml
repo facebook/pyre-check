@@ -213,6 +213,8 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       merge combine left right |> fold ~f ~init
   end
 
+  (** Access Path tree nodes have an abstract domain element and a set of children indexed by
+      AccessPath.PathElement.t *)
   type t = {
     (* Abstract contribution at this node. (Not the join from the root!) *)
     element: Element.t;
@@ -222,8 +224,6 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     *)
     children: t LabelMap.t;
   }
-  (** Access Path tree nodes have an abstract domain element and a set of children indexed by
-      AccessPath.PathElement.t *)
 
   let create_leaf element = { element; children = LabelMap.empty }
 
@@ -253,9 +253,9 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       Some (create_tree_internal path tree)
 
 
-  type widen_depth = int option
   (** Captures whether we need to widen and at what tree level. None -> no widening Some i -> widen
       start i levels down. *)
+  type widen_depth = int option
 
   let must_widen_depth = function
     | None -> false

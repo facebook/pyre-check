@@ -58,8 +58,8 @@ val track_duration_and_shared_memory
   string ->
   'a
 
+(** Convenient functions to track both time and shared memory usage *)
 val track_duration_and_shared_memory_with_dynamic_tags
   :  f:(unit -> 'a result_with_tags) ->
   string ->
   'a
-(** Convenient functions to track both time and shared memory usage *)

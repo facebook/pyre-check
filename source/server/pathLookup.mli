@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(** Given a Python module name, Return path to the corresponding Python source file as a string.
+    This API will take into account any potential path translation done by the {!BuildSystem.t}. *)
 val instantiate_path
   :  build_system:BuildSystem.t ->
   ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
   Ast.Reference.t ->
   string option
-(** Given a Python module name, Return path to the corresponding Python source file as a string.
-    This API will take into account any potential path translation done by the {!BuildSystem.t}. *)

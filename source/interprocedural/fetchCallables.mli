@@ -16,13 +16,13 @@ type t = {
   stubs: Target.t list;
 }
 
+(** Traverse the AST to find all callables (functions and methods). *)
 val from_source
   :  configuration:Configuration.Analysis.t ->
   resolution:Analysis.GlobalResolution.t ->
   include_unit_tests:bool ->
   source:Source.t ->
   t
-(** Traverse the AST to find all callables (functions and methods). *)
 
 val from_qualifiers
   :  scheduler:Scheduler.t ->

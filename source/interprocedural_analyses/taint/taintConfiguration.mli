@@ -154,16 +154,17 @@ module Error : sig
   val to_json : t -> Yojson.Safe.t
 end
 
-val from_json_list : (PyrePath.t * Yojson.Safe.t) list -> (t, Error.t list) Result.t
 (** Parse json files to create a taint configuration. *)
+val from_json_list : (PyrePath.t * Yojson.Safe.t) list -> (t, Error.t list) Result.t
 
 val register : t -> unit
 
 val default : t
 
-val from_taint_model_paths : PyrePath.t list -> (t, Error.t list) Result.t
 (** Create a taint configuration by finding `.config` files in the given directories. *)
+val from_taint_model_paths : PyrePath.t list -> (t, Error.t list) Result.t
 
+(** Update a taint configuration with the given command line options. *)
 val with_command_line_options
   :  t ->
   rule_filter:int list option ->
@@ -175,10 +176,9 @@ val with_command_line_options
   maximum_trace_length:int option ->
   maximum_tito_depth:int option ->
   (t, Error.t list) Result.t
-(** Update a taint configuration with the given command line options. *)
 
-val validate : t -> (t, Error.t list) Result.t
 (** Perform additional checks on the taint configuration. *)
+val validate : t -> (t, Error.t list) Result.t
 
 exception TaintConfigurationError of Error.t list
 

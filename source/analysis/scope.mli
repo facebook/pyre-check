@@ -135,6 +135,6 @@ module ScopeStack : sig
 end
 
 module Builtins : sig
-  val mem : Identifier.t -> bool
   (** Returns whether the given name belongs to the builtin scope. *)
+  val mem : Identifier.t -> bool
 end

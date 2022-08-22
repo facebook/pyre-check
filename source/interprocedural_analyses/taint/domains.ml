@@ -1355,12 +1355,12 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       transform Taint.Self Map ~f:(Taint.apply_sanitize_transforms transforms) taint
 end
 
-module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
 (** Used to infer which sources reach the exit points of a function. *)
+module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
 
-module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 (** Used to infer which sinks are reached from parameters, as well as the taint-in-taint-out (TITO)
     using the special LocalReturn sink. *)
+module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 
 let local_return_frame =
   Frame.create

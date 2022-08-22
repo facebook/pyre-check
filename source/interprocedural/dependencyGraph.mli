@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t
 (** Represents a dependency graph, i.e a mapping from a callee to its callers.
 
     This is used in the fixpoint to infer which targets to re-analyze when we discovered a new
     source or sink. *)
+type t
 
 val empty : t
 
@@ -23,14 +23,14 @@ module Reversed : sig
 
   type t
 
-  val disjoint_union : t -> t -> t
   (** Merge two reverse dependency graph that do not have common callees. *)
+  val disjoint_union : t -> t -> t
 
-  val from_call_graph : CallGraph.WholeProgramCallGraph.t -> t
   (** Create a reverse dependency graph from a call graph. *)
+  val from_call_graph : CallGraph.WholeProgramCallGraph.t -> t
 
-  val from_overrides : OverrideGraph.Heap.t -> t
   (** Create a reverse dependency graph from an override graph. *)
+  val from_overrides : OverrideGraph.Heap.t -> t
 
   type prune_result = {
     reverse_dependency_graph: t;
@@ -39,11 +39,11 @@ module Reversed : sig
     callables_kept: Target.t list;
   }
 
-  val prune : t -> initial_callables:FetchCallables.t -> prune_result
   (** Our analyses distinguish callables which are part of the project being analyzed and those
       belonging to dependencies. The prune operation restricts our callgraph to the subgraph
       reachable from the project callables. During this operation, we also return a list of pruned
       callables to analyze, i.e. we remove irrelevant dependencies from consideration. *)
+  val prune : t -> initial_callables:FetchCallables.t -> prune_result
 
   val to_target_graph : t -> TargetGraph.t
 
@@ -58,13 +58,13 @@ type whole_program_dependency_graph = {
   callables_to_analyze: Target.t list;
 }
 
+(** Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
+    the callables we are actually analyzing. Then reverse the graph, which maps dependers to
+    dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
+    maps dependees to dependers. *)
 val build_whole_program_dependency_graph
   :  prune:bool ->
   initial_callables:FetchCallables.t ->
   call_graph:CallGraph.WholeProgramCallGraph.t ->
   overrides:OverrideGraph.Heap.t ->
   whole_program_dependency_graph
-(** Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
-    the callables we are actually analyzing. Then reverse the graph, which maps dependers to
-    dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
-    maps dependees to dependers. *)

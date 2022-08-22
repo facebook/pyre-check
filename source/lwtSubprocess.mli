@@ -15,12 +15,6 @@ module Completed : sig
   }
 end
 
-val run
-  :  ?consume_stdout:(Lwt_io.input_channel -> string Lwt.t) ->
-  ?consume_stderr:(Lwt_io.input_channel -> string Lwt.t) ->
-  arguments:string list ->
-  string ->
-  Completed.t Lwt.t
 (** [run ~arguments command] spawns a subprocess which shells out to `command` with the given
     [arguments]. The returned promise will resolve upon completion of the subprocess.
 
@@ -33,3 +27,9 @@ val run
     logic with the [consume_stdout] and [consume_stderr] arguments. The returned [Complete.t] of
     this API will always have its [stdout] and [stderr] field set to the string returned by
     [consume_stdout] and [consume_stderr] callback, respectively. *)
+val run
+  :  ?consume_stdout:(Lwt_io.input_channel -> string Lwt.t) ->
+  ?consume_stderr:(Lwt_io.input_channel -> string Lwt.t) ->
+  arguments:string list ->
+  string ->
+  Completed.t Lwt.t

@@ -20,8 +20,8 @@ module BooleanValue = struct
   let description = "Whether decorators should be inlined."
 end
 
-module ShouldInlineDecorators = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (BooleanValue)
 (** This is basically a global variable storing whether decorators should be inlined. *)
+module ShouldInlineDecorators = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (BooleanValue)
 
 let set_should_inline_decorators should_inline_decorators =
   ShouldInlineDecorators.add "should_inline" should_inline_decorators
@@ -85,8 +85,8 @@ module Decorators = struct
   let description = "Decorators from a module."
 end
 
-module ModuleDecorators = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (Decorators)
 (** Mapping from a decorator reference to its body. *)
+module ModuleDecorators = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (Decorators)
 
 module InlinedNameToOriginalName =
   Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DecoratorModuleValue)

@@ -22,8 +22,8 @@ module type MODEL = sig
 
   val less_or_equal : callable:Target.t -> left:t -> right:t -> bool
 
-  val strip_for_callsite : t -> t
   (** Remove aspects from the model that are not needed at call sites. Just for optimization. *)
+  val strip_for_callsite : t -> t
 end
 
 (** Represents the result of the analysis.
@@ -50,32 +50,32 @@ module type LOGGER = sig
     callables_to_analyze:Target.t list ->
     exn
 
+  (** This is called at the beginning of each iteration. *)
   val iteration_start
     :  iteration:int ->
     callables_to_analyze:Target.t list ->
     number_of_callables:int ->
     unit
-  (** This is called at the beginning of each iteration. *)
 
+  (** This is called at the end of each iteration. *)
   val iteration_end
     :  iteration:int ->
     expensive_callables:expensive_callable list ->
     number_of_callables:int ->
     timer:Timer.t ->
     unit
-  (** This is called at the end of each iteration. *)
 
+  (** This is called after a worker made progress on an iteration. *)
   val iteration_progress
     :  iteration:int ->
     callables_processed:int ->
     number_of_callables:int ->
     unit
-  (** This is called after a worker made progress on an iteration. *)
 
   val is_expensive_callable : callable:Target.t -> timer:Timer.t -> bool
 
-  val override_analysis_end : callable:Target.t -> timer:Timer.t -> unit
   (** This is called after analyzing an override target (i.e, joining models of overriding methods). *)
+  val override_analysis_end : callable:Target.t -> timer:Timer.t -> unit
 
   val on_analyze_define_exception : iteration:int -> callable:Target.t -> exn:exn -> unit
 
@@ -84,9 +84,9 @@ end
 
 (** Must be implemented to perform a global fixpoint. *)
 module type ANALYSIS = sig
-  type context
   (** Passed down from the top level call to the `analyze_define` function. This should be cheap to
       marshal, since it will be sent to multiple workers. *)
+  type context
 
   module Model : MODEL
 
@@ -98,9 +98,13 @@ module type ANALYSIS = sig
 
   val empty_model : Model.t
 
-  val obscure_model : Model.t
   (** Model for obscure callables (usually, stubs) *)
+  val obscure_model : Model.t
 
+  (** Analyze a function or method definition.
+
+      `get_callee_model` can be used to get the model of a callee, as long as it was registered in
+      the call graph. *)
   val analyze_define
     :  context:context ->
     qualifier:Reference.t ->
@@ -109,10 +113,6 @@ module type ANALYSIS = sig
     previous_model:Model.t ->
     get_callee_model:(Target.t -> Model.t option) ->
     Result.t * Model.t
-  (** Analyze a function or method definition.
-
-      `get_callee_model` can be used to get the model of a callee, as long as it was registered in
-      the call graph. *)
 end
 
 module Make (Analysis : ANALYSIS) : sig
@@ -184,9 +184,9 @@ module Make (Analysis : ANALYSIS) : sig
 
   val get_iterations : t -> int
 
-  val cleanup : t -> unit
   (** Remove the fixpoint state from the shared memory. This must be called before computing another
       fixpoint. *)
+  val cleanup : t -> unit
 end
 
 module WithoutLogging : LOGGER

@@ -18,8 +18,8 @@ module SharedMemory : sig
 
   val from_heap : Heap.t -> t
 
-  val get_for_testing_only : unit -> t
   (** Return the current class interval graph in shared memory. Only exposed for tests. *)
+  val get_for_testing_only : unit -> t
 
   val add : t -> class_name:ClassHierarchyGraph.class_name -> interval:ClassIntervalSet.t -> unit
 

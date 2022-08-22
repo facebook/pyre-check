@@ -18,13 +18,13 @@ module Error : sig
   [@@deriving show]
 end
 
+(** Parse python source. ?handle is path relative to the file's source root, if any. *)
 val parse
   :  ?start_line:int ->
   ?start_column:int ->
   ?relative:string ->
   string list ->
   (Statement.t list, Error.t) Result.t
-(** Parse python source. ?handle is path relative to the file's source root, if any. *)
 
 val parse_exn
   :  ?start_line:int ->

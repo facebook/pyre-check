@@ -13,15 +13,14 @@
     server, where we want to be held back on responding to client read requests while an incremental
     update is being actively processed in the background. *)
 
-type 'a t
 (** An exclusive lock that holds a state of type 'a. Semantically it has almost the same behavior as
     'a ref, except that accesses to the underlying storage must go through the provided APIs that
     offers lock protection. *)
+type 'a t
 
-val create : 'a -> 'a t
 (** [create s] creates an exclusive lock with its initial state set to [s]. *)
+val create : 'a -> 'a t
 
-val read : f:('a -> 'b Lwt.t) -> 'a t -> 'b Lwt.t
 (** [read ~f exclusive_lock] will try to lock [exclusive_lock] first, then invoke [f] with the
     containing state of [exclusive_lock], and finally unlock [exclusive_lock] once [f] returns. The
     return value of [f] will be used as the return value of the entire [read] operation.
@@ -29,8 +28,8 @@ val read : f:('a -> 'b Lwt.t) -> 'a t -> 'b Lwt.t
     If [exclusive_lock] is already locked by another Lwt thread, this API will wait until the
     locking thread releases that lock. If there are multiple threads competing on the same lock, the
     lock will be granted in the same order in which they attempt to grab the lock. *)
+val read : f:('a -> 'b Lwt.t) -> 'a t -> 'b Lwt.t
 
-val write : f:('a -> ('a * 'b) Lwt.t) -> 'a t -> 'b Lwt.t
 (** [write ~f exclusive_lock] will try to lock [exclusive_lock] first, then invoke [f] with the
     containing state of [exclusive_lock], update the containing state of [exclusive_lock], and
     finally unlock [exclusive_lock]. The return type of [f] is expected to be a pair that contains
@@ -40,14 +39,15 @@ val write : f:('a -> ('a * 'b) Lwt.t) -> 'a t -> 'b Lwt.t
     If [exclusive_lock] is already locked by another Lwt thread, this API will wait until the
     locking thread releases that lock. If there are multiple threads competing on the same lock, the
     lock will be granted in the same order in which they attempt to grab the lock. *)
+val write : f:('a -> ('a * 'b) Lwt.t) -> 'a t -> 'b Lwt.t
 
-val unsafe_read : 'a t -> 'a
 (** [unsafe_read exclusive_lock] returns the containing state of [exclusive_lock] directly.
 
     WARNING: This function is unsafe since it allows its caller to get access to the locked state
     without obtaining the lock first. Such a blatant violation of the locking protocol would defeat
     the point of using a lock in the first place. Only use this API if you have very strict
     non-blocking requirement and very loose consistency requirements. *)
+val unsafe_read : 'a t -> 'a
 
 (** This module implements additional laziness on top of {!type: ExclusiveLock.t}.
 
@@ -55,18 +55,17 @@ val unsafe_read : 'a t -> 'a
     ['a Lwt.t Lazy.t ExclusiveLock.t]. But this module provides nicer APIs so its clients do not
     need to explicitly wait on the result of {!Lazy.force} themselves. *)
 module Lazy : sig
-  type 'a t
   (** An exclusive lock that holds a (lazily-initialized) state of type ['a]. Semantically it has
       almost the same behavior as ['a ExclusiveLock.t], except that the state itself does not have
       to be available at creation time. *)
+  type 'a t
 
-  val create : (unit -> 'a Lwt.t) -> 'a t
   (** [create f] creates a lazy exclusive lock, where [f] is the "initializer" of the state. Upon
       creation, the lock is considered to hold an "uninitialized" state. The first time operations
       like [force], [read], and [write] gets invoked, [f ()] will be called and waited on, after
       which the lock is considered to be "initialized". *)
+  val create : (unit -> 'a Lwt.t) -> 'a t
 
-  val force : 'a t -> 'a Lwt.t
   (** [force lazy_lock] will try to force-initialize the state of the lock. If [lazy_lock] is
       already initialized, the state will be returned directly. Otherwise, the initializer that was
       provided in the {!create} function will be invoked and waited on first.
@@ -74,24 +73,25 @@ module Lazy : sig
       Note that the lock itself will be held while initialization is in-progress. If [force] is
       invoked concurrently on an uninitialized state, only the first invocation will go through, and
       the rest will only get the already-initialized state. *)
+  val force : 'a t -> 'a Lwt.t
 
-  val read : f:('a -> 'b Lwt.t) -> 'a t -> 'b Lwt.t
   (** [read ~f lazy_lock] will try to lock [lazy_lock] first, then invoke [f] with the containing
       state of [lazy_lock], and finally unlock [lazy_lock] once [f] returns. If the containing state
       of [lazy_lock] is not yet initialized, a {!force} operation will be performed first before [f]
       is called. The return value of [f] will be used as the return value of the entire [read]
       operation. *)
+  val read : f:('a -> 'b Lwt.t) -> 'a t -> 'b Lwt.t
 
-  val write : f:('a -> ('a * 'b) Lwt.t) -> 'a t -> 'b Lwt.t
   (** [write ~f lazy_lock] will try to lock [lazy_lock] first, then invoke [f] with the containing
       state of [lazy_lock], update the containing state of [lazy_lock], and finally unlock
       [lazy_lock]. If the containing state of [lazy_lock] is not yet initialized, a {!force}
       operation will be performed first before [f] is called. The return type of [f] is expected to
       be a pair that contains both the new state that [lazy_lock] will take, and some additional
       info that will be forwarded as the return value of the entire [write] operation. *)
+  val write : f:('a -> ('a * 'b) Lwt.t) -> 'a t -> 'b Lwt.t
 
-  val unsafe_read : 'a t -> 'a option
   (** If [lazy_lock] is uninitialized, [unsafe_read lazy_lock] returns [None]. Otherwise,
       [unsafe_read] returns a [Some] of the containing state of [lazy_lock] directly without any
       blocking. *)
+  val unsafe_read : 'a t -> 'a option
 end

@@ -6,6 +6,7 @@ break-infix-before-func
 break-separators=after
 break-sequences
 dock-collection-brackets=true
+doc-comments=before
 exp-grouping=preserve
 field-space=tight-decl
 if-then-else=fit-or-vertical

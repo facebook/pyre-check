@@ -192,8 +192,8 @@ module DefineCallGraph : sig
   (* For testing purpose only. *)
   val equal_ignoring_types : t -> t -> bool
 
-  val all_targets : t -> Target.t list
   (** Return all callees of the call graph, as a sorted list. *)
+  val all_targets : t -> Target.t list
 end
 
 val call_graph_of_define
@@ -246,6 +246,11 @@ type call_graphs = {
   define_call_graphs: DefineCallGraphSharedMemory.t;
 }
 
+(** Build the whole call graph of the program.
+
+    The overrides must be computed first because we depend on a global shared memory graph to
+    include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
+    fixpoint. *)
 val build_whole_program_call_graph
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
@@ -255,8 +260,3 @@ val build_whole_program_call_graph
   attribute_targets:Target.HashSet.t ->
   callables:Target.t list ->
   call_graphs
-(** Build the whole call graph of the program.
-
-    The overrides must be computed first because we depend on a global shared memory graph to
-    include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
-    fixpoint. *)

@@ -104,45 +104,45 @@ module BuildMap : sig
         | Incompatible of IncompatibleItem.t
     end
 
-    val empty : t
     (** An empty map. *)
+    val empty : t
 
-    val of_alist_exn : (string * string) list -> t
     (** Create a partial build map from an associative list. The list must conform to `(source_path,
         artifact_path)` format. Raise an exception if the given list contains duplicated keys. *)
+    val of_alist_exn : (string * string) list -> t
 
-    val of_alist_ignoring_duplicates : (string * string) list -> t
     (** Create a partial build map from an associative list. The list must conform to `(source_path,
         artifact_path)` format. If duplicated keys exists, first item in the input list wins. *)
+    val of_alist_ignoring_duplicates : (string * string) list -> t
 
-    val of_json_exn_ignoring_duplicates : Yojson.Safe.t -> t
     (** Create a partial build map from a JSON. The JSON must conform to Buck's Python source-db
         format. Raise an exception if the input JSON is malformed. *)
+    val of_json_exn_ignoring_duplicates : Yojson.Safe.t -> t
 
-    val filter : t -> f:(key:string -> data:string -> bool) -> t
     (** [filter ~f m] returns a new partial build map [m'] that contains all mappings in [m] except
         the ones on which [f ~key ~data] returns [false]. *)
+    val filter : t -> f:(key:string -> data:string -> bool) -> t
 
-    val merge : t -> t -> MergeResult.t
     (** Given two partial build maps [l] and [r], [merge l r] returns [MergeResult.Ok m] where [m]
         is a new partial build map containing items in both maps, if the merging process succeeds.
         Merging would fail only if there exists at least one key which is mapped to different values
         in [l] and [r]. In the failing case, [MergeResult.Incompatible item] would be returned,
         where [item] would keep track of which values are different as well as what the
         corresponding key is. *)
+    val merge : t -> t -> MergeResult.t
   end
 
   (** Result type for the [index] operation. *)
   module Indexed : sig
     type t
 
-    val lookup_source : t -> string -> string option
     (** Lookup the source path that corresponds to the given artifact path. If there is no such
         artifact, return [None]. Time complexity of this operation is O(1).*)
+    val lookup_source : t -> string -> string option
 
-    val lookup_artifact : t -> string -> string list
     (** Lookup all artifact paths that corresponds to the given source path. If there is no such
         artifact, return an empty list. Time complexity of this operation is O(1).*)
+    val lookup_artifact : t -> string -> string list
   end
 
   (** Result type for the [difference] operation. It represents a set of artifact paths where each
@@ -158,45 +158,44 @@ module BuildMap : sig
 
     type t [@@deriving sexp]
 
-    val of_alist_exn : (string * Kind.t) list -> t
     (** Create a build map difference from an associative list. The list must conform to
         `(artifact_path, kind)` format. Raise an exception if the given list contains duplicated
         keys. *)
+    val of_alist_exn : (string * Kind.t) list -> t
 
-    val to_alist : t -> (string * Kind.t) list
     (** Convert a build map difference into an associated list. Each element in the list is a pair
         consisting of both the artifact path and the kind of the update. *)
+    val to_alist : t -> (string * Kind.t) list
 
-    val merge : t -> t -> (t, string) Result.t
     (** [merge a b] returns [Result.Ok c] where [c] includes artifact paths from both [a] and [b].
         If an artifact [path] is included in both [a] and [b] but the associated tags are different,
         [Result.Error path] will be returned instead. *)
+    val merge : t -> t -> (t, string) Result.t
   end
 
-  type t
   (** Type of the build map. *)
+  type t
 
-  val create : Partial.t -> t
   (** Create a build map from a partial build map. This is intended to be the only API for build map
       creation. *)
+  val create : Partial.t -> t
 
-  val index : t -> Indexed.t
   (** Create a index for the given build map and return a pair of constant-time lookup functions
       that utilizes the index. *)
+  val index : t -> Indexed.t
 
-  val artifact_count : t -> int
   (** Return the number of artifact files stored in the build map. *)
+  val artifact_count : t -> int
 
-  val to_alist : t -> (string * string) list
   (** Convert a partial build map into an associated list. Each element in the list represent an
       (artifact_path, source_path) mapping. *)
+  val to_alist : t -> (string * string) list
 
-  val difference : original:t -> t -> Difference.t
   (** [difference ~original current] computes the difference between the [original] build map and
       the [current] build map. Time complexity of this operation is O(n + m), where n and m are the
       sizes of the two build maps. *)
+  val difference : original:t -> t -> Difference.t
 
-  val strict_apply_difference : difference:Difference.t -> t -> (t, string) Result.t
   (** [strict_apply_difference ~difference:d original] tries to compute a new build map [current],
       such that [difference ~original current] equals [d]. It can be seen as an inverse operation of
       {!difference}.
@@ -215,6 +214,7 @@ module BuildMap : sig
 
       Time complexity of this operation is O(n + m), where n is the size of the original build map
       and m is the size of the difference. *)
+  val strict_apply_difference : difference:Difference.t -> t -> (t, string) Result.t
 end
 
 (** This module provide utility functions for populating and incrementally updating artifact roots.
@@ -224,11 +224,6 @@ end
     broken, build result will be non-deterministic due to race conditions between file
     creation/removal and directory creation/removal. *)
 module Artifacts : sig
-  val populate
-    :  source_root:PyrePath.t ->
-    artifact_root:PyrePath.t ->
-    BuildMap.t ->
-    (unit, string) Result.t Lwt.t
   (** Populate the artifact directory given a source root, an artifact root, and a build map. Return
       [Result.Ok ()] if the build succeeds, and [Result.Error message] otherwise, where [message]
       contains the error message.
@@ -253,12 +248,12 @@ module Artifacts : sig
       pre-existing files under [artifact_root] do not have naming conflicts with any of the
       artifacts. If cleaness of the artifact directory is required, it is expected that the caller
       would take care of that before invoking [full_build]. *)
-
-  val update
+  val populate
     :  source_root:PyrePath.t ->
     artifact_root:PyrePath.t ->
-    BuildMap.Difference.t ->
+    BuildMap.t ->
     (unit, string) Result.t Lwt.t
+
   (** Incrementally update the artifact directory given a source root, an artifact root, and a build
       map difference specificiation. Return [Result.Ok ()] if the build succeeds, and
       [Result.Error message] otherwise, where [message] contains the error message.
@@ -280,14 +275,19 @@ module Artifacts : sig
       and old symlinks may be deleted -- if any of the creation or removal fails (e.g. do not have
       the right permission to remove the files), the entire process fails. Directories created by
       this API will have the default permission of 0777 (unless adjusted by [umask]). *)
+  val update
+    :  source_root:PyrePath.t ->
+    artifact_root:PyrePath.t ->
+    BuildMap.Difference.t ->
+    (unit, string) Result.t Lwt.t
 end
 
 (** This module provides a wrapper type that represents a normalized Buck target. *)
 module Target : sig
   type t [@@deriving sexp, compare, hash]
 
-  val of_string : string -> t
   (** Create a [Target.t] out of a string. *)
+  val of_string : string -> t
 
   val show : t -> string
 
@@ -297,16 +297,19 @@ end
 (** This module contains the low-level interfaces for invoking [buck] as an external tool. *)
 module Raw : sig
   module ArgumentList : sig
-    type t [@@deriving sexp_of]
     (** This type represents the argument list for a raw Buck invocation. *)
+    type t [@@deriving sexp_of]
 
-    val to_buck_command : buck_command:string -> t -> string
     (** Reconstruct the shell command Pyre uses to invoke Buck from an {!ArgumentList.t}. *)
+    val to_buck_command : buck_command:string -> t -> string
 
-    val length : t -> int
     (** Number of arguments in the list*)
+    val length : t -> int
   end
 
+  (** Raised when external invocation of `buck` returns an error. The [exit_code] field is set to
+      [None] if the external `buck` process gets stopped by a signal. The [additional_log] field
+      contains the last few lines of Buck's log that get dumped on its stderr. *)
   exception
     BuckError of {
       buck_command: string;
@@ -316,43 +319,40 @@ module Raw : sig
       additional_logs: string list;
     }
   [@@deriving sexp_of]
-  (** Raised when external invocation of `buck` returns an error. The [exit_code] field is set to
-      [None] if the external `buck` process gets stopped by a signal. The [additional_log] field
-      contains the last few lines of Buck's log that get dumped on its stderr. *)
 
   type t
 
-  val create : ?additional_log_size:int -> unit -> t
   (** Create an instance of [Raw.t] based on system-installed Buck. The [additional_log_size]
       parameter controls how many lines of Buck log to preserve when an {!BuckError} is raised. By
       default, the size is set to 0, which means no additional log will be kept. *)
+  val create : ?additional_log_size:int -> unit -> t
 
-  val create_v2 : ?additional_log_size:int -> unit -> t
   (** Create an instance of [Raw.t] based on system-installed Buck2. The [additional_log_size]
       parameter controls how many lines of Buck2 log to preserve when an {!BuckError} is raised. By
       default, the size is set to 0, which means no additional log will be kept. *)
+  val create_v2 : ?additional_log_size:int -> unit -> t
 
+  (** Create an instance of [Raw.t] from custom [query] and [build] behavior. Useful for unit
+      testing. *)
   val create_for_testing
     :  query:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
     build:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
     unit ->
     t
-  (** Create an instance of [Raw.t] from custom [query] and [build] behavior. Useful for unit
-      testing. *)
 
-  val query : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
   (** Shell out to `buck query` with the given cli arguments. Returns the content of stdout. If the
       return code is not 0, raise [BuckError].
 
       Note that mode and isolation prefix are intentionally required to be specified separately,
       since Buck interpret them a bit differently from the rest of the arguments. *)
+  val query : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
 
-  val build : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
   (** Shell out to `buck build` with the given cli arguments. Returns the content of stdout. If the
       return code is not 0, raise [BuckError].
 
       Note that mode and isolation prefix are intentionally required to be specified separately,
       since Buck interpret them a bit differently from the rest of the arguments. *)
+  val build : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
 end
 
 (** This module contains high-level interfaces for invoking [buck] as an external tool. It relies on
@@ -361,8 +361,8 @@ end
 module Interface : sig
   type t
 
-  exception JsonError of string
   (** Raised when [buck] returns malformed JSONs *)
+  exception JsonError of string
 
   (** The return type for initial builds. It contains a build map as well as a list of buck targets
       that are successfully included in the build. *)
@@ -373,30 +373,29 @@ module Interface : sig
     }
   end
 
-  val create : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
   (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
       Interfaces created this way is only compatible with Buck1. *)
+  val create : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
 
-  val create_v2 : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
   (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
       Interfaces created this way is only compatible with Buck2.*)
+  val create_v2 : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
 
+  (** Create an instance of [Interface.t] from custom [normalize_targets] and [construct_build_map]
+      behavior. Useful for unit testing. *)
   val create_for_testing
     :  normalize_targets:(string list -> Target.t list Lwt.t) ->
     construct_build_map:(Target.t list -> BuildResult.t Lwt.t) ->
     unit ->
     t
-  (** Create an instance of [Interface.t] from custom [normalize_targets] and [construct_build_map]
-      behavior. Useful for unit testing. *)
 
-  val normalize_targets : t -> string list -> Target.t list Lwt.t
   (** Given a list of buck target specifications (which may contain `...` or filter expression),
       query [buck] and return the set of individual targets which will be built.
 
       May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
       succeeds but its output cannot be parsed. *)
+  val normalize_targets : t -> string list -> Target.t list Lwt.t
 
-  val construct_build_map : t -> Target.t list -> BuildResult.t Lwt.t
   (** Given a list of normalized Buck targets, invoke [buck] to construct the link tree as well as
       source databases. It then loads all generated source databases, and merge all of them into a
       single [BuildMap.t].
@@ -408,6 +407,7 @@ module Interface : sig
 
       May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
       succeeds but its output cannot be parsed. *)
+  val construct_build_map : t -> Target.t list -> BuildResult.t Lwt.t
 end
 
 (** This module contains highest-level interfaces for [buck]-related logic. It relies on
@@ -417,18 +417,18 @@ end
 module Builder : sig
   type t
 
-  exception LinkTreeConstructionError of string
   (** Raised when artifact building fails. See {!val:Artifacts.populate}. *)
+  exception LinkTreeConstructionError of string
 
   (** {1 Creation} *)
 
-  val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
   (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options.
       Builders created this way are only compatible with Buck1. *)
+  val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
 
-  val create_v2 : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
   (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options.
       Builders created with way are only compatible with Buck2. *)
+  val create_v2 : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
 
   (** {1 Build} *)
 
@@ -443,7 +443,6 @@ module Builder : sig
     }
   end
 
-  val build : targets:string list -> t -> Interface.BuildResult.t Lwt.t
   (** Given a list of buck target specificaitons to build, construct a build map for the targets and
       create a Python link tree at the given artifact root according to the build map. Return the
       constructed build map along with a list of targets that are covered by the build map.
@@ -466,8 +465,8 @@ module Builder : sig
       Note this API does not ensure the artifact root to be empty before the build starts. If
       cleaness of the artifact directory is desirable, it is expected that the caller would take
       care of that before its invocation. *)
+  val build : targets:string list -> t -> Interface.BuildResult.t Lwt.t
 
-  val restore : build_map:BuildMap.t -> t -> unit Lwt.t
   (** Given a build map, create the corresponding Python link tree at the given artifact root
       accordingly.
 
@@ -487,12 +486,8 @@ module Builder : sig
       Note this API does not ensure the artifact root to be empty before the build starts. If
       cleaness of the artifact directory is desirable, it is expected that the caller would take
       care of that before its invocation. *)
+  val restore : build_map:BuildMap.t -> t -> unit Lwt.t
 
-  val full_incremental_build
-    :  old_build_map:BuildMap.t ->
-    targets:string list ->
-    t ->
-    IncrementalBuildResult.t Lwt.t
   (** Given a list of buck target specificaitons to build, fully construct a new build map for the
       targets and incrementally update the Python link tree at the given artifact root according to
       how the new build map changed compared to the old build map. Return the new build map along
@@ -503,12 +498,12 @@ module Builder : sig
       produce the most correct and most up-to-date build map, but at the same time it is a costly
       operation at times. For faster incremental build, itt is recommended to use other variant of
       incremental build APIs if their pre-conditions are known to be satisfied. *)
-
-  val incremental_build_with_normalized_targets
+  val full_incremental_build
     :  old_build_map:BuildMap.t ->
-    targets:Target.t list ->
+    targets:string list ->
     t ->
     IncrementalBuildResult.t Lwt.t
+
   (** Given a list of normalized targets to build, fully construct a new build map for the targets
       and incrementally update the Python link tree at the given artifact root according to how the
       new build map changed compared to the old build map. Return the new build map along with a
@@ -521,15 +516,12 @@ module Builder : sig
       optimization. Such an assumption usually holds when the incremental update does not touch any
       `BUCK` or `TARGETS` file -- callers are encouraged to verify this before deciding which
       incremental build API to invoke. *)
-
-  val fast_incremental_build_with_normalized_targets
+  val incremental_build_with_normalized_targets
     :  old_build_map:BuildMap.t ->
-    old_build_map_index:BuildMap.Indexed.t ->
     targets:Target.t list ->
-    changed_paths:PyrePath.t list ->
-    removed_paths:PyrePath.t list ->
     t ->
     IncrementalBuildResult.t Lwt.t
+
   (** Given a list of normalized targets and changed/removed files, incrementally construct a new
       build map for the targets and incrementally update the Python link tree at the given artifact
       root accordingly. Return the new build map along with a list of targets that are covered by
@@ -540,14 +532,15 @@ module Builder : sig
       API makes an additional assumption that the given incremental update does not change the
       contents of any generated file. As a result, it can skip both the target normalizing step and
       the `buck build` step, which is usually a huge performance bottleneck for incremental checks. *)
-
-  val incremental_build_with_unchanged_build_map
-    :  build_map:BuildMap.t ->
-    build_map_index:BuildMap.Indexed.t ->
+  val fast_incremental_build_with_normalized_targets
+    :  old_build_map:BuildMap.t ->
+    old_build_map_index:BuildMap.Indexed.t ->
     targets:Target.t list ->
-    changed_sources:PyrePath.t list ->
+    changed_paths:PyrePath.t list ->
+    removed_paths:PyrePath.t list ->
     t ->
     IncrementalBuildResult.t Lwt.t
+
   (** Compute the incremental check result, assuming that the corresponding update does not change
       the build map in any way. The return value is intended to be compatible with that of
       {!full_incremental_build} and {!incremental_build_with_normalized_targets}.
@@ -557,27 +550,34 @@ module Builder : sig
       completely skip the rebuild. Callers are therefore strongly encouraged to verify the
       assumption, by checking that all changed sources exists and are already included in the old
       build map. *)
+  val incremental_build_with_unchanged_build_map
+    :  build_map:BuildMap.t ->
+    build_map_index:BuildMap.Indexed.t ->
+    targets:Target.t list ->
+    changed_sources:PyrePath.t list ->
+    t ->
+    IncrementalBuildResult.t Lwt.t
 
   (** {1 Lookup} *)
 
-  val lookup_source : index:BuildMap.Indexed.t -> builder:t -> PyrePath.t -> PyrePath.t option
   (** Lookup the source path that corresponds to the given artifact path. If there is no such
       artifact, return [None]. Time complexity of this operation is O(1).
 
       The difference between this API and {!BuildMap.Indexed.lookup_source} is that the build map
       API only understands relative paths, while this API operates on full paths and takes care of
       relativizing/expanding the input/output paths against source/artifact root. *)
+  val lookup_source : index:BuildMap.Indexed.t -> builder:t -> PyrePath.t -> PyrePath.t option
 
-  val lookup_artifact : index:BuildMap.Indexed.t -> builder:t -> PyrePath.t -> PyrePath.t list
   (** Lookup all artifact paths that corresponds to the given source path. If there is no such
       artifact, return an empty list. Time complexity of this operation is O(1).
 
       The difference between this API and {!BuildMap.Indexed.lookup_artifact} is that the build map
       API only understands relative paths, while this API operates on full paths and takes care of
       relativizing/expanding the input/output paths against artifact/source root.*)
+  val lookup_artifact : index:BuildMap.Indexed.t -> builder:t -> PyrePath.t -> PyrePath.t list
 
   (** {1 Misc} *)
 
-  val identifier_of : t -> string
   (** Return an identifier of the builder (for logging purpose). *)
+  val identifier_of : t -> string
 end

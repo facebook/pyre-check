@@ -36,11 +36,11 @@ module Heap : sig
     skipped_overrides: Target.t list;
   }
 
-  val cap_overrides : maximum_overrides:int option -> t -> cap_overrides_result
   (** If a method has too many overrides, ignore them. *)
+  val cap_overrides : maximum_overrides:int option -> t -> cap_overrides_result
 
-  type serializable
   (** This can be used to cache the whole graph in shared memory. *)
+  type serializable
 
   val to_serializable : t -> serializable
 
@@ -51,8 +51,8 @@ end
 module SharedMemory : sig
   type t
 
-  val get_for_testing_only : unit -> t
   (** Return the current override graph in shared memory. Only exposed for tests. *)
+  val get_for_testing_only : unit -> t
 
   val get_overriding_types : t -> member:Target.t -> Reference.t list option
 
@@ -60,12 +60,12 @@ module SharedMemory : sig
 
   val expand_override_targets : t -> Target.t list -> Target.t list
 
-  val from_heap : Heap.t -> t
   (** Records a heap override graph in shared memory. *)
+  val from_heap : Heap.t -> t
 
-  val cleanup : t -> Heap.t -> unit
   (** Remove an override graph from shared memory. This must be called before storing another
       override graph. *)
+  val cleanup : t -> Heap.t -> unit
 end
 
 type whole_program_overrides = {
@@ -74,6 +74,8 @@ type whole_program_overrides = {
   skipped_overrides: Target.t list;
 }
 
+(** Compute the override graph, which maps overide_targets (parent methods which are overridden) to
+    all concrete methods overriding them, and save it to shared memory. *)
 val build_whole_program_overrides
   :  scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
@@ -82,5 +84,3 @@ val build_whole_program_overrides
   maximum_overrides:int option ->
   qualifiers:Reference.t list ->
   whole_program_overrides
-(** Compute the override graph, which maps overide_targets (parent methods which are overridden) to
-    all concrete methods overriding them, and save it to shared memory. *)
