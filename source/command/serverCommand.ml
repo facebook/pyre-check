@@ -103,34 +103,6 @@ module ServerConfiguration = struct
         >>= fun raw -> Lwt.return_some { StartOptions.Watchman.root; raw }
 
 
-  let start_options_of
-      {
-        base = { CommandStartup.BaseConfiguration.source_paths; _ };
-        socket_path;
-        watchman_root;
-        critical_files;
-        saved_state_action;
-        skip_initial_type_check;
-        use_lazy_module_tracking;
-        _;
-      }
-    =
-    let open Lwt.Infix in
-    watchman_options_of watchman_root
-    >>= fun watchman ->
-    Lwt.return
-      {
-        StartOptions.source_paths;
-        socket_path;
-        watchman;
-        build_system_initializer = BuildSystem.get_initializer source_paths;
-        critical_files;
-        saved_state_action;
-        skip_initial_type_check;
-        use_lazy_module_tracking;
-      }
-
-
   let analysis_configuration_of
       {
         base =
@@ -195,6 +167,35 @@ module ServerConfiguration = struct
       ~enable_type_comments
       ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
       ()
+
+
+  let start_options_of
+      ({
+         base = { CommandStartup.BaseConfiguration.source_paths; _ };
+         socket_path;
+         watchman_root;
+         critical_files;
+         saved_state_action;
+         skip_initial_type_check;
+         use_lazy_module_tracking;
+         _;
+       } as server_configuration)
+    =
+    let open Lwt.Infix in
+    watchman_options_of watchman_root
+    >>= fun watchman ->
+    Lwt.return
+      {
+        StartOptions.configuration = analysis_configuration_of server_configuration;
+        source_paths;
+        socket_path;
+        watchman;
+        build_system_initializer = BuildSystem.get_initializer source_paths;
+        critical_files;
+        saved_state_action;
+        skip_initial_type_check;
+        use_lazy_module_tracking;
+      }
 end
 
 module ErrorKind = struct
@@ -293,12 +294,10 @@ let start_server_and_wait ~event_channel server_configuration =
             Lwt.return_unit
         | exn -> Lwt.fail exn)
   in
-  let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
   ServerConfiguration.start_options_of server_configuration
   >>= fun start_options ->
   Start.start_server
     start_options
-    ~configuration
     ~on_server_socket_ready:(fun socket_path ->
       (* An empty message signals that server socket has been created. *)
       write_event (ServerEvent.SocketCreated socket_path))

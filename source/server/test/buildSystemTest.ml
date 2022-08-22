@@ -51,21 +51,18 @@ let test_cleanup context =
     BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
   in
   let open Lwt.Infix in
-  let configuration, start_options =
-    let project =
-      ScratchProject.setup
-        ~context
-        ~build_system_initializer
-        ~include_typeshed_stubs:false
-        ~include_helper_builtins:false
-        []
-    in
-    ScratchProject.configuration_of project, ScratchProject.start_options_of project
+  let start_options =
+    ScratchProject.setup
+      ~context
+      ~build_system_initializer
+      ~include_typeshed_stubs:false
+      ~include_helper_builtins:false
+      []
+    |> ScratchProject.start_options_of
   in
 
   Start.start_server
     start_options
-    ~configuration
     ~on_exception:(fun exn -> raise exn)
     ~on_started:(fun _ _ ->
       (* Shutdown the server immediately after it is started. *)

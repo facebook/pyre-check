@@ -15,6 +15,7 @@ module Watchman = struct
 end
 
 type t = {
+  configuration: Configuration.Analysis.t;
   source_paths: Configuration.SourcePaths.t;
   socket_path: PyrePath.t;
   watchman: Watchman.t option;

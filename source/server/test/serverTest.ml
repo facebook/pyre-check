@@ -69,7 +69,6 @@ end
 module ScratchProject = struct
   type t = {
     context: test_ctxt;
-    configuration: Configuration.Analysis.t;
     start_options: StartOptions.t;
   }
 
@@ -141,7 +140,8 @@ module ScratchProject = struct
             { StartOptions.Watchman.root = source_root; raw })
       in
       {
-        StartOptions.source_paths = Configuration.SourcePaths.Simple [SearchPath.Root source_root];
+        StartOptions.configuration;
+        source_paths = Configuration.SourcePaths.Simple [SearchPath.Root source_root];
         socket_path =
           PyrePath.create_relative
             ~root:(PyrePath.create_absolute (bracket_tmpdir context))
@@ -155,24 +155,26 @@ module ScratchProject = struct
         use_lazy_module_tracking = false;
       }
     in
-    { context; configuration; start_options }
+    { context; start_options }
 
-
-  let configuration_of { configuration; _ } = configuration
 
   let start_options_of { start_options; _ } = start_options
+
+  let configuration_of project =
+    let { StartOptions.configuration; _ } = start_options_of project in
+    configuration
+
 
   let test_server_with
       ?(expect_server_error = false)
       ?on_server_socket_ready
       ~f
-      { context; configuration; start_options }
+      { context; start_options }
     =
     let open Lwt.Infix in
     Memory.reset_shared_memory ();
     Start.start_server
       start_options
-      ~configuration
       ?on_server_socket_ready
       ~on_exception:(function
         | OUnitTest.OUnit_failure _ as exn ->

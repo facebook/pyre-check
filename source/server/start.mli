@@ -22,6 +22,5 @@ val start_server
   :  ?on_server_socket_ready:(PyrePath.t -> unit Lwt.t) ->
   on_started:(ServerProperties.t -> ServerState.t ExclusiveLock.Lazy.t -> 'a Lwt.t) ->
   on_exception:(exn -> 'a Lwt.t) ->
-  configuration:Configuration.Analysis.t ->
   StartOptions.t ->
   'a Lwt.t
