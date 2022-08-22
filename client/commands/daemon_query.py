@@ -15,10 +15,14 @@ from typing import Optional, Type, TypeVar
 
 import dataclasses_json
 
+from .. import dataclasses_json_extensions as json_mixins
+
 from . import daemon_connection
 
 
-QueryResponseType = TypeVar("QueryResponseType")
+QueryResponseType = TypeVar(
+    "QueryResponseType", bound=json_mixins.CamlCaseAndExcludeJsonMixin
+)
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -101,7 +105,10 @@ async def attempt_typed_async_query(
         if response is None:
             return None
         else:
-            # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
+            if not isinstance(response.payload, dict):
+                raise ValueError(
+                    f"Expected a doct, got {response.payload!r} as response"
+                )
             return response_type.from_dict(response.payload)
     except (
         KeyError,
