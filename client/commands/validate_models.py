@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from .. import configuration as configuration_module, error as error_module
-from . import commands, connections, daemon_socket, frontend_configuration, query
+from . import commands, connections, daemon_query, daemon_socket, frontend_configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def parse_validation_errors(
     errors_payload = [] if "errors" not in payload else payload["errors"]
     if not isinstance(errors_payload, list):
         message = f"Invalid error payload for model validation: `{errors_payload}`."
-        raise query.InvalidQueryResponse(message)
+        raise daemon_query.InvalidQueryResponse(message)
 
     return sorted(
         (
@@ -48,14 +48,14 @@ def parse_validation_errors_response(
 ) -> List[error_module.ModelVerificationError]:
     if not isinstance(payload, dict) or "response" not in payload:
         message = f"Invalid payload for model validation: `{payload}`."
-        raise query.InvalidQueryResponse(message)
+        raise daemon_query.InvalidQueryResponse(message)
 
     response_payload = payload["response"]
     if not isinstance(response_payload, dict):
         message = (
             f"Invalid response payload for model validation: `{response_payload}`."
         )
-        raise query.InvalidQueryResponse(message)
+        raise daemon_query.InvalidQueryResponse(message)
 
     return parse_validation_errors(response_payload)
 
@@ -68,7 +68,7 @@ def run_validate_models(
         relative_local_root=configuration.get_relative_local_root(),
     )
     try:
-        response = query.query_server(socket_path, "validate_taint_models()")
+        response = daemon_query.execute_query(socket_path, "validate_taint_models()")
         validation_errors = parse_validation_errors_response(response.payload)
         error_module.print_errors(
             validation_errors, output=output, error_kind="model verification"

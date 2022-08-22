@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .. import configuration as configuration_module, log
-from . import commands, connections, daemon_socket, frontend_configuration
+from . import commands, connections, daemon_query, daemon_socket, frontend_configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -56,76 +56,8 @@ Possible queries:
 """
 
 
-class InvalidQueryResponse(Exception):
-    pass
-
-
-@dataclasses.dataclass(frozen=True)
-class Response:
-    payload: object
-
-
 def _print_help_message() -> None:
     log.stdout.write(HELP_MESSAGE)
-
-
-def _parse_query_with_overlay_response_json(response_json: object) -> Response:
-    if (
-        isinstance(response_json, list)
-        and len(response_json) > 1
-        and response_json[0] == "QueryWithOverlay"
-    ):
-        return Response(response_json[1])
-    raise InvalidQueryResponse(f"Unexpected JSON response from server: {response_json}")
-
-
-def parse_query_with_overlay_response(text: str) -> Response:
-    try:
-        response_json = json.loads(text)
-        return _parse_query_with_overlay_response_json(response_json)
-    except json.JSONDecodeError as decode_error:
-        message = f"Cannot parse response as JSON: {decode_error}"
-        raise InvalidQueryResponse(message) from decode_error
-
-
-def _parse_query_response_json(response_json: object) -> Response:
-    if (
-        isinstance(response_json, list)
-        and len(response_json) > 1
-        and response_json[0] == "Query"
-    ):
-        return Response(response_json[1])
-    raise InvalidQueryResponse(f"Unexpected JSON response from server: {response_json}")
-
-
-def parse_query_response(text: str) -> Response:
-    try:
-        response_json = json.loads(text)
-        return _parse_query_response_json(response_json)
-    except json.JSONDecodeError as decode_error:
-        message = f"Cannot parse response as JSON: {decode_error}"
-        raise InvalidQueryResponse(message) from decode_error
-
-
-def _send_query_request(output_channel: TextIO, query_text: str) -> None:
-    query_message = json.dumps(["Query", query_text])
-    LOG.debug(f"Sending `{log.truncate(query_message, 400)}`")
-    output_channel.write(f"{query_message}\n")
-
-
-def _receive_query_response(input_channel: TextIO) -> Response:
-    query_message = input_channel.readline().strip()
-    LOG.debug(f"Received `{log.truncate(query_message, 400)}`")
-    return parse_query_response(query_message)
-
-
-def query_server(socket_path: Path, query_text: str) -> Response:
-    with connections.connect(socket_path) as (
-        input_channel,
-        output_channel,
-    ):
-        _send_query_request(output_channel, query_text)
-        return _receive_query_response(input_channel)
 
 
 def run_query(
@@ -140,7 +72,7 @@ def run_query(
             _print_help_message()
             return commands.ExitCode.SUCCESS
 
-        response = query_server(socket_path, query_text)
+        response = daemon_query.execute_query(socket_path, query_text)
         log.stdout.write(json.dumps(response.payload))
         return commands.ExitCode.SUCCESS
     except connections.ConnectionFailure:

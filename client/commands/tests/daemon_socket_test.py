@@ -9,6 +9,8 @@ from pathlib import Path
 
 import testslide
 
+from ..daemon_query import InvalidQueryResponse, Response
+
 from ..daemon_socket import get_socket_path
 
 
@@ -61,3 +63,33 @@ class SocketTest(testslide.TestCase):
                 (str(project_root) + "//" + str(relative_local_root)).encode("utf-8")
             ).hexdigest()
             self.assertTrue(len(md5_hash) < 100)
+
+
+class QueryWithOverlayResponseTest(testslide.TestCase):
+    def test_parse_response(self) -> None:
+        def assert_parsed(text: str, expected: Response) -> None:
+            self.assertEqual(Response.parse(text), expected)
+
+        def assert_not_parsed(text: str) -> None:
+            with self.assertRaises(InvalidQueryResponse):
+                Response.parse(text)
+
+        assert_not_parsed("42")
+        assert_not_parsed("derp")
+        assert_not_parsed("{}")
+        assert_not_parsed("[]")
+        assert_not_parsed('["Query"]')
+
+        assert_parsed('["Query", []]', Response(payload=[]))
+        assert_parsed(
+            '["Query",{"response":{"boolean":true}}]',
+            Response(payload={"response": {"boolean": True}}),
+        )
+        assert_parsed(
+            '["Query", {"response":[{"object":[]}]}]',
+            Response(payload={"response": [{"object": []}]}),
+        )
+        assert_parsed(
+            '["Query",{"response":{"path":"/foo/bar.py"}}]',
+            Response(payload={"response": {"path": "/foo/bar.py"}}),
+        )

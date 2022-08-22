@@ -15,10 +15,10 @@ from ...tests import setup
 from .. import (
     commands,
     connections,
+    daemon_query,
     expression_level_coverage,
     frontend_configuration,
     language_server_protocol as lsp,
-    query,
 )
 
 
@@ -26,7 +26,7 @@ class ExpressionLevelTest(testslide.TestCase):
     def test_make_expression_level_coverage_response(self) -> None:
         self.assertEqual(
             expression_level_coverage._make_expression_level_coverage_response(
-                query.Response(
+                daemon_query.Response(
                     {
                         "response": [
                             [
@@ -79,7 +79,7 @@ class ExpressionLevelTest(testslide.TestCase):
         )
         self.assertEqual(
             expression_level_coverage._make_expression_level_coverage_response(
-                query.Response(
+                daemon_query.Response(
                     {
                         "response": [
                             [
@@ -191,11 +191,11 @@ class ExpressionLevelTest(testslide.TestCase):
             )
 
         assert_summary_expression_level_coverage(
-            query.Response({"response": []}).payload,
+            daemon_query.Response({"response": []}).payload,
             "Overall: 100.0% expressions are covered",
         )
         assert_summary_expression_level_coverage(
-            query.Response(
+            daemon_query.Response(
                 {
                     "response": [
                         [
@@ -212,7 +212,7 @@ class ExpressionLevelTest(testslide.TestCase):
             "test.py: 100.0% expressions are covered\nOverall: 100.0% expressions are covered",
         )
         assert_summary_expression_level_coverage(
-            query.Response(
+            daemon_query.Response(
                 {
                     "response": [
                         [
@@ -248,7 +248,7 @@ class ExpressionLevelTest(testslide.TestCase):
             "test.py: 71.43% expressions are covered\nOverall: 71.43% expressions are covered",
         )
         assert_summary_expression_level_coverage(
-            query.Response(
+            daemon_query.Response(
                 {
                     "response": [
                         [
@@ -292,7 +292,7 @@ class ExpressionLevelTest(testslide.TestCase):
             "library.py: 100.0% expressions are covered\ntest.py: 71.43% expressions are covered\nOverall: 81.82% expressions are covered",
         )
         assert_summary_expression_level_coverage(
-            query.Response(
+            daemon_query.Response(
                 {
                     "response": [
                         [
@@ -425,7 +425,7 @@ class ExpressionLevelTest(testslide.TestCase):
                 root_path,
             )
 
-            self.mock_callable(query, "query_server").to_raise(
+            self.mock_callable(daemon_query, "execute_query").to_raise(
                 connections.ConnectionFailure
             )
             self.assertEqual(

@@ -11,7 +11,7 @@ import testslide
 
 from ...error import ModelVerificationError
 from ...tests import setup
-from ..query import InvalidQueryResponse
+from ..daemon_query import InvalidQueryResponse
 from ..validate_models import parse_validation_errors_response
 
 

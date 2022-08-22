@@ -17,10 +17,10 @@ from . import (
     commands,
     connections,
     coverage,
+    daemon_query,
     daemon_socket,
     frontend_configuration,
     language_server_protocol as lsp,
-    query,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -298,7 +298,7 @@ def run_query(
         relative_local_root=configuration.get_relative_local_root(),
     )
     try:
-        response = query.query_server(socket_path, query_text)
+        response = daemon_query.execute_query(socket_path, query_text)
         _log_expression_level_coverage_to_remote(configuration, response.payload)
         if not print_summary:
             log.stdout.write(json.dumps(response.payload))
