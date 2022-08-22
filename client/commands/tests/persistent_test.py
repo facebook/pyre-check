@@ -21,14 +21,14 @@ from ...commands.language_server_protocol import SymbolKind
 from ...coverage_collector import CoveredAndUncoveredLines
 from ...tests import setup
 from .. import (
-    async_server_connection,
     backend_arguments,
     background,
+    connections,
     language_server_protocol as lsp,
     start,
     subscription,
 )
-from ..async_server_connection import (
+from ..connections import (
     AsyncTextReader,
     AsyncTextWriter,
     create_memory_text_reader,
@@ -826,7 +826,7 @@ class PersistentTest(testslide.TestCase):
         self.assertEqual(len(coverage_result.uncovered_ranges), 1)
 
     @setup.async_test
-    async def test_server_connection_lost(self) -> None:
+    async def test_connections_lost(self) -> None:
         test_path = Path("/foo.py")
         server_state = ServerState(
             diagnostics={test_path: []},
@@ -1266,7 +1266,7 @@ class PersistentTest(testslide.TestCase):
 def patch_connect_async(
     input_channel: AsyncTextReader, output_channel: AsyncTextWriter
 ) -> Iterator[CallableMixin]:
-    with patch.object(async_server_connection, "connect_async") as mock:
+    with patch.object(connections, "connect_async") as mock:
 
         class MockedConnection:
             async def __aenter__(self):

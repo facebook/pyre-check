@@ -19,9 +19,9 @@ from .. import (
 from . import (
     backend_arguments,
     commands,
+    connections,
     daemon,
     frontend_configuration,
-    server_connection,
     server_event,
     start,
 )
@@ -81,7 +81,7 @@ def parse_type_error_response(response: str) -> List[error.Error]:
 
 
 def _read_type_errors(socket_path: Path) -> List[error.Error]:
-    with server_connection.connect(socket_path) as (
+    with connections.connect(socket_path) as (
         input_channel,
         output_channel,
     ):
@@ -177,7 +177,7 @@ def run_incremental(
         return ExitStatus(
             exit_code=exit_code, connected_to=ServerStatus.ALREADY_RUNNING
         )
-    except server_connection.ConnectionFailure:
+    except connections.ConnectionFailure:
         pass
 
     if incremental_arguments.no_start:

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from .. import configuration as configuration_module, error as error_module
-from . import commands, daemon, frontend_configuration, query, server_connection
+from . import commands, connections, daemon, frontend_configuration, query
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ def run_validate_models(
             validation_errors, output=output, error_kind="model verification"
         )
         return commands.ExitCode.SUCCESS
-    except server_connection.ConnectionFailure:
+    except connections.ConnectionFailure:
         LOG.warning(
             "A running Pyre server is required for models to be validated. "
             "Please run `pyre` first to set up a server."

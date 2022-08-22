@@ -13,7 +13,7 @@ import tabulate
 from typing_extensions import TypedDict
 
 from .. import command_arguments, log
-from . import commands, daemon, server_connection, stop
+from . import commands, connections, daemon, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -116,13 +116,13 @@ class AllServerStatus:
 
 def _get_running_server_status(socket_path: Path) -> Optional[RunningServerStatus]:
     try:
-        with server_connection.connect(socket_path) as (
+        with connections.connect(socket_path) as (
             input_channel,
             output_channel,
         ):
             output_channel.write('["GetInfo"]\n')
             return RunningServerStatus.from_server_response(input_channel.readline())
-    except server_connection.ConnectionFailure:
+    except connections.ConnectionFailure:
         return None
 
 
@@ -182,7 +182,7 @@ def _stop_server(socket_path: Path) -> None:
         LOG.info(f"Stopping server at `{socket_path}...`")
         stop.stop_server(socket_path)
         LOG.info(f"Successfully stopped `{socket_path}.`")
-    except server_connection.ConnectionFailure:
+    except connections.ConnectionFailure:
         LOG.info(f"Failed to connect to `{socket_path}`. Removing it...")
         stop.remove_socket_if_exists(socket_path)
     except Exception as error:

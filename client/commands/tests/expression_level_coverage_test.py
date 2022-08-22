@@ -14,11 +14,11 @@ from ...tests import setup
 
 from .. import (
     commands,
+    connections,
     expression_level_coverage,
     frontend_configuration,
     language_server_protocol as lsp,
     query,
-    server_connection,
 )
 
 
@@ -426,7 +426,7 @@ class ExpressionLevelTest(testslide.TestCase):
             )
 
             self.mock_callable(query, "query_server").to_raise(
-                server_connection.ConnectionFailure
+                connections.ConnectionFailure
             )
             self.assertEqual(
                 expression_level_coverage.run(

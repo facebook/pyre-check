@@ -10,7 +10,7 @@ from typing import Type
 import testslide
 
 from ...tests import setup
-from ..async_server_connection import create_memory_text_reader
+from ..connections import create_memory_text_reader
 from ..server_event import (
     create_from_string,
     ErrorKind,

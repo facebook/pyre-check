@@ -34,9 +34,9 @@ from .. import (
 from . import (
     backend_arguments,
     commands,
+    connections,
     daemon,
     frontend_configuration,
-    server_connection,
     server_event,
     stop,
 )

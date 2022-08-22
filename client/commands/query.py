@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .. import configuration as configuration_module, log
-from . import commands, daemon, frontend_configuration, server_connection
+from . import commands, connections, daemon, frontend_configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -120,7 +120,7 @@ def _receive_query_response(input_channel: TextIO) -> Response:
 
 
 def query_server(socket_path: Path, query_text: str) -> Response:
-    with server_connection.connect(socket_path) as (
+    with connections.connect(socket_path) as (
         input_channel,
         output_channel,
     ):
@@ -143,7 +143,7 @@ def run_query(
         response = query_server(socket_path, query_text)
         log.stdout.write(json.dumps(response.payload))
         return commands.ExitCode.SUCCESS
-    except server_connection.ConnectionFailure:
+    except connections.ConnectionFailure:
         LOG.warning(
             "A running Pyre server is required for queries to be responded. "
             "Please run `pyre` first to set up a server."

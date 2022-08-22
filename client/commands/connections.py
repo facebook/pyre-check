@@ -6,16 +6,78 @@
 import abc
 import asyncio
 import contextlib
+import io
 import logging
+import socket
 import sys
 from pathlib import Path
-from typing import AsyncIterator, List, Optional, Tuple
+from typing import AsyncIterator, BinaryIO, Iterator, List, Optional, TextIO, Tuple
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class ConnectionFailure(Exception):
     pass
+
+
+@contextlib.contextmanager
+def _connect(
+    socket_path: Path,
+) -> Iterator[Tuple[BinaryIO, BinaryIO]]:
+    """
+    Connect to the socket at given path. Once connected, create an input and
+    an output stream from the socket. Both the input stream and the output
+    stream are in raw binary mode: read/write APIs of the streams need to use
+    `bytes` rather than `str`. The API is intended to be used like this:
+
+    ```
+    with connect(socket_path) as (input_stream, output_stream):
+        # Read from input_stream and write into output_stream here
+        ...
+    ```
+
+    Socket creation, connection, and closure will be automatically handled
+    inside this context manager. If any of the socket operations fail, raise
+    `ConnectionFailure`.
+    """
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
+            client_socket.connect(str(socket_path))
+            with client_socket.makefile(
+                mode="rb"
+            ) as input_channel, client_socket.makefile(mode="wb") as output_channel:
+                yield (input_channel, output_channel)
+    except OSError as error:
+        raise ConnectionFailure() from error
+
+
+@contextlib.contextmanager
+def connect(
+    socket_path: Path,
+) -> Iterator[Tuple[TextIO, TextIO]]:
+    """
+    This is a line-oriented higher-level API than `connect`. It can be used
+    when the caller does not want to deal with the complexity of binary I/O.
+
+    The behavior is the same as `connect`, except the streams that are created
+    operates in text mode. Read/write APIs of the streams uses UTF-8 encoded
+    `str` instead of `bytes`. Those operations are also line-buffered, meaning
+    that the streams will automatically be flushed once the newline character
+    is encountered.
+    """
+    with _connect(socket_path) as (input_channel, output_channel):
+        yield (
+            io.TextIOWrapper(
+                input_channel,
+                line_buffering=True,
+                errors="replace",
+            ),
+            io.TextIOWrapper(
+                output_channel,
+                line_buffering=True,
+                errors="replace",
+            ),
+        )
 
 
 class AsyncBytesReader(abc.ABC):
@@ -264,7 +326,7 @@ class StreamBytesWriter(AsyncBytesWriter):
 
 
 @contextlib.asynccontextmanager
-async def _connect(
+async def _connect_async(
     socket_path: Path, buffer_size: Optional[int] = None
 ) -> AsyncIterator[Tuple[AsyncBytesReader, AsyncBytesWriter]]:
     """
@@ -314,7 +376,7 @@ async def connect_async(
     operates in text mode. Read/write APIs of the streams uses UTF-8 encoded
     `str` instead of `bytes`.
     """
-    async with _connect(socket_path, buffer_size) as (bytes_reader, bytes_writer):
+    async with _connect_async(socket_path, buffer_size) as (bytes_reader, bytes_writer):
         yield (
             AsyncTextReader(bytes_reader, encoding="utf-8"),
             AsyncTextWriter(bytes_writer, encoding="utf-8"),

@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import IO, List, Optional, Union
 
-from . import async_server_connection
+from . import connections
 
 
 @dataclasses.dataclass
@@ -145,9 +145,7 @@ class Waiter:
     # This method does the same thing as `wait_on` except it operates on asyncio
     # streams rather than synchronoized streams.
     # NOTE: Any changes inside `wait_on` need to be applied here as well.
-    async def async_wait_on(
-        self, event_stream: async_server_connection.AsyncTextReader
-    ) -> None:
+    async def async_wait_on(self, event_stream: connections.AsyncTextReader) -> None:
         """
         This method is the same as `wait_on`, except it operates on async input
         channels instead of synchronous ones.

@@ -16,8 +16,8 @@ from typing import Union
 
 from .. import command_arguments, configuration as configuration_module, json_rpc, log
 from . import (
-    async_server_connection as connection,
     commands,
+    connections,
     frontend_configuration,
     language_server_protocol as lsp,
     start,
@@ -37,8 +37,8 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 async def try_initialize(
-    input_channel: connection.AsyncTextReader,
-    output_channel: connection.AsyncTextWriter,
+    input_channel: connections.AsyncTextReader,
+    output_channel: connections.AsyncTextWriter,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
     Read an LSP message from the input channel and try to initialize an LSP
@@ -114,16 +114,16 @@ async def try_initialize(
 
 class PysaServer:
     # I/O Channels
-    input_channel: connection.AsyncTextReader
-    output_channel: connection.AsyncTextWriter
+    input_channel: connections.AsyncTextReader
+    output_channel: connections.AsyncTextWriter
 
     # Immutable States
     client_capabilities: lsp.ClientCapabilities
 
     def __init__(
         self,
-        input_channel: connection.AsyncTextReader,
-        output_channel: connection.AsyncTextWriter,
+        input_channel: connections.AsyncTextReader,
+        output_channel: connections.AsyncTextWriter,
         client_capabilities: lsp.ClientCapabilities,
         pyre_arguments: start.Arguments,
         binary_location: str,
@@ -270,7 +270,7 @@ class PysaServer:
 async def run_persistent(
     binary_location: str, server_identifier: str, pysa_arguments: start.Arguments
 ) -> int:
-    stdin, stdout = await connection.create_async_stdin_stdout()
+    stdin, stdout = await connections.create_async_stdin_stdout()
     while True:
         initialize_result = await try_initialize(stdin, stdout)
         if isinstance(initialize_result, InitializationExit):

@@ -15,7 +15,7 @@ import dataclasses_json
 from pyre_extensions import override
 
 from .. import dataclasses_json_extensions as json_mixins, json_rpc
-from . import async_server_connection
+from . import connections
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class ReadChannelClosedError(Exception):
 
 
 async def _read_headers(
-    input_channel: async_server_connection.AsyncTextReader,
+    input_channel: connections.AsyncTextReader,
 ) -> List[str]:
     headers = []
     header = await input_channel.read_until("\r\n")
@@ -76,7 +76,7 @@ def _get_content_length(headers: Iterable[str]) -> int:
 
 
 async def read_json_rpc(
-    input_channel: async_server_connection.AsyncTextReader,
+    input_channel: connections.AsyncTextReader,
 ) -> json_rpc.Request:
     """
     Asynchronously read a JSON-RPC request from the given input channel.
@@ -104,7 +104,7 @@ def json_rpc_payload(message: json_rpc.JSONRPC) -> str:
 
 
 async def write_json_rpc(
-    output_channel: async_server_connection.AsyncTextWriter,
+    output_channel: connections.AsyncTextWriter,
     response: json_rpc.JSONRPC,
 ) -> None:
     """
@@ -114,7 +114,7 @@ async def write_json_rpc(
 
 
 async def write_json_rpc_ignore_connection_error(
-    output_channel: async_server_connection.AsyncTextWriter,
+    output_channel: connections.AsyncTextWriter,
     response: json_rpc.JSONRPC,
 ) -> None:
     """

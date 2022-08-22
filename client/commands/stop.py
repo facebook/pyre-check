@@ -7,14 +7,14 @@ import logging
 from pathlib import Path
 
 from .. import configuration as configuration_module
-from . import commands, daemon, frontend_configuration, server_connection, start
+from . import commands, connections, daemon, frontend_configuration, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def stop_server(socket_path: Path) -> None:
-    with server_connection.connect(socket_path) as (
+    with connections.connect(socket_path) as (
         input_channel,
         output_channel,
     ):
@@ -48,7 +48,7 @@ def run_stop(configuration: frontend_configuration.Base) -> commands.ExitCode:
         stop_server(socket_path)
         LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`\n")
         return commands.ExitCode.SUCCESS
-    except server_connection.ConnectionFailure:
+    except connections.ConnectionFailure:
         LOG.info("No running Pyre server to stop.\n")
         remove_socket_if_exists(socket_path)
         return commands.ExitCode.SERVER_NOT_FOUND

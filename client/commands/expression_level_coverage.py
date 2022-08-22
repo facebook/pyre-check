@@ -15,12 +15,12 @@ import dataclasses_json
 from .. import configuration as configuration_module, log, statistics_logger
 from . import (
     commands,
+    connections,
     coverage,
     daemon,
     frontend_configuration,
     language_server_protocol as lsp,
     query,
-    server_connection,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -305,7 +305,7 @@ def run_query(
         else:
             LOG.warning(summary_expression_level(response.payload))
         return commands.ExitCode.SUCCESS
-    except server_connection.ConnectionFailure:
+    except connections.ConnectionFailure:
         LOG.warning(
             "A running Pyre server is required for queries to be responded. "
             "Please run `pyre` first to set up a server."

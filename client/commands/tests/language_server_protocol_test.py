@@ -12,7 +12,7 @@ import testslide
 
 from ... import json_rpc
 from ...tests import setup
-from ..async_server_connection import (
+from ..connections import (
     AsyncBytesWriter,
     AsyncTextWriter,
     create_memory_text_reader,
