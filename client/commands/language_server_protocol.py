@@ -46,7 +46,9 @@ class ReadChannelClosedError(Exception):
     pass
 
 
-async def _read_headers(input_channel: async_server_connection.TextReader) -> List[str]:
+async def _read_headers(
+    input_channel: async_server_connection.AsyncTextReader,
+) -> List[str]:
     headers = []
     header = await input_channel.read_until("\r\n")
     while header != "\r\n":
@@ -74,7 +76,7 @@ def _get_content_length(headers: Iterable[str]) -> int:
 
 
 async def read_json_rpc(
-    input_channel: async_server_connection.TextReader,
+    input_channel: async_server_connection.AsyncTextReader,
 ) -> json_rpc.Request:
     """
     Asynchronously read a JSON-RPC request from the given input channel.
@@ -102,7 +104,8 @@ def json_rpc_payload(message: json_rpc.JSONRPC) -> str:
 
 
 async def write_json_rpc(
-    output_channel: async_server_connection.TextWriter, response: json_rpc.JSONRPC
+    output_channel: async_server_connection.AsyncTextWriter,
+    response: json_rpc.JSONRPC,
 ) -> None:
     """
     Asynchronously write a JSON-RPC response to the given output channel.
@@ -111,7 +114,8 @@ async def write_json_rpc(
 
 
 async def write_json_rpc_ignore_connection_error(
-    output_channel: async_server_connection.TextWriter, response: json_rpc.JSONRPC
+    output_channel: async_server_connection.AsyncTextWriter,
+    response: json_rpc.JSONRPC,
 ) -> None:
     """
     Asynchronously write a JSON-RPC response to the given output channel, and ignore

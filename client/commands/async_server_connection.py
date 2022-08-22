@@ -18,7 +18,7 @@ class ConnectionFailure(Exception):
     pass
 
 
-class BytesReader(abc.ABC):
+class AsyncBytesReader(abc.ABC):
     """
     This class defines the basic interface for async I/O input channel.
     """
@@ -53,7 +53,7 @@ class BytesReader(abc.ABC):
             return error.partial
 
 
-class BytesWriter(abc.ABC):
+class AsyncBytesWriter(abc.ABC):
     """
     This class defines the basic interface for async I/O output channel.
     """
@@ -75,20 +75,20 @@ class BytesWriter(abc.ABC):
         raise NotImplementedError()
 
 
-class TextReader:
+class AsyncTextReader:
     """
-    An adapter for `BytesReader` that decodes everything it reads immediately
+    An adapter for `AsyncBytesReader` that decodes everything it reads immediately
     from bytes to string. In other words, it tries to expose the same interfaces
-    as `BytesReader` except it operates on strings rather than bytestrings.
+    as `AsyncBytesReader` except it operates on strings rather than bytestrings.
     """
 
-    bytes_reader: BytesReader
+    bytes_reader: AsyncBytesReader
     encoding: str
     errors: str
 
     def __init__(
         self,
-        bytes_reader: BytesReader,
+        bytes_reader: AsyncBytesReader,
         encoding: str = "utf-8",
         errors: str = "replace",
     ) -> None:
@@ -110,17 +110,17 @@ class TextReader:
         return result_bytes.decode(self.encoding, errors=self.errors)
 
 
-class TextWriter:
+class AsyncTextWriter:
     """
-    An adapter for `BytesWriter` that encodes everything it writes immediately
+    An adapter for `AsyncBytesWriter` that encodes everything it writes immediately
     from string to bytes. In other words, it tries to expose the same interfaces
-    as `BytesWriter` except it operates on strings rather than bytestrings.
+    as `AsyncBytesWriter` except it operates on strings rather than bytestrings.
     """
 
-    bytes_writer: BytesWriter
+    bytes_writer: AsyncBytesWriter
     encoding: str
 
-    def __init__(self, bytes_writer: BytesWriter, encoding: str = "utf-8") -> None:
+    def __init__(self, bytes_writer: AsyncBytesWriter, encoding: str = "utf-8") -> None:
         self.bytes_writer = bytes_writer
         self.encoding = encoding
 
@@ -129,9 +129,9 @@ class TextWriter:
         await self.bytes_writer.write(data_bytes)
 
 
-class MemoryBytesReader(BytesReader):
+class MemoryBytesReader(AsyncBytesReader):
     """
-    An implementation of `BytesReader` based on a given in-memory byte string.
+    An implementation of `AsyncBytesReader` based on a given in-memory byte string.
     """
 
     _data: bytes
@@ -170,11 +170,11 @@ class MemoryBytesReader(BytesReader):
         self._cursor = 0
 
 
-def create_memory_text_reader(data: str, encoding: str = "utf-8") -> TextReader:
-    return TextReader(MemoryBytesReader(data.encode(encoding)), encoding)
+def create_memory_text_reader(data: str, encoding: str = "utf-8") -> AsyncTextReader:
+    return AsyncTextReader(MemoryBytesReader(data.encode(encoding)), encoding)
 
 
-class MemoryBytesWriter(BytesWriter):
+class MemoryBytesWriter(AsyncBytesWriter):
     _items: List[bytes]
 
     def __init__(self) -> None:
@@ -190,13 +190,13 @@ class MemoryBytesWriter(BytesWriter):
         return self._items
 
 
-def create_memory_text_writer(encoding: str = "utf-8") -> TextWriter:
-    return TextWriter(MemoryBytesWriter())
+def create_memory_text_writer(encoding: str = "utf-8") -> AsyncTextWriter:
+    return AsyncTextWriter(MemoryBytesWriter())
 
 
-class StreamBytesReader(BytesReader):
+class StreamBytesReader(AsyncBytesReader):
     """
-    An implementation of `BytesReader` based on `asyncio.StreamReader`.
+    An implementation of `AsyncBytesReader` based on `asyncio.StreamReader`.
     """
 
     stream_reader: asyncio.StreamReader
@@ -223,9 +223,9 @@ class StreamBytesReader(BytesReader):
         return await self.stream_reader.readexactly(count)
 
 
-class StreamBytesWriter(BytesWriter):
+class StreamBytesWriter(AsyncBytesWriter):
     """
-    An implementation of `BytesWriter` based on `asyncio.StreamWriter`.
+    An implementation of `AsyncBytesWriter` based on `asyncio.StreamWriter`.
     """
 
     stream_writer: asyncio.StreamWriter
@@ -266,7 +266,7 @@ class StreamBytesWriter(BytesWriter):
 @contextlib.asynccontextmanager
 async def _connect(
     socket_path: Path, buffer_size: Optional[int] = None
-) -> AsyncIterator[Tuple[BytesReader, BytesWriter]]:
+) -> AsyncIterator[Tuple[AsyncBytesReader, AsyncBytesWriter]]:
     """
     Connect to the socket at given path. Once connected, create an input and
     an output stream from the socket. Both the input stream and the output
@@ -286,7 +286,7 @@ async def _connect(
     inside this context manager. If any of the socket operations fail, raise
     `ConnectionFailure`.
     """
-    writer: Optional[BytesWriter] = None
+    writer: Optional[AsyncBytesWriter] = None
     try:
         limit = buffer_size if buffer_size is not None else 2**16
         stream_reader, stream_writer = await asyncio.open_unix_connection(
@@ -305,7 +305,7 @@ async def _connect(
 @contextlib.asynccontextmanager
 async def connect_in_text_mode(
     socket_path: Path, buffer_size: Optional[int] = None
-) -> AsyncIterator[Tuple[TextReader, TextWriter]]:
+) -> AsyncIterator[Tuple[AsyncTextReader, AsyncTextWriter]]:
     """
     This is a line-oriented higher-level API than `connect`. It can be used
     when the caller does not want to deal with the complexity of binary I/O.
@@ -316,12 +316,12 @@ async def connect_in_text_mode(
     """
     async with _connect(socket_path, buffer_size) as (bytes_reader, bytes_writer):
         yield (
-            TextReader(bytes_reader, encoding="utf-8"),
-            TextWriter(bytes_writer, encoding="utf-8"),
+            AsyncTextReader(bytes_reader, encoding="utf-8"),
+            AsyncTextWriter(bytes_writer, encoding="utf-8"),
         )
 
 
-async def create_async_stdin_stdout() -> Tuple[TextReader, TextWriter]:
+async def create_async_stdin_stdout() -> Tuple[AsyncTextReader, AsyncTextWriter]:
     """
     By default, `sys.stdin` and `sys.stdout` are synchronous channels: reading
     from `sys.stdin` or writing to `sys.stdout` will block until the read/write
@@ -344,6 +344,6 @@ async def create_async_stdin_stdout() -> Tuple[TextReader, TextWriter]:
     )
     stream_writer = asyncio.StreamWriter(w_transport, w_protocol, stream_reader, loop)
     return (
-        TextReader(StreamBytesReader(stream_reader)),
-        TextWriter(StreamBytesWriter(stream_writer)),
+        AsyncTextReader(StreamBytesReader(stream_reader)),
+        AsyncTextWriter(StreamBytesWriter(stream_writer)),
     )

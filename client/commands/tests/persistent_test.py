@@ -29,12 +29,12 @@ from .. import (
     subscription,
 )
 from ..async_server_connection import (
+    AsyncTextReader,
+    AsyncTextWriter,
     create_memory_text_reader,
     create_memory_text_writer,
     MemoryBytesReader,
     MemoryBytesWriter,
-    TextReader,
-    TextWriter,
 )
 from ..persistent import (
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
@@ -88,11 +88,11 @@ def _create_server_start_options_reader(
 
 async def _create_input_channel_with_requests(
     requests: Iterable[json_rpc.Request],
-) -> TextReader:
+) -> AsyncTextReader:
     bytes_writer = MemoryBytesWriter()
     for request in requests:
-        await lsp.write_json_rpc(TextWriter(bytes_writer), request)
-    return TextReader(MemoryBytesReader(b"\n".join(bytes_writer.items())))
+        await lsp.write_json_rpc(AsyncTextWriter(bytes_writer), request)
+    return AsyncTextReader(MemoryBytesReader(b"\n".join(bytes_writer.items())))
 
 
 class NoOpBackgroundTask(background.Task):
@@ -128,7 +128,7 @@ class PersistentTest(testslide.TestCase):
         )
         input_channel = await _create_input_channel_with_requests([expected_request])
         bytes_writer = MemoryBytesWriter()
-        output_channel = TextWriter(bytes_writer)
+        output_channel = AsyncTextWriter(bytes_writer)
         actual_request = await read_lsp_request(input_channel, output_channel)
         self.assertEquals(actual_request, expected_request)
         self.assertEqual(len(bytes_writer.items()), 0)
@@ -137,7 +137,7 @@ class PersistentTest(testslide.TestCase):
     async def test_read_lsp_request_fail_channel_closed(self) -> None:
         input_channel = create_memory_text_reader("")
         bytes_writer = MemoryBytesWriter()
-        output_channel = TextWriter(bytes_writer)
+        output_channel = AsyncTextWriter(bytes_writer)
         with self.assertRaises(lsp.ReadChannelClosedError):
             await read_lsp_request(input_channel, output_channel)
         self.assertEqual(len(bytes_writer.items()), 0)
@@ -146,7 +146,7 @@ class PersistentTest(testslide.TestCase):
     async def test_read_lsp_request_fail_incomplete_read(self) -> None:
         input_channel = create_memory_text_reader("derp\n")
         bytes_writer = MemoryBytesWriter()
-        output_channel = TextWriter(bytes_writer)
+        output_channel = AsyncTextWriter(bytes_writer)
         with self.assertRaises(lsp.ReadChannelClosedError):
             await read_lsp_request(input_channel, output_channel)
         # One message for one failed read
@@ -162,7 +162,7 @@ class PersistentTest(testslide.TestCase):
             f"foo\r\n\r\nbar\r\n\r\n{lsp.json_rpc_payload(expected_request)}"
         )
         bytes_writer = MemoryBytesWriter()
-        output_channel = TextWriter(bytes_writer)
+        output_channel = AsyncTextWriter(bytes_writer)
         actual_request = await read_lsp_request(input_channel, output_channel)
         self.assertEquals(actual_request, expected_request)
         # Two messages for two failed reads
@@ -197,7 +197,7 @@ class PersistentTest(testslide.TestCase):
         )
         bytes_writer = MemoryBytesWriter()
         result = await try_initialize(
-            input_channel, TextWriter(bytes_writer), _fake_option_reader()
+            input_channel, AsyncTextWriter(bytes_writer), _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationSuccess)
         self.assertEqual(len(bytes_writer.items()), 1)
@@ -389,7 +389,7 @@ class PersistentTest(testslide.TestCase):
             # Feed only a shutdown request to input channel
             input_channel=input_channel,
             # Always rasing in the output channel
-            output_channel=TextWriter(
+            output_channel=AsyncTextWriter(
                 ExceptionRaisingBytesWriter(ConnectionResetError())
             ),
             server_state=server_state,
@@ -408,7 +408,7 @@ class PersistentTest(testslide.TestCase):
             # Feed nothing to input channel
             input_channel=create_memory_text_reader(""),
             # Always rasing in the output channel
-            output_channel=TextWriter(
+            output_channel=AsyncTextWriter(
                 ExceptionRaisingBytesWriter(ConnectionResetError())
             ),
             server_state=server_state,
@@ -483,7 +483,7 @@ class PersistentTest(testslide.TestCase):
 
         server_handler = PyreServerHandler(
             server_start_options_reader=fake_server_start_options_reader,
-            client_output_channel=TextWriter(bytes_writer),
+            client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
         )
         await server_handler.handle_status_update_subscription(
@@ -528,7 +528,7 @@ class PersistentTest(testslide.TestCase):
 
         server_handler = PyreServerHandler(
             server_start_options_reader=fake_server_start_options_reader,
-            client_output_channel=TextWriter(MemoryBytesWriter()),
+            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             server_state=ServerState(),
         )
         with self.assertRaises(PyreServerShutdown):
@@ -548,7 +548,7 @@ class PersistentTest(testslide.TestCase):
 
         server_handler = PyreServerHandler(
             server_start_options_reader=fake_server_start_options_reader,
-            client_output_channel=TextWriter(bytes_writer),
+            client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
         )
         await server_handler.handle_status_update_subscription(
@@ -846,7 +846,7 @@ class PersistentTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(),
             ),
-            client_output_channel=TextWriter(bytes_writer),
+            client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
         )
 
@@ -860,7 +860,7 @@ class PersistentTest(testslide.TestCase):
         self.assertTrue(len(client_visible_messages) > 0)
         self.assertEqual(
             await lsp.read_json_rpc(
-                TextReader(
+                AsyncTextReader(
                     MemoryBytesReader(
                         # The server may send several status updates but we are
                         # mostly interested in the last message, which contains
@@ -894,7 +894,7 @@ class PersistentTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(),
             ),
-            client_output_channel=TextWriter(bytes_writer),
+            client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=ServerState(
                 client_capabilities=lsp.ClientCapabilities(
                     window=lsp.WindowClientCapabilities(
@@ -911,7 +911,7 @@ class PersistentTest(testslide.TestCase):
         self.assertTrue(len(client_visible_messages) > 0)
         self.assertEqual(
             await lsp.read_json_rpc(
-                TextReader(MemoryBytesReader(client_visible_messages[-1]))
+                AsyncTextReader(MemoryBytesReader(client_visible_messages[-1]))
             ),
             json_rpc.Request(
                 method="window/showStatus",
@@ -928,7 +928,7 @@ class PersistentTest(testslide.TestCase):
         fake_pyre_query_manager = background.TaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
-            output_channel=TextWriter(bytes_writer),
+            output_channel=AsyncTextWriter(bytes_writer),
             server_state=ServerState(),
             pyre_manager=fake_pyre_manager,
             pyre_query_manager=fake_pyre_query_manager,
@@ -970,7 +970,7 @@ class PersistentTest(testslide.TestCase):
         memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
-            output_channel=TextWriter(memory_bytes_writer),
+            output_channel=AsyncTextWriter(memory_bytes_writer),
             server_state=ServerState(
                 opened_documents={test_path},
             ),
@@ -1042,7 +1042,7 @@ class PersistentTest(testslide.TestCase):
         memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
-            output_channel=TextWriter(memory_bytes_writer),
+            output_channel=AsyncTextWriter(memory_bytes_writer),
             server_state=ServerState(
                 opened_documents={test_path},
             ),
@@ -1101,7 +1101,7 @@ class PersistentTest(testslide.TestCase):
             memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
             server = PyreServer(
                 input_channel=create_memory_text_reader(""),
-                output_channel=TextWriter(memory_bytes_writer),
+                output_channel=AsyncTextWriter(memory_bytes_writer),
                 server_state=ServerState(
                     opened_documents={test_path},
                 ),
@@ -1175,7 +1175,7 @@ class PersistentTest(testslide.TestCase):
         memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
-            output_channel=TextWriter(memory_bytes_writer),
+            output_channel=AsyncTextWriter(memory_bytes_writer),
             server_state=ServerState(
                 opened_documents={test_path},
             ),
@@ -1264,7 +1264,7 @@ class PersistentTest(testslide.TestCase):
 
 @contextmanager
 def patch_connect_in_text_mode(
-    input_channel: TextReader, output_channel: TextWriter
+    input_channel: AsyncTextReader, output_channel: AsyncTextWriter
 ) -> Iterator[CallableMixin]:
     with patch.object(async_server_connection, "connect_in_text_mode") as mock:
 
@@ -1337,12 +1337,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=TextWriter(bytes_writer),
+            client_output_channel=AsyncTextWriter(bytes_writer),
         )
         memory_bytes_writer = MemoryBytesWriter()
         flat_json = "".join(json_output.splitlines())
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
-        output_channel = TextWriter(memory_bytes_writer)
+        output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_in_text_mode(input_channel, output_channel):
             result = await pyre_query_manager._query_types(
@@ -1387,12 +1387,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=TextWriter(bytes_writer),
+            client_output_channel=AsyncTextWriter(bytes_writer),
         )
 
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
-        output_channel = TextWriter(memory_bytes_writer)
+        output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_in_text_mode(input_channel, output_channel):
             result = await pyre_query_manager._query_types(
                 [Path("test.py")], Path("fake_socket_path")
@@ -1411,14 +1411,14 @@ class PyreQueryHandlerTest(testslide.TestCase):
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
                 server_start_options_reader=server_start_options_reader,
-                client_output_channel=TextWriter(bytes_writer),
+                client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n'
             )
             memory_bytes_writer = MemoryBytesWriter()
-            output_channel = TextWriter(memory_bytes_writer)
+            output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_in_text_mode(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
@@ -1442,10 +1442,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_start_options_reader=_fake_option_reader(),
-            client_output_channel=TextWriter(MemoryBytesWriter()),
+            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
-        output_channel = TextWriter(MemoryBytesWriter())
+        output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_in_text_mode(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
@@ -1465,13 +1465,13 @@ class PyreQueryHandlerTest(testslide.TestCase):
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
                 server_start_options_reader=_fake_option_reader(),
-                client_output_channel=TextWriter(MemoryBytesWriter()),
+                client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             strict = True
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n'
             )
-            output_channel = TextWriter(MemoryBytesWriter())
+            output_channel = AsyncTextWriter(MemoryBytesWriter())
             with patch_connect_in_text_mode(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
@@ -1489,10 +1489,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_start_options_reader=_fake_option_reader(),
-            client_output_channel=TextWriter(MemoryBytesWriter()),
+            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
-        output_channel = TextWriter(MemoryBytesWriter())
+        output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_in_text_mode(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
@@ -1519,14 +1519,14 @@ class PyreQueryHandlerTest(testslide.TestCase):
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
                 server_start_options_reader=server_start_options_reader,
-                client_output_channel=TextWriter(bytes_writer),
+                client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":1,"coverage_gaps":[]}]]}]\n'
             )
             memory_bytes_writer = MemoryBytesWriter()
-            output_channel = TextWriter(memory_bytes_writer)
+            output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_in_text_mode(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
@@ -1556,14 +1556,14 @@ class PyreQueryHandlerTest(testslide.TestCase):
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
                 server_start_options_reader=server_start_options_reader,
-                client_output_channel=TextWriter(bytes_writer),
+                client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":4,"coverage_gaps":[{"location": {"start": {"line": 11, "column": 16}, "stop": {"line": 11, "column": 17}}, "function_name":"foo","type_": "typing.Any", "reason": ["TypeIsAny"]}]}]]}]\n'
             )
             memory_bytes_writer = MemoryBytesWriter()
-            output_channel = TextWriter(memory_bytes_writer)
+            output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_in_text_mode(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
@@ -1587,12 +1587,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_start_options_reader=_fake_option_reader(),
-            client_output_channel=TextWriter(MemoryBytesWriter()),
+            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
             '{ "error": "Oops" }\n["Query", {"response": [["ErrorAtPath",{"path":"/fake/path.py","error":"oops"}]]}]\n'
         )
-        output_channel = TextWriter(MemoryBytesWriter())
+        output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_in_text_mode(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
@@ -1612,13 +1612,13 @@ class PyreQueryHandlerTest(testslide.TestCase):
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
                 server_start_options_reader=_fake_option_reader(),
-                client_output_channel=TextWriter(MemoryBytesWriter()),
+                client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             strict = True
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
             )
-            output_channel = TextWriter(MemoryBytesWriter())
+            output_channel = AsyncTextWriter(MemoryBytesWriter())
             with patch_connect_in_text_mode(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
@@ -1636,12 +1636,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_start_options_reader=_fake_option_reader(),
-            client_output_channel=TextWriter(MemoryBytesWriter()),
+            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
             '["Query", {"response": []}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/test.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
         )
-        output_channel = TextWriter(MemoryBytesWriter())
+        output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_in_text_mode(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
@@ -1672,12 +1672,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=TextWriter(client_output_writer),
+            client_output_channel=AsyncTextWriter(client_output_writer),
         )
         memory_bytes_writer = MemoryBytesWriter()
         flat_json = "".join(json_output.splitlines())
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
-        output_channel = TextWriter(memory_bytes_writer)
+        output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_in_text_mode(input_channel, output_channel):
             await pyre_query_manager._query_and_send_hover_contents(
@@ -1723,12 +1723,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=TextWriter(client_output_writer),
+            client_output_channel=AsyncTextWriter(client_output_writer),
         )
 
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
-        output_channel = TextWriter(memory_bytes_writer)
+        output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_in_text_mode(input_channel, output_channel):
             await pyre_query_manager._query_and_send_hover_contents(
                 query=HoverQuery(
@@ -1781,12 +1781,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=TextWriter(client_output_writer),
+            client_output_channel=AsyncTextWriter(client_output_writer),
         )
         memory_bytes_writer = MemoryBytesWriter()
         flat_json = "".join(json_output.splitlines())
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
-        output_channel = TextWriter(memory_bytes_writer)
+        output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_in_text_mode(input_channel, output_channel):
             await pyre_query_manager._query_and_send_definition_location(
@@ -1840,12 +1840,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=TextWriter(client_output_writer),
+            client_output_channel=AsyncTextWriter(client_output_writer),
         )
 
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
-        output_channel = TextWriter(memory_bytes_writer)
+        output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_in_text_mode(input_channel, output_channel):
             await pyre_query_manager._query_and_send_definition_location(
                 query=DefinitionLocationQuery(
@@ -1913,12 +1913,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     find_all_references_enabled=True
                 ),
             ),
-            client_output_channel=TextWriter(client_output_writer),
+            client_output_channel=AsyncTextWriter(client_output_writer),
         )
         memory_bytes_writer = MemoryBytesWriter()
         flat_json = "".join(json_output.splitlines())
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
-        output_channel = TextWriter(memory_bytes_writer)
+        output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_in_text_mode(input_channel, output_channel):
             await pyre_query_manager._handle_find_all_references_query(
@@ -1980,12 +1980,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     find_all_references_enabled=True
                 ),
             ),
-            client_output_channel=TextWriter(client_output_writer),
+            client_output_channel=AsyncTextWriter(client_output_writer),
         )
 
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
-        output_channel = TextWriter(memory_bytes_writer)
+        output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_in_text_mode(input_channel, output_channel):
             await pyre_query_manager._handle_find_all_references_query(
                 query=ReferencesQuery(

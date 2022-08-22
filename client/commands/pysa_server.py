@@ -37,8 +37,8 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 async def try_initialize(
-    input_channel: connection.TextReader,
-    output_channel: connection.TextWriter,
+    input_channel: connection.AsyncTextReader,
+    output_channel: connection.AsyncTextWriter,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
     Read an LSP message from the input channel and try to initialize an LSP
@@ -114,16 +114,16 @@ async def try_initialize(
 
 class PysaServer:
     # I/O Channels
-    input_channel: connection.TextReader
-    output_channel: connection.TextWriter
+    input_channel: connection.AsyncTextReader
+    output_channel: connection.AsyncTextWriter
 
     # Immutable States
     client_capabilities: lsp.ClientCapabilities
 
     def __init__(
         self,
-        input_channel: connection.TextReader,
-        output_channel: connection.TextWriter,
+        input_channel: connection.AsyncTextReader,
+        output_channel: connection.AsyncTextWriter,
         client_capabilities: lsp.ClientCapabilities,
         pyre_arguments: start.Arguments,
         binary_location: str,

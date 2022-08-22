@@ -10,10 +10,10 @@ import testslide
 
 from ...tests import setup
 from ..async_server_connection import (
+    AsyncTextReader,
     connect_in_text_mode,
     MemoryBytesReader,
     MemoryBytesWriter,
-    TextReader,
 )
 
 from .server_connection_test import EchoServerRequestHandler
@@ -94,6 +94,6 @@ class AsyncConnectionTest(testslide.TestCase):
 
     async def test_text_errors(self) -> None:
         bytes_reader = MemoryBytesReader("∅\n".encode("utf-16"))
-        text_reader = TextReader(bytes_reader, encoding="utf-8")
+        text_reader = AsyncTextReader(bytes_reader, encoding="utf-8")
         result = (await text_reader.readline()).strip()
         self.assertEqual(result, '��\x05"')

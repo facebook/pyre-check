@@ -237,8 +237,8 @@ class InitializationExit:
 
 
 async def try_initialize(
-    input_channel: connection.TextReader,
-    output_channel: connection.TextWriter,
+    input_channel: connection.AsyncTextReader,
+    output_channel: connection.AsyncTextWriter,
     server_start_options_reader: PyreServerStartOptionsReader,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
@@ -338,7 +338,8 @@ async def try_initialize(
 
 
 async def read_lsp_request(
-    input_channel: connection.TextReader, output_channel: connection.TextWriter
+    input_channel: connection.AsyncTextReader,
+    output_channel: connection.AsyncTextWriter,
 ) -> json_rpc.Request:
     while True:
         try:
@@ -357,7 +358,8 @@ async def read_lsp_request(
 
 
 async def _wait_for_exit(
-    input_channel: connection.TextReader, output_channel: connection.TextWriter
+    input_channel: connection.AsyncTextReader,
+    output_channel: connection.AsyncTextWriter,
 ) -> None:
     """
     Wait for an LSP "exit" request from the `input_channel`. This is mostly useful
@@ -377,7 +379,7 @@ async def _wait_for_exit(
 
 
 async def _publish_diagnostics(
-    output_channel: connection.TextWriter,
+    output_channel: connection.AsyncTextWriter,
     path: Path,
     diagnostics: Sequence[lsp.Diagnostic],
 ) -> None:
@@ -397,7 +399,7 @@ async def _publish_diagnostics(
 
 
 async def _read_server_response(
-    server_input_channel: connection.TextReader,
+    server_input_channel: connection.AsyncTextReader,
 ) -> str:
     return await server_input_channel.read_until(separator="\n")
 
@@ -517,13 +519,15 @@ class PathTypeInfo(json_mixins.CamlCaseAndExcludeJsonMixin):
         )
 
 
-async def _send_request(output_channel: connection.TextWriter, request: str) -> None:
+async def _send_request(
+    output_channel: connection.AsyncTextWriter, request: str
+) -> None:
     LOG.debug(f"Sending `{log.truncate(request, 400)}`")
     await output_channel.write(f"{request}\n")
 
 
 async def _receive_response(
-    input_channel: connection.TextReader,
+    input_channel: connection.AsyncTextReader,
 ) -> Optional[query.Response]:
     raw_response = await _read_server_response(input_channel)
     LOG.info(f"Received `{log.truncate(raw_response, 400)}`")
@@ -534,7 +538,9 @@ async def _receive_response(
         return None
 
 
-async def _consume_and_drop_response(input_channel: connection.TextReader) -> None:
+async def _consume_and_drop_response(
+    input_channel: connection.AsyncTextReader,
+) -> None:
     raw_response = await _read_server_response(input_channel)
     LOG.info(f"Received and will drop response: `{log.truncate(raw_response, 400)}`")
     return None
@@ -592,8 +598,8 @@ class ServerState:
 @dataclasses.dataclass(frozen=True)
 class PyreServer:
     # I/O Channels
-    input_channel: connection.TextReader
-    output_channel: connection.TextWriter
+    input_channel: connection.AsyncTextReader
+    output_channel: connection.AsyncTextWriter
 
     # inside this task manager is a PyreServerHandler
     pyre_manager: background.TaskManager
@@ -1070,7 +1076,7 @@ async def _start_pyre_server(
                 )
 
             await server_event.Waiter(wait_on_initialization=True).async_wait_on(
-                connection.TextReader(connection.StreamBytesReader(server_stdout))
+                connection.AsyncTextReader(connection.StreamBytesReader(server_stdout))
             )
 
         return StartSuccess()
@@ -1221,7 +1227,7 @@ class PyreQueryHandler(background.Task):
         self,
         query_state: PyreQueryState,
         server_start_options_reader: PyreServerStartOptionsReader,
-        client_output_channel: connection.TextWriter,
+        client_output_channel: connection.AsyncTextWriter,
     ) -> None:
         self.query_state = query_state
         self.server_start_options_reader = server_start_options_reader
@@ -1612,7 +1618,7 @@ def _client_has_status_bar_support(
 
 async def _write_telemetry(
     enabled: bool,
-    output_channel: connection.TextWriter,
+    output_channel: connection.AsyncTextWriter,
     parameters: Dict[str, object],
     activity_key: Optional[Dict[str, object]],
 ) -> None:
@@ -1628,7 +1634,7 @@ async def _write_telemetry(
 
 
 async def _write_status(
-    output_channel: connection.TextWriter,
+    output_channel: connection.AsyncTextWriter,
     message: str,
     short_message: Optional[str] = None,
     level: lsp.MessageType = lsp.MessageType.INFO,
@@ -1652,7 +1658,7 @@ async def _write_status(
 
 
 async def _write_notification(
-    output_channel: connection.TextWriter,
+    output_channel: connection.AsyncTextWriter,
     message: str,
     short_message: Optional[str] = None,
     level: lsp.MessageType = lsp.MessageType.INFO,
@@ -1682,13 +1688,13 @@ class PyreServerShutdown(Exception):
 class PyreServerHandler(background.Task):
     server_start_options_reader: PyreServerStartOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
-    client_output_channel: connection.TextWriter
+    client_output_channel: connection.AsyncTextWriter
     server_state: ServerState
 
     def __init__(
         self,
         server_start_options_reader: PyreServerStartOptionsReader,
-        client_output_channel: connection.TextWriter,
+        client_output_channel: connection.AsyncTextWriter,
         server_state: ServerState,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
@@ -1820,8 +1826,8 @@ class PyreServerHandler(background.Task):
 
     async def _subscribe_to_type_error(
         self,
-        server_input_channel: connection.TextReader,
-        server_output_channel: connection.TextWriter,
+        server_input_channel: connection.AsyncTextReader,
+        server_output_channel: connection.AsyncTextWriter,
     ) -> None:
         subscription_name = f"persistent_{os.getpid()}"
         await server_output_channel.write(
@@ -1845,8 +1851,8 @@ class PyreServerHandler(background.Task):
 
     async def subscribe_to_type_error(
         self,
-        server_input_channel: connection.TextReader,
-        server_output_channel: connection.TextWriter,
+        server_input_channel: connection.AsyncTextReader,
+        server_output_channel: connection.AsyncTextWriter,
     ) -> None:
         try:
             await self._subscribe_to_type_error(

@@ -146,7 +146,7 @@ class Waiter:
     # streams rather than synchronoized streams.
     # NOTE: Any changes inside `wait_on` need to be applied here as well.
     async def async_wait_on(
-        self, event_stream: async_server_connection.TextReader
+        self, event_stream: async_server_connection.AsyncTextReader
     ) -> None:
         """
         This method is the same as `wait_on`, except it operates on async input

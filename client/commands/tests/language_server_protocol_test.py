@@ -13,10 +13,10 @@ import testslide
 from ... import json_rpc
 from ...tests import setup
 from ..async_server_connection import (
-    BytesWriter,
+    AsyncBytesWriter,
+    AsyncTextWriter,
     create_memory_text_reader,
     MemoryBytesWriter,
-    TextWriter,
 )
 from ..language_server_protocol import (
     ClientCapabilities,
@@ -47,9 +47,9 @@ from ..language_server_protocol import (
 T = TypeVar("T")
 
 
-class ExceptionRaisingBytesWriter(BytesWriter):
+class ExceptionRaisingBytesWriter(AsyncBytesWriter):
     """
-    A BytesWriter that always raises a given except when write is invoked.
+    An AsyncBytesWriter that always raises a given except when write is invoked.
     """
 
     def __init__(self, exception: Exception) -> None:
@@ -137,7 +137,7 @@ class LSPInputOutputTest(testslide.TestCase):
     async def test_write_lsp(self) -> None:
         async def assert_write(response: json_rpc.Response, expected: str) -> None:
             bytes_writer = MemoryBytesWriter()
-            await write_json_rpc(TextWriter(bytes_writer), response)
+            await write_json_rpc(AsyncTextWriter(bytes_writer), response)
             actual = bytes_writer.items()[0].decode("utf-8")
             self.assertEqual(actual, expected)
 
@@ -166,7 +166,7 @@ class LSPInputOutputTest(testslide.TestCase):
     async def test_write_json_rpc_ignore_connection_error(self) -> None:
         # This invocation should not raise
         write_json_rpc_ignore_connection_error(
-            TextWriter(ExceptionRaisingBytesWriter(ConnectionResetError())),
+            AsyncTextWriter(ExceptionRaisingBytesWriter(ConnectionResetError())),
             json_rpc.ErrorResponse(
                 id=None,
                 code=42,
