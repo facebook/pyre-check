@@ -169,6 +169,11 @@ module ServerConfiguration = struct
       ()
 
 
+  let environment_controls_of ({ use_lazy_module_tracking; _ } as server_configuration) =
+    analysis_configuration_of server_configuration
+    |> Analysis.EnvironmentControls.create ~populate_call_graph:true ~use_lazy_module_tracking
+
+
   let start_options_of
       ({
          base = { CommandStartup.BaseConfiguration.source_paths; _ };
@@ -177,7 +182,6 @@ module ServerConfiguration = struct
          critical_files;
          saved_state_action;
          skip_initial_type_check;
-         use_lazy_module_tracking;
          _;
        } as server_configuration)
     =
@@ -186,7 +190,7 @@ module ServerConfiguration = struct
     >>= fun watchman ->
     Lwt.return
       {
-        StartOptions.configuration = analysis_configuration_of server_configuration;
+        StartOptions.environment_controls = environment_controls_of server_configuration;
         source_paths;
         socket_path;
         watchman;
@@ -194,7 +198,6 @@ module ServerConfiguration = struct
         critical_files;
         saved_state_action;
         skip_initial_type_check;
-        use_lazy_module_tracking;
       }
 end
 

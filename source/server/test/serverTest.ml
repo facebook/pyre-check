@@ -112,26 +112,32 @@ module ScratchProject = struct
     let log_root = bracket_tmpdir context in
     List.iter sources ~f:(add_source ~root:source_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
-    let configuration =
-      Configuration.Analysis.create
-        ~parallel:false
-        ~analyze_external_sources:false
-        ~filter_directories:[source_root]
-        ~ignore_all_errors:[]
-        ~number_of_workers:1
-        ~local_root:source_root
-        ~project_root:source_root
-        ~search_paths:[SearchPath.Root external_root]
-        ~strict:false
-        ~debug:false
-        ~show_error_traces:false
-        ~excludes:[]
-        ~extensions:[]
-        ~store_type_check_resolution:false
-        ~incremental_style:Configuration.Analysis.FineGrained
-        ~log_directory:log_root
-        ~source_paths:[SearchPath.Root source_root]
-        ()
+    let environment_controls =
+      let configuration =
+        Configuration.Analysis.create
+          ~parallel:false
+          ~analyze_external_sources:false
+          ~filter_directories:[source_root]
+          ~ignore_all_errors:[]
+          ~number_of_workers:1
+          ~local_root:source_root
+          ~project_root:source_root
+          ~search_paths:[SearchPath.Root external_root]
+          ~strict:false
+          ~debug:false
+          ~show_error_traces:false
+          ~excludes:[]
+          ~extensions:[]
+          ~store_type_check_resolution:false
+          ~incremental_style:Configuration.Analysis.FineGrained
+          ~log_directory:log_root
+          ~source_paths:[SearchPath.Root source_root]
+          ()
+      in
+      Analysis.EnvironmentControls.create
+        ~populate_call_graph:true
+        ~use_lazy_module_tracking:false
+        configuration
     in
     let start_options =
       let watchman =
@@ -140,7 +146,7 @@ module ScratchProject = struct
             { StartOptions.Watchman.root = source_root; raw })
       in
       {
-        StartOptions.configuration;
+        StartOptions.environment_controls;
         source_paths = Configuration.SourcePaths.Simple [SearchPath.Root source_root];
         socket_path =
           PyrePath.create_relative
@@ -152,7 +158,6 @@ module ScratchProject = struct
         critical_files = [];
         saved_state_action = None;
         skip_initial_type_check = false;
-        use_lazy_module_tracking = false;
       }
     in
     { context; start_options }
@@ -161,8 +166,8 @@ module ScratchProject = struct
   let start_options_of { start_options; _ } = start_options
 
   let configuration_of project =
-    let { StartOptions.configuration; _ } = start_options_of project in
-    configuration
+    let { StartOptions.environment_controls; _ } = start_options_of project in
+    Analysis.EnvironmentControls.configuration environment_controls
 
 
   let test_server_with
