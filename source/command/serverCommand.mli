@@ -16,6 +16,8 @@ module ExitStatus : sig
   val exit_code : t -> int
 end
 
+val watchman_options_of : PyrePath.t option -> Server.StartOptions.Watchman.t option Lwt.t
+
 module ServerConfiguration : sig
   type t = {
     base: CommandStartup.BaseConfiguration.t;

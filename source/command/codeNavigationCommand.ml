@@ -100,13 +100,40 @@ module CodeNavigationConfiguration = struct
       ~enable_type_comments
       ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
       ()
+
+
+  let environment_controls_of code_navigation_configuration =
+    analysis_configuration_of code_navigation_configuration
+    |> Analysis.EnvironmentControls.create ~populate_call_graph:false ~use_lazy_module_tracking:true
+
+
+  let start_options_of
+      ({
+         base = { CommandStartup.BaseConfiguration.source_paths; _ };
+         socket_path;
+         watchman_root;
+         critical_files;
+         additional_logging_sections = _;
+       } as code_navigation_configuration)
+    =
+    let open Lwt.Infix in
+    ServerCommand.watchman_options_of watchman_root
+    >>= fun watchman ->
+    Lwt.return
+      {
+        CodeNavigationServer.StartOptions.environment_controls =
+          environment_controls_of code_navigation_configuration;
+        source_paths;
+        socket_path;
+        watchman;
+        critical_files;
+      }
 end
 
 let start_server_and_wait code_navigation_configuration =
-  let _configuration =
-    CodeNavigationConfiguration.analysis_configuration_of code_navigation_configuration
-  in
-  failwith "not implemented yet"
+  let open Lwt.Infix in
+  CodeNavigationConfiguration.start_options_of code_navigation_configuration
+  >>= fun _start_options -> failwith "not implemented yet"
 
 
 let run_server configuration_file =

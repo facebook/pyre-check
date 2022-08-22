@@ -19,6 +19,13 @@ module ExitStatus = struct
     | Error -> 1
 end
 
+let watchman_options_of = function
+  | None -> Lwt.return_none
+  | Some root ->
+      let open Lwt.Infix in
+      Watchman.Raw.create_exn () >>= fun raw -> Lwt.return_some { StartOptions.Watchman.root; raw }
+
+
 module ServerConfiguration = struct
   type t = {
     base: CommandStartup.BaseConfiguration.t;
@@ -93,14 +100,6 @@ module ServerConfiguration = struct
     | Undefined (message, _) ->
         Result.Error message
     | other_exception -> Result.Error (Exn.to_string other_exception)
-
-
-  let watchman_options_of = function
-    | None -> Lwt.return_none
-    | Some root ->
-        let open Lwt.Infix in
-        Watchman.Raw.create_exn ()
-        >>= fun raw -> Lwt.return_some { StartOptions.Watchman.root; raw }
 
 
   let analysis_configuration_of

@@ -6,5 +6,5 @@
     ppx_sexp_message ppx_deriving_yojson))
  (libraries core core.squeue sexplib ppxlib yojson ppx_deriving
    ppx_deriving_yojson ppx_deriving_yojson.runtime pyrelib.service
-   pyrelib.ast pyrelib.analysis pyrelib.pyre pyrelib.server pyrelib.version
-   pyrelib.taintAnalysis))
+   pyrelib.ast pyrelib.analysis pyrelib.pyre pyrelib.server
+   pyrelib.codeNavigationServer pyrelib.version pyrelib.taintAnalysis))
