@@ -228,6 +228,53 @@ let test_transform_environment context =
           def __gt__(self, o: object) -> bool: ...
           def __ge__(self, o: object) -> bool: ...
       |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      import attr
+      @attr.s(kw_only=True)
+      class A:
+        x: int
+        y: int
+        z: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        def __init__(self, *, x: int, y: int, z: int) -> None:
+          self.x = x
+          self.y = y
+          self.z = z
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
+  (* TODO(T129741558) Support typed syntax in attr *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from attr import field
+      import attr
+      @attr.s
+      class A:
+        x: int = field(kw_only=True)
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int = field(kw_only=True)
+        def __init__(self, x: int = ...) -> None:
+          self.x = x
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
   (* Inheritance *)
   assert_equivalent_attributes
     ~source:
@@ -405,6 +452,147 @@ let test_transform_environment context =
           def __gt__(self, o: object) -> bool: ...
           def __ge__(self, o: object) -> bool: ...
       |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      import attr
+      @attr.s
+      class Base:
+        x: int
+
+      @attr.s(kw_only=True)
+      class A(Base):
+        x: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int
+        def __init__(self, *, x: int) -> None:
+          self.x = x
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from attr import field
+      import attr
+      @attr.s(kw_only=True)
+      class Base:
+        x: int
+
+      @attr.s
+      class A(Base):
+        x: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int
+        def __init__(self, x: int) -> None:
+          self.x = x
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
+  (* TODO(T129344236) Fix inheritance for attrs fields *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from attr import field
+      import attr
+      @attr.s(kw_only=True)
+      class Base:
+        x: int
+
+      @attr.s
+      class A(Base):
+        y: int
+        z: int
+    |}
+    ~class_name:"A"
+    {|
+      class A(Base):
+        y: int
+        z: int
+        def __init__(self, x: int, y: int, z: int) -> None:
+          self.y = y
+          self.z = z
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
+  (* TODO(T129344236) Fix inheritance for attrs fields *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from attr import field
+      import attr
+      @attr.s
+      class Base:
+        x: int
+
+      @attr.s(kw_only=True)
+      class A(Base):
+        y: int
+        z: int
+    |}
+    ~class_name:"A"
+    {|
+      class A(Base):
+        y: int
+        z: int
+        def __init__(self, *, x: int, y: int, z: int) -> None:
+          self.y = y
+          self.z = z
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
+  (* TODO(T129344236) Fix inheritance for attrs fields *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from attr import field
+      import attr
+      @attr.s(kw_only=True)
+      class Base:
+        x: int
+
+      @attr.s
+      class A(Base):
+        y: int
+        z: int
+    |}
+    ~class_name:"A"
+    {|
+      class A(Base):
+        y: int
+        z: int
+        def __init__(self, x: int, y: int, z: int) -> None:
+          self.y = y
+          self.z = z
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
   ()
 
 
