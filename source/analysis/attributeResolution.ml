@@ -659,7 +659,16 @@ module ClassDecorators = struct
       in
       match options definition with
       | None -> []
-      | Some { init; repr; eq; order; match_args; field_descriptors; keyword_only } ->
+      | Some
+          {
+            init;
+            repr;
+            eq;
+            order;
+            match_args;
+            field_descriptors;
+            keyword_only = class_level_keyword_only;
+          } ->
           let init_parameters ~implicitly_initialize =
             let extract_dataclass_field_arguments (_, value) =
               match value with
@@ -709,6 +718,28 @@ module ClassDecorators = struct
                   | Some arguments -> List.find_map arguments ~f:get_default_value
                   | _ -> Some value)
             in
+            let get_is_field_level_keyword_only (attribute, value) =
+              let initialized = AnnotatedAttribute.initialized attribute in
+              let get_is_keyword_only { Call.Argument.name; value } =
+                name
+                >>| Node.value
+                >>| Identifier.sanitized
+                >>= function
+                | "kw_only" -> (
+                    match value with
+                    | { Node.location = _; Node.value = Expression.Constant Constant.True } ->
+                        Some true
+                    | _ -> Some false)
+                | _ -> None
+              in
+
+              match initialized with
+              | NotInitialized -> None
+              | _ -> (
+                  match extract_dataclass_field_arguments (attribute, value) with
+                  | Some arguments -> List.find_map arguments ~f:get_is_keyword_only
+                  | _ -> None)
+            in
             (* If a parameter exists in a parent class, then it modifies that parameter in its
                original position, instead of just adding the new parameter up front and deleting the
                old one *)
@@ -732,6 +763,11 @@ module ClassDecorators = struct
                       name;
                   let name = "$parameter$" ^ name in
                   let init_value = extract_init_value (attribute, value) in
+                  let keyword_only =
+                    match get_is_field_level_keyword_only (attribute, value) with
+                    | Some value -> value
+                    | None -> class_level_keyword_only
+                  in
                   let rec override_existing_parameters
                       (unchecked_parameters : Type.t dataclass_constructor_parameter list)
                     =

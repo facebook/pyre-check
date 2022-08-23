@@ -1400,12 +1400,126 @@ let test_keyword_only context =
   ()
 
 
+let test_keyword_only_fields context =
+  let assert_equivalent_attributes = assert_equivalent_attributes ~context in
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(repr=False, eq=False, match_args=False)
+      class A:
+        x: int = field(kw_only=True)
+        y: int = field(kw_only=True)
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int = field(kw_only=True)
+        y: int = field(kw_only=True)
+        def __init__(self, *, x: int, y: int) -> None:
+          self.x = x
+          self.y = y
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(repr=False, eq=False, match_args=False)
+      class A:
+        x: int
+        y: int = field(kw_only=True)
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int
+        y: int = field(kw_only=True)
+        def __init__(self, x: int, *, y: int) -> None:
+          self.x = x
+          self.y = y
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(repr=False, eq=False, match_args=False)
+      class A:
+        x: int = field(kw_only=True)
+        y: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int = field(kw_only=True)
+        y: int
+        def __init__(self, y: int, *, x: int) -> None:
+          self.x = x
+          self.y = y
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(kw_only=True ,repr=False, eq=False, match_args=False)
+      class A:
+        x: int = field(kw_only=True)
+        y: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int = field(kw_only=True)
+        y: int
+        def __init__(self, *, x: int, y: int) -> None:
+          self.x = x
+          self.y = y
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(kw_only=True ,repr=False, eq=False, match_args=False)
+      class A:
+        x: int = field(kw_only=False)
+        y: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int = field(kw_only=False)
+        y: int
+        def __init__(self, x: int, *, y: int) -> None:
+          self.x = x
+          self.y = y
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(kw_only=True ,repr=False, eq=False, match_args=False)
+      class A:
+        x: int
+        y: int = field(kw_only=False)
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int
+        y: int = field(kw_only=True)
+        def __init__(self, y: int, *, x: int) -> None:
+          self.x = x
+          self.y = y
+    |};
+  ()
+
+
 let () =
   "dataClass"
   >::: [
          "transform_environment" >: test_case ~length:Long test_transform_environment;
          "match_args" >:: test_match_args;
          "dataclass_transform" >:: test_dataclass_transform;
-         "kw_only" >:: test_keyword_only;
+         "keyword_only" >:: test_keyword_only;
+         "keyword_only_fields" >:: test_keyword_only_fields;
        ]
   |> Test.run
