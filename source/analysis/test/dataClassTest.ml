@@ -687,6 +687,27 @@ let test_transform_environment context =
           def __repr__(self) -> str: ...
           def __eq__(self, o: object) -> bool: ...
       |};
+  (* TODO(T129344236) Fix inheritance for dataclass fields *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass
+
+      @dataclass(match_args=False)
+      class Base:
+        x: int = dataclass.field(init=False)
+
+      @dataclass(repr=False, eq=False, match_args=False)
+      class Foo(Base):
+        y: int = dataclass.field(init=True)
+    |}
+    ~class_name:"Foo"
+    {|
+        # spacer
+        class Foo(Base):
+          y: int = dataclass.field(init=True)
+          def __init__(self, x: int = ..., y: int = ...) -> None: ...
+      |};
   ()
 
 
@@ -1231,11 +1252,160 @@ let test_dataclass_transform context =
   ()
 
 
+let test_keyword_only context =
+  let assert_equivalent_attributes = assert_equivalent_attributes ~context in
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass
+      @dataclass(kw_only=True, repr=False, eq=False, match_args=False)
+      class A:
+        x: int
+        y: int
+        z: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        def __init__(self, *, x: int, y: int, z: int) -> None:
+          self.x = x
+          self.y = y
+          self.z = z
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass
+      @dataclass(kw_only=True ,repr=False, eq=False, match_args=False)
+      class A:
+        x: int
+        y: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int
+        y: int
+        def __init__(self, *, x: int, y: int) -> None:
+          self.x = x
+          self.y = y
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(repr=False, eq=False, match_args=False)
+      class Base:
+        x: int
+
+      @dataclass(kw_only=True ,repr=False, eq=False, match_args=False)
+      class A(Base):
+        x: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int
+        def __init__(self, *, x: int) -> None:
+          self.x = x
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(kw_only=True ,repr=False, eq=False, match_args=False)
+      class Base:
+        x: int
+
+      @dataclass(repr=False, eq=False, match_args=False)
+      class A(Base):
+        x: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int
+        def __init__(self, x: int) -> None:
+          self.x = x
+    |};
+  (* TODO(T129344236) Fix inheritance for dataclass fields *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(kw_only=True, repr=False, eq=False, match_args=False)
+      class Base:
+        x: int
+
+      @dataclass(repr=False, eq=False, match_args=False)
+      class A(Base):
+        y: int
+        z: int
+    |}
+    ~class_name:"A"
+    {|
+      class A(Base):
+        y: int
+        z: int
+        def __init__(self, x: int, y: int, z: int) -> None:
+          self.y = y
+          self.z = z
+    |};
+  (* TODO(T129344236) Fix inheritance for dataclass fields *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(repr=False, eq=False, match_args=False)
+      class Base:
+        x: int
+
+      @dataclass(kw_only=True, repr=False, eq=False, match_args=False)
+      class A(Base):
+        y: int
+        z: int
+    |}
+    ~class_name:"A"
+    {|
+      class A(Base):
+        y: int
+        z: int
+        def __init__(self, *, x: int, y: int, z: int) -> None:
+          self.y = y
+          self.z = z
+    |};
+  (* TODO(T129344236) Fix inheritance for dataclass fields *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field
+      @dataclass(kw_only=True ,repr=False, eq=False, match_args=False)
+      class Base:
+        x: int
+
+      @dataclass(repr=False, eq=False, match_args=False)
+      class A(Base):
+        y: int
+        z: int
+    |}
+    ~class_name:"A"
+    {|
+      class A(Base):
+        y: int
+        z: int
+        def __init__(self, x: int, y: int, z: int) -> None:
+          self.y = y
+          self.z = z
+    |};
+  ()
+
+
 let () =
   "dataClass"
   >::: [
          "transform_environment" >: test_case ~length:Long test_transform_environment;
          "match_args" >:: test_match_args;
          "dataclass_transform" >:: test_dataclass_transform;
+         "kw_only" >:: test_keyword_only;
        ]
   |> Test.run

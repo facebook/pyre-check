@@ -549,6 +549,9 @@ module Callable : sig
 
     module Map : Core.Map.S with type Key.t = parameter
 
+    (** Used to indicate * when passing in a list of parameters and creating a callable *)
+    val dummy_star_parameter : type_t Record.Callable.RecordParameter.named
+
     val create : 'annotation named list -> 'annotation t list
 
     val default : parameter -> bool

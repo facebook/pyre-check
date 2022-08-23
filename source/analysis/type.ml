@@ -2863,6 +2863,8 @@ module Callable = struct
       type t = parameter [@@deriving compare, sexp]
     end)
 
+    let dummy_star_parameter = { name = "*"; annotation = Bottom; default = false }
+
     let create parameters =
       let parameter index (keyword_only, sofar) { name; annotation; default } =
         if String.equal (Identifier.sanitized name) "*" then

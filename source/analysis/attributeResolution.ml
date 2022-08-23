@@ -311,6 +311,16 @@ module ClassDecorators = struct
     order: bool;
     match_args: bool;
     field_descriptors: Ast.Expression.t list;
+    keyword_only: bool;
+  }
+
+  (** This is necessary as an abstraction over AnnotatedAttribute to determine which attributes are
+      keyword_only. *)
+  type 'annotation dataclass_constructor_parameter = {
+    name: Identifier.t;
+    annotation: 'annotation;
+    default: bool;
+    keyword_only: bool;
   }
 
   let find_decorator ~class_metadata_environment ~names ?dependency class_summary =
@@ -321,7 +331,7 @@ module ClassDecorators = struct
       class_summary
 
 
-  let extract_options ~default ~init ~repr ~eq ~order decorator =
+  let extract_options ~default ~init ~repr ~eq ~order ~keyword_only decorator =
     let open Expression in
     let extract_options_from_arguments =
       let apply_arguments default argument =
@@ -374,6 +384,12 @@ module ClassDecorators = struct
               else
                 default
             in
+            let default =
+              if String.equal argument_name keyword_only then
+                { default with keyword_only = recognize_value value ~default:default.keyword_only }
+              else
+                default
+            in
             default
         | _ -> default
       in
@@ -402,11 +418,13 @@ module ClassDecorators = struct
               order = false;
               match_args = true;
               field_descriptors;
+              keyword_only = false;
             }
           ~init:"init"
           ~repr:"repr"
           ~eq:"eq"
           ~order:"order"
+          ~keyword_only:"kw_only"
 
 
   let attrs_attributes ~class_metadata_environment ?dependency class_summary =
@@ -424,11 +442,13 @@ module ClassDecorators = struct
               order = true;
               match_args = false;
               field_descriptors = [];
+              keyword_only = false;
             }
           ~init:"init"
           ~repr:"repr"
           ~eq:"cmp"
           ~order:"cmp"
+          ~keyword_only:"kw_only"
 
 
   let is_dataclass_transform decorator =
@@ -448,9 +468,11 @@ module ClassDecorators = struct
       order = false;
       match_args = false;
       field_descriptors = [];
+      keyword_only = false;
     }
 
 
+  (* TODO(T129464224) Support `keyword_only_default` in Data Class Transforms *)
   let find_dataclass_transform_decorator_with_default
       ~class_metadata_environment
       ?dependency
@@ -479,6 +501,7 @@ module ClassDecorators = struct
             ~repr:""
             ~eq:"eq_default"
             ~order:"order_default"
+            ~keyword_only:"kw_only"
       >>| fun default -> decorator, default
     in
     decorators
@@ -492,7 +515,14 @@ module ClassDecorators = struct
       ?dependency
       class_summary
     >>| fun (decorator, default) ->
-    extract_options ~default ~init:"init" ~repr:"repr" ~eq:"eq" ~order:"order" decorator
+    extract_options
+      ~default
+      ~init:"init"
+      ~repr:"repr"
+      ~eq:"eq"
+      ~order:"order"
+      ~keyword_only:"kw_only_default"
+      decorator
 
 
   let find_dataclass_transform_class_as_decorator_with_default
@@ -517,6 +547,7 @@ module ClassDecorators = struct
             ~repr:""
             ~eq:"eq_default"
             ~order:"order_default"
+            ~keyword_only:"kw_only_default"
     in
     ClassMetadataEnvironment.ReadOnly.successors
       class_metadata_environment
@@ -537,7 +568,14 @@ module ClassDecorators = struct
       ?dependency
       class_summary
     >>| fun (decorator, default) ->
-    extract_options ~default ~init:"init" ~repr:"repr" ~eq:"eq" ~order:"order" decorator
+    extract_options
+      ~default
+      ~init:"init"
+      ~repr:"repr"
+      ~eq:"eq"
+      ~order:"order"
+      ~keyword_only:"kw_only_default"
+      decorator
 
 
   let apply
@@ -621,7 +659,7 @@ module ClassDecorators = struct
       in
       match options definition with
       | None -> []
-      | Some { init; repr; eq; order; match_args; field_descriptors } ->
+      | Some { init; repr; eq; order; match_args; field_descriptors; keyword_only } ->
           let init_parameters ~implicitly_initialize =
             let extract_dataclass_field_arguments (_, value) =
               match value with
@@ -671,6 +709,9 @@ module ClassDecorators = struct
                   | Some arguments -> List.find_map arguments ~f:get_default_value
                   | _ -> Some value)
             in
+            (* If a parameter exists in a parent class, then it modifies that parameter in its
+               original position, instead of just adding the new parameter up front and deleting the
+               old one *)
             let collect_parameters parameters (attribute, value) =
               (* Parameters must be annotated attributes *)
               let annotation =
@@ -690,24 +731,77 @@ module ClassDecorators = struct
                       table
                       name;
                   let name = "$parameter$" ^ name in
-                  let value = extract_init_value (attribute, value) in
-                  let rec override_existing_parameters unchecked_parameters =
+                  let init_value = extract_init_value (attribute, value) in
+                  let rec override_existing_parameters
+                      (unchecked_parameters : Type.t dataclass_constructor_parameter list)
+                    =
                     match unchecked_parameters with
                     | [] ->
-                        [
-                          {
-                            Type.Callable.Parameter.name;
-                            annotation;
-                            default = Option.is_some value;
-                          };
-                        ]
-                    | { Type.Callable.Parameter.name = old_name; default = old_default; _ } :: tail
+                        [{ name; annotation; default = Option.is_some init_value; keyword_only }]
+                    | { name = old_name; default = old_default; _ } :: tail
                       when Identifier.equal old_name name ->
-                        { name; annotation; default = Option.is_some value || old_default } :: tail
+                        {
+                          name;
+                          annotation;
+                          default = Option.is_some init_value || old_default;
+                          keyword_only;
+                        }
+                        :: tail
                     | head :: tail -> head :: override_existing_parameters tail
                   in
                   override_existing_parameters parameters
               | _ -> parameters
+            in
+            let is_class_var attribute =
+              match Node.value attribute with
+              | {
+               Attribute.kind =
+                 Attribute.Simple
+                   {
+                     annotation =
+                       Some
+                         {
+                           Node.value =
+                             Expression.Call
+                               {
+                                 callee =
+                                   {
+                                     value =
+                                       Name
+                                         (Name.Attribute
+                                           {
+                                             attribute = "__getitem__";
+                                             base =
+                                               {
+                                                 Node.value =
+                                                   Name
+                                                     (Name.Attribute
+                                                       {
+                                                         attribute = "ClassVar";
+                                                         base =
+                                                           {
+                                                             Node.value =
+                                                               Name (Name.Identifier "typing");
+                                                             _;
+                                                           };
+                                                         _;
+                                                       });
+                                                 _;
+                                               };
+                                             _;
+                                           });
+                                     _;
+                                   };
+                                 arguments = [_];
+                               };
+                           _;
+                         };
+                     _;
+                   };
+               _;
+              } ->
+                  false
+              | _ -> true
             in
             let get_table ({ Node.value = class_summary; _ } as parent) =
               let create attribute : uninstantiated_attribute * Expression.t =
@@ -738,62 +832,29 @@ module ClassDecorators = struct
               |> Identifier.SerializableMap.bindings
               |> List.unzip
               |> snd
-              |> List.filter ~f:(fun attribute ->
-                     (* ClassVar should be excluded from considerations as field. *)
-                     match Node.value attribute with
-                     | {
-                      Attribute.kind =
-                        Attribute.Simple
-                          {
-                            annotation =
-                              Some
-                                {
-                                  Node.value =
-                                    Expression.Call
-                                      {
-                                        callee =
-                                          {
-                                            value =
-                                              Name
-                                                (Name.Attribute
-                                                  {
-                                                    attribute = "__getitem__";
-                                                    base =
-                                                      {
-                                                        Node.value =
-                                                          Name
-                                                            (Name.Attribute
-                                                              {
-                                                                attribute = "ClassVar";
-                                                                base =
-                                                                  {
-                                                                    Node.value =
-                                                                      Name
-                                                                        (Name.Identifier "typing");
-                                                                    _;
-                                                                  };
-                                                                _;
-                                                              });
-                                                        _;
-                                                      };
-                                                    _;
-                                                  });
-                                            _;
-                                          };
-                                        arguments = [_];
-                                      };
-                                  _;
-                                };
-                            _;
-                          };
-                      _;
-                     } ->
-                         false
-                     | _ -> true)
+              |> List.filter ~f:is_class_var
               |> List.sort ~compare:compare_by_location
               |> List.map ~f:create
             in
-
+            let split_parameters_by_keyword_only parameters =
+              let keyword_only, not_keyword_only =
+                List.partition_tf parameters ~f:(function
+                    | { name = _; annotation = _; default = _; keyword_only } -> keyword_only)
+              in
+              let dataclass_constructor_to_named { name; annotation; default; _ }
+                  : Type.t Callable.RecordParameter.named
+                =
+                { name; annotation; default }
+              in
+              let keyword_only_named = List.map keyword_only ~f:dataclass_constructor_to_named in
+              let not_keyword_only_named =
+                List.map not_keyword_only ~f:dataclass_constructor_to_named
+              in
+              match keyword_only_named, not_keyword_only_named with
+              | [], not_keyword_only -> not_keyword_only
+              | keyword_only, not_keyword_only ->
+                  not_keyword_only @ [Type.Callable.Parameter.dummy_star_parameter] @ keyword_only
+            in
             let parent_attribute_tables =
               parent_dataclasses
               |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
@@ -804,6 +865,7 @@ module ClassDecorators = struct
             |> List.map ~f:(List.filter ~f:init_not_disabled)
             |> List.fold ~init:[] ~f:(fun parameters ->
                    List.fold ~init:parameters ~f:collect_parameters)
+            |> split_parameters_by_keyword_only
           in
           let methods =
             if init && not (already_in_table "__init__") then

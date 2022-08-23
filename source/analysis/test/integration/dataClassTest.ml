@@ -218,7 +218,28 @@ let test_check_attr context =
     []
 
 
+let test_check_kw_only context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from dataclasses import dataclass
+      @dataclass(kw_only=True)
+      class A:
+        x: int
+      reveal_type(A.__init__)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.A.__init__` is \
+       `typing.Callable(A.__init__)[[Named(self, A), KeywordOnly(x, int)], None]`.";
+    ];
+  ()
+
+
 let () =
   "dataclass"
-  >::: ["check_dataclass" >:: test_check_data_class; "check_attr" >:: test_check_attr]
+  >::: [
+         "check_dataclass" >:: test_check_data_class;
+         "check_attr" >:: test_check_attr;
+         "kw_only" >:: test_check_kw_only;
+       ]
   |> Test.run
