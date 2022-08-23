@@ -69,6 +69,75 @@ let test_callables context =
     |}
     ~expected:[];
   assert_callables
+    {|
+      import pytest
+      class C:
+        def foo() -> int:
+          ...
+    |}
+    ~expected:
+      [
+        Target.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Method { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
+        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+      ];
+  assert_callables
+    {|
+      import pytest
+      def test_int() -> int:
+        return 0
+      class C:
+        def foo() -> int:
+          ...
+    |}
+    ~expected:[];
+  assert_callables
+    {|
+      from pytest import raises
+      def test_int() -> int:
+        return 0
+      class C:
+        def foo() -> int:
+          ...
+    |}
+    ~expected:[];
+  assert_callables
+    {|
+      import pytest.raises as throws
+      def test_int() -> int:
+        return 0
+      class C:
+        def foo() -> int:
+          ...
+    |}
+    ~expected:[];
+  assert_callables
+    {|
+      import pytest
+      class C:
+        def foo() -> int:
+          ...
+        def test_int() -> int:
+          return 0
+    |}
+    ~expected:[];
+  assert_callables
+    {|
+      import foo.pytest
+      def test_int() -> int:
+        return 0
+      class C:
+        def foo() -> int:
+          ...
+    |}
+    ~expected:
+      [
+        Target.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Function { name = "test.test_int"; kind = Normal };
+        Target.Method { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
+        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+      ];
+  assert_callables
     "pass"
     ~additional_sources:
       [
