@@ -1,0 +1,5 @@
+(tests
+ (names basicTest)
+ (preprocess
+  (pps ppx_compare ppx_sexp_conv ppx_sexp_message ppx_hash lwt_ppx))
+ (libraries ounit2 ounit2-lwt pyrelib.codeNavigationServer pyrelib.test))

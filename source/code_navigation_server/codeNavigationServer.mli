@@ -55,3 +55,18 @@ module Start : sig
     StartOptions.t ->
     'a Lwt.t
 end
+
+(** {1 Testing} *)
+
+(** This module contains code that are useful for testing purpose only. They are considered internal
+    implementation details and it is strongly recommended to avoid relying on them in production
+    code! *)
+module Testing : sig
+  module Request : sig
+    type t = Stop [@@deriving sexp, compare, yojson { strict = false }]
+  end
+
+  module Response : sig
+    type t = Error of string [@@deriving sexp, compare, yojson { strict = false }]
+  end
+end
