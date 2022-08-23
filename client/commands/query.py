@@ -3,11 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import dataclasses
 import json
 import logging
-from pathlib import Path
-from typing import TextIO
 
 from .. import configuration as configuration_module, log
 from . import commands, connections, daemon_query, daemon_socket, frontend_configuration
