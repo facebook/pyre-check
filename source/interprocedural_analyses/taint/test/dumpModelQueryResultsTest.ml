@@ -175,7 +175,7 @@ let test_dump_model_query_results context =
         ModelQuery(
           name = "get_Base_child_sources",
           find = "methods",
-          where = [parent.matches("Base")],
+          where = [cls.matches("Base")],
           model = [
             Parameters(TaintSource[Test], where=index.equals(0)),
           ]
@@ -320,8 +320,8 @@ let test_dump_model_query_results context =
           name = "get_parent_of_baz_class_sources",
           find = "methods",
           where = [
-            parent.any_child(
-              parent.matches("Baz"),
+            cls.any_child(
+              cls.matches("Baz"),
               is_transitive=False
             ),
             name.matches("init")
@@ -399,14 +399,14 @@ let test_dump_model_query_results context =
           name = "get_parent_of_baz_class_transitive_sources",
           find = "methods",
           where = [
-            parent.any_child(
+            cls.any_child(
               AnyOf(
-                parent.decorator(
+                cls.decorator(
                   name.matches("anything")
                 ),
                 AllOf(
-                  Not(parent.matches("Foo")),
-                  Not(parent.matches("Bar")),
+                  Not(cls.matches("Foo")),
+                  Not(cls.matches("Bar")),
                 )
               ),
               is_transitive=True

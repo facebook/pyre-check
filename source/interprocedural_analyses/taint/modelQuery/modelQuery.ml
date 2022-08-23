@@ -360,11 +360,7 @@ let rec normalized_parameter_matches_constraint
       List.for_all constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
 
 
-let parent_matches_decorator_constraint
-    ~resolution
-    ~name_constraint
-    ~arguments_constraint
-    class_name
+let class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint class_name
   =
   GlobalResolution.class_summary resolution (Type.Primitive class_name)
   >>| Node.value
@@ -374,10 +370,8 @@ let parent_matches_decorator_constraint
   |> Option.value ~default:false
 
 
-let rec find_children ~class_hierarchy_graph ~is_transitive parent_name =
-  let child_name_set =
-    ClassHierarchyGraph.SharedMemory.get ~class_name:parent_name class_hierarchy_graph
-  in
+let rec find_children ~class_hierarchy_graph ~is_transitive class_name =
+  let child_name_set = ClassHierarchyGraph.SharedMemory.get ~class_name class_hierarchy_graph in
   let child_name_set =
     if is_transitive then
       ClassHierarchyGraph.ClassNameSet.fold
@@ -390,7 +384,7 @@ let rec find_children ~class_hierarchy_graph ~is_transitive parent_name =
     else
       child_name_set
   in
-  ClassHierarchyGraph.ClassNameSet.add parent_name child_name_set
+  ClassHierarchyGraph.ClassNameSet.add class_name child_name_set
 
 
 let rec class_matches_constraint ~resolution ~name class_constraint =
@@ -400,7 +394,7 @@ let rec class_matches_constraint ~resolution ~name class_constraint =
   | ModelQuery.ClassConstraint.Extends { class_name; is_transitive } ->
       is_ancestor ~resolution ~is_transitive class_name name
   | ModelQuery.ClassConstraint.DecoratorSatisfies { name_constraint; arguments_constraint } ->
-      parent_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint name
+      class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint name
   | ModelQuery.ClassConstraint.AnyOf constraints ->
       List.exists constraints ~f:(class_matches_constraint ~resolution ~name)
   | ModelQuery.ClassConstraint.AllOf constraints ->
@@ -410,14 +404,14 @@ let rec class_matches_constraint ~resolution ~name class_constraint =
   | _ -> failwith "impossible case"
 
 
-let parent_matches_any_child_constraint
+let class_matches_any_child_constraint
     ~resolution
     ~class_hierarchy_graph
     ~class_constraint
     ~is_transitive
-    parent_name
+    class_name
   =
-  find_children ~class_hierarchy_graph ~is_transitive parent_name
+  find_children ~class_hierarchy_graph ~is_transitive class_name
   |> ClassHierarchyGraph.ClassNameSet.exists (fun name ->
          class_matches_constraint ~resolution ~name class_constraint)
 
@@ -488,21 +482,21 @@ let rec callable_matches_constraint query_constraint ~resolution ~class_hierarch
   | ModelQuery.Not query_constraint ->
       not
         (callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable query_constraint)
-  | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
+  | ModelQuery.ClassConstraint (NameSatisfies name_constraint) ->
       Target.class_name callable
       >>| matches_name_constraint ~name_constraint
       |> Option.value ~default:false
-  | ModelQuery.ParentConstraint (Extends { class_name; is_transitive }) ->
+  | ModelQuery.ClassConstraint (Extends { class_name; is_transitive }) ->
       Target.class_name callable
       >>| is_ancestor ~resolution ~is_transitive class_name
       |> Option.value ~default:false
-  | ModelQuery.ParentConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
+  | ModelQuery.ClassConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
       Target.class_name callable
-      >>| parent_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
+      >>| class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
       |> Option.value ~default:false
-  | ModelQuery.ParentConstraint (AnyChildSatisfies { class_constraint; is_transitive }) ->
+  | ModelQuery.ClassConstraint (AnyChildSatisfies { class_constraint; is_transitive }) ->
       Target.class_name callable
-      >>| parent_matches_any_child_constraint
+      >>| class_matches_any_child_constraint
             ~resolution
             ~class_hierarchy_graph
             ~class_constraint
@@ -803,21 +797,21 @@ let rec attribute_matches_constraint
            ~name
            ~annotation
            query_constraint)
-  | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
+  | ModelQuery.ClassConstraint (NameSatisfies name_constraint) ->
       attribute_class_name
       >>| matches_name_constraint ~name_constraint
       |> Option.value ~default:false
-  | ModelQuery.ParentConstraint (Extends { class_name; is_transitive }) ->
+  | ModelQuery.ClassConstraint (Extends { class_name; is_transitive }) ->
       attribute_class_name
       >>| is_ancestor ~resolution ~is_transitive class_name
       |> Option.value ~default:false
-  | ModelQuery.ParentConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
+  | ModelQuery.ClassConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
       attribute_class_name
-      >>| parent_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
+      >>| class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
       |> Option.value ~default:false
-  | ModelQuery.ParentConstraint (AnyChildSatisfies { class_constraint; is_transitive }) ->
+  | ModelQuery.ClassConstraint (AnyChildSatisfies { class_constraint; is_transitive }) ->
       attribute_class_name
-      >>| parent_matches_any_child_constraint
+      >>| class_matches_any_child_constraint
             ~resolution
             ~class_hierarchy_graph
             ~class_constraint

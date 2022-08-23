@@ -152,7 +152,7 @@ module Internal : sig
       | AnyParameterConstraint of ParameterConstraint.t
       | AnyOf of model_constraint list
       | AllOf of model_constraint list
-      | ParentConstraint of ClassConstraint.t
+      | ClassConstraint of ClassConstraint.t
       | AnyDecoratorConstraint of DecoratorConstraint.t
       | Not of model_constraint
     [@@deriving equal, show]

@@ -183,7 +183,7 @@ module Internal = struct
       | AnyParameterConstraint of ParameterConstraint.t
       | AnyOf of model_constraint list
       | AllOf of model_constraint list
-      | ParentConstraint of ClassConstraint.t
+      | ClassConstraint of ClassConstraint.t
       | AnyDecoratorConstraint of DecoratorConstraint.t
       | Not of model_constraint
     [@@deriving equal, show]
@@ -1392,7 +1392,7 @@ let parse_arguments_constraint ~path ~location ({ Node.value; _ } as constraint_
         (model_verification_error ~path ~location (InvalidArgumentsClause constraint_expression))
 
 
-let parse_parent_equals_matches_clause ~path ~location ~callee ~attribute ~arguments =
+let parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~arguments =
   match arguments with
   | [
    {
@@ -1432,7 +1432,7 @@ let is_transitive
         (model_verification_error ~path ~location (InvalidIsTransitive is_transitive_expression))
 
 
-let parse_parent_extends_clause ~path ~location ~callee ~arguments =
+let parse_class_extends_clause ~path ~location ~callee ~arguments =
   match arguments with
   | [
    {
@@ -1515,6 +1515,7 @@ let parse_decorator_constraint ~path ~location ({ Node.value; _ } as constraint_
 let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_expression) =
   let open Core.Result in
   match value with
+  (* TODO(T128522530): Rename `parent` to `cls` - need both being accepted to migrate *)
   | Expression.Call
       {
         Call.callee =
@@ -1522,7 +1523,11 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
             Node.value =
               Expression.Name
                 (Name.Attribute
-                  { base = { Node.value = Name (Name.Identifier "parent"); _ }; attribute; _ });
+                  {
+                    base = { Node.value = Name (Name.Identifier ("parent" | "cls")); _ };
+                    attribute;
+                    _;
+                  });
             _;
           } as callee;
         arguments;
@@ -1530,8 +1535,8 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
       match attribute with
       | "equals"
       | "matches" ->
-          parse_parent_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
-      | "extends" -> parse_parent_extends_clause ~path ~location ~callee ~arguments
+          parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
+      | "extends" -> parse_class_extends_clause ~path ~location ~callee ~arguments
       | "decorator" ->
           parse_decorator_constraint ~path ~location constraint_expression
           >>= fun decorator_constraint ->
@@ -1716,6 +1721,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
           arguments = [{ Call.Argument.value; _ }];
         } ->
         parse_constraint value >>= fun model_constraint -> Ok (ModelQuery.Not model_constraint)
+    (* TODO(T128522530): Rename `parent` to `cls` - need both being accepted to migrate *)
     | Expression.Call
         {
           Call.callee =
@@ -1723,7 +1729,11 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
               Node.value =
                 Expression.Name
                   (Name.Attribute
-                    { base = { Node.value = Name (Name.Identifier "parent"); _ }; attribute; _ });
+                    {
+                      base = { Node.value = Name (Name.Identifier ("parent" | "cls")); _ };
+                      attribute;
+                      _;
+                    });
               _;
             } as callee;
           arguments;
@@ -1734,20 +1744,20 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
           match attribute with
           | "equals"
           | "matches" ->
-              parse_parent_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
-              >>| fun class_constraint -> ModelQuery.ParentConstraint class_constraint
+              parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
+              >>| fun class_constraint -> ModelQuery.ClassConstraint class_constraint
           | "extends" ->
-              parse_parent_extends_clause ~path ~location ~callee ~arguments
-              >>| fun class_constraint -> ModelQuery.ParentConstraint class_constraint
+              parse_class_extends_clause ~path ~location ~callee ~arguments
+              >>| fun class_constraint -> ModelQuery.ClassConstraint class_constraint
           | "decorator" ->
               parse_decorator_constraint ~path ~location constraint_expression
               >>= fun decorator_constraint ->
-              Ok (ModelQuery.ParentConstraint (DecoratorSatisfies decorator_constraint))
+              Ok (ModelQuery.ClassConstraint (DecoratorSatisfies decorator_constraint))
           | "any_child" ->
               parse_any_child_constraint ~path ~location ~callee ~arguments
               >>= fun (class_constraint, is_transitive) ->
               Ok
-                (ModelQuery.ParentConstraint
+                (ModelQuery.ClassConstraint
                    (ModelQuery.ClassConstraint.AnyChildSatisfies { class_constraint; is_transitive }))
           | _ -> Error (model_verification_error ~path ~location (UnsupportedCallee callee)))
     | Expression.Call { Call.callee; arguments = _ } ->

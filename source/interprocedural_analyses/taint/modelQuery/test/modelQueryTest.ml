@@ -1858,7 +1858,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
         expected_models = [];
@@ -1880,7 +1880,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
         expected_models = [];
@@ -1903,7 +1903,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
         expected_models = [];
@@ -1930,7 +1930,7 @@ let test_apply_rule context =
         name = "get_foo";
         query =
           [
-            ParentConstraint
+            ClassConstraint
               (DecoratorSatisfies
                  { name_constraint = Matches (Re2.create_exn "d2"); arguments_constraint = None });
           ];
@@ -1960,7 +1960,7 @@ let test_apply_rule context =
         name = "get_foo";
         query =
           [
-            ParentConstraint
+            ClassConstraint
               (DecoratorSatisfies
                  { name_constraint = Matches (Re2.create_exn "4"); arguments_constraint = None });
           ];
@@ -1991,7 +1991,7 @@ let test_apply_rule context =
         name = "get_foo";
         query =
           [
-            ParentConstraint
+            ClassConstraint
               (DecoratorSatisfies
                  {
                    name_constraint = Equals "test.d1";
@@ -2033,7 +2033,7 @@ let test_apply_rule context =
         name = "get_foo";
         query =
           [
-            ParentConstraint
+            ClassConstraint
               (DecoratorSatisfies
                  {
                    name_constraint = Matches (Re2.create_exn "d1");
@@ -2068,7 +2068,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2088,7 +2088,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (sink "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2108,7 +2108,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
+        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2128,7 +2128,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2149,7 +2149,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2172,7 +2172,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2420,8 +2420,8 @@ let test_apply_rule context =
         name = "get_foo";
         query =
           [
-            ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
-            Not (ParentConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
+            ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
+            Not (ClassConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -2446,8 +2446,8 @@ let test_apply_rule context =
         name = "get_foo";
         query =
           [
-            ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
-            Not (ParentConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
+            ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
+            Not (ClassConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -2488,7 +2488,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        query = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2511,7 +2511,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        query = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2534,7 +2534,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        query = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2559,7 +2559,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2582,7 +2582,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2605,7 +2605,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
         expected_models = [];
@@ -2630,7 +2630,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        query = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
         expected_models = [];
@@ -2654,7 +2654,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        query = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
         expected_models = [];
@@ -2678,7 +2678,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        query = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
         expected_models = [];
@@ -2702,7 +2702,7 @@ let test_apply_rule context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        query = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
         expected_models = [];

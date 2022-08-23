@@ -372,8 +372,8 @@ let description error =
         (Expression.show models_clause)
   | InvalidAnyChildClause expression ->
       Format.asprintf
-        "`%s` is not a valid any_child clause. Constraints within any_child should be either \
-         parent constraints or any of `AnyOf`, `AllOf`, and `Not`."
+        "`%s` is not a valid any_child clause. Constraints within any_child should be either class \
+         constraints or any of `AnyOf`, `AllOf`, and `Not`."
         (Expression.show expression)
 
 

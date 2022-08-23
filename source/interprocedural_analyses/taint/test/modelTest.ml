@@ -2414,7 +2414,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          parent.matches("foo"),
+          cls.matches("foo"),
           any_parameter.annotation.is_annotated_type()
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2431,7 +2431,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          parent.matches("foo"),
+          cls.matches("foo"),
           any_parameter.annotation.equals("int")
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2448,7 +2448,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          parent.matches("foo"),
+          cls.matches("foo"),
           any_parameter.annotation.matches("int")
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2465,7 +2465,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          parent.matches("foo"),
+          cls.matches("foo"),
           return_annotation.equals("int")
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2482,7 +2482,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          parent.matches("foo"),
+          cls.matches("foo"),
           return_annotation.matches("str")
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2512,12 +2512,12 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "functions",
-        where = parent.matches("foo"),
+        where = cls.matches("foo"),
         model = Returns(TaintSource[Test])
       )
     |}
     ~expect:
-      "`parent.matches` is not a valid constraint for model queries with find clause of kind \
+      "`cls.matches` is not a valid constraint for model queries with find clause of kind \
        `functions`."
     ();
   assert_invalid_model
@@ -2611,7 +2611,7 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
-        where = parent.extends("foo", is_transitive=foobar),
+        where = cls.extends("foo", is_transitive=foobar),
         model = ReturnModel(TaintSource[Test])
       )
     |}
@@ -2625,12 +2625,12 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
-        where = parent.extends("foo", foobar),
+        where = cls.extends("foo", foobar),
         model = ReturnModel(TaintSource[Test])
       )
     |}
     ~expect:
-      "Unsupported arguments for callee `parent.extends`: `{ Expression.Call.Argument.name = None; \
+      "Unsupported arguments for callee `cls.extends`: `{ Expression.Call.Argument.name = None; \
        value = \"foo\" }, { Expression.Call.Argument.name = None; value = foobar }`."
     ();
   assert_invalid_model
@@ -2639,12 +2639,12 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
-        where = parent.matches("foo", is_transitive=foobar),
+        where = cls.matches("foo", is_transitive=foobar),
         model = ReturnModel(TaintSource[Test])
       )
     |}
     ~expect:
-      "Unsupported arguments for callee `parent.matches`: `{ Expression.Call.Argument.name = None; \
+      "Unsupported arguments for callee `cls.matches`: `{ Expression.Call.Argument.name = None; \
        value = \"foo\" }, { Expression.Call.Argument.name = (Some is_transitive); value = foobar \
        }`."
     ();
@@ -3413,7 +3413,7 @@ Unexpected statement: `food(y)`
       \   The clause should be a list of syntactically correct model strings."
     ();
 
-  (* Test parent.any_child clause in model queries *)
+  (* Test cls.any_child clause in model queries *)
   assert_valid_model
     ~source:{|
       @d("1")
@@ -3427,7 +3427,7 @@ Unexpected statement: `food(y)`
         name = "valid_model",
         find = "methods",
         where = [
-            parent.any_child(parent.decorator(arguments.contains("1"), name.matches("d")))
+            cls.any_child(cls.decorator(arguments.contains("1"), name.matches("d")))
         ],
         model = Returns(TaintSource[A])
       )
@@ -3446,13 +3446,13 @@ Unexpected statement: `food(y)`
         name = "invalid_model",
         find = "methods",
         where = [
-            parent.any_child(Decorator(arguments.contains("1"), name.matches("d")))
+            cls.any_child(Decorator(arguments.contains("1"), name.matches("d")))
         ],
         model = Parameters(TaintSource[A])
       )
     |}
     ~expect:
-      {|`Decorator(arguments.contains("1"), name.matches("d"))` is not a valid any_child clause. Constraints within any_child should be either parent constraints or any of `AnyOf`, `AllOf`, and `Not`.|}
+      {|`Decorator(arguments.contains("1"), name.matches("d"))` is not a valid any_child clause. Constraints within any_child should be either class constraints or any of `AnyOf`, `AllOf`, and `Not`.|}
     ();
   assert_valid_model
     ~source:{|
@@ -3467,10 +3467,10 @@ Unexpected statement: `food(y)`
         name = "valid_model",
         find = "methods",
         where = [
-            parent.any_child(
+            cls.any_child(
               AnyOf(
-                parent.decorator(arguments.contains("1"), name.matches("d")),
-                parent.matches("A")
+                cls.decorator(arguments.contains("1"), name.matches("d")),
+                cls.matches("A")
               )
             )
         ],
@@ -4967,7 +4967,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = parent.equals("Foo"),
+     where = cls.equals("Foo"),
      model = [Returns([TaintSource[Test], TaintSink[Test]])]
     )
   |}
@@ -4976,7 +4976,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ParentConstraint (NameSatisfies (Equals "Foo"))];
+          query = [ClassConstraint (NameSatisfies (Equals "Foo"))];
           rule_kind = MethodModel;
           productions =
             [
@@ -5018,7 +5018,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = parent.extends("Foo"),
+     where = cls.extends("Foo"),
      model = [Returns([TaintSource[Test], TaintSink[Test]])]
     )
   |}
@@ -5027,7 +5027,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = false })];
+          query = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = false })];
           rule_kind = MethodModel;
           productions =
             [
@@ -5069,7 +5069,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = parent.extends("Foo", is_transitive=False),
+     where = cls.extends("Foo", is_transitive=False),
      model = [Returns([TaintSource[Test]])]
     )
   |}
@@ -5078,7 +5078,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = false })];
+          query = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = false })];
           rule_kind = MethodModel;
           productions =
             [
@@ -5109,7 +5109,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = parent.extends("Foo", is_transitive=True),
+     where = cls.extends("Foo", is_transitive=True),
      model = [Returns([TaintSource[Test]])]
     )
   |}
@@ -5118,7 +5118,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = true })];
+          query = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = true })];
           rule_kind = MethodModel;
           productions =
             [
@@ -5149,7 +5149,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = parent.matches("Foo.*"),
+     where = cls.matches("Foo.*"),
      model = [Returns([TaintSource[Test], TaintSink[Test]])]
     )
   |}
@@ -5158,7 +5158,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "Foo.*")))];
+          query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "Foo.*")))];
           rule_kind = MethodModel;
           productions =
             [
@@ -5200,7 +5200,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = parent.decorator(name.matches("foo.*")),
+     where = cls.decorator(name.matches("foo.*")),
      model = [Returns([TaintSource[Test], TaintSink[Test]])]
     )
   |}
@@ -5211,7 +5211,7 @@ let test_query_parsing context =
           name = "get_foo";
           query =
             [
-              ParentConstraint
+              ClassConstraint
                 (DecoratorSatisfies
                    {
                      name_constraint = Matches (Re2.create_exn "foo.*");
@@ -5576,14 +5576,14 @@ let test_query_parsing context =
       name = "get_parent_of_d1_decorator_sources",
       find = "methods",
       where = [
-        parent.any_child(
+        cls.any_child(
           AllOf(
-            parent.decorator(
+            cls.decorator(
               name.matches("d1")
             ),
             AnyOf(
-              Not(parent.matches("Foo")),
-              parent.matches("Baz")
+              Not(cls.matches("Foo")),
+              cls.matches("Baz")
             )
           ),
           is_transitive=False
@@ -5605,7 +5605,7 @@ let test_query_parsing context =
           name = "get_parent_of_d1_decorator_sources";
           query =
             [
-              ParentConstraint
+              ClassConstraint
                 (ClassConstraint.AnyChildSatisfies
                    {
                      class_constraint =
@@ -5679,14 +5679,14 @@ let test_query_parsing context =
       name = "get_parent_of_d1_decorator_transitive_sources",
       find = "methods",
       where = [
-        parent.any_child(
+        cls.any_child(
           AllOf(
-            parent.decorator(
+            cls.decorator(
               name.matches("d1")
             ),
             AnyOf(
-              Not(parent.matches("Foo")),
-              parent.matches("Baz")
+              Not(cls.matches("Foo")),
+              cls.matches("Baz")
             )
           ),
           is_transitive=True
@@ -5708,7 +5708,7 @@ let test_query_parsing context =
           name = "get_parent_of_d1_decorator_transitive_sources";
           query =
             [
-              ParentConstraint
+              ClassConstraint
                 (ClassConstraint.AnyChildSatisfies
                    {
                      class_constraint =
