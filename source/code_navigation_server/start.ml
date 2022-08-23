@@ -7,8 +7,32 @@
 
 open Core
 
-let handle_connection ~server_properties:_ _client_address (_input_channel, _output_channel) =
-  failwith "not implemented yet"
+let handle_connection ~server_properties:_ _client_address (input_channel, output_channel) =
+  Log.info "Connection established";
+  let rec handle_line () =
+    match%lwt Lwt_io.read_line_opt input_channel with
+    | None ->
+        Log.info "Connection closed";
+        Lwt.return_unit
+    | Some raw_request ->
+        Log.info "Processing request `%s`" raw_request;
+        let%lwt response = RequestHandler.handle_raw_request raw_request in
+        let raw_response = Response.to_string response in
+        Log.info "Request processed. Response: `%s`" raw_response;
+        let on_io_exception exn =
+          Log.warning "Exception occurred while sending responses: %s" (Exn.to_string exn);
+          Lwt.return_unit
+        in
+        let%lwt () =
+          Lwt.catch (fun () -> Lwt_io.write_line output_channel raw_response) on_io_exception
+        in
+        handle_line ()
+  in
+  let on_uncaught_exception exn =
+    Log.warning "Uncaught exception: %s" (Exn.to_string exn);
+    Lwt.return_unit
+  in
+  Lwt.catch handle_line on_uncaught_exception
 
 
 let with_server ~on_started { StartOptions.environment_controls; socket_path; critical_files; _ } =
