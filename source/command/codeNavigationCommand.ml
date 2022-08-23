@@ -133,7 +133,18 @@ end
 let start_server_and_wait code_navigation_configuration =
   let open Lwt.Infix in
   CodeNavigationConfiguration.start_options_of code_navigation_configuration
-  >>= fun _start_options -> failwith "not implemented yet"
+  >>= fun start_options ->
+  CodeNavigationServer.Start.start_server
+    start_options
+    ~on_started:(fun _ ->
+      let wait_forever, _ = Lwt.wait () in
+      wait_forever)
+    ~on_exception:(function
+      | Server.Start.ServerStopped -> Lwt.return ServerCommand.ExitStatus.Ok
+      | exn ->
+          let kind, message = ServerCommand.error_kind_and_message_from_exception exn in
+          Log.error "%a %s" Sexp.pp_hum (ServerCommand.ErrorKind.sexp_of_t kind) message;
+          Lwt.return ServerCommand.ExitStatus.Error)
 
 
 let run_server configuration_file =

@@ -469,7 +469,6 @@ let on_watchman_update ~server_properties ~server_state paths =
       Lwt.return (new_state, ()))
 
 
-(* Invoke `on_caught` when given unix signals are received. *)
 let wait_for_signal ~on_caught signals =
   let open Lwt in
   let waiter, resolver = wait () in
