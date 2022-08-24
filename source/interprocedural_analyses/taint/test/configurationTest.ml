@@ -867,9 +867,17 @@ let test_implicit_sources _ =
     assert_parse
       {|
           { sources: [{ name: "StringDigit" }],
-            sinks: [],
+            sinks: [{ name: "RCE" }],
             features: [],
-            rules: [],
+            rules: [
+              {
+                 name: "test rule",
+                 sources: ["StringDigit"],
+                 sinks: ["RCE"],
+                 code: 1,
+                 message_format: ""
+              }
+            ],
             implicit_sources: {
               literal_strings: [
                 {
@@ -896,10 +904,18 @@ let test_implicit_sinks _ =
   let configuration =
     assert_parse
       {|
-          { sources: [],
+          { sources: [{ name: "UserControlled" }],
             sinks: [{ name: "HTMLContainer" }],
             features: [],
-            rules: [],
+            rules: [
+              {
+                 name: "test rule",
+                 sources: ["UserControlled"],
+                 sinks: ["HTMLContainer"],
+                 code: 1,
+                 message_format: ""
+              }
+            ],
             implicit_sinks: {
               literal_strings: [
                 {

@@ -99,6 +99,56 @@ let transform_splits transforms =
   split ~result:[] ~prefix:[] ~suffix:transforms
 
 
+let filter_rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms rules =
+  let rules =
+    match filtered_rule_codes with
+    | Some rule_codes -> List.filter rules ~f:(fun { Rule.code; _ } -> Set.mem rule_codes code)
+    | None -> rules
+  in
+  let rules =
+    match filtered_sources with
+    | Some filtered_sources ->
+        let should_keep_source = function
+          | Sources.NamedSource name
+          | Sources.ParametricSource { source_name = name; _ } ->
+              Sources.Set.mem (Sources.NamedSource name) filtered_sources
+          | _ -> true
+        in
+        List.filter_map rules ~f:(fun rule ->
+            let rule_sources = List.filter ~f:should_keep_source rule.sources in
+            if not (List.is_empty rule_sources) then
+              Some { rule with sources = rule_sources }
+            else
+              None)
+    | None -> rules
+  in
+  let rules =
+    match filtered_sinks with
+    | Some filtered_sinks ->
+        let should_keep_sink = function
+          | Sinks.NamedSink name
+          | Sinks.ParametricSink { sink_name = name; _ } ->
+              Sinks.Set.mem (Sinks.NamedSink name) filtered_sinks
+          | _ -> true
+        in
+        List.filter_map rules ~f:(fun rule ->
+            let rule_sinks = List.filter ~f:should_keep_sink rule.sinks in
+            if not (List.is_empty rule_sinks) then
+              Some { rule with sinks = rule_sinks }
+            else
+              None)
+    | None -> rules
+  in
+  let rules =
+    match filtered_transforms with
+    | Some filtered_transforms ->
+        let should_keep_transform = List.mem filtered_transforms ~equal:TaintTransform.equal in
+        List.filter rules ~f:(fun rule -> List.for_all rule.transforms ~f:should_keep_transform)
+    | None -> rules
+  in
+  rules
+
+
 module SourceSinkFilter = struct
   type t = {
     matching_sources: Sources.Set.t Sinks.Map.t;
@@ -177,50 +227,7 @@ module SourceSinkFilter = struct
 
   let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms =
     let rules =
-      match filtered_rule_codes with
-      | Some rule_codes -> List.filter rules ~f:(fun { Rule.code; _ } -> Set.mem rule_codes code)
-      | None -> rules
-    in
-    let rules =
-      match filtered_sources with
-      | Some filtered_sources ->
-          let should_keep_source = function
-            | Sources.NamedSource name
-            | Sources.ParametricSource { source_name = name; _ } ->
-                Sources.Set.mem (Sources.NamedSource name) filtered_sources
-            | _ -> true
-          in
-          List.filter_map rules ~f:(fun rule ->
-              let rule_sources = List.filter ~f:should_keep_source rule.sources in
-              if not (List.is_empty rule_sources) then
-                Some { rule with sources = rule_sources }
-              else
-                None)
-      | None -> rules
-    in
-    let rules =
-      match filtered_sinks with
-      | Some filtered_sinks ->
-          let should_keep_sink = function
-            | Sinks.NamedSink name
-            | Sinks.ParametricSink { sink_name = name; _ } ->
-                Sinks.Set.mem (Sinks.NamedSink name) filtered_sinks
-            | _ -> true
-          in
-          List.filter_map rules ~f:(fun rule ->
-              let rule_sinks = List.filter ~f:should_keep_sink rule.sinks in
-              if not (List.is_empty rule_sinks) then
-                Some { rule with sinks = rule_sinks }
-              else
-                None)
-      | None -> rules
-    in
-    let rules =
-      match filtered_transforms with
-      | Some filtered_transforms ->
-          let should_keep_transform = List.mem filtered_transforms ~equal:TaintTransform.equal in
-          List.filter rules ~f:(fun rule -> List.for_all rule.transforms ~f:should_keep_transform)
-      | None -> rules
+      filter_rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms rules
     in
     let matching_sources, matching_sinks = matching_kinds_from_rules ~rules in
     let possible_tito_transforms = possible_tito_transforms_from_rules ~rules in
@@ -299,6 +306,24 @@ module SourceSinkFilter = struct
 
   let possible_tito_transforms { possible_tito_transforms; _ } = possible_tito_transforms
 end
+
+let filter_implicit_sources ~source_sink_filter { literal_strings } =
+  {
+    literal_strings =
+      List.filter literal_strings ~f:(fun { source_kind; _ } ->
+          SourceSinkFilter.should_keep_source source_sink_filter source_kind);
+  }
+
+
+let filter_implicit_sinks ~source_sink_filter { conditional_test; literal_string_sinks } =
+  {
+    conditional_test =
+      List.filter conditional_test ~f:(SourceSinkFilter.should_keep_sink source_sink_filter);
+    literal_string_sinks =
+      List.filter literal_string_sinks ~f:(fun { sink_kind; _ } ->
+          SourceSinkFilter.should_keep_sink source_sink_filter sink_kind);
+  }
+
 
 type t = {
   sources: AnnotationParser.source_or_sink list;
@@ -1388,21 +1413,35 @@ let with_command_line_options
     match rule_filter with
     | None -> configuration
     | Some rule_filter ->
-        let codes_to_keep = Int.Set.of_list rule_filter in
-        let { rules; _ } = configuration in
-        let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
-        { configuration with rules; filtered_rule_codes = Some codes_to_keep }
+        let filtered_rule_codes = Int.Set.of_list rule_filter in
+        { configuration with filtered_rule_codes = Some filtered_rule_codes }
   in
+  let rules =
+    filter_rules
+      ~filtered_rule_codes:configuration.filtered_rule_codes
+      ~filtered_sources:configuration.filtered_sources
+      ~filtered_sinks:configuration.filtered_sinks
+      ~filtered_transforms:configuration.filtered_transforms
+      configuration.rules
+  in
+  let source_sink_filter =
+    SourceSinkFilter.create
+      ~rules
+      ~filtered_rule_codes:configuration.filtered_rule_codes
+      ~filtered_sources:configuration.filtered_sources
+      ~filtered_sinks:configuration.filtered_sinks
+      ~filtered_transforms:configuration.filtered_transforms
+  in
+  let implicit_sources =
+    filter_implicit_sources ~source_sink_filter configuration.implicit_sources
+  in
+  let implicit_sinks = filter_implicit_sinks ~source_sink_filter configuration.implicit_sinks in
   {
     configuration with
-    source_sink_filter =
-      Some
-        (SourceSinkFilter.create
-           ~rules:configuration.rules
-           ~filtered_rule_codes:configuration.filtered_rule_codes
-           ~filtered_sources:configuration.filtered_sources
-           ~filtered_sinks:configuration.filtered_sinks
-           ~filtered_transforms:configuration.filtered_transforms);
+    rules;
+    implicit_sources;
+    implicit_sinks;
+    source_sink_filter = Some source_sink_filter;
   }
 
 
