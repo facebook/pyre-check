@@ -1344,7 +1344,14 @@ class PyreQueryHandler(background.Task):
         result = lsp.LspHoverResponse.cached_schema().dump(
             response,
         )
-
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                activity_key=query.activity_key,
+                result=result,
+            ),
+        )
         await _write_telemetry(
             enabled_telemetry_event,
             self.client_output_channel,
@@ -1353,18 +1360,9 @@ class PyreQueryHandler(background.Task):
                 "operation": "hover",
                 "filePath": str(query.path),
                 "nonEmpty": len(response.contents) > 0,
-                "result": result,
+                "response": result,
             },
             query.activity_key,
-        )
-
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.SuccessResponse(
-                id=query.id,
-                activity_key=query.activity_key,
-                result=result,
-            ),
         )
 
     async def _query_and_send_definition_location(
@@ -1398,7 +1396,14 @@ class PyreQueryHandler(background.Task):
             definitions,
             many=True,
         )
-
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                activity_key=query.activity_key,
+                result=result,
+            ),
+        )
         await _write_telemetry(
             enabled_telemetry_event,
             self.client_output_channel,
@@ -1407,18 +1412,9 @@ class PyreQueryHandler(background.Task):
                 "operation": "definition",
                 "filePath": str(query.path),
                 "count": len(definitions),
-                "definitions": result,
+                "response": result,
             },
             query.activity_key,
-        )
-
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.SuccessResponse(
-                id=query.id,
-                activity_key=query.activity_key,
-                result=result,
-            ),
         )
 
     async def _handle_find_all_references_query(
