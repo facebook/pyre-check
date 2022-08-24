@@ -36,6 +36,12 @@ module Unit : sig
   val join : global_resolution:GlobalResolution.t -> t -> t -> t
 
   val meet : global_resolution:GlobalResolution.t -> t -> t -> t
+
+  val join_annotations
+    :  global_resolution:GlobalResolution.t ->
+    Annotation.t ->
+    Annotation.t ->
+    Annotation.t
 end
 
 module Store : sig

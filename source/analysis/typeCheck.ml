@@ -1094,8 +1094,6 @@ module State (Context : Context) = struct
 
             let _, head_attribute, _ = head_attribute_info in
             let _, tail_attributes, _ = List.unzip3 tail_attributes_info in
-            let head_annotation = Annotated.Attribute.annotation head_attribute in
-            let tail_annotations = List.map ~f:Annotated.Attribute.annotation tail_attributes in
 
             let errors =
               let attribute_name, target =
@@ -1145,6 +1143,10 @@ module State (Context : Context) = struct
                            })
               | _ -> errors
             in
+
+            let head_annotation = Annotated.Attribute.annotation head_attribute in
+            let tail_annotations = List.map ~f:Annotated.Attribute.annotation tail_attributes in
+
             let resolved_annotation =
               let apply_local_override global_annotation =
                 let local_override =
@@ -1159,18 +1161,11 @@ module State (Context : Context) = struct
                 | Some local_annotation -> local_annotation
                 | None -> global_annotation
               in
-              let join sofar element =
-                let refined =
-                  Refinement.Unit.join
-                    ~global_resolution
-                    (Refinement.Unit.create sofar)
-                    (Refinement.Unit.create element)
-                  |> Refinement.Unit.base
-                  |> Option.value ~default:(Annotation.create_mutable Type.Bottom)
-                in
-                { refined with annotation = Type.union [sofar.annotation; element.annotation] }
-              in
-              List.fold ~init:head_annotation ~f:join tail_annotations |> apply_local_override
+              tail_annotations
+              |> Algorithms.fold_divide_and_conquer
+                   ~f:(Refinement.Unit.join_annotations ~global_resolution)
+                   ~init:head_annotation
+              |> apply_local_override
             in
             {
               resolution;

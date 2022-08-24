@@ -255,6 +255,15 @@ module Unit = struct
       create (Annotation.create_mutable Type.Top)
     else
       join ~global_resolution left right
+
+
+  let join_annotations ~global_resolution left right =
+    let refined =
+      join ~global_resolution (create left) (create right)
+      |> base
+      |> Option.value ~default:(Annotation.create_mutable Type.Bottom)
+    in
+    { refined with annotation = Type.union [left.annotation; right.annotation] }
 end
 
 module Store = struct
