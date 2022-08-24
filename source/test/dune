@@ -9,9 +9,9 @@
 
 (tests
  (names configurationTest fileTest logTest pyrePathTest searchPathTest
-   statisticsTest profilingTest)
+   statisticsTest profilingTest algorithmsTest)
  (modules :standard \ test)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
     ppx_deriving_yojson))
- (libraries oUnit pyrelib.service pyrelib.analysis pyrelib.test))
+ (libraries oUnit pyrelib.service pyrelib.analysis pyrelib.test pyrelib.algorithms))

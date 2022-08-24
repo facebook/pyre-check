@@ -168,6 +168,12 @@
  (libraries yojson pyrePath))
 
 (library
+ (name algorithms)
+ (public_name pyrelib.algorithms)
+ (modules algorithms)
+ (libraries core))
+
+(library
  (name file)
  (modules file)
  (public_name pyrelib.file)
