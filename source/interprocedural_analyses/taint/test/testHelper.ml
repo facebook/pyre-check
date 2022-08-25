@@ -356,11 +356,12 @@ let check_expectation
 
   (* Check errors *)
   let actual_errors =
-    let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     let to_analysis_error =
       Error.instantiate
         ~show_error_traces:true
-        ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+        ~lookup:
+          (TypeEnvironment.ReadOnly.module_tracker environment
+          |> ModuleTracker.ReadOnly.lookup_relative_path)
     in
     get_errors callable |> List.map ~f:Issue.to_error |> List.map ~f:to_analysis_error
   in
@@ -478,7 +479,9 @@ let initialize
               let error =
                 AnalysisError.instantiate
                   ~show_error_traces:false
-                  ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment)
+                  ~lookup:
+                    (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                       (AstEnvironment.ReadOnly.module_tracker ast_environment))
                   error
               in
               Format.asprintf
@@ -776,8 +779,8 @@ let end_to_end_integration_test path context =
     let serialize_model callable : string =
       let externalization =
         let filename_lookup =
-          Analysis.TypeEnvironment.ReadOnly.ast_environment environment
-          |> Analysis.AstEnvironment.ReadOnly.get_relative
+          TypeEnvironment.ReadOnly.module_tracker environment
+          |> ModuleTracker.ReadOnly.lookup_relative_path
         in
         Taint.Reporting.fetch_and_externalize
           ~fixpoint_state

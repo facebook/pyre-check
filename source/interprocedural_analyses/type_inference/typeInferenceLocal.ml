@@ -117,9 +117,9 @@ module State (Context : Context) = struct
           let error_to_string error =
             let error =
               let lookup reference =
-                GlobalResolution.ast_environment global_resolution
-                |> fun ast_environment ->
-                AstEnvironment.ReadOnly.get_real_path_relative ast_environment reference
+                ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                  (GlobalResolution.module_tracker global_resolution)
+                  reference
               in
               Error.instantiate ~show_error_traces:true ~lookup error
             in

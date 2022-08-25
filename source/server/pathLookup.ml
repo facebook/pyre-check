@@ -20,8 +20,8 @@ let modules_of_source_path ~build_system ~module_tracker path =
   |> List.filter_map ~f:(module_of_path ~module_tracker)
 
 
-let instantiate_path ~build_system ~ast_environment qualifier =
-  match Analysis.AstEnvironment.ReadOnly.get_real_path ast_environment qualifier with
+let instantiate_path ~build_system ~module_tracker qualifier =
+  match Analysis.ModuleTracker.ReadOnly.lookup_full_path module_tracker qualifier with
   | None -> None
   | Some analysis_path ->
       let path =

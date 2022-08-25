@@ -50,6 +50,8 @@ let ast_environment resolution =
   unannotated_global_environment resolution |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 
 
+let module_tracker resolution = ast_environment resolution |> AstEnvironment.ReadOnly.module_tracker
+
 let class_hierarchy ({ dependency; _ } as resolution) =
   ClassHierarchyEnvironment.ReadOnly.class_hierarchy
     ?dependency

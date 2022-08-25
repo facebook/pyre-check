@@ -296,10 +296,9 @@ module State (Context : Context) = struct
         let errors =
           let error_to_string error =
             let error =
-              let lookup reference =
-                GlobalResolution.ast_environment global_resolution
-                |> fun ast_environment ->
-                AstEnvironment.ReadOnly.get_relative ast_environment reference
+              let lookup =
+                GlobalResolution.module_tracker global_resolution
+                |> ModuleTracker.ReadOnly.lookup_relative_path
               in
               Error.instantiate ~show_error_traces:true ~lookup error
             in
@@ -659,11 +658,12 @@ module State (Context : Context) = struct
 
 
   let instantiate_path ~global_resolution location =
-    let ast_environment = GlobalResolution.ast_environment global_resolution in
+    let lookup =
+      GlobalResolution.module_tracker global_resolution
+      |> ModuleTracker.ReadOnly.lookup_relative_path
+    in
     let location = Location.with_module ~module_reference:Context.qualifier location in
-    Location.WithModule.instantiate
-      ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
-      location
+    Location.WithModule.instantiate ~lookup location
 
 
   let define_signature =
@@ -966,8 +966,10 @@ module State (Context : Context) = struct
                 | Some qualifier when not (Reference.is_empty qualifier) ->
                     if GlobalResolution.module_exists global_resolution qualifier then
                       let origin =
-                        let ast_environment = GlobalResolution.ast_environment global_resolution in
-                        match AstEnvironment.ReadOnly.get_module_path ast_environment qualifier with
+                        let module_tracker = GlobalResolution.module_tracker global_resolution in
+                        match
+                          ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
+                        with
                         | Some module_path -> Error.ExplicitModule module_path
                         | None -> Error.ImplicitModule qualifier
                       in
@@ -1033,11 +1035,11 @@ module State (Context : Context) = struct
           | None -> None
         in
         let module_path_of_parent_module class_type =
-          let ast_environment = GlobalResolution.ast_environment global_resolution in
+          let module_tracker = GlobalResolution.module_tracker global_resolution in
           GlobalResolution.class_summary global_resolution class_type
           >>| Node.value
           >>= fun { ClassSummary.qualifier; _ } ->
-          AstEnvironment.ReadOnly.get_module_path ast_environment qualifier
+          ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
         in
         match Type.resolve_class resolved_base >>| List.map ~f:find_attribute >>= Option.all with
         | None ->
@@ -1445,11 +1447,11 @@ module State (Context : Context) = struct
                        (Binary { operator_name; left_operand = target; right_operand = resolved }))
               | _ ->
                   let class_module =
-                    let ast_environment = GlobalResolution.ast_environment global_resolution in
+                    let module_tracker = GlobalResolution.module_tracker global_resolution in
                     GlobalResolution.class_summary global_resolution target
                     >>| Node.value
                     >>= fun { ClassSummary.qualifier; _ } ->
-                    AstEnvironment.ReadOnly.get_module_path ast_environment qualifier
+                    ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
                   in
                   Some
                     (Error.UndefinedAttribute
@@ -4105,13 +4107,13 @@ module State (Context : Context) = struct
                                  custom definition of `__setattr__`, we should run signature select
                                  against the value type. *)
                               let parent_module_path =
-                                let ast_environment =
-                                  GlobalResolution.ast_environment global_resolution
+                                let module_tracker =
+                                  GlobalResolution.module_tracker global_resolution
                                 in
                                 GlobalResolution.class_summary global_resolution parent
                                 >>| Node.value
                                 >>= fun { ClassSummary.qualifier; _ } ->
-                                AstEnvironment.ReadOnly.get_module_path ast_environment qualifier
+                                ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
                               in
                               emit_error
                                 ~errors
@@ -4830,7 +4832,7 @@ module State (Context : Context) = struct
                   else
                     [Error.UndefinedModule from]
               | Some module_metadata ->
-                  let ast_environment = GlobalResolution.ast_environment global_resolution in
+                  let module_tracker = GlobalResolution.module_tracker global_resolution in
                   List.filter_map
                     imports
                     ~f:(fun { Node.value = { Import.name = name_reference; _ }; _ } ->
@@ -4857,7 +4859,7 @@ module State (Context : Context) = struct
                               else
                                 let origin_module =
                                   match
-                                    AstEnvironment.ReadOnly.get_module_path ast_environment from
+                                    ModuleTracker.ReadOnly.lookup_module_path module_tracker from
                                   with
                                   | Some source_path -> Error.ExplicitModule source_path
                                   | None -> Error.ImplicitModule from

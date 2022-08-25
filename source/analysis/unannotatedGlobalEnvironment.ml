@@ -741,7 +741,11 @@ module FromReadOnlyUpstream = struct
 
     let load_module_if_tracked { environment; ast_environment } qualifier =
       if not (Modules.mem environment.modules qualifier) then
-        if AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier then
+        if
+          ModuleTracker.ReadOnly.is_module_tracked
+            (AstEnvironment.ReadOnly.module_tracker ast_environment)
+            qualifier
+        then
           match
             AstEnvironment.ReadOnly.get_processed_source
               ~track_dependency:true
@@ -860,6 +864,7 @@ module FromReadOnlyUpstream = struct
     let class_summaries = ClassSummaries.create ~loader class_summaries in
     let function_definitions = FunctionDefinitions.create ~loader function_definitions in
     let unannotated_globals = UnannotatedGlobals.create ~loader unannotated_globals in
+    let module_tracker = AstEnvironment.ReadOnly.module_tracker ast_environment in
     (* Define the basic getters and existence checks *)
     let get_module_metadata ?dependency qualifier =
       let qualifier =
@@ -874,7 +879,7 @@ module FromReadOnlyUpstream = struct
       | None -> (
           (* Handle implicit namespace modules. These are tracked in ModuleTracker, but not by
              AstEnvironment or by any of the tables in this environment. *)
-          match AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier with
+          match ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier with
           | true -> Some (Module.create_implicit ())
           | false -> None)
     in
@@ -888,7 +893,10 @@ module FromReadOnlyUpstream = struct
       in
       match Modules.mem modules ?dependency qualifier with
       | true -> true
-      | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
+      | false ->
+          ModuleTracker.ReadOnly.is_module_tracked
+            (AstEnvironment.ReadOnly.module_tracker ast_environment)
+            qualifier
     in
     let get_class_summary = ClassSummaries.get class_summaries in
     let class_exists = ClassSummaries.mem class_summaries in
@@ -899,7 +907,7 @@ module FromReadOnlyUpstream = struct
     in
     (* Define the bulk key reads - these tell us what's been loaded thus far *)
     let all_classes () =
-      AstEnvironment.ReadOnly.all_explicit_modules ast_environment
+      ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
       |> KeyTracker.get_class_keys key_tracker
     in
     let all_indices () =
@@ -909,7 +917,7 @@ module FromReadOnlyUpstream = struct
       |> IndexTracker.Set.to_list
     in
     let all_unannotated_globals () =
-      AstEnvironment.ReadOnly.all_explicit_modules ast_environment
+      ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
       |> KeyTracker.get_unannotated_global_keys key_tracker
     in
     {

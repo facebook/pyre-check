@@ -200,7 +200,10 @@ module Setup = struct
     let environment, configuration = set_up_project ~context code in
     let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
     let ast_environment = GlobalResolution.ast_environment global_resolution in
-    let filename_lookup = Analysis.AstEnvironment.ReadOnly.get_relative ast_environment in
+    let filename_lookup =
+      ModuleTracker.ReadOnly.lookup_relative_path
+        (AstEnvironment.ReadOnly.module_tracker ast_environment)
+    in
     let source =
       AstEnvironment.ReadOnly.get_processed_source ast_environment (Reference.create "test")
       |> fun option -> Option.value_exn option

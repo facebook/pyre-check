@@ -2866,7 +2866,7 @@ module ScratchProject = struct
   let qualifiers_of project = module_paths_of project |> List.map ~f:ModulePath.qualifier
 
   let project_qualifiers project =
-    ast_environment project |> AstEnvironment.ReadOnly.project_qualifiers
+    module_tracker project |> ModuleTracker.ReadOnly.project_qualifiers
 
 
   let get_project_sources project =
@@ -2970,7 +2970,7 @@ let assert_errors
 
   let descriptions =
     let errors =
-      let sources, ast_environment, environment =
+      let sources, environment =
         let project =
           let external_sources =
             List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
@@ -2984,13 +2984,11 @@ let assert_errors
             ~debug
             [handle, source]
         in
-        let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
+        let { ScratchProject.BuiltGlobalEnvironment.sources; _ } =
           ScratchProject.build_global_environment project
         in
         let type_environment = ScratchProject.ReadWrite.type_environment project in
-        ( sources,
-          AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment,
-          type_environment )
+        sources, type_environment
       in
       let source =
         List.find_exn sources ~f:(fun { Source.module_path; _ } ->
@@ -3001,7 +2999,9 @@ let assert_errors
            ~f:
              (AnalysisError.instantiate
                 ~show_error_traces
-                ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment))
+                ~lookup:
+                  (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                     (TypeEnvironment.module_tracker environment |> ModuleTracker.read_only)))
     in
     let errors_with_any_location =
       List.filter_map errors ~f:(fun error ->

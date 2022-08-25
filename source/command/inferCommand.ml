@@ -105,10 +105,11 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
           Service.Infer.build_environment_data ~configuration ()
         in
         let filename_lookup qualifier =
-          let ast_environment =
+          let module_tracker =
             Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
+            |> Analysis.AstEnvironment.ReadOnly.module_tracker
           in
-          Server.PathLookup.instantiate_path ~build_system ~ast_environment qualifier
+          Server.PathLookup.instantiate_path ~build_system ~module_tracker qualifier
         in
         Service.Infer.run_infer
           ~configuration

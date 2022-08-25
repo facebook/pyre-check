@@ -106,7 +106,9 @@ module ReadOnly = struct
 
 
   let project_qualifiers environment =
-    ast_environment environment |> AstEnvironment.ReadOnly.project_qualifiers
+    ast_environment environment
+    |> AstEnvironment.ReadOnly.module_tracker
+    |> ModuleTracker.ReadOnly.project_qualifiers
 end
 
 module UpdateResult = GlobalLocationTable.UpdateResult

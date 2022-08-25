@@ -131,26 +131,24 @@ let with_performance_tracking ~debug f =
 let do_check configuration =
   Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
       with_performance_tracking ~debug:configuration.debug (fun () ->
-          let environment =
-            let read_write_environment =
-              Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
-              |> Analysis.ErrorsEnvironment.create
-            in
-            let () =
-              Analysis.ErrorsEnvironment.project_qualifiers read_write_environment
-              |> Analysis.ErrorsEnvironment.check_and_preprocess read_write_environment ~scheduler
-            in
-            Analysis.ErrorsEnvironment.read_only read_write_environment
+          let read_write_environment =
+            Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
+            |> Analysis.ErrorsEnvironment.create
           in
-          ( Analysis.ErrorsEnvironment.ReadOnly.get_all_errors environment,
-            Analysis.ErrorsEnvironment.ReadOnly.ast_environment environment )))
+          let () =
+            Analysis.ErrorsEnvironment.project_qualifiers read_write_environment
+            |> Analysis.ErrorsEnvironment.check_and_preprocess read_write_environment ~scheduler
+          in
+          Analysis.ErrorsEnvironment.read_only read_write_environment))
 
 
 let compute_errors ~configuration ~build_system () =
-  let errors, ast_environment = do_check configuration in
+  let environment = do_check configuration in
+  let errors = Analysis.ErrorsEnvironment.ReadOnly.get_all_errors environment in
+  let module_tracker = Analysis.ErrorsEnvironment.ReadOnly.module_tracker environment in
   List.map
     (List.sort ~compare:Analysis.AnalysisError.compare errors)
-    ~f:(Server.RequestHandler.instantiate_error ~build_system ~configuration ~ast_environment)
+    ~f:(Server.RequestHandler.instantiate_error ~build_system ~configuration ~module_tracker)
 
 
 let print_errors errors =

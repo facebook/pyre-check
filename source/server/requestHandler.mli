@@ -8,7 +8,7 @@
 val instantiate_error
   :  build_system:BuildSystem.t ->
   configuration:Configuration.Analysis.t ->
-  ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
+  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
   Analysis.AnalysisError.t ->
   Analysis.AnalysisError.Instantiated.t
 

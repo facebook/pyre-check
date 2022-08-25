@@ -398,10 +398,10 @@ let run_taint_analysis
         ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
     in
 
-    let ast_environment =
+    let module_tracker =
       environment
       |> Analysis.TypeEnvironment.read_only
-      |> Analysis.TypeEnvironment.ReadOnly.ast_environment
+      |> Analysis.TypeEnvironment.ReadOnly.module_tracker
     in
 
     Log.info "Computing overrides...";
@@ -501,7 +501,7 @@ let run_taint_analysis
     in
 
     let filename_lookup path_reference =
-      match Server.PathLookup.instantiate_path ~build_system ~ast_environment path_reference with
+      match Server.PathLookup.instantiate_path ~build_system ~module_tracker path_reference with
       | None -> None
       | Some full_path ->
           let root = Option.value repository_root ~default:configuration.local_root in

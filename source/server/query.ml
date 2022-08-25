@@ -672,10 +672,7 @@ let rec process_request ~environment ~build_system request =
             module_reference;
           }
       =
-      PathLookup.instantiate_path
-        ~build_system
-        ~ast_environment:(TypeEnvironment.ReadOnly.ast_environment environment)
-        module_reference
+      PathLookup.instantiate_path ~build_system ~module_tracker module_reference
       >>| fun path ->
       {
         Response.Base.path;
@@ -741,8 +738,8 @@ let rec process_request ~environment ~build_system request =
         let instantiate =
           Location.WithModule.instantiate
             ~lookup:
-              (AstEnvironment.ReadOnly.get_real_path_relative
-                 (TypeEnvironment.ReadOnly.ast_environment environment))
+              (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                 module_tracker)
         in
         let callees =
           (* We don't yet support a syntax for fetching property setters. *)
@@ -752,10 +749,9 @@ let rec process_request ~environment ~build_system request =
         in
         Single (Base.CalleesWithLocation callees)
     | Defines module_or_class_names ->
-        let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
         let defines_of_module module_or_class_name =
           let module_name, filter_define =
-            if AstEnvironment.ReadOnly.is_module_tracked ast_environment module_or_class_name then
+            if ModuleTracker.ReadOnly.is_module_tracked module_tracker module_or_class_name then
               Some module_or_class_name, fun _ -> false
             else
               let filter
@@ -764,7 +760,7 @@ let rec process_request ~environment ~build_system request =
                 not (Option.equal Reference.equal parent (Some module_or_class_name))
               in
               let rec find_module_name current_reference =
-                if AstEnvironment.ReadOnly.is_module_tracked ast_environment current_reference then
+                if ModuleTracker.ReadOnly.is_module_tracked module_tracker current_reference then
                   Some current_reference
                 else
                   Reference.prefix current_reference >>= find_module_name
@@ -772,6 +768,7 @@ let rec process_request ~environment ~build_system request =
               find_module_name module_or_class_name, filter
           in
           let defines =
+            let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
             module_name
             >>= AstEnvironment.ReadOnly.get_processed_source ast_environment
             >>| Analysis.FunctionDefinition.collect_defines
@@ -821,8 +818,8 @@ let rec process_request ~environment ~build_system request =
             let instantiate =
               Location.WithModule.instantiate
                 ~lookup:
-                  (AstEnvironment.ReadOnly.get_real_path_relative
-                     (TypeEnvironment.ReadOnly.ast_environment environment))
+                  (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                     module_tracker)
             in
             Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
             |> List.map ~f:(fun { Callgraph.callee; locations } ->

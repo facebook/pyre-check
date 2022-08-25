@@ -23,6 +23,6 @@ val modules_of_source_path
     This API will take into account any potential path translation done by the {!BuildSystem.t}. *)
 val instantiate_path
   :  build_system:BuildSystem.t ->
-  ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
+  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
   Ast.Reference.t ->
   string option

@@ -106,12 +106,10 @@ module Create (Context : TypeCheck.Context) = struct
 end
 
 let description ~resolution error =
-  let ast_environment =
-    Resolution.global_resolution resolution |> GlobalResolution.ast_environment
-  in
+  let module_tracker = Resolution.global_resolution resolution |> GlobalResolution.module_tracker in
   Error.instantiate
     ~show_error_traces:false
-    ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+    ~lookup:(ModuleTracker.ReadOnly.lookup_relative_path module_tracker)
     error
   |> Error.Instantiated.description
 

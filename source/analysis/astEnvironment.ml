@@ -84,43 +84,7 @@ module ReadOnly = struct
 
   let controls environment = module_tracker environment |> ModuleTracker.ReadOnly.controls
 
-  let get_module_path environment =
-    module_tracker environment |> ModuleTracker.ReadOnly.lookup_module_path
-
-
-  let is_module_tracked environment =
-    module_tracker environment |> ModuleTracker.ReadOnly.is_module_tracked
-
-
-  let all_explicit_modules environment =
-    module_tracker environment |> ModuleTracker.ReadOnly.tracked_explicit_modules
-
-
   let get_raw_source { get_raw_source; _ } = get_raw_source
-
-  let get_relative read_only qualifier =
-    let open Option in
-    get_module_path read_only qualifier >>| ModulePath.relative
-
-
-  let configuration environment = controls environment |> EnvironmentControls.configuration
-
-  let get_real_path read_only qualifier =
-    let configuration = configuration read_only in
-    get_module_path read_only qualifier >>| ModulePath.full_path ~configuration
-
-
-  let get_real_path_relative read_only qualifier =
-    (* ModulePath.relative refers to the renamed path when search paths are provided with a root and
-       subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
-    let { Configuration.Analysis.local_root; _ } = configuration read_only in
-    get_real_path read_only qualifier
-    >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path:(ArtifactPath.raw path)
-
-
-  let project_qualifiers { module_tracker; _ } =
-    ModuleTracker.ReadOnly.project_qualifiers module_tracker
-
 
   let expand_wildcard_imports ?dependency environment source =
     let open Statement in

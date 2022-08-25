@@ -13,17 +13,17 @@ open Analysis
 let instantiate_error
     ~build_system
     ~configuration:{ Configuration.Analysis.show_error_traces; _ }
-    ~ast_environment
+    ~module_tracker
     error
   =
   AnalysisError.instantiate
     ~show_error_traces
-    ~lookup:(PathLookup.instantiate_path ~build_system ~ast_environment)
+    ~lookup:(PathLookup.instantiate_path ~build_system ~module_tracker)
     error
 
 
-let instantiate_errors ~build_system ~configuration ~ast_environment errors =
-  List.map errors ~f:(instantiate_error ~build_system ~configuration ~ast_environment)
+let instantiate_errors ~build_system ~configuration ~module_tracker errors =
+  List.map errors ~f:(instantiate_error ~build_system ~configuration ~module_tracker)
 
 
 let process_display_type_error_request
@@ -48,12 +48,7 @@ let process_display_type_error_request
     ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers errors_environment modules
     |> List.sort ~compare:AnalysisError.compare
   in
-  Response.TypeErrors
-    (instantiate_errors
-       errors
-       ~build_system
-       ~configuration
-       ~ast_environment:(ErrorsEnvironment.ReadOnly.ast_environment errors_environment))
+  Response.TypeErrors (instantiate_errors errors ~build_system ~configuration ~module_tracker)
 
 
 let create_info_response
@@ -107,7 +102,7 @@ let process_incremental_update_request
                 errors
                 ~build_system
                 ~configuration
-                ~ast_environment:(ErrorsEnvironment.ReadOnly.ast_environment errors_environment)))
+                ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment)))
       in
       Subscription.batch_send
         ~response:(create_status_update_response Response.ServerStatus.Rebuilding)
@@ -159,7 +154,7 @@ let process_overlay_update ~build_system ~overlaid_environment ~overlay_id ~sour
          ~build_system
          ~configuration:
            (ModuleTracker.ReadOnly.controls module_tracker |> EnvironmentControls.configuration)
-         ~ast_environment:(ErrorsEnvironment.ReadOnly.ast_environment errors_environment)
+         ~module_tracker
   in
   OverlaidEnvironment.overlay overlaid_environment overlay_id
   >>| type_errors_for_module

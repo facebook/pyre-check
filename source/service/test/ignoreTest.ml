@@ -12,18 +12,20 @@ open Test
 open TypeCheck
 
 let assert_errors ?(show_error_traces = false) ~context input_source expected_errors =
-  let ast_environment, type_errors =
+  let module_tracker, type_errors =
     let project = ScratchProject.setup ~context ["test.py", input_source] in
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
       ScratchProject.build_type_environment_and_postprocess project
     in
-    TypeEnvironment.ReadOnly.ast_environment type_environment, type_errors
+    TypeEnvironment.ReadOnly.module_tracker type_environment, type_errors
   in
   let descriptions =
     List.map type_errors ~f:(fun error ->
         Error.instantiate
           ~show_error_traces
-          ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment)
+          ~lookup:
+            (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+               module_tracker)
           error
         |> Error.Instantiated.description)
   in

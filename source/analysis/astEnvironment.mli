@@ -32,22 +32,6 @@ module ReadOnly : sig
     (Source.t, ParserError.t) Result.t option
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
-
-  val get_module_path : t -> Reference.t -> ModulePath.t option
-
-  val get_relative : t -> Reference.t -> string option
-
-  (** NOTE(grievejia): This API is oblivious to the existence of a build system. User-facing logic
-      should always prefer {!Server.PathLookup.instantiate_path} for module-to-path translation. *)
-  val get_real_path : t -> Reference.t -> ArtifactPath.t option
-
-  val get_real_path_relative : t -> Reference.t -> string option
-
-  val all_explicit_modules : t -> Reference.t list
-
-  val is_module_tracked : t -> Reference.t -> bool
-
-  val project_qualifiers : t -> Ast.Reference.t list
 end
 
 module UpdateResult : sig

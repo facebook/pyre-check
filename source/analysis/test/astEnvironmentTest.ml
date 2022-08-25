@@ -34,12 +34,14 @@ let test_basic context =
     ScratchProject.setup ~context [handle_a, source_a; handle_b, source_b; handle_c, source_c]
   in
   let configuration = ScratchProject.configuration_of project in
-  let ast_environment =
-    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
+  let module_tracker =
+    ScratchProject.global_environment project
+    |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
+    |> AstEnvironment.ReadOnly.module_tracker
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let assert_module_path ~ast_environment ~expected reference =
-    match AstEnvironment.ReadOnly.get_module_path ast_environment reference with
+  let assert_module_path ~module_tracker ~expected reference =
+    match ModuleTracker.ReadOnly.lookup_module_path module_tracker reference with
     | None ->
         let message =
           Format.asprintf "Cannot find reference %a in the AST environment" Reference.pp reference
@@ -51,11 +53,11 @@ let test_basic context =
   in
   assert_module_path
     !&"a"
-    ~ast_environment
+    ~module_tracker
     ~expected:(Test.relative_artifact_path ~root:local_root ~relative:handle_a);
   assert_module_path
     !&"b"
-    ~ast_environment
+    ~module_tracker
     ~expected:(Test.relative_artifact_path ~root:local_root ~relative:handle_b);
   ()
 
@@ -118,7 +120,8 @@ let test_parse_source context =
   in
   let sources =
     List.filter_map
-      (AstEnvironment.ReadOnly.project_qualifiers ast_environment)
+      (ModuleTracker.ReadOnly.project_qualifiers
+         (AstEnvironment.ReadOnly.module_tracker ast_environment))
       ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
   in
   let handles =
@@ -178,7 +181,8 @@ let test_parse_sources context =
       EnvironmentControls.create configuration |> Analysis.AstEnvironment.create
     in
     let project_qualifiers =
-      AstEnvironment.read_only ast_environment |> AstEnvironment.ReadOnly.project_qualifiers
+      let module_tracker = AstEnvironment.module_tracker ast_environment in
+      ModuleTracker.ReadOnly.project_qualifiers (ModuleTracker.read_only module_tracker)
     in
     let sources =
       List.filter_map
@@ -606,7 +610,8 @@ let test_parse_repository context =
           |> ScratchProject.build_ast_environment
         in
         List.filter_map
-          (AstEnvironment.ReadOnly.project_qualifiers ast_environment)
+          (ModuleTracker.ReadOnly.project_qualifiers
+             (AstEnvironment.ReadOnly.module_tracker ast_environment))
           ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
       List.map sources ~f:(fun ({ Source.module_path; _ } as source) ->
@@ -723,7 +728,8 @@ module IncrementalTest = struct
          List.iter external_setups ~f:load_source);
       if preprocess_all_sources then
         (* Preprocess invalidated modules (which are internal sources) *)
-        AstEnvironment.ReadOnly.project_qualifiers ast_environment
+        ModuleTracker.ReadOnly.project_qualifiers
+          (AstEnvironment.ReadOnly.module_tracker ast_environment)
         |> List.iter ~f:(fun qualifier ->
                AstEnvironment.ReadOnly.get_processed_source
                  ast_environment

@@ -96,6 +96,8 @@ val base_is_from_placeholder_stub : t -> Expression.t -> bool
 
 val module_exists : t -> Reference.t -> bool
 
+val module_tracker : t -> ModuleTracker.ReadOnly.t
+
 val get_module_metadata : t -> Reference.t -> Module.t option
 
 val class_metadata : t -> Type.t -> ClassMetadataEnvironment.class_metadata option
