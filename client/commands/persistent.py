@@ -97,12 +97,12 @@ def _log_lsp_event(
             )
 
 
-PyreServerStartOptionsReader = Callable[[], "PyreServerStartOptions"]
+PyreDaemonStartOptionsReader = Callable[[], "PyreDaemonStartOptions"]
 FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
 
 
 @dataclasses.dataclass(frozen=True)
-class PyreServerStartOptions:
+class PyreDaemonStartOptions:
     binary: str
     server_identifier: str
     start_arguments: start.Arguments
@@ -116,7 +116,7 @@ class PyreServerStartOptions:
         start_command_argument: command_arguments.StartArguments,
         configuration: frontend_configuration.Base,
         enabled_telemetry_event: bool,
-    ) -> PyreServerStartOptions:
+    ) -> PyreDaemonStartOptions:
         binary_location = configuration.get_binary_location(download_if_needed=True)
         if binary_location is None:
             raise configuration_module.InvalidConfiguration(
@@ -133,7 +133,7 @@ class PyreServerStartOptions:
                 "properly."
             )
 
-        return PyreServerStartOptions(
+        return PyreDaemonStartOptions(
             binary=str(binary_location),
             server_identifier=start.get_server_identifier(configuration),
             start_arguments=start_arguments,
@@ -149,9 +149,9 @@ class PyreServerStartOptions:
         start_command_argument: command_arguments.StartArguments,
         read_frontend_configuration: FrontendConfigurationReader,
         enabled_telemetry_event: bool,
-    ) -> PyreServerStartOptionsReader:
-        def read() -> PyreServerStartOptions:
-            return PyreServerStartOptions.create(
+    ) -> PyreDaemonStartOptionsReader:
+        def read() -> PyreDaemonStartOptions:
+            return PyreDaemonStartOptions.create(
                 start_command_argument=start_command_argument,
                 configuration=read_frontend_configuration(),
                 enabled_telemetry_event=enabled_telemetry_event,
@@ -161,9 +161,9 @@ class PyreServerStartOptions:
 
 
 def read_server_start_options(
-    server_start_options_reader: PyreServerStartOptionsReader,
+    server_start_options_reader: PyreDaemonStartOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
-) -> "PyreServerStartOptions":
+) -> "PyreDaemonStartOptions":
     try:
         LOG.info("Reading Pyre server configurations...")
         return server_start_options_reader()
@@ -236,7 +236,7 @@ class InitializationExit:
 async def try_initialize(
     input_channel: connections.AsyncTextReader,
     output_channel: connections.AsyncTextWriter,
-    server_start_options_reader: PyreServerStartOptionsReader,
+    server_start_options_reader: PyreDaemonStartOptionsReader,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
     Read an LSP message from the input channel and try to initialize an LSP
@@ -771,7 +771,7 @@ class PyreQueryHandler(background.Task):
     def __init__(
         self,
         query_state: PyreQueryState,
-        server_start_options_reader: PyreServerStartOptionsReader,
+        server_start_options_reader: PyreDaemonStartOptionsReader,
         client_output_channel: connections.AsyncTextWriter,
     ) -> None:
         self.query_state = query_state
@@ -1016,7 +1016,7 @@ class PyreQueryHandler(background.Task):
             request=json.dumps(overlay_update_dict),
         )
 
-    async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
+    async def _run(self, server_start_options: "PyreDaemonStartOptions") -> None:
         start_arguments = server_start_options.start_arguments
         socket_path = daemon_socket.get_default_socket_path(
             project_root=Path(start_arguments.base_arguments.global_root),
@@ -1063,7 +1063,7 @@ class PyreQueryHandler(background.Task):
             elif isinstance(query, OverlayUpdate):
                 await self._handle_overlay_update_request(query, socket_path)
 
-    def read_server_start_options(self) -> "PyreServerStartOptions":
+    def read_server_start_options(self) -> "PyreDaemonStartOptions":
         try:
             LOG.info("Reading Pyre server configurations...")
             return self.server_start_options_reader()
@@ -1162,19 +1162,19 @@ async def _write_notification(
     )
 
 
-class PyreServerShutdown(Exception):
+class PyreDaemonShutdown(Exception):
     pass
 
 
-class PyreServerHandler(background.Task):
-    server_start_options_reader: PyreServerStartOptionsReader
+class PyreDaemonLaunchAndSubscribeHandler(background.Task):
+    server_start_options_reader: PyreDaemonStartOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
     client_output_channel: connections.AsyncTextWriter
     server_state: ServerState
 
     def __init__(
         self,
-        server_start_options_reader: PyreServerStartOptionsReader,
+        server_start_options_reader: PyreDaemonStartOptionsReader,
         client_output_channel: connections.AsyncTextWriter,
         server_state: ServerState,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
@@ -1293,7 +1293,7 @@ class PyreServerHandler(background.Task):
     ) -> None:
         message = error_subscription.message
         LOG.info(f"Received error from subscription channel: {message}")
-        raise PyreServerShutdown(message)
+        raise PyreDaemonShutdown(message)
 
     async def _handle_subscription_body(
         self, subscription_body: subscription.Body
@@ -1355,7 +1355,7 @@ class PyreServerHandler(background.Task):
 
     @staticmethod
     def _auxiliary_logging_info(
-        server_start_options: PyreServerStartOptions,
+        server_start_options: PyreDaemonStartOptions,
     ) -> Dict[str, Optional[str]]:
         relative_local_root = (
             server_start_options.start_arguments.base_arguments.relative_local_root
@@ -1375,7 +1375,7 @@ class PyreServerHandler(background.Task):
 
     async def _try_connect_and_subscribe(
         self,
-        server_start_options: PyreServerStartOptions,
+        server_start_options: PyreDaemonStartOptions,
         socket_path: Path,
         connection_timer: timer.Timer,
         is_preexisting: bool,
@@ -1417,7 +1417,7 @@ class PyreServerHandler(background.Task):
             )
             await self.subscribe_to_type_error(input_channel, output_channel)
 
-    async def _run(self, server_start_options: PyreServerStartOptions) -> None:
+    async def _run(self, server_start_options: PyreDaemonStartOptions) -> None:
         server_identifier = server_start_options.server_identifier
         start_arguments = server_start_options.start_arguments
         socket_path = daemon_socket.get_default_socket_path(
@@ -1540,7 +1540,7 @@ class PyreServerHandler(background.Task):
         except asyncio.CancelledError:
             error_message = "Explicit termination request"
             raise
-        except PyreServerShutdown as error:
+        except PyreDaemonShutdown as error:
             error_message = f"Pyre server shutdown: {error}"
         except BaseException:
             error_message = traceback.format_exc()
@@ -1567,7 +1567,7 @@ class PyreServer:
     input_channel: connections.AsyncTextReader
     output_channel: connections.AsyncTextWriter
 
-    # inside this task manager is a PyreServerHandler
+    # inside this task manager is a PyreDaemonLaunchAndSubscribeHandler
     pyre_manager: background.TaskManager
     # inside this task manager is a PyreQueryHandler
     pyre_query_manager: background.TaskManager
@@ -1990,7 +1990,7 @@ class PyreServer:
 
 
 async def run_persistent(
-    server_start_options_reader: PyreServerStartOptionsReader,
+    server_start_options_reader: PyreDaemonStartOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     stdin, stdout = await connections.create_async_stdin_stdout()
@@ -2025,7 +2025,7 @@ async def run_persistent(
                 output_channel=stdout,
                 server_state=server_state,
                 pyre_manager=background.TaskManager(
-                    PyreServerHandler(
+                    PyreDaemonLaunchAndSubscribeHandler(
                         server_start_options_reader=server_start_options_reader,
                         remote_logging=remote_logging,
                         client_output_channel=stdout,
@@ -2062,7 +2062,7 @@ async def run_persistent(
 
 
 def run(
-    read_server_start_options: PyreServerStartOptionsReader,
+    read_server_start_options: PyreDaemonStartOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     command_timer = timer.Timer()

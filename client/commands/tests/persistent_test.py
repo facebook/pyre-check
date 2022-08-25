@@ -45,13 +45,13 @@ from ..persistent import (
     InitializationSuccess,
     LocationTypeLookup,
     path_to_coverage_response,
+    PyreDaemonLaunchAndSubscribeHandler,
+    PyreDaemonShutdown,
+    PyreDaemonStartOptions,
+    PyreDaemonStartOptionsReader,
     PyreQueryHandler,
     PyreQueryState,
     PyreServer,
-    PyreServerHandler,
-    PyreServerShutdown,
-    PyreServerStartOptions,
-    PyreServerStartOptionsReader,
     read_lsp_request,
     ReferencesQuery,
     ServerState,
@@ -72,9 +72,9 @@ def _create_server_start_options_reader(
     ide_features: Optional[configuration_module.IdeFeatures] = None,
     strict_defualt: bool = False,
     excludes: Optional[Sequence[str]] = None,
-) -> PyreServerStartOptionsReader:
-    def reader() -> PyreServerStartOptions:
-        return PyreServerStartOptions(
+) -> PyreDaemonStartOptionsReader:
+    def reader() -> PyreDaemonStartOptions:
+        return PyreDaemonStartOptions(
             binary,
             server_identifier,
             start_arguments,
@@ -105,7 +105,7 @@ class WaitForeverBackgroundTask(background.Task):
         await asyncio.Event().wait()
 
 
-def _fake_option_reader() -> PyreServerStartOptionsReader:
+def _fake_option_reader() -> PyreDaemonStartOptionsReader:
     return _create_server_start_options_reader(
         binary="/not/relevant",
         server_identifier="not_relevant",
@@ -477,11 +477,11 @@ class PersistentTest(testslide.TestCase):
         )
         bytes_writer = MemoryBytesWriter()
 
-        def fake_server_start_options_reader() -> PyreServerStartOptions:
+        def fake_server_start_options_reader() -> PyreDaemonStartOptions:
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
-        server_handler = PyreServerHandler(
+        server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_start_options_reader=fake_server_start_options_reader,
             client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
@@ -522,16 +522,16 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_subscription_error(self) -> None:
-        def fake_server_start_options_reader() -> PyreServerStartOptions:
+        def fake_server_start_options_reader() -> PyreDaemonStartOptions:
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
-        server_handler = PyreServerHandler(
+        server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_start_options_reader=fake_server_start_options_reader,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             server_state=ServerState(),
         )
-        with self.assertRaises(PyreServerShutdown):
+        with self.assertRaises(PyreDaemonShutdown):
             await server_handler.handle_error_subscription(
                 subscription.Error(message="Doom Eternal")
             )
@@ -542,11 +542,11 @@ class PersistentTest(testslide.TestCase):
         server_state = ServerState(diagnostics={path: []})
         bytes_writer = MemoryBytesWriter()
 
-        def fake_server_start_options_reader() -> PyreServerStartOptions:
+        def fake_server_start_options_reader() -> PyreDaemonStartOptions:
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
-        server_handler = PyreServerHandler(
+        server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_start_options_reader=fake_server_start_options_reader,
             client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
@@ -833,7 +833,7 @@ class PersistentTest(testslide.TestCase):
         )
 
         bytes_writer = MemoryBytesWriter()
-        server_handler = PyreServerHandler(
+        server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -881,7 +881,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_send_message_to_status_bar(self) -> None:
         bytes_writer = MemoryBytesWriter()
-        server_handler = PyreServerHandler(
+        server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
