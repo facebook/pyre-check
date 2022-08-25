@@ -10,20 +10,30 @@ open Pyre
 open Ast
 open Analysis
 
-let instantiate_error
+let instantiate_error ~lookup_source ~show_error_traces ~module_tracker error =
+  AnalysisError.instantiate
+    ~show_error_traces
+    ~lookup:(PathLookup.instantiate_path ~lookup_source ~module_tracker)
+    error
+
+
+let instantiate_error_with_build_system
     ~build_system
     ~configuration:{ Configuration.Analysis.show_error_traces; _ }
     ~module_tracker
     error
   =
-  AnalysisError.instantiate
+  instantiate_error
+    ~lookup_source:(BuildSystem.lookup_source build_system)
     ~show_error_traces
-    ~lookup:(PathLookup.instantiate_path ~build_system ~module_tracker)
+    ~module_tracker
     error
 
 
-let instantiate_errors ~build_system ~configuration ~module_tracker errors =
-  List.map errors ~f:(instantiate_error ~build_system ~configuration ~module_tracker)
+let instantiate_errors_with_build_system ~build_system ~configuration ~module_tracker errors =
+  List.map
+    errors
+    ~f:(instantiate_error_with_build_system ~build_system ~configuration ~module_tracker)
 
 
 let process_display_type_error_request
@@ -40,7 +50,7 @@ let process_display_type_error_request
         let get_module_for_source_path path =
           PyrePath.create_absolute path
           |> SourcePath.create
-          |> PathLookup.modules_of_source_path ~build_system ~module_tracker
+          |> PathLookup.modules_of_source_path_with_build_system ~build_system ~module_tracker
         in
         List.concat_map paths ~f:get_module_for_source_path
   in
@@ -48,7 +58,8 @@ let process_display_type_error_request
     ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers errors_environment modules
     |> List.sort ~compare:AnalysisError.compare
   in
-  Response.TypeErrors (instantiate_errors errors ~build_system ~configuration ~module_tracker)
+  Response.TypeErrors
+    (instantiate_errors_with_build_system errors ~build_system ~configuration ~module_tracker)
 
 
 let create_info_response
@@ -98,7 +109,7 @@ let process_incremental_update_request
              |> List.sort ~compare:AnalysisError.compare
            in
            Response.TypeErrors
-             (instantiate_errors
+             (instantiate_errors_with_build_system
                 errors
                 ~build_system
                 ~configuration
@@ -150,7 +161,7 @@ let process_overlay_update ~build_system ~overlaid_environment ~overlay_id ~sour
     in
     List.filter_map artifact_paths ~f:qualifier_for_artifact_path
     |> List.concat_map ~f:(ErrorsEnvironment.ReadOnly.get_errors_for_qualifier errors_environment)
-    |> instantiate_errors
+    |> instantiate_errors_with_build_system
          ~build_system
          ~configuration:
            (ModuleTracker.ReadOnly.controls module_tracker |> EnvironmentControls.configuration)

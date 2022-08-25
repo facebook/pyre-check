@@ -148,7 +148,11 @@ let compute_errors ~configuration ~build_system () =
   let module_tracker = Analysis.ErrorsEnvironment.ReadOnly.module_tracker environment in
   List.map
     (List.sort ~compare:Analysis.AnalysisError.compare errors)
-    ~f:(Server.RequestHandler.instantiate_error ~build_system ~configuration ~module_tracker)
+    ~f:
+      (Server.RequestHandler.instantiate_error_with_build_system
+         ~build_system
+         ~configuration
+         ~module_tracker)
 
 
 let print_errors errors =

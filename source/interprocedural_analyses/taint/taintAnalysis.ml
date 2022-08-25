@@ -501,7 +501,12 @@ let run_taint_analysis
     in
 
     let filename_lookup path_reference =
-      match Server.PathLookup.instantiate_path ~build_system ~module_tracker path_reference with
+      match
+        Server.PathLookup.instantiate_path_with_build_system
+          ~build_system
+          ~module_tracker
+          path_reference
+      with
       | None -> None
       | Some full_path ->
           let root = Option.value repository_root ~default:configuration.local_root in

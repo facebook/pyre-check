@@ -15,17 +15,23 @@ let module_of_path ~module_tracker path =
       None
 
 
-let modules_of_source_path ~build_system ~module_tracker path =
-  BuildSystem.lookup_artifact build_system path
-  |> List.filter_map ~f:(module_of_path ~module_tracker)
+let modules_of_source_path ~lookup_artifact ~module_tracker path =
+  lookup_artifact path |> List.filter_map ~f:(module_of_path ~module_tracker)
 
 
-let instantiate_path ~build_system ~module_tracker qualifier =
+let modules_of_source_path_with_build_system ~build_system ~module_tracker path =
+  modules_of_source_path
+    ~lookup_artifact:(BuildSystem.lookup_artifact build_system)
+    ~module_tracker
+    path
+
+
+let instantiate_path ~lookup_source ~module_tracker qualifier =
   match Analysis.ModuleTracker.ReadOnly.lookup_full_path module_tracker qualifier with
   | None -> None
   | Some analysis_path ->
       let path =
-        match BuildSystem.lookup_source build_system analysis_path with
+        match lookup_source analysis_path with
         | Some source_path -> source_path |> SourcePath.raw
         | None ->
             (* NOTE (grievejia): This means the path is under the search roots but is not tracked by
@@ -35,3 +41,7 @@ let instantiate_path ~build_system ~module_tracker qualifier =
             ArtifactPath.raw analysis_path
       in
       Some (PyrePath.absolute path)
+
+
+let instantiate_path_with_build_system ~build_system ~module_tracker qualifier =
+  instantiate_path ~lookup_source:(BuildSystem.lookup_source build_system) ~module_tracker qualifier
