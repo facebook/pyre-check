@@ -23,6 +23,15 @@ let overlay { overlays; _ } identifier =
   String.Table.find overlays identifier >>| ErrorsEnvironment.Overlay.read_only
 
 
+let get_or_create_overlay { root; overlays } identifier =
+  match String.Table.find overlays identifier with
+  | Some overlay -> overlay
+  | None ->
+      let new_overlay = ErrorsEnvironment.read_only root |> ErrorsEnvironment.Overlay.create in
+      let () = String.Table.add overlays ~key:identifier ~data:new_overlay |> ignore in
+      new_overlay
+
+
 let controls { root; _ } = ErrorsEnvironment.read_only root |> ErrorsEnvironment.ReadOnly.controls
 
 let configuration environment = controls environment |> EnvironmentControls.configuration
@@ -54,13 +63,9 @@ let prepare_for_update overlaid_environment ~scheduler =
 
 let update_root { root; _ } = ErrorsEnvironment.update_this_and_all_preceding_environments root
 
-let rec update_overlay_with_code ({ root; overlays } as environment) ~code_updates identifier =
-  match String.Table.find overlays identifier with
-  | None ->
-      let new_overlay = ErrorsEnvironment.read_only root |> ErrorsEnvironment.Overlay.create in
-      let () = String.Table.add overlays ~key:identifier ~data:new_overlay |> ignore in
-      update_overlay_with_code environment ~code_updates identifier
-  | Some overlay -> ErrorsEnvironment.Overlay.update_overlaid_code overlay ~code_updates
+let update_overlay_with_code environment ~code_updates identifier =
+  get_or_create_overlay environment identifier
+  |> ErrorsEnvironment.Overlay.update_overlaid_code ~code_updates
 
 
 module UpdateType = struct
