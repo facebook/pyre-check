@@ -110,7 +110,7 @@ class PyreServerStartOptions:
 
     @staticmethod
     def read_from(
-        command_argument: command_arguments.CommandArguments,
+        command_argument: command_arguments.StartArguments,
         load_configuration: ConfigurationReader,
         enabled_telemetry_event: bool,
     ) -> "PyreServerStartOptions":
@@ -123,25 +123,7 @@ class PyreServerStartOptions:
 
         start_arguments = start.create_server_arguments(
             configuration,
-            command_arguments.StartArguments(
-                changed_files_path=command_argument.changed_files_path,
-                debug=command_argument.debug,
-                enable_memory_profiling=command_argument.enable_memory_profiling,
-                enable_profiling=command_argument.enable_profiling,
-                load_initial_state_from=command_argument.load_initial_state_from,
-                log_identifier=command_argument.log_identifier,
-                logging_sections=command_argument.logging_sections,
-                no_saved_state=command_argument.no_saved_state,
-                no_watchman=False,
-                noninteractive=command_argument.noninteractive,
-                save_initial_state_to=command_argument.save_initial_state_to,
-                saved_state_project=command_argument.saved_state_project,
-                sequential=command_argument.sequential,
-                show_error_traces=command_argument.show_error_traces,
-                store_type_check_resolution=False,
-                terminal=False,
-                wait_on_initialization=True,
-            ),
+            command_arguments,
         )
         if start_arguments.watchman_root is None:
             raise commands.ClientException(
@@ -2089,7 +2071,7 @@ async def run_persistent(
 
 
 def run(
-    command_argument: command_arguments.CommandArguments,
+    command_argument: command_arguments.StartArguments,
     load_configuration: ConfigurationReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
     enable_telemetry_event: bool = False,
