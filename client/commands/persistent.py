@@ -95,6 +95,9 @@ def _log_lsp_event(
             )
 
 
+ConfigurationReader = Callable[[], configuration_module.Configuration]
+
+
 @dataclasses.dataclass(frozen=True)
 class PyreServerStartOptions:
     binary: str
@@ -108,12 +111,10 @@ class PyreServerStartOptions:
     @staticmethod
     def read_from(
         command_argument: command_arguments.CommandArguments,
-        base_directory: Path,
+        load_configuration: ConfigurationReader,
         enabled_telemetry_event: bool,
     ) -> "PyreServerStartOptions":
-        configuration = frontend_configuration.OpenSource(
-            configuration_module.create_configuration(command_argument, base_directory)
-        )
+        configuration = frontend_configuration.OpenSource(load_configuration())
         binary_location = configuration.get_binary_location(download_if_needed=True)
         if binary_location is None:
             raise configuration_module.InvalidConfiguration(
@@ -2089,13 +2090,13 @@ async def run_persistent(
 
 def run(
     command_argument: command_arguments.CommandArguments,
-    base_directory: Path,
+    load_configuration: ConfigurationReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
     enable_telemetry_event: bool = False,
 ) -> int:
     def read_server_start_options() -> PyreServerStartOptions:
         return PyreServerStartOptions.read_from(
-            command_argument, base_directory, enable_telemetry_event
+            command_argument, load_configuration, enable_telemetry_event
         )
 
     command_timer = timer.Timer()

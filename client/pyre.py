@@ -793,7 +793,14 @@ def persistent(context: click.Context) -> int:
     and responses from the Pyre server to stdout.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    base_directory = Path(".")
+    base_directory: Path = Path(".")
+
+    def load_configuration() -> configuration_module.Configuration:
+        return configuration_module.create_configuration(
+            command_argument, base_directory
+        )
+
+    configuration = load_configuration()
     configuration = configuration_module.create_configuration(
         command_argument, base_directory
     )
@@ -802,7 +809,7 @@ def persistent(context: click.Context) -> int:
     )
     return commands.persistent.run(
         command_argument,
-        base_directory,
+        load_configuration,
         commands.backend_arguments.RemoteLogging.create(
             configuration.logger, command_argument.log_identifier
         ),
