@@ -95,21 +95,9 @@ def _run_incremental_command(
     configuration = configuration_module.create_configuration(arguments, Path("."))
     _check_open_source_version(configuration)
     start_logging_to_directory(configuration.log_directory)
-    start_arguments = command_arguments.StartArguments(
-        changed_files_path=arguments.changed_files_path,
-        debug=arguments.debug,
-        enable_memory_profiling=arguments.enable_memory_profiling,
-        enable_profiling=arguments.enable_profiling,
-        load_initial_state_from=arguments.load_initial_state_from,
-        log_identifier=arguments.log_identifier,
-        logging_sections=arguments.logging_sections,
-        no_saved_state=arguments.no_saved_state,
+    start_arguments = command_arguments.StartArguments.create(
+        arguments,
         no_watchman=no_watchman,
-        noninteractive=arguments.noninteractive,
-        save_initial_state_to=arguments.save_initial_state_to,
-        saved_state_project=arguments.saved_state_project,
-        sequential=arguments.sequential,
-        show_error_traces=arguments.show_error_traces,
         store_type_check_resolution=False,
         terminal=False,
         wait_on_initialization=True,
@@ -863,21 +851,9 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
     )
     return commands.pysa_server.run(
         configuration,
-        command_arguments.StartArguments(
-            changed_files_path=command_argument.changed_files_path,
-            debug=command_argument.debug,
-            enable_memory_profiling=command_argument.enable_memory_profiling,
-            enable_profiling=command_argument.enable_profiling,
-            load_initial_state_from=command_argument.load_initial_state_from,
-            log_identifier=command_argument.log_identifier,
-            logging_sections=command_argument.logging_sections,
-            no_saved_state=command_argument.no_saved_state,
+        command_arguments.StartArguments.create(
+            command_argument,
             no_watchman=no_watchman,
-            noninteractive=command_argument.noninteractive,
-            save_initial_state_to=command_argument.save_initial_state_to,
-            saved_state_project=command_argument.saved_state_project,
-            sequential=command_argument.sequential,
-            show_error_traces=command_argument.show_error_traces,
             store_type_check_resolution=False,
             terminal=False,
             wait_on_initialization=True,
@@ -991,21 +967,9 @@ def restart(
     )
     _check_open_source_version(configuration)
     start_logging_to_directory(configuration.log_directory)
-    start_arguments = command_arguments.StartArguments(
-        changed_files_path=command_argument.changed_files_path,
-        debug=command_argument.debug,
-        enable_memory_profiling=command_argument.enable_memory_profiling,
-        enable_profiling=command_argument.enable_profiling,
-        load_initial_state_from=command_argument.load_initial_state_from,
-        log_identifier=command_argument.log_identifier,
-        logging_sections=command_argument.logging_sections,
-        no_saved_state=command_argument.no_saved_state,
+    start_arguments = command_arguments.StartArguments.create(
+        command_argument=command_argument,
         no_watchman=no_watchman,
-        noninteractive=command_argument.noninteractive,
-        save_initial_state_to=command_argument.save_initial_state_to,
-        saved_state_project=command_argument.saved_state_project,
-        sequential=command_argument.sequential,
-        show_error_traces=command_argument.show_error_traces,
         store_type_check_resolution=store_type_check_resolution,
         terminal=terminal,
         wait_on_initialization=True,
@@ -1124,21 +1088,9 @@ def start(
     start_logging_to_directory(configuration.log_directory)
     return commands.start.run(
         configuration,
-        command_arguments.StartArguments(
-            changed_files_path=command_argument.changed_files_path,
-            debug=command_argument.debug,
-            enable_memory_profiling=command_argument.enable_memory_profiling,
-            enable_profiling=command_argument.enable_profiling,
-            load_initial_state_from=command_argument.load_initial_state_from,
-            log_identifier=command_argument.log_identifier,
-            logging_sections=command_argument.logging_sections,
-            no_saved_state=command_argument.no_saved_state,
+        command_arguments.StartArguments.create(
+            command_argument=command_argument,
             no_watchman=no_watchman,
-            noninteractive=command_argument.noninteractive,
-            save_initial_state_to=command_argument.save_initial_state_to,
-            saved_state_project=command_argument.saved_state_project,
-            sequential=command_argument.sequential,
-            show_error_traces=command_argument.show_error_traces,
             store_type_check_resolution=store_type_check_resolution,
             terminal=terminal,
             wait_on_initialization=wait_on_initialization,
