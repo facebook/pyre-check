@@ -73,17 +73,7 @@ def _run_check_command(
     configuration = configuration_module.create_configuration(arguments, Path("."))
     _check_open_source_version(configuration)
     start_logging_to_directory(configuration.log_directory)
-    check_arguments = command_arguments.CheckArguments(
-        debug=arguments.debug,
-        enable_memory_profiling=arguments.enable_memory_profiling,
-        enable_profiling=arguments.enable_profiling,
-        log_identifier=arguments.log_identifier,
-        logging_sections=arguments.logging_sections,
-        noninteractive=arguments.noninteractive,
-        output=arguments.output,
-        sequential=arguments.sequential,
-        show_error_traces=arguments.show_error_traces,
-    )
+    check_arguments = command_arguments.CheckArguments.create(arguments)
     return commands.check.run(configuration, check_arguments)
 
 

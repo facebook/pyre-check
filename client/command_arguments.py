@@ -154,6 +154,22 @@ class CheckArguments:
     sequential: bool = False
     show_error_traces: bool = False
 
+    @staticmethod
+    def create(
+        command_argument: CommandArguments,
+    ) -> CheckArguments:
+        return CheckArguments(
+            debug=command_argument.debug,
+            enable_memory_profiling=command_argument.enable_memory_profiling,
+            enable_profiling=command_argument.enable_profiling,
+            log_identifier=command_argument.log_identifier,
+            logging_sections=command_argument.logging_sections,
+            noninteractive=command_argument.noninteractive,
+            output=command_argument.output,
+            sequential=command_argument.sequential,
+            show_error_traces=command_argument.show_error_traces,
+        )
+
 
 @dataclass(frozen=True)
 class InferArguments:
