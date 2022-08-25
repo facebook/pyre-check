@@ -822,7 +822,11 @@ def persistent(context: click.Context) -> int:
                 terminal=False,
                 wait_on_initialization=True,
             ),
-            base_directory=base_directory,
+            read_frontend_configuration=lambda: commands.frontend_configuration.OpenSource(
+                configuration_module.create_configuration(
+                    command_argument, base_directory
+                )
+            ),
             enabled_telemetry_event=False,
         ),
         remote_logging=commands.backend_arguments.RemoteLogging.create(

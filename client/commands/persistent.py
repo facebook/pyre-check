@@ -98,6 +98,7 @@ def _log_lsp_event(
 
 
 PyreServerStartOptionsReader = Callable[[], "PyreServerStartOptions"]
+FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -146,17 +147,13 @@ class PyreServerStartOptions:
     def create_reader(
         command_argument: command_arguments.CommandArguments,
         start_command_argument: command_arguments.StartArguments,
-        base_directory: Path,
+        read_frontend_configuration: FrontendConfigurationReader,
         enabled_telemetry_event: bool,
     ) -> PyreServerStartOptionsReader:
         def read() -> PyreServerStartOptions:
             return PyreServerStartOptions.create(
                 start_command_argument=start_command_argument,
-                configuration=frontend_configuration.OpenSource(
-                    configuration_module.create_configuration(
-                        command_argument, base_directory
-                    )
-                ),
+                configuration=read_frontend_configuration(),
                 enabled_telemetry_event=enabled_telemetry_event,
             )
 
