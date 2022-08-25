@@ -547,11 +547,6 @@ async def _consume_and_drop_response(
 
 
 @dataclasses.dataclass(frozen=True)
-class QueryTypesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: List[PathTypeInfo]
-
-
-@dataclasses.dataclass(frozen=True)
 class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[str]
 
@@ -1213,25 +1208,6 @@ class PyreQueryHandler(background.Task):
         self.query_state = query_state
         self.server_start_options_reader = server_start_options_reader
         self.client_output_channel = client_output_channel
-
-    async def _query_types(
-        self, paths: List[Path], socket_path: Path
-    ) -> Optional[Dict[Path, LocationTypeLookup]]:
-        path_string = ", ".join(f"'{path}'" for path in paths)
-        query_text = f"types({path_string})"
-        query_types_response = await daemon_query.attempt_typed_async_query(
-            response_type=QueryTypesResponse,
-            socket_path=socket_path,
-            query_text=query_text,
-        )
-
-        if query_types_response is None:
-            return None
-
-        return {
-            Path(path_type_info.path): path_type_info.get_location_type_lookup()
-            for path_type_info in query_types_response.response
-        }
 
     async def _query_modules_of_path(
         self,
