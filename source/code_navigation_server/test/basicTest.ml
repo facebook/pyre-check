@@ -18,7 +18,7 @@ let test_invalid_request context =
   let test_invalid_request client =
     let%lwt raw_response = ScratchProject.Client.send_raw_request client "derp" in
     match Yojson.Safe.from_string raw_response with
-    | `List (`String "Error" :: _) -> Lwt.return_unit
+    | `List [`String "Error"; `List (`String "InvalidRequest" :: _)] -> Lwt.return_unit
     | _ as json ->
         let message =
           Format.sprintf "Expected error response but got: `%s`" (Yojson.Safe.to_string json)

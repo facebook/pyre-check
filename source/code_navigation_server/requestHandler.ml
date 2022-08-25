@@ -20,5 +20,5 @@ let handle_request ~server:_ = function
 
 let handle_raw_request ~server raw_request =
   match Request.of_string raw_request with
-  | Result.Error message -> Lwt.return (Response.Error message)
+  | Result.Error message -> Lwt.return (Response.Error (Response.ErrorKind.InvalidRequest message))
   | Result.Ok request -> handle_request ~server request

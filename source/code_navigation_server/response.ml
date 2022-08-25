@@ -7,6 +7,10 @@
 
 open Base
 
-type t = Error of string [@@deriving sexp, compare, yojson { strict = false }]
+module ErrorKind = struct
+  type t = InvalidRequest of string [@@deriving sexp, compare, yojson { strict = false }]
+end
+
+type t = Error of ErrorKind.t [@@deriving sexp, compare, yojson { strict = false }]
 
 let to_string response = to_yojson response |> Yojson.Safe.to_string

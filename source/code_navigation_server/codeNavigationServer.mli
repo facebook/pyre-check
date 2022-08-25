@@ -71,10 +71,27 @@ end
     code! *)
 module Testing : sig
   module Request : sig
-    type t = Stop [@@deriving sexp, compare, yojson { strict = false }]
+    (** A type representing requests sent from the clients to the server. *)
+    type t =
+      | Stop
+          (** A request that asks the server to stop. The server will shut itself down immediately
+              when this request gets processed. No response will be sent back to the client. *)
+    [@@deriving sexp, compare, yojson { strict = false }]
   end
 
   module Response : sig
-    type t = Error of string [@@deriving sexp, compare, yojson { strict = false }]
+    module ErrorKind : sig
+      (** A type storing details of the error the server runs into *)
+      type t =
+        | InvalidRequest of string
+            (** This error occurs when the client has sent a request which the server cannot parse. *)
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
+    (** A type representing responses sent from the server to its clients *)
+    type t =
+      | Error of ErrorKind.t
+          (** This response will be sent when the server runs into errors when processing a request. *)
+    [@@deriving sexp, compare, yojson { strict = false }]
   end
 end
