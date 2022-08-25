@@ -50,7 +50,7 @@ ModelQuery(
   name = "get_tornado_sources",
   find = "methods",
   where = [
-    parent.extends("tornado.web.RequestHandler", is_transitive=True),
+    cls.extends("tornado.web.RequestHandler", is_transitive=True),
     AnyOf(
       name.matches("\.get$"),
       name.matches("\.post$"),
