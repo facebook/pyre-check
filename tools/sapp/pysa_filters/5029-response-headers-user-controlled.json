@@ -1,0 +1,27 @@
+{
+    "name": "User controlled response headers",
+    "description": "High signal filter for 5029 response headers user controlled",
+    "features": [
+        {
+            "mode": "none of",
+            "features": [
+                "always-via:furl_query_params",
+                "always-via:string_concat_rhs",
+                "always-via:format-string",
+                "always-type:scalar",
+                "always-via:boolean"
+            ]
+        }
+    ],
+    "codes": [
+        5029
+    ],
+    "traceLengthFromSources": [
+        0,
+        6
+    ],
+    "traceLengthToSinks": [
+        0,
+        6
+    ]
+}
