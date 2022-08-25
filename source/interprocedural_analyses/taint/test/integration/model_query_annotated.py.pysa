@@ -5,7 +5,7 @@ ModelQuery(
   name = "get_model_query_annotated_test1_sources",
   find = "attributes",
   where = [
-      parent.equals("model_query_annotated.Test1_C"),
+      cls.equals("model_query_annotated.Test1_C"),
       type_annotation.matches(".*Annotated\[.*Color\..*")
     ],
   model = [
@@ -17,7 +17,7 @@ ModelQuery(
   name = "get_model_query_annotated_test2_sources",
   find = "attributes",
   where = [
-      parent.equals("model_query_annotated.Test2_C"),
+      cls.equals("model_query_annotated.Test2_C"),
       AnyOf(
         type_annotation.equals("typing.Annotated[(typing.Optional[float], model_query_annotated.Color.RED)]"),
         type_annotation.equals("typing.Annotated[(typing.Optional[float], model_query_annotated.Color.RED, foo)]")

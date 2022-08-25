@@ -70,7 +70,7 @@ ModelQuery(
   name = "get_model_query_parameters_test5_sink",
   find = "methods",
   where = [
-    parent.matches("Test5"),
+    cls.matches("Test5"),
     name.matches("test5_")
   ],
   model = [
@@ -116,7 +116,7 @@ ModelQuery(
   name = "get_model_query_parameters_test7_source",
   find = "methods",
   where = [
-    parent.matches("Test7"),
+    cls.matches("Test7"),
     name.matches("test7_")
   ],
   model = [

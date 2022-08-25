@@ -15,7 +15,7 @@ ModelQuery(
   find = "methods",
   where = [
     name.matches("test2_"),
-    parent.equals("model_query_type_annotation.Test2_C"),
+    cls.equals("model_query_type_annotation.Test2_C"),
     any_parameter.annotation.matches("Test2_T")
   ],
   model = [
@@ -64,7 +64,7 @@ ModelQuery(
   find = "methods",
   where = [
     name.matches("test6_"),
-    parent.equals("model_query_type_annotation.Test6_C"),
+    cls.equals("model_query_type_annotation.Test6_C"),
     return_annotation.is_annotated_type()
   ],
   model = [
@@ -77,7 +77,7 @@ ModelQuery(
   name = "get_model_query_type_annotation_test7_sources",
   find = "attributes",
   where = [
-    parent.equals("model_query_type_annotation.Test7_C"),
+    cls.equals("model_query_type_annotation.Test7_C"),
     type_annotation.equals("int")
   ],
   model = [
@@ -90,7 +90,7 @@ ModelQuery(
   name = "get_model_query_type_annotation_test8_sources",
   find = "attributes",
   where = [
-    parent.equals("model_query_type_annotation.Test8_C"),
+    cls.equals("model_query_type_annotation.Test8_C"),
     type_annotation.matches("str")
   ],
   model = [
@@ -103,7 +103,7 @@ ModelQuery(
   name = "get_model_query_type_annotation_test9_sources",
   find = "attributes",
   where = [
-    parent.equals("model_query_type_annotation.Test9_C"),
+    cls.equals("model_query_type_annotation.Test9_C"),
     type_annotation.is_annotated_type()
   ],
   model = [
