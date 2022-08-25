@@ -664,17 +664,6 @@ let rec process_request ~environment ~build_system request =
             (print_reason error_reason))
         errors
     in
-    let modules_of_path path =
-      let module_of_path path =
-        match ModuleTracker.ReadOnly.lookup_path module_tracker path with
-        | ModuleTracker.PathLookup.Found { ModulePath.qualifier; _ } -> Some qualifier
-        | ShadowedBy _
-        | NotFound ->
-            None
-      in
-      let artifact_path = BuildSystem.lookup_artifact build_system path in
-      List.filter_map ~f:module_of_path artifact_path
-    in
     let instantiate_range
         Location.WithModule.
           {
@@ -702,7 +691,7 @@ let rec process_request ~environment ~build_system request =
         let { Configuration.Analysis.local_root = root; _ } = configuration in
         PyrePath.create_relative ~root ~relative:(PyrePath.absolute path) |> SourcePath.create
       in
-      match modules_of_path relative_path with
+      match PathLookup.modules_of_source_path ~build_system ~module_tracker relative_path with
       | [found_module] -> Some found_module
       | _ -> None
     in
@@ -1073,7 +1062,11 @@ let rec process_request ~environment ~build_system request =
                         `List (List.map models ~f:to_json) |> Yojson.Safe.to_string
                       in
                       Single (Base.FoundModels models_string)))
-    | ModulesOfPath path -> Single (Base.FoundModules (SourcePath.create path |> modules_of_path))
+    | ModulesOfPath path ->
+        Single
+          (Base.FoundModules
+             (SourcePath.create path
+             |> PathLookup.modules_of_source_path ~build_system ~module_tracker))
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
@@ -1145,15 +1138,6 @@ let rec process_request ~environment ~build_system request =
           Single (Base.FoundReferences [])
         in
         let symbol =
-          let module_of_path path =
-            let relative_path =
-              let { Configuration.Analysis.local_root = root; _ } = configuration in
-              PyrePath.create_relative ~root ~relative:(PyrePath.absolute path) |> SourcePath.create
-            in
-            match modules_of_path relative_path with
-            | [found_module] -> Some found_module
-            | _ -> None
-          in
           module_of_path path
           >>= fun module_reference ->
           LocationBasedLookup.find_narrowest_spanning_symbol

@@ -10,12 +10,6 @@ open Pyre
 open Ast
 open Analysis
 
-let module_of_path ~module_tracker path =
-  match ModuleTracker.ReadOnly.lookup_path module_tracker path with
-  | ModuleTracker.PathLookup.Found { ModulePath.qualifier; _ } -> Some qualifier
-  | _ -> None
-
-
 let instantiate_error
     ~build_system
     ~configuration:{ Configuration.Analysis.show_error_traces; _ }
@@ -44,19 +38,11 @@ let process_display_type_error_request
     | [] -> ModuleTracker.ReadOnly.project_qualifiers module_tracker
     | _ ->
         let get_module_for_source_path path =
-          let path = PyrePath.create_absolute path |> SourcePath.create in
-          match BuildSystem.lookup_artifact build_system path with
-          | [] -> None
-          | artifact_path :: _ ->
-              (* If the same source file is mapped to more than one artifact paths, all of the
-                 artifact paths will likely contain the same set of type errors. It does not matter
-                 which artifact path is picked.
-
-                 NOTE (grievejia): It is possible for the type errors to differ. We may need to
-                 reconsider how this is handled in the future. *)
-              module_of_path ~module_tracker artifact_path
+          PyrePath.create_absolute path
+          |> SourcePath.create
+          |> PathLookup.modules_of_source_path ~build_system ~module_tracker
         in
-        List.filter_map paths ~f:get_module_for_source_path
+        List.concat_map paths ~f:get_module_for_source_path
   in
   let errors =
     ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers errors_environment modules

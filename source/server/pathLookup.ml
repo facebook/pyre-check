@@ -5,6 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Base
+
+let module_of_path ~module_tracker path =
+  match Analysis.ModuleTracker.ReadOnly.lookup_path module_tracker path with
+  | Analysis.ModuleTracker.PathLookup.Found { Ast.ModulePath.qualifier; _ } -> Some qualifier
+  | ShadowedBy _
+  | NotFound ->
+      None
+
+
+let modules_of_source_path ~build_system ~module_tracker path =
+  BuildSystem.lookup_artifact build_system path
+  |> List.filter_map ~f:(module_of_path ~module_tracker)
+
+
 let instantiate_path ~build_system ~ast_environment qualifier =
   match Analysis.AstEnvironment.ReadOnly.get_real_path ast_environment qualifier with
   | None -> None

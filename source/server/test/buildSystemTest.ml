@@ -179,6 +179,70 @@ let test_type_errors context =
   |> ScratchProject.test_server_with ~f:test_type_errors
 
 
+let test_type_errors_in_multiple_artifacts context =
+  let test_source_path = PyrePath.create_absolute "/foo/test.py" |> SourcePath.create in
+  let test_artifact_path0 =
+    (* The real value will be deterimend once the server starts. *)
+    ref (PyrePath.create_absolute "uninitialized" |> ArtifactPath.create)
+  in
+  let test_artifact_path1 =
+    (* The real value will be deterimend once the server starts. *)
+    ref (PyrePath.create_absolute "uninitialized" |> ArtifactPath.create)
+  in
+  let build_system_initializer =
+    let initialize () =
+      (* We map the queried source path to both aritfact paths *)
+      let lookup_source path =
+        if
+          ArtifactPath.equal path !test_artifact_path0
+          || ArtifactPath.equal path !test_artifact_path1
+        then
+          Some test_source_path
+        else
+          None
+      in
+      let lookup_artifact path =
+        if SourcePath.equal path test_source_path then
+          [!test_artifact_path0; !test_artifact_path1]
+        else
+          []
+      in
+      Lwt.return (BuildSystem.create_for_testing ~lookup_source ~lookup_artifact ())
+    in
+    let load () = failwith "saved state loading is not supported" in
+    let cleanup () = Lwt.return_unit in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
+  in
+  let test_type_errors client =
+    let open Lwt.Infix in
+    let global_root =
+      Client.get_server_properties client
+      |> fun { ServerProperties.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
+      project_root
+    in
+    test_artifact_path0 := Test.relative_artifact_path ~root:global_root ~relative:"foo/test.py";
+    test_artifact_path1 := Test.relative_artifact_path ~root:global_root ~relative:"bar/test.py";
+    Client.send_request client (Request.DisplayTypeError ["/foo/test.py"])
+    >>= fun raw_response ->
+    match Yojson.Safe.from_string raw_response with
+    | `List [`String "TypeErrors"; `List errors] ->
+        (* Given that `/foo/test.py` is mapped to two artifact paths, the client should see type
+           errors in both files. *)
+        assert_equal ~ctxt:context ~cmp:Int.equal ~printer:Int.to_string 2 (List.length errors);
+        Lwt.return_unit
+    | _ ->
+        let message = Format.sprintf "Unexpected response message: %s" raw_response in
+        assert_failure message
+  in
+  ScratchProject.setup
+    ~context
+    ~include_typeshed_stubs:false
+    ~include_helper_builtins:false
+    ~build_system_initializer
+    ["foo/test.py", "reveal_type(42)"; "bar/test.py", "reveal_type(43)"]
+  |> ScratchProject.test_server_with ~f:test_type_errors
+
+
 let test_update context =
   let internal_state = ref "unupdated" in
   let test_source_path = PyrePath.create_absolute "/foo/test.py" |> SourcePath.create in
@@ -576,6 +640,8 @@ let () =
          "initialize" >:: OUnitLwt.lwt_wrapper test_initialize;
          "cleanup" >:: OUnitLwt.lwt_wrapper test_cleanup;
          "type_errors" >:: OUnitLwt.lwt_wrapper test_type_errors;
+         "type_errors_in_multiple_artifacts"
+         >:: OUnitLwt.lwt_wrapper test_type_errors_in_multiple_artifacts;
          "update" >:: OUnitLwt.lwt_wrapper test_update;
          "buck_renormalize" >:: OUnitLwt.lwt_wrapper test_buck_renormalize;
          "buck_update" >:: OUnitLwt.lwt_wrapper test_buck_update;
