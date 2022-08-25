@@ -14,10 +14,15 @@ module Response = CodeNavigationServer.Testing.Response
 module Client = struct
   type t = {
     context: test_ctxt;
+    configuration: Configuration.Analysis.t;
     server_state: State.t Server.ExclusiveLock.t;
     input_channel: Lwt_io.input_channel;
     output_channel: Lwt_io.output_channel;
   }
+
+  let get_source_root { configuration = { Configuration.Analysis.project_root; _ }; _ } =
+    project_root
+
 
   let get_server_state { server_state; _ } = server_state
 
@@ -46,7 +51,7 @@ type t = {
   start_options: StartOptions.t;
 }
 
-let setup ~context ?(include_typeshed_stubs = true) ?source_root ?watchman sources =
+let setup ~context ?(include_typeshed_stubs = true) ?watchman sources =
   (* MacOS tends to use very long directory name as the default `temp_dir`. This unfortunately would
      make the filename of temporary socket files exceed the default Unix limit. Hard-coding temp dir
      to `/tmp` to avoid the issue for now. *)
@@ -54,9 +59,7 @@ let setup ~context ?(include_typeshed_stubs = true) ?source_root ?watchman sourc
 
   (* We assume that there's only one checked source directory that acts as the global root as well. *)
   let source_root =
-    match source_root with
-    | Some source_root -> source_root
-    | None -> bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
   (* We assume that there's only one external source directory. *)
   let external_root =
@@ -69,17 +72,14 @@ let setup ~context ?(include_typeshed_stubs = true) ?source_root ?watchman sourc
       []
   in
   let log_root = bracket_tmpdir context in
+  let add_source ~root (relative, content) =
+    let content = Test.trim_extra_indentation content in
+    let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
+    File.write file
+  in
+  List.iter sources ~f:(add_source ~root:source_root);
+  List.iter external_sources ~f:(add_source ~root:external_root);
   let environment_controls =
-    let in_memory_sources =
-      let to_in_memory_source (relative, content) ~is_external =
-        let code = Test.trim_extra_indentation content in
-        let priority = if is_external then 0 else 1 in
-        let module_path = Ast.ModulePath.create_for_testing ~relative ~is_external ~priority in
-        module_path, code
-      in
-      List.map sources ~f:(to_in_memory_source ~is_external:false)
-      @ List.map external_sources ~f:(to_in_memory_source ~is_external:true)
-    in
     Configuration.Analysis.create
       ~parallel:false
       ~analyze_external_sources:false
@@ -99,10 +99,7 @@ let setup ~context ?(include_typeshed_stubs = true) ?source_root ?watchman sourc
       ~log_directory:log_root
       ~source_paths:[SearchPath.Root source_root]
       ()
-    |> Analysis.EnvironmentControls.create
-         ~populate_call_graph:false
-         ~use_lazy_module_tracking:true
-         ~in_memory_sources
+    |> Analysis.EnvironmentControls.create ~populate_call_graph:false ~use_lazy_module_tracking:true
   in
   let start_options =
     let watchman =
@@ -138,9 +135,9 @@ let test_server_with ~f { context; start_options } =
     ~on_exception:(function
       | Server.Start.ServerStopped -> Lwt.return_unit
       | exn -> raise exn)
-    ~on_started:(fun { Server.ServerProperties.socket_path; _ } server_state ->
+    ~on_started:(fun { Server.ServerProperties.socket_path; configuration; _ } server_state ->
       let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
       let test_client (input_channel, output_channel) =
-        f { Client.context; server_state; input_channel; output_channel }
+        f { Client.context; configuration; server_state; input_channel; output_channel }
       in
       Lwt_io.with_connection socket_address test_client)
