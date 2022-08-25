@@ -1016,7 +1016,9 @@ class PyreQueryHandler(background.Task):
             request=json.dumps(overlay_update_dict),
         )
 
-    async def _run(self, server_start_options: "PyreDaemonStartOptions") -> None:
+    async def run_request_handler(
+        self, server_start_options: "PyreDaemonStartOptions"
+    ) -> None:
         start_arguments = server_start_options.start_arguments
         socket_path = daemon_socket.get_default_socket_path(
             project_root=Path(start_arguments.base_arguments.global_root),
@@ -1072,8 +1074,10 @@ class PyreQueryHandler(background.Task):
             raise
 
     async def run(self) -> None:
-        # Re-read server start options on every run, to make sure the server
-        # start options are always up-to-date.
+        """
+        Reread the server start options, which can change due to configuration
+        reloading, and run with error logging.
+        """
         server_start_options = self.read_server_start_options()
 
         try:
@@ -1081,7 +1085,7 @@ class PyreQueryHandler(background.Task):
                 "Running Pyre query manager using"
                 f" configuration: {server_start_options}"
             )
-            await self._run(server_start_options)
+            await self.run_request_handler(server_start_options)
         except Exception:
             LOG.error("Failed to run the Pyre query handler")
             raise
@@ -1417,7 +1421,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             )
             await self.subscribe_to_type_error(input_channel, output_channel)
 
-    async def _run(self, server_start_options: PyreDaemonStartOptions) -> None:
+    async def launch_and_subscribe(
+        self, server_start_options: PyreDaemonStartOptions
+    ) -> None:
         server_identifier = server_start_options.server_identifier
         start_arguments = server_start_options.start_arguments
         socket_path = daemon_socket.get_default_socket_path(
@@ -1527,8 +1533,10 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             raise RuntimeError("Impossible type for `start_status`")
 
     async def run(self) -> None:
-        # Re-read server start options on every run, to make sure the server
-        # start options are always up-to-date.
+        """
+        Reread the server start options, which can change due to configuration
+        reloading, and run with error logging.
+        """
         server_start_options = read_server_start_options(
             self.server_start_options_reader, self.remote_logging
         )
@@ -1536,7 +1544,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         error_message: Optional[str] = None
         try:
             LOG.info(f"Starting Pyre server from configuration: {server_start_options}")
-            await self._run(server_start_options)
+            await self.launch_and_subscribe(server_start_options)
         except asyncio.CancelledError:
             error_message = "Explicit termination request"
             raise
@@ -1835,7 +1843,7 @@ class PyreServer:
         )
         return await self.wait_for_exit()
 
-    async def _run(self) -> int:
+    async def run_request_handler(self) -> int:
         while True:
             request = await read_lsp_request(self.input_channel, self.output_channel)
             LOG.debug(f"Received LSP request: {log.truncate(str(request), 400)}")
@@ -1973,10 +1981,15 @@ class PyreServer:
                 )
 
     async def run(self) -> int:
+        """
+        Launch the background tasks that deal with starting and subscribing
+        to a pyre server and managing a queue of requests, then run the
+        language server itself.
+        """
         try:
             await self.pyre_manager.ensure_task_running()
             await self.pyre_query_manager.ensure_task_running()
-            return await self._run()
+            return await self.run_request_handler()
         except lsp.ReadChannelClosedError:
             # This error can happen when the connection gets closed unilaterally
             # from the language client, which causes issue when we try to access the
