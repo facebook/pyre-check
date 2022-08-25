@@ -567,434 +567,6 @@ class ServerState:
 
 
 @dataclasses.dataclass(frozen=True)
-class PyreServer:
-    # I/O Channels
-    input_channel: connections.AsyncTextReader
-    output_channel: connections.AsyncTextWriter
-
-    # inside this task manager is a PyreServerHandler
-    pyre_manager: background.TaskManager
-    # inside this task manager is a PyreQueryHandler
-    pyre_query_manager: background.TaskManager
-    # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
-    server_state: ServerState
-
-    async def wait_for_exit(self) -> int:
-        await _wait_for_exit(self.input_channel, self.output_channel)
-        return 0
-
-    async def _try_restart_pyre_server(self) -> None:
-        if (
-            self.server_state.consecutive_start_failure
-            < CONSECUTIVE_START_ATTEMPT_THRESHOLD
-        ):
-            await self.pyre_manager.ensure_task_running()
-        else:
-            LOG.info(
-                "Not restarting Pyre since failed consecutive start attempt limit"
-                " has been reached."
-            )
-
-    async def process_open_request(
-        self,
-        parameters: lsp.DidOpenTextDocumentParameters,
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-        self.server_state.opened_documents.add(document_path)
-        LOG.info(f"File opened: {document_path}")
-
-        # Attempt to trigger a background Pyre server start on each file open
-        if not self.pyre_manager.is_task_running():
-            await self._try_restart_pyre_server()
-
-    async def process_close_request(
-        self, parameters: lsp.DidCloseTextDocumentParameters
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-        try:
-            self.server_state.opened_documents.remove(document_path)
-            LOG.info(f"File closed: {document_path}")
-        except KeyError:
-            LOG.warning(f"Trying to close an un-opened file: {document_path}")
-
-    async def process_did_change_request(
-        self,
-        parameters: lsp.DidChangeTextDocumentParameters,
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-
-        if document_path not in self.server_state.opened_documents:
-            return
-
-        overlay_update = OverlayUpdate(
-            str(document_path.resolve()),
-            document_path.resolve(),
-            str(
-                "".join(
-                    [
-                        content_change.text
-                        for content_change in parameters.content_changes
-                    ]
-                )
-            ),
-        )
-
-        self.server_state.query_state.queries.put_nowait(overlay_update)
-
-        # Attempt to trigger a background Pyre server start on each file change
-        if not self.pyre_manager.is_task_running():
-            await self._try_restart_pyre_server()
-
-    async def process_did_save_request(
-        self,
-        parameters: lsp.DidSaveTextDocumentParameters,
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-
-        if document_path not in self.server_state.opened_documents:
-            return
-
-        # Attempt to trigger a background Pyre server start on each file save
-        if not self.pyre_manager.is_task_running():
-            await self._try_restart_pyre_server()
-
-    async def process_type_coverage_request(
-        self,
-        parameters: lsp.TypeCoverageTextDocumentParameters,
-        request_id: Union[int, str, None],
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-        await self.server_state.query_state.queries.put(
-            TypeCoverageQuery(
-                id=request_id, activity_key=activity_key, path=document_path
-            )
-        )
-
-    async def process_hover_request(
-        self,
-        parameters: lsp.HoverTextDocumentParameters,
-        request_id: Union[int, str, None],
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        """Always respond to a hover request even for non-tracked paths.
-
-        Otherwise, VS Code hover will wait for Pyre until it times out, meaning
-        that messages from other hover providers will be delayed."""
-
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-
-        if document_path not in self.server_state.opened_documents:
-            await lsp.write_json_rpc(
-                self.output_channel,
-                json_rpc.SuccessResponse(
-                    id=request_id,
-                    activity_key=activity_key,
-                    result=lsp.LspHoverResponse.empty().to_dict(),
-                ),
-            )
-        else:
-            self.server_state.query_state.queries.put_nowait(
-                HoverQuery(
-                    id=request_id,
-                    activity_key=activity_key,
-                    path=document_path,
-                    position=parameters.position.to_pyre_position(),
-                )
-            )
-
-    async def process_definition_request(
-        self,
-        parameters: lsp.DefinitionTextDocumentParameters,
-        request_id: Union[int, str, None],
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-
-        if document_path not in self.server_state.opened_documents:
-            await lsp.write_json_rpc(
-                self.output_channel,
-                json_rpc.SuccessResponse(
-                    id=request_id,
-                    activity_key=activity_key,
-                    result=lsp.LspDefinitionResponse.cached_schema().dump(
-                        [], many=True
-                    ),
-                ),
-            )
-            return
-
-        self.server_state.query_state.queries.put_nowait(
-            DefinitionLocationQuery(
-                id=request_id,
-                activity_key=activity_key,
-                path=document_path,
-                position=parameters.position.to_pyre_position(),
-            )
-        )
-
-    async def process_document_symbols_request(
-        self,
-        parameters: lsp.DocumentSymbolsTextDocumentParameters,
-        request_id: Union[int, str, None],
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-        if document_path not in self.server_state.opened_documents:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI has not been opened: {parameters.text_document.uri}"
-            )
-        try:
-            source = document_path.read_text()
-            symbols = find_symbols.parse_source_and_collect_symbols(source)
-            await lsp.write_json_rpc(
-                self.output_channel,
-                json_rpc.SuccessResponse(
-                    id=request_id,
-                    activity_key=activity_key,
-                    result=[s.to_dict() for s in symbols],
-                ),
-            )
-        except find_symbols.UnparseableError as error:
-            raise lsp.RequestFailedError(
-                f"Document URI is not parsable: {parameters.text_document.uri}"
-            ) from error
-        except OSError as error:
-            raise lsp.RequestFailedError(
-                f"Document URI is not a readable file: {parameters.text_document.uri}"
-            ) from error
-
-    async def process_find_all_references_request(
-        self,
-        parameters: lsp.ReferencesTextDocumentParameters,
-        request_id: Union[int, str, None],
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-
-        if document_path not in self.server_state.opened_documents:
-            await lsp.write_json_rpc(
-                self.output_channel,
-                json_rpc.SuccessResponse(
-                    id=request_id,
-                    activity_key=activity_key,
-                    result=lsp.LspDefinitionResponse.cached_schema().dump(
-                        [], many=True
-                    ),
-                ),
-            )
-            return
-
-        self.server_state.query_state.queries.put_nowait(
-            ReferencesQuery(
-                id=request_id,
-                activity_key=activity_key,
-                path=document_path,
-                position=parameters.position.to_pyre_position(),
-            )
-        )
-
-    async def process_shutdown_request(self, request_id: Union[int, str, None]) -> int:
-        await lsp.write_json_rpc_ignore_connection_error(
-            self.output_channel,
-            json_rpc.SuccessResponse(id=request_id, activity_key=None, result=None),
-        )
-        return await self.wait_for_exit()
-
-    async def _run(self) -> int:
-        while True:
-            request = await read_lsp_request(self.input_channel, self.output_channel)
-            LOG.debug(f"Received LSP request: {log.truncate(str(request), 400)}")
-
-            try:
-                if request.method == "exit":
-                    return commands.ExitCode.FAILURE
-                elif request.method == "shutdown":
-                    return await self.process_shutdown_request(request.id)
-                elif request.method == "textDocument/definition":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for definition method"
-                        )
-                    await self.process_definition_request(
-                        lsp.DefinitionTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
-                        request.id,
-                        request.activity_key,
-                    )
-                elif request.method == "textDocument/didOpen":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for didOpen method"
-                        )
-                    await self.process_open_request(
-                        lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
-                        request.activity_key,
-                    )
-                elif request.method == "textDocument/didChange":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for didChange method"
-                        )
-                    await self.process_did_change_request(
-                        lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        )
-                    )
-                elif request.method == "textDocument/didClose":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for didClose method"
-                        )
-                    await self.process_close_request(
-                        lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        )
-                    )
-                elif request.method == "textDocument/didSave":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for didSave method"
-                        )
-                    await self.process_did_save_request(
-                        lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
-                        request.activity_key,
-                    )
-                elif request.method == "textDocument/hover":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for hover method"
-                        )
-                    await self.process_hover_request(
-                        lsp.HoverTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
-                        request.id,
-                        request.activity_key,
-                    )
-                elif request.method == "textDocument/typeCoverage":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for typeCoverage method"
-                        )
-                    await self.process_type_coverage_request(
-                        lsp.TypeCoverageTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
-                        request.id,
-                        request.activity_key,
-                    )
-                elif request.method == "textDocument/documentSymbol":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Mising Parameters for document symbols"
-                        )
-                    await self.process_document_symbols_request(
-                        lsp.DocumentSymbolsTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
-                        request.id,
-                        request.activity_key,
-                    )
-                elif request.method == "textDocument/references":
-                    parameters = request.parameters
-                    if parameters is None:
-                        raise json_rpc.InvalidRequestError(
-                            "Missing parameters for find all references"
-                        )
-                    await self.process_find_all_references_request(
-                        lsp.ReferencesTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
-                        request.id,
-                        request.activity_key,
-                    )
-                elif request.id is not None:
-                    raise lsp.RequestCancelledError("Request not supported yet")
-            except json_rpc.JSONRPCException as json_rpc_error:
-                LOG.debug(
-                    f"Exception occurred while processing request: {json_rpc_error}"
-                )
-                await lsp.write_json_rpc_ignore_connection_error(
-                    self.output_channel,
-                    json_rpc.ErrorResponse(
-                        id=request.id,
-                        activity_key=request.activity_key,
-                        code=json_rpc_error.error_code(),
-                        message=str(json_rpc_error),
-                    ),
-                )
-
-    async def run(self) -> int:
-        try:
-            await self.pyre_manager.ensure_task_running()
-            await self.pyre_query_manager.ensure_task_running()
-            return await self._run()
-        except lsp.ReadChannelClosedError:
-            # This error can happen when the connection gets closed unilaterally
-            # from the language client, which causes issue when we try to access the
-            # input channel. This usually signals that the language client has exited,
-            # which implies that the language server should do that as well.
-            LOG.info("Connection closed by LSP client.")
-            return commands.ExitCode.SUCCESS
-        finally:
-            await self.pyre_manager.ensure_task_stop()
-            await self.pyre_query_manager.ensure_task_stop()
-
-
-@dataclasses.dataclass(frozen=True)
 class StartSuccess:
     pass
 
@@ -1987,6 +1559,434 @@ class PyreServerHandler(background.Task):
                     ),
                 },
             )
+
+
+@dataclasses.dataclass(frozen=True)
+class PyreServer:
+    # I/O Channels
+    input_channel: connections.AsyncTextReader
+    output_channel: connections.AsyncTextWriter
+
+    # inside this task manager is a PyreServerHandler
+    pyre_manager: background.TaskManager
+    # inside this task manager is a PyreQueryHandler
+    pyre_query_manager: background.TaskManager
+    # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
+    server_state: ServerState
+
+    async def wait_for_exit(self) -> int:
+        await _wait_for_exit(self.input_channel, self.output_channel)
+        return 0
+
+    async def _try_restart_pyre_server(self) -> None:
+        if (
+            self.server_state.consecutive_start_failure
+            < CONSECUTIVE_START_ATTEMPT_THRESHOLD
+        ):
+            await self.pyre_manager.ensure_task_running()
+        else:
+            LOG.info(
+                "Not restarting Pyre since failed consecutive start attempt limit"
+                " has been reached."
+            )
+
+    async def process_open_request(
+        self,
+        parameters: lsp.DidOpenTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        self.server_state.opened_documents.add(document_path)
+        LOG.info(f"File opened: {document_path}")
+
+        # Attempt to trigger a background Pyre server start on each file open
+        if not self.pyre_manager.is_task_running():
+            await self._try_restart_pyre_server()
+
+    async def process_close_request(
+        self, parameters: lsp.DidCloseTextDocumentParameters
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        try:
+            self.server_state.opened_documents.remove(document_path)
+            LOG.info(f"File closed: {document_path}")
+        except KeyError:
+            LOG.warning(f"Trying to close an un-opened file: {document_path}")
+
+    async def process_did_change_request(
+        self,
+        parameters: lsp.DidChangeTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        if document_path not in self.server_state.opened_documents:
+            return
+
+        overlay_update = OverlayUpdate(
+            str(document_path.resolve()),
+            document_path.resolve(),
+            str(
+                "".join(
+                    [
+                        content_change.text
+                        for content_change in parameters.content_changes
+                    ]
+                )
+            ),
+        )
+
+        self.server_state.query_state.queries.put_nowait(overlay_update)
+
+        # Attempt to trigger a background Pyre server start on each file change
+        if not self.pyre_manager.is_task_running():
+            await self._try_restart_pyre_server()
+
+    async def process_did_save_request(
+        self,
+        parameters: lsp.DidSaveTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        if document_path not in self.server_state.opened_documents:
+            return
+
+        # Attempt to trigger a background Pyre server start on each file save
+        if not self.pyre_manager.is_task_running():
+            await self._try_restart_pyre_server()
+
+    async def process_type_coverage_request(
+        self,
+        parameters: lsp.TypeCoverageTextDocumentParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        await self.server_state.query_state.queries.put(
+            TypeCoverageQuery(
+                id=request_id, activity_key=activity_key, path=document_path
+            )
+        )
+
+    async def process_hover_request(
+        self,
+        parameters: lsp.HoverTextDocumentParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        """Always respond to a hover request even for non-tracked paths.
+
+        Otherwise, VS Code hover will wait for Pyre until it times out, meaning
+        that messages from other hover providers will be delayed."""
+
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        if document_path not in self.server_state.opened_documents:
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=lsp.LspHoverResponse.empty().to_dict(),
+                ),
+            )
+        else:
+            self.server_state.query_state.queries.put_nowait(
+                HoverQuery(
+                    id=request_id,
+                    activity_key=activity_key,
+                    path=document_path,
+                    position=parameters.position.to_pyre_position(),
+                )
+            )
+
+    async def process_definition_request(
+        self,
+        parameters: lsp.DefinitionTextDocumentParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        if document_path not in self.server_state.opened_documents:
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                        [], many=True
+                    ),
+                ),
+            )
+            return
+
+        self.server_state.query_state.queries.put_nowait(
+            DefinitionLocationQuery(
+                id=request_id,
+                activity_key=activity_key,
+                path=document_path,
+                position=parameters.position.to_pyre_position(),
+            )
+        )
+
+    async def process_document_symbols_request(
+        self,
+        parameters: lsp.DocumentSymbolsTextDocumentParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        if document_path not in self.server_state.opened_documents:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI has not been opened: {parameters.text_document.uri}"
+            )
+        try:
+            source = document_path.read_text()
+            symbols = find_symbols.parse_source_and_collect_symbols(source)
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=[s.to_dict() for s in symbols],
+                ),
+            )
+        except find_symbols.UnparseableError as error:
+            raise lsp.RequestFailedError(
+                f"Document URI is not parsable: {parameters.text_document.uri}"
+            ) from error
+        except OSError as error:
+            raise lsp.RequestFailedError(
+                f"Document URI is not a readable file: {parameters.text_document.uri}"
+            ) from error
+
+    async def process_find_all_references_request(
+        self,
+        parameters: lsp.ReferencesTextDocumentParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        if document_path not in self.server_state.opened_documents:
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                        [], many=True
+                    ),
+                ),
+            )
+            return
+
+        self.server_state.query_state.queries.put_nowait(
+            ReferencesQuery(
+                id=request_id,
+                activity_key=activity_key,
+                path=document_path,
+                position=parameters.position.to_pyre_position(),
+            )
+        )
+
+    async def process_shutdown_request(self, request_id: Union[int, str, None]) -> int:
+        await lsp.write_json_rpc_ignore_connection_error(
+            self.output_channel,
+            json_rpc.SuccessResponse(id=request_id, activity_key=None, result=None),
+        )
+        return await self.wait_for_exit()
+
+    async def _run(self) -> int:
+        while True:
+            request = await read_lsp_request(self.input_channel, self.output_channel)
+            LOG.debug(f"Received LSP request: {log.truncate(str(request), 400)}")
+
+            try:
+                if request.method == "exit":
+                    return commands.ExitCode.FAILURE
+                elif request.method == "shutdown":
+                    return await self.process_shutdown_request(request.id)
+                elif request.method == "textDocument/definition":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for definition method"
+                        )
+                    await self.process_definition_request(
+                        lsp.DefinitionTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
+                        request.activity_key,
+                    )
+                elif request.method == "textDocument/didOpen":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for didOpen method"
+                        )
+                    await self.process_open_request(
+                        lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.activity_key,
+                    )
+                elif request.method == "textDocument/didChange":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for didChange method"
+                        )
+                    await self.process_did_change_request(
+                        lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        )
+                    )
+                elif request.method == "textDocument/didClose":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for didClose method"
+                        )
+                    await self.process_close_request(
+                        lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        )
+                    )
+                elif request.method == "textDocument/didSave":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for didSave method"
+                        )
+                    await self.process_did_save_request(
+                        lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.activity_key,
+                    )
+                elif request.method == "textDocument/hover":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for hover method"
+                        )
+                    await self.process_hover_request(
+                        lsp.HoverTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
+                        request.activity_key,
+                    )
+                elif request.method == "textDocument/typeCoverage":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for typeCoverage method"
+                        )
+                    await self.process_type_coverage_request(
+                        lsp.TypeCoverageTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
+                        request.activity_key,
+                    )
+                elif request.method == "textDocument/documentSymbol":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Mising Parameters for document symbols"
+                        )
+                    await self.process_document_symbols_request(
+                        lsp.DocumentSymbolsTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
+                        request.activity_key,
+                    )
+                elif request.method == "textDocument/references":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for find all references"
+                        )
+                    await self.process_find_all_references_request(
+                        lsp.ReferencesTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
+                        request.activity_key,
+                    )
+                elif request.id is not None:
+                    raise lsp.RequestCancelledError("Request not supported yet")
+            except json_rpc.JSONRPCException as json_rpc_error:
+                LOG.debug(
+                    f"Exception occurred while processing request: {json_rpc_error}"
+                )
+                await lsp.write_json_rpc_ignore_connection_error(
+                    self.output_channel,
+                    json_rpc.ErrorResponse(
+                        id=request.id,
+                        activity_key=request.activity_key,
+                        code=json_rpc_error.error_code(),
+                        message=str(json_rpc_error),
+                    ),
+                )
+
+    async def run(self) -> int:
+        try:
+            await self.pyre_manager.ensure_task_running()
+            await self.pyre_query_manager.ensure_task_running()
+            return await self._run()
+        except lsp.ReadChannelClosedError:
+            # This error can happen when the connection gets closed unilaterally
+            # from the language client, which causes issue when we try to access the
+            # input channel. This usually signals that the language client has exited,
+            # which implies that the language server should do that as well.
+            LOG.info("Connection closed by LSP client.")
+            return commands.ExitCode.SUCCESS
+        finally:
+            await self.pyre_manager.ensure_task_stop()
+            await self.pyre_query_manager.ensure_task_stop()
 
 
 async def run_persistent(
