@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from __future__ import annotations
+
 import asyncio
 import dataclasses
 import enum
@@ -95,7 +97,7 @@ def _log_lsp_event(
             )
 
 
-ConfigurationReader = Callable[[], configuration_module.Configuration]
+PyreServerStartOptionsReader = Callable[[], "PyreServerStartOptions"]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -109,12 +111,11 @@ class PyreServerStartOptions:
     enabled_telemetry_event: bool = False
 
     @staticmethod
-    def read_from(
-        command_argument: command_arguments.StartArguments,
-        load_configuration: ConfigurationReader,
+    def create(
+        start_command_argument: command_arguments.StartArguments,
+        configuration: frontend_configuration.Base,
         enabled_telemetry_event: bool,
-    ) -> "PyreServerStartOptions":
-        configuration = frontend_configuration.OpenSource(load_configuration())
+    ) -> PyreServerStartOptions:
         binary_location = configuration.get_binary_location(download_if_needed=True)
         if binary_location is None:
             raise configuration_module.InvalidConfiguration(
@@ -123,7 +124,7 @@ class PyreServerStartOptions:
 
         start_arguments = start.create_server_arguments(
             configuration,
-            command_arguments,
+            start_command_argument,
         )
         if start_arguments.watchman_root is None:
             raise commands.ClientException(
@@ -141,8 +142,25 @@ class PyreServerStartOptions:
             enabled_telemetry_event=enabled_telemetry_event,
         )
 
+    @staticmethod
+    def create_reader(
+        command_argument: command_arguments.CommandArguments,
+        start_command_argument: command_arguments.StartArguments,
+        base_directory: Path,
+        enabled_telemetry_event: bool,
+    ) -> PyreServerStartOptionsReader:
+        def read() -> PyreServerStartOptions:
+            return PyreServerStartOptions.create(
+                start_command_argument=start_command_argument,
+                configuration=frontend_configuration.OpenSource(
+                    configuration_module.create_configuration(
+                        command_argument, base_directory
+                    )
+                ),
+                enabled_telemetry_event=enabled_telemetry_event,
+            )
 
-PyreServerStartOptionsReader = Callable[[], PyreServerStartOptions]
+        return read
 
 
 def read_server_start_options(
@@ -2071,16 +2089,9 @@ async def run_persistent(
 
 
 def run(
-    command_argument: command_arguments.StartArguments,
-    load_configuration: ConfigurationReader,
+    read_server_start_options: PyreServerStartOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
-    enable_telemetry_event: bool = False,
 ) -> int:
-    def read_server_start_options() -> PyreServerStartOptions:
-        return PyreServerStartOptions.read_from(
-            command_argument, load_configuration, enable_telemetry_event
-        )
-
     command_timer = timer.Timer()
     error_message: Optional[str] = None
     try:

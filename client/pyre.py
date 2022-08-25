@@ -794,13 +794,6 @@ def persistent(context: click.Context) -> int:
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     base_directory: Path = Path(".")
-
-    def load_configuration() -> configuration_module.Configuration:
-        return configuration_module.create_configuration(
-            command_argument, base_directory
-        )
-
-    configuration = load_configuration()
     configuration = configuration_module.create_configuration(
         command_argument, base_directory
     )
@@ -808,27 +801,31 @@ def persistent(context: click.Context) -> int:
         configuration.log_directory,
     )
     return commands.persistent.run(
-        command_arguments.StartArguments(
-            changed_files_path=command_argument.changed_files_path,
-            debug=command_argument.debug,
-            enable_memory_profiling=command_argument.enable_memory_profiling,
-            enable_profiling=command_argument.enable_profiling,
-            load_initial_state_from=command_argument.load_initial_state_from,
-            log_identifier=command_argument.log_identifier,
-            logging_sections=command_argument.logging_sections,
-            no_saved_state=command_argument.no_saved_state,
-            no_watchman=False,
-            noninteractive=command_argument.noninteractive,
-            save_initial_state_to=command_argument.save_initial_state_to,
-            saved_state_project=command_argument.saved_state_project,
-            sequential=command_argument.sequential,
-            show_error_traces=command_argument.show_error_traces,
-            store_type_check_resolution=False,
-            terminal=False,
-            wait_on_initialization=True,
+        read_server_start_options=commands.persistent.PyreServerStartOptions.create_reader(
+            command_argument=command_argument,
+            start_command_argument=command_arguments.StartArguments(
+                changed_files_path=command_argument.changed_files_path,
+                debug=command_argument.debug,
+                enable_memory_profiling=command_argument.enable_memory_profiling,
+                enable_profiling=command_argument.enable_profiling,
+                load_initial_state_from=command_argument.load_initial_state_from,
+                log_identifier=command_argument.log_identifier,
+                logging_sections=command_argument.logging_sections,
+                no_saved_state=command_argument.no_saved_state,
+                no_watchman=False,
+                noninteractive=command_argument.noninteractive,
+                save_initial_state_to=command_argument.save_initial_state_to,
+                saved_state_project=command_argument.saved_state_project,
+                sequential=command_argument.sequential,
+                show_error_traces=command_argument.show_error_traces,
+                store_type_check_resolution=False,
+                terminal=False,
+                wait_on_initialization=True,
+            ),
+            base_directory=base_directory,
+            enabled_telemetry_event=False,
         ),
-        load_configuration,
-        commands.backend_arguments.RemoteLogging.create(
+        remote_logging=commands.backend_arguments.RemoteLogging.create(
             configuration.logger, command_argument.log_identifier
         ),
     )
