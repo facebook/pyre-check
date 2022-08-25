@@ -44,6 +44,22 @@ module Client = struct
     let%lwt actual = send_request client request in
     assert_response_equal client ~expected ~actual;
     Lwt.return_unit
+
+
+  let assert_error_response ~request ~kind client =
+    let%lwt actual = send_request client request in
+    match Yojson.Safe.from_string actual with
+    | `List [`String "Error"; `List (`String actual_kind :: _)] ->
+        if String.equal kind actual_kind then
+          Lwt.return_unit
+        else
+          let message = Format.sprintf "Expected error kind `%s` but got: `%s`" kind actual_kind in
+          assert_failure message
+    | json ->
+        let message =
+          Format.sprintf "Expected error response but got: `%s`" (Yojson.Safe.to_string json)
+        in
+        assert_failure message
 end
 
 type t = {

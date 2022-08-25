@@ -6,6 +6,7 @@
  *)
 
 open Base
+open Analysis
 
 module ServerInternal = struct
   type t = {
@@ -14,8 +15,80 @@ module ServerInternal = struct
   }
 end
 
-let handle_request ~server:_ = function
+let default_lookup_artifact source_path =
+  (* TODO: Add support for Buck path translation. *)
+  [SourcePath.raw source_path |> ArtifactPath.create]
+
+
+let default_lookup_source artifact_path =
+  (* TODO: Add support for Buck path translation. *)
+  Some (ArtifactPath.raw artifact_path |> SourcePath.create)
+
+
+let get_overlay ~environment overlay_id =
+  match overlay_id with
+  | None -> Result.Ok (OverlaidEnvironment.root environment)
+  | Some overlay_id -> (
+      match OverlaidEnvironment.overlay environment overlay_id with
+      | Some overlay -> Result.Ok overlay
+      | None -> Result.Error (Response.ErrorKind.OverlayNotFound { overlay_id }))
+
+
+let get_modules ~module_tracker module_ =
+  let modules =
+    match module_ with
+    | Request.Module.OfName name ->
+        let module_name = Ast.Reference.create name in
+        if ModuleTracker.ReadOnly.is_module_tracked module_tracker module_name then
+          [module_name]
+        else
+          []
+    | Request.Module.OfPath path ->
+        let source_path = PyrePath.create_absolute path |> SourcePath.create in
+        Server.PathLookup.modules_of_source_path
+          source_path
+          ~module_tracker
+          ~lookup_artifact:default_lookup_artifact
+  in
+  match modules with
+  | [] -> Result.Error (Response.ErrorKind.ModuleNotTracked { module_ })
+  | _ -> Result.Ok modules
+
+
+let get_type_errors_in_overlay ~overlay module_ =
+  let open Result in
+  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
+  get_modules ~module_tracker module_
+  >>| fun modules ->
+  ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers overlay modules
+  |> List.sort ~compare:AnalysisError.compare
+  |> List.map
+       ~f:
+         (Server.RequestHandler.instantiate_error
+            ~lookup_source:default_lookup_source
+            ~show_error_traces:false
+            ~module_tracker)
+
+
+let handle_get_type_errors ~module_ ~overlay_id { State.environment } =
+  let open Result in
+  get_overlay ~environment overlay_id
+  >>= fun overlay ->
+  get_type_errors_in_overlay ~overlay module_ >>| fun type_errors -> Response.TypeErrors type_errors
+
+
+let response_from_result = function
+  | Result.Ok response -> response
+  | Result.Error kind -> Response.Error kind
+
+
+let handle_request ~server:{ ServerInternal.properties = _; state } = function
   | Request.Stop -> Server.Stop.stop_waiting_server ()
+  | Request.GetTypeErrors { module_; overlay_id } ->
+      let f state =
+        handle_get_type_errors ~module_ ~overlay_id state |> response_from_result |> Lwt.return
+      in
+      Server.ExclusiveLock.read state ~f
 
 
 let handle_raw_request ~server raw_request =

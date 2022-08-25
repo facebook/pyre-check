@@ -8,6 +8,7 @@
 open Core
 open OUnit2
 module Request = CodeNavigationServer.Testing.Request
+module Response = CodeNavigationServer.Testing.Response
 
 let test_no_op_server context =
   ScratchProject.setup ~context ~include_typeshed_stubs:false []
@@ -41,11 +42,83 @@ let test_stop_request context =
   |> ScratchProject.test_server_with ~f:test_stop_request
 
 
+let test_get_type_errors_request context =
+  let test_get_type_errors_request client =
+    let root = ScratchProject.Client.get_source_root client in
+    let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+    let expected_error =
+      Analysis.AnalysisError.Instantiated.of_yojson
+        (`Assoc
+          [
+            "line", `Int 1;
+            "column", `Int 0;
+            "stop_line", `Int 1;
+            "stop_column", `Int 11;
+            "path", `String (PyrePath.absolute test_path);
+            "code", `Int (-1);
+            "name", `String "Revealed type";
+            ( "description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            ( "long_description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            ( "concise_description",
+              `String
+                "Revealed type [-1]: Revealed type for `42` is `typing_extensions.Literal[42]`." );
+            "define", `String "test.$toplevel";
+          ])
+      |> Result.ok_or_failwith
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:Request.(GetTypeErrors { overlay_id = None; module_ = Module.OfName "test" })
+        ~expected:(Response.TypeErrors [expected_error])
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            GetTypeErrors
+              { overlay_id = None; module_ = Module.OfPath (PyrePath.absolute test_path) })
+        ~expected:(Response.TypeErrors [expected_error])
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(GetTypeErrors { overlay_id = None; module_ = Module.OfName "doesnotexist" })
+        ~kind:"ModuleNotTracked"
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(GetTypeErrors { overlay_id = None; module_ = Module.OfPath "/doesnotexist.py" })
+        ~kind:"ModuleNotTracked"
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            GetTypeErrors { overlay_id = Some "doesnotexist"; module_ = Module.OfName "test" })
+        ~kind:"OverlayNotFound"
+    in
+    Lwt.return_unit
+  in
+  ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
+  |> ScratchProject.test_server_with ~f:test_get_type_errors_request
+
+
 let () =
   "basic_test"
   >::: [
          "no_op_server" >:: OUnitLwt.lwt_wrapper test_no_op_server;
          "invalid_request" >:: OUnitLwt.lwt_wrapper test_invalid_request;
          "stop_request" >:: OUnitLwt.lwt_wrapper test_stop_request;
+         "get_type_errors_request" >:: OUnitLwt.lwt_wrapper test_get_type_errors_request;
        ]
   |> Test.run

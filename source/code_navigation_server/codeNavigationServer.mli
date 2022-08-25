@@ -71,11 +71,37 @@ end
     code! *)
 module Testing : sig
   module Request : sig
-    (** A type representing requests sent from the clients to the server. *)
+    module Module : sig
+      (** A helper type that help specifying a Python module. *)
+      type t =
+        | OfPath of string
+            (** Specify a module at the given file path. The path is expected to be absolute.
+                Symlinks will not be followed.*)
+        | OfName of string  (** Specify a module with a given dot-qualified name directly. *)
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
+    (** A type representing requests sent from the clients to the server.
+
+        The code navigation server supports a primitive form of isolation between different clients.
+        Many kinds of requests that query server state can optionally specify an [overlay_id], and
+        the server will attempt to guarantee that type checking states for different [overlay_id]s
+        will not interfere with each other. *)
     type t =
       | Stop
           (** A request that asks the server to stop. The server will shut itself down immediately
               when this request gets processed. No response will be sent back to the client. *)
+      | GetTypeErrors of {
+          module_: Module.t;
+          overlay_id: string option;
+        }
+          (** A request that asks the server to type check a given module. The server will send back
+              a {!Response.TypeErrors} response when the type checking completes.
+
+              If the provided module is not covered by the code navigation server, the server will
+              respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
+              the overlay with the given ID, it will respond with a
+              {!Response.ErrorKind.OverlayNotFound} error. *)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 
@@ -85,6 +111,12 @@ module Testing : sig
       type t =
         | InvalidRequest of string
             (** This error occurs when the client has sent a request which the server cannot parse. *)
+        | ModuleNotTracked of { module_: Request.Module.t }
+            (** This error occurs when the client has requested info on a module which the server
+                cannot find. *)
+        | OverlayNotFound of { overlay_id: string }
+            (** This error occurs when the client has requested info from an overlay whose id does
+                not exist within the server. *)
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
@@ -92,6 +124,7 @@ module Testing : sig
     type t =
       | Error of ErrorKind.t
           (** This response will be sent when the server runs into errors when processing a request. *)
+      | TypeErrors of Analysis.AnalysisError.Instantiated.t list
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 end

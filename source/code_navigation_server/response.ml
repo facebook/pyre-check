@@ -8,9 +8,16 @@
 open Base
 
 module ErrorKind = struct
-  type t = InvalidRequest of string [@@deriving sexp, compare, yojson { strict = false }]
+  type t =
+    | InvalidRequest of string
+    | ModuleNotTracked of { module_: Request.Module.t [@key "module"] }
+    | OverlayNotFound of { overlay_id: string }
+  [@@deriving sexp, compare, yojson { strict = false }]
 end
 
-type t = Error of ErrorKind.t [@@deriving sexp, compare, yojson { strict = false }]
+type t =
+  | Error of ErrorKind.t
+  | TypeErrors of Analysis.AnalysisError.Instantiated.t list
+[@@deriving sexp, compare, yojson { strict = false }]
 
 let to_string response = to_yojson response |> Yojson.Safe.to_string

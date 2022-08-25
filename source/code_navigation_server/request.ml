@@ -7,7 +7,23 @@
 
 open Base
 
-type t = Stop [@@deriving sexp, compare, yojson { strict = false }]
+module Module = struct
+  (** A helper type that help specifying a Python module. *)
+  type t =
+    | OfPath of string
+        (** Specify a module at the given file path. The path is expected to be absolute. Symlinks
+            will not be followed.*)
+    | OfName of string  (** Specify a module with a given dot-qualified name directly. *)
+  [@@deriving sexp, compare, yojson { strict = false }]
+end
+
+type t =
+  | Stop
+  | GetTypeErrors of {
+      module_: Module.t; [@key "module"]
+      overlay_id: string option;
+    }
+[@@deriving sexp, compare, yojson { strict = false }]
 
 let of_string message =
   try
