@@ -7,11 +7,18 @@
 
 open Base
 
-let handle_request = function
+module ServerInternal = struct
+  type t = {
+    properties: Server.ServerProperties.t;
+    state: State.t Server.ExclusiveLock.t;
+  }
+end
+
+let handle_request ~server:_ = function
   | Request.Stop -> Server.Stop.stop_waiting_server ()
 
 
-let handle_raw_request raw_request =
+let handle_raw_request ~server raw_request =
   match Request.of_string raw_request with
   | Result.Error message -> Lwt.return (Response.Error message)
-  | Result.Ok request -> handle_request request
+  | Result.Ok request -> handle_request ~server request

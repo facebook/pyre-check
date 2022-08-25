@@ -136,7 +136,7 @@ let start_server_and_wait code_navigation_configuration =
   >>= fun start_options ->
   CodeNavigationServer.Start.start_server
     start_options
-    ~on_started:(fun _ ->
+    ~on_started:(fun _ _ ->
       let wait_forever, _ = Lwt.wait () in
       wait_forever)
     ~on_exception:(function

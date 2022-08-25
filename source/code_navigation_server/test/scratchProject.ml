@@ -14,9 +14,12 @@ module Response = CodeNavigationServer.Testing.Response
 module Client = struct
   type t = {
     context: test_ctxt;
+    server_state: State.t Server.ExclusiveLock.t;
     input_channel: Lwt_io.input_channel;
     output_channel: Lwt_io.output_channel;
   }
+
+  let get_server_state { server_state; _ } = server_state
 
   let send_raw_request { input_channel; output_channel; _ } raw_request =
     let%lwt () = Lwt_io.write_line output_channel raw_request in
@@ -135,9 +138,9 @@ let test_server_with ~f { context; start_options } =
     ~on_exception:(function
       | Server.Start.ServerStopped -> Lwt.return_unit
       | exn -> raise exn)
-    ~on_started:(fun { Server.ServerProperties.socket_path; _ } ->
+    ~on_started:(fun { Server.ServerProperties.socket_path; _ } server_state ->
       let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
       let test_client (input_channel, output_channel) =
-        f { Client.context; input_channel; output_channel }
+        f { Client.context; server_state; input_channel; output_channel }
       in
       Lwt_io.with_connection socket_address test_client)

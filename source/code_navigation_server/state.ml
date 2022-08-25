@@ -5,7 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module Start = Start
-module StartOptions = StartOptions
-module State = State
-module Testing = Testing
+type t = { environment: Analysis.OverlaidEnvironment.t }

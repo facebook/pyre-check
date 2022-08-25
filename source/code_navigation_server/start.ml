@@ -7,7 +7,7 @@
 
 open Core
 
-let handle_connection ~server_properties:_ _client_address (input_channel, output_channel) =
+let handle_connection ~server _client_address (input_channel, output_channel) =
   Log.info "Connection established";
   let rec handle_line () =
     match%lwt Lwt_io.read_line_opt input_channel with
@@ -16,7 +16,7 @@ let handle_connection ~server_properties:_ _client_address (input_channel, outpu
         Lwt.return_unit
     | Some raw_request ->
         Log.info "Processing request `%s`" raw_request;
-        let%lwt response = RequestHandler.handle_raw_request raw_request in
+        let%lwt response = RequestHandler.handle_raw_request ~server raw_request in
         let raw_response = Response.to_string response in
         Log.info "Request processed. Response: `%s`" raw_response;
         let on_io_exception exn =
@@ -35,15 +35,28 @@ let handle_connection ~server_properties:_ _client_address (input_channel, outpu
   Lwt.catch handle_line on_uncaught_exception
 
 
+let initialize_shared_memory environment_controls =
+  Analysis.EnvironmentControls.configuration environment_controls
+  |> Memory.get_heap_handle
+  |> ignore
+
+
+let initialize_server_state environment_controls =
+  initialize_shared_memory environment_controls;
+  let environment =
+    Analysis.ErrorsEnvironment.create environment_controls |> Analysis.OverlaidEnvironment.create
+  in
+  { State.environment }
+
+
 let with_server ~on_started { StartOptions.environment_controls; socket_path; critical_files; _ } =
   let configuration = Analysis.EnvironmentControls.configuration environment_controls in
-  let server_properties =
-    Server.ServerProperties.create ~socket_path ~critical_files ~configuration ()
-  in
+  let properties = Server.ServerProperties.create ~socket_path ~critical_files ~configuration () in
+  let state = Server.ExclusiveLock.create (initialize_server_state environment_controls) in
   let after_server_starts () =
     Log.info "Code navigation server has started listening on socket `%a`" PyrePath.pp socket_path;
     let waiters =
-      let server_waiter () = on_started server_properties in
+      let server_waiter () = on_started properties state in
       let signal_waiters =
         [
           (* We rely on SIGINT for normal server shutdown. *)
@@ -65,7 +78,8 @@ let with_server ~on_started { StartOptions.environment_controls; socket_path; cr
   in
   LwtSocketServer.SocketAddress.create_from_path socket_path
   |> LwtSocketServer.with_server
-       ~handle_connection:(handle_connection ~server_properties)
+       ~handle_connection:
+         (handle_connection ~server:{ RequestHandler.ServerInternal.properties; state })
        ~f:(fun () -> Lwt.finalize after_server_starts after_server_stops)
 
 

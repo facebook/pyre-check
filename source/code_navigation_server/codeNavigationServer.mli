@@ -35,6 +35,14 @@ module StartOptions : sig
   }
 end
 
+(** {1 Server State}*)
+
+(** This module contains APIs that are relevant to the internal state of the code navigation server. *)
+module State : sig
+  (** A type that represent the internal state of the server. *)
+  type t
+end
+
 (** This module contains APIs that are relevant to start a code navigation server. *)
 module Start : sig
   (** [start_server ~on_started ~on_exception start_options] starts a code navigation server, whose
@@ -50,7 +58,7 @@ module Start : sig
       fatal signals like [SIGTERM], [SIGSEGV], etc. will result in a
       {!Server.Start.ServerInterrupted} exception instead.*)
   val start_server
-    :  on_started:(Server.ServerProperties.t -> 'a Lwt.t) ->
+    :  on_started:(Server.ServerProperties.t -> State.t Server.ExclusiveLock.t -> 'a Lwt.t) ->
     on_exception:(exn -> 'a Lwt.t) ->
     StartOptions.t ->
     'a Lwt.t
