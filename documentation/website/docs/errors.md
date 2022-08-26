@@ -1123,18 +1123,18 @@ def my_decorator_factory(message: str) -> MyCallableProtocol:
 If you are using a `ParamSpec` in your decorator, use the following:
 
 ```python
-from typing import Awaitable, Callable, Protocol, TypeVar
+from typing import Any, Callable, Coroutine, Protocol, TypeVar
 from pyre_extensions import ParameterSpecification
+import asyncio
 
 R = TypeVar("R")
 P = ParameterSpecification("P")
 
 class MyCallableProtocol(Protocol):
-    def __call__(self, f: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]: ...
+    def __call__(self, f: Callable[P, Coroutine[object, object, R]]) -> Callable[P, Coroutine[object, object, R]]: ...
 
 def my_decorator_factory(message: str) -> MyCallableProtocol:
-
-    def _decorator(f: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+    def _decorator(f: Callable[P, Coroutine[object, object, R]]) -> Callable[P, Coroutine[object, object, R]]:
 
         async def _inner(*args: P.args, **kwargs: P.kwargs) -> R:
             print(message)
@@ -1143,6 +1143,12 @@ def my_decorator_factory(message: str) -> MyCallableProtocol:
         return _inner
 
     return _decorator
+
+@my_decorator_factory("hello!")
+async def foo() -> int:
+    return 1
+
+asyncio.run(foo())
 ```
 
 Note: Support for such callables is currently **experimental** and varies from one typechecker to another. This behavior may change in the future.
