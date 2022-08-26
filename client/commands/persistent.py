@@ -44,7 +44,6 @@ from . import (
     frontend_configuration,
     incremental,
     language_server_protocol as lsp,
-    location_lookup,
     server_event,
     start,
     statistics,
@@ -401,11 +400,6 @@ async def _read_server_response(
     return await server_input_channel.read_until(separator="\n")
 
 
-TypeInfo = str
-
-LocationTypeLookup = location_lookup.LocationLookup[TypeInfo]
-
-
 @dataclasses.dataclass(frozen=True)
 class TypeCoverageQuery:
     id: Union[int, str, None]
@@ -496,24 +490,6 @@ class LocationInfo(json_mixins.CamlCaseAndExcludeJsonMixin):
 class LocationAnnotation(json_mixins.CamlCaseAndExcludeJsonMixin):
     location: LocationInfo
     annotation: str
-
-
-@dataclasses.dataclass(frozen=True)
-class PathTypeInfo(json_mixins.CamlCaseAndExcludeJsonMixin):
-    path: str
-    types: List[LocationAnnotation]
-
-    def get_location_type_lookup(self) -> LocationTypeLookup:
-        return LocationTypeLookup(
-            [
-                (
-                    location_annotation.location.start.to_position(),
-                    location_annotation.location.stop.to_position(),
-                    location_annotation.annotation,
-                )
-                for location_annotation in self.types
-            ]
-        )
 
 
 async def _send_request(

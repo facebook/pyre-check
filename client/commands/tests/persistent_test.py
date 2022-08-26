@@ -43,7 +43,6 @@ from ..persistent import (
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
-    LocationTypeLookup,
     path_to_coverage_response,
     PyreDaemonLaunchAndSubscribeHandler,
     PyreDaemonShutdown,
