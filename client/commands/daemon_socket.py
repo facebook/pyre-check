@@ -22,6 +22,16 @@ def get_md5(identifier_string: str) -> str:
     return hashlib.md5(identifier_bytes).hexdigest()
 
 
+def get_project_identifier(
+    global_root: Path,
+    relative_local_root: Optional[str],
+) -> str:
+    project_identifier = str(global_root)
+    if relative_local_root is not None:
+        project_identifier = project_identifier + "//" + relative_local_root
+    return project_identifier
+
+
 def get_socket_path(
     socket_root: Path,
     global_root: Path,
@@ -32,10 +42,12 @@ def get_socket_path(
     `log_directory` because of the ~100 character length limit on Unix socket
     file paths.
     """
-    project_identifier = str(global_root)
-    if relative_local_root is not None:
-        project_identifier = project_identifier + "//" + relative_local_root
-    project_hash = get_md5(project_identifier)
+    project_hash = get_md5(
+        get_project_identifier(
+            global_root=global_root,
+            relative_local_root=relative_local_root,
+        )
+    )
     return socket_root / f"pyre_server_{project_hash}.sock"
 
 

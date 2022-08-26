@@ -5,10 +5,17 @@
 
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 import testslide
 
-from ..daemon_socket import find_socket_files, get_md5, get_socket_path, MD5_LENGTH
+from ..daemon_socket import (
+    find_socket_files,
+    get_md5,
+    get_project_identifier,
+    get_socket_path,
+    MD5_LENGTH,
+)
 
 
 class SocketTest(testslide.TestCase):
@@ -31,12 +38,24 @@ class SocketTest(testslide.TestCase):
         md5_hash = get_md5((str(project_root) + "//" + str(relative_local_root)))
         self.assertTrue(len(md5_hash) == MD5_LENGTH)
 
-    def test_get_socket_path(self) -> None:
-        socket_root = Path("socket_root")
-        # With local directory
+    def test_get_project_identifier(self) -> None:
         project_root = Path("project_root")
-        relative_local_root = "my/project"
-        md5_hash = get_md5((str(project_root) + "//" + str(relative_local_root)))
+        self.assertEqual(
+            get_project_identifier(project_root, relative_local_root=None),
+            str(project_root),
+        )
+        self.assertEqual(
+            get_project_identifier(project_root, relative_local_root="relative"),
+            str(project_root) + "//relative",
+        )
+
+    def _assert_socket_path(
+        self,
+        socket_root: Path,
+        project_root: Path,
+        relative_local_root: Optional[str],
+    ) -> None:
+        md5_hash = get_md5(get_project_identifier(project_root, relative_local_root))
         self.assertEqual(
             get_socket_path(
                 socket_root,
@@ -45,17 +64,20 @@ class SocketTest(testslide.TestCase):
             ),
             socket_root / f"pyre_server_{md5_hash}.sock",
         )
+
+    def test_get_socket_path(self) -> None:
+        socket_root = Path("socket_root")
+        # With local directory
+        self._assert_socket_path(
+            socket_root=socket_root,
+            project_root=Path("project_root"),
+            relative_local_root="my/project",
+        )
         # No local directory
-        project_root = Path("project_root")
-        relative_local_root = None
-        md5_hash = get_md5(str(project_root))
-        self.assertEqual(
-            get_socket_path(
-                socket_root,
-                project_root,
-                relative_local_root,
-            ),
-            socket_root / f"pyre_server_{md5_hash}.sock",
+        self._assert_socket_path(
+            socket_root=socket_root,
+            project_root=Path("project_root"),
+            relative_local_root=None,
         )
 
     def test_find_socket_files(self) -> None:
