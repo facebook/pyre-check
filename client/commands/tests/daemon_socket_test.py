@@ -32,33 +32,31 @@ class SocketTest(testslide.TestCase):
         self.assertTrue(len(md5_hash) == MD5_LENGTH)
 
     def test_get_socket_path(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            # With local directory
-            root_path = Path(root)
-            project_root = Path("project_root")
-            relative_local_root = "my/project"
-            md5_hash = get_md5((str(project_root) + "//" + str(relative_local_root)))
-            self.assertEqual(
-                get_socket_path(
-                    root_path,
-                    project_root,
-                    relative_local_root,
-                ),
-                root_path / f"pyre_server_{md5_hash}.sock",
-            )
-            # No local directory
-            root_path = Path(root)
-            project_root = Path("project_root")
-            relative_local_root = None
-            md5_hash = get_md5(str(project_root))
-            self.assertEqual(
-                get_socket_path(
-                    root_path,
-                    project_root,
-                    relative_local_root,
-                ),
-                root_path / f"pyre_server_{md5_hash}.sock",
-            )
+        socket_root = Path("socket_root")
+        # With local directory
+        project_root = Path("project_root")
+        relative_local_root = "my/project"
+        md5_hash = get_md5((str(project_root) + "//" + str(relative_local_root)))
+        self.assertEqual(
+            get_socket_path(
+                socket_root,
+                project_root,
+                relative_local_root,
+            ),
+            socket_root / f"pyre_server_{md5_hash}.sock",
+        )
+        # No local directory
+        project_root = Path("project_root")
+        relative_local_root = None
+        md5_hash = get_md5(str(project_root))
+        self.assertEqual(
+            get_socket_path(
+                socket_root,
+                project_root,
+                relative_local_root,
+            ),
+            socket_root / f"pyre_server_{md5_hash}.sock",
+        )
 
     def test_find_socket_files(self) -> None:
         with tempfile.TemporaryDirectory(dir="/tmp") as socket_root:
