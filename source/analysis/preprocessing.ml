@@ -4082,6 +4082,122 @@ let expand_pytorch_register_buffer source =
   TransformConstructor.transform () source |> TransformConstructor.source
 
 
+(* Inline the KW_ONLY pseudo-field into field(kw_only) for all subsequent attributes. *)
+let add_dataclass_keyword_only_specifiers source =
+  let is_dataclass_decorator expression =
+    match Decorator.from_expression expression with
+    | Some { Decorator.name = { Node.value = name; _ }; _ } ->
+        Reference.equal name (Reference.create_from_list ["dataclasses"; "dataclass"])
+    | None -> false
+  in
+  let is_keyword_only_pseudo_field statement =
+    match statement with
+    | {
+     Node.value =
+       Statement.Assign
+         {
+           target = _;
+           annotation =
+             Some
+               {
+                 Node.value =
+                   Expression.Name
+                     (Name.Attribute
+                       {
+                         base = { Node.location = _; value = Name (Name.Identifier "dataclasses") };
+                         attribute = "KW_ONLY";
+                         special = false;
+                       });
+                 _;
+               };
+           value = _;
+         };
+     _;
+    } ->
+        true
+    | _ -> false
+  in
+  let is_not_keyword_only_pseudo_field statement = not (is_keyword_only_pseudo_field statement) in
+  let set_keyword_only_field statement =
+    match statement with
+    | { Node.value = Statement.Assign { target; annotation; value }; location } ->
+        {
+          Node.value =
+            Statement.Assign
+              {
+                target;
+                annotation;
+                value =
+                  Expression.Call
+                    {
+                      callee =
+                        Expression.Name
+                          (Name.Attribute
+                             {
+                               base =
+                                 Expression.Name (Name.Identifier "dataclasses")
+                                 |> Node.create_with_default_location;
+                               attribute = "field";
+                               special = false;
+                             })
+                        |> Node.create_with_default_location;
+                      arguments =
+                        [
+                          {
+                            Call.Argument.name =
+                              Some ("$parameter$kw_only" |> Node.create_with_default_location);
+                            value =
+                              Expression.Constant Constant.True |> Node.create_with_default_location;
+                          };
+                          {
+                            Call.Argument.name =
+                              Some ("$parameter$default" |> Node.create_with_default_location);
+                            value;
+                          };
+                        ];
+                    }
+                  |> Node.create_with_default_location;
+              };
+          location;
+        }
+    | statement -> statement
+  in
+  let set_keyword_only_after_pseudo_field body =
+    let before, after = List.split_while body ~f:is_not_keyword_only_pseudo_field in
+    let after = List.filter after ~f:is_not_keyword_only_pseudo_field in
+    before @ List.map after ~f:set_keyword_only_field
+  in
+
+  let module TransformDataclassKeywordOnlyAttributes = Transform.MakeStatementTransformer (struct
+    type t = unit
+
+    let statement _ ({ Node.value; location } as statement) =
+      match value with
+      | Statement.Class { name; base_arguments; body; decorators; top_level_unbound_names }
+        when List.exists decorators ~f:is_dataclass_decorator
+             && List.exists body ~f:is_keyword_only_pseudo_field ->
+          ( (),
+            [
+              {
+                Node.value =
+                  Statement.Class
+                    {
+                      name;
+                      base_arguments;
+                      body = set_keyword_only_after_pseudo_field body;
+                      decorators;
+                      top_level_unbound_names;
+                    };
+                location;
+              };
+            ] )
+      | _ -> (), [statement]
+  end)
+  in
+  TransformDataclassKeywordOnlyAttributes.transform () source
+  |> TransformDataclassKeywordOnlyAttributes.source
+
+
 module SelfType = struct
   let self_variable_name class_reference =
     Format.asprintf "_Self_%s__" (Reference.as_list class_reference |> String.concat ~sep:"_")
@@ -4260,6 +4376,7 @@ let preprocess_phase1 source =
   |> expand_named_tuples
   |> inline_six_metaclass
   |> expand_pytorch_register_buffer
+  |> add_dataclass_keyword_only_specifiers
   |> SelfType.expand_self_type
   |> populate_nesting_defines
   |> populate_captures

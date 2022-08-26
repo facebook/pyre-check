@@ -1513,6 +1513,49 @@ let test_keyword_only_fields context =
   ()
 
 
+let test_preprocessing context =
+  let assert_equivalent_attributes = assert_equivalent_attributes ~context in
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field, KW_ONLY
+      @dataclass(repr=False, eq=False, match_args=False)
+      class A:
+        x: int = field(kw_only=True)
+        _: KW_ONLY
+        y: int
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: int = field(kw_only=True)
+        y: int = field(kw_only=True)
+        def __init__(self, *, x: int, y: int = ...) -> None:
+          self.x = x
+          self.y = y
+    |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass, field, KW_ONLY, InitVar
+      @dataclass(repr=False, eq=False, match_args=False)
+      class A:
+        x: InitVar[int] = field(kw_only=True)
+        _: KW_ONLY
+        y: InitVar[int]
+    |}
+    ~class_name:"A"
+    {|
+      class A:
+        x: dataclasses.InitVar[int] = field(kw_only=True)
+        y: dataclasses.InitVar[int] = field(kw_only=True)
+        def __init__(self, *, x: int, y: int = ...) -> None:
+          self.x = x
+          self.y = y
+    |};
+  ()
+
+
 let () =
   "dataClass"
   >::: [
@@ -1521,5 +1564,6 @@ let () =
          "dataclass_transform" >:: test_dataclass_transform;
          "keyword_only" >:: test_keyword_only;
          "keyword_only_fields" >:: test_keyword_only_fields;
+         "preprocessing" >:: test_preprocessing;
        ]
   |> Test.run

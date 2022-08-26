@@ -6598,6 +6598,122 @@ let test_expand_self_type _ =
   ()
 
 
+let test_inline_keyword_only_attribute _ =
+  let assert_expand ?(handle = "test.py") source expected =
+    let expected = parse ~handle expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source
+      |> Preprocessing.qualify
+      |> Preprocessing.add_dataclass_keyword_only_specifiers
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class A:
+      _: KW_ONLY
+      x: int
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class A:
+      x: int = dataclasses.field(kw_only=True, default=...)
+  |};
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class A:
+      _: KW_ONLY
+      x: int = 5
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class A:
+      x: int = dataclasses.field(kw_only=True, default=5)
+  |};
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class A:
+      z: int
+      _: KW_ONLY
+      x: int
+      y: int
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class A:
+      z: int
+      x: int = dataclasses.field(kw_only=True, default=...)
+      y: int = dataclasses.field(kw_only=True, default=...)
+  |};
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class A:
+      f: KW_ONLY
+      x: int
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class A:
+      x: int = dataclasses.field(kw_only=True, default=...)
+  |};
+  assert_expand
+    {|
+      from dataclasses import dataclass
+
+      @dataclass
+      class A:
+        x: int
+        init_variable: dataclasses.InitVar[str]
+    |}
+    {|
+      from dataclasses import dataclass
+
+      @dataclass
+      class A:
+        x: int
+        init_variable: dataclasses.InitVar[str]
+    |};
+  assert_expand
+    {|
+      from dataclasses import dataclass, KW_ONLY
+
+      @dataclass
+      class A:
+        x: int
+        _: KW_ONLY
+        init_variable: dataclasses.InitVar[str]
+    |}
+    {|
+      from dataclasses import dataclass, KW_ONLY
+
+      @dataclass
+      class A:
+        x: int
+        init_variable: dataclasses.InitVar[str] = dataclasses.field(kw_only=True, default=...)
+    |};
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -6633,5 +6749,6 @@ let () =
          "expand_import_python_calls" >:: test_expand_import_python_calls;
          "expand_pytorch_register_buffer" >:: test_expand_pytorch_register_buffer;
          "self_type" >:: test_expand_self_type;
+         "inline_keyword_only_attribute" >:: test_inline_keyword_only_attribute;
        ]
   |> Test.run

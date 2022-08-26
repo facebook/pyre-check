@@ -1628,7 +1628,7 @@ let test_resolve_definition_for_symbol context =
 
         # No definition found.
     |}
-    (Some "dataclasses:5:0-5:46");
+    (Some "dataclasses:6:0-6:46");
   ()
 
 

@@ -64,6 +64,8 @@ val inline_six_metaclass : Source.t -> Source.t
 
 val expand_pytorch_register_buffer : Source.t -> Source.t
 
+val add_dataclass_keyword_only_specifiers : Source.t -> Source.t
+
 (* List of function definitions in a source. include_toplevels copies all definitions into a
    toplevel definition. *)
 val defines
