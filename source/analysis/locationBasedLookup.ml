@@ -950,20 +950,17 @@ let resolve_type_for_symbol
   type_
 
 
-let empty_hover_contents = ""
-
 let hover_info_for_position ~type_environment ~module_reference position =
   let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
   let hover_contents =
     symbol_data
     >>= resolve_type_for_symbol ~type_environment
-    >>| (fun type_ -> Format.asprintf "`%s`" (Type.show_concise type_))
-    |> Option.value ~default:empty_hover_contents
+    >>| fun type_ -> Format.asprintf "`%s`" (Type.show_concise type_)
   in
   Log.log
     ~section:`Server
     "Hover info for symbol at position `%s:%s`: %s"
     (Reference.show module_reference)
     ([%show: Location.position] position)
-    hover_contents;
+    (Option.value hover_contents ~default:"<EMPTY>");
   hover_contents

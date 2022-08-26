@@ -115,7 +115,7 @@ val hover_info_for_position
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   module_reference:Reference.t ->
   Location.position ->
-  string
+  string option
 
 val parameter_is_any_message : string list
 
