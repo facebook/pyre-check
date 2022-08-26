@@ -55,12 +55,14 @@ val missing_flows_kind_from_string : string -> missing_flows_kind option
 
 val missing_flows_kind_to_string : missing_flows_kind -> string
 
+module IntSet : Stdlib.Set.S with type elt = int
+
 module SourceSinkFilter : sig
   type t
 
   val create
     :  rules:Rule.t list ->
-    filtered_rule_codes:Int.Set.t option ->
+    filtered_rule_codes:IntSet.t option ->
     filtered_sources:Sources.Set.t option ->
     filtered_sinks:Sinks.Set.t option ->
     filtered_transforms:TaintTransform.t list option ->
@@ -89,7 +91,7 @@ type t = {
   filtered_transforms: TaintTransform.t list option;
   features: string list;
   rules: Rule.t list;
-  filtered_rule_codes: Int.Set.t option;
+  filtered_rule_codes: IntSet.t option;
   implicit_sinks: implicit_sinks;
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;

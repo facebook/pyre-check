@@ -99,10 +99,12 @@ let transform_splits transforms =
   split ~result:[] ~prefix:[] ~suffix:transforms
 
 
+module IntSet = Stdlib.Set.Make (Int)
+
 let filter_rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms rules =
   let rules =
     match filtered_rule_codes with
-    | Some rule_codes -> List.filter rules ~f:(fun { Rule.code; _ } -> Set.mem rule_codes code)
+    | Some rule_codes -> List.filter rules ~f:(fun { Rule.code; _ } -> IntSet.mem code rule_codes)
     | None -> rules
   in
   let rules =
@@ -334,7 +336,7 @@ type t = {
   filtered_transforms: TaintTransform.t list option;
   features: string list;
   rules: Rule.t list;
-  filtered_rule_codes: Int.Set.t option;
+  filtered_rule_codes: IntSet.t option;
   implicit_sinks: implicit_sinks;
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
@@ -1413,7 +1415,7 @@ let with_command_line_options
     match rule_filter with
     | None -> configuration
     | Some rule_filter ->
-        let filtered_rule_codes = Int.Set.of_list rule_filter in
+        let filtered_rule_codes = IntSet.of_list rule_filter in
         { configuration with filtered_rule_codes = Some filtered_rule_codes }
   in
   let rules =

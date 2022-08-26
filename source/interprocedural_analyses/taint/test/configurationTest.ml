@@ -14,18 +14,23 @@ module Result = Core.Result
 
 let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configuration =
   let open Result in
-  TaintConfiguration.from_json_list
-    [PyrePath.create_absolute "/taint.config", Yojson.Safe.from_string configuration]
-  >>= TaintConfiguration.with_command_line_options
-        ~rule_filter
-        ~source_filter
-        ~sink_filter
-        ~transform_filter
-        ~find_missing_flows:None
-        ~dump_model_query_results_path:None
-        ~maximum_trace_length:None
-        ~maximum_tito_depth:None
-  >>= TaintConfiguration.validate
+  let configuration =
+    TaintConfiguration.from_json_list
+      [PyrePath.create_absolute "/taint.config", Yojson.Safe.from_string configuration]
+    >>= TaintConfiguration.with_command_line_options
+          ~rule_filter
+          ~source_filter
+          ~sink_filter
+          ~transform_filter
+          ~find_missing_flows:None
+          ~dump_model_query_results_path:None
+          ~maximum_trace_length:None
+          ~maximum_tito_depth:None
+    >>= TaintConfiguration.validate
+  in
+  (* Test that the configuration can be written in shared memory. *)
+  let (_ : (unit, Error.t list) Result.t) = configuration >>| TaintConfiguration.register in
+  configuration
 
 
 let assert_parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configuration =
