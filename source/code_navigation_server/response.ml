@@ -16,6 +16,7 @@ module ErrorKind = struct
 end
 
 type t =
+  | Ok
   | Error of ErrorKind.t
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
 [@@deriving sexp, compare, yojson { strict = false }]

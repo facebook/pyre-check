@@ -86,7 +86,8 @@ module Testing : sig
         The code navigation server supports a primitive form of isolation between different clients.
         Many kinds of requests that query server state can optionally specify an [overlay_id], and
         the server will attempt to guarantee that type checking states for different [overlay_id]s
-        will not interfere with each other. *)
+        will not interfere with each other. Overlays are implicitly created the first time a
+        [LocalUpdate] request is sent to the server. *)
     type t =
       | Stop
           (** A request that asks the server to stop. The server will shut itself down immediately
@@ -102,6 +103,18 @@ module Testing : sig
               respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
               the overlay with the given ID, it will respond with a
               {!Response.ErrorKind.OverlayNotFound} error. *)
+      | LocalUpdate of {
+          module_: Module.t;
+          content: string;
+          overlay_id: string;
+        }
+          (** A request that asks the server to update a given module locally for an overlay. The
+              server will send back a {!Response.Ok} response when the update succeeds. If the
+              overlay with the given ID does not exist yet, a new overlay with that ID will be
+              created.
+
+              If the provided module is not covered by the code navigation server, the server will
+              respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 
@@ -122,9 +135,11 @@ module Testing : sig
 
     (** A type representing responses sent from the server to its clients *)
     type t =
+      | Ok  (** This response will be used for acknowledging successful processing of a request. *)
       | Error of ErrorKind.t
           (** This response will be sent when the server runs into errors when processing a request. *)
       | TypeErrors of Analysis.AnalysisError.Instantiated.t list
+          (** Response for {!Request.GetTypeErrors}. *)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 end

@@ -77,6 +77,25 @@ let handle_get_type_errors ~module_ ~overlay_id { State.environment } =
   get_type_errors_in_overlay ~overlay module_ >>| fun type_errors -> Response.TypeErrors type_errors
 
 
+let handle_local_update ~module_ ~content ~overlay_id { State.environment } =
+  let open Result in
+  let module_tracker =
+    OverlaidEnvironment.root environment |> ErrorsEnvironment.ReadOnly.module_tracker
+  in
+  get_modules ~module_tracker module_
+  >>| fun modules ->
+  let code_updates =
+    let code_update = ModuleTracker.Overlay.CodeUpdate.NewCode content in
+    let to_update module_name =
+      ModuleTracker.ReadOnly.lookup_full_path module_tracker module_name
+      |> Option.map ~f:(fun artifact_path -> artifact_path, code_update)
+    in
+    List.filter_map modules ~f:to_update
+  in
+  let _ = OverlaidEnvironment.update_overlay_with_code environment ~code_updates overlay_id in
+  Response.Ok
+
+
 let response_from_result = function
   | Result.Ok response -> response
   | Result.Error kind -> Response.Error kind
@@ -87,6 +106,13 @@ let handle_request ~server:{ ServerInternal.properties = _; state } = function
   | Request.GetTypeErrors { module_; overlay_id } ->
       let f state =
         handle_get_type_errors ~module_ ~overlay_id state |> response_from_result |> Lwt.return
+      in
+      Server.ExclusiveLock.read state ~f
+  | Request.LocalUpdate { module_; content; overlay_id } ->
+      let f state =
+        handle_local_update ~module_ ~content ~overlay_id state
+        |> response_from_result
+        |> Lwt.return
       in
       Server.ExclusiveLock.read state ~f
 

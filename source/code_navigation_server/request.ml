@@ -23,6 +23,11 @@ type t =
       module_: Module.t; [@key "module"]
       overlay_id: string option;
     }
+  | LocalUpdate of {
+      module_: Module.t; [@key "module"]
+      content: string;
+      overlay_id: string;
+    }
 [@@deriving sexp, compare, yojson { strict = false }]
 
 let of_string message =

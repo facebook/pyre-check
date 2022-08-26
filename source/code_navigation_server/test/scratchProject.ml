@@ -20,6 +20,8 @@ module Client = struct
     output_channel: Lwt_io.output_channel;
   }
 
+  let get_context { context; _ } = context
+
   let get_source_root { configuration = { Configuration.Analysis.project_root; _ }; _ } =
     project_root
 

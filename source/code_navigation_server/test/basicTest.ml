@@ -10,6 +10,28 @@ open OUnit2
 module Request = CodeNavigationServer.Testing.Request
 module Response = CodeNavigationServer.Testing.Response
 
+let assert_type_error_count ?overlay_id ~client ~expected module_name =
+  let%lwt raw_response =
+    ScratchProject.Client.send_request
+      client
+      Request.(GetTypeErrors { module_ = Module.OfName module_name; overlay_id })
+  in
+  match Yojson.Safe.from_string raw_response with
+  | `List [`String "TypeErrors"; `List errors] ->
+      assert_equal
+        ~ctxt:(ScratchProject.Client.get_context client)
+        ~cmp:Int.equal
+        ~printer:Int.to_string
+        expected
+        (List.length errors);
+      Lwt.return_unit
+  | _ as json ->
+      let message =
+        Format.sprintf "Expected type error response but got: `%s`" (Yojson.Safe.to_string json)
+      in
+      assert_failure message
+
+
 let test_no_op_server context =
   ScratchProject.setup ~context ~include_typeshed_stubs:false []
   |> ScratchProject.test_server_with ~f:(fun _ -> Lwt.return_unit)
@@ -113,6 +135,53 @@ let test_get_type_errors_request context =
   |> ScratchProject.test_server_with ~f:test_get_type_errors_request
 
 
+let test_local_update_request context =
+  let test_local_update_request client =
+    let%lwt () = assert_type_error_count "test" ~client ~expected:1 in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            LocalUpdate
+              {
+                module_ = Module.OfName "test";
+                content = "reveal_type(43)\nreveal_type(44)";
+                overlay_id = "foo";
+              })
+        ~expected:Response.Ok
+    in
+    let%lwt () = assert_type_error_count "test" ~client ~overlay_id:"foo" ~expected:2 in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            LocalUpdate { module_ = Module.OfName "doesnotexist"; content = ""; overlay_id = "foo" })
+        ~kind:"ModuleNotTracked"
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            LocalUpdate
+              {
+                module_ = Module.OfName "test";
+                content = "reveal_type(43)\nreveal_type(44)\nreveal_type(45)";
+                overlay_id = "bar";
+              })
+        ~expected:Response.Ok
+    in
+    let%lwt () = assert_type_error_count "test" ~client ~overlay_id:"bar" ~expected:3 in
+    let%lwt () = assert_type_error_count "test" ~client ~overlay_id:"foo" ~expected:2 in
+    let%lwt () = assert_type_error_count "test" ~client ~expected:1 in
+    Lwt.return_unit
+  in
+  ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
+  |> ScratchProject.test_server_with ~f:test_local_update_request
+
+
 let () =
   "basic_test"
   >::: [
@@ -120,5 +189,6 @@ let () =
          "invalid_request" >:: OUnitLwt.lwt_wrapper test_invalid_request;
          "stop_request" >:: OUnitLwt.lwt_wrapper test_stop_request;
          "get_type_errors_request" >:: OUnitLwt.lwt_wrapper test_get_type_errors_request;
+         "local_update_request" >:: OUnitLwt.lwt_wrapper test_local_update_request;
        ]
   |> Test.run
