@@ -8,7 +8,7 @@ from pathlib import Path
 
 import testslide
 
-from ..daemon_socket import get_md5, get_socket_path, MD5_LENGTH
+from ..daemon_socket import find_socket_files, get_md5, get_socket_path, MD5_LENGTH
 
 
 class SocketTest(testslide.TestCase):
@@ -58,4 +58,28 @@ class SocketTest(testslide.TestCase):
                     relative_local_root,
                 ),
                 root_path / f"pyre_server_{md5_hash}.sock",
+            )
+
+    def test_find_socket_files(self) -> None:
+        with tempfile.TemporaryDirectory(dir="/tmp") as socket_root:
+            socket_root_path = Path(socket_root)
+            socket_a = get_socket_path(
+                socket_root_path,
+                global_root=Path("a"),
+                relative_local_root=None,
+            )
+            socket_a.touch()
+            self.assertEqual(
+                set(find_socket_files(socket_root_path)),
+                {socket_a},
+            )
+            socket_b = get_socket_path(
+                socket_root_path,
+                global_root=Path("b"),
+                relative_local_root="relative_to_b",
+            )
+            socket_b.touch()
+            self.assertEqual(
+                set(find_socket_files(socket_root_path)),
+                {socket_a, socket_b},
             )

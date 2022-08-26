@@ -9,7 +9,7 @@ import hashlib
 
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 
 
 # Socket path logic ---
@@ -23,21 +23,20 @@ def get_md5(identifier_string: str) -> str:
 
 
 def get_socket_path(
-    root: Path, global_root: Path, relative_local_root: Optional[str]
+    socket_root: Path,
+    global_root: Path,
+    relative_local_root: Optional[str],
 ) -> Path:
     """
     Determine where the server socket file is located. We can't directly use
     `log_directory` because of the ~100 character length limit on Unix socket
     file paths.
-
-    Implementation needs to be kept in sync with the `user_independent_socket_path_of`
-    function in `pyre/new_server/start.ml`.
     """
     project_identifier = str(global_root)
     if relative_local_root is not None:
         project_identifier = project_identifier + "//" + relative_local_root
     project_hash = get_md5(project_identifier)
-    return root / f"pyre_server_{project_hash}.sock"
+    return socket_root / f"pyre_server_{project_hash}.sock"
 
 
 def get_default_socket_root() -> Path:
@@ -50,3 +49,12 @@ def get_default_socket_path(
     project_root: Path, relative_local_root: Optional[str]
 ) -> Path:
     return get_socket_path(get_default_socket_root(), project_root, relative_local_root)
+
+
+def socket_file_glob_pattern() -> str:
+    md5_hash_pattern = "[0-9a-f]" * MD5_LENGTH
+    return f"pyre_server_{md5_hash_pattern}.sock"
+
+
+def find_socket_files(socket_root: Path) -> Iterable[Path]:
+    return socket_root.glob(socket_file_glob_pattern())
