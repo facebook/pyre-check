@@ -6711,6 +6711,92 @@ let test_inline_keyword_only_attribute _ =
         x: int
         init_variable: dataclasses.InitVar[str] = dataclasses.field(kw_only=True, default=...)
     |};
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      x: int = field(kw_only=True)
+      _: KW_ONLY
+      y: int
+      z: int
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      x: int = field(kw_only=True)
+      y: int = field(kw_only=True, default = ...)
+      z: int = field(kw_only=True, default = ...)
+  |};
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      _: KW_ONLY
+      x: int = field(kw_only=True)
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      x: int = field(kw_only=True)
+  |};
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      _: KW_ONLY
+      x: int = field(kw_only=False)
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      x: int = field(kw_only=False)
+  |};
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      x: int = 5
+      _: KW_ONLY
+      y: int = 5
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      x: int = 5
+      y: int = field(kw_only=True, default=5)
+  |};
+  assert_expand
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      _: KW_ONLY
+      x: List[int] = field(default=[1], default_factory=list, init=False, repr=False, hash=True, compare=False, metadata={"stuff": 0})
+  |}
+    {|
+    from dataclasses import dataclass, KW_ONLY, field
+
+    @dataclass
+    class A:
+      x: List[int] = dataclasses.field(kw_only = True, default = [1], default_factory = list, init = False, repr = False, hash = True, compare = False, metadata = { "stuff":0 })
+  |};
   ()
 
 

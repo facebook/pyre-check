@@ -4118,48 +4118,76 @@ let add_dataclass_keyword_only_specifiers source =
     | _ -> false
   in
   let is_not_keyword_only_pseudo_field statement = not (is_keyword_only_pseudo_field statement) in
+  let is_keyword_only_argument = function
+    | { Call.Argument.name = Some { value = "$parameter$kw_only"; _ }; _ } -> true
+    | _ -> false
+  in
+  let keyword_only_argument =
+    {
+      Call.Argument.name = Some ("$parameter$kw_only" |> Node.create_with_default_location);
+      value = Expression.Constant Constant.True |> Node.create_with_default_location;
+    }
+  in
   let set_keyword_only_field statement =
     match statement with
-    | { Node.value = Statement.Assign { target; annotation; value }; location } ->
-        {
-          Node.value =
-            Statement.Assign
+    | {
+     Node.value =
+       Statement.Assign
+         { value = { Node.value = expression; _ } as expression_node; target; annotation };
+     _;
+    } ->
+        let attribute_value =
+          match expression with
+          | Expression.Call
               {
-                target;
-                annotation;
-                value =
-                  Expression.Call
-                    {
-                      callee =
-                        Expression.Name
-                          (Name.Attribute
-                             {
-                               base =
-                                 Expression.Name (Name.Identifier "dataclasses")
-                                 |> Node.create_with_default_location;
-                               attribute = "field";
-                               special = false;
-                             })
-                        |> Node.create_with_default_location;
-                      arguments =
-                        [
+                callee =
+                  {
+                    value =
+                      Expression.Name
+                        (Name.Attribute
                           {
-                            Call.Argument.name =
-                              Some ("$parameter$kw_only" |> Node.create_with_default_location);
-                            value =
-                              Expression.Constant Constant.True |> Node.create_with_default_location;
-                          };
-                          {
-                            Call.Argument.name =
-                              Some ("$parameter$default" |> Node.create_with_default_location);
-                            value;
-                          };
-                        ];
-                    }
-                  |> Node.create_with_default_location;
-              };
-          location;
-        }
+                            base = { value = Expression.Name (Name.Identifier "dataclasses"); _ };
+                            attribute = "field";
+                            special = false;
+                          });
+                    _;
+                  } as callee;
+                arguments;
+              } ->
+              let arguments =
+                if List.exists arguments ~f:is_keyword_only_argument then
+                  arguments
+                else
+                  keyword_only_argument :: arguments
+              in
+              let expression = Expression.Call { callee; arguments } in
+              { expression_node with value = expression }
+          | value ->
+              let arguments =
+                [
+                  keyword_only_argument;
+                  {
+                    Call.Argument.name =
+                      Some ("$parameter$default" |> Node.create_with_default_location);
+                    value = value |> Node.create_with_default_location;
+                  };
+                ]
+              in
+              let callee =
+                Expression.Name
+                  (Name.Attribute
+                     {
+                       base =
+                         Expression.Name (Name.Identifier "dataclasses")
+                         |> Node.create_with_default_location;
+                       attribute = "field";
+                       special = false;
+                     })
+                |> Node.create_with_default_location
+              in
+              { expression_node with value = Expression.Call { callee; arguments } }
+        in
+        { statement with value = Statement.Assign { target; annotation; value = attribute_value } }
     | statement -> statement
   in
   let set_keyword_only_after_pseudo_field body =
