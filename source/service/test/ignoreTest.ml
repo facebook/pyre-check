@@ -23,9 +23,7 @@ let assert_errors ?(show_error_traces = false) ~context input_source expected_er
     List.map type_errors ~f:(fun error ->
         Error.instantiate
           ~show_error_traces
-          ~lookup:
-            (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
-               module_tracker)
+          ~lookup:(ModuleTracker.ReadOnly.lookup_relative_path module_tracker)
           error
         |> Error.Instantiated.description)
   in

@@ -28,8 +28,7 @@ let assert_errors ~context ~project expected =
     |> ErrorsEnvironment.ReadOnly.get_all_errors
     |> instantiate_and_stringify
          ~lookup:
-           (ScratchProject.module_tracker project
-           |> ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated)
+           (ScratchProject.module_tracker project |> ModuleTracker.ReadOnly.lookup_relative_path)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
@@ -41,8 +40,7 @@ let assert_overlay_errors ~context ~project ~overlay qualifier expected =
       qualifier
     |> instantiate_and_stringify
          ~lookup:
-           (ScratchProject.module_tracker project
-           |> ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated)
+           (ScratchProject.module_tracker project |> ModuleTracker.ReadOnly.lookup_relative_path)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
@@ -331,7 +329,7 @@ let test_error_filtering context =
              Analysis.AnalysisError.instantiate
                ~show_error_traces:false
                ~lookup:
-                 (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                 (ModuleTracker.ReadOnly.lookup_relative_path
                     (ErrorsEnvironment.ReadOnly.module_tracker environment))
                error
              |> Analysis.AnalysisError.Instantiated.description)

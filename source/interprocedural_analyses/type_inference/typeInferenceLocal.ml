@@ -117,7 +117,7 @@ module State (Context : Context) = struct
           let error_to_string error =
             let error =
               let lookup reference =
-                ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                ModuleTracker.ReadOnly.lookup_relative_path
                   (GlobalResolution.module_tracker global_resolution)
                   reference
               in

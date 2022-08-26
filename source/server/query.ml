@@ -742,9 +742,7 @@ let rec process_request ~environment ~build_system request =
     | CalleesWithLocation caller ->
         let instantiate =
           Location.WithModule.instantiate
-            ~lookup:
-              (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
-                 module_tracker)
+            ~lookup:(ModuleTracker.ReadOnly.lookup_relative_path module_tracker)
         in
         let callees =
           (* We don't yet support a syntax for fetching property setters. *)
@@ -822,9 +820,7 @@ let rec process_request ~environment ~build_system request =
             =
             let instantiate =
               Location.WithModule.instantiate
-                ~lookup:
-                  (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
-                     module_tracker)
+                ~lookup:(ModuleTracker.ReadOnly.lookup_relative_path module_tracker)
             in
             Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
             |> List.map ~f:(fun { Callgraph.callee; locations } ->

@@ -38,8 +38,6 @@ module ReadOnly : sig
 
   val lookup_relative_path : t -> Ast.Reference.t -> string option
 
-  val lookup_full_path_relative_to_local_root_deprecated : t -> Ast.Reference.t -> string option
-
   val lookup_path : t -> ArtifactPath.t -> PathLookup.t
 
   val module_paths : t -> Ast.ModulePath.t list

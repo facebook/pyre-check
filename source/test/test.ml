@@ -3000,7 +3000,7 @@ let assert_errors
              (AnalysisError.instantiate
                 ~show_error_traces
                 ~lookup:
-                  (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                  (ModuleTracker.ReadOnly.lookup_relative_path
                      (TypeEnvironment.module_tracker environment |> ModuleTracker.read_only)))
     in
     let errors_with_any_location =

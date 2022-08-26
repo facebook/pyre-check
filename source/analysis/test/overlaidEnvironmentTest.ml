@@ -29,7 +29,7 @@ let assert_root_errors ~context ~overlaid_environment expected =
          ~lookup:
            (OverlaidEnvironment.root overlaid_environment
            |> ErrorsEnvironment.ReadOnly.module_tracker
-           |> ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated)
+           |> ModuleTracker.ReadOnly.lookup_relative_path)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
@@ -43,7 +43,7 @@ let assert_root_errors_for_qualifier ~context ~overlaid_environment ~qualifier e
          ~lookup:
            (OverlaidEnvironment.root overlaid_environment
            |> ErrorsEnvironment.ReadOnly.module_tracker
-           |> ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated)
+           |> ModuleTracker.ReadOnly.lookup_relative_path)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
@@ -55,7 +55,7 @@ let assert_overlay_errors ~context ~overlaid_environment ~overlay_identifier exp
          ~lookup:
            (OverlaidEnvironment.root overlaid_environment
            |> ErrorsEnvironment.ReadOnly.module_tracker
-           |> ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated)
+           |> ModuleTracker.ReadOnly.lookup_relative_path)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 

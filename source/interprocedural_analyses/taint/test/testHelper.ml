@@ -480,7 +480,7 @@ let initialize
                 AnalysisError.instantiate
                   ~show_error_traces:false
                   ~lookup:
-                    (ModuleTracker.ReadOnly.lookup_full_path_relative_to_local_root_deprecated
+                    (ModuleTracker.ReadOnly.lookup_relative_path
                        (AstEnvironment.ReadOnly.module_tracker ast_environment))
                   error
               in
