@@ -14,6 +14,13 @@ from typing import Optional
 
 # Socket path logic ---
 
+MD5_LENGTH = 32
+
+
+def get_md5(identifier_string: str) -> str:
+    identifier_bytes = identifier_string.encode("utf-8")
+    return hashlib.md5(identifier_bytes).hexdigest()
+
 
 def get_socket_path(
     root: Path, global_root: Path, relative_local_root: Optional[str]
@@ -29,9 +36,7 @@ def get_socket_path(
     project_identifier = str(global_root)
     if relative_local_root is not None:
         project_identifier = project_identifier + "//" + relative_local_root
-    project_identifier = project_identifier.encode("utf-8")
-
-    project_hash = hashlib.md5(project_identifier).hexdigest()
+    project_hash = get_md5(project_identifier)
     return root / f"pyre_server_{project_hash}.sock"
 
 
