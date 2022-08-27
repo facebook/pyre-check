@@ -9,13 +9,8 @@ from typing import Optional
 
 import testslide
 
-from ..daemon_socket import (
-    find_socket_files,
-    get_md5,
-    get_project_identifier,
-    get_socket_path,
-    MD5_LENGTH,
-)
+from ..daemon_socket import find_socket_files, get_md5, get_socket_path, MD5_LENGTH
+from ..frontend_configuration import get_project_identifier
 
 
 class SocketTest(testslide.TestCase):

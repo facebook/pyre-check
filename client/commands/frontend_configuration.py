@@ -10,6 +10,17 @@ from typing import List, Optional
 
 from .. import configuration as configuration_module
 
+
+def get_project_identifier(
+    global_root: Path,
+    relative_local_root: Optional[str],
+) -> str:
+    project_identifier = str(global_root)
+    if relative_local_root is not None:
+        project_identifier = project_identifier + "//" + relative_local_root
+    return project_identifier
+
+
 # TODO(T120824066): Break this class down into smaller pieces. Ideally, one
 # class per command.
 class Base(abc.ABC):
@@ -136,6 +147,12 @@ class Base(abc.ABC):
         if relative_local_root is None:
             return None
         return self.get_global_root() / relative_local_root
+
+    def get_project_identifier(self) -> str:
+        return get_project_identifier(
+            self.get_global_root(),
+            self.get_relative_local_root(),
+        )
 
 
 class OpenSource(Base):

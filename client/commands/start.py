@@ -329,14 +329,6 @@ def create_server_arguments(
     )
 
 
-def get_server_identifier(configuration: frontend_configuration.Base) -> str:
-    global_identifier = configuration.get_global_root().name
-    relative_local_root = configuration.get_relative_local_root()
-    if relative_local_root is None:
-        return global_identifier
-    return f"{global_identifier}/{relative_local_root}"
-
-
 def _run_in_foreground(
     command: Sequence[str], environment: Mapping[str, str]
 ) -> commands.ExitCode:
@@ -467,7 +459,7 @@ def run_start(
             " since no filesystem updates will be sent to the Pyre server."
         )
 
-    LOG.info(f"Starting server at `{get_server_identifier(configuration)}`...")
+    LOG.info(f"Starting server at `{configuration.get_project_identifier()}`...")
     with backend_arguments.temporary_argument_file(
         server_arguments
     ) as argument_file_path:

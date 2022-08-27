@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 from typing import Iterable, Optional
 
+from . import frontend_configuration
 
 # Socket path logic ---
 
@@ -20,16 +21,6 @@ MD5_LENGTH = 32
 def get_md5(identifier_string: str) -> str:
     identifier_bytes = identifier_string.encode("utf-8")
     return hashlib.md5(identifier_bytes).hexdigest()
-
-
-def get_project_identifier(
-    global_root: Path,
-    relative_local_root: Optional[str],
-) -> str:
-    project_identifier = str(global_root)
-    if relative_local_root is not None:
-        project_identifier = project_identifier + "//" + relative_local_root
-    return project_identifier
 
 
 def get_socket_path(
@@ -43,7 +34,7 @@ def get_socket_path(
     file paths.
     """
     project_hash = get_md5(
-        get_project_identifier(
+        frontend_configuration.get_project_identifier(
             global_root=global_root,
             relative_local_root=relative_local_root,
         )

@@ -20,7 +20,6 @@ from ..start import (
     CriticalFile,
     get_critical_files,
     get_saved_state_action,
-    get_server_identifier,
     LoadSavedStateFromFile,
     LoadSavedStateFromProject,
     MatchPolicy,
@@ -137,48 +136,6 @@ class ArgumentTest(testslide.TestCase):
                     ),
                 ),
             ],
-        )
-
-
-class ServerIdentifierTest(testslide.TestCase):
-    def test_server_identifier(self) -> None:
-        def assert_server_identifier(
-            client_configuration: configuration.Configuration, expected: str
-        ) -> None:
-            self.assertEqual(
-                get_server_identifier(
-                    frontend_configuration.OpenSource(client_configuration)
-                ),
-                expected,
-            )
-
-        assert_server_identifier(
-            configuration.Configuration(
-                project_root="project", dot_pyre_directory=Path(".pyre")
-            ),
-            "project",
-        )
-        assert_server_identifier(
-            configuration.Configuration(
-                project_root="my/project", dot_pyre_directory=Path(".pyre")
-            ),
-            "project",
-        )
-        assert_server_identifier(
-            configuration.Configuration(
-                project_root="my/project",
-                dot_pyre_directory=Path(".pyre"),
-                relative_local_root="foo",
-            ),
-            "project/foo",
-        )
-        assert_server_identifier(
-            configuration.Configuration(
-                project_root="my/project",
-                dot_pyre_directory=Path(".pyre"),
-                relative_local_root="foo/bar",
-            ),
-            "project/foo/bar",
         )
 
 

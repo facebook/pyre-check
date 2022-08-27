@@ -46,7 +46,7 @@ def run_stop(configuration: frontend_configuration.Base) -> commands.ExitCode:
     try:
         LOG.info("Stopping server...")
         stop_server(socket_path)
-        LOG.info(f"Stopped server at `{start.get_server_identifier(configuration)}`\n")
+        LOG.info(f"Stopped server at `{configuration.get_project_identifier()}`\n")
         return commands.ExitCode.SUCCESS
     except connections.ConnectionFailure:
         LOG.info("No running Pyre server to stop.\n")

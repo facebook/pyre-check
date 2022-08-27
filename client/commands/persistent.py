@@ -103,7 +103,7 @@ FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
 @dataclasses.dataclass(frozen=True)
 class PyreDaemonStartOptions:
     binary: str
-    server_identifier: str
+    project_identifier: str
     start_arguments: start.Arguments
     ide_features: Optional[configuration_module.IdeFeatures]
     strict_default: bool
@@ -134,7 +134,7 @@ class PyreDaemonStartOptions:
 
         return PyreDaemonStartOptions(
             binary=str(binary_location),
-            server_identifier=start.get_server_identifier(configuration),
+            project_identifier=configuration.get_project_identifier(),
             start_arguments=start_arguments,
             ide_features=configuration.get_ide_features(),
             strict_default=configuration.is_strict(),
@@ -1360,7 +1360,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         connection_timer: timer.Timer,
         is_preexisting: bool,
     ) -> None:
-        server_identifier = server_start_options.server_identifier
+        project_identifier = server_start_options.project_identifier
         async with connections.connect_async(socket_path) as (
             input_channel,
             output_channel,
@@ -1368,14 +1368,14 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             if is_preexisting:
                 await self.log_and_show_status_message_to_client(
                     "Established connection with existing Pyre server at "
-                    f"`{server_identifier}`.",
+                    f"`{project_identifier}`.",
                     short_message="Pyre Ready",
                     level=lsp.MessageType.INFO,
                     fallback_to_notification=True,
                 )
             else:
                 await self.log_and_show_status_message_to_client(
-                    f"Pyre server at `{server_identifier}` has been initialized.",
+                    f"Pyre server at `{project_identifier}` has been initialized.",
                     short_message="Pyre Ready",
                     level=lsp.MessageType.INFO,
                     fallback_to_notification=True,
@@ -1400,7 +1400,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     async def launch_and_subscribe(
         self, server_start_options: PyreDaemonStartOptions
     ) -> None:
-        server_identifier = server_start_options.server_identifier
+        project_identifier = server_start_options.project_identifier
         start_arguments = server_start_options.start_arguments
         socket_path = daemon_socket.get_default_socket_path(
             project_root=Path(start_arguments.base_arguments.global_root),
@@ -1419,7 +1419,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             pass
 
         await self.log_and_show_status_message_to_client(
-            f"Starting a new Pyre server at `{server_identifier}` in "
+            f"Starting a new Pyre server at `{project_identifier}` in "
             "the background.",
             short_message="Starting Pyre...",
             level=lsp.MessageType.WARNING,
@@ -1450,7 +1450,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             )
             if not self.server_state.is_user_notified_on_buck_failure:
                 await self.show_notification_message_to_client(
-                    f"Cannot start a new Pyre server at `{server_identifier}` "
+                    f"Cannot start a new Pyre server at `{project_identifier}` "
                     "due to Buck failure. If you added or changed a target, "
                     "make sure the target file is parsable and the owning "
                     "targets are buildable by Buck. If you removed a target, "
@@ -1460,7 +1460,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 )
                 self.server_state.is_user_notified_on_buck_failure = True
             await self.show_status_message_to_client(
-                f"Cannot start a new Pyre server at `{server_identifier}`. "
+                f"Cannot start a new Pyre server at `{project_identifier}`. "
                 f"{start_status.message}",
                 short_message="Pyre Stopped",
                 level=lsp.MessageType.INFO,
@@ -1482,7 +1482,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     },
                 )
                 await self.show_status_message_to_client(
-                    f"Cannot start a new Pyre server at `{server_identifier}`. "
+                    f"Cannot start a new Pyre server at `{project_identifier}`. "
                     f"{start_status.message}",
                     short_message="Pyre Stopped",
                     level=lsp.MessageType.INFO,
@@ -1499,7 +1499,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     },
                 )
                 await self.show_status_message_to_client(
-                    f"Pyre server restart at `{server_identifier}` has been "
+                    f"Pyre server restart at `{project_identifier}` has been "
                     "failing repeatedly. Disabling The Pyre plugin for now.",
                     short_message="Pyre Disabled",
                     level=lsp.MessageType.ERROR,
