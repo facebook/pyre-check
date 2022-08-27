@@ -7,7 +7,7 @@ import dataclasses
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 
 import tabulate
 from typing_extensions import TypedDict
@@ -114,7 +114,9 @@ class AllServerStatus:
         ]
 
 
-def _get_running_server_status(socket_path: Path) -> Optional[RunningServerStatus]:
+def _get_server_status(
+    socket_path: Path,
+) -> Union[RunningServerStatus, DefunctServerStatus]:
     try:
         with connections.connect(socket_path) as (
             input_channel,
@@ -123,7 +125,7 @@ def _get_running_server_status(socket_path: Path) -> Optional[RunningServerStatu
             output_channel.write('["GetInfo"]\n')
             return RunningServerStatus.from_server_response(input_channel.readline())
     except connections.ConnectionFailure:
-        return None
+        return DefunctServerStatus(str(socket_path))
 
 
 def _print_running_server_status(running_status: Sequence[RunningServerStatus]) -> None:
@@ -196,11 +198,11 @@ def find_all_servers(socket_paths: Iterable[Path]) -> AllServerStatus:
     defunct_servers = []
 
     for socket_path in socket_paths:
-        running_server_status = _get_running_server_status(socket_path)
-        if running_server_status is not None:
-            running_servers.append(running_server_status)
+        status = _get_server_status(socket_path)
+        if isinstance(status, RunningServerStatus):
+            running_servers.append(status)
         else:
-            defunct_servers.append(DefunctServerStatus(str(socket_path)))
+            defunct_servers.append(status)
 
     return AllServerStatus(running_servers, defunct_servers)
 
