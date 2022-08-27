@@ -10,7 +10,12 @@ open Interprocedural
 
 type t
 
-val load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> enabled:bool -> t
+val load
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  taint_configuration:TaintConfiguration.t ->
+  enabled:bool ->
+  t
 
 val type_environment : t -> (unit -> TypeEnvironment.t) -> TypeEnvironment.t
 

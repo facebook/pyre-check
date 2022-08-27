@@ -18,15 +18,19 @@ let initialize_configuration
         source_filter;
         sink_filter;
         transform_filter;
+        find_missing_flows;
+        dump_model_query_results;
+        maximum_trace_length;
+        maximum_tito_depth;
         _;
       }
   =
-  (* In order to save time, sanity check models before starting the analysis. *)
   Log.info "Verifying model syntax and configuration.";
   let timer = Timer.start () in
-  ModelParser.get_model_sources ~paths:taint_model_paths
-  |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source);
-  let (_ : TaintConfiguration.t) =
+  let find_missing_flows =
+    find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
+  in
+  let taint_configuration =
     let open Core.Result in
     TaintConfiguration.from_taint_model_paths taint_model_paths
     >>= TaintConfiguration.with_command_line_options
@@ -34,17 +38,26 @@ let initialize_configuration
           ~source_filter
           ~sink_filter
           ~transform_filter
-          ~find_missing_flows:None
-          ~dump_model_query_results_path:None
-          ~maximum_trace_length:None
-          ~maximum_tito_depth:None
+          ~find_missing_flows
+          ~dump_model_query_results_path:dump_model_query_results
+          ~maximum_trace_length
+          ~maximum_tito_depth
     |> TaintConfiguration.exception_on_error
   in
-  Statistics.performance
-    ~name:"Verified model syntax and configuration"
-    ~phase_name:"Verifying model syntax and configuration"
-    ~timer
-    ()
+  let () = TaintConfiguration.register taint_configuration in
+  (* In order to save time, sanity check models before starting the analysis. *)
+  let () =
+    ModelParser.get_model_sources ~paths:taint_model_paths
+    |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source)
+  in
+  let () =
+    Statistics.performance
+      ~name:"Verified model syntax and configuration"
+      ~phase_name:"Verifying model syntax and configuration"
+      ~timer
+      ()
+  in
+  taint_configuration
 
 
 let parse_and_save_decorators_to_skip
@@ -151,42 +164,6 @@ let parse_models_and_queries_from_sources
     ()
 
 
-let parse_taint_configuration
-    ~static_analysis_configuration:
-      {
-        Configuration.StaticAnalysis.configuration = { taint_model_paths; _ };
-        rule_filter;
-        source_filter;
-        sink_filter;
-        transform_filter;
-        find_missing_flows;
-        dump_model_query_results;
-        maximum_trace_length;
-        maximum_tito_depth;
-        _;
-      }
-  =
-  let find_missing_flows =
-    find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-  in
-  let taint_configuration =
-    let open Core.Result in
-    TaintConfiguration.from_taint_model_paths taint_model_paths
-    >>= TaintConfiguration.with_command_line_options
-          ~rule_filter
-          ~source_filter
-          ~sink_filter
-          ~transform_filter
-          ~find_missing_flows
-          ~dump_model_query_results_path:dump_model_query_results
-          ~maximum_trace_length
-          ~maximum_tito_depth
-    |> TaintConfiguration.exception_on_error
-  in
-  let () = TaintConfiguration.register taint_configuration in
-  taint_configuration
-
-
 let parse_models_and_queries_from_configuration
     ~scheduler
     ~static_analysis_configuration:
@@ -226,6 +203,7 @@ let parse_models_and_queries_from_configuration
 let initialize_models
     ~scheduler
     ~static_analysis_configuration
+    ~taint_configuration
     ~class_hierarchy_graph
     ~environment
     ~callables
@@ -235,7 +213,6 @@ let initialize_models
 
   Log.info "Parsing taint models...";
   let timer = Timer.start () in
-  let taint_configuration = parse_taint_configuration ~static_analysis_configuration in
   let { ModelParser.models; queries; skip_overrides; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
@@ -319,13 +296,13 @@ let run_taint_analysis
     ()
   =
   try
-    let () = initialize_configuration ~static_analysis_configuration in
+    let taint_configuration = initialize_configuration ~static_analysis_configuration in
 
     (* Collect decorators to skip before type-checking because decorator inlining happens in an
        early phase of type-checking and needs to know which decorators to skip. *)
     let () = parse_and_save_decorators_to_skip ~inline_decorators configuration in
 
-    let cache = Cache.load ~scheduler ~configuration ~enabled:use_cache in
+    let cache = Cache.load ~scheduler ~configuration ~taint_configuration ~enabled:use_cache in
 
     let environment = type_check ~scheduler ~configuration ~cache in
 
@@ -391,6 +368,7 @@ let run_taint_analysis
       initialize_models
         ~scheduler
         ~static_analysis_configuration
+        ~taint_configuration
         ~class_hierarchy_graph:
           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
         ~environment:(Analysis.TypeEnvironment.read_only environment)

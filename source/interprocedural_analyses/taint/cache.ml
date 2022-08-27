@@ -159,7 +159,7 @@ let load_type_environment ~scheduler ~configuration =
       Error InvalidByCodeChange
 
 
-let load ~scheduler ~configuration ~enabled =
+let load ~scheduler ~configuration ~taint_configuration ~enabled =
   if not enabled then
     { cache = Error Disabled; save_cache = false; scheduler; configuration }
   else
@@ -175,6 +175,9 @@ let load ~scheduler ~configuration ~enabled =
           Memory.reset_shared_memory ();
           Error error
     in
+    (* Re-write the original taint configuration in shared memory,
+     * in case it was overwritten when loading the cache. *)
+    let () = TaintConfiguration.register taint_configuration in
     { cache; save_cache = true; scheduler; configuration }
 
 

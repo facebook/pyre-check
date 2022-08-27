@@ -979,7 +979,13 @@ let rec process_request ~environment ~build_system request =
                          (PyrePath.show path))
                   else
                     let get_models_for_query scheduler =
-                      let cache = Taint.Cache.load ~scheduler ~configuration ~enabled:false in
+                      let cache =
+                        Taint.Cache.load
+                          ~scheduler
+                          ~configuration
+                          ~taint_configuration
+                          ~enabled:false
+                      in
                       let initial_callables =
                         Taint.Cache.initial_callables cache (fun () ->
                             let timer = Timer.start () in
