@@ -1821,7 +1821,7 @@ let test_less_or_equal_variance _ =
   ()
 
 
-let test_join context =
+let test_join _ =
   let assert_join ?(order = default) ?(aliases = Type.empty_aliases) left right expected =
     let parse_annotation = function
       | "$bottom" -> Type.Bottom
@@ -1856,6 +1856,7 @@ let test_join context =
     assert_type_equal
       (parse_annotation expected)
       (join ~attributes order (parse_annotation left) (parse_annotation right));
+    (* Test that `join` is commutative. *)
     assert_type_equal
       (parse_annotation expected)
       (join ~attributes order (parse_annotation right) (parse_annotation left))
@@ -2312,6 +2313,11 @@ let test_join context =
     (join order (Type.Literal (String AnyLiteral)) (Type.literal_string "hello"))
     (Type.Literal (String AnyLiteral));
   assert_type_equal (join order (Type.Literal (String AnyLiteral)) Type.string) Type.string;
+  ()
+
+
+(* Test using the type order created by `GlobalResolution`. *)
+let test_join_with_full_type_order context =
   let assert_join ?(source = "") ~left ~right expected_result =
     let resolution = resolution ~source context in
     let parse_annotation annotation =
@@ -2730,6 +2736,7 @@ let () =
   "order"
   >::: [
          "join" >:: test_join;
+         "join_with_full_type_order" >:: test_join_with_full_type_order;
          "less_or_equal" >:: test_less_or_equal;
          "less_or_equal_variance" >:: test_less_or_equal_variance;
          "is_compatible_with" >:: test_is_compatible_with;
