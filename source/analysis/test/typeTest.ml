@@ -6458,6 +6458,32 @@ let test_show _ =
   ()
 
 
+let test_is_truthy _ =
+  let assert_truthy ~expected type_ =
+    parse_single_expression type_
+    |> Type.create ~aliases:Type.empty_aliases
+    |> Type.is_truthy
+    |> assert_bool_equals ~expected
+  in
+  assert_truthy ~expected:true "typing_extensions.Literal[True]";
+  assert_truthy ~expected:false "None";
+  assert_truthy ~expected:true "typing.Callable[[int, str], int]";
+  assert_truthy ~expected:true "typing_extensions.Literal[42]";
+  assert_truthy ~expected:false "typing_extensions.Literal[0]";
+  assert_truthy ~expected:false "typing_extensions.Literal['']";
+  assert_truthy ~expected:false "typing_extensions.Literal[b'']";
+  assert_truthy ~expected:true "typing_extensions.Literal['hello']";
+  assert_truthy ~expected:true "typing_extensions.Literal[b'hello']";
+  assert_truthy ~expected:true "typing.Annotated[typing_extensions.Literal[True]]";
+  assert_truthy
+    ~expected:true
+    "typing.Union[typing_extensions.Literal[True], typing_extensions.Literal[1]]";
+  assert_truthy
+    ~expected:false
+    "typing.Union[typing_extensions.Literal[True], typing_extensions.Literal[0]]";
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -6535,6 +6561,7 @@ let () =
          "divide_polynomial" >:: test_divide_polynomial;
          "resolve_class" >:: test_resolve_class;
          "show" >:: test_show;
+         "is_truthy" >:: test_is_truthy;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

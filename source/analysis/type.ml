@@ -1976,11 +1976,10 @@ let rec is_truthy = function
   | Literal (Boolean true)
   | Callable _ ->
       true
-  | Literal (Integer i) when not (Int.equal i 0) -> true
+  | Literal (Integer i) -> not (Int.equal i 0)
   | Literal (String (LiteralValue value))
-  | Literal (Bytes value)
-    when not (String.is_empty value) ->
-      true
+  | Literal (Bytes value) ->
+      not (String.is_empty value)
   | Annotated annotated -> is_truthy annotated
   | Union types -> List.for_all types ~f:is_truthy
   | _ -> false
