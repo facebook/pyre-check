@@ -289,7 +289,7 @@ let test_check_return_control_flow context =
     |}
     [
       "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
-       `typing.List` to avoid runtime subscripting errors.";
+       `typing.List[<element type>]` to avoid runtime subscripting errors.";
     ];
   assert_type_errors
     {|
@@ -302,7 +302,7 @@ let test_check_return_control_flow context =
       "Missing global annotation [5]: Globally accessible variable `x` must be specified "
       ^ "as type that does not contain `Any`.";
       "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
-       `typing.List` to avoid runtime subscripting errors.";
+       `typing.List[<element type>]` to avoid runtime subscripting errors.";
     ];
   assert_type_errors
     {|

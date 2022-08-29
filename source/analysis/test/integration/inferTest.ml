@@ -279,7 +279,7 @@ let test_check_missing_return context =
     |}
     [
       "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
-       `typing.List` to avoid runtime subscripting errors.";
+       `typing.List[<element type>]` to avoid runtime subscripting errors.";
     ];
 
   (* Don't report in non-debug mode. *)

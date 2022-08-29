@@ -2224,7 +2224,7 @@ let test_generic_aliases context =
     |}
     [
       "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
-       `typing.List` to avoid runtime subscripting errors.";
+       `typing.List[<element type>]` to avoid runtime subscripting errors.";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(x, \
        typing.List[typing.Any])], typing.List[typing.Any]]`.";
       "Revealed type [-1]: Revealed type for `test.foo([\"hello\"])` is `typing.List[typing.Any]`.";
