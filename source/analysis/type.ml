@@ -3697,6 +3697,12 @@ module TypeOperation = struct
   type t = type_t Record.TypeOperation.record
 end
 
+module ReadOnly = struct
+  let create = function
+    | ReadOnly _ as type_ -> type_
+    | type_ -> ReadOnly type_
+end
+
 let parameters_from_unpacked_annotation annotation ~variable_aliases =
   let open Record.OrderedTypes.Concatenation in
   let unpacked_variadic_to_parameter = function
@@ -4285,6 +4291,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> annotated head
         | "typing.Optional", Some [head] -> optional head
         | "typing.Union", Some parameters -> union parameters
+        | "pyre_extensions.ReadOnly", Some [head] -> ReadOnly.create head
         | _ -> result
       in
       match Identifier.Table.find alternate_name_to_canonical_name_map name with
@@ -6471,10 +6478,6 @@ module TypedDictionary = struct
     else
       common_methods
       @ (non_total_special_methods class_name |> List.map ~f:(fun { name; _ } -> define name))
-end
-
-module ReadOnly = struct
-  let create type_ = ReadOnly type_
 end
 
 (* Transform tuples and callables so they are printed correctly when running infer and click to fix. *)

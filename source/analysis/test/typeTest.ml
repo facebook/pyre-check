@@ -1346,6 +1346,17 @@ let test_create_variadic_tuple _ =
   ()
 
 
+let test_create_readonly _ =
+  assert_create "pyre_extensions.ReadOnly[int]" (Type.ReadOnly.create Type.integer);
+  assert_create
+    "pyre_extensions.ReadOnly[pyre_extensions.ReadOnly[int]]"
+    (Type.ReadOnly.create Type.integer);
+  assert_create
+    "typing.List[pyre_extensions.ReadOnly[int]]"
+    (Type.list (Type.ReadOnly.create Type.integer));
+  ()
+
+
 let test_resolve_aliases _ =
   let assert_resolved ~aliases annotation expected =
     let aliases ?replace_unbound_parameters_with_any:_ = aliases in
@@ -6455,6 +6466,7 @@ let () =
          "create_alias" >:: test_create_alias;
          "create_type_operator" >:: test_create_type_operator;
          "create_variadic_tuple" >:: test_create_variadic_tuple;
+         "create_readonly" >:: test_create_readonly;
          "resolve_aliases" >:: test_resolve_aliases;
          "instantiate" >:: test_instantiate;
          "expression" >:: test_expression;
