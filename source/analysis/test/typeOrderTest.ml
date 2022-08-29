@@ -2077,6 +2077,14 @@ let test_join context =
     "ParametricCallableToStr[int]"
     "typing.Callable[[int], typing.Union[int, str]]";
 
+  (* ReadOnly: The type checking analysis ignores `ReadOnly`, so we don't really care about the
+     precise `join`. We just preserve the `ReadOnly` wrapper if either type has it. *)
+  assert_join "pyre_extensions.ReadOnly[int]" "float" "pyre_extensions.ReadOnly[float]";
+  assert_join
+    "pyre_extensions.ReadOnly[int]"
+    "pyre_extensions.ReadOnly[float]"
+    "pyre_extensions.ReadOnly[float]";
+
   (* Variables. *)
   assert_type_equal
     (join order Type.integer (Type.variable "T"))
