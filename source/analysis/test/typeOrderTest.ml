@@ -2361,11 +2361,27 @@ let test_join_recursive_types context =
   let assert_join_direct ~source ~left ~right expected_annotation =
     let resolution = resolution ~source context in
     let left, right = parse_annotation ~resolution left, parse_annotation ~resolution right in
+    (* Note: It's not enough to naively check `Type.equal` or even check if they are
+       alpha-equivalent (same body but different recursive type names). That would miss the cases
+       where one of the recursive types happens to be unrolled a few more times than the other, even
+       though both are equivalent to each other.
+
+       So, we need to use `less-or-equal` both ways. *)
+    let are_recursive_types_equivalent left right =
+      GlobalResolution.less_or_equal resolution ~left ~right
+      && GlobalResolution.less_or_equal resolution ~left:right ~right:left
+    in
     assert_equal
       ~printer:Type.show
-      ~cmp:Type.equal
+      ~cmp:are_recursive_types_equivalent
       expected_annotation
-      (GlobalResolution.join resolution left right)
+      (GlobalResolution.join resolution left right);
+    (* Test that `join` is commutative. *)
+    assert_equal
+      ~printer:Type.show
+      ~cmp:are_recursive_types_equivalent
+      expected_annotation
+      (GlobalResolution.join resolution right left)
   in
   let assert_join ?(source = "") ~left ~right expected_result =
     let resolution = resolution ~source context in
