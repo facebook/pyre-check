@@ -2351,6 +2351,26 @@ let test_join_with_full_type_order context =
     ~left:"test.NonGenericChild"
     ~right:"test.GenericBase[int, str]"
     "test.GenericBase[int, str]";
+  ()
+
+
+let test_join_recursive_types context =
+  let parse_annotation ~resolution annotation =
+    annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
+  in
+  let assert_join_direct ~source ~left ~right expected_annotation =
+    let resolution = resolution ~source context in
+    let left, right = parse_annotation ~resolution left, parse_annotation ~resolution right in
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      expected_annotation
+      (GlobalResolution.join resolution left right)
+  in
+  let assert_join ?(source = "") ~left ~right expected_result =
+    let resolution = resolution ~source context in
+    assert_join_direct ~source ~left ~right (parse_annotation ~resolution expected_result)
+  in
   let recursive_alias_source =
     {|
       from typing import Tuple, Union
@@ -2740,6 +2760,7 @@ let () =
   >::: [
          "join" >:: test_join;
          "join_with_full_type_order" >:: test_join_with_full_type_order;
+         "join_recursive_types" >:: test_join_recursive_types;
          "less_or_equal" >:: test_less_or_equal;
          "less_or_equal_variance" >:: test_less_or_equal_variance;
          "is_compatible_with" >:: test_is_compatible_with;
