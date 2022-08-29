@@ -2327,23 +2327,17 @@ let test_join _ =
 
 (* Test using the type order created by `GlobalResolution`. *)
 let test_join_with_full_type_order context =
+  let parse_annotation ~resolution annotation =
+    annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
+  in
+  let assert_join_direct ~source ~left ~right expected_annotation =
+    let resolution = resolution ~source context in
+    let left, right = parse_annotation ~resolution left, parse_annotation ~resolution right in
+    assert_type_equal expected_annotation (GlobalResolution.join resolution left right)
+  in
   let assert_join ?(source = "") ~left ~right expected_result =
     let resolution = resolution ~source context in
-    let parse_annotation annotation =
-      annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
-    in
-    let left, right = parse_annotation left, parse_annotation right in
-    assert_type_equal
-      (parse_annotation expected_result)
-      (GlobalResolution.join resolution left right)
-  in
-  let assert_join_direct ?(source = "") ~left ~right expected_annotation =
-    let resolution = resolution ~source context in
-    let parse_annotation annotation =
-      annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
-    in
-    let left, right = parse_annotation left, parse_annotation right in
-    assert_type_equal expected_annotation (GlobalResolution.join resolution left right)
+    assert_join_direct ~source ~left ~right (parse_annotation ~resolution expected_result)
   in
   assert_join
     ~source:
