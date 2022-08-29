@@ -476,9 +476,6 @@ module OrderImplementation = struct
         | Type.ParameterVariadicComponent _, _
         | _, Type.ParameterVariadicComponent _ ->
             Type.Bottom
-        | Type.NoneType, _
-        | _, Type.NoneType ->
-            Type.Bottom
         | Type.Annotated left, _ -> Type.annotated (meet order left right)
         | _, Type.Annotated right -> Type.annotated (meet order left right)
         | Type.ReadOnly left, _ -> Type.ReadOnly.create (meet order left right)
@@ -495,6 +492,9 @@ module OrderImplementation = struct
               other
             else
               List.map elements ~f:(meet order other) |> List.fold ~f:(join order) ~init:Type.Bottom
+        | Type.NoneType, _
+        | _, Type.NoneType ->
+            Type.Bottom
         | Type.Parametric _, Type.Parametric _
         | Type.Primitive _, Type.Primitive _ ->
             if always_less_or_equal order ~left ~right then

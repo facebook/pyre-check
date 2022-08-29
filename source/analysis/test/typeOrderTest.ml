@@ -2447,6 +2447,7 @@ let test_meet _ =
   assert_meet "typing.Union[int, str]" "typing.Union[float, bool]" "int";
   assert_meet "typing.Union[int, str]" "typing.Union[int, bool]" "int";
 
+  assert_meet "None" "typing.Optional[str]" "None";
   assert_meet
     "typing.Union[int, str]"
     "typing.Union[int, typing.Optional[str]]"
@@ -2454,6 +2455,10 @@ let test_meet _ =
   assert_meet
     "typing.Union[int, typing.Optional[str]]"
     "typing.Optional[str]"
+    "typing.Optional[str]";
+  assert_meet
+    "typing.Optional[str]"
+    "typing.Union[int, typing.Optional[str]]"
     "typing.Optional[str]";
 
   (* Parametric types. *)
