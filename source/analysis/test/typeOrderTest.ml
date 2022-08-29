@@ -2432,6 +2432,13 @@ let test_meet _ =
     "typing_extensions.Annotated[float]"
     "typing_extensions.Annotated[int]";
 
+  (* ReadOnly. *)
+  assert_meet "pyre_extensions.ReadOnly[int]" "float" "pyre_extensions.ReadOnly[int]";
+  assert_meet
+    "pyre_extensions.ReadOnly[int]"
+    "pyre_extensions.ReadOnly[float]"
+    "pyre_extensions.ReadOnly[int]";
+
   (* Unions. *)
   assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
   assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";

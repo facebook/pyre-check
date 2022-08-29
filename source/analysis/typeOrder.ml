@@ -481,8 +481,8 @@ module OrderImplementation = struct
             Type.Bottom
         | Type.Annotated left, _ -> Type.annotated (meet order left right)
         | _, Type.Annotated right -> Type.annotated (meet order left right)
-        | Type.ReadOnly _, _ -> failwith "TODO(T130377746): Implement ReadOnly"
-        | _, Type.ReadOnly _ -> failwith "TODO(T130377746): Implement ReadOnly"
+        | Type.ReadOnly left, _ -> Type.ReadOnly.create (meet order left right)
+        | _, Type.ReadOnly right -> Type.ReadOnly.create (meet order left right)
         | (Type.Variable _ as variable), other
         | other, (Type.Variable _ as variable) ->
             if always_less_or_equal order ~left:variable ~right:other then
