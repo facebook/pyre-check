@@ -2343,7 +2343,7 @@ let variable ?constraints ?variance name =
 
 let yield parameter = Parametric { name = "Yield"; parameters = [Single parameter] }
 
-let parametric_substitution_map =
+let alternate_name_to_canonical_name_map =
   [
     "typing.ChainMap", "collections.ChainMap";
     "typing.Counter", "collections.Counter";
@@ -4287,7 +4287,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | "typing.Union", Some parameters -> union parameters
         | _ -> result
       in
-      match Identifier.Table.find parametric_substitution_map name with
+      match Identifier.Table.find alternate_name_to_canonical_name_map name with
       | Some name -> Parametric { name; parameters }
       | None -> replace_with_special_form ~name parameters)
   | Union elements -> union elements
