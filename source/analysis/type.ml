@@ -4280,20 +4280,16 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       >>= IntExpression.create_product_from_ordered_type
       |> Option.value ~default:Top
   | Parametric { name; parameters } -> (
-      match
-        Identifier.Table.find parametric_substitution_map name, Parameter.all_singles parameters
-      with
-      | Some name, _ -> Parametric { name; parameters }
-      | None, Some parameters -> (
-          match name with
-          | "typing_extensions.Annotated"
-          | "typing.Annotated"
-            when List.length parameters > 0 ->
-              annotated (List.hd_exn parameters)
-          | "typing.Optional" when List.length parameters = 1 -> optional (List.hd_exn parameters)
-          | "typing.Union" -> union parameters
-          | _ -> result)
-      | _, None -> result)
+      let replace_with_special_form ~name parameters =
+        match name, Parameter.all_singles parameters with
+        | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> annotated head
+        | "typing.Optional", Some [head] -> optional head
+        | "typing.Union", Some parameters -> union parameters
+        | _ -> result
+      in
+      match Identifier.Table.find parametric_substitution_map name with
+      | Some name -> Parametric { name; parameters }
+      | None -> replace_with_special_form ~name parameters)
   | Union elements -> union elements
   | Callable ({ implementation; overloads; _ } as callable) ->
       let collect_unpacked_parameters_if_any ({ parameters; _ } as overload) =
