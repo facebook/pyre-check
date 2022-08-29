@@ -6484,6 +6484,32 @@ let test_is_truthy _ =
   ()
 
 
+let test_is_falsy _ =
+  let assert_falsy ~expected type_ =
+    parse_single_expression type_
+    |> Type.create ~aliases:Type.empty_aliases
+    |> Type.is_falsy
+    |> assert_bool_equals ~expected
+  in
+  assert_falsy ~expected:false "typing_extensions.Literal[True]";
+  assert_falsy ~expected:true "None";
+  assert_falsy ~expected:true "typing_extensions.Literal[False]";
+  assert_falsy ~expected:true "typing_extensions.Literal[0]";
+  assert_falsy ~expected:false "typing_extensions.Literal[42]";
+  assert_falsy ~expected:true "typing_extensions.Literal['']";
+  assert_falsy ~expected:true "typing_extensions.Literal[b'']";
+  assert_falsy ~expected:false "typing_extensions.Literal['hello']";
+  assert_falsy ~expected:false "typing_extensions.Literal[b'hello']";
+  assert_falsy ~expected:true "typing.Annotated[typing_extensions.Literal[False]]";
+  assert_falsy
+    ~expected:true
+    "typing.Union[typing_extensions.Literal[False], typing_extensions.Literal[0]]";
+  assert_falsy
+    ~expected:false
+    "typing.Union[typing_extensions.Literal[True], typing_extensions.Literal[0]]";
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -6562,6 +6588,7 @@ let () =
          "resolve_class" >:: test_resolve_class;
          "show" >:: test_show;
          "is_truthy" >:: test_is_truthy;
+         "is_falsy" >:: test_is_falsy;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;
