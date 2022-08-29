@@ -14,9 +14,9 @@
    finalTest formatStringTest generatorTest globalTest importTest inferTest
    isinstanceTest iterableTest lambdaTest literalTest methodTest modeTest
    overloadTest parseErrorTest protocolTest redundantCastTest
-   typeRefinementTest returnTest revealLocalsTest revealTypeTest scopeTest
-   signatureSelectionTest sqlAlchemyTest tupleTest typeGuardTest
-   typeVariableTest typedDictionaryTest unionTest varianceTest
+   typeRefinementTest readOnlyTypeCheckTest returnTest revealLocalsTest
+   revealTypeTest scopeTest signatureSelectionTest sqlAlchemyTest tupleTest
+   typeGuardTest typeVariableTest typedDictionaryTest unionTest varianceTest
    walrusOperatorTest matchTest)
  (modules :standard \ integrationTest)
  (preprocess

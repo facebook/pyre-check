@@ -987,6 +987,15 @@ let test_add_constraint_type_variable_tuple context =
   ()
 
 
+let test_add_constraint_readonly context =
+  let assert_add, _, _, _ = make_assert_functions context in
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" [[]];
+  assert_add ~left:"C" ~right:"pyre_extensions.ReadOnly[C]" [[]];
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
+  assert_add ~left:"C" ~right:"pyre_extensions.ReadOnly[T_Unconstrained]" [["T_Unconstrained", "C"]];
+  ()
+
+
 let test_instantiate_protocol_parameters context =
   let assert_instantiate_protocol_parameters
       ?source
@@ -1251,6 +1260,7 @@ let () =
          "add_constraint" >:: test_add_constraint;
          "add_constraint_recursive_type" >:: test_add_constraint_recursive_type;
          "add_constraint_type_variable_tuple" >:: test_add_constraint_type_variable_tuple;
+         "add_constraint_readonly" >:: test_add_constraint_readonly;
          "instantiate_protocol_parameters" >:: test_instantiate_protocol_parameters;
          "marks_escaped_as_escaped" >:: test_mark_escaped_as_escaped;
        ]

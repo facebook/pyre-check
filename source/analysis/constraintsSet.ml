@@ -431,8 +431,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.ParameterVariadicComponent _ -> impossible
     | Type.Annotated left, _ -> solve_less_or_equal order ~constraints ~left ~right
     | _, Type.Annotated right -> solve_less_or_equal order ~constraints ~left ~right
-    | Type.ReadOnly _, _ -> failwith "TODO(T130377746): Implement ReadOnly"
-    | _, Type.ReadOnly _ -> failwith "TODO(T130377746): Implement ReadOnly"
+    | Type.ReadOnly left, _ -> solve_less_or_equal order ~constraints ~left ~right
+    | _, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
     | Type.Any, other -> [add_fallbacks other]
     | Type.Variable left_variable, Type.Variable right_variable
       when Type.Variable.Unary.is_free left_variable && Type.Variable.Unary.is_free right_variable
