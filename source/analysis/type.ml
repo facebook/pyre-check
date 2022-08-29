@@ -1967,7 +1967,9 @@ let rec is_falsy = function
   | Literal (String (LiteralValue ""))
   | Literal (Bytes "") ->
       true
-  | Annotated annotated -> is_falsy annotated
+  | Annotated annotated
+  | ReadOnly annotated ->
+      is_falsy annotated
   | Union types -> List.for_all types ~f:is_falsy
   | _ -> false
 
@@ -1980,7 +1982,9 @@ let rec is_truthy = function
   | Literal (String (LiteralValue value))
   | Literal (Bytes value) ->
       not (String.is_empty value)
-  | Annotated annotated -> is_truthy annotated
+  | Annotated annotated
+  | ReadOnly annotated ->
+      is_truthy annotated
   | Union types -> List.for_all types ~f:is_truthy
   | _ -> false
 

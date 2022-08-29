@@ -35,6 +35,20 @@ let test_ignore_readonly context =
       "Incompatible variable type [9]: y is declared to have type `str` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
     ];
+  assert_type_errors
+    ~context
+    {|
+      from pyre_extensions import ReadOnly
+      from typing_extensions import Literal
+
+      def foo(
+        always_true: ReadOnly[Literal[True]],
+        always_false: ReadOnly[Literal[False]]
+      ) -> None:
+        x: Literal[True] = always_true or False
+        y: Literal[False] = always_false and True
+    |}
+    [];
   ()
 
 
