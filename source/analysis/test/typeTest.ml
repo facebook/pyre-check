@@ -1701,6 +1701,9 @@ let test_expression _ =
     (Type.TypeOperation (Compose (Type.OrderedTypes.Concrete [callable1; callable2])))
     "pyre_extensions.Compose[(typing.Callable[([PositionalOnly(int)], str)], \
      typing.Callable[([PositionalOnly(str)], bool)])]";
+  assert_expression
+    (Type.ReadOnly (Type.list Type.integer))
+    "pyre_extensions.ReadOnly[typing.List[int]]";
   ()
 
 
@@ -1941,6 +1944,9 @@ let test_elements _ =
   assert_equal
     ["str"; "typing_extensions.Literal"]
     (Type.elements (Type.Literal (Type.String AnyLiteral)));
+  assert_equal
+    ["int"; "list"; "pyre_extensions.ReadOnly"]
+    (Type.elements (Type.ReadOnly (Type.list Type.integer)));
   ()
 
 
@@ -2699,6 +2705,26 @@ let test_visit _ =
   in
   assert_types_equal transformed (create "Foo[Bar[Bro[typing.Optional[FooBarBroLand]]]]");
   assert_equal "" end_state;
+  let module CollectAnnotations = Type.Transform.Make (struct
+    type state = Type.t list
+
+    let visit state annotation =
+      { Type.Transform.transformed_annotation = annotation; new_state = annotation :: state }
+
+
+    let visit_children_before _ _ = false
+
+    let visit_children_after = true
+  end)
+  in
+  let visited_annotations =
+    CollectAnnotations.visit [] (create "pyre_extensions.ReadOnly[typing.List[int]]") |> fst
+  in
+  assert_equal
+    ~cmp:[%compare.equal: string list]
+    ~printer:[%show: string list]
+    ["int"; "typing.List[int]"; "pyre_extensions.ReadOnly[typing.List[int]]"]
+    (List.map visited_annotations ~f:Type.show);
   ()
 
 
@@ -6414,6 +6440,10 @@ let test_show _ =
        typing.Tuple[typing.Callable[[str], bool], *Ts]]]"
     ~expected_concise:
       "Compose[*Broadcast[typing.Tuple[(int) -> str], typing.Tuple[(str) -> bool, *Ts]]]";
+  assert_show
+    (Type.ReadOnly (Type.list Type.integer))
+    ~expected_full:"pyre_extensions.ReadOnly[typing.List[int]]"
+    ~expected_concise:"pyre_extensions.ReadOnly[typing.List[int]]";
   ()
 
 

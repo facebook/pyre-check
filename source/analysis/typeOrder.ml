@@ -153,6 +153,8 @@ module OrderImplementation = struct
             union
         | Type.Annotated left, _ -> Type.annotated (join order left right)
         | _, Type.Annotated right -> Type.annotated (join order left right)
+        | Type.ReadOnly _, _ -> failwith "TODO(T130377746): Implement ReadOnly"
+        | _, Type.ReadOnly _ -> failwith "TODO(T130377746): Implement ReadOnly"
         | Type.RecursiveType left_recursive_type, Type.RecursiveType right_recursive_type ->
             let new_name = Type.RecursiveType.Namespace.create_fresh_name () in
             (* Based on https://cstheory.stackexchange.com/a/38415. *)
@@ -479,6 +481,8 @@ module OrderImplementation = struct
             Type.Bottom
         | Type.Annotated left, _ -> Type.annotated (meet order left right)
         | _, Type.Annotated right -> Type.annotated (meet order left right)
+        | Type.ReadOnly _, _ -> failwith "TODO(T130377746): Implement ReadOnly"
+        | _, Type.ReadOnly _ -> failwith "TODO(T130377746): Implement ReadOnly"
         | (Type.Variable _ as variable), other
         | other, (Type.Variable _ as variable) ->
             if always_less_or_equal order ~left:variable ~right:other then

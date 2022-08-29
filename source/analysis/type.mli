@@ -367,6 +367,7 @@ and t =
     }
   | ParameterVariadicComponent of Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of Primitive.t
+  | ReadOnly of t
   | RecursiveType of t Record.RecursiveType.record
   | Top
   | Tuple of t Record.OrderedTypes.record
@@ -1110,6 +1111,10 @@ module TypedDictionary : sig
   val class_name : total:bool -> Primitive.t
 
   val is_builtin_typed_dictionary_class : Primitive.t -> bool
+end
+
+module ReadOnly : sig
+  val create : t -> t
 end
 
 val infer_transform : t -> t

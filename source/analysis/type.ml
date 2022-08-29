@@ -1474,6 +1474,7 @@ module T = struct
     | ParameterVariadicComponent of
         Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
     | Primitive of Primitive.t
+    | ReadOnly of t
     | RecursiveType of t Record.RecursiveType.record
     | Top
     | Tuple of t Record.OrderedTypes.record
@@ -2088,6 +2089,7 @@ let rec pp format annotation =
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
   | Primitive name -> Format.fprintf format "%a" String.pp name
+  | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
   | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
   | Top -> Format.fprintf format "unknown"
   | Tuple ordered_type -> Format.fprintf format "typing.Tuple[%s]" (pp_ordered_type ordered_type)
@@ -2174,6 +2176,7 @@ and pp_concise format annotation =
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
   | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
+  | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
   | RecursiveType { name; _ } -> Format.fprintf format "%s" name
   | Top -> Format.fprintf format "unknown"
   | Tuple (Concatenation { middle = UnboundedElements parameter; prefix = []; suffix = [] }) ->
@@ -2559,6 +2562,7 @@ let rec expression annotation =
         Expression.Name
           (Attribute { base = expression (Primitive variable_name); attribute; special = false })
     | Primitive name -> create_name name
+    | ReadOnly type_ -> get_item_call "pyre_extensions.ReadOnly" [expression type_]
     | RecursiveType { name; _ } -> create_name name
     | Top -> create_name "$unknown"
     | Tuple (Concrete []) ->
@@ -2751,6 +2755,7 @@ module Transform = struct
               | Unpacked (Broadcast broadcast) -> Unpacked (Broadcast (visit_broadcast broadcast))
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
+        | ReadOnly type_ -> ReadOnly (visit_annotation type_ ~state)
         | RecursiveType { name; body } ->
             RecursiveType { name; body = visit_annotation ~state body }
         | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
@@ -4429,6 +4434,7 @@ let elements annotation =
         | Tuple _ -> "tuple" :: sofar, recursive_type_names
         | TypeOperation (Compose _) -> "pyre_extensions.Compose" :: sofar, recursive_type_names
         | Union _ -> "typing.Union" :: sofar, recursive_type_names
+        | ReadOnly _ -> "pyre_extensions.ReadOnly" :: sofar, recursive_type_names
         | RecursiveType { name; _ } -> sofar, name :: recursive_type_names
         | ParameterVariadicComponent _
         | Bottom
@@ -6469,6 +6475,10 @@ module TypedDictionary = struct
     else
       common_methods
       @ (non_total_special_methods class_name |> List.map ~f:(fun { name; _ } -> define name))
+end
+
+module ReadOnly = struct
+  let create type_ = ReadOnly type_
 end
 
 (* Transform tuples and callables so they are printed correctly when running infer and click to fix. *)
