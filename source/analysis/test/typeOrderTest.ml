@@ -2412,14 +2412,17 @@ let test_meet _ =
     in
     assert_type_equal
       (parse_annotation expected)
-      (meet order (parse_annotation left) (parse_annotation right))
+      (meet order (parse_annotation left) (parse_annotation right));
+    (* Test that `meet` is commutative. *)
+    assert_type_equal
+      (parse_annotation expected)
+      (meet order (parse_annotation right) (parse_annotation left))
   in
   (* Special elements. *)
   assert_meet "typing.List[float]" "typing.Any" "typing.List[float]";
 
   (* Primitive types. *)
   assert_meet "list" "typing.Sized" "list";
-  assert_meet "typing.Sized" "list" "list";
   assert_meet "typing.List[int]" "typing.Sized" "typing.List[int]";
 
   (* Annotated types. *)
@@ -2455,10 +2458,6 @@ let test_meet _ =
   assert_meet
     "typing.Union[int, typing.Optional[str]]"
     "typing.Optional[str]"
-    "typing.Optional[str]";
-  assert_meet
-    "typing.Optional[str]"
-    "typing.Union[int, typing.Optional[str]]"
     "typing.Optional[str]";
 
   (* Parametric types. *)
@@ -2623,7 +2622,8 @@ let test_meet _ =
 
 let test_meet_callable _ =
   let assert_meet ?(order = default) left right expected =
-    assert_type_equal expected (meet order left right)
+    assert_type_equal expected (meet order left right);
+    assert_type_equal expected (meet order right left)
   in
   let named_int_to_int =
     Type.Callable.create
