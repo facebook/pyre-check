@@ -49,6 +49,15 @@ let test_ignore_readonly context =
         y: Literal[False] = always_false and True
     |}
     [];
+  assert_type_errors
+    ~context
+    {|
+      from pyre_extensions import ReadOnly
+
+      def foo(s: ReadOnly[str]) -> None:
+        y: str = s.capitalize()
+    |}
+    [];
   ()
 
 

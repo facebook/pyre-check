@@ -6635,7 +6635,9 @@ let resolve_class annotation =
                       ~recursive_type
                       instantiated;
                 })
-    | Annotated annotation -> extract ~meta annotation
+    | Annotated annotation
+    | ReadOnly annotation ->
+        extract ~meta annotation
     | annotation when is_meta annotation ->
         (* Metaclasses return accessed_through_class=true since they allow looking up only class
            attribute, etc. *)

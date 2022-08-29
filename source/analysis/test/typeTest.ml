@@ -6392,6 +6392,13 @@ let test_resolve_class _ =
   assert_resolved_class
     directly_recursive_type
     (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
+
+  assert_resolved_class
+    (Type.annotated Type.integer)
+    (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
+  assert_resolved_class
+    (Type.ReadOnly.create Type.integer)
+    (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
   ()
 
 
