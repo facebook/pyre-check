@@ -11,10 +11,10 @@
  * Traditional fold:        f(1, f(2, f(3, 4)))
  * Divide and conquer fold: f(f(1, 2), f(3, 4))
  *
- * Requires f to be associative.
+ * Requires f to be associative, uses List.reduce_balanced
  *
  * With n = length of the list, O(n log(n)) for cases
  * where (f sofar element) is linear in number of elements
- * already folden over, as opposed to O(n^2).
+ * already folded over, as opposed to O(n^2).
  *)
-val fold_divide_and_conquer : 'a list -> f:('a -> 'a -> 'a) -> init:'a -> 'a
+val fold_balanced : 'a list -> f:('a -> 'a -> 'a) -> init:'a -> 'a

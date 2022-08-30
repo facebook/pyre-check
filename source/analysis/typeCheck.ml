@@ -1164,7 +1164,7 @@ module State (Context : Context) = struct
                 | None -> global_annotation
               in
               tail_annotations
-              |> Algorithms.fold_divide_and_conquer
+              |> Algorithms.fold_balanced
                    ~f:(Refinement.Unit.join_annotations ~global_resolution)
                    ~init:head_annotation
               |> apply_local_override

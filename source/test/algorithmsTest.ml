@@ -10,9 +10,9 @@ open OUnit2
 
 let test_fold_correctness _ =
   let fold1 = List.fold in
-  let fold2 = Algorithms.fold_divide_and_conquer in
+  let fold2 = Algorithms.fold_balanced in
   let input_strings = ["", []; "H", ["e"; "l"; "l"; "o"]] in
-  let input_ints = [0, [1; 2; 3; 4; 5]; -1, [-1; -1]] in
+  let input_ints = [0, [1; 2; 3; 4; 5]; -1, [-1; -1; -1]] in
   let rec loop ~f ~cmp inputs =
     match inputs with
     | [] -> ()
