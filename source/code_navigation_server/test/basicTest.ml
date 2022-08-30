@@ -10,6 +10,8 @@ open OUnit2
 module Request = CodeNavigationServer.Testing.Request
 module Response = CodeNavigationServer.Testing.Response
 
+let position line column = { Ast.Location.line; column }
+
 let assert_type_error_count ?overlay_id ~client ~expected module_name =
   let%lwt raw_response =
     ScratchProject.Client.send_request
@@ -182,6 +184,85 @@ let test_local_update_request context =
   |> ScratchProject.test_server_with ~f:test_local_update_request
 
 
+let test_hover_request context =
+  let test_hover_request client =
+    let root = ScratchProject.Client.get_source_root client in
+    let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            (* This location point to empty space. *)
+            Hover { overlay_id = None; module_ = Module.OfName "test"; position = position 1 2 })
+        ~expected:Response.(Hover { contents = [] })
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            Hover { overlay_id = None; module_ = Module.OfName "test"; position = position 1 0 })
+        ~expected:
+          Response.(
+            Hover { contents = HoverContent.[{ kind = Kind.PlainText; value = "`float`" }] })
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            Hover
+              {
+                overlay_id = None;
+                module_ = Module.OfPath (PyrePath.absolute test_path);
+                position = position 1 0;
+              })
+        ~expected:
+          Response.(
+            Hover { contents = HoverContent.[{ kind = Kind.PlainText; value = "`float`" }] })
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            Hover
+              { overlay_id = None; module_ = Module.OfName "doesnotexist"; position = position 1 0 })
+        ~kind:"ModuleNotTracked"
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            Hover
+              {
+                overlay_id = None;
+                module_ = Module.OfPath "/doesnotexist.py";
+                position = position 1 0;
+              })
+        ~kind:"ModuleNotTracked"
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            Hover
+              {
+                overlay_id = Some "doesnotexist";
+                module_ = Module.OfName "test";
+                position = position 1 0;
+              })
+        ~kind:"OverlayNotFound"
+    in
+    Lwt.return_unit
+  in
+  ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "x: float = 4.2"]
+  |> ScratchProject.test_server_with ~f:test_hover_request
+
+
 let () =
   "basic_test"
   >::: [
@@ -190,5 +271,6 @@ let () =
          "stop_request" >:: OUnitLwt.lwt_wrapper test_stop_request;
          "get_type_errors_request" >:: OUnitLwt.lwt_wrapper test_get_type_errors_request;
          "local_update_request" >:: OUnitLwt.lwt_wrapper test_local_update_request;
+         "hover_request" >:: OUnitLwt.lwt_wrapper test_hover_request;
        ]
   |> Test.run

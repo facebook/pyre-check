@@ -23,6 +23,11 @@ type t =
       module_: Module.t; [@key "module"]
       overlay_id: string option;
     }
+  | Hover of {
+      module_: Module.t; [@key "module"]
+      position: Ast.Location.position;
+      overlay_id: string option;
+    }
   | LocalUpdate of {
       module_: Module.t; [@key "module"]
       content: string;

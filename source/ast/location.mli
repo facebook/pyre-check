@@ -12,7 +12,7 @@ type position = {
   line: int;
   column: int;
 }
-[@@deriving compare, sexp, show, hash, to_yojson]
+[@@deriving compare, sexp, show, hash, yojson]
 
 val any_position : position
 
@@ -20,7 +20,7 @@ type t = {
   start: position;
   stop: position;
 }
-[@@deriving compare, sexp, show, hash, to_yojson]
+[@@deriving compare, sexp, show, hash, yojson]
 
 val create : start:Lexing.position -> stop:Lexing.position -> t
 

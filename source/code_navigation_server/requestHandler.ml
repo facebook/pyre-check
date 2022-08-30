@@ -77,6 +77,26 @@ let handle_get_type_errors ~module_ ~overlay_id { State.environment } =
   get_type_errors_in_overlay ~overlay module_ >>| fun type_errors -> Response.TypeErrors type_errors
 
 
+let get_hover_content_for_module ~overlay ~position module_reference =
+  let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
+  LocationBasedLookup.hover_info_for_position ~type_environment ~module_reference position
+  |> Option.map ~f:(fun value -> Response.HoverContent.{ kind = Kind.PlainText; value })
+
+
+let get_hover_in_overlay ~overlay ~position module_ =
+  let open Result in
+  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
+  get_modules ~module_tracker module_
+  >>| List.filter_map ~f:(get_hover_content_for_module ~overlay ~position)
+
+
+let handle_hover ~module_ ~position ~overlay_id { State.environment } =
+  let open Result in
+  get_overlay ~environment overlay_id
+  >>= fun overlay ->
+  get_hover_in_overlay ~overlay ~position module_ >>| fun contents -> Response.(Hover { contents })
+
+
 let handle_local_update ~module_ ~content ~overlay_id { State.environment } =
   let open Result in
   let module_tracker =
@@ -106,6 +126,11 @@ let handle_request ~server:{ ServerInternal.properties = _; state } = function
   | Request.GetTypeErrors { module_; overlay_id } ->
       let f state =
         handle_get_type_errors ~module_ ~overlay_id state |> response_from_result |> Lwt.return
+      in
+      Server.ExclusiveLock.read state ~f
+  | Request.Hover { module_; position; overlay_id } ->
+      let f state =
+        handle_hover ~module_ ~position ~overlay_id state |> response_from_result |> Lwt.return
       in
       Server.ExclusiveLock.read state ~f
   | Request.LocalUpdate { module_; content; overlay_id } ->

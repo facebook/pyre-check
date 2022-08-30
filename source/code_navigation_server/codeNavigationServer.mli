@@ -103,6 +103,20 @@ module Testing : sig
               respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
               the overlay with the given ID, it will respond with a
               {!Response.ErrorKind.OverlayNotFound} error. *)
+      | Hover of {
+          module_: Module.t;
+          position: Ast.Location.position;
+          overlay_id: string option;
+        }
+          (** A request that asks the server to return hover information at a given location in a
+              given module. The server will send back a {!Response.Hover} response as result. The
+              response will contain an empty list if the server do not have any hover text to show
+              at the location.
+
+              If the provided module is not covered by the code navigation server, the server will
+              respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
+              the overlay with the given ID, it will respond with a
+              {!Response.ErrorKind.OverlayNotFound} error. *)
       | LocalUpdate of {
           module_: Module.t;
           content: string;
@@ -133,6 +147,21 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
+    module HoverContent : sig
+      module Kind : sig
+        (** TODO(T103574623): Support Markup. *)
+        type t = PlainText [@@deriving sexp, compare, yojson { strict = false }]
+      end
+
+      (** A type representing hovering text element. Roughly corresponds to LSP's [MarkupContent]
+          structure. *)
+      type t = {
+        kind: Kind.t;
+        value: string;
+      }
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
     (** A type representing responses sent from the server to its clients *)
     type t =
       | Ok  (** This response will be used for acknowledging successful processing of a request. *)
@@ -140,6 +169,10 @@ module Testing : sig
           (** This response will be sent when the server runs into errors when processing a request. *)
       | TypeErrors of Analysis.AnalysisError.Instantiated.t list
           (** Response for {!Request.GetTypeErrors}. *)
+      | Hover of { contents: HoverContent.t list }
+          (** Response for {!Request.Hover}. [contents] contains a list of items that will be shown
+              to the user (there can be many because build system may map the same file to multiple
+              modules). TODO: Add an optional [range] field used to visualize a hover. *)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 end
