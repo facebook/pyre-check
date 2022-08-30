@@ -1313,22 +1313,16 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options=mock_initial_server_options,
+                server_options=_create_server_options(strict_default=False),
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
-            strict = False
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n'
             )
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager._query_type_coverage(
-                    path=test_path,
-                    strict_default=strict,
-                    expression_level_coverage_enabled=False,
-                    consume_unsaved_changes_enabled=False,
-                )
+                result = await pyre_query_manager._query_type_coverage(path=test_path)
             self.assertEqual(len(memory_bytes_writer.items()), 1)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
@@ -1343,7 +1337,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_type_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options=mock_initial_server_options,
+            server_options=_create_server_options(strict_default=False),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
@@ -1351,9 +1345,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
-                strict_default=False,
-                expression_level_coverage_enabled=False,
-                consume_unsaved_changes_enabled=False,
             )
         self.assertTrue(result is None)
 
@@ -1365,21 +1356,15 @@ class PyreQueryHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options=mock_initial_server_options,
+                server_options=_create_server_options(strict_default=True),
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
-            strict = True
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n'
             )
             output_channel = AsyncTextWriter(MemoryBytesWriter())
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager._query_type_coverage(
-                    path=test_path,
-                    strict_default=strict,
-                    expression_level_coverage_enabled=False,
-                    consume_unsaved_changes_enabled=False,
-                )
+                result = await pyre_query_manager._query_type_coverage(path=test_path)
             self.assertTrue(result is not None)
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertEqual(result.covered_percent, 100.0)
@@ -1388,18 +1373,13 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options=mock_initial_server_options,
+            server_options=_create_server_options(strict_default=False),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager._query_type_coverage(
-                path=Path("test.py"),
-                strict_default=False,
-                expression_level_coverage_enabled=False,
-                consume_unsaved_changes_enabled=False,
-            )
+            result = await pyre_query_manager._query_type_coverage(path=Path("test.py"))
         self.assertTrue(result is not None)
         self.assertEqual(result.covered_percent, 0.0)
         self.assertEqual(len(result.uncovered_ranges), 1)
@@ -1416,22 +1396,21 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options=mock_initial_server_options,
+                server_options=_create_server_options(
+                    strict_default=False,
+                    ide_features=configuration_module.IdeFeatures(
+                        expression_level_coverage_enabled=True
+                    ),
+                ),
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
-            strict = False
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":1,"coverage_gaps":[]}]]}]\n'
             )
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager._query_type_coverage(
-                    path=test_path,
-                    strict_default=strict,
-                    expression_level_coverage_enabled=True,
-                    consume_unsaved_changes_enabled=False,
-                )
+                result = await pyre_query_manager._query_type_coverage(path=test_path)
             self.assertEqual(len(memory_bytes_writer.items()), 2)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
@@ -1451,10 +1430,14 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options=mock_initial_server_options,
+                server_options=_create_server_options(
+                    strict_default=False,
+                    ide_features=configuration_module.IdeFeatures(
+                        expression_level_coverage_enabled=True
+                    ),
+                ),
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
-            strict = False
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":4,"coverage_gaps":[{"location": {"start": {"line": 11, "column": 16}, "stop": {"line": 11, "column": 17}}, "function_name":"foo","type_": "typing.Any", "reason": ["TypeIsAny"]}]}]]}]\n'
             )
@@ -1463,9 +1446,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             with patch_connect_async(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
-                    strict_default=strict,
-                    expression_level_coverage_enabled=True,
-                    consume_unsaved_changes_enabled=False,
                 )
             self.assertEqual(len(memory_bytes_writer.items()), 2)
             self.assertTrue(
@@ -1481,7 +1461,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_expression_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options=mock_initial_server_options,
+            server_options=_create_server_options(
+                strict_default=False,
+                ide_features=configuration_module.IdeFeatures(
+                    expression_level_coverage_enabled=True
+                ),
+            ),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
@@ -1491,9 +1476,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
-                strict_default=False,
-                expression_level_coverage_enabled=True,
-                consume_unsaved_changes_enabled=False,
             )
         self.assertTrue(result is None)
 
@@ -1505,10 +1487,14 @@ class PyreQueryHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options=mock_initial_server_options,
+                server_options=_create_server_options(
+                    strict_default=True,
+                    ide_features=configuration_module.IdeFeatures(
+                        expression_level_coverage_enabled=True
+                    ),
+                ),
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
-            strict = True
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
             )
@@ -1516,9 +1502,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             with patch_connect_async(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
-                    strict_default=strict,
-                    expression_level_coverage_enabled=True,
-                    consume_unsaved_changes_enabled=False,
                 )
             self.assertTrue(result is not None)
             self.assertEqual(len(result.uncovered_ranges), 0)
@@ -1528,7 +1511,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_expression_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options=mock_initial_server_options,
+            server_options=_create_server_options(
+                strict_default=True,
+                ide_features=configuration_module.IdeFeatures(
+                    expression_level_coverage_enabled=True
+                ),
+            ),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
@@ -1538,9 +1526,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
-                strict_default=False,
-                expression_level_coverage_enabled=True,
-                consume_unsaved_changes_enabled=False,
             )
         self.assertTrue(result is not None)
         self.assertEqual(result.covered_percent, 100.0)
@@ -1569,7 +1554,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(
@@ -1608,7 +1592,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(len(client_output_writer.items()), 1)
@@ -1656,7 +1639,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(
@@ -1703,7 +1685,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(len(client_output_writer.items()), 1)
@@ -1766,7 +1747,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(
@@ -1822,7 +1802,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(len(client_output_writer.items()), 1)

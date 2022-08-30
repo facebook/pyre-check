@@ -750,6 +750,23 @@ class PyreQueryHandler(background.Task):
         self.client_output_channel = client_output_channel
         self.socket_path: Path = server_options.get_socket_path()
 
+    def is_expression_level_coverage_enabled(self) -> bool:
+        ide_features = self.server_options.ide_features
+        return (
+            ide_features is not None
+            and ide_features.is_expression_level_coverage_enabled()
+        )
+
+    def is_consume_unsaved_changes_enabled(self) -> bool:
+        ide_features = self.server_options.ide_features
+        return (
+            ide_features is not None
+            and ide_features.is_consume_unsaved_changes_enabled()
+        )
+
+    def is_strict_by_default(self) -> bool:
+        return self.server_options.strict_default
+
     def should_write_telemetry(self) -> bool:
         return self.server_options.enabled_telemetry_event
 
@@ -771,9 +788,8 @@ class PyreQueryHandler(background.Task):
     async def _query_modules_of_path(
         self,
         path: Path,
-        consume_unsaved_changes_enabled: bool,
     ) -> Optional[QueryModulesOfPathResponse]:
-        overlay_id = str(path) if consume_unsaved_changes_enabled else None
+        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled else None
         return await daemon_query.attempt_typed_async_query(
             response_type=QueryModulesOfPathResponse,
             socket_path=self.socket_path,
@@ -782,10 +798,11 @@ class PyreQueryHandler(background.Task):
         )
 
     async def _query_is_typechecked(
-        self, path: Path, consume_unsaved_changes_enabled: bool
+        self,
+        path: Path,
     ) -> Optional[bool]:
         response = await self._query_modules_of_path(
-            path, consume_unsaved_changes_enabled
+            path,
         )
         if response is None:
             return None
@@ -795,16 +812,11 @@ class PyreQueryHandler(background.Task):
     async def _query_type_coverage(
         self,
         path: Path,
-        strict_default: bool,
-        expression_level_coverage_enabled: bool,
-        consume_unsaved_changes_enabled: bool,
     ) -> Optional[lsp.TypeCoverageResponse]:
-        is_typechecked = await self._query_is_typechecked(
-            path, consume_unsaved_changes_enabled
-        )
+        is_typechecked = await self._query_is_typechecked(path)
         if is_typechecked is None:
             return None
-        elif expression_level_coverage_enabled:
+        elif self.is_expression_level_coverage_enabled():
             response = await daemon_query.attempt_async_query(
                 socket_path=self.socket_path,
                 query_text=f"expression_level_coverage('{path}')",
@@ -819,25 +831,19 @@ class PyreQueryHandler(background.Task):
             if expression_coverage is None:
                 return file_not_typechecked_coverage_result()
             return path_to_expression_coverage_response(
-                strict_default, expression_coverage
+                self.is_strict_by_default(), expression_coverage
             )
         elif is_typechecked:
-            return path_to_coverage_response(path, strict_default)
+            return path_to_coverage_response(path, self.is_strict_by_default())
         else:
             return file_not_typechecked_coverage_result()
 
     async def _handle_type_coverage_query(
         self,
         query: TypeCoverageQuery,
-        strict_default: bool,
-        expression_level_coverage_enabled: bool,
-        consume_unsaved_changes_enabled: bool,
     ) -> None:
         type_coverage_result = await self._query_type_coverage(
             query.path,
-            strict_default,
-            expression_level_coverage_enabled,
-            consume_unsaved_changes_enabled,
         )
         if type_coverage_result is not None:
             await lsp.write_json_rpc(
@@ -852,14 +858,15 @@ class PyreQueryHandler(background.Task):
     async def _query_and_send_hover_contents(
         self,
         query: HoverQuery,
-        consume_unsaved_changes_enabled: bool,
     ) -> None:
         path_string = f"'{query.path}'"
         query_text = (
             f"hover_info_for_position(path={path_string},"
             f" line={query.position.line}, column={query.position.character})"
         )
-        overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
+        overlay_id = (
+            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
+        )
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=HoverResponse,
             socket_path=self.socket_path,
@@ -896,14 +903,15 @@ class PyreQueryHandler(background.Task):
     async def _query_and_send_definition_location(
         self,
         query: DefinitionLocationQuery,
-        consume_unsaved_changes_enabled: bool,
     ) -> None:
         path_string = f"'{query.path}'"
         query_text = (
             f"location_of_definition(path={path_string},"
             f" line={query.position.line}, column={query.position.character})"
         )
-        overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
+        overlay_id = (
+            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
+        )
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=DefinitionLocationResponse,
             socket_path=self.socket_path,
@@ -944,14 +952,15 @@ class PyreQueryHandler(background.Task):
     async def _handle_find_all_references_query(
         self,
         query: ReferencesQuery,
-        consume_unsaved_changes_enabled: bool,
     ) -> None:
         path_string = f"'{query.path}'"
         query_text = (
             f"find_references(path={path_string},"
             f" line={query.position.line}, column={query.position.character})"
         )
-        overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
+        overlay_id = (
+            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
+        )
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=ReferencesResponse,
             socket_path=self.socket_path,
@@ -995,39 +1004,23 @@ class PyreQueryHandler(background.Task):
         )
 
     async def run_request_handler(self) -> None:
-        strict_default = self.server_options.strict_default
-        ide_features = self.server_options.ide_features
-        expression_level_coverage_enabled = (
-            ide_features is not None
-            and ide_features.is_expression_level_coverage_enabled()
-        )
-        consume_unsaved_changes_enabled = (
-            ide_features is not None
-            and ide_features.is_consume_unsaved_changes_enabled()
-        )
         while True:
             query = await self.query_state.queries.get()
             if isinstance(query, TypeCoverageQuery):
                 await self._handle_type_coverage_query(
                     query,
-                    strict_default,
-                    expression_level_coverage_enabled,
-                    consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, HoverQuery):
                 await self._query_and_send_hover_contents(
                     query,
-                    consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, DefinitionLocationQuery):
                 await self._query_and_send_definition_location(
                     query,
-                    consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, ReferencesQuery):
                 await self._handle_find_all_references_query(
                     query,
-                    consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, OverlayUpdate):
                 await self._handle_overlay_update_request(query)
