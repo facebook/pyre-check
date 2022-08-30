@@ -1548,7 +1548,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager._query_and_send_hover_contents(
+            await pyre_query_manager.handle_hover_query(
                 query=HoverQuery(
                     id=99,
                     path=Path("bar.py"),
@@ -1586,7 +1586,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager._query_and_send_hover_contents(
+            await pyre_query_manager.handle_hover_query(
                 query=HoverQuery(
                     id=99,
                     path=Path("bar.py"),
@@ -1633,7 +1633,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager._query_and_send_definition_location(
+            await pyre_query_manager.handle_definition_location_query(
                 query=DefinitionLocationQuery(
                     id=99,
                     path=Path("bar.py"),
@@ -1679,7 +1679,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager._query_and_send_definition_location(
+            await pyre_query_manager.handle_definition_location_query(
                 query=DefinitionLocationQuery(
                     id=99,
                     path=Path("bar.py"),
@@ -1741,7 +1741,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager._handle_find_all_references_query(
+            await pyre_query_manager.handle_find_references_query(
                 query=ReferencesQuery(
                     id=99,
                     path=Path("bar.py"),
@@ -1796,7 +1796,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager._handle_find_all_references_query(
+            await pyre_query_manager.handle_find_references_query(
                 query=ReferencesQuery(
                     id=99,
                     path=Path("bar.py"),

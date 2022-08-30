@@ -838,7 +838,7 @@ class PyreQueryHandler(background.Task):
         else:
             return file_not_typechecked_coverage_result()
 
-    async def _handle_type_coverage_query(
+    async def handle_type_coverage_query(
         self,
         query: TypeCoverageQuery,
     ) -> None:
@@ -855,7 +855,7 @@ class PyreQueryHandler(background.Task):
                 ),
             )
 
-    async def _query_and_send_hover_contents(
+    async def handle_hover_query(
         self,
         query: HoverQuery,
     ) -> None:
@@ -900,7 +900,7 @@ class PyreQueryHandler(background.Task):
             query.activity_key,
         )
 
-    async def _query_and_send_definition_location(
+    async def handle_definition_location_query(
         self,
         query: DefinitionLocationQuery,
     ) -> None:
@@ -949,7 +949,7 @@ class PyreQueryHandler(background.Task):
             query.activity_key,
         )
 
-    async def _handle_find_all_references_query(
+    async def handle_find_references_query(
         self,
         query: ReferencesQuery,
     ) -> None:
@@ -987,7 +987,7 @@ class PyreQueryHandler(background.Task):
             ),
         )
 
-    async def _handle_overlay_update_request(
+    async def handle_overlay_update_request(
         self,
         request: OverlayUpdate,
     ) -> None:
@@ -1007,23 +1007,15 @@ class PyreQueryHandler(background.Task):
         while True:
             query = await self.query_state.queries.get()
             if isinstance(query, TypeCoverageQuery):
-                await self._handle_type_coverage_query(
-                    query,
-                )
+                await self.handle_type_coverage_query(query)
             elif isinstance(query, HoverQuery):
-                await self._query_and_send_hover_contents(
-                    query,
-                )
+                await self.handle_hover_query(query)
             elif isinstance(query, DefinitionLocationQuery):
-                await self._query_and_send_definition_location(
-                    query,
-                )
+                await self.handle_definition_location_query(query)
             elif isinstance(query, ReferencesQuery):
-                await self._handle_find_all_references_query(
-                    query,
-                )
+                await self.handle_find_references_query(query)
             elif isinstance(query, OverlayUpdate):
-                await self._handle_overlay_update_request(query)
+                await self.handle_overlay_update_request(query)
 
     async def run(self) -> None:
         """
