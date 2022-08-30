@@ -85,6 +85,21 @@ def _create_server_options_reader(
     return reader
 
 
+mock_server_options_reader: PyreServerOptionsReader = _create_server_options_reader(
+    binary="/not/relevant",
+    server_identifier="not_relevant",
+    start_arguments=start.Arguments(
+        base_arguments=backend_arguments.BaseArguments(
+            source_paths=backend_arguments.SimpleSourcePath(),
+            log_path="/log/path",
+            global_root="/global/root",
+        ),
+        socket_path=Path("irrelevant_socket_path.sock"),
+    ),
+)
+mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
+
+
 async def _create_input_channel_with_requests(
     requests: Iterable[json_rpc.Request],
 ) -> AsyncTextReader:
@@ -102,21 +117,6 @@ class NoOpBackgroundTask(background.Task):
 class WaitForeverBackgroundTask(background.Task):
     async def run(self) -> None:
         await asyncio.Event().wait()
-
-
-def _fake_option_reader() -> PyreServerOptionsReader:
-    return _create_server_options_reader(
-        binary="/not/relevant",
-        server_identifier="not_relevant",
-        start_arguments=start.Arguments(
-            base_arguments=backend_arguments.BaseArguments(
-                source_paths=backend_arguments.SimpleSourcePath(),
-                log_path="/log/path",
-                global_root="/global/root",
-            ),
-            socket_path=Path("irrelevant_socket_path.sock"),
-        ),
-    )
 
 
 class PersistentTest(testslide.TestCase):
@@ -197,7 +197,7 @@ class PersistentTest(testslide.TestCase):
         )
         bytes_writer = MemoryBytesWriter()
         result = await try_initialize(
-            input_channel, AsyncTextWriter(bytes_writer), _fake_option_reader()
+            input_channel, AsyncTextWriter(bytes_writer), mock_initial_server_options
         )
         self.assertIsInstance(result, InitializationSuccess)
         self.assertEqual(len(bytes_writer.items()), 1)
@@ -209,7 +209,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, _fake_option_reader()
+            input_channel, output_channel, mock_initial_server_options
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -220,7 +220,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, _fake_option_reader()
+            input_channel, output_channel, mock_initial_server_options
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -253,7 +253,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, _fake_option_reader()
+            input_channel, output_channel, mock_initial_server_options
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -264,7 +264,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, _fake_option_reader()
+            input_channel, output_channel, mock_initial_server_options
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -296,7 +296,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, _fake_option_reader()
+            input_channel, output_channel, mock_initial_server_options
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -320,7 +320,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, _fake_option_reader()
+            input_channel, output_channel, mock_initial_server_options
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -329,7 +329,7 @@ class PersistentTest(testslide.TestCase):
         result = await try_initialize(
             create_memory_text_reader(""),
             create_memory_text_writer(),
-            _fake_option_reader(),
+            mock_initial_server_options,
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -1292,10 +1292,9 @@ class PyreQueryHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
-            server_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=server_options_reader,
+                server_options_reader=mock_server_options_reader,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1326,7 +1325,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_type_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_fake_option_reader(),
+            server_options_reader=mock_server_options_reader,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
@@ -1349,7 +1348,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=_fake_option_reader(),
+                server_options_reader=mock_server_options_reader,
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             strict = True
@@ -1373,7 +1372,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_fake_option_reader(),
+            server_options_reader=mock_server_options_reader,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
@@ -1400,10 +1399,9 @@ class PyreQueryHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
-            server_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=server_options_reader,
+                server_options_reader=mock_server_options_reader,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1437,10 +1435,9 @@ class PyreQueryHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
-            server_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=server_options_reader,
+                server_options_reader=mock_server_options_reader,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1471,7 +1468,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_expression_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_fake_option_reader(),
+            server_options_reader=mock_server_options_reader,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
@@ -1496,7 +1493,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=_fake_option_reader(),
+                server_options_reader=mock_server_options_reader,
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             strict = True
@@ -1520,7 +1517,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_expression_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_fake_option_reader(),
+            server_options_reader=mock_server_options_reader,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(

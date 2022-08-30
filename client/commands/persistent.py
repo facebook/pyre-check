@@ -237,7 +237,7 @@ class InitializationExit:
 async def try_initialize(
     input_channel: connections.AsyncTextReader,
     output_channel: connections.AsyncTextWriter,
-    server_options_reader: PyreServerOptionsReader,
+    server_options: PyreServerOptions,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
     Read an LSP message from the input channel and try to initialize an LSP
@@ -275,13 +275,6 @@ async def try_initialize(
         initialize_parameters = lsp.InitializeParameters.from_json_rpc_parameters(
             request_parameters
         )
-
-        try:
-            server_options = read_server_options(
-                server_options_reader, remote_logging=None
-            )
-        except configuration_module.InvalidConfiguration as e:
-            raise lsp.ServerNotInitializedError(str(e)) from None
 
         result = process_initialize_request(
             initialize_parameters, server_options.ide_features
@@ -1968,9 +1961,15 @@ async def run_persistent(
     server_options_reader: PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
+    try:
+        initial_server_options = read_server_options(
+            server_options_reader, remote_logging=None
+        )
+    except configuration_module.InvalidConfiguration as e:
+        raise lsp.ServerNotInitializedError(str(e)) from None
     stdin, stdout = await connections.create_async_stdin_stdout()
     while True:
-        initialize_result = await try_initialize(stdin, stdout, server_options_reader)
+        initialize_result = await try_initialize(stdin, stdout, initial_server_options)
         if isinstance(initialize_result, InitializationExit):
             LOG.info("Received exit request before initialization.")
             return 0
