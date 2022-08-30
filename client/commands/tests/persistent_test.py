@@ -69,7 +69,7 @@ def _create_server_start_options_reader(
     server_identifier: str,
     start_arguments: start.Arguments,
     ide_features: Optional[configuration_module.IdeFeatures] = None,
-    strict_defualt: bool = False,
+    strict_default: bool = False,
     excludes: Optional[Sequence[str]] = None,
 ) -> PyreDaemonStartOptionsReader:
     def reader() -> PyreDaemonStartOptions:
@@ -78,7 +78,7 @@ def _create_server_start_options_reader(
             server_identifier,
             start_arguments,
             ide_features,
-            strict_defualt,
+            strict_default,
             excludes if excludes else [],
         )
 
