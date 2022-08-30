@@ -49,7 +49,11 @@ let test_basic context =
         assert_failure message
     | Some module_path ->
         let actual = ModulePath.full_path ~configuration module_path in
-        assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show expected actual
+        assert_equal
+          ~cmp:[%compare.equal: ArtifactPath.t]
+          ~printer:ArtifactPath.show
+          expected
+          actual
   in
   assert_module_path
     !&"a"

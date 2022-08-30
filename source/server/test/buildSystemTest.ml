@@ -82,13 +82,13 @@ let test_type_errors context =
   let build_system_initializer =
     let initialize () =
       let lookup_source path =
-        if ArtifactPath.equal path !test_artifact_path then
+        if [%compare.equal: ArtifactPath.t] path !test_artifact_path then
           Some test_source_path
         else
           None
       in
       let lookup_artifact path =
-        if SourcePath.equal path test_source_path then
+        if [%compare.equal: SourcePath.t] path test_source_path then
           [!test_artifact_path]
         else
           []
@@ -194,15 +194,15 @@ let test_type_errors_in_multiple_artifacts context =
       (* We map the queried source path to both aritfact paths *)
       let lookup_source path =
         if
-          ArtifactPath.equal path !test_artifact_path0
-          || ArtifactPath.equal path !test_artifact_path1
+          [%compare.equal: ArtifactPath.t] path !test_artifact_path0
+          || [%compare.equal: ArtifactPath.t] path !test_artifact_path1
         then
           Some test_source_path
         else
           None
       in
       let lookup_artifact path =
-        if SourcePath.equal path test_source_path then
+        if [%compare.equal: SourcePath.t] path test_source_path then
           [!test_artifact_path0; !test_artifact_path1]
         else
           []
@@ -253,13 +253,13 @@ let test_update context =
   let build_system_initializer =
     let initialize () =
       let lookup_source path =
-        if ArtifactPath.equal path !test_artifact_path then
+        if [%compare.equal: ArtifactPath.t] path !test_artifact_path then
           Some test_source_path
         else
           None
       in
       let lookup_artifact path =
-        if SourcePath.equal path test_source_path then
+        if [%compare.equal: SourcePath.t] path test_source_path then
           [!test_artifact_path]
         else
           []

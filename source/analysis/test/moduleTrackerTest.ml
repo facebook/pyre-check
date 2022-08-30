@@ -108,7 +108,11 @@ let assert_module_path
   =
   let expected_path = Test.relative_artifact_path ~root:search_root ~relative in
   let actual_path = ModulePath.full_path ~configuration module_path in
-  assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show expected_path actual_path;
+  assert_equal
+    ~cmp:[%compare.equal: ArtifactPath.t]
+    ~printer:ArtifactPath.show
+    expected_path
+    actual_path;
   Option.iter priority ~f:(fun expected_priority ->
       assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
   Option.iter is_stub ~f:(fun expected_is_stub ->
@@ -328,7 +332,7 @@ let test_module_path_search_path_subdirectory context =
       ~filter_directories:[local_root]
       ()
   in
-  let assert_path = assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show in
+  let assert_path = assert_equal ~cmp:[%compare.equal: ArtifactPath.t] ~printer:ArtifactPath.show in
   assert_no_module_path ~configuration search_root "b.py";
   let module_path_a = create_module_path_exn ~configuration local_root "a.py" in
   assert_path

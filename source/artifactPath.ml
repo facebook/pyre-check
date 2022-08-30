@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t = ArtifactPath of PyrePath.t [@@deriving show, eq, compare, hash]
+type t = ArtifactPath of PyrePath.t [@@deriving show, compare, hash]
 
 let create raw = ArtifactPath raw
 
