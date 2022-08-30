@@ -780,7 +780,6 @@ def persistent(context: click.Context) -> int:
     )
     return commands.persistent.run(
         read_server_start_options=commands.persistent.PyreDaemonStartOptions.create_reader(
-            command_argument=command_argument,
             start_command_argument=command_arguments.StartArguments.create(
                 command_argument=command_argument,
             ),

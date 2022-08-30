@@ -144,7 +144,6 @@ class PyreDaemonStartOptions:
 
     @staticmethod
     def create_reader(
-        command_argument: command_arguments.CommandArguments,
         start_command_argument: command_arguments.StartArguments,
         read_frontend_configuration: FrontendConfigurationReader,
         enabled_telemetry_event: bool,
