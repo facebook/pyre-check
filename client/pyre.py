@@ -779,7 +779,7 @@ def persistent(context: click.Context) -> int:
         configuration.log_directory,
     )
     return commands.persistent.run(
-        read_server_start_options=commands.persistent.PyreDaemonStartOptions.create_reader(
+        read_server_options=commands.persistent.PyreServerOptions.create_reader(
             start_command_argument=command_arguments.StartArguments.create(
                 command_argument=command_argument,
             ),

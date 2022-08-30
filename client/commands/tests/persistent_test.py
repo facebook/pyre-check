@@ -46,11 +46,11 @@ from ..persistent import (
     path_to_coverage_response,
     PyreDaemonLaunchAndSubscribeHandler,
     PyreDaemonShutdown,
-    PyreDaemonStartOptions,
-    PyreDaemonStartOptionsReader,
     PyreQueryHandler,
     PyreQueryState,
     PyreServer,
+    PyreServerOptions,
+    PyreServerOptionsReader,
     read_lsp_request,
     ReferencesQuery,
     ServerState,
@@ -64,16 +64,16 @@ from ..persistent import (
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
 
 
-def _create_server_start_options_reader(
+def _create_server_options_reader(
     binary: str,
     server_identifier: str,
     start_arguments: start.Arguments,
     ide_features: Optional[configuration_module.IdeFeatures] = None,
     strict_default: bool = False,
     excludes: Optional[Sequence[str]] = None,
-) -> PyreDaemonStartOptionsReader:
-    def reader() -> PyreDaemonStartOptions:
-        return PyreDaemonStartOptions(
+) -> PyreServerOptionsReader:
+    def reader() -> PyreServerOptions:
+        return PyreServerOptions(
             binary,
             server_identifier,
             start_arguments,
@@ -104,8 +104,8 @@ class WaitForeverBackgroundTask(background.Task):
         await asyncio.Event().wait()
 
 
-def _fake_option_reader() -> PyreDaemonStartOptionsReader:
-    return _create_server_start_options_reader(
+def _fake_option_reader() -> PyreServerOptionsReader:
+    return _create_server_options_reader(
         binary="/not/relevant",
         server_identifier="not_relevant",
         start_arguments=start.Arguments(
@@ -477,12 +477,12 @@ class PersistentTest(testslide.TestCase):
         )
         bytes_writer = MemoryBytesWriter()
 
-        def fake_server_start_options_reader() -> PyreDaemonStartOptions:
+        def fake_server_options_reader() -> PyreServerOptions:
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
-            server_start_options_reader=fake_server_start_options_reader,
+            server_options_reader=fake_server_options_reader,
             client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
         )
@@ -522,12 +522,12 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_subscription_error(self) -> None:
-        def fake_server_start_options_reader() -> PyreDaemonStartOptions:
+        def fake_server_options_reader() -> PyreServerOptions:
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
-            server_start_options_reader=fake_server_start_options_reader,
+            server_options_reader=fake_server_options_reader,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             server_state=ServerState(),
         )
@@ -542,12 +542,12 @@ class PersistentTest(testslide.TestCase):
         server_state = ServerState(diagnostics={path: []})
         bytes_writer = MemoryBytesWriter()
 
-        def fake_server_start_options_reader() -> PyreDaemonStartOptions:
+        def fake_server_options_reader() -> PyreServerOptions:
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
-            server_start_options_reader=fake_server_start_options_reader,
+            server_options_reader=fake_server_options_reader,
             client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
         )
@@ -834,7 +834,7 @@ class PersistentTest(testslide.TestCase):
 
         bytes_writer = MemoryBytesWriter()
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
-            server_start_options_reader=_create_server_start_options_reader(
+            server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -883,7 +883,7 @@ class PersistentTest(testslide.TestCase):
     async def test_send_message_to_status_bar(self) -> None:
         bytes_writer = MemoryBytesWriter()
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
-            server_start_options_reader=_create_server_start_options_reader(
+            server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1292,10 +1292,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
-            server_start_options_reader = _fake_option_reader()
+            server_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_start_options_reader=server_start_options_reader,
+                server_options_reader=server_options_reader,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1326,7 +1326,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_type_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_fake_option_reader(),
+            server_options_reader=_fake_option_reader(),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
@@ -1349,7 +1349,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_start_options_reader=_fake_option_reader(),
+                server_options_reader=_fake_option_reader(),
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             strict = True
@@ -1373,7 +1373,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_fake_option_reader(),
+            server_options_reader=_fake_option_reader(),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
@@ -1400,10 +1400,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
-            server_start_options_reader = _fake_option_reader()
+            server_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_start_options_reader=server_start_options_reader,
+                server_options_reader=server_options_reader,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1437,10 +1437,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
-            server_start_options_reader = _fake_option_reader()
+            server_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_start_options_reader=server_start_options_reader,
+                server_options_reader=server_options_reader,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1471,7 +1471,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_expression_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_fake_option_reader(),
+            server_options_reader=_fake_option_reader(),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
@@ -1496,7 +1496,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_start_options_reader=_fake_option_reader(),
+                server_options_reader=_fake_option_reader(),
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             strict = True
@@ -1520,7 +1520,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_expression_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_fake_option_reader(),
+            server_options_reader=_fake_option_reader(),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
@@ -1545,7 +1545,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
+            server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1597,7 +1597,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
+            server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1656,7 +1656,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
+            server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1716,7 +1716,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
+            server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1788,7 +1788,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
+            server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1856,7 +1856,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
+            server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
