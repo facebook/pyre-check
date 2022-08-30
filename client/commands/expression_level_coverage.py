@@ -294,8 +294,7 @@ def run_query(
     print_summary: bool = False,
 ) -> commands.ExitCode:
     socket_path = daemon_socket.get_default_socket_path(
-        project_root=configuration.get_global_root(),
-        relative_local_root=configuration.get_relative_local_root(),
+        configuration.get_project_identifier()
     )
     try:
         response = daemon_query.execute_query(socket_path, query_text)

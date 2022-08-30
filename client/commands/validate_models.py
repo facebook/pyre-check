@@ -64,8 +64,7 @@ def run_validate_models(
     configuration: frontend_configuration.Base, output: str
 ) -> commands.ExitCode:
     socket_path = daemon_socket.get_default_socket_path(
-        project_root=configuration.get_global_root(),
-        relative_local_root=configuration.get_relative_local_root(),
+        configuration.get_project_identifier()
     )
     try:
         response = daemon_query.execute_query(socket_path, "validate_taint_models()")

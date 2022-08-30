@@ -129,6 +129,7 @@ class Arguments:
 
     base_arguments: backend_arguments.BaseArguments
 
+    socket_path: Path
     strict: bool = False
     show_error_traces: bool = False
     additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
@@ -144,12 +145,7 @@ class Arguments:
         return {
             **self.base_arguments.serialize(),
             "strict": self.strict,
-            "socket_path": str(
-                daemon_socket.get_default_socket_path(
-                    Path(self.base_arguments.global_root),
-                    self.base_arguments.relative_local_root,
-                )
-            ),
+            "socket_path": str(self.socket_path),
             "show_error_traces": self.show_error_traces,
             "additional_logging_sections": self.additional_logging_sections,
             **(
@@ -326,6 +322,9 @@ def create_server_arguments(
         ),
         skip_initial_type_check=start_arguments.skip_initial_type_check,
         use_lazy_module_tracking=start_arguments.use_lazy_module_tracking,
+        socket_path=daemon_socket.get_default_socket_path(
+            configuration.get_project_identifier()
+        ),
     )
 
 
@@ -476,7 +475,7 @@ def run_start(
             return _run_in_foreground(server_command, server_environment)
         else:
             socket_path = daemon_socket.get_default_socket_path(
-                configuration.get_global_root(), configuration.get_relative_local_root()
+                configuration.get_project_identifier(),
             )
             return _run_in_background(
                 server_command,

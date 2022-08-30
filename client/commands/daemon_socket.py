@@ -9,9 +9,8 @@ import hashlib
 
 import tempfile
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
-from . import frontend_configuration
 
 # Socket path logic ---
 
@@ -25,20 +24,14 @@ def get_md5(identifier_string: str) -> str:
 
 def get_socket_path(
     socket_root: Path,
-    global_root: Path,
-    relative_local_root: Optional[str],
+    project_identifier: str,
 ) -> Path:
     """
     Determine where the server socket file is located. We can't directly use
     `log_directory` because of the ~100 character length limit on Unix socket
     file paths.
     """
-    project_hash = get_md5(
-        frontend_configuration.get_project_identifier(
-            global_root=global_root,
-            relative_local_root=relative_local_root,
-        )
-    )
+    project_hash = get_md5(project_identifier)
     return socket_root / f"pyre_server_{project_hash}.sock"
 
 
@@ -49,9 +42,9 @@ def get_default_socket_root() -> Path:
 
 
 def get_default_socket_path(
-    project_root: Path, relative_local_root: Optional[str]
+    project_identifier: str,
 ) -> Path:
-    return get_socket_path(get_default_socket_root(), project_root, relative_local_root)
+    return get_socket_path(get_default_socket_root(), project_identifier)
 
 
 def socket_file_glob_pattern() -> str:

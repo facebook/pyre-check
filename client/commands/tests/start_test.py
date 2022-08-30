@@ -12,7 +12,7 @@ import testslide
 from ... import command_arguments, configuration
 from ...configuration import search_path
 from ...tests import setup
-from .. import backend_arguments, frontend_configuration
+from .. import backend_arguments, daemon_socket, frontend_configuration
 from ..start import (
     Arguments,
     background_server_log_file,
@@ -107,6 +107,7 @@ class ArgumentTest(testslide.TestCase):
                 saved_state_action=LoadSavedStateFromProject(
                     project_name="my_project", project_metadata="my_metadata"
                 ),
+                socket_path=Path("not_relevant_for_this_test.sock"),
             ),
             [
                 ("log_path", "foo"),
@@ -343,6 +344,9 @@ class StartTest(testslide.TestCase):
                     strict=True,
                     taint_models_path=[str(root_path / "taint")],
                     watchman_root=root_path,
+                    socket_path=daemon_socket.get_default_socket_path(
+                        f"{root_path}//local"
+                    ),
                 ),
             )
 

@@ -54,8 +54,7 @@ class Info(dataclasses_json.DataClassJsonMixin):
         except Exception:
             binary_version = None
         socket_path = daemon_socket.get_default_socket_path(
-            project_root=configuration.get_global_root(),
-            relative_local_root=configuration.get_relative_local_root(),
+            configuration.get_project_identifier(),
         )
         return cls(
             socket_path=str(socket_path),

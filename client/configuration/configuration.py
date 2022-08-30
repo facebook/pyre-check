@@ -31,7 +31,7 @@ from typing import (
 
 import psutil
 
-from .. import command_arguments, dataclasses_merge, find_directories
+from .. import command_arguments, dataclasses_merge, find_directories, identifiers
 from ..filesystem import expand_global_root, expand_relative_path
 from ..find_directories import (
     BINARY_NAME,
@@ -643,6 +643,18 @@ class Configuration:
                 partial_configuration.use_buck2, default=False
             ),
             version_hash=partial_configuration.version_hash,
+        )
+
+    @property
+    def project_identifier(self) -> str:
+        """
+        Note: it is important that this identifier, which is part of what determines
+        the socket path for connecting to an ocaml daemon, is entirely determined based
+        on fields that come from the command arguments.
+        """
+        return identifiers.get_project_identifier(
+            Path(self.project_root),
+            self.relative_local_root,
         )
 
     @property

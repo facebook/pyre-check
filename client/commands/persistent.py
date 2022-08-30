@@ -995,10 +995,8 @@ class PyreQueryHandler(background.Task):
     async def run_request_handler(
         self, server_start_options: "PyreDaemonStartOptions"
     ) -> None:
-        start_arguments = server_start_options.start_arguments
         socket_path = daemon_socket.get_default_socket_path(
-            project_root=Path(start_arguments.base_arguments.global_root),
-            relative_local_root=start_arguments.base_arguments.relative_local_root,
+            server_start_options.project_identifier,
         )
         strict_default = server_start_options.strict_default
         expression_level_coverage_enabled = (
@@ -1403,8 +1401,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         project_identifier = server_start_options.project_identifier
         start_arguments = server_start_options.start_arguments
         socket_path = daemon_socket.get_default_socket_path(
-            project_root=Path(start_arguments.base_arguments.global_root),
-            relative_local_root=start_arguments.base_arguments.relative_local_root,
+            server_start_options.project_identifier,
         )
 
         connection_timer = timer.Timer()

@@ -9,8 +9,9 @@ from typing import Optional
 
 import testslide
 
+from ...identifiers import get_project_identifier
+
 from ..daemon_socket import find_socket_files, get_md5, get_socket_path, MD5_LENGTH
-from ..frontend_configuration import get_project_identifier
 
 
 class SocketTest(testslide.TestCase):
@@ -53,9 +54,7 @@ class SocketTest(testslide.TestCase):
         md5_hash = get_md5(get_project_identifier(project_root, relative_local_root))
         self.assertEqual(
             get_socket_path(
-                socket_root,
-                project_root,
-                relative_local_root,
+                socket_root, get_project_identifier(project_root, relative_local_root)
             ),
             socket_root / f"pyre_server_{md5_hash}.sock",
         )
@@ -80,8 +79,7 @@ class SocketTest(testslide.TestCase):
             socket_root_path = Path(socket_root)
             socket_a = get_socket_path(
                 socket_root_path,
-                global_root=Path("a"),
-                relative_local_root=None,
+                project_identifier="a",
             )
             socket_a.touch()
             self.assertEqual(
@@ -90,8 +88,7 @@ class SocketTest(testslide.TestCase):
             )
             socket_b = get_socket_path(
                 socket_root_path,
-                global_root=Path("b"),
-                relative_local_root="relative_to_b",
+                project_identifier="b//relative_to_b",
             )
             socket_b.touch()
             self.assertEqual(

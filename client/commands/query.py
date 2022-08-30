@@ -61,8 +61,7 @@ def run_query(
     configuration: frontend_configuration.Base, query_text: str
 ) -> commands.ExitCode:
     socket_path = daemon_socket.get_default_socket_path(
-        project_root=configuration.get_global_root(),
-        relative_local_root=configuration.get_relative_local_root(),
+        configuration.get_project_identifier()
     )
     try:
         if query_text == "help":

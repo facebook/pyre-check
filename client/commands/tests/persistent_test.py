@@ -113,7 +113,8 @@ def _fake_option_reader() -> PyreDaemonStartOptionsReader:
                 source_paths=backend_arguments.SimpleSourcePath(),
                 log_path="/log/path",
                 global_root="/global/root",
-            )
+            ),
+            socket_path=Path("irrelevant_socket_path.sock"),
         ),
     )
 
@@ -841,7 +842,8 @@ class PersistentTest(testslide.TestCase):
                         source_paths=backend_arguments.SimpleSourcePath(),
                         log_path="/log/path",
                         global_root="/global/root",
-                    )
+                    ),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                 ),
                 ide_features=configuration_module.IdeFeatures(),
             ),
@@ -889,7 +891,8 @@ class PersistentTest(testslide.TestCase):
                         source_paths=backend_arguments.SimpleSourcePath(),
                         log_path="/log/path",
                         global_root="/global/root",
-                    )
+                    ),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                 ),
                 ide_features=configuration_module.IdeFeatures(),
             ),
@@ -1305,7 +1308,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("fake_socket_path"),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=False,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1332,7 +1335,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 expression_level_coverage_enabled=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1358,7 +1361,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("fake_socket_path"),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=False,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1379,7 +1382,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 expression_level_coverage_enabled=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1413,7 +1416,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("fake_socket_path"),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=True,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1450,7 +1453,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("fake_socket_path"),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=True,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1479,7 +1482,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 expression_level_coverage_enabled=True,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1505,7 +1508,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("fake_socket_path"),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=True,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1528,7 +1531,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 expression_level_coverage_enabled=True,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1550,7 +1553,8 @@ class PyreQueryHandlerTest(testslide.TestCase):
                         source_paths=backend_arguments.SimpleSourcePath(),
                         log_path="/log/path",
                         global_root="/global/root",
-                    )
+                    ),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
@@ -1568,7 +1572,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1601,7 +1605,8 @@ class PyreQueryHandlerTest(testslide.TestCase):
                         source_paths=backend_arguments.SimpleSourcePath(),
                         log_path="/log/path",
                         global_root="/global/root",
-                    )
+                    ),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
@@ -1618,7 +1623,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1659,7 +1664,8 @@ class PyreQueryHandlerTest(testslide.TestCase):
                         source_paths=backend_arguments.SimpleSourcePath(),
                         log_path="/log/path",
                         global_root="/global/root",
-                    )
+                    ),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
@@ -1677,7 +1683,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1718,7 +1724,8 @@ class PyreQueryHandlerTest(testslide.TestCase):
                         source_paths=backend_arguments.SimpleSourcePath(),
                         log_path="/log/path",
                         global_root="/global/root",
-                    )
+                    ),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
@@ -1735,7 +1742,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1789,7 +1796,8 @@ class PyreQueryHandlerTest(testslide.TestCase):
                         source_paths=backend_arguments.SimpleSourcePath(),
                         log_path="/log/path",
                         global_root="/global/root",
-                    )
+                    ),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                 ),
                 ide_features=configuration_module.IdeFeatures(
                     find_all_references_enabled=True
@@ -1809,7 +1817,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 consume_unsaved_changes_enabled=False,
             )
 
@@ -1856,7 +1864,8 @@ class PyreQueryHandlerTest(testslide.TestCase):
                         source_paths=backend_arguments.SimpleSourcePath(),
                         log_path="/log/path",
                         global_root="/global/root",
-                    )
+                    ),
+                    socket_path=Path("irrelevant_socket_path.sock"),
                 ),
                 ide_features=configuration_module.IdeFeatures(
                     find_all_references_enabled=True
@@ -1875,7 +1884,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("fake_socket_path"),
+                socket_path=Path("irrelevant_socket_path.sock"),
                 consume_unsaved_changes_enabled=False,
             )
 
