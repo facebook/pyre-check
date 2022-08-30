@@ -166,7 +166,7 @@ class Repository:
         result = self.run_pyre("info")
         socket_path = pathlib.Path(json.loads(result)["socket_path"])
         if not socket_path.is_socket():
-            raise RuntimeError(f"No such socket {socket_path}; is the pyre server running?")
+            raise RuntimeError(f"Socket path: {socket_path} does not point to a socket. Path details: {socket_path.stat()}; Is the pyre server running?")
         return socket_path
 
     def send_update_request(self, request_message: str) -> str:
