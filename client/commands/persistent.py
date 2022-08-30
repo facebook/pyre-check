@@ -750,6 +750,24 @@ class PyreQueryHandler(background.Task):
         self.client_output_channel = client_output_channel
         self.socket_path: Path = server_options.get_socket_path()
 
+    def should_write_telemetry(self) -> bool:
+        return self.server_options.enabled_telemetry_event
+
+    async def write_telemetry(
+        self,
+        parameters: Dict[str, object],
+        activity_key: Optional[Dict[str, object]],
+    ) -> None:
+        if self.should_write_telemetry():
+            await lsp.write_json_rpc_ignore_connection_error(
+                self.client_output_channel,
+                json_rpc.Request(
+                    activity_key=activity_key,
+                    method="telemetry/event",
+                    parameters=json_rpc.ByNameParameters(parameters),
+                ),
+            )
+
     async def _query_modules_of_path(
         self,
         path: Path,
@@ -834,7 +852,6 @@ class PyreQueryHandler(background.Task):
     async def _query_and_send_hover_contents(
         self,
         query: HoverQuery,
-        enabled_telemetry_event: bool,
         consume_unsaved_changes_enabled: bool,
     ) -> None:
         path_string = f"'{query.path}'"
@@ -865,9 +882,7 @@ class PyreQueryHandler(background.Task):
                 result=result,
             ),
         )
-        await _write_telemetry(
-            enabled_telemetry_event,
-            self.client_output_channel,
+        await self.write_telemetry(
             {
                 "type": "LSP",
                 "operation": "hover",
@@ -881,7 +896,6 @@ class PyreQueryHandler(background.Task):
     async def _query_and_send_definition_location(
         self,
         query: DefinitionLocationQuery,
-        enabled_telemetry_event: bool,
         consume_unsaved_changes_enabled: bool,
     ) -> None:
         path_string = f"'{query.path}'"
@@ -916,9 +930,7 @@ class PyreQueryHandler(background.Task):
                 result=result,
             ),
         )
-        await _write_telemetry(
-            enabled_telemetry_event,
-            self.client_output_channel,
+        await self.write_telemetry(
             {
                 "type": "LSP",
                 "operation": "definition",
@@ -989,7 +1001,6 @@ class PyreQueryHandler(background.Task):
             ide_features is not None
             and ide_features.is_expression_level_coverage_enabled()
         )
-        enabled_telemetry_event = self.server_options.enabled_telemetry_event
         consume_unsaved_changes_enabled = (
             ide_features is not None
             and ide_features.is_consume_unsaved_changes_enabled()
@@ -1006,13 +1017,11 @@ class PyreQueryHandler(background.Task):
             elif isinstance(query, HoverQuery):
                 await self._query_and_send_hover_contents(
                     query,
-                    enabled_telemetry_event,
                     consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, DefinitionLocationQuery):
                 await self._query_and_send_definition_location(
                     query,
-                    enabled_telemetry_event,
                     consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, ReferencesQuery):
@@ -1046,23 +1055,6 @@ def _client_has_status_bar_support(
         return window_capabilities.status is not None
     else:
         return False
-
-
-async def _write_telemetry(
-    enabled: bool,
-    output_channel: connections.AsyncTextWriter,
-    parameters: Dict[str, object],
-    activity_key: Optional[Dict[str, object]],
-) -> None:
-    if enabled:
-        await lsp.write_json_rpc_ignore_connection_error(
-            output_channel,
-            json_rpc.Request(
-                activity_key=activity_key,
-                method="telemetry/event",
-                parameters=json_rpc.ByNameParameters(parameters),
-            ),
-        )
 
 
 async def _write_status(

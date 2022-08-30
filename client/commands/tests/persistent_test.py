@@ -1575,7 +1575,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
 
@@ -1625,7 +1624,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
 
@@ -1684,7 +1682,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
 
@@ -1742,7 +1739,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
 
