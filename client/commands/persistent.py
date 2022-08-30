@@ -449,36 +449,6 @@ class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[lsp.ReferencesResponse]
 
 
-RequestTypes = Union[
-    TypeCoverageQuery,
-    HoverQuery,
-    DefinitionLocationQuery,
-    ReferencesQuery,
-    OverlayUpdate,
-]
-
-
-@dataclasses.dataclass(frozen=True)
-class LineColumn(json_mixins.CamlCaseAndExcludeJsonMixin):
-    line: int
-    column: int
-
-    def to_position(self) -> lsp.Position:
-        return lsp.Position(line=self.line, character=self.column)
-
-
-@dataclasses.dataclass(frozen=True)
-class LocationInfo(json_mixins.CamlCaseAndExcludeJsonMixin):
-    start: LineColumn
-    stop: LineColumn
-
-
-@dataclasses.dataclass(frozen=True)
-class LocationAnnotation(json_mixins.CamlCaseAndExcludeJsonMixin):
-    location: LocationInfo
-    annotation: str
-
-
 async def _send_request(
     output_channel: connections.AsyncTextWriter, request: str
 ) -> None:
