@@ -64,6 +64,24 @@ from ..persistent import (
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
 
 
+def _create_server_options(
+    binary: str,
+    server_identifier: str,
+    start_arguments: start.Arguments,
+    ide_features: Optional[configuration_module.IdeFeatures] = None,
+    strict_default: bool = False,
+    excludes: Optional[Sequence[str]] = None,
+) -> PyreServerOptions:
+    return PyreServerOptions(
+        binary,
+        server_identifier,
+        start_arguments,
+        ide_features,
+        strict_default,
+        excludes if excludes else [],
+    )
+
+
 def _create_server_options_reader(
     binary: str,
     server_identifier: str,
@@ -72,17 +90,14 @@ def _create_server_options_reader(
     strict_default: bool = False,
     excludes: Optional[Sequence[str]] = None,
 ) -> PyreServerOptionsReader:
-    def reader() -> PyreServerOptions:
-        return PyreServerOptions(
-            binary,
-            server_identifier,
-            start_arguments,
-            ide_features,
-            strict_default,
-            excludes if excludes else [],
-        )
-
-    return reader
+    return lambda: _create_server_options(
+        binary,
+        server_identifier,
+        start_arguments,
+        ide_features,
+        strict_default,
+        excludes,
+    )
 
 
 mock_server_options_reader: PyreServerOptionsReader = _create_server_options_reader(
@@ -1294,7 +1309,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=mock_server_options_reader,
+                server_options=mock_initial_server_options,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1307,7 +1322,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=False,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1325,7 +1339,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_type_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=mock_server_options_reader,
+            server_options=mock_initial_server_options,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
@@ -1334,7 +1348,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
-                socket_path=Path("irrelevant_socket_path.sock"),
                 expression_level_coverage_enabled=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1348,7 +1361,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=mock_server_options_reader,
+                server_options=mock_initial_server_options,
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             strict = True
@@ -1360,7 +1373,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=False,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1372,7 +1384,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=mock_server_options_reader,
+            server_options=mock_initial_server_options,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
@@ -1381,7 +1393,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
-                socket_path=Path("irrelevant_socket_path.sock"),
                 expression_level_coverage_enabled=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1401,7 +1412,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=mock_server_options_reader,
+                server_options=mock_initial_server_options,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1414,7 +1425,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=True,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1437,7 +1447,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=mock_server_options_reader,
+                server_options=mock_initial_server_options,
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             strict = False
@@ -1450,7 +1460,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=True,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1468,7 +1477,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_expression_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=mock_server_options_reader,
+            server_options=mock_initial_server_options,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
@@ -1479,7 +1488,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
-                socket_path=Path("irrelevant_socket_path.sock"),
                 expression_level_coverage_enabled=True,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1493,7 +1501,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
                 query_state=PyreQueryState(),
-                server_options_reader=mock_server_options_reader,
+                server_options=mock_initial_server_options,
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             strict = True
@@ -1505,7 +1513,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
-                    socket_path=Path("irrelevant_socket_path.sock"),
                     expression_level_coverage_enabled=True,
                     consume_unsaved_changes_enabled=False,
                 )
@@ -1517,7 +1524,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_expression_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=mock_server_options_reader,
+            server_options=mock_initial_server_options,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
@@ -1528,7 +1535,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
-                socket_path=Path("irrelevant_socket_path.sock"),
                 expression_level_coverage_enabled=True,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1542,7 +1548,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_create_server_options_reader(
+            server_options=_create_server_options(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1569,7 +1575,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("irrelevant_socket_path.sock"),
                 enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1594,7 +1599,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_create_server_options_reader(
+            server_options=_create_server_options(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1620,7 +1625,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("irrelevant_socket_path.sock"),
                 enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1653,7 +1657,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_create_server_options_reader(
+            server_options=_create_server_options(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1680,7 +1684,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("irrelevant_socket_path.sock"),
                 enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1713,7 +1716,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_create_server_options_reader(
+            server_options=_create_server_options(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1739,7 +1742,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("irrelevant_socket_path.sock"),
                 enabled_telemetry_event=False,
                 consume_unsaved_changes_enabled=False,
             )
@@ -1785,7 +1787,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_create_server_options_reader(
+            server_options=_create_server_options(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1814,7 +1816,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("irrelevant_socket_path.sock"),
                 consume_unsaved_changes_enabled=False,
             )
 
@@ -1853,7 +1854,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
-            server_options_reader=_create_server_options_reader(
+            server_options=_create_server_options(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1881,7 +1882,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     path=Path("bar.py"),
                     position=lsp.Position(line=42, character=10),
                 ),
-                socket_path=Path("irrelevant_socket_path.sock"),
                 consume_unsaved_changes_enabled=False,
             )
 
