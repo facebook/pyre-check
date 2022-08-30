@@ -699,270 +699,6 @@ def path_to_expression_coverage_response(
     )
 
 
-class RequestHandler:
-    def __init__(
-        self,
-        server_options: PyreServerOptions,
-        client_output_channel: connections.AsyncTextWriter,
-    ) -> None:
-        self.server_options = server_options
-        self.client_output_channel = client_output_channel
-        self.socket_path: Path = server_options.get_socket_path()
-
-    def is_expression_level_coverage_enabled(self) -> bool:
-        ide_features = self.server_options.ide_features
-        return (
-            ide_features is not None
-            and ide_features.is_expression_level_coverage_enabled()
-        )
-
-    def is_consume_unsaved_changes_enabled(self) -> bool:
-        ide_features = self.server_options.ide_features
-        return (
-            ide_features is not None
-            and ide_features.is_consume_unsaved_changes_enabled()
-        )
-
-    def is_strict_by_default(self) -> bool:
-        return self.server_options.strict_default
-
-    def should_write_telemetry(self) -> bool:
-        return self.server_options.enabled_telemetry_event
-
-    async def write_telemetry(
-        self,
-        parameters: Dict[str, object],
-        activity_key: Optional[Dict[str, object]],
-    ) -> None:
-        if self.should_write_telemetry():
-            await lsp.write_json_rpc_ignore_connection_error(
-                self.client_output_channel,
-                json_rpc.Request(
-                    activity_key=activity_key,
-                    method="telemetry/event",
-                    parameters=json_rpc.ByNameParameters(parameters),
-                ),
-            )
-
-    async def _query_modules_of_path(
-        self,
-        path: Path,
-    ) -> Optional[QueryModulesOfPathResponse]:
-        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled else None
-        return await daemon_query.attempt_typed_async_query(
-            response_type=QueryModulesOfPathResponse,
-            socket_path=self.socket_path,
-            query_text=f"modules_of_path('{path}')",
-            overlay_id=overlay_id,
-        )
-
-    async def _query_is_typechecked(
-        self,
-        path: Path,
-    ) -> Optional[bool]:
-        response = await self._query_modules_of_path(
-            path,
-        )
-        if response is None:
-            return None
-        else:
-            return len(response.response) > 0
-
-    async def _query_type_coverage(
-        self,
-        path: Path,
-    ) -> Optional[lsp.TypeCoverageResponse]:
-        is_typechecked = await self._query_is_typechecked(path)
-        if is_typechecked is None:
-            return None
-        elif self.is_expression_level_coverage_enabled():
-            response = await daemon_query.attempt_async_query(
-                socket_path=self.socket_path,
-                query_text=f"expression_level_coverage('{path}')",
-            )
-            if response is None:
-                return None
-            expression_coverage = (
-                expression_level_coverage._make_expression_level_coverage_response(
-                    response.payload
-                )
-            )
-            if expression_coverage is None:
-                return file_not_typechecked_coverage_result()
-            return path_to_expression_coverage_response(
-                self.is_strict_by_default(), expression_coverage
-            )
-        elif is_typechecked:
-            return path_to_coverage_response(path, self.is_strict_by_default())
-        else:
-            return file_not_typechecked_coverage_result()
-
-    async def handle_type_coverage_query(
-        self,
-        query: TypeCoverageQuery,
-    ) -> None:
-        type_coverage_result = await self._query_type_coverage(
-            query.path,
-        )
-        if type_coverage_result is not None:
-            await lsp.write_json_rpc(
-                self.client_output_channel,
-                json_rpc.SuccessResponse(
-                    id=query.id,
-                    activity_key=query.activity_key,
-                    result=type_coverage_result.to_dict(),
-                ),
-            )
-
-    async def handle_hover_query(
-        self,
-        query: HoverQuery,
-    ) -> None:
-        path_string = f"'{query.path}'"
-        query_text = (
-            f"hover_info_for_position(path={path_string},"
-            f" line={query.position.line}, column={query.position.character})"
-        )
-        overlay_id = (
-            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
-        )
-        daemon_response = await daemon_query.attempt_typed_async_query(
-            response_type=HoverResponse,
-            socket_path=self.socket_path,
-            query_text=query_text,
-            overlay_id=overlay_id,
-        )
-        response = (
-            daemon_response.response
-            if daemon_response
-            else lsp.LspHoverResponse.empty()
-        )
-        result = lsp.LspHoverResponse.cached_schema().dump(
-            response,
-        )
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.SuccessResponse(
-                id=query.id,
-                activity_key=query.activity_key,
-                result=result,
-            ),
-        )
-        await self.write_telemetry(
-            {
-                "type": "LSP",
-                "operation": "hover",
-                "filePath": str(query.path),
-                "nonEmpty": len(response.contents) > 0,
-                "response": result,
-            },
-            query.activity_key,
-        )
-
-    async def handle_definition_location_query(
-        self,
-        query: DefinitionLocationQuery,
-    ) -> None:
-        path_string = f"'{query.path}'"
-        query_text = (
-            f"location_of_definition(path={path_string},"
-            f" line={query.position.line}, column={query.position.character})"
-        )
-        overlay_id = (
-            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
-        )
-        daemon_response = await daemon_query.attempt_typed_async_query(
-            response_type=DefinitionLocationResponse,
-            socket_path=self.socket_path,
-            query_text=query_text,
-            overlay_id=overlay_id,
-        )
-        definitions = (
-            [
-                response.to_lsp_definition_response()
-                for response in daemon_response.response
-            ]
-            if daemon_response is not None
-            else []
-        )
-        result = lsp.LspDefinitionResponse.cached_schema().dump(
-            definitions,
-            many=True,
-        )
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.SuccessResponse(
-                id=query.id,
-                activity_key=query.activity_key,
-                result=result,
-            ),
-        )
-        await self.write_telemetry(
-            {
-                "type": "LSP",
-                "operation": "definition",
-                "filePath": str(query.path),
-                "count": len(definitions),
-                "response": result,
-            },
-            query.activity_key,
-        )
-
-    async def handle_find_references_query(
-        self,
-        query: ReferencesQuery,
-    ) -> None:
-        path_string = f"'{query.path}'"
-        query_text = (
-            f"find_references(path={path_string},"
-            f" line={query.position.line}, column={query.position.character})"
-        )
-        overlay_id = (
-            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
-        )
-        daemon_response = await daemon_query.attempt_typed_async_query(
-            response_type=ReferencesResponse,
-            socket_path=self.socket_path,
-            query_text=query_text,
-            overlay_id=overlay_id,
-        )
-        reference_locations = (
-            [
-                response.to_lsp_definition_response()
-                for response in daemon_response.response
-            ]
-            if daemon_response is not None
-            else []
-        )
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.SuccessResponse(
-                id=query.id,
-                activity_key=query.activity_key,
-                result=lsp.LspDefinitionResponse.cached_schema().dump(
-                    reference_locations,
-                    many=True,
-                ),
-            ),
-        )
-
-    async def handle_overlay_update_request(
-        self,
-        request: OverlayUpdate,
-    ) -> None:
-        source_path = f"{request.source_path}"
-        overlay_update_dict = {
-            "overlay_id": request.overlay_id,
-            "source_path": source_path,
-            "code_update": ["NewCode", request.code_update],
-        }
-        # Drop the response (the daemon code will log it for us)
-        await daemon_connection.attempt_send_async_raw_request(
-            socket_path=self.socket_path,
-            request=json.dumps(overlay_update_dict),
-        )
-
-
 def _client_has_status_bar_support(
     client_capabilities: lsp.ClientCapabilities,
 ) -> bool:
@@ -1413,6 +1149,270 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     ),
                 },
             )
+
+
+class RequestHandler:
+    def __init__(
+        self,
+        server_options: PyreServerOptions,
+        client_output_channel: connections.AsyncTextWriter,
+    ) -> None:
+        self.server_options = server_options
+        self.client_output_channel = client_output_channel
+        self.socket_path: Path = server_options.get_socket_path()
+
+    def is_expression_level_coverage_enabled(self) -> bool:
+        ide_features = self.server_options.ide_features
+        return (
+            ide_features is not None
+            and ide_features.is_expression_level_coverage_enabled()
+        )
+
+    def is_consume_unsaved_changes_enabled(self) -> bool:
+        ide_features = self.server_options.ide_features
+        return (
+            ide_features is not None
+            and ide_features.is_consume_unsaved_changes_enabled()
+        )
+
+    def is_strict_by_default(self) -> bool:
+        return self.server_options.strict_default
+
+    def should_write_telemetry(self) -> bool:
+        return self.server_options.enabled_telemetry_event
+
+    async def write_telemetry(
+        self,
+        parameters: Dict[str, object],
+        activity_key: Optional[Dict[str, object]],
+    ) -> None:
+        if self.should_write_telemetry():
+            await lsp.write_json_rpc_ignore_connection_error(
+                self.client_output_channel,
+                json_rpc.Request(
+                    activity_key=activity_key,
+                    method="telemetry/event",
+                    parameters=json_rpc.ByNameParameters(parameters),
+                ),
+            )
+
+    async def _query_modules_of_path(
+        self,
+        path: Path,
+    ) -> Optional[QueryModulesOfPathResponse]:
+        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled else None
+        return await daemon_query.attempt_typed_async_query(
+            response_type=QueryModulesOfPathResponse,
+            socket_path=self.socket_path,
+            query_text=f"modules_of_path('{path}')",
+            overlay_id=overlay_id,
+        )
+
+    async def _query_is_typechecked(
+        self,
+        path: Path,
+    ) -> Optional[bool]:
+        response = await self._query_modules_of_path(
+            path,
+        )
+        if response is None:
+            return None
+        else:
+            return len(response.response) > 0
+
+    async def _query_type_coverage(
+        self,
+        path: Path,
+    ) -> Optional[lsp.TypeCoverageResponse]:
+        is_typechecked = await self._query_is_typechecked(path)
+        if is_typechecked is None:
+            return None
+        elif self.is_expression_level_coverage_enabled():
+            response = await daemon_query.attempt_async_query(
+                socket_path=self.socket_path,
+                query_text=f"expression_level_coverage('{path}')",
+            )
+            if response is None:
+                return None
+            expression_coverage = (
+                expression_level_coverage._make_expression_level_coverage_response(
+                    response.payload
+                )
+            )
+            if expression_coverage is None:
+                return file_not_typechecked_coverage_result()
+            return path_to_expression_coverage_response(
+                self.is_strict_by_default(), expression_coverage
+            )
+        elif is_typechecked:
+            return path_to_coverage_response(path, self.is_strict_by_default())
+        else:
+            return file_not_typechecked_coverage_result()
+
+    async def handle_type_coverage_query(
+        self,
+        query: TypeCoverageQuery,
+    ) -> None:
+        type_coverage_result = await self._query_type_coverage(
+            query.path,
+        )
+        if type_coverage_result is not None:
+            await lsp.write_json_rpc(
+                self.client_output_channel,
+                json_rpc.SuccessResponse(
+                    id=query.id,
+                    activity_key=query.activity_key,
+                    result=type_coverage_result.to_dict(),
+                ),
+            )
+
+    async def handle_hover_query(
+        self,
+        query: HoverQuery,
+    ) -> None:
+        path_string = f"'{query.path}'"
+        query_text = (
+            f"hover_info_for_position(path={path_string},"
+            f" line={query.position.line}, column={query.position.character})"
+        )
+        overlay_id = (
+            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
+        )
+        daemon_response = await daemon_query.attempt_typed_async_query(
+            response_type=HoverResponse,
+            socket_path=self.socket_path,
+            query_text=query_text,
+            overlay_id=overlay_id,
+        )
+        response = (
+            daemon_response.response
+            if daemon_response
+            else lsp.LspHoverResponse.empty()
+        )
+        result = lsp.LspHoverResponse.cached_schema().dump(
+            response,
+        )
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                activity_key=query.activity_key,
+                result=result,
+            ),
+        )
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "hover",
+                "filePath": str(query.path),
+                "nonEmpty": len(response.contents) > 0,
+                "response": result,
+            },
+            query.activity_key,
+        )
+
+    async def handle_definition_location_query(
+        self,
+        query: DefinitionLocationQuery,
+    ) -> None:
+        path_string = f"'{query.path}'"
+        query_text = (
+            f"location_of_definition(path={path_string},"
+            f" line={query.position.line}, column={query.position.character})"
+        )
+        overlay_id = (
+            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
+        )
+        daemon_response = await daemon_query.attempt_typed_async_query(
+            response_type=DefinitionLocationResponse,
+            socket_path=self.socket_path,
+            query_text=query_text,
+            overlay_id=overlay_id,
+        )
+        definitions = (
+            [
+                response.to_lsp_definition_response()
+                for response in daemon_response.response
+            ]
+            if daemon_response is not None
+            else []
+        )
+        result = lsp.LspDefinitionResponse.cached_schema().dump(
+            definitions,
+            many=True,
+        )
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                activity_key=query.activity_key,
+                result=result,
+            ),
+        )
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "definition",
+                "filePath": str(query.path),
+                "count": len(definitions),
+                "response": result,
+            },
+            query.activity_key,
+        )
+
+    async def handle_find_references_query(
+        self,
+        query: ReferencesQuery,
+    ) -> None:
+        path_string = f"'{query.path}'"
+        query_text = (
+            f"find_references(path={path_string},"
+            f" line={query.position.line}, column={query.position.character})"
+        )
+        overlay_id = (
+            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
+        )
+        daemon_response = await daemon_query.attempt_typed_async_query(
+            response_type=ReferencesResponse,
+            socket_path=self.socket_path,
+            query_text=query_text,
+            overlay_id=overlay_id,
+        )
+        reference_locations = (
+            [
+                response.to_lsp_definition_response()
+                for response in daemon_response.response
+            ]
+            if daemon_response is not None
+            else []
+        )
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                activity_key=query.activity_key,
+                result=lsp.LspDefinitionResponse.cached_schema().dump(
+                    reference_locations,
+                    many=True,
+                ),
+            ),
+        )
+
+    async def handle_overlay_update_request(
+        self,
+        request: OverlayUpdate,
+    ) -> None:
+        source_path = f"{request.source_path}"
+        overlay_update_dict = {
+            "overlay_id": request.overlay_id,
+            "source_path": source_path,
+            "code_update": ["NewCode", request.code_update],
+        }
+        # Drop the response (the daemon code will log it for us)
+        await daemon_connection.attempt_send_async_raw_request(
+            socket_path=self.socket_path,
+            request=json.dumps(overlay_update_dict),
+        )
 
 
 @dataclasses.dataclass(frozen=True)
