@@ -110,6 +110,9 @@ class PyreServerOptions:
     excludes: Sequence[str]
     enabled_telemetry_event: bool = False
 
+    def get_socket_path(self) -> Path:
+        return daemon_socket.get_default_socket_path(self.project_identifier)
+
     @staticmethod
     def create(
         start_command_argument: command_arguments.StartArguments,
@@ -992,9 +995,7 @@ class PyreQueryHandler(background.Task):
         )
 
     async def run_request_handler(self, server_options: "PyreServerOptions") -> None:
-        socket_path = daemon_socket.get_default_socket_path(
-            server_options.project_identifier,
-        )
+        socket_path = server_options.get_socket_path()
         strict_default = server_options.strict_default
         expression_level_coverage_enabled = (
             server_options.ide_features is not None
@@ -1392,9 +1393,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     async def launch_and_subscribe(self, server_options: PyreServerOptions) -> None:
         project_identifier = server_options.project_identifier
         start_arguments = server_options.start_arguments
-        socket_path = daemon_socket.get_default_socket_path(
-            server_options.project_identifier,
-        )
+        socket_path = server_options.get_socket_path()
 
         connection_timer = timer.Timer()
         try:
