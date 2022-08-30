@@ -134,6 +134,7 @@ class Repository:
         self._pyre_directory: pathlib.Path = pathlib.Path(base_directory) / "repository"
         self.debug: bool = debug
         self._initialize_pyre_directory(self._pyre_directory, typeshed_zip_path, base_directory)
+        self.socket_path: pathlib.Path = self.start_pyre_and_return_socket_path()
         pass
 
     @staticmethod
@@ -156,7 +157,12 @@ class Repository:
     def get_commit_paths(self) -> Iterable[pathlib.Path]:
         return self._commit_paths
 
-    def find_socket_path(self) -> pathlib.Path:
+    def start_pyre_and_return_socket_path(self) -> pathlib.Path:
+        self.run_pyre(
+            "--logging-sections",
+            "-n",
+            "start",
+        )
         result = self.run_pyre("info")
         socket_path = pathlib.Path(json.loads(result)["socket_path"])
         if not socket_path.is_socket():
@@ -164,7 +170,7 @@ class Repository:
         return socket_path
 
     def send_update_request(self, request_message: str) -> str:
-        socket_path = self.find_socket_path()
+        socket_path = self.socket_path
         with connect_in_text_mode(socket_path) as (input_stream, output_stream):
             output_stream.write(f"{request_message}\n")
             result = input_stream.readline().strip()
@@ -254,11 +260,6 @@ def run_unsaved_changes_test(
             typeshed_zip_path, base_directory, repository_path, debug
         )
         try:
-            repository.run_pyre(
-                "--logging-sections",
-                "-n",
-                "start",
-            )
             result = 0
             for commit in repository.get_commit_paths():
                 discrepancies: Dict[pathlib.Path, Tuple[str, str]] = {}
@@ -296,7 +297,6 @@ def _print_discrepancies(discrepancies: Dict[pathlib.Path, Tuple[str, str]], com
 
 
 def run(repository_location: str, typeshed_zip_path: str, debug: bool) -> int:
-    typeshed_zip_path = typeshed_zip_path
     return run_unsaved_changes_test(
         typeshed_zip_path, repository_location, debug
     )
