@@ -1124,33 +1124,6 @@ class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[str]
 
 
-async def _send_request(
-    output_channel: connections.AsyncTextWriter, request: str
-) -> None:
-    LOG.debug(f"Sending `{log.truncate(request, 400)}`")
-    await output_channel.write(f"{request}\n")
-
-
-async def _receive_response(
-    input_channel: connections.AsyncTextReader,
-) -> Optional[daemon_query.Response]:
-    raw_response = await _read_server_response(input_channel)
-    LOG.info(f"Received `{log.truncate(raw_response, 400)}`")
-    try:
-        return daemon_query.Response.parse(raw_response)
-    except daemon_query.InvalidQueryResponse as exception:
-        LOG.info(f"Failed to parse json {raw_response} due to exception: {exception}")
-        return None
-
-
-async def _consume_and_drop_response(
-    input_channel: connections.AsyncTextReader,
-) -> None:
-    raw_response = await _read_server_response(input_channel)
-    LOG.info(f"Received and will drop response: `{log.truncate(raw_response, 400)}`")
-    return None
-
-
 class RequestHandler:
     def __init__(
         self,
