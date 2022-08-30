@@ -985,7 +985,7 @@ class PersistentTest(testslide.TestCase):
         )
 
         await server.process_type_coverage_request(
-            lsp.TypeCoverageTextDocumentParameters(
+            lsp.TypeCoverageParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
                 )
@@ -1031,7 +1031,7 @@ class PersistentTest(testslide.TestCase):
         await fake_task_manager.ensure_task_running()
 
         await server.process_hover_request(
-            lsp.HoverTextDocumentParameters(
+            lsp.HoverParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
                 ),
@@ -1055,7 +1055,7 @@ class PersistentTest(testslide.TestCase):
         )
 
         await server.process_hover_request(
-            lsp.HoverTextDocumentParameters(
+            lsp.HoverParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(not_tracked_path).unparse(),
                 ),
@@ -1104,7 +1104,7 @@ class PersistentTest(testslide.TestCase):
         await fake_task_manager.ensure_task_running()
 
         await server.process_definition_request(
-            lsp.DefinitionTextDocumentParameters(
+            lsp.DefinitionParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
                 ),
@@ -1128,7 +1128,7 @@ class PersistentTest(testslide.TestCase):
         )
 
         await server.process_definition_request(
-            lsp.DefinitionTextDocumentParameters(
+            lsp.DefinitionParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(not_tracked_path).unparse(),
                 ),
@@ -1162,7 +1162,7 @@ class PersistentTest(testslide.TestCase):
             )
             await fake_task_manager.ensure_task_running()
             await server.process_document_symbols_request(
-                lsp.DocumentSymbolsTextDocumentParameters(
+                lsp.DocumentSymbolsParameters(
                     text_document=lsp.TextDocumentIdentifier(uri=test_path.as_uri())
                 ),
                 request_id=42,
@@ -1238,7 +1238,7 @@ class PersistentTest(testslide.TestCase):
         await fake_task_manager.ensure_task_running()
 
         await server.process_find_all_references_request(
-            lsp.ReferencesTextDocumentParameters(
+            lsp.ReferencesParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
                 ),
@@ -1262,7 +1262,7 @@ class PersistentTest(testslide.TestCase):
         )
 
         await server.process_find_all_references_request(
-            lsp.ReferencesTextDocumentParameters(
+            lsp.ReferencesParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(not_tracked_path).unparse(),
                 ),

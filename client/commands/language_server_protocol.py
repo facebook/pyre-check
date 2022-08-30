@@ -471,15 +471,15 @@ class WorkspaceDidChangeConfigurationParameters(
 
 
 @dataclasses.dataclass(frozen=True)
-class HoverTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+class HoverParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     position: LspPosition
 
     @staticmethod
     def from_json_rpc_parameters(
         parameters: json_rpc.Parameters,
-    ) -> "HoverTextDocumentParameters":
-        return _parse_parameters(parameters, target=HoverTextDocumentParameters)
+    ) -> "HoverParameters":
+        return _parse_parameters(parameters, target=HoverParameters)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -494,15 +494,15 @@ class LspHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class ReferencesTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+class ReferencesParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     position: LspPosition
 
     @staticmethod
     def from_json_rpc_parameters(
         parameters: json_rpc.Parameters,
-    ) -> "ReferencesTextDocumentParameters":
-        return _parse_parameters(parameters, target=ReferencesTextDocumentParameters)
+    ) -> "ReferencesParameters":
+        return _parse_parameters(parameters, target=ReferencesParameters)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -519,14 +519,14 @@ class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class TypeCoverageTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+class TypeCoverageParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
 
     @staticmethod
     def from_json_rpc_parameters(
         parameters: json_rpc.Parameters,
-    ) -> "TypeCoverageTextDocumentParameters":
-        return _parse_parameters(parameters, target=TypeCoverageTextDocumentParameters)
+    ) -> "TypeCoverageParameters":
+        return _parse_parameters(parameters, target=TypeCoverageParameters)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -539,15 +539,15 @@ class TypeCoverageResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class DefinitionTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+class DefinitionParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     position: LspPosition
 
     @staticmethod
     def from_json_rpc_parameters(
         parameters: json_rpc.Parameters,
-    ) -> "DefinitionTextDocumentParameters":
-        return _parse_parameters(parameters, target=DefinitionTextDocumentParameters)
+    ) -> "DefinitionParameters":
+        return _parse_parameters(parameters, target=DefinitionParameters)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -572,16 +572,14 @@ class LspDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class DocumentSymbolsTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+class DocumentSymbolsParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
 
     @staticmethod
     def from_json_rpc_parameters(
         parameters: json_rpc.Parameters,
-    ) -> "DocumentSymbolsTextDocumentParameters":
-        return _parse_parameters(
-            parameters, target=DocumentSymbolsTextDocumentParameters
-        )
+    ) -> "DocumentSymbolsParameters":
+        return _parse_parameters(parameters, target=DocumentSymbolsParameters)
 
 
 @dataclasses.dataclass(frozen=True)

@@ -1501,7 +1501,7 @@ class PyreServer:
 
     async def process_type_coverage_request(
         self,
-        parameters: lsp.TypeCoverageTextDocumentParameters,
+        parameters: lsp.TypeCoverageParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
@@ -1518,7 +1518,7 @@ class PyreServer:
 
     async def process_hover_request(
         self,
-        parameters: lsp.HoverTextDocumentParameters,
+        parameters: lsp.HoverParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
@@ -1554,7 +1554,7 @@ class PyreServer:
 
     async def process_definition_request(
         self,
-        parameters: lsp.DefinitionTextDocumentParameters,
+        parameters: lsp.DefinitionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
@@ -1588,7 +1588,7 @@ class PyreServer:
 
     async def process_document_symbols_request(
         self,
-        parameters: lsp.DocumentSymbolsTextDocumentParameters,
+        parameters: lsp.DocumentSymbolsParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
@@ -1623,7 +1623,7 @@ class PyreServer:
 
     async def process_find_all_references_request(
         self,
-        parameters: lsp.ReferencesTextDocumentParameters,
+        parameters: lsp.ReferencesParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
@@ -1679,9 +1679,7 @@ class PyreServer:
                             "Missing parameters for definition method"
                         )
                     await self.process_definition_request(
-                        lsp.DefinitionTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
+                        lsp.DefinitionParameters.from_json_rpc_parameters(parameters),
                         request.id,
                         request.activity_key,
                     )
@@ -1738,9 +1736,7 @@ class PyreServer:
                             "Missing parameters for hover method"
                         )
                     await self.process_hover_request(
-                        lsp.HoverTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
+                        lsp.HoverParameters.from_json_rpc_parameters(parameters),
                         request.id,
                         request.activity_key,
                     )
@@ -1751,9 +1747,7 @@ class PyreServer:
                             "Missing parameters for typeCoverage method"
                         )
                     await self.process_type_coverage_request(
-                        lsp.TypeCoverageTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
+                        lsp.TypeCoverageParameters.from_json_rpc_parameters(parameters),
                         request.id,
                         request.activity_key,
                     )
@@ -1764,7 +1758,7 @@ class PyreServer:
                             "Mising Parameters for document symbols"
                         )
                     await self.process_document_symbols_request(
-                        lsp.DocumentSymbolsTextDocumentParameters.from_json_rpc_parameters(
+                        lsp.DocumentSymbolsParameters.from_json_rpc_parameters(
                             parameters
                         ),
                         request.id,
@@ -1777,9 +1771,7 @@ class PyreServer:
                             "Missing parameters for find all references"
                         )
                     await self.process_find_all_references_request(
-                        lsp.ReferencesTextDocumentParameters.from_json_rpc_parameters(
-                            parameters
-                        ),
+                        lsp.ReferencesParameters.from_json_rpc_parameters(parameters),
                         request.id,
                         request.activity_key,
                     )
