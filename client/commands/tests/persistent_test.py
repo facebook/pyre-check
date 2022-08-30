@@ -64,13 +64,28 @@ from ..persistent import (
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
 
 
+DEFAULT_BINARY = "/bin/pyre"
+DEFAULT_SERVER_IDENTIFIER = "server_identifier"
+DEFAULT_START_ARGUMENTS: start.Arguments = start.Arguments(
+    base_arguments=backend_arguments.BaseArguments(
+        source_paths=backend_arguments.SimpleSourcePath(),
+        log_path="/log/path",
+        global_root="/global/root",
+    ),
+    socket_path=Path("irrelevant_socket_path.sock"),
+)
+DEFAULT_IDE_FEATURES: Optional[configuration_module.IdeFeatures] = None
+DEFAULT_IS_STRICT = False
+DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
+
+
 def _create_server_options(
-    binary: str,
-    server_identifier: str,
-    start_arguments: start.Arguments,
-    ide_features: Optional[configuration_module.IdeFeatures] = None,
-    strict_default: bool = False,
-    excludes: Optional[Sequence[str]] = None,
+    binary: str = DEFAULT_BINARY,
+    server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
+    start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
+    ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
+    strict_default: bool = DEFAULT_IS_STRICT,
+    excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
 ) -> PyreServerOptions:
     return PyreServerOptions(
         binary,
@@ -83,12 +98,12 @@ def _create_server_options(
 
 
 def _create_server_options_reader(
-    binary: str,
-    server_identifier: str,
-    start_arguments: start.Arguments,
-    ide_features: Optional[configuration_module.IdeFeatures] = None,
-    strict_default: bool = False,
-    excludes: Optional[Sequence[str]] = None,
+    binary: str = DEFAULT_BINARY,
+    server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
+    start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
+    ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
+    strict_default: bool = DEFAULT_IS_STRICT,
+    excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
 ) -> PyreServerOptionsReader:
     return lambda: _create_server_options(
         binary,
@@ -100,18 +115,7 @@ def _create_server_options_reader(
     )
 
 
-mock_server_options_reader: PyreServerOptionsReader = _create_server_options_reader(
-    binary="/not/relevant",
-    server_identifier="not_relevant",
-    start_arguments=start.Arguments(
-        base_arguments=backend_arguments.BaseArguments(
-            source_paths=backend_arguments.SimpleSourcePath(),
-            log_path="/log/path",
-            global_root="/global/root",
-        ),
-        socket_path=Path("irrelevant_socket_path.sock"),
-    ),
-)
+mock_server_options_reader: PyreServerOptionsReader = _create_server_options_reader()
 mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
 
 
@@ -1549,16 +1553,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_options=_create_server_options(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    ),
-                    socket_path=Path("irrelevant_socket_path.sock"),
-                ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
             client_output_channel=AsyncTextWriter(client_output_writer),
@@ -1599,16 +1593,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_options=_create_server_options(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    ),
-                    socket_path=Path("irrelevant_socket_path.sock"),
-                ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
             client_output_channel=AsyncTextWriter(client_output_writer),
@@ -1656,16 +1640,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_options=_create_server_options(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    ),
-                    socket_path=Path("irrelevant_socket_path.sock"),
-                ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
             client_output_channel=AsyncTextWriter(client_output_writer),
@@ -1714,16 +1688,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_options=_create_server_options(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    ),
-                    socket_path=Path("irrelevant_socket_path.sock"),
-                ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
             client_output_channel=AsyncTextWriter(client_output_writer),
@@ -1784,16 +1748,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_options=_create_server_options(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    ),
-                    socket_path=Path("irrelevant_socket_path.sock"),
-                ),
                 ide_features=configuration_module.IdeFeatures(
                     find_all_references_enabled=True
                 ),
@@ -1851,16 +1805,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         pyre_query_manager = PyreQueryHandler(
             query_state=PyreQueryState(),
             server_options=_create_server_options(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    ),
-                    socket_path=Path("irrelevant_socket_path.sock"),
-                ),
                 ide_features=configuration_module.IdeFeatures(
                     find_all_references_enabled=True
                 ),
