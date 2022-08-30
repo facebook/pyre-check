@@ -28,6 +28,11 @@ type t =
       position: Ast.Location.position;
       overlay_id: string option;
     }
+  | LocationOfDefinition of {
+      module_: Module.t; [@key "module"]
+      position: Ast.Location.position;
+      overlay_id: string option;
+    }
   | LocalUpdate of {
       module_: Module.t; [@key "module"]
       content: string;

@@ -117,6 +117,20 @@ module Testing : sig
               respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
               the overlay with the given ID, it will respond with a
               {!Response.ErrorKind.OverlayNotFound} error. *)
+      | LocationOfDefinition of {
+          module_: Module.t;
+          position: Ast.Location.position;
+          overlay_id: string option;
+        }
+          (** A request that asks the server to return the location of definitions for a given
+              cursor point in a given module. The server will send back a
+              {!Response.LocationOfDefinition} response as result. The response will contain an
+              empty list if a definition cannot be found.
+
+              If the provided module is not covered by the code navigation server, the server will
+              respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
+              the overlay with the given ID, it will respond with a
+              {!Response.ErrorKind.OverlayNotFound} error. *)
       | LocalUpdate of {
           module_: Module.t;
           content: string;
@@ -162,6 +176,17 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
+    module DefinitionLocation : sig
+      (** A type representing location of a definition.
+
+          TODO: Support LSP [LocationLink] to enable the functionality of "peek definition". *)
+      type t = {
+        path: string;
+        range: Ast.Location.t;
+      }
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
     (** A type representing responses sent from the server to its clients *)
     type t =
       | Ok  (** This response will be used for acknowledging successful processing of a request. *)
@@ -173,6 +198,11 @@ module Testing : sig
           (** Response for {!Request.Hover}. [contents] contains a list of items that will be shown
               to the user (there can be many because build system may map the same file to multiple
               modules). TODO: Add an optional [range] field used to visualize a hover. *)
+      | LocationOfDefinition of DefinitionLocation.t list
+          (** Response for {!Request.LocationOfDefinition}. The associated value is a list since
+              there can be many potential definitions for a given item, either because build system
+              may map the same file to multiple modules, or because the same name may get redefined
+              multiple times.*)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 end

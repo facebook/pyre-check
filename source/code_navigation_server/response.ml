@@ -27,11 +27,20 @@ module HoverContent = struct
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 
+module DefinitionLocation = struct
+  type t = {
+    path: string;
+    range: Ast.Location.t;
+  }
+  [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 type t =
   | Ok
   | Error of ErrorKind.t
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Hover of { contents: HoverContent.t list }
+  | LocationOfDefinition of DefinitionLocation.t list
 [@@deriving sexp, compare, yojson { strict = false }]
 
 let to_string response = to_yojson response |> Yojson.Safe.to_string

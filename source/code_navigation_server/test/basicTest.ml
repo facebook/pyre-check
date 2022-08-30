@@ -12,6 +12,10 @@ module Response = CodeNavigationServer.Testing.Response
 
 let position line column = { Ast.Location.line; column }
 
+let range start_line start_column stop_line stop_column =
+  { Ast.Location.start = position start_line start_column; stop = position stop_line stop_column }
+
+
 let assert_type_error_count ?overlay_id ~client ~expected module_name =
   let%lwt raw_response =
     ScratchProject.Client.send_request
@@ -263,6 +267,94 @@ let test_hover_request context =
   |> ScratchProject.test_server_with ~f:test_hover_request
 
 
+let test_location_of_definition_request context =
+  let test_location_of_definition_request client =
+    let root = ScratchProject.Client.get_source_root client in
+    let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+    let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            (* This location points to an empty space *)
+            LocationOfDefinition
+              { overlay_id = None; module_ = Module.OfName "test2"; position = position 2 8 })
+        ~expected:Response.(LocationOfDefinition [])
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            (* This location points to `test.x` *)
+            LocationOfDefinition
+              { overlay_id = None; module_ = Module.OfName "test2"; position = position 2 14 })
+        ~expected:
+          Response.(
+            LocationOfDefinition
+              [{ DefinitionLocation.path = PyrePath.absolute test_path; range = range 1 0 1 1 }])
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            LocationOfDefinition
+              {
+                overlay_id = None;
+                module_ = Module.OfPath (PyrePath.absolute test2_path);
+                position = position 2 14;
+              })
+        ~expected:
+          Response.(
+            LocationOfDefinition
+              [{ DefinitionLocation.path = PyrePath.absolute test_path; range = range 1 0 1 1 }])
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            LocationOfDefinition
+              { overlay_id = None; module_ = Module.OfName "doesnotexist"; position = position 1 0 })
+        ~kind:"ModuleNotTracked"
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            LocationOfDefinition
+              {
+                overlay_id = None;
+                module_ = Module.OfPath "/doesnotexist.py";
+                position = position 1 0;
+              })
+        ~kind:"ModuleNotTracked"
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            LocationOfDefinition
+              {
+                overlay_id = Some "doesnotexist";
+                module_ = Module.OfName "test";
+                position = position 1 0;
+              })
+        ~kind:"OverlayNotFound"
+    in
+    Lwt.return_unit
+  in
+  ScratchProject.setup
+    ~context
+    ~include_typeshed_stubs:false
+    ["test.py", "x: int = 42"; "test2.py", "import test\ny: int = test.x"]
+  |> ScratchProject.test_server_with ~f:test_location_of_definition_request
+
+
 let () =
   "basic_test"
   >::: [
@@ -272,5 +364,7 @@ let () =
          "get_type_errors_request" >:: OUnitLwt.lwt_wrapper test_get_type_errors_request;
          "local_update_request" >:: OUnitLwt.lwt_wrapper test_local_update_request;
          "hover_request" >:: OUnitLwt.lwt_wrapper test_hover_request;
+         "location_of_definition_request"
+         >:: OUnitLwt.lwt_wrapper test_location_of_definition_request;
        ]
   |> Test.run
