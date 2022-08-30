@@ -458,14 +458,6 @@ RequestTypes = Union[
 ]
 
 
-@dataclasses.dataclass
-class PyreQueryState:
-    # Queue of queries.
-    queries: "asyncio.Queue[RequestTypes]" = dataclasses.field(
-        default_factory=asyncio.Queue
-    )
-
-
 @dataclasses.dataclass(frozen=True)
 class LineColumn(json_mixins.CamlCaseAndExcludeJsonMixin):
     line: int
@@ -534,7 +526,6 @@ class ServerState:
     last_diagnostic_update_timer: timer.Timer = dataclasses.field(
         default_factory=timer.Timer
     )
-    query_state: PyreQueryState = dataclasses.field(default_factory=PyreQueryState)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -738,14 +729,12 @@ def path_to_expression_coverage_response(
     )
 
 
-class PyreQueryHandler(background.Task):
+class RequestHandler:
     def __init__(
         self,
-        query_state: PyreQueryState,
         server_options: PyreServerOptions,
         client_output_channel: connections.AsyncTextWriter,
     ) -> None:
-        self.query_state = query_state
         self.server_options = server_options
         self.client_output_channel = client_output_channel
         self.socket_path: Path = server_options.get_socket_path()
@@ -1002,34 +991,6 @@ class PyreQueryHandler(background.Task):
             socket_path=self.socket_path,
             request=json.dumps(overlay_update_dict),
         )
-
-    async def run_request_handler(self) -> None:
-        while True:
-            query = await self.query_state.queries.get()
-            if isinstance(query, TypeCoverageQuery):
-                await self.handle_type_coverage_query(query)
-            elif isinstance(query, HoverQuery):
-                await self.handle_hover_query(query)
-            elif isinstance(query, DefinitionLocationQuery):
-                await self.handle_definition_location_query(query)
-            elif isinstance(query, ReferencesQuery):
-                await self.handle_find_references_query(query)
-            elif isinstance(query, OverlayUpdate):
-                await self.handle_overlay_update_request(query)
-
-    async def run(self) -> None:
-        """
-        Reread the server start options, which can change due to configuration
-        reloading, and run with error logging.
-        """
-        try:
-            LOG.info(
-                f"Running Pyre query manager using configuration: {self.server_options}"
-            )
-            await self.run_request_handler()
-        except Exception:
-            LOG.error("Failed to run the Pyre query handler")
-            raise
 
 
 def _client_has_status_bar_support(
@@ -1492,10 +1453,10 @@ class PyreServer:
 
     # inside this task manager is a PyreDaemonLaunchAndSubscribeHandler
     pyre_manager: background.TaskManager
-    # inside this task manager is a PyreQueryHandler
-    pyre_query_manager: background.TaskManager
     # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
     server_state: ServerState
+
+    handler: RequestHandler
 
     async def wait_for_exit(self) -> int:
         await _wait_for_exit(self.input_channel, self.output_channel)
@@ -1571,7 +1532,7 @@ class PyreServer:
             ),
         )
 
-        self.server_state.query_state.queries.put_nowait(overlay_update)
+        await self.handler.handle_overlay_update_request(overlay_update)
 
         # Attempt to trigger a background Pyre server start on each file change
         if not self.pyre_manager.is_task_running():
@@ -1606,7 +1567,7 @@ class PyreServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        await self.server_state.query_state.queries.put(
+        await self.handler.handle_type_coverage_query(
             TypeCoverageQuery(
                 id=request_id, activity_key=activity_key, path=document_path
             )
@@ -1639,7 +1600,7 @@ class PyreServer:
                 ),
             )
         else:
-            self.server_state.query_state.queries.put_nowait(
+            await self.handler.handle_hover_query(
                 HoverQuery(
                     id=request_id,
                     activity_key=activity_key,
@@ -1673,7 +1634,7 @@ class PyreServer:
             )
             return
 
-        self.server_state.query_state.queries.put_nowait(
+        await self.handler.handle_definition_location_query(
             DefinitionLocationQuery(
                 id=request_id,
                 activity_key=activity_key,
@@ -1742,7 +1703,7 @@ class PyreServer:
             )
             return
 
-        self.server_state.query_state.queries.put_nowait(
+        await self.handler.handle_find_references_query(
             ReferencesQuery(
                 id=request_id,
                 activity_key=activity_key,
@@ -1903,7 +1864,6 @@ class PyreServer:
         """
         try:
             await self.pyre_manager.ensure_task_running()
-            await self.pyre_query_manager.ensure_task_running()
             return await self.run_request_handler()
         except lsp.ReadChannelClosedError:
             # This error can happen when the connection gets closed unilaterally
@@ -1914,7 +1874,6 @@ class PyreServer:
             return commands.ExitCode.SUCCESS
         finally:
             await self.pyre_manager.ensure_task_stop()
-            await self.pyre_query_manager.ensure_task_stop()
 
 
 async def run_persistent(
@@ -1964,12 +1923,9 @@ async def run_persistent(
                         server_state=server_state,
                     )
                 ),
-                pyre_query_manager=background.TaskManager(
-                    PyreQueryHandler(
-                        query_state=server_state.query_state,
-                        server_options=initial_server_options,
-                        client_output_channel=stdout,
-                    )
+                handler=RequestHandler(
+                    server_options=initial_server_options,
+                    client_output_channel=stdout,
                 ),
             )
             return await server.run()
