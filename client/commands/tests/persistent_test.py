@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -40,7 +40,6 @@ from ..persistent import (
     AbstractRequestHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     DefinitionLocationQuery,
-    HoverQuery,
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
@@ -123,9 +122,11 @@ class MockRequestHandler(AbstractRequestHandler):
     def __init__(
         self,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
+        mock_hover_response: Optional[lsp.LspHoverResponse] = None,
     ) -> None:
         self.requests: List[object] = []
         self.mock_type_coverage = mock_type_coverage
+        self.mock_hover_response = mock_hover_response
 
     async def write_telemetry(
         self,
@@ -141,11 +142,16 @@ class MockRequestHandler(AbstractRequestHandler):
         self.requests.append({"path": path})
         return self.mock_type_coverage
 
-    async def handle_hover_query(
+    async def get_hover(
         self,
-        query: HoverQuery,
-    ) -> None:
-        self.requests.append(query)
+        path: Path,
+        position: lsp.Position,
+    ) -> lsp.LspHoverResponse:
+        self.requests.append({"path": path, "position": position})
+        if self.mock_hover_response is None:
+            raise ValueError("You need to set hover response in the mock handler")
+        else:
+            return self.mock_hover_response
 
     async def handle_definition_location_query(
         self,
@@ -1048,75 +1054,96 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertEqual(output_writer.items(), [])
 
-    @setup.async_test
-    async def test_hover(self) -> None:
-        def assert_hover_response(
-            response: lsp.LspHoverResponse,
-        ) -> None:
-            client_messages = memory_bytes_writer.items()
-            expected_response = json_rpc.SuccessResponse(
-                id=42, result=lsp.LspHoverResponse.cached_schema().dump(response)
-            )
-            response_string = json.dumps(expected_response.json())
-            self.assertEqual(
-                client_messages[-1].decode(),
-                f"Content-Length: {len(response_string)}\r\n\r\n" + response_string,
-            )
-
-        test_path = Path("/foo.py")
-        not_tracked_path = Path("/not_tracked.py")
+    async def _assert_hover_response(
+        self,
+        opened_documents: Set[Path],
+        parameters: lsp.HoverParameters,
+        handler_response: Optional[lsp.LspHoverResponse],
+        expected_response: lsp.LspHoverResponse,
+        expected_handler_requests: List[object],
+    ) -> None:
+        # set up the system under test
         fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
-        handler = MockRequestHandler()
+        output_writer: MemoryBytesWriter = MemoryBytesWriter()
+        handler = MockRequestHandler(
+            mock_hover_response=expected_response,
+        )
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
-            output_channel=AsyncTextWriter(memory_bytes_writer),
+            output_channel=AsyncTextWriter(output_writer),
             server_state=ServerState(
-                opened_documents={test_path},
+                opened_documents=opened_documents,
             ),
             pyre_manager=fake_task_manager,
             handler=handler,
         )
-
         await fake_task_manager.ensure_task_running()
-
+        # process the request
         await server.process_hover_request(
-            lsp.HoverParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                ),
-                position=lsp.LspPosition(line=3, character=4),
-            ),
+            parameters,
             request_id=42,
         )
-        await asyncio.sleep(0)
-
-        self.assertTrue(fake_task_manager.is_task_running())
-        self.assertEqual(len(memory_bytes_writer.items()), 0)
+        # verify that we passed data as expected
         self.assertEqual(
             handler.requests,
-            [
-                HoverQuery(
-                    id=42,
-                    path=test_path,
-                    position=lsp.LspPosition(line=3, character=4).to_pyre_position(),
-                )
+            expected_handler_requests,
+        )
+        # verify that we returned a response as expected
+        expected_raw_response = json.dumps(
+            json_rpc.SuccessResponse(
+                id=42,
+                result=lsp.LspHoverResponse.cached_schema().dump(expected_response),
+            ).json()
+        )
+        client_messages = output_writer.items()
+        self.assertEqual(len(client_messages), 1)
+        client_message = client_messages[0].decode()
+        content_length_portion, json_portion = client_message.split("\r\n\r\n")
+        self.assertEqual(
+            json.loads(json_portion),
+            json.loads(expected_raw_response),
+        )
+        self.assertEqual(
+            content_length_portion, f"Content-Length: {len(expected_raw_response)}"
+        )
+
+    @setup.async_test
+    async def test_hover(self) -> None:
+        tracked_path = Path("/tracked.py")
+        untracked_path = Path("/not_tracked.py")
+        lsp_line = 3
+        daemon_line = 3 + 1
+        # tracked file
+        await self._assert_hover_response(
+            opened_documents={tracked_path},
+            parameters=lsp.HoverParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=lsp_line, character=4),
+            ),
+            handler_response=lsp.LspHoverResponse(contents="```foo.Foo```"),
+            expected_response=lsp.LspHoverResponse(contents="```foo.Foo```"),
+            expected_handler_requests=[
+                {
+                    "path": tracked_path,
+                    "position": lsp.Position(line=daemon_line, character=4),
+                }
             ],
         )
-
-        await server.process_hover_request(
-            lsp.HoverParameters(
+        # untracked file
+        await self._assert_hover_response(
+            opened_documents={tracked_path},
+            parameters=lsp.HoverParameters(
                 text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(not_tracked_path).unparse(),
+                    uri=lsp.DocumentUri.from_file_path(untracked_path).unparse(),
                 ),
-                position=lsp.LspPosition(line=3, character=4),
+                position=lsp.LspPosition(line=daemon_line, character=4),
             ),
-            request_id=42,
+            handler_response=None,
+            expected_response=lsp.LspHoverResponse(contents=""),
+            expected_handler_requests=[],
         )
-        await asyncio.sleep(0)
-
-        self.assertTrue(fake_task_manager.is_task_running())
-        assert_hover_response(lsp.LspHoverResponse.empty())
 
     @setup.async_test
     async def test_definition(self) -> None:
@@ -1620,27 +1647,20 @@ class RequestHandlerTest(testslide.TestCase):
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager.handle_hover_query(
-                query=HoverQuery(
-                    id=99,
-                    path=Path("bar.py"),
-                    position=lsp.Position(line=42, character=10),
-                ),
+            result = await pyre_query_manager.get_hover(
+                path=Path("bar.py"), position=lsp.Position(line=42, character=10)
             )
 
+        self.assertEqual(
+            result,
+            lsp.LspHoverResponse(contents="```foo.bar.Bar```"),
+        )
         self.assertEqual(
             memory_bytes_writer.items(),
             [
                 b'["QueryWithOverlay", {"query_text": "hover_info_for_position(path=\'bar.py\','
                 b' line=42, column=10)", "overlay_id": null}]\n'
             ],
-        )
-        self.assertEqual(len(client_output_writer.items()), 1)
-        response = client_output_writer.items()[0].splitlines()[2]
-        result = json.loads(response)["result"]
-        self.assertEqual(
-            lsp.LspHoverResponse.cached_schema().load(result),
-            lsp.LspHoverResponse(contents="```foo.bar.Bar```"),
         )
 
     @setup.async_test
@@ -1657,17 +1677,15 @@ class RequestHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager.handle_hover_query(
-                query=HoverQuery(
-                    id=99,
-                    path=Path("bar.py"),
-                    position=lsp.Position(line=42, character=10),
-                ),
+            result = await pyre_query_manager.get_hover(
+                path=Path("bar.py"),
+                position=lsp.Position(line=42, character=10),
             )
 
-        self.assertEqual(len(client_output_writer.items()), 1)
-        response = client_output_writer.items()[0].splitlines()[2]
-        self.assertEqual(json.loads(response)["result"], {"contents": ""})
+        self.assertEqual(
+            result,
+            lsp.LspHoverResponse.empty(),
+        )
 
     @setup.async_test
     async def test_query_definition_location(self) -> None:

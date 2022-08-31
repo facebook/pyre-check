@@ -1075,14 +1075,6 @@ class OverlayUpdate:
 
 
 @dataclasses.dataclass(frozen=True)
-class HoverQuery:
-    id: Union[int, str, None]
-    path: Path
-    position: lsp.Position
-    activity_key: Optional[Dict[str, object]] = None
-
-
-@dataclasses.dataclass(frozen=True)
 class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: lsp.LspHoverResponse
 
@@ -1135,10 +1127,11 @@ class AbstractRequestHandler(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def handle_hover_query(
+    async def get_hover(
         self,
-        query: HoverQuery,
-    ) -> None:
+        path: Path,
+        position: lsp.Position,
+    ) -> lsp.LspHoverResponse:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -1261,49 +1254,27 @@ class RequestHandler(AbstractRequestHandler):
         else:
             return file_not_typechecked_coverage_result()
 
-    async def handle_hover_query(
+    async def get_hover(
         self,
-        query: HoverQuery,
-    ) -> None:
-        path_string = f"'{query.path}'"
+        path: Path,
+        position: lsp.Position,
+    ) -> lsp.LspHoverResponse:
+        path_string = f"'{path}'"
         query_text = (
             f"hover_info_for_position(path={path_string},"
-            f" line={query.position.line}, column={query.position.character})"
+            f" line={position.line}, column={position.character})"
         )
-        overlay_id = (
-            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
-        )
+        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled() else None
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=HoverResponse,
             socket_path=self.socket_path,
             query_text=query_text,
             overlay_id=overlay_id,
         )
-        response = (
+        return (
             daemon_response.response
             if daemon_response
             else lsp.LspHoverResponse.empty()
-        )
-        result = lsp.LspHoverResponse.cached_schema().dump(
-            response,
-        )
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.SuccessResponse(
-                id=query.id,
-                activity_key=query.activity_key,
-                result=result,
-            ),
-        )
-        await self.write_telemetry(
-            {
-                "type": "LSP",
-                "operation": "hover",
-                "filePath": str(query.path),
-                "nonEmpty": len(response.contents) > 0,
-                "response": result,
-            },
-            query.activity_key,
         )
 
     async def handle_definition_location_query(
@@ -1570,13 +1541,30 @@ class PyreServer:
                 ),
             )
         else:
-            await self.handler.handle_hover_query(
-                HoverQuery(
+            result = await self.handler.get_hover(
+                path=document_path,
+                position=parameters.position.to_pyre_position(),
+            )
+            raw_result = lsp.LspHoverResponse.cached_schema().dump(
+                result,
+            )
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    path=document_path,
-                    position=parameters.position.to_pyre_position(),
-                )
+                    result=raw_result,
+                ),
+            )
+            await self.handler.write_telemetry(
+                {
+                    "type": "LSP",
+                    "operation": "hover",
+                    "filePath": str(document_path),
+                    "nonEmpty": len(result.contents) > 0,
+                    "response": raw_result,
+                },
+                activity_key,
             )
 
     async def process_definition_request(
