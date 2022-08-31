@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import abc
 import asyncio
 import dataclasses
 import enum
@@ -1124,7 +1125,52 @@ class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[str]
 
 
-class RequestHandler:
+class AbstractRequestHandler(abc.ABC):
+    @abc.abstractmethod
+    async def write_telemetry(
+        self,
+        parameters: Dict[str, object],
+        activity_key: Optional[Dict[str, object]],
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def handle_type_coverage_query(
+        self,
+        query: TypeCoverageQuery,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def handle_hover_query(
+        self,
+        query: HoverQuery,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def handle_definition_location_query(
+        self,
+        query: DefinitionLocationQuery,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def handle_find_references_query(
+        self,
+        query: ReferencesQuery,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def handle_overlay_update_request(
+        self,
+        request: OverlayUpdate,
+    ) -> None:
+        raise NotImplementedError()
+
+
+class RequestHandler(AbstractRequestHandler):
     def __init__(
         self,
         server_options: PyreServerOptions,
@@ -1399,7 +1445,7 @@ class PyreServer:
     # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
     server_state: ServerState
 
-    handler: RequestHandler
+    handler: AbstractRequestHandler
 
     async def wait_for_exit(self) -> int:
         await _wait_for_exit(self.input_channel, self.output_channel)

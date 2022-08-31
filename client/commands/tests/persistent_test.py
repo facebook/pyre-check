@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterable, Iterator, List, Optional, Sequence
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -37,6 +37,7 @@ from ..connections import (
     MemoryBytesWriter,
 )
 from ..persistent import (
+    AbstractRequestHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     DefinitionLocationQuery,
     HoverQuery,
@@ -119,9 +120,16 @@ mock_server_options_reader: PyreServerOptionsReader = _create_server_options_rea
 mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
 
 
-class MockRequestHandler(RequestHandler):
+class MockRequestHandler(AbstractRequestHandler):
     def __init__(self) -> None:
         self.requests: List[object] = []
+
+    async def write_telemetry(
+        self,
+        parameters: Dict[str, object],
+        activity_key: Optional[Dict[str, object]],
+    ) -> None:
+        pass
 
     async def handle_type_coverage_query(
         self,
