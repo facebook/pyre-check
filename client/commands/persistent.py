@@ -1067,14 +1067,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
 
 
 @dataclasses.dataclass(frozen=True)
-class OverlayUpdate:
-    # TODO: T126924773 Consider making the overlay id also contain a GUID or PID
-    overlay_id: str
-    source_path: Path
-    code_update: str
-
-
-@dataclasses.dataclass(frozen=True)
 class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: lsp.LspHoverResponse
 
@@ -1135,9 +1127,10 @@ class AbstractRequestHandler(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def handle_overlay_update_request(
+    async def update_overlay(
         self,
-        request: OverlayUpdate,
+        path: Path,
+        code: str,
     ) -> None:
         raise NotImplementedError()
 
@@ -1316,15 +1309,18 @@ class RequestHandler(AbstractRequestHandler):
             else []
         )
 
-    async def handle_overlay_update_request(
+    async def update_overlay(
         self,
-        request: OverlayUpdate,
+        path: Path,
+        code: str,
     ) -> None:
-        source_path = f"{request.source_path}"
+        source_path = f"{path}"
         overlay_update_dict = {
-            "overlay_id": request.overlay_id,
+            # TODO: T126924773 Include a language server identifier (e.g. PID of
+            # the current process) in this overlay id.
+            "overlay_id": path,
             "source_path": source_path,
-            "code_update": ["NewCode", request.code_update],
+            "code_update": ["NewCode", code],
         }
         # Drop the response (the daemon code will log it for us)
         await daemon_connection.attempt_send_async_raw_request(
@@ -1407,10 +1403,9 @@ class PyreServer:
         if document_path not in self.server_state.opened_documents:
             return
 
-        overlay_update = OverlayUpdate(
-            str(document_path.resolve()),
-            document_path.resolve(),
-            str(
+        await self.handler.update_overlay(
+            path=document_path.resolve(),
+            code=str(
                 "".join(
                     [
                         content_change.text
@@ -1419,9 +1414,6 @@ class PyreServer:
                 )
             ),
         )
-
-        await self.handler.handle_overlay_update_request(overlay_update)
-
         # Attempt to trigger a background Pyre server start on each file change
         if not self.pyre_manager.is_task_running():
             await self._try_restart_pyre_server()

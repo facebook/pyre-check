@@ -42,7 +42,6 @@ from ..persistent import (
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
-    OverlayUpdate,
     path_to_coverage_response,
     PyreDaemonLaunchAndSubscribeHandler,
     PyreDaemonShutdown,
@@ -177,11 +176,12 @@ class MockRequestHandler(AbstractRequestHandler):
         else:
             return self.mock_references_response
 
-    async def handle_overlay_update_request(
+    async def update_overlay(
         self,
-        request: OverlayUpdate,
+        path: Path,
+        code: str,
     ) -> None:
-        self.requests.append(request)
+        self.requests.append({"path": path, "code": code})
 
 
 async def _create_input_channel_with_requests(
