@@ -111,8 +111,29 @@ def _create_server_options_reader(
     )
 
 
+def _create_server_state_with_options(
+    binary: str = DEFAULT_BINARY,
+    server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
+    start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
+    ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
+    strict_default: bool = DEFAULT_IS_STRICT,
+    excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
+) -> ServerState:
+    return ServerState(
+        _create_server_options(
+            binary,
+            server_identifier,
+            start_arguments,
+            ide_features,
+            strict_default,
+            excludes,
+        )
+    )
+
+
 mock_server_options_reader: PyreServerOptionsReader = _create_server_options_reader()
 mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
+mock_server_state: ServerState = ServerState(server_options=mock_initial_server_options)
 
 
 class MockRequestHandler(AbstractRequestHandler):
@@ -419,7 +440,7 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_server_exit(self) -> None:
-        server_state = ServerState()
+        server_state = mock_server_state
         noop_task_manager = background.TaskManager(NoOpBackgroundTask())
         input_channel = await _create_input_channel_with_requests(
             [
@@ -440,7 +461,7 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_server_exit_unknown_request_after_shutdown(self) -> None:
-        server_state = ServerState()
+        server_state = mock_server_state
         noop_task_manager = background.TaskManager(NoOpBackgroundTask())
         input_channel = await _create_input_channel_with_requests(
             [
@@ -462,7 +483,7 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_server_exit_gracefully_after_shutdown(self) -> None:
-        server_state = ServerState()
+        server_state = mock_server_state
         noop_task_manager = background.TaskManager(NoOpBackgroundTask())
         input_channel = await _create_input_channel_with_requests(
             [
@@ -486,7 +507,7 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_server_exit_gracefully_on_channel_closure(self) -> None:
-        server_state = ServerState()
+        server_state = mock_server_state
         noop_task_manager = background.TaskManager(NoOpBackgroundTask())
         server = PyreServer(
             # Feed nothing to input channel
@@ -505,7 +526,7 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_open_close(self) -> None:
-        server_state = ServerState()
+        server_state = mock_server_state
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
@@ -556,7 +577,8 @@ class PersistentTest(testslide.TestCase):
                 window=lsp.WindowClientCapabilities(
                     status=lsp.ShowStatusRequestClientCapabilities(),
                 ),
-            )
+            ),
+            server_options=mock_initial_server_options,
         )
         bytes_writer = MemoryBytesWriter()
 
@@ -612,7 +634,7 @@ class PersistentTest(testslide.TestCase):
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
-            server_state=ServerState(),
+            server_state=mock_server_state,
         )
         with self.assertRaises(PyreDaemonShutdown):
             await server_handler.handle_error_subscription(
@@ -622,7 +644,9 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_busy_status_clear_diagnostics(self) -> None:
         path = Path("foo.py")
-        server_state = ServerState(diagnostics={path: []})
+        server_state = ServerState(
+            server_options=mock_initial_server_options, diagnostics={path: []}
+        )
         bytes_writer = MemoryBytesWriter()
 
         def fake_server_options_reader() -> PyreServerOptions:
@@ -653,7 +677,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            server_state=ServerState(),
+            server_state=mock_server_state,
             pyre_manager=fake_task_manager,
             handler=MockRequestHandler(),
         )
@@ -680,7 +704,8 @@ class PersistentTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
-                consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD
+                server_options=mock_initial_server_options,
+                consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
             pyre_manager=fake_task_manager,
             handler=MockRequestHandler(),
@@ -708,7 +733,9 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            server_state=ServerState(opened_documents={test_path}),
+            server_state=ServerState(
+                server_options=mock_initial_server_options, opened_documents={test_path}
+            ),
             pyre_manager=fake_task_manager,
             handler=MockRequestHandler(),
         )
@@ -732,6 +759,7 @@ class PersistentTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
+                server_options=mock_initial_server_options,
                 opened_documents={test_path},
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
@@ -757,7 +785,9 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            server_state=ServerState(opened_documents={test_path}),
+            server_state=ServerState(
+                server_options=mock_initial_server_options, opened_documents={test_path}
+            ),
             pyre_manager=fake_task_manager,
             handler=MockRequestHandler(),
         )
@@ -907,6 +937,7 @@ class PersistentTest(testslide.TestCase):
     async def test_connections_lost(self) -> None:
         test_path = Path("/foo.py")
         server_state = ServerState(
+            server_options=mock_initial_server_options,
             diagnostics={test_path: []},
         )
 
@@ -980,7 +1011,8 @@ class PersistentTest(testslide.TestCase):
                     window=lsp.WindowClientCapabilities(
                         status=lsp.ShowStatusRequestClientCapabilities(),
                     ),
-                )
+                ),
+                server_options=mock_initial_server_options,
             ),
         )
         await server_handler.show_status_message_to_client(
@@ -1015,7 +1047,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
-            server_state=ServerState(),
+            server_state=mock_server_state,
             pyre_manager=fake_pyre_manager,
             handler=handler,
         )
@@ -1048,7 +1080,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
-            server_state=ServerState(),
+            server_state=mock_server_state,
             pyre_manager=fake_pyre_manager,
             handler=handler,
         )
@@ -1084,6 +1116,7 @@ class PersistentTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=ServerState(
+                server_options=mock_initial_server_options,
                 opened_documents=opened_documents,
             ),
             pyre_manager=fake_task_manager,
@@ -1175,6 +1208,7 @@ class PersistentTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=ServerState(
+                server_options=mock_initial_server_options,
                 opened_documents=opened_documents,
             ),
             pyre_manager=fake_task_manager,
@@ -1284,6 +1318,7 @@ class PersistentTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=ServerState(
+                server_options=mock_initial_server_options,
                 opened_documents=opened_documents,
             ),
             pyre_manager=fake_task_manager,
@@ -1389,6 +1424,7 @@ class PersistentTest(testslide.TestCase):
                 input_channel=create_memory_text_reader(""),
                 output_channel=AsyncTextWriter(memory_bytes_writer),
                 server_state=ServerState(
+                    server_options=mock_initial_server_options,
                     opened_documents={test_path},
                 ),
                 pyre_manager=fake_task_manager,
@@ -1505,7 +1541,7 @@ class RequestHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = RequestHandler(
-                server_options=_create_server_options(strict_default=False),
+                server_state=_create_server_state_with_options(strict_default=False),
                 client_output_channel=AsyncTextWriter(bytes_writer),
             )
             input_channel = create_memory_text_reader(
@@ -1528,7 +1564,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_get_type_coverage__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(strict_default=False),
+            server_state=_create_server_state_with_options(strict_default=False),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
@@ -1546,7 +1582,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = RequestHandler(
-                server_options=_create_server_options(strict_default=True),
+                server_state=_create_server_state_with_options(strict_default=True),
                 client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             input_channel = create_memory_text_reader(
@@ -1562,7 +1598,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_get_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(strict_default=False),
+            server_state=_create_server_state_with_options(strict_default=False),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
@@ -1584,7 +1620,7 @@ class RequestHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = RequestHandler(
-                server_options=_create_server_options(
+                server_state=_create_server_state_with_options(
                     strict_default=False,
                     ide_features=configuration_module.IdeFeatures(
                         expression_level_coverage_enabled=True
@@ -1617,7 +1653,7 @@ class RequestHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             bytes_writer = MemoryBytesWriter()
             pyre_query_manager = RequestHandler(
-                server_options=_create_server_options(
+                server_state=_create_server_state_with_options(
                     strict_default=False,
                     ide_features=configuration_module.IdeFeatures(
                         expression_level_coverage_enabled=True
@@ -1647,7 +1683,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_get_type_coverage__expression_level__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(
+            server_state=_create_server_state_with_options(
                 strict_default=False,
                 ide_features=configuration_module.IdeFeatures(
                     expression_level_coverage_enabled=True
@@ -1672,7 +1708,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = RequestHandler(
-                server_options=_create_server_options(
+                server_state=_create_server_state_with_options(
                     strict_default=True,
                     ide_features=configuration_module.IdeFeatures(
                         expression_level_coverage_enabled=True
@@ -1695,7 +1731,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_get_type_coverage__expression_level__not_typechecked(self) -> None:
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(
+            server_state=_create_server_state_with_options(
                 strict_default=True,
                 ide_features=configuration_module.IdeFeatures(
                     expression_level_coverage_enabled=True
@@ -1720,7 +1756,7 @@ class RequestHandlerTest(testslide.TestCase):
         json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(
+            server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
             client_output_channel=AsyncTextWriter(client_output_writer),
@@ -1751,7 +1787,7 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_hover__bad_json(self) -> None:
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(
+            server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
             client_output_channel=AsyncTextWriter(client_output_writer),
@@ -1794,7 +1830,7 @@ class RequestHandlerTest(testslide.TestCase):
         """
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(
+            server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
             client_output_channel=AsyncTextWriter(client_output_writer),
@@ -1834,7 +1870,7 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_definition_location__bad_json(self) -> None:
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(
+            server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
             client_output_channel=AsyncTextWriter(client_output_writer),
@@ -1890,7 +1926,7 @@ class RequestHandlerTest(testslide.TestCase):
         """
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(
+            server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(
                     find_all_references_enabled=True
                 ),
@@ -1939,7 +1975,7 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_references__bad_json(self) -> None:
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
-            server_options=_create_server_options(
+            server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(
                     find_all_references_enabled=True
                 ),

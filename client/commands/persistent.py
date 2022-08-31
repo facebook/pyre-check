@@ -398,6 +398,9 @@ async def _read_server_response(
 
 @dataclasses.dataclass
 class ServerState:
+    # State that can only change on config reload
+    server_options: PyreServerOptions
+
     # Immutable States
     client_capabilities: lsp.ClientCapabilities = lsp.ClientCapabilities()
 
@@ -1037,6 +1040,8 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         server_options = read_server_options(
             self.server_options_reader, self.remote_logging
         )
+        # Update the server options, which can change if the config is modified
+        self.server_state.server_options = server_options
         session_timer = timer.Timer()
         error_message: Optional[str] = None
         try:
@@ -1138,32 +1143,35 @@ class AbstractRequestHandler(abc.ABC):
 class RequestHandler(AbstractRequestHandler):
     def __init__(
         self,
-        server_options: PyreServerOptions,
+        server_state: ServerState,
         client_output_channel: connections.AsyncTextWriter,
     ) -> None:
-        self.server_options = server_options
+        self.server_state = server_state
         self.client_output_channel = client_output_channel
-        self.socket_path: Path = server_options.get_socket_path()
+        self.socket_path: Path = self.get_server_options().get_socket_path()
+
+    def get_server_options(self) -> PyreServerOptions:
+        return self.server_state.server_options
 
     def is_expression_level_coverage_enabled(self) -> bool:
-        ide_features = self.server_options.ide_features
+        ide_features = self.get_server_options().ide_features
         return (
             ide_features is not None
             and ide_features.is_expression_level_coverage_enabled()
         )
 
     def is_consume_unsaved_changes_enabled(self) -> bool:
-        ide_features = self.server_options.ide_features
+        ide_features = self.get_server_options().ide_features
         return (
             ide_features is not None
             and ide_features.is_consume_unsaved_changes_enabled()
         )
 
     def is_strict_by_default(self) -> bool:
-        return self.server_options.strict_default
+        return self.get_server_options().strict_default
 
     def should_write_telemetry(self) -> bool:
-        return self.server_options.enabled_telemetry_event
+        return self.get_server_options().enabled_telemetry_event
 
     async def write_telemetry(
         self,
@@ -1827,7 +1835,10 @@ async def run_persistent(
 
             client_capabilities = initialize_result.client_capabilities
             LOG.debug(f"Client capabilities: {client_capabilities}")
-            server_state = ServerState(client_capabilities=client_capabilities)
+            server_state = ServerState(
+                client_capabilities=client_capabilities,
+                server_options=initial_server_options,
+            )
             server = PyreServer(
                 input_channel=stdin,
                 output_channel=stdout,
@@ -1841,7 +1852,7 @@ async def run_persistent(
                     )
                 ),
                 handler=RequestHandler(
-                    server_options=initial_server_options,
+                    server_state=server_state,
                     client_output_channel=stdout,
                 ),
             )
