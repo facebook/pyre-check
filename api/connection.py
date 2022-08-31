@@ -59,6 +59,7 @@ class PyreConnection:
         pyre_directory: Optional[Path] = None,
         pyre_arguments: Optional[List[str]] = None,
         skip_initial_type_check: bool = False,
+        wait_on_initialization: bool = False,
     ) -> None:
         self.pyre_directory: Path = (
             pyre_directory if pyre_directory is not None else Path.cwd()
@@ -66,6 +67,7 @@ class PyreConnection:
         self.pyre_arguments: List[str] = pyre_arguments or []
         self.server_initialized = False
         self.skip_initial_type_check = skip_initial_type_check
+        self.wait_on_initialization = wait_on_initialization
 
     def __enter__(self) -> "PyreConnection":
         self.start_server()
@@ -85,14 +87,17 @@ class PyreConnection:
 
     def start_server(self) -> PyreCheckResult:
         if self.skip_initial_type_check:
+            command = [
+                "pyre",
+                "--noninteractive",
+                *self.pyre_arguments,
+                "start",
+                "--skip-initial-type-check",
+            ]
+            if self.wait_on_initialization:
+                command.extend("--wait-on-initialization")
             result = subprocess.run(
-                [
-                    "pyre",
-                    "--noninteractive",
-                    *self.pyre_arguments,
-                    "start",
-                    "--skip-initial-type-check",
-                ],
+                command,
                 stdout=subprocess.PIPE,
                 cwd=str(self.pyre_directory),
             )
