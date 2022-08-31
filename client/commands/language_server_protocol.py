@@ -280,7 +280,7 @@ class LspRange(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class Diagnostic(json_mixins.CamlCaseAndExcludeJsonMixin):
-    range: PyreRange
+    range: LspRange
     message: str
     severity: Optional[DiagnosticSeverity] = None
     code: Optional[int] = None

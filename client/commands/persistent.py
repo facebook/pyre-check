@@ -495,11 +495,11 @@ async def _start_pyre_server(
 
 def type_error_to_diagnostic(type_error: error.Error) -> lsp.Diagnostic:
     return lsp.Diagnostic(
-        range=lsp.PyreRange(
-            start=lsp.PyrePosition(
+        range=lsp.LspRange(
+            start=lsp.LspPosition(
                 line=type_error.line - 1, character=type_error.column
             ),
-            end=lsp.PyrePosition(
+            end=lsp.LspPosition(
                 line=type_error.stop_line - 1, character=type_error.stop_column
             ),
         ),
@@ -523,12 +523,12 @@ def type_errors_to_diagnostics(
 
 def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
     return lsp.Diagnostic(
-        range=lsp.PyreRange(
-            start=lsp.PyrePosition(
+        range=lsp.LspRange(
+            start=lsp.LspPosition(
                 line=uncovered_range.start.line - 1,
                 character=uncovered_range.start.column,
             ),
-            end=lsp.PyrePosition(
+            end=lsp.LspPosition(
                 line=uncovered_range.end.line - 1, character=uncovered_range.end.column
             ),
         ),
@@ -566,12 +566,12 @@ def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
         covered_percent=0.0,
         uncovered_ranges=[
             lsp.Diagnostic(
-                range=lsp.PyreRange(
-                    start=lsp.PyrePosition(
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(
                         line=0,
                         character=0,
                     ),
-                    end=lsp.PyrePosition(line=1, character=0),
+                    end=lsp.LspPosition(line=1, character=0),
                 ),
                 message="This file is not type checked by Pyre.",
             )

@@ -439,7 +439,7 @@ class ExpressionLevelTest(testslide.TestCase):
 
     def test_location_to_range(self) -> None:
         def assert_location_to_range(
-            response: expression_level_coverage.Location, expected: lsp.PyreRange
+            response: expression_level_coverage.Location, expected: lsp.LspRange
         ) -> None:
             self.assertEqual(
                 expression_level_coverage.location_to_range(response),
@@ -451,9 +451,9 @@ class ExpressionLevelTest(testslide.TestCase):
                 start=expression_level_coverage.Pair(line=1, column=1),
                 stop=expression_level_coverage.Pair(line=1, column=7),
             ),
-            lsp.PyreRange(
-                start=lsp.PyrePosition(line=0, character=1),
-                end=lsp.PyrePosition(line=0, character=7),
+            lsp.LspRange(
+                start=lsp.LspPosition(line=0, character=1),
+                end=lsp.LspPosition(line=0, character=7),
             ),
         )
 
@@ -477,9 +477,9 @@ class ExpressionLevelTest(testslide.TestCase):
                 reason=["TypeIsAny message."],
             ),
             lsp.Diagnostic(
-                range=lsp.PyreRange(
-                    start=lsp.PyrePosition(line=0, character=1),
-                    end=lsp.PyrePosition(line=0, character=7),
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=0, character=1),
+                    end=lsp.LspPosition(line=0, character=7),
                 ),
                 message="TypeIsAny message.",
             ),
@@ -539,9 +539,9 @@ class ExpressionLevelTest(testslide.TestCase):
             ),
             [
                 lsp.Diagnostic(
-                    range=lsp.PyreRange(
-                        start=lsp.PyrePosition(line=0, character=1),
-                        end=lsp.PyrePosition(line=0, character=7),
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=0, character=1),
+                        end=lsp.LspPosition(line=0, character=7),
                     ),
                     message="TypeIsAny message.",
                 )
@@ -588,16 +588,16 @@ class ExpressionLevelTest(testslide.TestCase):
             ),
             [
                 lsp.Diagnostic(
-                    range=lsp.PyreRange(
-                        start=lsp.PyrePosition(line=0, character=1),
-                        end=lsp.PyrePosition(line=0, character=7),
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=0, character=1),
+                        end=lsp.LspPosition(line=0, character=7),
                     ),
                     message="ContainerParameterIsAny message.",
                 ),
                 lsp.Diagnostic(
-                    range=lsp.PyreRange(
-                        start=lsp.PyrePosition(line=1, character=4),
-                        end=lsp.PyrePosition(line=1, character=7),
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=1, character=4),
+                        end=lsp.LspPosition(line=1, character=7),
                     ),
                     message="CallableParameterIsUnknownOrAny message.",
                 ),

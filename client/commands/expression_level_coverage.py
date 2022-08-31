@@ -178,12 +178,12 @@ def summary_expression_level(response: object) -> str:
     return percent_output
 
 
-def location_to_range(location: Location) -> lsp.PyreRange:
-    return lsp.PyreRange(
-        start=lsp.PyrePosition(
+def location_to_range(location: Location) -> lsp.LspRange:
+    return lsp.LspRange(
+        start=lsp.LspPosition(
             line=location.start.line - 1, character=location.start.column
         ),
-        end=lsp.PyrePosition(
+        end=lsp.LspPosition(
             line=location.stop.line - 1, character=location.stop.column
         ),
     )

@@ -812,9 +812,9 @@ class PersistentTest(testslide.TestCase):
                 )
             ),
             lsp.Diagnostic(
-                range=lsp.PyreRange(
-                    start=lsp.PyrePosition(line=0, character=1),
-                    end=lsp.PyrePosition(line=1, character=2),
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=0, character=1),
+                    end=lsp.LspPosition(line=1, character=2),
                 ),
                 message="description",
                 severity=lsp.DiagnosticSeverity.ERROR,
@@ -860,9 +860,9 @@ class PersistentTest(testslide.TestCase):
             {
                 Path("/foo.py"): [
                     lsp.Diagnostic(
-                        range=lsp.PyreRange(
-                            start=lsp.PyrePosition(line=0, character=1),
-                            end=lsp.PyrePosition(line=1, character=2),
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=0, character=1),
+                            end=lsp.LspPosition(line=1, character=2),
                         ),
                         message="foo_description",
                         severity=lsp.DiagnosticSeverity.ERROR,
@@ -870,9 +870,9 @@ class PersistentTest(testslide.TestCase):
                         source="Pyre",
                     ),
                     lsp.Diagnostic(
-                        range=lsp.PyreRange(
-                            start=lsp.PyrePosition(line=1, character=2),
-                            end=lsp.PyrePosition(line=2, character=3),
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=2),
+                            end=lsp.LspPosition(line=2, character=3),
                         ),
                         message="foo_description2",
                         severity=lsp.DiagnosticSeverity.ERROR,
@@ -882,9 +882,9 @@ class PersistentTest(testslide.TestCase):
                 ],
                 Path("/bar.py"): [
                     lsp.Diagnostic(
-                        range=lsp.PyreRange(
-                            start=lsp.PyrePosition(line=3, character=4),
-                            end=lsp.PyrePosition(line=4, character=5),
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=4),
+                            end=lsp.LspPosition(line=4, character=5),
                         ),
                         message="bar_description",
                         severity=lsp.DiagnosticSeverity.ERROR,
@@ -903,9 +903,9 @@ class PersistentTest(testslide.TestCase):
                 )
             ),
             lsp.Diagnostic(
-                range=lsp.PyreRange(
-                    start=lsp.PyrePosition(line=0, character=1),
-                    end=lsp.PyrePosition(line=1, character=2),
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=0, character=1),
+                    end=lsp.LspPosition(line=1, character=2),
                 ),
                 message=(
                     "This function is not type checked. "
@@ -1478,9 +1478,9 @@ class PersistentTest(testslide.TestCase):
                     covered_percent=50.0,
                     uncovered_ranges=[
                         lsp.Diagnostic(
-                            range=lsp.PyreRange(
-                                start=lsp.PyrePosition(line=1, character=0),
-                                end=lsp.PyrePosition(line=2, character=12),
+                            range=lsp.LspRange(
+                                start=lsp.LspPosition(line=1, character=0),
+                                end=lsp.LspPosition(line=2, character=12),
                             ),
                             message="This function is not type checked. Consider adding parameter or return type annotations.",
                             severity=None,
