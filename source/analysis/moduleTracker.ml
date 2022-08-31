@@ -222,7 +222,7 @@ module ModulePaths = struct
 
 
     let invalidate { cache; _ } qualifier =
-      qualifier :: Reference.prefixes qualifier |> Cache.KeySet.of_list |> Cache.remove_batch cache
+      Reference.this_and_all_parents qualifier |> Cache.KeySet.of_list |> Cache.remove_batch cache
 
 
     (* Given a qualifier, find all ModulePath.t values for that qualifier (across all search roots) *)

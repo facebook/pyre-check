@@ -178,4 +178,6 @@ let prefixes reference =
   recurse (reverse reference) []
 
 
+let this_and_all_parents reference = reference :: prefixes reference
+
 let possible_qualifiers_after_delocalize reference = delocalize reference |> prefixes

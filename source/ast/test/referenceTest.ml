@@ -191,8 +191,25 @@ let test_map_last _ =
   ()
 
 
+let test_this_and_all_parents _ =
+  let assert_result reference expected =
+    let actual = Reference.this_and_all_parents (Reference.create reference) in
+    let expected_references = List.map ~f:Reference.create expected in
+    assert_equal
+      ~cmp:(List.equal Reference.equal)
+      ~printer:(fun references -> [%show: Reference.t list] references)
+      expected_references
+      actual
+  in
+  assert_result "" [""];
+  assert_result "a" ["a"];
+  assert_result "a.b" ["a.b"; "a"];
+  assert_result "a.b.c" ["a.b.c"; "a"; "a.b"];
+  ()
+
+
 let test_possible_qualifiers_after_delocalize _ =
-  let assert_prefixes reference expected =
+  let assert_result reference expected =
     let actual = Reference.possible_qualifiers_after_delocalize (Reference.create reference) in
     let expected_references = List.map ~f:Reference.create expected in
     assert_equal
@@ -201,12 +218,12 @@ let test_possible_qualifiers_after_delocalize _ =
       expected_references
       actual
   in
-  assert_prefixes "" [];
-  assert_prefixes "a" [];
-  assert_prefixes "a.b" ["a"];
-  assert_prefixes "a.b.c" ["a"; "a.b"];
-  assert_prefixes "$local_a$b" ["a"];
-  assert_prefixes "$local_a?b$c" ["a"; "a.b"];
+  assert_result "" [];
+  assert_result "a" [];
+  assert_result "a.b" ["a"];
+  assert_result "a.b.c" ["a"; "a.b"];
+  assert_result "$local_a$b" ["a"];
+  assert_result "$local_a?b$c" ["a"; "a.b"];
   ()
 
 
@@ -219,6 +236,7 @@ let () =
          "delocalize" >:: test_delocalize;
          "prefix" >:: test_prefix;
          "map_last" >:: test_map_last;
+         "this_and_all_parents" >:: test_this_and_all_parents;
          "possible_qualifiers_after_delocalize" >:: test_possible_qualifiers_after_delocalize;
        ]
   |> Test.run
