@@ -1067,13 +1067,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
 
 
 @dataclasses.dataclass(frozen=True)
-class TypeCoverageQuery:
-    id: Union[int, str, None]
-    path: Path
-    activity_key: Optional[Dict[str, object]] = None
-
-
-@dataclasses.dataclass(frozen=True)
 class OverlayUpdate:
     # TODO: T126924773 Consider making the overlay id also contain a GUID or PID
     overlay_id: str
@@ -1135,10 +1128,10 @@ class AbstractRequestHandler(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def handle_type_coverage_query(
+    async def get_type_coverage(
         self,
-        query: TypeCoverageQuery,
-    ) -> None:
+        path: Path,
+    ) -> Optional[lsp.TypeCoverageResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -1239,7 +1232,7 @@ class RequestHandler(AbstractRequestHandler):
         else:
             return len(response.response) > 0
 
-    async def _query_type_coverage(
+    async def get_type_coverage(
         self,
         path: Path,
     ) -> Optional[lsp.TypeCoverageResponse]:
@@ -1267,23 +1260,6 @@ class RequestHandler(AbstractRequestHandler):
             return path_to_coverage_response(path, self.is_strict_by_default())
         else:
             return file_not_typechecked_coverage_result()
-
-    async def handle_type_coverage_query(
-        self,
-        query: TypeCoverageQuery,
-    ) -> None:
-        type_coverage_result = await self._query_type_coverage(
-            query.path,
-        )
-        if type_coverage_result is not None:
-            await lsp.write_json_rpc(
-                self.client_output_channel,
-                json_rpc.SuccessResponse(
-                    id=query.id,
-                    activity_key=query.activity_key,
-                    result=type_coverage_result.to_dict(),
-                ),
-            )
 
     async def handle_hover_query(
         self,
@@ -1556,11 +1532,16 @@ class PyreServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        await self.handler.handle_type_coverage_query(
-            TypeCoverageQuery(
-                id=request_id, activity_key=activity_key, path=document_path
+        response = await self.handler.get_type_coverage(path=document_path)
+        if response is not None:
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=response.to_dict(),
+                ),
             )
-        )
 
     async def process_hover_request(
         self,

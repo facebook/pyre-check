@@ -59,7 +59,6 @@ from ..persistent import (
     try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
-    TypeCoverageQuery,
     uncovered_range_to_diagnostic,
 )
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
@@ -121,8 +120,12 @@ mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
 
 
 class MockRequestHandler(AbstractRequestHandler):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
+    ) -> None:
         self.requests: List[object] = []
+        self.mock_type_coverage = mock_type_coverage
 
     async def write_telemetry(
         self,
@@ -131,11 +134,12 @@ class MockRequestHandler(AbstractRequestHandler):
     ) -> None:
         pass
 
-    async def handle_type_coverage_query(
+    async def get_type_coverage(
         self,
-        query: TypeCoverageQuery,
-    ) -> None:
-        self.requests.append(query)
+        path: Path,
+    ) -> Optional[lsp.TypeCoverageResponse]:
+        self.requests.append({"path": path})
+        return self.mock_type_coverage
 
     async def handle_hover_query(
         self,
@@ -981,17 +985,22 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_type_coverage_request(self) -> None:
         test_path = Path("/foo")
-        bytes_writer = MemoryBytesWriter()
+        output_writer = MemoryBytesWriter()
         fake_pyre_manager = background.TaskManager(WaitForeverBackgroundTask())
-        handler = MockRequestHandler()
+        handler = MockRequestHandler(
+            mock_type_coverage=lsp.TypeCoverageResponse(
+                covered_percent=42.42,
+                uncovered_ranges=[],
+                default_message="pyre is on fire",
+            )
+        )
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
-            output_channel=AsyncTextWriter(bytes_writer),
+            output_channel=AsyncTextWriter(output_writer),
             server_state=ServerState(),
             pyre_manager=fake_pyre_manager,
             handler=handler,
         )
-
         await server.process_type_coverage_request(
             lsp.TypeCoverageParameters(
                 text_document=lsp.TextDocumentIdentifier(
@@ -1000,11 +1009,44 @@ class PersistentTest(testslide.TestCase):
             ),
             request_id=1,
         )
-
         self.assertEqual(
             handler.requests,
-            [TypeCoverageQuery(1, test_path)],
+            [{"path": test_path}],
         )
+        self.assertEqual(
+            output_writer.items(),
+            [
+                b'Content-Length: 124\r\n\r\n{"jsonrpc": "2.0", "id": 1, "result": {"coveredPe'
+                b'rcent": 42.42, "uncoveredRanges": [], "defaultMessage": "pyre is on fire"}}'
+            ],
+        )
+
+    @setup.async_test
+    async def test_type_coverage_request__None_response(self) -> None:
+        test_path = Path("/foo")
+        output_writer = MemoryBytesWriter()
+        fake_pyre_manager = background.TaskManager(WaitForeverBackgroundTask())
+        handler = MockRequestHandler(mock_type_coverage=None)
+        server = PyreServer(
+            input_channel=create_memory_text_reader(""),
+            output_channel=AsyncTextWriter(output_writer),
+            server_state=ServerState(),
+            pyre_manager=fake_pyre_manager,
+            handler=handler,
+        )
+        await server.process_type_coverage_request(
+            lsp.TypeCoverageParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                )
+            ),
+            request_id=1,
+        )
+        self.assertEqual(
+            handler.requests,
+            [{"path": test_path}],
+        )
+        self.assertEqual(output_writer.items(), [])
 
     @setup.async_test
     async def test_hover(self) -> None:
@@ -1345,7 +1387,7 @@ def patch_connect_async(
 
 class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
-    async def test_query_type_coverage(self) -> None:
+    async def test_get_type_coverage__basic(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
@@ -1361,7 +1403,7 @@ class RequestHandlerTest(testslide.TestCase):
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager._query_type_coverage(path=test_path)
+                result = await pyre_query_manager.get_type_coverage(path=test_path)
             self.assertEqual(len(memory_bytes_writer.items()), 1)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
@@ -1373,7 +1415,7 @@ class RequestHandlerTest(testslide.TestCase):
             self.assertTrue(result.covered_percent < 100.0)
 
     @setup.async_test
-    async def test_query_type_coverage__bad_json(self) -> None:
+    async def test_get_type_coverage__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
             server_options=_create_server_options(strict_default=False),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
@@ -1381,13 +1423,13 @@ class RequestHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager._query_type_coverage(
+            result = await pyre_query_manager.get_type_coverage(
                 path=Path("test.py"),
             )
         self.assertTrue(result is None)
 
     @setup.async_test
-    async def test_query_type_coverage__strict(self) -> None:
+    async def test_get_type_coverage__strict(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
@@ -1401,13 +1443,13 @@ class RequestHandlerTest(testslide.TestCase):
             )
             output_channel = AsyncTextWriter(MemoryBytesWriter())
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager._query_type_coverage(path=test_path)
+                result = await pyre_query_manager.get_type_coverage(path=test_path)
             self.assertTrue(result is not None)
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertEqual(result.covered_percent, 100.0)
 
     @setup.async_test
-    async def test_query_type_coverage__not_typechecked(self) -> None:
+    async def test_get_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = RequestHandler(
             server_options=_create_server_options(strict_default=False),
             client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
@@ -1415,7 +1457,7 @@ class RequestHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager._query_type_coverage(path=Path("test.py"))
+            result = await pyre_query_manager.get_type_coverage(path=Path("test.py"))
         self.assertTrue(result is not None)
         self.assertEqual(result.covered_percent, 0.0)
         self.assertEqual(len(result.uncovered_ranges), 1)
@@ -1424,7 +1466,7 @@ class RequestHandlerTest(testslide.TestCase):
         )
 
     @setup.async_test
-    async def test_query_expression_coverage(self) -> None:
+    async def test_get_type_coverage__expression_level(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
@@ -1445,7 +1487,7 @@ class RequestHandlerTest(testslide.TestCase):
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager._query_type_coverage(path=test_path)
+                result = await pyre_query_manager.get_type_coverage(path=test_path)
             self.assertEqual(len(memory_bytes_writer.items()), 2)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
@@ -1457,7 +1499,7 @@ class RequestHandlerTest(testslide.TestCase):
             self.assertTrue(result.covered_percent == 100.0)
 
     @setup.async_test
-    async def test_query_expression_coverage_gaps(self) -> None:
+    async def test_get_type_coverage__expression_level__gaps(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
@@ -1478,7 +1520,7 @@ class RequestHandlerTest(testslide.TestCase):
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager._query_type_coverage(
+                result = await pyre_query_manager.get_type_coverage(
                     path=test_path,
                 )
             self.assertEqual(len(memory_bytes_writer.items()), 2)
@@ -1492,7 +1534,7 @@ class RequestHandlerTest(testslide.TestCase):
             self.assertTrue(result.covered_percent == 75.0)
 
     @setup.async_test
-    async def test_query_expression_coverage__bad_json(self) -> None:
+    async def test_get_type_coverage__expression_level__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
             server_options=_create_server_options(
                 strict_default=False,
@@ -1507,13 +1549,13 @@ class RequestHandlerTest(testslide.TestCase):
         )
         output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager._query_type_coverage(
+            result = await pyre_query_manager.get_type_coverage(
                 path=Path("test.py"),
             )
         self.assertTrue(result is None)
 
     @setup.async_test
-    async def test_query_expression_coverage__strict(self) -> None:
+    async def test_get_type_coverage__expression_level__strict(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
@@ -1532,7 +1574,7 @@ class RequestHandlerTest(testslide.TestCase):
             )
             output_channel = AsyncTextWriter(MemoryBytesWriter())
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager._query_type_coverage(
+                result = await pyre_query_manager.get_type_coverage(
                     path=test_path,
                 )
             self.assertTrue(result is not None)
@@ -1540,7 +1582,7 @@ class RequestHandlerTest(testslide.TestCase):
             self.assertEqual(result.covered_percent, 100.0)
 
     @setup.async_test
-    async def test_query_expression_coverage__not_typechecked(self) -> None:
+    async def test_get_type_coverage__expression_level__not_typechecked(self) -> None:
         pyre_query_manager = RequestHandler(
             server_options=_create_server_options(
                 strict_default=True,
@@ -1555,7 +1597,7 @@ class RequestHandlerTest(testslide.TestCase):
         )
         output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager._query_type_coverage(
+            result = await pyre_query_manager.get_type_coverage(
                 path=Path("test.py"),
             )
         self.assertTrue(result is not None)
