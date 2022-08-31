@@ -1085,14 +1085,6 @@ class DefinitionLocationResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class ReferencesQuery:
-    id: Union[int, str, None]
-    path: Path
-    position: lsp.Position
-    activity_key: Optional[Dict[str, object]] = None
-
-
-@dataclasses.dataclass(frozen=True)
 class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[lsp.ReferencesResponse]
 
@@ -1135,10 +1127,11 @@ class AbstractRequestHandler(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def handle_find_references_query(
+    async def get_reference_locations(
         self,
-        query: ReferencesQuery,
-    ) -> None:
+        path: Path,
+        position: lsp.Position,
+    ) -> List[lsp.LspDefinitionResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -1297,42 +1290,30 @@ class RequestHandler(AbstractRequestHandler):
         )
         return definitions
 
-    async def handle_find_references_query(
+    async def get_reference_locations(
         self,
-        query: ReferencesQuery,
-    ) -> None:
-        path_string = f"'{query.path}'"
+        path: Path,
+        position: lsp.Position,
+    ) -> List[lsp.LspDefinitionResponse]:
+        path_string = f"'{path}'"
         query_text = (
             f"find_references(path={path_string},"
-            f" line={query.position.line}, column={query.position.character})"
+            f" line={position.line}, column={position.character})"
         )
-        overlay_id = (
-            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
-        )
+        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled() else None
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=ReferencesResponse,
             socket_path=self.socket_path,
             query_text=query_text,
             overlay_id=overlay_id,
         )
-        reference_locations = (
+        return (
             [
                 response.to_lsp_definition_response()
                 for response in daemon_response.response
             ]
             if daemon_response is not None
             else []
-        )
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.SuccessResponse(
-                id=query.id,
-                activity_key=query.activity_key,
-                result=lsp.LspDefinitionResponse.cached_schema().dump(
-                    reference_locations,
-                    many=True,
-                ),
-            ),
         )
 
     async def handle_overlay_update_request(
@@ -1648,13 +1629,20 @@ class PyreServer:
             )
             return
 
-        await self.handler.handle_find_references_query(
-            ReferencesQuery(
+        reference_locations = await self.handler.get_reference_locations(
+            path=document_path,
+            position=parameters.position.to_pyre_position(),
+        )
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
                 id=request_id,
                 activity_key=activity_key,
-                path=document_path,
-                position=parameters.position.to_pyre_position(),
-            )
+                result=lsp.LspDefinitionResponse.cached_schema().dump(
+                    reference_locations,
+                    many=True,
+                ),
+            ),
         )
 
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> int:
