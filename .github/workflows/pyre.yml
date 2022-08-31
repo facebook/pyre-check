@@ -24,6 +24,11 @@ jobs:
           VERSION=$(grep "version" .pyre_configuration | sed -n -e 's/.*\(0\.0\.[0-9]*\).*/\1/p')
           pip install pyre-check-nightly==$VERSION
 
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          limit-access-to-actor: true
+
       - name: Run Pyre
         continue-on-error: true
         run: |
