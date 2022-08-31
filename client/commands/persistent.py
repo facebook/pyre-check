@@ -1093,14 +1093,6 @@ class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 class AbstractRequestHandler(abc.ABC):
     @abc.abstractmethod
-    async def write_telemetry(
-        self,
-        parameters: Dict[str, object],
-        activity_key: Optional[Dict[str, object]],
-    ) -> None:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     async def get_type_coverage(
         self,
         path: Path,
@@ -1144,10 +1136,8 @@ class RequestHandler(AbstractRequestHandler):
     def __init__(
         self,
         server_state: ServerState,
-        client_output_channel: connections.AsyncTextWriter,
     ) -> None:
         self.server_state = server_state
-        self.client_output_channel = client_output_channel
         self.socket_path: Path = self.get_server_options().get_socket_path()
 
     def get_server_options(self) -> PyreServerOptions:
@@ -1169,24 +1159,6 @@ class RequestHandler(AbstractRequestHandler):
 
     def is_strict_by_default(self) -> bool:
         return self.get_server_options().strict_default
-
-    def should_write_telemetry(self) -> bool:
-        return self.get_server_options().enabled_telemetry_event
-
-    async def write_telemetry(
-        self,
-        parameters: Dict[str, object],
-        activity_key: Optional[Dict[str, object]],
-    ) -> None:
-        if self.should_write_telemetry():
-            await lsp.write_json_rpc_ignore_connection_error(
-                self.client_output_channel,
-                json_rpc.Request(
-                    activity_key=activity_key,
-                    method="telemetry/event",
-                    parameters=json_rpc.ByNameParameters(parameters),
-                ),
-            )
 
     async def _query_modules_of_path(
         self,
@@ -1350,6 +1322,24 @@ class PyreServer:
 
     handler: AbstractRequestHandler
 
+    async def write_telemetry(
+        self,
+        parameters: Dict[str, object],
+        activity_key: Optional[Dict[str, object]],
+    ) -> None:
+        should_write_telemetry = (
+            self.server_state.server_options.enabled_telemetry_event
+        )
+        if should_write_telemetry:
+            await lsp.write_json_rpc_ignore_connection_error(
+                self.output_channel,
+                json_rpc.Request(
+                    activity_key=activity_key,
+                    method="telemetry/event",
+                    parameters=json_rpc.ByNameParameters(parameters),
+                ),
+            )
+
     async def wait_for_exit(self) -> int:
         await _wait_for_exit(self.input_channel, self.output_channel)
         return 0
@@ -1508,7 +1498,7 @@ class PyreServer:
                     result=raw_result,
                 ),
             )
-            await self.handler.write_telemetry(
+            await self.write_telemetry(
                 {
                     "type": "LSP",
                     "operation": "hover",
@@ -1558,7 +1548,7 @@ class PyreServer:
                     ),
                 ),
             )
-            await self.handler.write_telemetry(
+            await self.write_telemetry(
                 {
                     "type": "LSP",
                     "operation": "definition",
@@ -1853,7 +1843,6 @@ async def run_persistent(
                 ),
                 handler=RequestHandler(
                     server_state=server_state,
-                    client_output_channel=stdout,
                 ),
             )
             return await server.run()

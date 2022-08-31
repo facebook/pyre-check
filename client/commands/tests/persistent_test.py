@@ -150,13 +150,6 @@ class MockRequestHandler(AbstractRequestHandler):
         self.mock_definition_response = mock_definition_response
         self.mock_references_response = mock_references_response
 
-    async def write_telemetry(
-        self,
-        parameters: Dict[str, object],
-        activity_key: Optional[Dict[str, object]],
-    ) -> None:
-        pass
-
     async def get_type_coverage(
         self,
         path: Path,
@@ -1539,10 +1532,8 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            bytes_writer = MemoryBytesWriter()
             pyre_query_manager = RequestHandler(
                 server_state=_create_server_state_with_options(strict_default=False),
-                client_output_channel=AsyncTextWriter(bytes_writer),
             )
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n'
@@ -1565,7 +1556,6 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_get_type_coverage__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(strict_default=False),
-            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
@@ -1583,7 +1573,6 @@ class RequestHandlerTest(testslide.TestCase):
             test_path = Path(tmpfile.name)
             pyre_query_manager = RequestHandler(
                 server_state=_create_server_state_with_options(strict_default=True),
-                client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n'
@@ -1599,7 +1588,6 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_get_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(strict_default=False),
-            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
@@ -1618,7 +1606,6 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            bytes_writer = MemoryBytesWriter()
             pyre_query_manager = RequestHandler(
                 server_state=_create_server_state_with_options(
                     strict_default=False,
@@ -1626,7 +1613,6 @@ class RequestHandlerTest(testslide.TestCase):
                         expression_level_coverage_enabled=True
                     ),
                 ),
-                client_output_channel=AsyncTextWriter(bytes_writer),
             )
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":1,"coverage_gaps":[]}]]}]\n'
@@ -1651,7 +1637,6 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            bytes_writer = MemoryBytesWriter()
             pyre_query_manager = RequestHandler(
                 server_state=_create_server_state_with_options(
                     strict_default=False,
@@ -1659,7 +1644,6 @@ class RequestHandlerTest(testslide.TestCase):
                         expression_level_coverage_enabled=True
                     ),
                 ),
-                client_output_channel=AsyncTextWriter(bytes_writer),
             )
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":4,"coverage_gaps":[{"location": {"start": {"line": 11, "column": 16}, "stop": {"line": 11, "column": 17}}, "function_name":"foo","type_": "typing.Any", "reason": ["TypeIsAny"]}]}]]}]\n'
@@ -1689,7 +1673,6 @@ class RequestHandlerTest(testslide.TestCase):
                     expression_level_coverage_enabled=True
                 ),
             ),
-            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
             '{ "error": "Oops" }\n["Query", {"response": [["ErrorAtPath",{"path":"/fake/path.py","error":"oops"}]]}]\n'
@@ -1714,7 +1697,6 @@ class RequestHandlerTest(testslide.TestCase):
                         expression_level_coverage_enabled=True
                     ),
                 ),
-                client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             )
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
@@ -1737,7 +1719,6 @@ class RequestHandlerTest(testslide.TestCase):
                     expression_level_coverage_enabled=True
                 ),
             ),
-            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
         )
         input_channel = create_memory_text_reader(
             '["Query", {"response": []}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/test.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
@@ -1759,7 +1740,6 @@ class RequestHandlerTest(testslide.TestCase):
             server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=AsyncTextWriter(client_output_writer),
         )
         memory_bytes_writer = MemoryBytesWriter()
         flat_json = "".join(json_output.splitlines())
@@ -1785,12 +1765,10 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_hover__bad_json(self) -> None:
-        client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=AsyncTextWriter(client_output_writer),
         )
 
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
@@ -1828,12 +1806,10 @@ class RequestHandlerTest(testslide.TestCase):
             ]
         }
         """
-        client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=AsyncTextWriter(client_output_writer),
         )
         memory_bytes_writer = MemoryBytesWriter()
         flat_json = "".join(json_output.splitlines())
@@ -1868,12 +1844,10 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_definition_location__bad_json(self) -> None:
-        client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
-            client_output_channel=AsyncTextWriter(client_output_writer),
         )
 
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
@@ -1924,14 +1898,12 @@ class RequestHandlerTest(testslide.TestCase):
             ]
         }
         """
-        client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(
                     find_all_references_enabled=True
                 ),
             ),
-            client_output_channel=AsyncTextWriter(client_output_writer),
         )
         memory_bytes_writer = MemoryBytesWriter()
         flat_json = "".join(json_output.splitlines())
@@ -1973,16 +1945,13 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_references__bad_json(self) -> None:
-        client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(
                     find_all_references_enabled=True
                 ),
             ),
-            client_output_channel=AsyncTextWriter(client_output_writer),
         )
-
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
