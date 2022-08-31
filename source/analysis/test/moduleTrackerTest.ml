@@ -1733,7 +1733,7 @@ let test_update_lazy_tracker context =
   ()
 
 
-let test_invalidate_lazy_tracker_cache context =
+let test_invalidate_lazy_tracker_cache__removal context =
   let open Test in
   let open Pyre in
   let ({ Configuration.Analysis.local_root; _ } as configuration), _ =
@@ -1778,6 +1778,85 @@ let test_invalidate_lazy_tracker_cache context =
     ~ctxt:context
     ~printer:[%show: Reference.t option]
     (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.b" >>| ModulePath.qualifier)
+    None;
+  ()
+
+
+let test_invalidate_lazy_tracker_cache__add context =
+  let open Test in
+  let open Pyre in
+  (*
+   * Case 1: modules in a nested directory
+   *)
+  let ({ Configuration.Analysis.local_root; _ } as configuration), _ =
+    create_test_configuration ~context ~local_tree:[TestFiles.File "package/a.py"] ~external_tree:[]
+  in
+  let tracker =
+    EnvironmentControls.create configuration ~use_lazy_module_tracking:true |> ModuleTracker.create
+  in
+  let read_only = ModuleTracker.read_only tracker in
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
+    (Some !&"package.a");
+  (* Add a second file next to a.py - the cached directory reads won't know about this *)
+  let artifact_paths =
+    let path_to_b = PyrePath.create_relative ~root:local_root ~relative:"package/b.py" in
+    let () = File.create path_to_b ~content:"" |> File.write in
+    [ArtifactPath.create path_to_b]
+  in
+  (* Verify that the lazy tracker does not update anything *)
+  let updates = ModuleTracker.update tracker ~artifact_paths in
+  assert_equal ~ctxt:context ~printer:[%show: ModuleTracker.IncrementalUpdate.t list] [] updates;
+  (* Verify that both the previously-read and non-previously-read modules no longer exist if we
+     remove the entire directory. *)
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
+    (Some !&"package.a");
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.b" >>| ModulePath.qualifier)
+    (Some !&"package.b");
+  (*
+   * Case 2: modules in the project top-level
+   *)
+  let ({ Configuration.Analysis.local_root; _ } as configuration), _ =
+    create_test_configuration ~context ~local_tree:[TestFiles.File "a.py"] ~external_tree:[]
+  in
+  let tracker =
+    EnvironmentControls.create configuration ~use_lazy_module_tracking:true |> ModuleTracker.create
+  in
+  let read_only = ModuleTracker.read_only tracker in
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"a" >>| ModulePath.qualifier)
+    (Some !&"a");
+  (* Add a second file next to a.py - the cached directory reads won't know about this *)
+  let artifact_paths =
+    let path_to_b = PyrePath.create_relative ~root:local_root ~relative:"b.py" in
+    let () = File.create path_to_b ~content:"" |> File.write in
+    [ArtifactPath.create path_to_b]
+  in
+  (* Verify that the lazy tracker does not update anything *)
+  let updates = ModuleTracker.update tracker ~artifact_paths in
+  assert_equal ~ctxt:context ~printer:[%show: ModuleTracker.IncrementalUpdate.t list] [] updates;
+  (* Verify that both the previously-read and non-previously-read modules no longer exist if we
+     remove the entire directory. *)
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"a" >>| ModulePath.qualifier)
+    (Some !&"a");
+  (* TODO(T130802871): this is a bug! We should have gotten a result here. *)
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"b" >>| ModulePath.qualifier)
     None;
   ()
 
@@ -1950,7 +2029,8 @@ let () =
          "update_changed_files" >:: test_update_changed_files;
          "update_implicits" >:: test_update_implicits;
          "update_lazy_tracker" >:: test_update_lazy_tracker;
-         "invalidate_lazy_tracker_cache" >:: test_invalidate_lazy_tracker_cache;
+         "invalidate_lazy_tracker_cache__removal" >:: test_invalidate_lazy_tracker_cache__removal;
+         "invalidate_lazy_tracker_cache__add" >:: test_invalidate_lazy_tracker_cache__add;
          "overlay_basic" >:: test_overlay_basic;
          "overlay_code_hiding" >:: test_overlay_code_hiding;
        ]
