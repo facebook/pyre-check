@@ -39,7 +39,6 @@ from ..connections import (
 from ..persistent import (
     AbstractRequestHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
-    DefinitionLocationQuery,
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
@@ -123,10 +122,12 @@ class MockRequestHandler(AbstractRequestHandler):
         self,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
         mock_hover_response: Optional[lsp.LspHoverResponse] = None,
+        mock_definition_response: Optional[List[lsp.LspDefinitionResponse]] = None,
     ) -> None:
         self.requests: List[object] = []
         self.mock_type_coverage = mock_type_coverage
         self.mock_hover_response = mock_hover_response
+        self.mock_definition_response = mock_definition_response
 
     async def write_telemetry(
         self,
@@ -153,11 +154,16 @@ class MockRequestHandler(AbstractRequestHandler):
         else:
             return self.mock_hover_response
 
-    async def handle_definition_location_query(
+    async def get_definition_locations(
         self,
-        query: DefinitionLocationQuery,
-    ) -> None:
-        self.requests.append(query)
+        path: Path,
+        position: lsp.Position,
+    ) -> List[lsp.LspDefinitionResponse]:
+        self.requests.append({"path": path, "position": position})
+        if self.mock_definition_response is None:
+            raise ValueError("You need to set hover response in the mock handler")
+        else:
+            return self.mock_definition_response
 
     async def handle_find_references_query(
         self,
@@ -1145,78 +1151,114 @@ class PersistentTest(testslide.TestCase):
             expected_handler_requests=[],
         )
 
-    @setup.async_test
-    async def test_definition(self) -> None:
-        def assert_definition_response(
-            definitions: Sequence[lsp.LspDefinitionResponse],
-        ) -> None:
-            client_messages = memory_bytes_writer.items()
-            expected_response = json_rpc.SuccessResponse(
-                id=42,
-                result=lsp.LspDefinitionResponse.cached_schema().dump(
-                    definitions, many=True
-                ),
-            )
-            response_string = json.dumps(expected_response.json())
-            self.assertEqual(
-                client_messages[-1].decode(),
-                f"Content-Length: {len(response_string)}\r\n\r\n" + response_string,
-            )
-
-        test_path = Path("/foo.py")
-        not_tracked_path = Path("/not_tracked.py")
+    async def _assert_definition_response(
+        self,
+        opened_documents: Set[Path],
+        parameters: lsp.DefinitionParameters,
+        handler_response: Optional[List[lsp.LspDefinitionResponse]],
+        expected_response: List[lsp.LspDefinitionResponse],
+        expected_handler_requests: List[object],
+    ) -> None:
+        # set up the system under test
         fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
-        handler = MockRequestHandler()
+        output_writer: MemoryBytesWriter = MemoryBytesWriter()
+        handler = MockRequestHandler(
+            mock_definition_response=handler_response,
+        )
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
-            output_channel=AsyncTextWriter(memory_bytes_writer),
+            output_channel=AsyncTextWriter(output_writer),
             server_state=ServerState(
-                opened_documents={test_path},
+                opened_documents=opened_documents,
             ),
             pyre_manager=fake_task_manager,
             handler=handler,
         )
-
         await fake_task_manager.ensure_task_running()
-
+        # process the request
         await server.process_definition_request(
-            lsp.DefinitionParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                ),
-                position=lsp.LspPosition(line=3, character=4),
-            ),
+            parameters,
             request_id=42,
         )
-        await asyncio.sleep(0)
-
-        self.assertTrue(fake_task_manager.is_task_running())
-        self.assertEqual(len(memory_bytes_writer.items()), 0)
+        # verify that we passed data as expected
         self.assertEqual(
             handler.requests,
-            [
-                DefinitionLocationQuery(
-                    id=42,
-                    path=test_path,
-                    position=lsp.LspPosition(line=3, character=4).to_pyre_position(),
+            expected_handler_requests,
+        )
+        # verify that we returned a response as expected
+        expected_raw_response = json.dumps(
+            json_rpc.SuccessResponse(
+                id=42,
+                result=lsp.LspDefinitionResponse.cached_schema().dump(
+                    expected_response, many=True
+                ),
+            ).json()
+        )
+        client_messages = output_writer.items()
+        self.assertEqual(len(client_messages), 1)
+        client_message = client_messages[0].decode()
+        content_length_portion, json_portion = client_message.split("\r\n\r\n")
+        self.assertEqual(
+            json.loads(json_portion),
+            json.loads(expected_raw_response),
+        )
+        self.assertEqual(
+            content_length_portion, f"Content-Length: {len(expected_raw_response)}"
+        )
+
+    @setup.async_test
+    async def test_definition(self) -> None:
+        tracked_path = Path("/tracked.py")
+        untracked_path = Path("/not_tracked.py")
+        lsp_line = 3
+        daemon_line = 3 + 1
+        # tracked file
+        await self._assert_definition_response(
+            opened_documents={tracked_path},
+            parameters=lsp.DefinitionParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=lsp_line, character=4),
+            ),
+            handler_response=[
+                lsp.LspDefinitionResponse(
+                    uri="file:///path/to/foo.py",
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=5, character=6),
+                        end=lsp.LspPosition(line=5, character=9),
+                    ),
                 )
             ],
+            expected_response=[
+                lsp.LspDefinitionResponse(
+                    uri="file:///path/to/foo.py",
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=5, character=6),
+                        end=lsp.LspPosition(line=5, character=9),
+                    ),
+                )
+            ],
+            expected_handler_requests=[
+                {
+                    "path": tracked_path,
+                    "position": lsp.Position(line=daemon_line, character=4),
+                }
+            ],
         )
-
-        await server.process_definition_request(
-            lsp.DefinitionParameters(
+        # untracked file
+        await self._assert_definition_response(
+            opened_documents={tracked_path},
+            parameters=lsp.DefinitionParameters(
                 text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(not_tracked_path).unparse(),
+                    uri=lsp.DocumentUri.from_file_path(untracked_path).unparse(),
                 ),
-                position=lsp.LspPosition(line=3, character=4),
+                position=lsp.LspPosition(line=lsp_line, character=4),
             ),
-            request_id=42,
+            handler_response=None,
+            expected_response=[],
+            expected_handler_requests=[],
         )
-        await asyncio.sleep(0)
-
-        self.assertTrue(fake_task_manager.is_task_running())
-        assert_definition_response([])
 
     @setup.async_test
     async def test_document_symbols_request(self) -> None:
@@ -1721,12 +1763,9 @@ class RequestHandlerTest(testslide.TestCase):
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager.handle_definition_location_query(
-                query=DefinitionLocationQuery(
-                    id=99,
-                    path=Path("bar.py"),
-                    position=lsp.Position(line=42, character=10),
-                ),
+            response = await pyre_query_manager.get_definition_locations(
+                path=Path("bar.py"),
+                position=lsp.Position(line=42, character=10),
             )
 
         self.assertEqual(
@@ -1736,11 +1775,8 @@ class RequestHandlerTest(testslide.TestCase):
                 b' line=42, column=10)", "overlay_id": null}]\n'
             ],
         )
-        self.assertEqual(len(client_output_writer.items()), 1)
-        response = client_output_writer.items()[0].splitlines()[2]
-        result = json.loads(response)["result"]
         self.assertEqual(
-            lsp.LspDefinitionResponse.cached_schema().load(result, many=True),
+            response,
             [
                 lsp.LspDefinitionResponse(
                     uri="/foo.py",
@@ -1766,17 +1802,15 @@ class RequestHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            await pyre_query_manager.handle_definition_location_query(
-                query=DefinitionLocationQuery(
-                    id=99,
-                    path=Path("bar.py"),
-                    position=lsp.Position(line=42, character=10),
-                ),
+            response = await pyre_query_manager.get_definition_locations(
+                path=Path("bar.py"),
+                position=lsp.Position(line=42, character=10),
             )
 
-        self.assertEqual(len(client_output_writer.items()), 1)
-        response = client_output_writer.items()[0].splitlines()[2]
-        self.assertEqual(json.loads(response)["result"], [])
+        self.assertEqual(
+            response,
+            [],
+        )
 
     @setup.async_test
     async def test_query_references(self) -> None:

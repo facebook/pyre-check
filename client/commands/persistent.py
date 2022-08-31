@@ -1080,14 +1080,6 @@ class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class DefinitionLocationQuery:
-    id: Union[int, str, None]
-    path: Path
-    position: lsp.Position
-    activity_key: Optional[Dict[str, object]] = None
-
-
-@dataclasses.dataclass(frozen=True)
 class DefinitionLocationResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[lsp.PyreDefinitionResponse]
 
@@ -1135,10 +1127,11 @@ class AbstractRequestHandler(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def handle_definition_location_query(
+    async def get_definition_locations(
         self,
-        query: DefinitionLocationQuery,
-    ) -> None:
+        path: Path,
+        position: lsp.Position,
+    ) -> List[lsp.LspDefinitionResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -1277,18 +1270,17 @@ class RequestHandler(AbstractRequestHandler):
             else lsp.LspHoverResponse.empty()
         )
 
-    async def handle_definition_location_query(
+    async def get_definition_locations(
         self,
-        query: DefinitionLocationQuery,
-    ) -> None:
-        path_string = f"'{query.path}'"
+        path: Path,
+        position: lsp.Position,
+    ) -> List[lsp.LspDefinitionResponse]:
+        path_string = f"'{path}'"
         query_text = (
             f"location_of_definition(path={path_string},"
-            f" line={query.position.line}, column={query.position.character})"
+            f" line={position.line}, column={position.character})"
         )
-        overlay_id = (
-            str(query.path) if self.is_consume_unsaved_changes_enabled() else None
-        )
+        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled() else None
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=DefinitionLocationResponse,
             socket_path=self.socket_path,
@@ -1303,28 +1295,7 @@ class RequestHandler(AbstractRequestHandler):
             if daemon_response is not None
             else []
         )
-        result = lsp.LspDefinitionResponse.cached_schema().dump(
-            definitions,
-            many=True,
-        )
-        await lsp.write_json_rpc(
-            self.client_output_channel,
-            json_rpc.SuccessResponse(
-                id=query.id,
-                activity_key=query.activity_key,
-                result=result,
-            ),
-        )
-        await self.write_telemetry(
-            {
-                "type": "LSP",
-                "operation": "definition",
-                "filePath": str(query.path),
-                "count": len(definitions),
-                "response": result,
-            },
-            query.activity_key,
-        )
+        return definitions
 
     async def handle_find_references_query(
         self,
@@ -1590,16 +1561,32 @@ class PyreServer:
                     ),
                 ),
             )
-            return
-
-        await self.handler.handle_definition_location_query(
-            DefinitionLocationQuery(
-                id=request_id,
-                activity_key=activity_key,
+        else:
+            definitions = await self.handler.get_definition_locations(
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
             )
-        )
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                        definitions,
+                        many=True,
+                    ),
+                ),
+            )
+            await self.handler.write_telemetry(
+                {
+                    "type": "LSP",
+                    "operation": "definition",
+                    "filePath": str(document_path),
+                    "count": len(definitions),
+                    "response": definitions,
+                },
+                activity_key,
+            )
 
     async def process_document_symbols_request(
         self,
