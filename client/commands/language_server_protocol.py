@@ -241,7 +241,7 @@ class DocumentUri:
 
 
 @dataclasses.dataclass(frozen=True, order=True)
-class Position(json_mixins.CamlCaseAndExcludeJsonMixin):
+class PyrePosition(json_mixins.CamlCaseAndExcludeJsonMixin):
     line: int
     character: int
 
@@ -256,14 +256,14 @@ class LspPosition(json_mixins.CamlCaseAndExcludeJsonMixin):
     line: int
     character: int
 
-    def to_pyre_position(self) -> "Position":
-        return Position(self.line + 1, self.character)
+    def to_pyre_position(self) -> "PyrePosition":
+        return PyrePosition(self.line + 1, self.character)
 
 
 @dataclasses.dataclass(frozen=True)
-class Range(json_mixins.CamlCaseAndExcludeJsonMixin):
-    start: Position
-    end: Position
+class PyreRange(json_mixins.CamlCaseAndExcludeJsonMixin):
+    start: PyrePosition
+    end: PyrePosition
 
     def to_lsp_range(self) -> "LspRange":
         return LspRange(
@@ -280,7 +280,7 @@ class LspRange(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class Diagnostic(json_mixins.CamlCaseAndExcludeJsonMixin):
-    range: Range
+    range: PyreRange
     message: str
     severity: Optional[DiagnosticSeverity] = None
     code: Optional[int] = None
@@ -510,7 +510,7 @@ class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains code location of one reference."""
 
     path: str
-    range: Range
+    range: PyreRange
 
     def to_lsp_definition_response(
         self,
@@ -555,7 +555,7 @@ class PyreDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains one possible definition for a symbol."""
 
     path: str
-    range: Range
+    range: PyreRange
 
     def to_lsp_definition_response(
         self,

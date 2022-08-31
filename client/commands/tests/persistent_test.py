@@ -160,7 +160,7 @@ class MockRequestHandler(AbstractRequestHandler):
     async def get_hover(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> lsp.LspHoverResponse:
         self.requests.append({"path": path, "position": position})
         if self.mock_hover_response is None:
@@ -171,7 +171,7 @@ class MockRequestHandler(AbstractRequestHandler):
     async def get_definition_locations(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> List[lsp.LspDefinitionResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_definition_response is None:
@@ -182,7 +182,7 @@ class MockRequestHandler(AbstractRequestHandler):
     async def get_reference_locations(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> List[lsp.LspDefinitionResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_references_response is None:
@@ -812,9 +812,9 @@ class PersistentTest(testslide.TestCase):
                 )
             ),
             lsp.Diagnostic(
-                range=lsp.Range(
-                    start=lsp.Position(line=0, character=1),
-                    end=lsp.Position(line=1, character=2),
+                range=lsp.PyreRange(
+                    start=lsp.PyrePosition(line=0, character=1),
+                    end=lsp.PyrePosition(line=1, character=2),
                 ),
                 message="description",
                 severity=lsp.DiagnosticSeverity.ERROR,
@@ -860,9 +860,9 @@ class PersistentTest(testslide.TestCase):
             {
                 Path("/foo.py"): [
                     lsp.Diagnostic(
-                        range=lsp.Range(
-                            start=lsp.Position(line=0, character=1),
-                            end=lsp.Position(line=1, character=2),
+                        range=lsp.PyreRange(
+                            start=lsp.PyrePosition(line=0, character=1),
+                            end=lsp.PyrePosition(line=1, character=2),
                         ),
                         message="foo_description",
                         severity=lsp.DiagnosticSeverity.ERROR,
@@ -870,9 +870,9 @@ class PersistentTest(testslide.TestCase):
                         source="Pyre",
                     ),
                     lsp.Diagnostic(
-                        range=lsp.Range(
-                            start=lsp.Position(line=1, character=2),
-                            end=lsp.Position(line=2, character=3),
+                        range=lsp.PyreRange(
+                            start=lsp.PyrePosition(line=1, character=2),
+                            end=lsp.PyrePosition(line=2, character=3),
                         ),
                         message="foo_description2",
                         severity=lsp.DiagnosticSeverity.ERROR,
@@ -882,9 +882,9 @@ class PersistentTest(testslide.TestCase):
                 ],
                 Path("/bar.py"): [
                     lsp.Diagnostic(
-                        range=lsp.Range(
-                            start=lsp.Position(line=3, character=4),
-                            end=lsp.Position(line=4, character=5),
+                        range=lsp.PyreRange(
+                            start=lsp.PyrePosition(line=3, character=4),
+                            end=lsp.PyrePosition(line=4, character=5),
                         ),
                         message="bar_description",
                         severity=lsp.DiagnosticSeverity.ERROR,
@@ -903,9 +903,9 @@ class PersistentTest(testslide.TestCase):
                 )
             ),
             lsp.Diagnostic(
-                range=lsp.Range(
-                    start=lsp.Position(line=0, character=1),
-                    end=lsp.Position(line=1, character=2),
+                range=lsp.PyreRange(
+                    start=lsp.PyrePosition(line=0, character=1),
+                    end=lsp.PyrePosition(line=1, character=2),
                 ),
                 message=(
                     "This function is not type checked. "
@@ -1165,7 +1165,7 @@ class PersistentTest(testslide.TestCase):
             expected_handler_requests=[
                 {
                     "path": tracked_path,
-                    "position": lsp.Position(line=daemon_line, character=4),
+                    "position": lsp.PyrePosition(line=daemon_line, character=4),
                 }
             ],
         )
@@ -1275,7 +1275,7 @@ class PersistentTest(testslide.TestCase):
             expected_handler_requests=[
                 {
                     "path": tracked_path,
-                    "position": lsp.Position(line=daemon_line, character=4),
+                    "position": lsp.PyrePosition(line=daemon_line, character=4),
                 }
             ],
         )
@@ -1385,7 +1385,7 @@ class PersistentTest(testslide.TestCase):
             expected_handler_requests=[
                 {
                     "path": tracked_path,
-                    "position": lsp.Position(line=daemon_line, character=4),
+                    "position": lsp.PyrePosition(line=daemon_line, character=4),
                 }
             ],
         )
@@ -1478,9 +1478,9 @@ class PersistentTest(testslide.TestCase):
                     covered_percent=50.0,
                     uncovered_ranges=[
                         lsp.Diagnostic(
-                            range=lsp.Range(
-                                start=lsp.Position(line=1, character=0),
-                                end=lsp.Position(line=2, character=12),
+                            range=lsp.PyreRange(
+                                start=lsp.PyrePosition(line=1, character=0),
+                                end=lsp.PyrePosition(line=2, character=12),
                             ),
                             message="This function is not type checked. Consider adding parameter or return type annotations.",
                             severity=None,
@@ -1748,7 +1748,7 @@ class RequestHandlerTest(testslide.TestCase):
 
         with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager.get_hover(
-                path=Path("bar.py"), position=lsp.Position(line=42, character=10)
+                path=Path("bar.py"), position=lsp.PyrePosition(line=42, character=10)
             )
 
         self.assertEqual(
@@ -1777,7 +1777,7 @@ class RequestHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager.get_hover(
                 path=Path("bar.py"),
-                position=lsp.Position(line=42, character=10),
+                position=lsp.PyrePosition(line=42, character=10),
             )
 
         self.assertEqual(
@@ -1819,7 +1819,7 @@ class RequestHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             response = await pyre_query_manager.get_definition_locations(
                 path=Path("bar.py"),
-                position=lsp.Position(line=42, character=10),
+                position=lsp.PyrePosition(line=42, character=10),
             )
 
         self.assertEqual(
@@ -1856,7 +1856,7 @@ class RequestHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             response = await pyre_query_manager.get_definition_locations(
                 path=Path("bar.py"),
-                position=lsp.Position(line=42, character=10),
+                position=lsp.PyrePosition(line=42, character=10),
             )
 
         self.assertEqual(
@@ -1913,7 +1913,7 @@ class RequestHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager.get_reference_locations(
                 path=Path("bar.py"),
-                position=lsp.Position(line=42, character=10),
+                position=lsp.PyrePosition(line=42, character=10),
             )
 
         self.assertEqual(
@@ -1958,7 +1958,7 @@ class RequestHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager.get_reference_locations(
                 path=Path("bar.py"),
-                position=lsp.Position(line=42, character=10),
+                position=lsp.PyrePosition(line=42, character=10),
             )
 
         self.assertEqual(result, [])

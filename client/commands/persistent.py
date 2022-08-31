@@ -495,9 +495,11 @@ async def _start_pyre_server(
 
 def type_error_to_diagnostic(type_error: error.Error) -> lsp.Diagnostic:
     return lsp.Diagnostic(
-        range=lsp.Range(
-            start=lsp.Position(line=type_error.line - 1, character=type_error.column),
-            end=lsp.Position(
+        range=lsp.PyreRange(
+            start=lsp.PyrePosition(
+                line=type_error.line - 1, character=type_error.column
+            ),
+            end=lsp.PyrePosition(
                 line=type_error.stop_line - 1, character=type_error.stop_column
             ),
         ),
@@ -521,12 +523,12 @@ def type_errors_to_diagnostics(
 
 def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
     return lsp.Diagnostic(
-        range=lsp.Range(
-            start=lsp.Position(
+        range=lsp.PyreRange(
+            start=lsp.PyrePosition(
                 line=uncovered_range.start.line - 1,
                 character=uncovered_range.start.column,
             ),
-            end=lsp.Position(
+            end=lsp.PyrePosition(
                 line=uncovered_range.end.line - 1, character=uncovered_range.end.column
             ),
         ),
@@ -564,12 +566,12 @@ def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
         covered_percent=0.0,
         uncovered_ranges=[
             lsp.Diagnostic(
-                range=lsp.Range(
-                    start=lsp.Position(
+                range=lsp.PyreRange(
+                    start=lsp.PyrePosition(
                         line=0,
                         character=0,
                     ),
-                    end=lsp.Position(line=1, character=0),
+                    end=lsp.PyrePosition(line=1, character=0),
                 ),
                 message="This file is not type checked by Pyre.",
             )
@@ -1103,7 +1105,7 @@ class AbstractRequestHandler(abc.ABC):
     async def get_hover(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> lsp.LspHoverResponse:
         raise NotImplementedError()
 
@@ -1111,7 +1113,7 @@ class AbstractRequestHandler(abc.ABC):
     async def get_definition_locations(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> List[lsp.LspDefinitionResponse]:
         raise NotImplementedError()
 
@@ -1119,7 +1121,7 @@ class AbstractRequestHandler(abc.ABC):
     async def get_reference_locations(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> List[lsp.LspDefinitionResponse]:
         raise NotImplementedError()
 
@@ -1216,7 +1218,7 @@ class RequestHandler(AbstractRequestHandler):
     async def get_hover(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> lsp.LspHoverResponse:
         path_string = f"'{path}'"
         query_text = (
@@ -1239,7 +1241,7 @@ class RequestHandler(AbstractRequestHandler):
     async def get_definition_locations(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> List[lsp.LspDefinitionResponse]:
         path_string = f"'{path}'"
         query_text = (
@@ -1266,7 +1268,7 @@ class RequestHandler(AbstractRequestHandler):
     async def get_reference_locations(
         self,
         path: Path,
-        position: lsp.Position,
+        position: lsp.PyrePosition,
     ) -> List[lsp.LspDefinitionResponse]:
         path_string = f"'{path}'"
         query_text = (

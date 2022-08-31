@@ -10,7 +10,7 @@ from typing import List, Optional, Union
 from .language_server_protocol import (
     DocumentSymbolsResponse,
     LspRange,
-    Position,
+    PyrePosition,
     SymbolKind,
 )
 
@@ -18,8 +18,8 @@ from .language_server_protocol import (
 @dataclasses.dataclass(frozen=True)
 class SymbolInfo:
     name: str
-    start_pos: Position
-    end_pos: Position
+    start_pos: PyrePosition
+    end_pos: PyrePosition
     kind: SymbolKind
 
 
@@ -62,7 +62,7 @@ def _create_document_symbols_response(
 
 
 def _generate_lsp_symbol_info(node: ast.AST, name: str, kind: SymbolKind) -> SymbolInfo:
-    start = Position(line=node.lineno, character=node.col_offset)
+    start = PyrePosition(line=node.lineno, character=node.col_offset)
     try:
         end_lineno, end_col_offset = (node.end_lineno, node.end_col_offset)
     except AttributeError:
@@ -70,9 +70,9 @@ def _generate_lsp_symbol_info(node: ast.AST, name: str, kind: SymbolKind) -> Sym
         end_lineno, end_col_offset = None, None
     end = None
     if end_lineno is not None and end_col_offset is not None:
-        end = Position(line=end_lineno, character=end_col_offset)
+        end = PyrePosition(line=end_lineno, character=end_col_offset)
     else:
-        end = Position(line=node.lineno, character=node.col_offset + len(name))
+        end = PyrePosition(line=node.lineno, character=node.col_offset + len(name))
     return SymbolInfo(name, start, end, kind)
 
 

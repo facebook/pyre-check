@@ -8,7 +8,7 @@ from typing import Generic, Iterable, Optional, Tuple, TypeVar
 
 import intervaltree
 
-from .language_server_protocol import Position
+from .language_server_protocol import PyrePosition
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -21,13 +21,15 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class LocationLookup(Generic[Value]):
-    """Interval tree to store a `Value` for each interval of `(Position, Position)`.
+    """Interval tree to store a `Value` for each interval of `(PyrePosition, PyrePosition)`.
 
     The intervals are left-inclusive, right-exclusive.
 
     This class is implemented using `intervaltree.IntervalTree`."""
 
-    def __init__(self, intervals: Iterable[Tuple[Position, Position, Value]]) -> None:
+    def __init__(
+        self, intervals: Iterable[Tuple[PyrePosition, PyrePosition, Value]]
+    ) -> None:
         non_null_intervals = [
             interval for interval in intervals if interval[1] > interval[0]
         ]
@@ -35,7 +37,7 @@ class LocationLookup(Generic[Value]):
             non_null_intervals
         )
 
-    def __getitem__(self, position: Position) -> Optional[Value]:
+    def __getitem__(self, position: PyrePosition) -> Optional[Value]:
         """Returns the value from the first matching interval, if any.
 
         Pyre query returns overlapping intervals for compound expressions, so
@@ -44,7 +46,7 @@ class LocationLookup(Generic[Value]):
         We do this by subtracting the two endpoints (as tuples) and sorting in
         lexicographic order.
 
-        For example, if we have Position = (line, character), then we look at the
+        For example, if we have PyrePosition = (line, character), then we look at the
         difference in lines before looking at the difference in characters. We use
         this instead of Euclidean distance because an interval that spans just 1
         lines is 'narrower' than an interval that spans 2 lines even if the
