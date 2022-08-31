@@ -1857,7 +1857,7 @@ let test_invalidate_lazy_tracker_cache__add context =
     ~ctxt:context
     ~printer:[%show: Reference.t option]
     (ModuleTracker.ReadOnly.lookup_module_path read_only !&"b" >>| ModulePath.qualifier)
-    None;
+    (Some !&"b");
   ()
 
 

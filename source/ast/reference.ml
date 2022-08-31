@@ -168,7 +168,7 @@ let map_last ~f reference =
   | head :: tail -> f head :: tail |> List.rev
 
 
-let prefixes reference =
+let prefixes_not_including_empty reference =
   let rec recurse reversed sofar =
     match reversed with
     | [] -> sofar
@@ -178,6 +178,15 @@ let prefixes reference =
   recurse (reverse reference) []
 
 
-let this_and_all_parents reference = reference :: prefixes reference
+(* The ordering here is the reference itself, and then parents ascending from the empty reference.
+   This ordering is odd but deterministic and good for performance, and most use cases do not care
+   about ordering. *)
+let this_and_all_parents reference =
+  if equal reference empty then
+    [empty]
+  else
+    reference :: empty :: prefixes_not_including_empty reference
 
-let possible_qualifiers_after_delocalize reference = delocalize reference |> prefixes
+
+let possible_qualifiers_after_delocalize reference =
+  delocalize reference |> prefixes_not_including_empty

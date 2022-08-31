@@ -202,9 +202,9 @@ let test_this_and_all_parents _ =
       actual
   in
   assert_result "" [""];
-  assert_result "a" ["a"];
-  assert_result "a.b" ["a.b"; "a"];
-  assert_result "a.b.c" ["a.b.c"; "a"; "a.b"];
+  assert_result "a" ["a"; ""];
+  assert_result "a.b" ["a.b"; ""; "a"];
+  assert_result "a.b.c" ["a.b.c"; ""; "a"; "a.b"];
   ()
 
 
