@@ -25,7 +25,7 @@ fbtest: dev
 	if [ -d "$(shell pwd)/facebook" ]; then make -C ../facebook; fi
 
 .PHONY: release
-release: configure
+release:
 	@../scripts/generate-version-number.sh
 	dune build @install -j auto --profile release
 
