@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set
+from typing import Iterable, Iterator, List, Optional, Sequence, Set
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -1735,7 +1735,6 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_hover(self) -> None:
         json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
-        client_output_writer = MemoryBytesWriter()
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),

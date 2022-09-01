@@ -15,7 +15,7 @@ from .. import (
     find_directories,
     recently_used_configurations,
 )
-from . import commands, daemon_socket, frontend_configuration, servers, stop
+from . import commands, daemon_socket, frontend_configuration, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
