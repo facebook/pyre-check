@@ -95,7 +95,7 @@ class PyreConnection:
                 "--skip-initial-type-check",
             ]
             if self.wait_on_initialization:
-                command.extend("--wait-on-initialization")
+                command.append("--wait-on-initialization")
             result = subprocess.run(
                 command,
                 stdout=subprocess.PIPE,
