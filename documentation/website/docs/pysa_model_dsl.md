@@ -275,12 +275,12 @@ ModelQuery(
   where = [
     AnyOf(
       AllOf(
-        parent.extends("a.b"),
-        parent.matches("Foo"),
+        cls.extends("a.b"),
+        cls.matches("Foo"),
       ),
       AllOf(
-        parent.extends("c.d"),
-        parent.matches("Bar")
+        cls.extends("c.d"),
+        cls.matches("Bar")
       )
     )
   ],
@@ -401,11 +401,11 @@ ModelQuery(
 )
 ```
 
-### `parent.equals` clause
+### `cls.equals` clause
 
-You may use the `parent` clause to specify predicates on the parent class. This predicate can only be used when the find clause specifies methods or attributes.
+You may use the `cls` clause to specify predicates on the class. This predicate can only be used when the find clause specifies methods or attributes.
 
-The `parent.equals` clause is used to model entities when the parent's fully qualified name is an exact match for the specified string.
+The `cls.equals` clause is used to model entities when the class's fully qualified name is an exact match for the specified string.
 
 Example:
 
@@ -413,14 +413,14 @@ Example:
 ModelQuery(
   name = "get_childOf_foo_Bar",
   find = "methods",
-  where = parent.equals("foo.Bar"),
+  where = cls.equals("foo.Bar"),
   ...
 )
 ```
 
-### `parent.matches` clause
+### `cls.matches` clause
 
-The `parent.matches` clause is used to model entities when the parent's fully qualified name matches the provided regex.
+The `cls.matches` clause is used to model entities when the class's fully qualified name matches the provided regex.
 
 Example:
 
@@ -428,14 +428,14 @@ Example:
 ModelQuery(
   name = "get_childOf_Foo",
   find = "methods",
-  where = parent.matches(".*Foo.*"),
+  where = cls.matches(".*Foo.*"),
   ...
 )
 ```
 
-### `parent.extends` clause
+### `cls.extends` clause
 
-The `parent.extends` clause is used to model entities when the parent's class is a subclass of the provided class name.
+The `cls.extends` clause is used to model entities when the class is a subclass of the provided class name.
 
 Example:
 
@@ -443,12 +443,12 @@ Example:
 ModelQuery(
   name = "get_subclassOf_C",
   find = "attributes",
-  where = parent.extends("C"),
+  where = cls.extends("C"),
   ...
 )
 ```
 
-The default behavior is that it will only match if the parent class is an instance of, or a direct subclass of the specified class. For example, with classes:
+The default behavior is that it will only match if the class is an instance of, or a direct subclass of the specified class. For example, with classes:
 ```python
 class C:
   x = ...
@@ -470,16 +470,16 @@ Example:
 ModelQuery(
   name = "get_transitive_subclassOf_C",
   find = "attributes",
-  where = parent.extends("C", is_transitive=True),
+  where = cls.extends("C", is_transitive=True),
   ...
 )
 ```
 
 This query will model `C.x`, `D.y` and `E.z`.
 
-### `parent.decorator` clause
+### `cls.decorator` clause
 
-The `parent.decorator` clause is used to specify constraints on a class decorator, so you can choose to model entities on classes only if the class it is part of has the specified decorator.
+The `cls.decorator` clause is used to specify constraints on a class decorator, so you can choose to model entities on classes only if the class it is part of has the specified decorator.
 
 The arguments for this clause are identical to the non-class constraint `Decorator`, for more information, please see the [`Decorator` clauses](#decorator-clauses) section.
 
@@ -490,7 +490,7 @@ ModelQuery(
   name = "get_childOf_d1_decorator_sources",
   find = "methods",
   where = [
-    parent.decorator(
+    cls.decorator(
       name.matches("d1"),
       arguments.contains(2)
     ),
@@ -524,11 +524,11 @@ class Baz:
 ```
 will result in a model for `def Foo.__init__(b: TaintSource[Test])`.
 
-### `parent.any_child` clause
+### `cls.any_child` clause
 
-The `parent.any_child` clause is used to model entities when any child of the current class meets the specified constraints.
+The `cls.any_child` clause is used to model entities when any child of the current class meets the specified constraints.
 
-The arguments for this clause are any combination of valid class constraints (`parent.equals`, `parent.matches`, `parent.extends`, `parent.decorator`) and logical clauses (`AnyOf`, `AllOf`, `Not`), along with an optional `is_transitive` clause.
+The arguments for this clause are any combination of valid class constraints (`cls.equals`, `cls.matches`, `cls.extends`, `cls.decorator`) and logical clauses (`AnyOf`, `AllOf`, `Not`), along with an optional `is_transitive` clause.
 
 Example:
 
@@ -537,8 +537,8 @@ ModelQuery(
   name = "get_parent_of_d1_decorator_sources",
   find = "methods",
   where = [
-    parent.any_child(
-      parent.decorator(
+    cls.any_child(
+      cls.decorator(
         name.matches("d1"),
         arguments.contains(2)
       )
@@ -554,7 +554,7 @@ ModelQuery(
 )
 ```
 
-Similar to the `parent.extends` constraint, the default behavior is that it will only match if the current class is equal to or is a direct subclass of the specified class. For example, with classes:
+Similar to the `cls.extends` constraint, the default behavior is that it will only match if the current class is equal to or is a direct subclass of the specified class. For example, with classes:
 ```python
 class Foo:
   def __init__(self, a, b):
@@ -581,8 +581,8 @@ ModelQuery(
   name = "get_transitive_parent_of_d1_decorator_sources",
   find = "attributes",
   where = [
-    parent.any_child(
-      parent.decorator(
+    cls.any_child(
+      cls.decorator(
         name.matches("d1"),
         arguments.contains(2)
       ),
@@ -610,7 +610,7 @@ ModelQuery(
   where = [
     Not(
       name.matches("foo.*"),
-      parent.matches("testing.unittest.UnitTest"),
+      cls.matches("testing.unittest.UnitTest"),
     )
   ],
   model = ...
@@ -790,12 +790,12 @@ ModelQuery(
         Not(
           AnyOf(
             AllOf(
-              parent.extends("a.b"),
-              parent.matches("Foo"),
+              cls.extends("a.b"),
+              cls.matches("Foo"),
             ),
             AllOf(
-              parent.extends("c.d"),
-              parent.matches("Bar")
+              cls.extends("c.d"),
+              cls.matches("Bar")
             )
           )
         )
