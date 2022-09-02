@@ -131,10 +131,9 @@ let save_results_to_directory
         Json.to_buffer out_buffer json)
   in
   let timer = Timer.start () in
-  let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
+  let models_path = "taint-output.json" in
   let root = local_root |> PyrePath.absolute in
   let save_models () =
-    let filename = "taint-output.json" in
     let out_buffer = Buffer.create 256 in
     let array_emitter = emit_json_array_elements out_buffer in
     let header_with_version =
@@ -145,7 +144,7 @@ let save_results_to_directory
     Target.Set.iter
       (emit_externalization ~fixpoint_state ~filename_lookup ~override_graph array_emitter)
       callables;
-    let output_path = PyrePath.append result_directory ~element:filename in
+    let output_path = PyrePath.append result_directory ~element:models_path in
     let out_channel = open_out (PyrePath.absolute output_path) in
     Buffer.output_buffer out_channel out_buffer;
     close_out out_channel
@@ -162,7 +161,6 @@ let save_results_to_directory
   let save_metadata () =
     let filename = "taint-metadata.json" in
     let out_buffer = Buffer.create 256 in
-    let filename_spec = models_path "taint" in
     let statistics =
       let global_statistics =
         `Assoc
@@ -178,7 +176,7 @@ let save_results_to_directory
     let toplevel_metadata =
       `Assoc
         [
-          "filename_spec", `String filename_spec;
+          "filename_spec", `String models_path;
           "root", `String root;
           "tool", `String "pysa";
           "version", `String (Version.version ());
