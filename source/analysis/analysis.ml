@@ -34,6 +34,7 @@ module Fixpoint = Fixpoint
 module FunctionDefinition = FunctionDefinition
 module GlobalResolution = GlobalResolution
 module InlineDecorator = InlineDecorator
+module LatticeOfMaps = LatticeOfMaps
 module LivenessCheck = LivenessCheck
 module LocalAnnotationMap = LocalAnnotationMap
 module LocationBasedLookup = LocationBasedLookup
