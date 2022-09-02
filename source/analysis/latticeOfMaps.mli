@@ -29,16 +29,16 @@ module type MapSignature = sig
     f:(key:key -> data:[ `Both of 'data * 'data | `Left of 'data | `Right of 'data ] -> 'a -> 'a) ->
     'a
 
-  val of_alist : (string * 'a) list -> [ `Duplicate_key of string | `Ok of 'a t ]
+  val of_alist : (key * 'a) list -> [ `Duplicate_key of key | `Ok of 'a t ]
 
-  val of_alist_exn : (string * 'a) list -> 'a t
+  val of_alist_exn : (key * 'a) list -> 'a t
 
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
   val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module Make (Map : MapSignature) : sig
+module type MapWithLatticeFunctions = sig
   include MapSignature
 
   (** The keys of `right` have to be a subset of the keys of `left` for `left` to be less than or
@@ -59,3 +59,6 @@ module Make (Map : MapSignature) : sig
   (** Update keys in `old_map` with values from `new_map`. *)
   val update_existing : old_map:'data t -> new_map:'data t -> 'data t
 end
+
+module Make (Map : MapSignature) :
+  MapWithLatticeFunctions with type key := Map.key and type 'data t := 'data Map.t

@@ -31,16 +31,35 @@ module type MapSignature = sig
     f:(key:key -> data:[ `Both of 'data * 'data | `Left of 'data | `Right of 'data ] -> 'a -> 'a) ->
     'a
 
-  val of_alist : (string * 'a) list -> [ `Duplicate_key of string | `Ok of 'a t ]
+  val of_alist : (key * 'a) list -> [ `Duplicate_key of key | `Ok of 'a t ]
 
-  val of_alist_exn : (string * 'a) list -> 'a t
+  val of_alist_exn : (key * 'a) list -> 'a t
 
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
   val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module Make (Map : MapSignature) = struct
+module type MapWithLatticeFunctions = sig
+  include MapSignature
+
+  val less_or_equal
+    :  less_or_equal_one:(left:'data -> right:'data -> bool) ->
+    left:'data t ->
+    right:'data t ->
+    bool
+
+  val join : join_one:('data -> 'data -> 'data) -> 'data t -> 'data t -> 'data t
+
+  val meet : meet_one:('data -> 'data -> 'data) -> 'data t -> 'data t -> 'data t
+
+  val merge_with : merge_one:('data -> 'data -> 'data) -> 'data t -> 'data t -> 'data t
+
+  val update_existing : old_map:'data t -> new_map:'data t -> 'data t
+end
+
+module Make (Map : MapSignature) :
+  MapWithLatticeFunctions with type key := Map.key and type 'data t := 'data Map.t = struct
   include Map
 
   let less_or_equal ~less_or_equal_one ~left ~right =

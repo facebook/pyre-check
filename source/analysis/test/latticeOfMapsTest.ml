@@ -166,6 +166,16 @@ let test_update_existing _ =
   ()
 
 
+let test_mem _ =
+  assert_bool_equals
+    ~expected:true
+    (StringMap.mem (StringMap.of_alist_exn ["a", Bottom; "b", Foo]) "a");
+  assert_bool_equals
+    ~expected:false
+    (StringMap.mem (StringMap.of_alist_exn ["a", Bottom; "b", Foo]) "z");
+  ()
+
+
 let () =
   "latticeOfMaps"
   >::: [
@@ -174,5 +184,6 @@ let () =
          "meet" >:: test_meet;
          "merge" >:: test_merge;
          "update_existing" >:: test_update_existing;
+         "mem" >:: test_mem;
        ]
   |> Test.run
