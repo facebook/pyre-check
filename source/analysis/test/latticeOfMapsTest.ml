@@ -42,6 +42,17 @@ let join left right =
   | Foo, Foo -> Foo
 
 
+let meet left right =
+  match left, right with
+  | Top, other
+  | other, Top ->
+      other
+  | _, Bottom
+  | Bottom, _ ->
+      Bottom
+  | Foo, Foo -> Foo
+
+
 let _ = show
 
 let test_less_or_equal _ =
@@ -91,5 +102,29 @@ let test_join _ =
   ()
 
 
+let test_meet _ =
+  let assert_meet ~expected left right =
+    let assert_equal =
+      assert_equal
+        ~cmp:(StringMap.equal [%compare.equal: t])
+        ~printer:(fun map -> StringMap.sexp_of_t [%sexp_of: t] map |> Sexp.to_string_hum)
+    in
+    assert_equal expected (StringMap.meet ~meet_one:meet left right);
+    assert_equal expected (StringMap.meet ~meet_one:meet right left)
+  in
+  assert_meet ~expected:StringMap.empty StringMap.empty StringMap.empty;
+  assert_meet
+    ~expected:(StringMap.of_alist_exn ["a", Bottom])
+    (StringMap.of_alist_exn ["a", Bottom])
+    StringMap.empty;
+  assert_meet
+    ~expected:(StringMap.of_alist_exn ["a", Bottom; "b", Foo; "c", Bottom])
+    (StringMap.of_alist_exn ["a", Bottom; "b", Foo])
+    (StringMap.of_alist_exn ["a", Top; "c", Bottom]);
+  ()
+
+
 let () =
-  "latticeOfMaps" >::: ["less_or_equal" >:: test_less_or_equal; "join" >:: test_join] |> Test.run
+  "latticeOfMaps"
+  >::: ["less_or_equal" >:: test_less_or_equal; "join" >:: test_join; "meet" >:: test_meet]
+  |> Test.run

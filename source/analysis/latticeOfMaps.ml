@@ -60,10 +60,23 @@ module Make (Map : MapSignature) = struct
       | `Both (left, right) -> set sofar ~key ~data:(join_one left right)
       | `Left _
       | `Right _ ->
-          (* If the key is present in only one of the maps, don't add it. That way, both left and
-             right will be less-or-equal to the resulting map, making the resulting map an upper
+          (* If the key is present in only one of the maps, don't add it. That way, both `left` and
+             `right` will be less-or-equal to the resulting map, making the resulting map an upper
              bound. *)
           sofar
+    in
+    fold2 left right ~init:empty ~f
+
+
+  let meet ~meet_one left right =
+    let f ~key ~data sofar =
+      match data with
+      | `Both (left, right) -> set sofar ~key ~data:(meet_one left right)
+      | `Left data
+      | `Right data ->
+          (* If the key is present in only one of the maps, add it, so that the resulting map is
+             compatible with both `left` and `right`. *)
+          set sofar ~key ~data
     in
     fold2 left right ~init:empty ~f
 end

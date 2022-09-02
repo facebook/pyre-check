@@ -50,4 +50,6 @@ module Make (Map : MapSignature) : sig
     bool
 
   val join : join_one:('data -> 'data -> 'data) -> 'data t -> 'data t -> 'data t
+
+  val meet : meet_one:('data -> 'data -> 'data) -> 'data t -> 'data t -> 'data t
 end
