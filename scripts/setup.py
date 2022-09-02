@@ -223,7 +223,9 @@ class Setup(NamedTuple):
     ) -> None:
         self.produce_dune_file(pyre_directory, build_type_override)
 
-        opam_environment_variables: Mapping[str, str] = self.set_opam_switch_and_install_dependencies()
+        opam_environment_variables: Mapping[
+            str, str
+        ] = self.set_opam_switch_and_install_dependencies()
         # Note: we do not run `make clean` because we want the result of the
         # explicit `produce_dune_file` to remain.
         if run_clean:
@@ -310,9 +312,7 @@ def setup(runner_type: Type[Setup]) -> None:
 
     opam_root = _make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
 
-    runner = runner_type(
-        opam_root=opam_root, release=parsed.release
-    )
+    runner = runner_type(opam_root=opam_root, release=parsed.release)
     if parsed.configure:
         runner.produce_dune_file(pyre_directory, parsed.build_type)
     elif parsed.environment_only:
