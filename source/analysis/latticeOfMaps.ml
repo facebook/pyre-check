@@ -90,4 +90,14 @@ module Make (Map : MapSignature) = struct
           set sofar ~key ~data
     in
     fold2 left right ~init:empty ~f
+
+
+  let update_existing ~old_map ~new_map =
+    let update_key_if_it_exists ~key ~data map =
+      if mem map key then
+        set ~key ~data map
+      else
+        map
+    in
+    fold ~init:old_map ~f:update_key_if_it_exists new_map
 end
