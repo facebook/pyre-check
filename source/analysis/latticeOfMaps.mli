@@ -32,6 +32,10 @@ module type MapSignature = sig
   val of_alist : (string * 'a) list -> [ `Duplicate_key of string | `Ok of 'a t ]
 
   val of_alist_exn : (string * 'a) list -> 'a t
+
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+
+  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module Make (Map : MapSignature) : sig
@@ -44,4 +48,6 @@ module Make (Map : MapSignature) : sig
     left:'data t ->
     right:'data t ->
     bool
+
+  val join : join_one:('data -> 'data -> 'data) -> 'data t -> 'data t -> 'data t
 end
