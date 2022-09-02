@@ -31,14 +31,6 @@ module type MapSignature = sig
     init:'a ->
     f:(key:key -> data:[ `Both of 'data * 'data | `Left of 'data | `Right of 'data ] -> 'a -> 'a) ->
     'a
-
-  val of_alist : (key * 'a) list -> [ `Duplicate_key of key | `Ok of 'a t ]
-
-  val of_alist_exn : (key * 'a) list -> 'a t
-
-  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-
-  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module type LatticeFunctions = sig
