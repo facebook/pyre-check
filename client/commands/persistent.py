@@ -1539,15 +1539,16 @@ class PyreServer:
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
             )
+            raw_result = lsp.LspDefinitionResponse.cached_schema().dump(
+                definitions,
+                many=True,
+            )
             await lsp.write_json_rpc(
                 self.output_channel,
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    result=lsp.LspDefinitionResponse.cached_schema().dump(
-                        definitions,
-                        many=True,
-                    ),
+                    result=raw_result,
                 ),
             )
             await self.write_telemetry(
@@ -1556,7 +1557,7 @@ class PyreServer:
                     "operation": "definition",
                     "filePath": str(document_path),
                     "count": len(definitions),
-                    "response": definitions,
+                    "response": raw_result,
                 },
                 activity_key,
             )
