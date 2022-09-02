@@ -124,7 +124,34 @@ let test_meet _ =
   ()
 
 
+let test_merge _ =
+  let assert_merge ~expected left right =
+    let assert_equal =
+      assert_equal
+        ~cmp:(StringMap.equal [%compare.equal: t])
+        ~printer:(fun map -> StringMap.sexp_of_t [%sexp_of: t] map |> Sexp.to_string_hum)
+    in
+    let merge_with_left_bias left _ = left in
+    assert_equal expected (StringMap.merge_with ~merge_one:merge_with_left_bias left right)
+  in
+  assert_merge ~expected:StringMap.empty StringMap.empty StringMap.empty;
+  assert_merge
+    ~expected:(StringMap.of_alist_exn ["a", Bottom])
+    (StringMap.of_alist_exn ["a", Bottom])
+    StringMap.empty;
+  assert_merge
+    ~expected:(StringMap.of_alist_exn ["a", Bottom; "b", Foo; "c", Bottom])
+    (StringMap.of_alist_exn ["a", Bottom; "b", Foo])
+    (StringMap.of_alist_exn ["a", Top; "c", Bottom]);
+  ()
+
+
 let () =
   "latticeOfMaps"
-  >::: ["less_or_equal" >:: test_less_or_equal; "join" >:: test_join; "meet" >:: test_meet]
+  >::: [
+         "less_or_equal" >:: test_less_or_equal;
+         "join" >:: test_join;
+         "meet" >:: test_meet;
+         "merge" >:: test_merge;
+       ]
   |> Test.run

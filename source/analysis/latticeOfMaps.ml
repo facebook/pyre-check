@@ -79,4 +79,15 @@ module Make (Map : MapSignature) = struct
           set sofar ~key ~data
     in
     fold2 left right ~init:empty ~f
+
+
+  let merge_with ~merge_one left right =
+    let f ~key ~data sofar =
+      match data with
+      | `Both (left, right) -> set sofar ~key ~data:(merge_one left right)
+      | `Left data
+      | `Right data ->
+          set sofar ~key ~data
+    in
+    fold2 left right ~init:empty ~f
 end
