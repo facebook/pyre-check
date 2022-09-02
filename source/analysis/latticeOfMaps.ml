@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Ast
 
 module type MapSignature = sig
   type key
@@ -120,3 +121,19 @@ module Make (Map : MapSignature) :
     in
     fold ~init:old_map ~f:update_key_if_it_exists new_map
 end
+
+module IdentifierMap = Make (struct
+  include Identifier.Map.Tree
+
+  type key = Identifier.t
+
+  type 'data t = 'data Identifier.Map.Tree.t
+end)
+
+module ReferenceMap = Make (struct
+  include Reference.Map
+
+  type key = Reference.t
+
+  type 'data t = 'data Reference.Map.t
+end)

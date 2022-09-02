@@ -62,3 +62,13 @@ end
 
 module Make (Map : MapSignature) :
   MapWithLatticeFunctions with type key := Map.key and type 'data t := 'data Map.t
+
+module IdentifierMap :
+  MapWithLatticeFunctions
+    with type key := Ast.Identifier.t
+     and type 'data t := 'data Ast.Identifier.Map.Tree.t
+
+module ReferenceMap :
+  MapWithLatticeFunctions
+    with type key := Ast.Reference.t
+     and type 'data t := 'data Ast.Reference.Map.t
