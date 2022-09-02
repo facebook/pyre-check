@@ -41,8 +41,10 @@ module type MapSignature = sig
   val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module type MapWithLatticeFunctions = sig
-  include MapSignature
+module type LatticeFunctions = sig
+  type key
+
+  type 'data t
 
   val less_or_equal
     :  less_or_equal_one:(left:'data -> right:'data -> bool) ->
@@ -60,8 +62,8 @@ module type MapWithLatticeFunctions = sig
 end
 
 module Make (Map : MapSignature) :
-  MapWithLatticeFunctions with type key := Map.key and type 'data t := 'data Map.t = struct
-  include Map
+  LatticeFunctions with type key := Map.key and type 'data t := 'data Map.t = struct
+  open Map
 
   let less_or_equal ~less_or_equal_one ~left ~right =
     let f ~key ~data:right_data sofar =
@@ -122,18 +124,24 @@ module Make (Map : MapSignature) :
     fold ~init:old_map ~f:update_key_if_it_exists new_map
 end
 
-module IdentifierMap = Make (struct
-  include Identifier.Map.Tree
+module IdentifierMap = struct
+  module T = struct
+    include Identifier.Map.Tree
 
-  type key = Identifier.t
+    type key = Identifier.t
+  end
 
-  type 'data t = 'data Identifier.Map.Tree.t
-end)
+  include T
+  include Make (T)
+end
 
-module ReferenceMap = Make (struct
-  include Reference.Map
+module ReferenceMap = struct
+  module T = struct
+    include Reference.Map
 
-  type key = Reference.t
+    type key = Reference.t
+  end
 
-  type 'data t = 'data Reference.Map.t
-end)
+  include T
+  include Make (T)
+end

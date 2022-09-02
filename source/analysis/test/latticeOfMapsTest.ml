@@ -10,18 +10,7 @@ open OUnit2
 open Analysis
 open LatticeOfMaps
 open Test
-
-module T = struct
-  type t = string [@@deriving compare, sexp]
-end
-
-module StringMapWithoutLatticeFunctions = Map.Make (T)
-
-module StringMap = Make (struct
-  include StringMapWithoutLatticeFunctions.Tree
-
-  type key = T.t
-end)
+module StringMap = IdentifierMap
 
 type t =
   | Bottom
@@ -176,6 +165,14 @@ let test_mem _ =
   ()
 
 
+(* Test that we preserve all functions from the `Map` data structure from which we generated lattice
+   functions. We are not limited to the functions specified in `MapSignature`. *)
+let test_function_not_in_map_signature _ =
+  (* `singleton` is not present in `MapSignature`. *)
+  assert_bool_equals ~expected:true (StringMap.mem (StringMap.singleton "foo" 42) "foo");
+  ()
+
+
 let () =
   "latticeOfMaps"
   >::: [
@@ -185,5 +182,6 @@ let () =
          "merge" >:: test_merge;
          "update_existing" >:: test_update_existing;
          "mem" >:: test_mem;
+         "function_not_in_map_signature" >:: test_function_not_in_map_signature;
        ]
   |> Test.run

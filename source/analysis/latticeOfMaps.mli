@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Ast
+
 module type MapSignature = sig
   type key
 
@@ -38,8 +40,10 @@ module type MapSignature = sig
   val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module type MapWithLatticeFunctions = sig
-  include MapSignature
+module type LatticeFunctions = sig
+  type key
+
+  type 'data t
 
   (** The keys of `right` have to be a subset of the keys of `left` for `left` to be less than or
       equal to `right`, since more keys = more restrictions = lower in the lattice *)
@@ -60,15 +64,14 @@ module type MapWithLatticeFunctions = sig
   val update_existing : old_map:'data t -> new_map:'data t -> 'data t
 end
 
-module Make (Map : MapSignature) :
-  MapWithLatticeFunctions with type key := Map.key and type 'data t := 'data Map.t
+module IdentifierMap : sig
+  include module type of Identifier.Map.Tree
 
-module IdentifierMap :
-  MapWithLatticeFunctions
-    with type key := Ast.Identifier.t
-     and type 'data t := 'data Ast.Identifier.Map.Tree.t
+  include LatticeFunctions with type key := Identifier.t and type 'data t := 'data t
+end
 
-module ReferenceMap :
-  MapWithLatticeFunctions
-    with type key := Ast.Reference.t
-     and type 'data t := 'data Ast.Reference.Map.t
+module ReferenceMap : sig
+  include module type of Reference.Map
+
+  include LatticeFunctions with type key := Reference.t and type 'data t := 'data t
+end
