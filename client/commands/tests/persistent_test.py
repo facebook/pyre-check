@@ -207,6 +207,16 @@ async def _create_input_channel_with_requests(
     return AsyncTextReader(MemoryBytesReader(b"\n".join(bytes_writer.items())))
 
 
+DEFAULT_REQUEST_ID: int = 42
+
+
+def _success_response_json(
+    result: object,
+    request_id: int = DEFAULT_REQUEST_ID,
+) -> str:
+    return json.dumps(json_rpc.SuccessResponse(id=request_id, result=result).json())
+
+
 class NoOpBackgroundTask(background.Task):
     async def run(self) -> None:
         pass
@@ -1119,7 +1129,7 @@ class PersistentTest(testslide.TestCase):
         # process the request
         await server.process_hover_request(
             parameters,
-            request_id=42,
+            request_id=DEFAULT_REQUEST_ID,
         )
         # verify that we passed data as expected
         self.assertEqual(
@@ -1127,11 +1137,8 @@ class PersistentTest(testslide.TestCase):
             expected_handler_requests,
         )
         # verify that we returned a response as expected
-        expected_raw_response = json.dumps(
-            json_rpc.SuccessResponse(
-                id=42,
-                result=lsp.LspHoverResponse.cached_schema().dump(expected_response),
-            ).json()
+        expected_raw_response = _success_response_json(
+            result=lsp.LspHoverResponse.cached_schema().dump(expected_response),
         )
         client_messages = output_writer.items()
         self.assertEqual(len(client_messages), 1)
@@ -1211,7 +1218,7 @@ class PersistentTest(testslide.TestCase):
         # process the request
         await server.process_definition_request(
             parameters,
-            request_id=42,
+            request_id=DEFAULT_REQUEST_ID,
         )
         # verify that we passed data as expected
         self.assertEqual(
@@ -1219,13 +1226,10 @@ class PersistentTest(testslide.TestCase):
             expected_handler_requests,
         )
         # verify that we returned a response as expected
-        expected_raw_response = json.dumps(
-            json_rpc.SuccessResponse(
-                id=42,
-                result=lsp.LspDefinitionResponse.cached_schema().dump(
-                    expected_response, many=True
-                ),
-            ).json()
+        expected_raw_response = _success_response_json(
+            result=lsp.LspDefinitionResponse.cached_schema().dump(
+                expected_response, many=True
+            ),
         )
         client_messages = output_writer.items()
         self.assertEqual(len(client_messages), 1)
@@ -1321,7 +1325,7 @@ class PersistentTest(testslide.TestCase):
         # process the request
         await server.process_find_all_references_request(
             parameters,
-            request_id=42,
+            request_id=DEFAULT_REQUEST_ID,
         )
         # verify that we passed data as expected
         self.assertEqual(
@@ -1329,13 +1333,10 @@ class PersistentTest(testslide.TestCase):
             expected_handler_requests,
         )
         # verify that we returned a response as expected
-        expected_raw_response = json.dumps(
-            json_rpc.SuccessResponse(
-                id=42,
-                result=lsp.LspDefinitionResponse.cached_schema().dump(
-                    expected_response, many=True
-                ),
-            ).json()
+        expected_raw_response = _success_response_json(
+            result=lsp.LspDefinitionResponse.cached_schema().dump(
+                expected_response, many=True
+            ),
         )
         client_messages = output_writer.items()
         self.assertEqual(len(client_messages), 1)
@@ -1438,8 +1439,7 @@ class PersistentTest(testslide.TestCase):
                 end_line, end_character = 1, 6
             else:
                 end_line, end_character = 0, 3
-            expected_response = json_rpc.SuccessResponse(
-                id=42,
+            expected_response = _success_response_json(
                 result=[
                     {
                         "detail": "",
@@ -1457,13 +1457,14 @@ class PersistentTest(testslide.TestCase):
                     }
                 ],
             )
-            response_string = json.dumps(expected_response.json())
-            actual = client_messages[-1].decode()
-            self.assertRegex(
-                actual, f"Content-Length: {len(response_string)}\r\n\r\n.*"
+            client_message = client_messages[-1].decode()
+            content_length_part, content_part = client_message.split("\r\n\r\n")
+            self.assertEqual(
+                content_length_part, f"Content-Length: {len(expected_response)}"
             )
-            actual_json = json.loads(actual[actual.index("{") :])
-            self.assertDictEqual(actual_json, expected_response.json())
+            self.assertDictEqual(
+                json.loads(content_part), json.loads(expected_response)
+            )
 
     def test_path_to_coverage_response(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
