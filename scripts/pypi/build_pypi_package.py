@@ -22,6 +22,7 @@ from .setup import run as run_setup
 
 
 MODULE_NAME = "pyre_check"
+EXPECTED_LD_PATH = "/lib64/ld-linux-x86-64.so.2"
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -180,6 +181,14 @@ def _ensure_usable_binary_exists(pyre_directory: Path) -> None:
         raise ValueError(
             "The binary file does not exist. \
             Have you run 'make' in the toplevel directory?"
+        )
+    result = subprocess.run(
+        ["file", str(binary_path)], stdout=subprocess.PIPE, encoding="utf-8",
+    )
+    if EXPECTED_LD_PATH not in result.stdout:
+        raise ValueError(
+            "The built executable appears to include an unreleasable ld path. "
+            f"The output of running `file` on it was {result}"
         )
 
 
