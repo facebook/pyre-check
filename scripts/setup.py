@@ -242,6 +242,9 @@ class Setup(NamedTuple):
                 add_environment_variables=opam_environment_variables,
             )
 
+        if self.release:
+            LOG.info("Running a release build. This may take a while.")
+
         run_make("release" if self.release else "dev")
         if run_tests:
             run_make("release_test" if self.release else "test")
