@@ -184,7 +184,7 @@ function Sandbox() {
     ((use_os_models_in_uri === "null")? getStorageValue("use_os_models", "true") : use_os_models_in_uri) === "true"
   );
 
-  const socket = socketIOClient("ws://127.0.0.1:5000/analyze", {transports: ["websocket"], reconnection: false});
+  const socket = socketIOClient("ws://127.0.0.1:5000/analyze", {reconnection: false});
   let synchronous_results = [];
 
   useEffect(() => {

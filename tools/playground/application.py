@@ -6,6 +6,8 @@
 # pyre-unsafe
 
 import argparse
+import functools
+import hashlib
 import json
 import logging
 import os
@@ -53,6 +55,23 @@ def _consume(stream: IO[str]) -> str:
     thread.join()
 
     return "\n".join(buffer)
+
+
+@functools.lru_cache(maxsize=128)
+def _get_cache_contents(file_path: Path) -> str:
+    with file_path.open() as cache_file:
+        return cache_file.read()
+
+
+@functools.lru_cache(maxsize=128)
+def _get_cache_file_path(input: str, model: str) -> Path:
+    hashable_object = str(input + model).encode("utf-8")
+    sha1_hash_file_name = hashlib.sha1(hashable_object).hexdigest() + ".cache"
+    cache_directory = Path(
+        os.environ.get("PYSA_PLAYGROUND_CACHE_DIRECTORY", "/var/pysa_cache")
+    )
+    cache_file_path = cache_directory / sha1_hash_file_name
+    return cache_file_path
 
 
 class Pyre:
@@ -122,6 +141,8 @@ class Pysa:
     ) -> None:
         self._directory: Path = Path(tempfile.mkdtemp())
         self._stubs: Path = Path(tempfile.mkdtemp())
+        self.input: str = input
+        self.model: str = model
 
         LOG.debug(f"Intializing Pysa in `{self._directory}`...")
         pyre_configuration = json.dumps(
@@ -157,6 +178,7 @@ class Pysa:
             text=True,
         ) as process:
             model_verification_errors = []
+            cache_lines = ""
             # pyre-fixme[16]: process.stderr is marked as Optional
             for line in iter(process.stderr.readline, b""):
                 line = line.rstrip()
@@ -182,6 +204,7 @@ class Pysa:
                         model_verification_errors = []
                     emit("pysa_results_channel", {"type": "output", "line": line})
                 LOG.debug(line)
+                cache_lines += line + "\n"
 
             return_code = process.wait()
             if return_code != 0:
@@ -190,6 +213,10 @@ class Pysa:
                 result = {"type": "finished", "result": "ok"}
 
             emit("pysa_results_channel", result)
+            # write to cache now:
+            with _get_cache_file_path(self.input, self.model).open("w") as cache_file:
+                cache_file.write(str(return_code) + "\n")
+                cache_file.write(cache_lines)
 
 
 def get_server():
@@ -236,9 +263,27 @@ def get_server():
                 },
             )
         else:
-            pysa = Pysa(input, model, use_builtin_pysa_models)
-            LOG.info(f"Checking `{input}`...")
-            pysa.analyze()
+            cache_file_path = _get_cache_file_path(input, model)
+            if cache_file_path.exists():
+                LOG.info(f"Using cache `{cache_file_path}`...")
+                cache_contents = _get_cache_contents(cache_file_path).split("\n")
+                run_status = cache_contents.pop(0)
+                emit(
+                    "pysa_results_channel",
+                    {
+                        "type": "output",
+                        "line": "\n".join(cache_contents),
+                    },
+                )
+                if run_status != "0":
+                    result = {"type": "finished", "result": "error"}
+                else:
+                    result = {"type": "finished", "result": "ok"}
+                emit("pysa_results_channel", result)
+            else:
+                pysa = Pysa(input, model, use_builtin_pysa_models)
+                LOG.info(f"Checking `{input}`...")
+                pysa.analyze()
 
     @application.route("/")
     def index() -> str:
