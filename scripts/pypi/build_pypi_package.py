@@ -183,12 +183,14 @@ def _ensure_usable_binary_exists(pyre_directory: Path) -> None:
             Have you run 'make' in the toplevel directory?"
         )
     result = subprocess.run(
-        ["file", str(binary_path)], stdout=subprocess.PIPE, encoding="utf-8",
+        ["file", str(binary_path)],
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
     )
-    if EXPECTED_LD_PATH not in result.stdout:
+    if "dynamically linked" in result.stdout and EXPECTED_LD_PATH not in result.stdout:
         raise ValueError(
             "The built executable appears to include an unreleasable ld path. "
-            f"The output of running `file` on it was {result}"
+            f"The output of running `file` on it was {result.stdout}"
         )
 
 
