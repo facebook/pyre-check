@@ -52,8 +52,8 @@ module type LatticeFunctions = sig
   (** Merge maps, taking the union of all keys and merging values for common keys. *)
   val merge_with : merge_one:('data -> 'data -> 'data) -> 'data t -> 'data t -> 'data t
 
-  (** Update keys in `old_map` with values from `new_map`. *)
-  val update_existing : old_map:'data t -> new_map:'data t -> 'data t
+  (** Update keys in `map_to_update` with values from `new_map`. *)
+  val update_existing_entries : map_to_update:'data t -> new_map:'data t -> 'data t
 end
 
 module IdentifierMap : sig

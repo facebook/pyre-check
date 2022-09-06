@@ -50,7 +50,7 @@ module type LatticeFunctions = sig
 
   val merge_with : merge_one:('data -> 'data -> 'data) -> 'data t -> 'data t -> 'data t
 
-  val update_existing : old_map:'data t -> new_map:'data t -> 'data t
+  val update_existing_entries : map_to_update:'data t -> new_map:'data t -> 'data t
 end
 
 module Make (Map : MapSignature) :
@@ -106,14 +106,14 @@ module Make (Map : MapSignature) :
     fold2 left right ~init:empty ~f
 
 
-  let update_existing ~old_map ~new_map =
+  let update_existing_entries ~map_to_update ~new_map =
     let update_key_if_it_exists ~key ~data map =
       if mem map key then
         set ~key ~data map
       else
         map
     in
-    fold ~init:old_map ~f:update_key_if_it_exists new_map
+    fold ~init:map_to_update ~f:update_key_if_it_exists new_map
 end
 
 module IdentifierMap = struct

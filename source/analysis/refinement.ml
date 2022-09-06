@@ -338,10 +338,12 @@ module Store = struct
   let update_existing ~old_store ~new_store =
     {
       annotations =
-        ReferenceMap.update_existing ~old_map:old_store.annotations ~new_map:new_store.annotations;
+        ReferenceMap.update_existing_entries
+          ~map_to_update:old_store.annotations
+          ~new_map:new_store.annotations;
       temporary_annotations =
-        ReferenceMap.update_existing
-          ~old_map:old_store.temporary_annotations
+        ReferenceMap.update_existing_entries
+          ~map_to_update:old_store.temporary_annotations
           ~new_map:new_store.temporary_annotations;
     }
 

@@ -135,14 +135,14 @@ let test_merge _ =
   ()
 
 
-let test_update_existing _ =
+let test_update_existing_entries _ =
   let assert_update ~expected ~old_map ~new_map =
     let assert_equal =
       assert_equal
         ~cmp:(StringMap.equal [%compare.equal: t])
         ~printer:(fun map -> StringMap.sexp_of_t [%sexp_of: t] map |> Sexp.to_string_hum)
     in
-    assert_equal expected (StringMap.update_existing ~old_map ~new_map)
+    assert_equal expected (StringMap.update_existing_entries ~map_to_update:old_map ~new_map)
   in
   assert_update
     ~expected:(StringMap.of_alist_exn ["a", Bottom; "b", Foo])
@@ -180,7 +180,7 @@ let () =
          "join" >:: test_join;
          "meet" >:: test_meet;
          "merge" >:: test_merge;
-         "update_existing" >:: test_update_existing;
+         "update_existing_entries" >:: test_update_existing_entries;
          "mem" >:: test_mem;
          "function_not_in_map_signature" >:: test_function_not_in_map_signature;
        ]
