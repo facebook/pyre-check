@@ -119,48 +119,34 @@ let save_results_to_directory
     ~fixpoint_state
     ~errors
   =
-  let module Buffer = Caml.Buffer in
-  let emit_json_array_elements out_buffer =
-    let seen_element = ref false in
-    fun json ->
-      if !seen_element then (
-        Buffer.add_string out_buffer "\n";
-        Json.to_buffer out_buffer json)
-      else (
-        seen_element := true;
-        Json.to_buffer out_buffer json)
-  in
   let timer = Timer.start () in
   let models_path = "taint-output.json" in
   let root = local_root |> PyrePath.absolute in
+  let open_file ~filename =
+    let path = PyrePath.append result_directory ~element:filename in
+    open_out (PyrePath.absolute path)
+  in
   let save_models () =
-    let out_buffer = Buffer.create 256 in
-    let array_emitter = emit_json_array_elements out_buffer in
-    let header_with_version =
-      `Assoc ["file_version", `Int 3; "config", `Assoc ["repo", `String root]]
+    let out_channel = open_file ~filename:models_path in
+    `Assoc ["file_version", `Int 3; "config", `Assoc ["repo", `String root]]
+    |> Json.to_channel out_channel;
+    Printf.fprintf out_channel "\n";
+    let emitter json =
+      Json.to_channel out_channel json;
+      Printf.fprintf out_channel "\n"
     in
-    Json.to_buffer out_buffer header_with_version;
-    Buffer.add_string out_buffer "\n";
     Target.Set.iter
-      (emit_externalization ~fixpoint_state ~filename_lookup ~override_graph array_emitter)
+      (emit_externalization ~fixpoint_state ~filename_lookup ~override_graph emitter)
       callables;
-    let output_path = PyrePath.append result_directory ~element:models_path in
-    let out_channel = open_out (PyrePath.absolute output_path) in
-    Buffer.output_buffer out_channel out_buffer;
     close_out out_channel
   in
   let save_errors () =
-    let filename = "errors.json" in
-    let out_buffer = Buffer.create 256 in
-    Json.to_buffer out_buffer (`List errors);
-    let output_path = PyrePath.append result_directory ~element:filename in
-    let out_channel = open_out (PyrePath.absolute output_path) in
-    Buffer.output_buffer out_channel out_buffer;
+    let out_channel = open_file ~filename:"errors.json" in
+    Json.to_channel out_channel (`List errors);
     close_out out_channel
   in
   let save_metadata () =
-    let filename = "taint-metadata.json" in
-    let out_buffer = Buffer.create 256 in
+    let out_channel = open_file ~filename:"taint-metadata.json" in
     let statistics =
       let global_statistics =
         `Assoc
@@ -184,10 +170,7 @@ let save_results_to_directory
         ]
     in
     let analysis_metadata = metadata () in
-    Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_buffer out_buffer;
-    let output_path = PyrePath.append result_directory ~element:filename in
-    let out_channel = open_out (PyrePath.absolute output_path) in
-    Buffer.output_buffer out_channel out_buffer;
+    Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_channel out_channel;
     close_out out_channel
   in
   save_models ();
