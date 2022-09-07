@@ -474,7 +474,7 @@ end
 module StaticAnalysis = struct
   type t = {
     repository_root: PyrePath.t option;
-    result_json_path: PyrePath.t option;
+    save_results_to: PyrePath.t option;
     output_format: TaintOutputFormat.t;
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
@@ -496,7 +496,7 @@ module StaticAnalysis = struct
   let create
       configuration
       ?repository_root
-      ?result_json_path
+      ?save_results_to
       ?(output_format = TaintOutputFormat.Json)
       ?dump_call_graph
       ?(verify_models = true)
@@ -515,7 +515,7 @@ module StaticAnalysis = struct
     =
     {
       repository_root;
-      result_json_path;
+      save_results_to;
       output_format;
       dump_call_graph;
       verify_models;

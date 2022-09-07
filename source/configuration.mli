@@ -204,7 +204,7 @@ module StaticAnalysis : sig
   type t = {
     repository_root: PyrePath.t option;
     (* A directory to write files in. *)
-    result_json_path: PyrePath.t option;
+    save_results_to: PyrePath.t option;
     output_format: TaintOutputFormat.t;
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
@@ -226,7 +226,7 @@ module StaticAnalysis : sig
   val create
     :  Analysis.t ->
     ?repository_root:PyrePath.t ->
-    ?result_json_path:PyrePath.t ->
+    ?save_results_to:PyrePath.t ->
     ?output_format:TaintOutputFormat.t ->
     ?dump_call_graph:PyrePath.t ->
     ?verify_models:bool ->

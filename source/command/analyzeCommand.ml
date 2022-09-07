@@ -180,7 +180,7 @@ module AnalyzeConfiguration = struct
     {
       Configuration.StaticAnalysis.configuration;
       repository_root;
-      result_json_path = save_results_to;
+      save_results_to;
       output_format;
       dump_call_graph;
       verify_models = not no_verify;

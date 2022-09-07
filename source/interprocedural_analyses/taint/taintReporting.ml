@@ -188,7 +188,7 @@ let report
     ~scheduler
     ~static_analysis_configuration:
       {
-        Configuration.StaticAnalysis.result_json_path;
+        Configuration.StaticAnalysis.save_results_to;
         configuration = { local_root; show_error_traces; _ };
         _;
       }
@@ -227,7 +227,7 @@ let report
     |> Error.Instantiated.to_yojson
   in
   let errors = List.map errors ~f:error_to_json in
-  match result_json_path with
+  match save_results_to with
   | Some result_directory ->
       save_results_to_directory
         ~result_directory
