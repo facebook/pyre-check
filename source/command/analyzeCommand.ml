@@ -38,6 +38,7 @@ module AnalyzeConfiguration = struct
     sink_filter: string list option;
     transform_filter: string list option;
     save_results_to: PyrePath.t option;
+    output_format: Configuration.TaintOutputFormat.t;
     strict: bool;
     taint_model_paths: PyrePath.t list;
     use_cache: bool;
@@ -45,6 +46,7 @@ module AnalyzeConfiguration = struct
   [@@deriving sexp, compare, hash]
 
   let of_yojson json =
+    let open Core.Result in
     let open Yojson.Safe.Util in
     let open JsonParsing in
     (* Parsing logic *)
@@ -66,6 +68,9 @@ module AnalyzeConfiguration = struct
           let sink_filter = optional_list_member ~f:to_string "sink_filter" json in
           let transform_filter = optional_list_member ~f:to_string "transform_filter" json in
           let save_results_to = optional_path_member "save_results_to" json in
+          string_member "output_format" ~default:"json" json
+          |> Configuration.TaintOutputFormat.of_string
+          >>= fun output_format ->
           let strict = bool_member "strict" ~default:false json in
           let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
           let use_cache = bool_member "use_cache" ~default:false json in
@@ -87,6 +92,7 @@ module AnalyzeConfiguration = struct
               sink_filter;
               transform_filter;
               save_results_to;
+              output_format;
               strict;
               taint_model_paths;
               use_cache;
@@ -134,6 +140,7 @@ module AnalyzeConfiguration = struct
         sink_filter;
         transform_filter;
         save_results_to;
+        output_format;
         strict;
         taint_model_paths;
         use_cache;
@@ -174,6 +181,7 @@ module AnalyzeConfiguration = struct
       Configuration.StaticAnalysis.configuration;
       repository_root;
       result_json_path = save_results_to;
+      output_format;
       dump_call_graph;
       verify_models = not no_verify;
       verify_dsl;

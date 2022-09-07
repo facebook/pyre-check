@@ -51,6 +51,7 @@ class Arguments:
     sink_filter: Optional[Sequence[str]] = None
     transform_filter: Optional[Sequence[str]] = None
     save_results_to: Optional[str] = None
+    output_format: Optional[str] = None
     strict: bool = False
     taint_model_paths: Sequence[str] = dataclasses.field(default_factory=list)
     use_cache: bool = False
@@ -67,6 +68,7 @@ class Arguments:
         sink_filter = self.sink_filter
         transform_filter = self.transform_filter
         save_results_to = self.save_results_to
+        output_format = self.output_format
         return {
             **self.base_arguments.serialize(),
             **({} if dump_call_graph is None else {"dump_call_graph": dump_call_graph}),
@@ -103,6 +105,7 @@ class Arguments:
                 else {"transform_filter": transform_filter}
             ),
             **({} if save_results_to is None else {"save_results_to": save_results_to}),
+            **({} if output_format is None else {"output_format": output_format}),
             "strict": self.strict,
             "taint_model_paths": self.taint_model_paths,
             "use_cache": self.use_cache,
@@ -149,6 +152,7 @@ def create_analyze_arguments(
     sink = analyze_arguments.sink
     transform = analyze_arguments.transform
     taint_models_path = analyze_arguments.taint_models_path
+    output_format = analyze_arguments.output_format
     if len(taint_models_path) == 0:
         taint_models_path = configuration.get_taint_models_path()
     repository_root = analyze_arguments.repository_root
@@ -192,6 +196,7 @@ def create_analyze_arguments(
         sink_filter=None if len(sink) == 0 else sink,
         transform_filter=None if len(transform) == 0 else transform,
         save_results_to=analyze_arguments.save_results_to,
+        output_format=str(output_format.value) if output_format is not None else None,
         strict=configuration.is_strict(),
         taint_model_paths=taint_models_path,
         use_cache=analyze_arguments.use_cache,

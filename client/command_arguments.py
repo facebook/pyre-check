@@ -36,6 +36,11 @@ class MissingFlowsKind(str, enum.Enum):
     TYPE: str = "type"
 
 
+class TaintOutputFormat(str, enum.Enum):
+    JSON: str = "json"
+    SHARDED_JSON: str = "sharded-json"
+
+
 @dataclass(frozen=True)
 class CommandArguments:
     local_configuration: Optional[str] = None
@@ -235,6 +240,7 @@ class AnalyzeArguments:
     sink: List[str] = field(default_factory=list)
     transform: List[str] = field(default_factory=list)
     save_results_to: Optional[str] = None
+    output_format: Optional[TaintOutputFormat] = None
     sequential: bool = False
     taint_models_path: List[str] = field(default_factory=list)
     use_cache: bool = False

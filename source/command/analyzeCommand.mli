@@ -33,6 +33,7 @@ module AnalyzeConfiguration : sig
     sink_filter: string list option;
     transform_filter: string list option;
     save_results_to: PyrePath.t option;
+    output_format: Configuration.TaintOutputFormat.t;
     strict: bool;
     taint_model_paths: PyrePath.t list;
     use_cache: bool;

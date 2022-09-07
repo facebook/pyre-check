@@ -409,6 +409,11 @@ def pyre(
     help="Directory to write analysis results to.",
 )
 @click.option(
+    "--output-format",
+    type=click.Choice([kind.value for kind in command_arguments.TaintOutputFormat]),
+    help="Format of the taint output file(s).",
+)
+@click.option(
     "--dump-call-graph",
     type=str,
     help="Dump the call graph in the given file.",
@@ -481,6 +486,7 @@ def analyze(
     verify_dsl: bool,
     version: bool,
     save_results_to: Optional[str],
+    output_format: Optional[str],
     dump_call_graph: Optional[str],
     repository_root: Optional[str],
     rule: Iterable[int],
@@ -531,6 +537,9 @@ def analyze(
             sink=list(sink),
             transform=list(transform),
             save_results_to=save_results_to,
+            output_format=command_arguments.TaintOutputFormat(output_format)
+            if output_format is not None
+            else None,
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),
             use_cache=use_cache,

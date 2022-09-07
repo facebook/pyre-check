@@ -459,10 +459,23 @@ module Analysis = struct
     ()
 end
 
+module TaintOutputFormat = struct
+  type t =
+    | Json
+    | ShardedJson
+  [@@deriving sexp, compare, hash]
+
+  let of_string = function
+    | "json" -> Ok Json
+    | "sharded-json" -> Ok ShardedJson
+    | output_format -> Error (Format.sprintf "Invalid taint output format `%s`" output_format)
+end
+
 module StaticAnalysis = struct
   type t = {
     repository_root: PyrePath.t option;
     result_json_path: PyrePath.t option;
+    output_format: TaintOutputFormat.t;
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
     verify_dsl: bool;
@@ -484,6 +497,7 @@ module StaticAnalysis = struct
       configuration
       ?repository_root
       ?result_json_path
+      ?(output_format = TaintOutputFormat.Json)
       ?dump_call_graph
       ?(verify_models = true)
       ?(verify_dsl = true)
@@ -502,6 +516,7 @@ module StaticAnalysis = struct
     {
       repository_root;
       result_json_path;
+      output_format;
       dump_call_graph;
       verify_models;
       verify_dsl;

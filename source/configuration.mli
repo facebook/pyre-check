@@ -191,11 +191,21 @@ module Analysis : sig
   val validate_paths : t -> unit
 end
 
+module TaintOutputFormat : sig
+  type t =
+    | Json
+    | ShardedJson
+  [@@deriving sexp, compare, hash]
+
+  val of_string : string -> (t, string) Result.t
+end
+
 module StaticAnalysis : sig
   type t = {
     repository_root: PyrePath.t option;
     (* A directory to write files in. *)
     result_json_path: PyrePath.t option;
+    output_format: TaintOutputFormat.t;
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
     verify_dsl: bool;
@@ -217,6 +227,7 @@ module StaticAnalysis : sig
     :  Analysis.t ->
     ?repository_root:PyrePath.t ->
     ?result_json_path:PyrePath.t ->
+    ?output_format:TaintOutputFormat.t ->
     ?dump_call_graph:PyrePath.t ->
     ?verify_models:bool ->
     ?verify_dsl:bool ->

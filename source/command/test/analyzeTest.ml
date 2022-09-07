@@ -39,6 +39,7 @@ let test_json_parsing context =
       sink_filter = None;
       transform_filter = None;
       save_results_to = None;
+      output_format = Configuration.TaintOutputFormat.Json;
       strict = false;
       taint_model_paths = [];
       use_cache = false;
@@ -109,6 +110,17 @@ let test_json_parsing context =
       {
         dummy_analyze_configuration with
         save_results_to = Some (PyrePath.create_absolute "/result");
+      };
+  assert_parsed
+    (`Assoc (("output_format", `String "json") :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      { dummy_analyze_configuration with output_format = Configuration.TaintOutputFormat.Json };
+  assert_parsed
+    (`Assoc (("output_format", `String "sharded-json") :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      {
+        dummy_analyze_configuration with
+        output_format = Configuration.TaintOutputFormat.ShardedJson;
       };
   assert_parsed
     (`Assoc (("strict", `Bool true) :: BaseConfigurationTest.dummy_base_json))
