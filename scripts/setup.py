@@ -221,33 +221,31 @@ class Setup(NamedTuple):
         run_clean: bool = False,
         build_type_override: Optional[BuildType] = None,
     ) -> None:
-        self.produce_dune_file(pyre_directory, build_type_override)
-
         opam_environment_variables: Mapping[
             str, str
         ] = self.set_opam_switch_and_install_dependencies()
-        # Note: we do not run `make clean` because we want the result of the
-        # explicit `produce_dune_file` to remain.
-        if run_clean:
-            self.run(
-                ["dune", "clean"],
-                pyre_directory / "source",
-                add_environment_variables=opam_environment_variables,
-            )
 
-        def run_make(target: str) -> None:
+        def run_in_opam_environment(command: List[str]) -> None:
             self.run(
-                ["make", target],
+                command,
                 current_working_directory=pyre_directory / "source",
                 add_environment_variables=opam_environment_variables,
             )
 
+        self.produce_dune_file(pyre_directory, build_type_override)
+        # Note: we do not run `make clean` because we want the result of the
+        # explicit `produce_dune_file` to remain.
+        if run_clean:
+            run_in_opam_environment(["dune", "clean"])
         if self.release:
             LOG.info("Running a release build. This may take a while.")
-
-        run_make("release" if self.release else "dev")
-        if run_tests:
-            run_make("release_test" if self.release else "test")
+            run_in_opam_environment(["make", "release"])
+            if run_tests:
+                run_in_opam_environment(["make", "release_test"])
+        else:
+            run_in_opam_environment(["make", "dev"])
+            if run_tests:
+                run_in_opam_environment(["make", "test"])
 
     def run(
         self,
