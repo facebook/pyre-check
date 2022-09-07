@@ -65,7 +65,11 @@ let test_json_parsing context =
       };
   assert_parsed
     (`Assoc (("find_missing_flows", `String "obscure") :: BaseConfigurationTest.dummy_base_json))
-    ~expected:{ dummy_analyze_configuration with find_missing_flows = Some "obscure" };
+    ~expected:
+      {
+        dummy_analyze_configuration with
+        find_missing_flows = Some Configuration.MissingFlowKind.Obscure;
+      };
   assert_parsed
     (`Assoc (("inline_decorators", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with inline_decorators = true };

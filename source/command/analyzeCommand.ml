@@ -26,7 +26,7 @@ module AnalyzeConfiguration = struct
     base: CommandStartup.BaseConfiguration.t;
     dump_call_graph: PyrePath.t option;
     dump_model_query_results: PyrePath.t option;
-    find_missing_flows: string option;
+    find_missing_flows: Configuration.MissingFlowKind.t option;
     inline_decorators: bool;
     maximum_tito_depth: int option;
     maximum_trace_length: int option;
@@ -56,7 +56,12 @@ module AnalyzeConfiguration = struct
       | Result.Ok base ->
           let dump_call_graph = optional_path_member "dump_call_graph" json in
           let dump_model_query_results = optional_path_member "dump_model_query_results" json in
-          let find_missing_flows = optional_string_member "find_missing_flows" json in
+          optional_string_member "find_missing_flows" json
+          |> (function
+               | Some missing_flow ->
+                   Configuration.MissingFlowKind.of_string missing_flow >>| Option.some
+               | None -> Ok None)
+          >>= fun find_missing_flows ->
           let inline_decorators = bool_member "inline_decorators" ~default:false json in
           let maximum_tito_depth = optional_int_member "maximum_tito_depth" json in
           let maximum_trace_length = optional_int_member "maximum_trace_length" json in

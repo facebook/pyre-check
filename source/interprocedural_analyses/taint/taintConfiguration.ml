@@ -62,24 +62,6 @@ let default_analysis_model_constraints =
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
-type missing_flows_kind =
-  (* Find missing flows through obscure models. *)
-  | Obscure
-  (* Find missing flows due to missing type information. *)
-  | Type
-[@@deriving compare, show]
-
-let missing_flows_kind_from_string = function
-  | "obscure" -> Some Obscure
-  | "type" -> Some Type
-  | _ -> None
-
-
-let missing_flows_kind_to_string = function
-  | Obscure -> "obscure"
-  | Type -> "type"
-
-
 (* Given a rule to find flows of the form:
  *   source -> T1 -> T2 -> T3 -> ... -> Tn -> sink
  * Following are different ways we can find matching flows:
@@ -341,7 +323,7 @@ type t = {
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list String.Map.Tree.t;
-  find_missing_flows: missing_flows_kind option;
+  find_missing_flows: Configuration.MissingFlowKind.t option;
   dump_model_query_results_path: PyrePath.t option;
   analysis_model_constraints: analysis_model_constraints;
   lineage_analysis: bool;
@@ -1292,8 +1274,8 @@ let missing_type_flows_configuration configuration =
 
 
 let apply_missing_flows configuration = function
-  | Obscure -> obscure_flows_configuration configuration
-  | Type -> missing_type_flows_configuration configuration
+  | Configuration.MissingFlowKind.Obscure -> obscure_flows_configuration configuration
+  | Configuration.MissingFlowKind.Type -> missing_type_flows_configuration configuration
 
 
 let get () =
@@ -1388,8 +1370,8 @@ let with_command_line_options
   >>| fun configuration ->
   let configuration =
     match find_missing_flows with
-    | Some Obscure -> obscure_flows_configuration configuration
-    | Some Type -> missing_type_flows_configuration configuration
+    | Some Configuration.MissingFlowKind.Obscure -> obscure_flows_configuration configuration
+    | Some Configuration.MissingFlowKind.Type -> missing_type_flows_configuration configuration
     | None -> configuration
   in
   let configuration = { configuration with dump_model_query_results_path } in
@@ -1482,7 +1464,7 @@ let get_triggered_sink ~partial_sink ~source =
 let is_missing_flow_analysis kind =
   match get () with
   | { find_missing_flows; _ } ->
-      Option.equal [%compare.equal: missing_flows_kind] (Some kind) find_missing_flows
+      Option.equal Configuration.MissingFlowKind.equal (Some kind) find_missing_flows
 
 
 let get_maximum_model_width () =

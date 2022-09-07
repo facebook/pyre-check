@@ -83,9 +83,6 @@ let add_obscure_models
            Registry.get models callable >>| Model.is_obscure |> Option.value ~default:true)
     |> Hash_set.fold ~f:add_obscure_sink ~init:models
   in
-  let find_missing_flows =
-    find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-  in
   match find_missing_flows with
   | Some Obscure -> initial_models |> remove_sinks |> add_obscure_sinks
   | Some Type -> initial_models |> remove_sinks
@@ -97,9 +94,6 @@ let add_unknown_callee_models
     ~call_graph
     ~initial_models
   =
-  let find_missing_flows =
-    find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-  in
   match find_missing_flows with
   | Some Type ->
       Log.info "Initializing models for unknown callees...";

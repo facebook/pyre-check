@@ -2063,7 +2063,11 @@ let call_graph_of_define
 
     let attribute_targets = attribute_targets
 
-    let is_missing_flow_type_analysis = Option.equal String.equal find_missing_flows (Some "type")
+    let is_missing_flow_type_analysis =
+      Option.equal
+        Configuration.MissingFlowKind.equal
+        find_missing_flows
+        (Some Configuration.MissingFlowKind.Type)
   end)
   in
   (* Handle parameters. *)

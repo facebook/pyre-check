@@ -46,15 +46,6 @@ type analysis_model_constraints = {
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
-type missing_flows_kind =
-  | Obscure
-  | Type
-[@@deriving compare, show]
-
-val missing_flows_kind_from_string : string -> missing_flows_kind option
-
-val missing_flows_kind_to_string : missing_flows_kind -> string
-
 module IntSet : Stdlib.Set.S with type elt = int
 
 module SourceSinkFilter : sig
@@ -96,7 +87,7 @@ type t = {
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list Core.String.Map.Tree.t;
-  find_missing_flows: missing_flows_kind option;
+  find_missing_flows: Configuration.MissingFlowKind.t option;
   dump_model_query_results_path: PyrePath.t option;
   analysis_model_constraints: analysis_model_constraints;
   lineage_analysis: bool;
@@ -173,7 +164,7 @@ val with_command_line_options
   source_filter:string list option ->
   sink_filter:string list option ->
   transform_filter:string list option ->
-  find_missing_flows:missing_flows_kind option ->
+  find_missing_flows:Configuration.MissingFlowKind.t option ->
   dump_model_query_results_path:PyrePath.t option ->
   maximum_trace_length:int option ->
   maximum_tito_depth:int option ->
@@ -186,7 +177,7 @@ exception TaintConfigurationError of Error.t list
 
 val exception_on_error : (t, Error.t list) Result.t -> t
 
-val apply_missing_flows : t -> missing_flows_kind -> t
+val apply_missing_flows : t -> Configuration.MissingFlowKind.t -> t
 
 val source_can_match_rule : t -> Sources.t -> bool
 
@@ -202,7 +193,7 @@ val literal_string_sources : unit -> literal_string_source list
 
 val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> Sinks.t option
 
-val is_missing_flow_analysis : missing_flows_kind -> bool
+val is_missing_flow_analysis : Configuration.MissingFlowKind.t -> bool
 
 val get_maximum_model_width : unit -> int
 

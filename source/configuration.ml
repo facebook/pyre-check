@@ -471,6 +471,20 @@ module TaintOutputFormat = struct
     | output_format -> Error (Format.sprintf "Invalid taint output format `%s`" output_format)
 end
 
+module MissingFlowKind = struct
+  type t =
+    (* Find missing flows through obscure models. *)
+    | Obscure
+    (* Find missing flows due to missing type information. *)
+    | Type
+  [@@deriving sexp, compare, equal, hash]
+
+  let of_string = function
+    | "obscure" -> Ok Obscure
+    | "type" -> Ok Type
+    | missing_flow -> Error (Format.sprintf "Invalid missing flow kind `%s`" missing_flow)
+end
+
 module StaticAnalysis = struct
   type t = {
     repository_root: PyrePath.t option;
@@ -485,7 +499,7 @@ module StaticAnalysis = struct
     source_filter: string list option;
     sink_filter: string list option;
     transform_filter: string list option;
-    find_missing_flows: string option;
+    find_missing_flows: MissingFlowKind.t option;
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
     inline_decorators: bool;

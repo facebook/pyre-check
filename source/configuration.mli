@@ -200,6 +200,17 @@ module TaintOutputFormat : sig
   val of_string : string -> (t, string) Result.t
 end
 
+module MissingFlowKind : sig
+  type t =
+    (* Find missing flows through obscure models. *)
+    | Obscure
+    (* Find missing flows due to missing type information. *)
+    | Type
+  [@@deriving sexp, compare, equal, hash]
+
+  val of_string : string -> (t, string) Result.t
+end
+
 module StaticAnalysis : sig
   type t = {
     repository_root: PyrePath.t option;
@@ -215,7 +226,7 @@ module StaticAnalysis : sig
     source_filter: string list option;
     sink_filter: string list option;
     transform_filter: string list option;
-    find_missing_flows: string option;
+    find_missing_flows: MissingFlowKind.t option;
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
     inline_decorators: bool;
@@ -235,7 +246,7 @@ module StaticAnalysis : sig
     ?source_filter:string list ->
     ?sink_filter:string list ->
     ?transform_filter:string list ->
-    ?find_missing_flows:string ->
+    ?find_missing_flows:MissingFlowKind.t ->
     ?dump_model_query_results:PyrePath.t ->
     ?use_cache:bool ->
     ?inline_decorators:bool ->

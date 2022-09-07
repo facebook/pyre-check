@@ -27,9 +27,6 @@ let initialize_configuration
   =
   Log.info "Verifying model syntax and configuration.";
   let timer = Timer.start () in
-  let find_missing_flows =
-    find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-  in
   let taint_configuration =
     let open Core.Result in
     TaintConfiguration.from_taint_model_paths taint_model_paths

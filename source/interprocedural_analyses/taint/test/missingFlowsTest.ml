@@ -43,7 +43,7 @@ let assert_fixpoint
     =
     initialize
       ?models_source
-      ~find_missing_flows:(TaintConfiguration.missing_flows_kind_to_string missing_flows)
+      ~find_missing_flows:missing_flows
       ~taint_configuration
       ~handle
       ~context
@@ -94,7 +94,7 @@ let assert_fixpoint
 let test_obscure context =
   assert_fixpoint
     ~context
-    ~missing_flows:TaintConfiguration.Obscure
+    ~missing_flows:Configuration.MissingFlowKind.Obscure
     ~handle:"test_obscure.py"
     ~models_source:{|
       def test_obscure.obscure(x): ...
@@ -171,7 +171,7 @@ let test_obscure context =
 let test_type context =
   assert_fixpoint
     ~context
-    ~missing_flows:TaintConfiguration.Type
+    ~missing_flows:Configuration.MissingFlowKind.Type
     ~handle:"test_type.py"
     {|
       from builtins import _test_source, _test_sink, _user_controlled
