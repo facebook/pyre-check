@@ -1556,6 +1556,89 @@ let test_preprocessing context =
   ()
 
 
+let test_slots context =
+  let assert_equivalent_attributes = assert_equivalent_attributes ~context in
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass
+
+      @dataclass(slots=True, repr=False, eq=False, match_args=False)
+      class Foo:
+        x: int
+    |}
+    ~class_name:"Foo"
+    {|
+        class Foo:
+          __slots__: typing.Tuple[str] = ('x',)
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+      |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass
+
+      @dataclass(slots=True, repr=False, eq=False, match_args=False)
+      class Foo:
+        x: int
+        y: int
+    |}
+    ~class_name:"Foo"
+    {|
+        class Foo:
+          __slots__: typing.Tuple[str, str] = ('x', 'y')
+          x: int
+          def __init__(self, x: int, y: int) -> None:
+            self.x = x
+            self.y = y
+      |};
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass
+
+      @dataclass(slots=True)
+      class Base:
+        y: int
+
+      @dataclass(slots=True, repr=False, eq=False, match_args=False)
+      class Foo(Base):
+        x: int
+    |}
+    ~class_name:"Foo"
+    {|
+        class Foo:
+          __slots__: typing.Tuple[str, str] = ('y', 'x')
+          x: int
+          def __init__(self, y: int, x: int) -> None:
+            self.x = x
+      |};
+  (* TODO(T130663259) fix inheritance for dataclasses *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      from dataclasses import dataclass
+
+      @dataclass(slots=True)
+      class Base:
+        y: int
+
+      @dataclass(slots=False, repr=False, eq=False, match_args=False)
+      class Foo(Base):
+        x: int
+    |}
+    ~class_name:"Foo"
+    {|
+        class Foo:
+          x: int
+          def __init__(self, y: int, x: int) -> None:
+            self.x = x
+      |};
+  ()
+
+
 let () =
   "dataClass"
   >::: [
@@ -1565,5 +1648,6 @@ let () =
          "keyword_only" >:: test_keyword_only;
          "keyword_only_fields" >:: test_keyword_only_fields;
          "preprocessing" >:: test_preprocessing;
+         "slots" >:: test_slots;
        ]
   |> Test.run

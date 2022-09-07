@@ -593,6 +593,54 @@ let test_transform_environment context =
         def __gt__(self, o: object) -> bool: ...
         def __ge__(self, o: object) -> bool: ...
     |};
+  assert_equivalent_attributes
+    ~source:{|
+      import attr
+      @attr.s(slots=True)
+      class Foo:
+        x: int
+    |}
+    ~class_name:"Foo"
+    {|
+      class Foo:
+        x: int
+        def __init__(self, x: int) -> None:
+          self.x = x
+        __slots__: typing.Tuple[str] = ('x',)
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
+  (* TODO(T130663259) Fix inheritance for dataclasses *)
+  assert_equivalent_attributes
+    ~source:
+      {|
+      import attr
+
+      @attr.s(slots=True)
+      class Base:
+        x: int
+
+      @attr.s(slots=False)
+      class Foo(Base):
+        y: int
+    |}
+    ~class_name:"Foo"
+    {|
+      class Foo:
+        y: int
+        def __init__(self, x: int, y: int) -> None:
+          self.y = y
+        def __repr__(self) -> str: ...
+        def __eq__(self, o: object) -> bool: ...
+        def __lt__(self, o: object) -> bool: ...
+        def __le__(self, o: object) -> bool: ...
+        def __gt__(self, o: object) -> bool: ...
+        def __ge__(self, o: object) -> bool: ...
+    |};
   ()
 
 

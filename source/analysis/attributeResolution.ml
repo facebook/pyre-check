@@ -312,6 +312,7 @@ module ClassDecorators = struct
     match_args: bool;
     field_descriptors: Ast.Expression.t list;
     keyword_only: bool;
+    has_slots: bool;
   }
 
   (** This is necessary as an abstraction over AnnotatedAttribute to determine which attributes are
@@ -331,7 +332,7 @@ module ClassDecorators = struct
       class_summary
 
 
-  let extract_options ~default ~init ~repr ~eq ~order ~keyword_only decorator =
+  let extract_options ~default ~init ~repr ~eq ~order ~keyword_only ~has_slots decorator =
     let open Expression in
     let extract_options_from_arguments =
       let apply_arguments default argument =
@@ -390,6 +391,12 @@ module ClassDecorators = struct
               else
                 default
             in
+            let default =
+              if String.equal argument_name has_slots then
+                { default with has_slots = recognize_value value ~default:default.has_slots }
+              else
+                default
+            in
             default
         | _ -> default
       in
@@ -419,12 +426,14 @@ module ClassDecorators = struct
               match_args = true;
               field_descriptors;
               keyword_only = false;
+              has_slots = false;
             }
           ~init:"init"
           ~repr:"repr"
           ~eq:"eq"
           ~order:"order"
           ~keyword_only:"kw_only"
+          ~has_slots:"slots"
 
 
   let attrs_attributes ~class_metadata_environment ?dependency class_summary =
@@ -443,12 +452,14 @@ module ClassDecorators = struct
               match_args = false;
               field_descriptors = [];
               keyword_only = false;
+              has_slots = false;
             }
           ~init:"init"
           ~repr:"repr"
           ~eq:"cmp"
           ~order:"cmp"
           ~keyword_only:"kw_only"
+          ~has_slots:"slots"
 
 
   let is_dataclass_transform decorator =
@@ -469,6 +480,7 @@ module ClassDecorators = struct
       match_args = false;
       field_descriptors = [];
       keyword_only = false;
+      has_slots = false;
     }
 
 
@@ -502,6 +514,7 @@ module ClassDecorators = struct
             ~eq:"eq_default"
             ~order:"order_default"
             ~keyword_only:"kw_only"
+            ~has_slots:"slots"
       >>| fun default -> decorator, default
     in
     decorators
@@ -522,6 +535,7 @@ module ClassDecorators = struct
       ~eq:"eq"
       ~order:"order"
       ~keyword_only:"kw_only_default"
+      ~has_slots:"slots"
       decorator
 
 
@@ -548,6 +562,7 @@ module ClassDecorators = struct
             ~eq:"eq_default"
             ~order:"order_default"
             ~keyword_only:"kw_only_default"
+            ~has_slots:"slots"
     in
     ClassMetadataEnvironment.ReadOnly.successors
       class_metadata_environment
@@ -575,6 +590,7 @@ module ClassDecorators = struct
       ~eq:"eq"
       ~order:"order"
       ~keyword_only:"kw_only_default"
+      ~has_slots:"slots"
       decorator
 
 
@@ -668,7 +684,99 @@ module ClassDecorators = struct
             match_args;
             field_descriptors;
             keyword_only = class_level_keyword_only;
+            has_slots;
           } ->
+          let is_class_var attribute =
+            match Node.value attribute with
+            | {
+             Attribute.kind =
+               Attribute.Simple
+                 {
+                   annotation =
+                     Some
+                       {
+                         Node.value =
+                           Expression.Call
+                             {
+                               callee =
+                                 {
+                                   value =
+                                     Name
+                                       (Name.Attribute
+                                         {
+                                           attribute = "__getitem__";
+                                           base =
+                                             {
+                                               Node.value =
+                                                 Name
+                                                   (Name.Attribute
+                                                     {
+                                                       attribute = "ClassVar";
+                                                       base =
+                                                         {
+                                                           Node.value =
+                                                             Name (Name.Identifier "typing");
+                                                           _;
+                                                         };
+                                                       _;
+                                                     });
+                                               _;
+                                             };
+                                           _;
+                                         });
+                                   _;
+                                 };
+                               arguments = [_];
+                             };
+                         _;
+                       };
+                   _;
+                 };
+             _;
+            } ->
+                false
+            | _ -> true
+          in
+
+          let get_table_from_classsummary ({ Node.value = class_summary; _ } as parent) =
+            let create attribute : uninstantiated_attribute * Expression.t =
+              let value =
+                match attribute with
+                | {
+                 Node.value = { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ };
+                 _;
+                } ->
+                    value
+                | { Node.location; _ } ->
+                    Node.create (Expression.Constant Constant.Ellipsis) ~location
+              in
+              ( create_attribute
+                  ~parent
+                  ?defined:None
+                  ~accessed_via_metaclass:false
+                  (Node.value attribute),
+                value )
+            in
+            let compare_by_location left right =
+              Ast.Location.compare (Node.location left) (Node.location right)
+            in
+            ClassSummary.attributes ~include_generated_attributes:false ~in_test:false class_summary
+            |> Identifier.SerializableMap.bindings
+            |> List.unzip
+            |> snd
+            |> List.filter ~f:is_class_var
+            |> List.sort ~compare:compare_by_location
+            |> List.map ~f:create
+          in
+
+          let attribute_tables =
+            (parent_dataclasses
+            |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
+            |> List.rev
+            |> List.map ~f:get_table_from_classsummary)
+            @ [get_table_from_classsummary definition]
+          in
+
           let init_parameters ~implicitly_initialize =
             let extract_dataclass_field_arguments (_, value) =
               match value with
@@ -788,90 +896,6 @@ module ClassDecorators = struct
                   override_existing_parameters parameters
               | _ -> parameters
             in
-            let is_class_var attribute =
-              match Node.value attribute with
-              | {
-               Attribute.kind =
-                 Attribute.Simple
-                   {
-                     annotation =
-                       Some
-                         {
-                           Node.value =
-                             Expression.Call
-                               {
-                                 callee =
-                                   {
-                                     value =
-                                       Name
-                                         (Name.Attribute
-                                           {
-                                             attribute = "__getitem__";
-                                             base =
-                                               {
-                                                 Node.value =
-                                                   Name
-                                                     (Name.Attribute
-                                                       {
-                                                         attribute = "ClassVar";
-                                                         base =
-                                                           {
-                                                             Node.value =
-                                                               Name (Name.Identifier "typing");
-                                                             _;
-                                                           };
-                                                         _;
-                                                       });
-                                                 _;
-                                               };
-                                             _;
-                                           });
-                                     _;
-                                   };
-                                 arguments = [_];
-                               };
-                           _;
-                         };
-                     _;
-                   };
-               _;
-              } ->
-                  false
-              | _ -> true
-            in
-            let get_table ({ Node.value = class_summary; _ } as parent) =
-              let create attribute : uninstantiated_attribute * Expression.t =
-                let value =
-                  match attribute with
-                  | {
-                   Node.value = { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ };
-                   _;
-                  } ->
-                      value
-                  | { Node.location; _ } ->
-                      Node.create (Expression.Constant Constant.Ellipsis) ~location
-                in
-                ( create_attribute
-                    ~parent
-                    ?defined:None
-                    ~accessed_via_metaclass:false
-                    (Node.value attribute),
-                  value )
-              in
-              let compare_by_location left right =
-                Ast.Location.compare (Node.location left) (Node.location right)
-              in
-              ClassSummary.attributes
-                ~include_generated_attributes:false
-                ~in_test:false
-                class_summary
-              |> Identifier.SerializableMap.bindings
-              |> List.unzip
-              |> snd
-              |> List.filter ~f:is_class_var
-              |> List.sort ~compare:compare_by_location
-              |> List.map ~f:create
-            in
             let split_parameters_by_keyword_only parameters =
               let keyword_only, not_keyword_only =
                 List.partition_tf parameters ~f:(function
@@ -891,18 +915,25 @@ module ClassDecorators = struct
               | keyword_only, not_keyword_only ->
                   not_keyword_only @ [Type.Callable.Parameter.dummy_star_parameter] @ keyword_only
             in
-            let parent_attribute_tables =
-              parent_dataclasses
-              |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
-              |> List.rev
-              |> List.map ~f:get_table
-            in
-            parent_attribute_tables @ [get_table definition]
+            attribute_tables
             |> List.map ~f:(List.filter ~f:init_not_disabled)
             |> List.fold ~init:[] ~f:(fun parameters ->
                    List.fold ~init:parameters ~f:collect_parameters)
             |> split_parameters_by_keyword_only
           in
+          (* We are unable to use init_parameters because slots items can have different values
+           * for ancestors and we do not want the dummy star argument.
+           * TODO(T130663259) Inaccurate for ancestors *)
+          let slots_items =
+            if has_slots then
+              attribute_tables
+              |> List.concat
+              |> List.map ~f:(fun (attribute, _) -> AnnotatedAttribute.name attribute)
+              |> List.dedup_and_sort ~compare:Identifier.compare
+            else
+              []
+          in
+
           let methods =
             if init && not (already_in_table "__init__") then
               [
@@ -958,6 +989,15 @@ module ClassDecorators = struct
                 Type.tuple (List.map ~f:literal_string_value_type init_parameter_names)
               in
               make_attribute ~annotation ~attribute_name:"__match_args__" :: methods
+            else
+              methods
+          in
+          let methods =
+            if (not (List.is_empty slots_items)) && not (already_in_table "__slots__") then
+              make_attribute
+                ~annotation:(Type.tuple (List.map slots_items ~f:(fun _ -> Type.string)))
+                ~attribute_name:"__slots__"
+              :: methods
             else
               methods
           in
