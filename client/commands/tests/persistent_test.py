@@ -1174,6 +1174,20 @@ class PersistentTest(testslide.TestCase):
             ),
         )
 
+    def _expect_telemetry_event(
+        self,
+        operation: str,
+        result: object,
+    ) -> Callable[[str], None]:
+        def expectation(actual_json_string: str) -> None:
+            actual_telemetry = json.loads(actual_json_string)
+            self.assertEqual(actual_telemetry["method"], "telemetry/event")
+            telemetry_params = actual_telemetry["params"]
+            self.assertEqual(telemetry_params["operation"], operation)
+            self.assertEqual(telemetry_params["response"], result)
+
+        return expectation
+
     def _assert_output_messages(
         self,
         output_writer: MemoryBytesWriter,
@@ -1193,39 +1207,55 @@ class PersistentTest(testslide.TestCase):
         lsp_line = 3
         daemon_line = 3 + 1
         expected_response = lsp.LspHoverResponse(contents="```foo.Foo```")
-        handler = MockRequestHandler(
-            mock_hover_response=expected_response,
-        )
-        server, output_writer = await _create_server_for_request_test(
-            opened_documents={tracked_path},
-            handler=handler,
-        )
-        await server.process_hover_request(
-            parameters=lsp.HoverParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+        for enabled_telemetry_event in (True, False):
+            handler = MockRequestHandler(
+                mock_hover_response=expected_response,
+            )
+            server, output_writer = await _create_server_for_request_test(
+                opened_documents={tracked_path},
+                handler=handler,
+                server_options=_create_server_options(
+                    enabled_telemetry_event=enabled_telemetry_event
                 ),
-                position=lsp.LspPosition(line=lsp_line, character=4),
-            ),
-            request_id=DEFAULT_REQUEST_ID,
-        )
-        self.assertEqual(
-            handler.requests,
-            [
-                {
-                    "path": tracked_path,
-                    "position": lsp.PyrePosition(line=daemon_line, character=4),
-                }
-            ],
-        )
-        self._assert_output_messages(
-            output_writer,
-            [
-                self._expect_success_message(
-                    result=lsp.LspHoverResponse.cached_schema().dump(expected_response),
-                )
-            ],
-        )
+            )
+            await server.process_hover_request(
+                parameters=lsp.HoverParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                    ),
+                    position=lsp.LspPosition(line=lsp_line, character=4),
+                ),
+                request_id=DEFAULT_REQUEST_ID,
+            )
+            self.assertEqual(
+                handler.requests,
+                [
+                    {
+                        "path": tracked_path,
+                        "position": lsp.PyrePosition(line=daemon_line, character=4),
+                    }
+                ],
+            )
+            raw_expected_response = lsp.LspHoverResponse.cached_schema().dump(
+                expected_response
+            )
+            expect_correct_response = self._expect_success_message(
+                raw_expected_response
+            )
+            if enabled_telemetry_event:
+                expectations = [
+                    expect_correct_response,
+                    self._expect_telemetry_event(
+                        operation="hover",
+                        result=raw_expected_response,
+                    ),
+                ]
+            else:
+                expectations = [expect_correct_response]
+            self._assert_output_messages(
+                output_writer,
+                expectations,
+            )
 
     @setup.async_test
     async def test_hover__unopened(self) -> None:
@@ -1272,41 +1302,55 @@ class PersistentTest(testslide.TestCase):
                 ),
             )
         ]
-        handler = MockRequestHandler(
-            mock_definition_response=expected_response,
-        )
-        server, output_writer = await _create_server_for_request_test(
-            opened_documents={tracked_path},
-            handler=handler,
-        )
-        await server.process_definition_request(
-            parameters=lsp.DefinitionParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+        for enabled_telemetry_event in (True, False):
+            handler = MockRequestHandler(
+                mock_definition_response=expected_response,
+            )
+            server, output_writer = await _create_server_for_request_test(
+                opened_documents={tracked_path},
+                handler=handler,
+                server_options=_create_server_options(
+                    enabled_telemetry_event=enabled_telemetry_event
                 ),
-                position=lsp.LspPosition(line=lsp_line, character=4),
-            ),
-            request_id=DEFAULT_REQUEST_ID,
-        )
-        self.assertEqual(
-            handler.requests,
-            [
-                {
-                    "path": tracked_path,
-                    "position": lsp.PyrePosition(line=daemon_line, character=4),
-                }
-            ],
-        )
-        self._assert_output_messages(
-            output_writer,
-            [
-                self._expect_success_message(
-                    result=lsp.LspDefinitionResponse.cached_schema().dump(
-                        expected_response, many=True
+            )
+            await server.process_definition_request(
+                parameters=lsp.DefinitionParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
                     ),
-                )
-            ],
-        )
+                    position=lsp.LspPosition(line=lsp_line, character=4),
+                ),
+                request_id=DEFAULT_REQUEST_ID,
+            )
+            self.assertEqual(
+                handler.requests,
+                [
+                    {
+                        "path": tracked_path,
+                        "position": lsp.PyrePosition(line=daemon_line, character=4),
+                    }
+                ],
+            )
+            raw_expected_response = lsp.LspDefinitionResponse.cached_schema().dump(
+                expected_response, many=True
+            )
+            expect_correct_response = self._expect_success_message(
+                raw_expected_response
+            )
+            if enabled_telemetry_event:
+                expectations = [
+                    expect_correct_response,
+                    self._expect_telemetry_event(
+                        operation="definition",
+                        result=raw_expected_response,
+                    ),
+                ]
+            else:
+                expectations = [expect_correct_response]
+            self._assert_output_messages(
+                output_writer,
+                expectations,
+            )
 
     async def test_definition__unopened(self) -> None:
         tracked_path = Path("/tracked.py")
