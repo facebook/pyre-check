@@ -17,6 +17,21 @@ module Module = struct
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 
+module FileUpdateEvent = struct
+  module Kind = struct
+    type t =
+      | CreatedOrChanged
+      | Deleted
+    [@@deriving sexp, compare, yojson { strict = false }]
+  end
+
+  type t = {
+    kind: Kind.t;
+    path: string;
+  }
+  [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 type t =
   | Stop
   | GetTypeErrors of {
@@ -38,6 +53,7 @@ type t =
       content: string;
       overlay_id: string;
     }
+  | FileUpdate of FileUpdateEvent.t list
 [@@deriving sexp, compare, yojson { strict = false }]
 
 let of_string message =

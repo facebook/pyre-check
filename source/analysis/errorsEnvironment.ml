@@ -74,6 +74,8 @@ module ReadOnly = struct
     ast_environment environment |> AstEnvironment.ReadOnly.module_tracker
 
 
+  let controls environment = type_environment environment |> TypeEnvironment.ReadOnly.controls
+
   let get_errors_for_qualifier environment qualifier = get environment qualifier
 
   let get_errors_for_qualifiers environment qualifiers =

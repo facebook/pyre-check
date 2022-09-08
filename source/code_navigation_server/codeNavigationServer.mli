@@ -81,6 +81,25 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
+    module FileUpdateEvent : sig
+      module Kind : sig
+        (** A helper type that help specifying the change associated with the event. *)
+        type t =
+          | CreatedOrChanged
+          | Deleted
+        [@@deriving sexp, compare, yojson { strict = false }]
+      end
+
+      (** A helper type that help specifying a file change event. *)
+      type t = {
+        kind: Kind.t;  (** The change type. *)
+        path: string;
+            (** The changed path. We currently do not support specifying the path by module name due
+                to how caching was done in {!Analysis.ModuleTracker} *)
+      }
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
     (** A type representing requests sent from the clients to the server.
 
         The code navigation server supports a primitive form of isolation between different clients.
@@ -143,6 +162,15 @@ module Testing : sig
 
               If the provided module is not covered by the code navigation server, the server will
               respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
+      | FileUpdate of FileUpdateEvent.t list
+          (** A request that notify the server that a file has changed on disk, so the server needs
+              to incrementally adjust its internal state accordingly. Events will get processed
+              in-order. An on-disk change may potentially affect existing overlays when those
+              overlays have dependency to the file being updated.
+
+              The server will send back a {!Response.Ok} response when the sever is done updating
+              its internal state. In particular, no errors will be returned if any of the provided
+              modules is not covered by the code navigation server. *)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 

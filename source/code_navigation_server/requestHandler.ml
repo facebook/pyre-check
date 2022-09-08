@@ -144,6 +144,33 @@ let handle_local_update ~module_ ~content ~overlay_id { State.environment } =
   Response.Ok
 
 
+let get_artifact_path_event_kind = function
+  | Request.FileUpdateEvent.Kind.CreatedOrChanged -> ArtifactPath.Event.Kind.CreatedOrChanged
+  | Request.FileUpdateEvent.Kind.Deleted -> ArtifactPath.Event.Kind.Deleted
+
+
+let get_artifact_path_event { Request.FileUpdateEvent.kind; path } =
+  let kind = get_artifact_path_event_kind kind in
+  PyrePath.create_absolute path |> ArtifactPath.create |> ArtifactPath.Event.create ~kind
+
+
+let handle_file_update ~events { State.environment } =
+  let artifact_path_events =
+    (* TODO: Add support for Buck path translation. *)
+    List.map events ~f:get_artifact_path_event
+  in
+  let () =
+    let configuration =
+      OverlaidEnvironment.root environment
+      |> ErrorsEnvironment.ReadOnly.controls
+      |> EnvironmentControls.configuration
+    in
+    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
+  in
+  Lwt.return_unit
+
+
 let response_from_result = function
   | Result.Ok response -> response
   | Result.Error kind -> Response.Error kind
@@ -173,6 +200,12 @@ let handle_request ~server:{ ServerInternal.properties = _; state } = function
         handle_local_update ~module_ ~content ~overlay_id state
         |> response_from_result
         |> Lwt.return
+      in
+      Server.ExclusiveLock.read state ~f
+  | Request.FileUpdate events ->
+      let f state =
+        let%lwt () = handle_file_update ~events state in
+        Lwt.return Response.Ok
       in
       Server.ExclusiveLock.read state ~f
 

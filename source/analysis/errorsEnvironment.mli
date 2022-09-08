@@ -14,6 +14,8 @@ module ErrorsEnvironmentReadOnly : sig
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
 
+  val controls : t -> EnvironmentControls.t
+
   val project_qualifiers : t -> Ast.Reference.t list
 
   val get_errors_for_qualifier : t -> Ast.Reference.t -> AnalysisError.t list

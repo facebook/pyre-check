@@ -188,6 +188,110 @@ let test_local_update_request context =
   |> ScratchProject.test_server_with ~f:test_local_update_request
 
 
+let test_file_update_request context =
+  let test_file_update_request client =
+    let root = ScratchProject.Client.get_source_root client in
+    let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+    let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
+
+    let%lwt () = assert_type_error_count "test" ~client ~expected:1 in
+
+    PyrePath.remove test_path;
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            FileUpdate [FileUpdateEvent.{ kind = Kind.Deleted; path = PyrePath.absolute test_path }])
+        ~expected:Response.Ok
+    in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            GetTypeErrors
+              { overlay_id = None; module_ = Module.OfPath (PyrePath.absolute test_path) })
+        ~kind:"ModuleNotTracked"
+    in
+
+    File.create test2_path ~content:"reveal_type(43)\nreveal_type(44)" |> File.write;
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            FileUpdate
+              [
+                FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
+              ])
+        ~expected:Response.Ok
+    in
+    let%lwt () = assert_type_error_count "test2" ~client ~expected:2 in
+
+    File.create test2_path ~content:"reveal_type(43)" |> File.write;
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            FileUpdate
+              [
+                FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
+              ])
+        ~expected:Response.Ok
+    in
+    let%lwt () = assert_type_error_count "test2" ~client ~expected:1 in
+    Lwt.return_unit
+  in
+  ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
+  |> ScratchProject.test_server_with ~f:test_file_update_request
+
+
+let test_file_and_local_update context =
+  let test_file_and_local_update client =
+    let root = ScratchProject.Client.get_source_root client in
+    let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
+
+    let%lwt () = assert_type_error_count "test" ~client ~expected:2 in
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            LocalUpdate
+              {
+                module_ = Module.OfName "test";
+                content = "from test2 import x";
+                overlay_id = "foo";
+              })
+        ~expected:Response.Ok
+    in
+    let%lwt () = assert_type_error_count "test" ~client ~overlay_id:"foo" ~expected:1 in
+
+    File.create test2_path ~content:"x: int = 42" |> File.write;
+    let%lwt () =
+      ScratchProject.Client.assert_response
+        client
+        ~request:
+          Request.(
+            FileUpdate
+              [
+                FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
+              ])
+        ~expected:Response.Ok
+    in
+    let%lwt () = assert_type_error_count "test" ~client ~overlay_id:"foo" ~expected:0 in
+
+    Lwt.return_unit
+  in
+  ScratchProject.setup
+    ~context
+    ~include_typeshed_stubs:false
+    ["test.py", "reveal_type(42)\nreveal_type(43)"; "test2.py", ""]
+  |> ScratchProject.test_server_with ~f:test_file_and_local_update
+
+
 let test_hover_request context =
   let test_hover_request client =
     let root = ScratchProject.Client.get_source_root client in
@@ -363,6 +467,8 @@ let () =
          "stop_request" >:: OUnitLwt.lwt_wrapper test_stop_request;
          "get_type_errors_request" >:: OUnitLwt.lwt_wrapper test_get_type_errors_request;
          "local_update_request" >:: OUnitLwt.lwt_wrapper test_local_update_request;
+         "file_update_request" >:: OUnitLwt.lwt_wrapper test_file_update_request;
+         "file_and_local_update" >:: OUnitLwt.lwt_wrapper test_file_and_local_update;
          "hover_request" >:: OUnitLwt.lwt_wrapper test_hover_request;
          "location_of_definition_request"
          >:: OUnitLwt.lwt_wrapper test_location_of_definition_request;
