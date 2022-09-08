@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterable, Iterator, List, Optional, Sequence, Set
+from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -1101,20 +1101,14 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertEqual(output_writer.items(), [])
 
-    async def _assert_hover_response(
+    async def _set_up_server_for_request_test(
         self,
         opened_documents: Set[Path],
-        parameters: lsp.HoverParameters,
-        handler_response: Optional[lsp.LspHoverResponse],
-        expected_response: lsp.LspHoverResponse,
-        expected_handler_requests: List[object],
-    ) -> None:
+        handler: MockRequestHandler,
+    ) -> Tuple[PyreServer, MemoryBytesWriter]:
         # set up the system under test
         fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
         output_writer: MemoryBytesWriter = MemoryBytesWriter()
-        handler = MockRequestHandler(
-            mock_hover_response=expected_response,
-        )
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
@@ -1126,23 +1120,14 @@ class PersistentTest(testslide.TestCase):
             handler=handler,
         )
         await fake_task_manager.ensure_task_running()
-        # process the request
-        await server.process_hover_request(
-            parameters,
-            request_id=DEFAULT_REQUEST_ID,
-        )
-        # verify that we passed data as expected
-        self.assertEqual(
-            handler.requests,
-            expected_handler_requests,
-        )
-        # verify that we returned a response as expected
-        expected_raw_response = _success_response_json(
-            result=lsp.LspHoverResponse.cached_schema().dump(expected_response),
-        )
-        client_messages = output_writer.items()
-        self.assertEqual(len(client_messages), 1)
-        client_message = client_messages[0].decode()
+        return server, output_writer
+
+    def _assert_output_message_equal(
+        self,
+        output_writer_item: bytes,
+        expected_raw_response: str,
+    ) -> None:
+        client_message = output_writer_item.decode()
         content_length_portion, json_portion = client_message.split("\r\n\r\n")
         self.assertEqual(
             json.loads(json_portion),
@@ -1150,6 +1135,55 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertEqual(
             content_length_portion, f"Content-Length: {len(expected_raw_response)}"
+        )
+
+    def _assert_output_messages(
+        self,
+        output_writer: MemoryBytesWriter,
+        expected_raw_responses: List[str],
+    ) -> None:
+        self.assertEqual(
+            len(output_writer.items()),
+            len(expected_raw_responses),
+        )
+        for output_writer_item, expected_raw_response in zip(
+            output_writer.items(), expected_raw_responses
+        ):
+            self._assert_output_message_equal(
+                output_writer_item,
+                expected_raw_response,
+            )
+
+    async def _assert_hover_response(
+        self,
+        opened_documents: Set[Path],
+        parameters: lsp.HoverParameters,
+        handler_response: Optional[lsp.LspHoverResponse],
+        expected_response: lsp.LspHoverResponse,
+        expected_handler_requests: List[object],
+    ) -> None:
+        handler = MockRequestHandler(
+            mock_hover_response=handler_response,
+        )
+        server, output_writer = await self._set_up_server_for_request_test(
+            opened_documents=opened_documents,
+            handler=handler,
+        )
+        await server.process_hover_request(
+            parameters,
+            request_id=DEFAULT_REQUEST_ID,
+        )
+        self.assertEqual(
+            handler.requests,
+            expected_handler_requests,
+        )
+        self._assert_output_messages(
+            output_writer,
+            [
+                _success_response_json(
+                    result=lsp.LspHoverResponse.cached_schema().dump(expected_response),
+                )
+            ],
         )
 
     @setup.async_test
