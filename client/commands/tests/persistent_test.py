@@ -16,7 +16,7 @@ from unittest.mock import CallableMixin, patch
 import testslide
 from libcst.metadata import CodePosition, CodeRange
 
-from ... import configuration as configuration_module, error, json_rpc
+from ... import error, json_rpc
 from ...commands.language_server_protocol import SymbolKind
 from ...coverage_collector import CoveredAndUncoveredLines
 from ...tests import setup
@@ -42,6 +42,7 @@ from ..persistent import (
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
+    LanguageServerFeatures,
     path_to_coverage_response,
     PyreDaemonLaunchAndSubscribeHandler,
     PyreDaemonShutdown,
@@ -55,6 +56,7 @@ from ..persistent import (
     try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
+    TypeCoverageLevel,
     uncovered_range_to_diagnostic,
 )
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
@@ -70,7 +72,9 @@ DEFAULT_START_ARGUMENTS: start.Arguments = start.Arguments(
     ),
     socket_path=Path("irrelevant_socket_path.sock"),
 )
-DEFAULT_IDE_FEATURES: Optional[configuration_module.IdeFeatures] = None
+DEFAULT_FEATURES: LanguageServerFeatures = LanguageServerFeatures(
+    type_coverage_level=TypeCoverageLevel.FUNCTION_LEVEL
+)
 DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
 DEFAULT_ENABLE_TELEMETRY: bool = False
@@ -80,7 +84,7 @@ def _create_server_options(
     binary: str = DEFAULT_BINARY,
     server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
     start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
-    ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
+    language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
@@ -89,7 +93,7 @@ def _create_server_options(
         binary,
         server_identifier,
         start_arguments,
-        ide_features,
+        language_server_features,
         strict_default,
         excludes if excludes else [],
         enabled_telemetry_event,
@@ -100,7 +104,7 @@ def _create_server_options_reader(
     binary: str = DEFAULT_BINARY,
     server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
     start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
-    ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
+    language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
@@ -109,7 +113,7 @@ def _create_server_options_reader(
         binary,
         server_identifier,
         start_arguments,
-        ide_features,
+        language_server_features,
         strict_default,
         excludes,
         enabled_telemetry_event,
@@ -120,7 +124,7 @@ def _create_server_state_with_options(
     binary: str = DEFAULT_BINARY,
     server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
     start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
-    ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
+    language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
@@ -130,7 +134,7 @@ def _create_server_state_with_options(
             binary,
             server_identifier,
             start_arguments,
-            ide_features,
+            language_server_features,
             strict_default,
             excludes,
             enabled_telemetry_event,
@@ -1007,7 +1011,6 @@ class PersistentTest(testslide.TestCase):
                     ),
                     socket_path=Path("irrelevant_socket_path.sock"),
                 ),
-                ide_features=configuration_module.IdeFeatures(),
             ),
             client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
@@ -1056,7 +1059,6 @@ class PersistentTest(testslide.TestCase):
                     ),
                     socket_path=Path("irrelevant_socket_path.sock"),
                 ),
-                ide_features=configuration_module.IdeFeatures(),
             ),
             client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=ServerState(
@@ -1645,8 +1647,8 @@ class RequestHandlerTest(testslide.TestCase):
             pyre_query_manager = RequestHandler(
                 server_state=_create_server_state_with_options(
                     strict_default=False,
-                    ide_features=configuration_module.IdeFeatures(
-                        expression_level_coverage_enabled=True
+                    language_server_features=LanguageServerFeatures(
+                        type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
                     ),
                 ),
             )
@@ -1676,8 +1678,8 @@ class RequestHandlerTest(testslide.TestCase):
             pyre_query_manager = RequestHandler(
                 server_state=_create_server_state_with_options(
                     strict_default=False,
-                    ide_features=configuration_module.IdeFeatures(
-                        expression_level_coverage_enabled=True
+                    language_server_features=LanguageServerFeatures(
+                        type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
                     ),
                 ),
             )
@@ -1705,8 +1707,8 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 strict_default=False,
-                ide_features=configuration_module.IdeFeatures(
-                    expression_level_coverage_enabled=True
+                language_server_features=LanguageServerFeatures(
+                    type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
                 ),
             ),
         )
@@ -1729,8 +1731,8 @@ class RequestHandlerTest(testslide.TestCase):
             pyre_query_manager = RequestHandler(
                 server_state=_create_server_state_with_options(
                     strict_default=True,
-                    ide_features=configuration_module.IdeFeatures(
-                        expression_level_coverage_enabled=True
+                    language_server_features=LanguageServerFeatures(
+                        type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
                     ),
                 ),
             )
@@ -1751,7 +1753,7 @@ class RequestHandlerTest(testslide.TestCase):
         json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+                language_server_features=LanguageServerFeatures(hover_enabled=True),
             ),
         )
         memory_bytes_writer = MemoryBytesWriter()
@@ -1780,7 +1782,7 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_hover__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+                language_server_features=LanguageServerFeatures(hover_enabled=True),
             ),
         )
 
@@ -1821,7 +1823,7 @@ class RequestHandlerTest(testslide.TestCase):
         """
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+                language_server_features=LanguageServerFeatures(hover_enabled=True),
             ),
         )
         memory_bytes_writer = MemoryBytesWriter()
@@ -1859,7 +1861,7 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_definition_location__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+                language_server_features=LanguageServerFeatures(hover_enabled=True),
             ),
         )
 
@@ -1913,8 +1915,8 @@ class RequestHandlerTest(testslide.TestCase):
         """
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                ide_features=configuration_module.IdeFeatures(
-                    find_all_references_enabled=True
+                language_server_features=LanguageServerFeatures(
+                    references_enabled=True
                 ),
             ),
         )
@@ -1960,8 +1962,8 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_references__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                ide_features=configuration_module.IdeFeatures(
-                    find_all_references_enabled=True
+                language_server_features=LanguageServerFeatures(
+                    references_enabled=True
                 ),
             ),
         )

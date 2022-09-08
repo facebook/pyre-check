@@ -101,12 +101,62 @@ PyreServerOptionsReader = Callable[[], "PyreServerOptions"]
 FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
 
 
+class TypeCoverageLevel(enum.Enum):
+    NONE = "none"
+    FUNCTION_LEVEL = "function_level"
+    EXPRESSION_LEVEL = "expression_level"
+
+
+@dataclasses.dataclass(frozen=True)
+class LanguageServerFeatures:
+    hover_enabled: bool = False
+    definition_enabled: bool = False
+    references_enabled: bool = False
+    document_symbols_enabled: bool = False
+    unsaved_changes_enabled: bool = False
+    type_coverage_level: TypeCoverageLevel = TypeCoverageLevel.NONE
+
+    @staticmethod
+    def create(
+        configuration: frontend_configuration.Base,
+    ) -> LanguageServerFeatures:
+        ide_features = configuration.get_ide_features()
+        if ide_features is None:
+            return LanguageServerFeatures(
+                hover_enabled=False,
+                definition_enabled=False,
+                references_enabled=False,
+                document_symbols_enabled=False,
+                unsaved_changes_enabled=False,
+                type_coverage_level=TypeCoverageLevel.FUNCTION_LEVEL,
+            )
+        else:
+            return LanguageServerFeatures(
+                hover_enabled=ide_features.is_hover_enabled(),
+                definition_enabled=ide_features.is_go_to_definition_enabled(),
+                references_enabled=ide_features.is_find_all_references_enabled(),
+                document_symbols_enabled=ide_features.is_find_symbols_enabled(),
+                unsaved_changes_enabled=ide_features.is_consume_unsaved_changes_enabled(),
+                type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
+                if ide_features.is_expression_level_coverage_enabled()
+                else TypeCoverageLevel.FUNCTION_LEVEL,
+            )
+
+    def capabilities(self) -> Dict[str, bool]:
+        return {
+            "hover_provider": self.hover_enabled,
+            "definition_provider": self.definition_enabled,
+            "references_provider": self.references_enabled,
+            "document_symbol_provider": self.document_symbols_enabled,
+        }
+
+
 @dataclasses.dataclass(frozen=True)
 class PyreServerOptions:
     binary: str
     project_identifier: str
     start_arguments: start.Arguments
-    ide_features: Optional[configuration_module.IdeFeatures]
+    language_server_features: LanguageServerFeatures
     strict_default: bool
     excludes: Sequence[str]
     enabled_telemetry_event: bool = False
@@ -140,7 +190,7 @@ class PyreServerOptions:
             binary=str(binary_location),
             project_identifier=configuration.get_project_identifier(),
             start_arguments=start_arguments,
-            ide_features=configuration.get_ide_features(),
+            language_server_features=LanguageServerFeatures.create(configuration),
             strict_default=configuration.is_strict(),
             excludes=configuration.get_excludes(),
             enabled_telemetry_event=enabled_telemetry_event,
@@ -182,18 +232,18 @@ def read_server_options(
 
 def process_initialize_request(
     parameters: lsp.InitializeParameters,
-    ide_features: Optional[configuration_module.IdeFeatures] = None,
+    language_server_features: Optional[LanguageServerFeatures] = None,
 ) -> lsp.InitializeResult:
     LOG.info(
         f"Received initialization request from {parameters.client_info} "
         f" (pid = {parameters.process_id})"
     )
-
+    if language_server_features is None:
+        language_server_features = LanguageServerFeatures()
     server_info = lsp.Info(name="pyre", version=version.__version__)
     did_change_result = (
         lsp.TextDocumentSyncKind.FULL
-        if ide_features is not None
-        and ide_features.is_consume_unsaved_changes_enabled()
+        if language_server_features.unsaved_changes_enabled
         else lsp.TextDocumentSyncKind.NONE
     )
     server_capabilities = lsp.ServerCapabilities(
@@ -202,16 +252,7 @@ def process_initialize_request(
             change=did_change_result,
             save=lsp.SaveOptions(include_text=False),
         ),
-        **(
-            {
-                "hover_provider": ide_features.is_hover_enabled(),
-                "definition_provider": ide_features.is_go_to_definition_enabled(),
-                "document_symbol_provider": ide_features.is_find_symbols_enabled(),
-                "references_provider": ide_features.is_find_all_references_enabled(),
-            }
-            if ide_features is not None
-            else {}
-        ),
+        **language_server_features.capabilities(),
     )
     return lsp.InitializeResult(
         capabilities=server_capabilities, server_info=server_info
@@ -278,7 +319,7 @@ async def try_initialize(
         )
 
         result = process_initialize_request(
-            initialize_parameters, server_options.ide_features
+            initialize_parameters, server_options.language_server_features
         )
         await lsp.write_json_rpc_ignore_connection_error(
             output_channel,
@@ -1140,33 +1181,20 @@ class RequestHandler(AbstractRequestHandler):
         server_state: ServerState,
     ) -> None:
         self.server_state = server_state
-        self.socket_path: Path = self.get_server_options().get_socket_path()
+        self.socket_path: Path = server_state.server_options.get_socket_path()
 
-    def get_server_options(self) -> PyreServerOptions:
-        return self.server_state.server_options
-
-    def is_expression_level_coverage_enabled(self) -> bool:
-        ide_features = self.get_server_options().ide_features
-        return (
-            ide_features is not None
-            and ide_features.is_expression_level_coverage_enabled()
-        )
-
-    def is_consume_unsaved_changes_enabled(self) -> bool:
-        ide_features = self.get_server_options().ide_features
-        return (
-            ide_features is not None
-            and ide_features.is_consume_unsaved_changes_enabled()
-        )
-
-    def is_strict_by_default(self) -> bool:
-        return self.get_server_options().strict_default
+    def get_language_server_features(self) -> LanguageServerFeatures:
+        return self.server_state.server_options.language_server_features
 
     async def _query_modules_of_path(
         self,
         path: Path,
     ) -> Optional[QueryModulesOfPathResponse]:
-        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled else None
+        overlay_id = (
+            str(path)
+            if self.get_language_server_features().unsaved_changes_enabled
+            else None
+        )
         return await daemon_query.attempt_typed_async_query(
             response_type=QueryModulesOfPathResponse,
             socket_path=self.socket_path,
@@ -1186,6 +1214,12 @@ class RequestHandler(AbstractRequestHandler):
         else:
             return len(response.response) > 0
 
+    def _get_overlay_id(self, path: Path) -> Optional[str]:
+        unsaved_changes_enabled = (
+            self.get_language_server_features().unsaved_changes_enabled
+        )
+        return str(path) if unsaved_changes_enabled else None
+
     async def get_type_coverage(
         self,
         path: Path,
@@ -1195,7 +1229,9 @@ class RequestHandler(AbstractRequestHandler):
             return None
         elif not is_typechecked:
             return file_not_typechecked_coverage_result()
-        if self.is_expression_level_coverage_enabled():
+        type_coverage_level = self.get_language_server_features().type_coverage_level
+        strict_by_default = self.server_state.server_options.strict_default
+        if type_coverage_level == TypeCoverageLevel.EXPRESSION_LEVEL:
             response = await daemon_query.attempt_async_query(
                 socket_path=self.socket_path,
                 query_text=f"expression_level_coverage('{path}')",
@@ -1204,13 +1240,13 @@ class RequestHandler(AbstractRequestHandler):
                 return None
             else:
                 return path_to_expression_coverage_response(
-                    self.is_strict_by_default(),
+                    strict_by_default,
                     expression_level_coverage._make_expression_level_coverage_response(
                         response.payload
                     ),
                 )
         else:
-            return path_to_coverage_response(path, self.is_strict_by_default())
+            return path_to_coverage_response(path, strict_by_default)
 
     async def get_hover(
         self,
@@ -1222,12 +1258,11 @@ class RequestHandler(AbstractRequestHandler):
             f"hover_info_for_position(path={path_string},"
             f" line={position.line}, column={position.character})"
         )
-        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled() else None
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=HoverResponse,
             socket_path=self.socket_path,
             query_text=query_text,
-            overlay_id=overlay_id,
+            overlay_id=self._get_overlay_id(path),
         )
         return (
             daemon_response.response
@@ -1245,12 +1280,11 @@ class RequestHandler(AbstractRequestHandler):
             f"location_of_definition(path={path_string},"
             f" line={position.line}, column={position.character})"
         )
-        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled() else None
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=DefinitionLocationResponse,
             socket_path=self.socket_path,
             query_text=query_text,
-            overlay_id=overlay_id,
+            overlay_id=self._get_overlay_id(path),
         )
         definitions = (
             [
@@ -1272,12 +1306,11 @@ class RequestHandler(AbstractRequestHandler):
             f"find_references(path={path_string},"
             f" line={position.line}, column={position.character})"
         )
-        overlay_id = str(path) if self.is_consume_unsaved_changes_enabled() else None
         daemon_response = await daemon_query.attempt_typed_async_query(
             response_type=ReferencesResponse,
             socket_path=self.socket_path,
             query_text=query_text,
-            overlay_id=overlay_id,
+            overlay_id=self._get_overlay_id(path),
         )
         return (
             [
