@@ -1232,49 +1232,30 @@ class PersistentTest(testslide.TestCase):
         expected_response: List[lsp.LspDefinitionResponse],
         expected_handler_requests: List[object],
     ) -> None:
-        # set up the system under test
-        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        output_writer: MemoryBytesWriter = MemoryBytesWriter()
         handler = MockRequestHandler(
             mock_definition_response=handler_response,
         )
-        server = PyreServer(
-            input_channel=create_memory_text_reader(""),
-            output_channel=AsyncTextWriter(output_writer),
-            server_state=ServerState(
-                server_options=mock_initial_server_options,
-                opened_documents=opened_documents,
-            ),
-            pyre_manager=fake_task_manager,
+        server, output_writer = await self._set_up_server_for_request_test(
+            opened_documents=opened_documents,
             handler=handler,
         )
-        await fake_task_manager.ensure_task_running()
-        # process the request
         await server.process_definition_request(
             parameters,
             request_id=DEFAULT_REQUEST_ID,
         )
-        # verify that we passed data as expected
         self.assertEqual(
             handler.requests,
             expected_handler_requests,
         )
-        # verify that we returned a response as expected
-        expected_raw_response = _success_response_json(
-            result=lsp.LspDefinitionResponse.cached_schema().dump(
-                expected_response, many=True
-            ),
-        )
-        client_messages = output_writer.items()
-        self.assertEqual(len(client_messages), 1)
-        client_message = client_messages[0].decode()
-        content_length_portion, json_portion = client_message.split("\r\n\r\n")
-        self.assertEqual(
-            json.loads(json_portion),
-            json.loads(expected_raw_response),
-        )
-        self.assertEqual(
-            content_length_portion, f"Content-Length: {len(expected_raw_response)}"
+        self._assert_output_messages(
+            output_writer,
+            [
+                _success_response_json(
+                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                        expected_response, many=True
+                    ),
+                )
+            ],
         )
 
     @setup.async_test
@@ -1339,49 +1320,30 @@ class PersistentTest(testslide.TestCase):
         expected_response: List[lsp.LspDefinitionResponse],
         expected_handler_requests: List[object],
     ) -> None:
-        # set up the system under test
-        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        output_writer: MemoryBytesWriter = MemoryBytesWriter()
         handler = MockRequestHandler(
             mock_references_response=handler_response,
         )
-        server = PyreServer(
-            input_channel=create_memory_text_reader(""),
-            output_channel=AsyncTextWriter(output_writer),
-            server_state=ServerState(
-                server_options=mock_initial_server_options,
-                opened_documents=opened_documents,
-            ),
-            pyre_manager=fake_task_manager,
+        server, output_writer = await self._set_up_server_for_request_test(
+            opened_documents=opened_documents,
             handler=handler,
         )
-        await fake_task_manager.ensure_task_running()
-        # process the request
         await server.process_find_all_references_request(
             parameters,
             request_id=DEFAULT_REQUEST_ID,
         )
-        # verify that we passed data as expected
         self.assertEqual(
             handler.requests,
             expected_handler_requests,
         )
-        # verify that we returned a response as expected
-        expected_raw_response = _success_response_json(
-            result=lsp.LspDefinitionResponse.cached_schema().dump(
-                expected_response, many=True
-            ),
-        )
-        client_messages = output_writer.items()
-        self.assertEqual(len(client_messages), 1)
-        client_message = client_messages[0].decode()
-        content_length_portion, json_portion = client_message.split("\r\n\r\n")
-        self.assertEqual(
-            json.loads(json_portion),
-            json.loads(expected_raw_response),
-        )
-        self.assertEqual(
-            content_length_portion, f"Content-Length: {len(expected_raw_response)}"
+        self._assert_output_messages(
+            output_writer,
+            [
+                _success_response_json(
+                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                        expected_response, many=True
+                    ),
+                )
+            ],
         )
 
     @setup.async_test
