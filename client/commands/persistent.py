@@ -1200,14 +1200,15 @@ class RequestHandler(AbstractRequestHandler):
             )
             if response is None:
                 return None
-            expression_coverage = (
-                expression_level_coverage._make_expression_level_coverage_response(
-                    response.payload
+            else:
+                expression_coverage = (
+                    expression_level_coverage._make_expression_level_coverage_response(
+                        response.payload
+                    )
                 )
-            )
-            return path_to_expression_coverage_response(
-                self.is_strict_by_default(), expression_coverage
-            )
+                return path_to_expression_coverage_response(
+                    self.is_strict_by_default(), expression_coverage
+                )
         elif is_typechecked:
             return path_to_coverage_response(path, self.is_strict_by_default())
         else:
