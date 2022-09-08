@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
+from typing import Callable, Iterable, Iterator, List, Optional, Sequence, Set, Tuple
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -1161,23 +1161,31 @@ class PersistentTest(testslide.TestCase):
             json.loads(expected_json_string),
         )
 
+    def _expect_success_message(
+        self,
+        result: object,
+        request_id: int = DEFAULT_REQUEST_ID,
+    ) -> Callable[[str], None]:
+        return lambda actual_json_string: self._assert_json_equal(
+            actual_json_string,
+            _success_response_json(
+                result=result,
+                request_id=request_id,
+            ),
+        )
+
     def _assert_output_messages(
         self,
         output_writer: MemoryBytesWriter,
-        expected_raw_responses: List[str],
+        expectations: List[Callable[[str], None]],
     ) -> None:
         self.assertEqual(
             len(output_writer.items()),
-            len(expected_raw_responses),
+            len(expectations),
         )
-        for raw_message, expected_raw_response in zip(
-            output_writer.items(), expected_raw_responses
-        ):
+        for raw_message, expectation in zip(output_writer.items(), expectations):
             json_string = _extract_json_from_json_rpc_message(raw_message)
-            self._assert_json_equal(
-                json_string,
-                expected_raw_response,
-            )
+            expectation(json_string)
 
     @setup.async_test
     async def test_hover__basic(self) -> None:
@@ -1213,7 +1221,7 @@ class PersistentTest(testslide.TestCase):
         self._assert_output_messages(
             output_writer,
             [
-                _success_response_json(
+                self._expect_success_message(
                     result=lsp.LspHoverResponse.cached_schema().dump(expected_response),
                 )
             ],
@@ -1242,7 +1250,7 @@ class PersistentTest(testslide.TestCase):
         self._assert_output_messages(
             output_writer,
             [
-                _success_response_json(
+                self._expect_success_message(
                     result=lsp.LspHoverResponse.cached_schema().dump(
                         lsp.LspHoverResponse.empty()
                     ),
@@ -1292,7 +1300,7 @@ class PersistentTest(testslide.TestCase):
         self._assert_output_messages(
             output_writer,
             [
-                _success_response_json(
+                self._expect_success_message(
                     result=lsp.LspDefinitionResponse.cached_schema().dump(
                         expected_response, many=True
                     ),
@@ -1321,7 +1329,7 @@ class PersistentTest(testslide.TestCase):
         self.assertEqual(handler.requests, [])
         self._assert_output_messages(
             output_writer,
-            [_success_response_json([])],
+            [self._expect_success_message([])],
         )
 
     @setup.async_test
@@ -1366,7 +1374,7 @@ class PersistentTest(testslide.TestCase):
         self._assert_output_messages(
             output_writer,
             [
-                _success_response_json(
+                self._expect_success_message(
                     result=lsp.LspDefinitionResponse.cached_schema().dump(
                         expected_response, many=True
                     ),
@@ -1394,7 +1402,9 @@ class PersistentTest(testslide.TestCase):
             request_id=DEFAULT_REQUEST_ID,
         )
         self.assertEqual(handler.requests, [])
-        self._assert_output_messages(output_writer, [_success_response_json(result=[])])
+        self._assert_output_messages(
+            output_writer, [self._expect_success_message(result=[])]
+        )
 
     @setup.async_test
     async def test_document_symbols_request(self) -> None:
@@ -1420,7 +1430,7 @@ class PersistentTest(testslide.TestCase):
             self._assert_output_messages(
                 output_writer,
                 [
-                    _success_response_json(
+                    self._expect_success_message(
                         result=[
                             {
                                 "detail": "",
