@@ -1407,59 +1407,48 @@ class PersistentTest(testslide.TestCase):
             temporary_file.write(b"def foo(x):\n  pass\n")
             temporary_file.flush()
             test_path = Path(temporary_file.name)
-            fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-            memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
-            handler = MockRequestHandler()
-            server = PyreServer(
-                input_channel=create_memory_text_reader(""),
-                output_channel=AsyncTextWriter(memory_bytes_writer),
-                server_state=ServerState(
-                    server_options=mock_initial_server_options,
-                    opened_documents={test_path},
-                ),
-                pyre_manager=fake_task_manager,
-                handler=handler,
+            server, output_writer = await self._set_up_server_for_request_test(
+                opened_documents={test_path},
+                handler=MockRequestHandler(),
             )
-            await fake_task_manager.ensure_task_running()
             await server.process_document_symbols_request(
                 lsp.DocumentSymbolsParameters(
                     text_document=lsp.TextDocumentIdentifier(uri=test_path.as_uri())
                 ),
-                request_id=42,
+                request_id=DEFAULT_REQUEST_ID,
             )
-            await asyncio.sleep(0)
-            self.assertTrue(fake_task_manager.is_task_running())
-
-            client_messages = memory_bytes_writer.items()
             if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                 end_line, end_character = 1, 6
             else:
                 end_line, end_character = 0, 3
-            expected_response = _success_response_json(
-                result=[
-                    {
-                        "detail": "",
-                        "name": "foo",
-                        "range": {
-                            "start": {"line": 0, "character": 0},
-                            "end": {"line": end_line, "character": end_character},
-                        },
-                        "kind": SymbolKind.FUNCTION.value,
-                        "selectionRange": {
-                            "start": {"line": 0, "character": 0},
-                            "end": {"line": end_line, "character": end_character},
-                        },
-                        "children": [],
-                    }
+            self._assert_output_messages(
+                output_writer,
+                [
+                    _success_response_json(
+                        result=[
+                            {
+                                "detail": "",
+                                "name": "foo",
+                                "range": {
+                                    "start": {"line": 0, "character": 0},
+                                    "end": {
+                                        "line": end_line,
+                                        "character": end_character,
+                                    },
+                                },
+                                "kind": SymbolKind.FUNCTION.value,
+                                "selectionRange": {
+                                    "start": {"line": 0, "character": 0},
+                                    "end": {
+                                        "line": end_line,
+                                        "character": end_character,
+                                    },
+                                },
+                                "children": [],
+                            }
+                        ],
+                    )
                 ],
-            )
-            client_message = client_messages[-1].decode()
-            content_length_part, content_part = client_message.split("\r\n\r\n")
-            self.assertEqual(
-                content_length_part, f"Content-Length: {len(expected_response)}"
-            )
-            self.assertDictEqual(
-                json.loads(content_part), json.loads(expected_response)
             )
 
     def test_path_to_coverage_response(self) -> None:
