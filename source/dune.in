@@ -148,8 +148,7 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path
-  pyrelib.sourcepath))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
 
 (library
  (name searchPath)
@@ -159,7 +158,7 @@
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
  (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path
-  pyrelib.artifactpath))
+   pyrelib.artifactpath))
 
 (library
  (name jsonParsing)
@@ -190,7 +189,7 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare))
- (libraries core sexplib ppxlib ppx_deriving hack_parallel pyrelib.path
+ (libraries core sexplib ppxlib ppx_deriving hack_parallel pyrelib.sourcepath
    pyrelib.artifactpath))
 
 (library
@@ -200,7 +199,8 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries core ppx_deriving pyrelib.pyre pyrelib.path pyrelib.search_path pyrelib.json_parsing))
+ (libraries core ppx_deriving pyrelib.pyre pyrelib.path pyrelib.search_path
+   pyrelib.json_parsing))
 
 (library
  (name pyrelib)
@@ -211,22 +211,16 @@
     ppx_compare ppx_sexp_conv))
  (libraries pyrelib.pyreParser pyrelib.analysis pyrelib.ast pyrelib.service
    pyrelib.commands pyrelib.configuration pyrelib.pyre pyrelib.taint
-   pyrelib.timer pyrelib.path pyrelib.artifactpath pyrelib.file pyrelib.version))
+   pyrelib.timer pyrelib.file pyrelib.version))
 
 (tests
- (names
-   decoratorsTest
-   specialCallResolutionTest
-   internalTaintIntegrationTest)
- (modules
-   decoratorsTest
-   specialCallResolutionTest
-   internalTaintIntegrationTest)
+ (names decoratorsTest specialCallResolutionTest internalTaintIntegrationTest)
+ (modules decoratorsTest specialCallResolutionTest internalTaintIntegrationTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries pyrelib oUnit test
- pyrelib.integrationTest pyrelib.internalTaintIntegrationTestFiles pyrelib.taintTestHelper))
+ (libraries pyrelib oUnit test pyrelib.integrationTest
+   pyrelib.internalTaintIntegrationTestFiles pyrelib.taintTestHelper))
 
 (executable
  (name main)
