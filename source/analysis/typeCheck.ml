@@ -3363,7 +3363,7 @@ module State (Context : Context) = struct
         | true, _ -> Unreachable
         | _, { Node.value = Name name; _ } when is_simple_name name -> Value (resolve ~name)
         | _ -> Value resolution)
-    (* Is/is not callable *)
+    (* Is callable *)
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "callable"); _ };
@@ -3386,6 +3386,7 @@ module State (Context : Context) = struct
           | _ -> resolution
         in
         Value resolution
+    (* Is not callable *)
     | UnaryOperator
         {
           UnaryOperator.operator = UnaryOperator.Not;
@@ -3401,7 +3402,7 @@ module State (Context : Context) = struct
               _;
             };
         }
-      when is_simple_name name ->
+      when is_simple_name name -> (
         let resolution =
           match existing_annotation name with
           | Some existing_annotation ->
@@ -3414,13 +3415,12 @@ module State (Context : Context) = struct
                        ~annotation:Type.object_primitive
                        ())
               in
-              not_consistent_with_boundary
-              >>| Annotation.create_mutable
-              >>| refine_local ~name
-              |> Option.value ~default:resolution
-          | _ -> resolution
+              not_consistent_with_boundary >>| Annotation.create_mutable >>| refine_local ~name
+          | _ -> Some resolution
         in
-        Value resolution
+        match resolution with
+        | Some resolution -> Value resolution
+        | None -> Unreachable)
     (* `is` and `in` refinement *)
     | ComparisonOperator
         {

@@ -785,10 +785,7 @@ let test_check_callable context =
         else:
           reveal_type(x)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`."];
   assert_type_errors
     {|
       def foo(x:int) -> None:
@@ -801,6 +798,18 @@ let test_check_callable context =
       "Revealed type [-1]: Revealed type for `x` is `typing.Callable[..., object]`.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";
     ];
+  assert_type_errors
+    {|
+      class CallableClass:
+        def __call__(self, x:int) -> str:
+          return "A"
+      def foo(x: CallableClass) -> None:
+        if callable(x):
+          pass
+        else:
+          reveal_type(x)
+    |}
+    [];
   ()
 
 
