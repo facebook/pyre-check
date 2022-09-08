@@ -73,6 +73,7 @@ DEFAULT_START_ARGUMENTS: start.Arguments = start.Arguments(
 DEFAULT_IDE_FEATURES: Optional[configuration_module.IdeFeatures] = None
 DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
+DEFAULT_ENABLE_TELEMETRY: bool = False
 
 
 def _create_server_options(
@@ -82,6 +83,7 @@ def _create_server_options(
     ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
+    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> PyreServerOptions:
     return PyreServerOptions(
         binary,
@@ -90,6 +92,7 @@ def _create_server_options(
         ide_features,
         strict_default,
         excludes if excludes else [],
+        enabled_telemetry_event,
     )
 
 
@@ -100,6 +103,7 @@ def _create_server_options_reader(
     ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
+    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> PyreServerOptionsReader:
     return lambda: _create_server_options(
         binary,
@@ -108,6 +112,7 @@ def _create_server_options_reader(
         ide_features,
         strict_default,
         excludes,
+        enabled_telemetry_event,
     )
 
 
@@ -118,6 +123,7 @@ def _create_server_state_with_options(
     ide_features: Optional[configuration_module.IdeFeatures] = DEFAULT_IDE_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
+    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> ServerState:
     return ServerState(
         _create_server_options(
@@ -127,6 +133,7 @@ def _create_server_state_with_options(
             ide_features,
             strict_default,
             excludes,
+            enabled_telemetry_event,
         )
     )
 
@@ -196,6 +203,49 @@ class MockRequestHandler(AbstractRequestHandler):
         code: str,
     ) -> None:
         self.requests.append({"path": path, "code": code})
+
+
+async def _create_server_for_request_test(
+    opened_documents: Set[Path],
+    handler: MockRequestHandler,
+    server_options: PyreServerOptions = mock_initial_server_options,
+) -> Tuple[PyreServer, MemoryBytesWriter]:
+    # set up the system under test
+    fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+    output_writer: MemoryBytesWriter = MemoryBytesWriter()
+    server = PyreServer(
+        input_channel=create_memory_text_reader(""),
+        output_channel=AsyncTextWriter(output_writer),
+        server_state=ServerState(
+            server_options=server_options,
+            opened_documents=opened_documents,
+        ),
+        pyre_manager=fake_task_manager,
+        handler=handler,
+    )
+    await fake_task_manager.ensure_task_running()
+    return server, output_writer
+
+
+def _extract_json_from_json_rpc_message(
+    raw_message: bytes,
+) -> str:
+    """
+    Return the content-length of a json rpc message
+    """
+    content_length_portion, json_portion = raw_message.split(b"\r\n\r\n")
+    CONTENT_LENGTH_PREFIX = b"Content-Length: "
+    if not content_length_portion.startswith(CONTENT_LENGTH_PREFIX):
+        raise ValueError(
+            f"Did not get expected content length header, but {content_length_portion!r}"
+        )
+    content_length = int(content_length_portion[len(CONTENT_LENGTH_PREFIX) :])
+    if not len(json_portion) == content_length:
+        raise ValueError(
+            f"Expected content length {content_length} to match length "
+            f"{len(json_portion)} of json mssage {json_portion!r}"
+        )
+    return json_portion.decode()
 
 
 async def _create_input_channel_with_requests(
@@ -1101,40 +1151,14 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertEqual(output_writer.items(), [])
 
-    async def _set_up_server_for_request_test(
+    def _assert_json_equal(
         self,
-        opened_documents: Set[Path],
-        handler: MockRequestHandler,
-    ) -> Tuple[PyreServer, MemoryBytesWriter]:
-        # set up the system under test
-        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        output_writer: MemoryBytesWriter = MemoryBytesWriter()
-        server = PyreServer(
-            input_channel=create_memory_text_reader(""),
-            output_channel=AsyncTextWriter(output_writer),
-            server_state=ServerState(
-                server_options=mock_initial_server_options,
-                opened_documents=opened_documents,
-            ),
-            pyre_manager=fake_task_manager,
-            handler=handler,
-        )
-        await fake_task_manager.ensure_task_running()
-        return server, output_writer
-
-    def _assert_output_message_equal(
-        self,
-        output_writer_item: bytes,
-        expected_raw_response: str,
+        actual_json_string: str,
+        expected_json_string: str,
     ) -> None:
-        client_message = output_writer_item.decode()
-        content_length_portion, json_portion = client_message.split("\r\n\r\n")
         self.assertEqual(
-            json.loads(json_portion),
-            json.loads(expected_raw_response),
-        )
-        self.assertEqual(
-            content_length_portion, f"Content-Length: {len(expected_raw_response)}"
+            json.loads(actual_json_string),
+            json.loads(expected_json_string),
         )
 
     def _assert_output_messages(
@@ -1146,11 +1170,12 @@ class PersistentTest(testslide.TestCase):
             len(output_writer.items()),
             len(expected_raw_responses),
         )
-        for output_writer_item, expected_raw_response in zip(
+        for raw_message, expected_raw_response in zip(
             output_writer.items(), expected_raw_responses
         ):
-            self._assert_output_message_equal(
-                output_writer_item,
+            json_string = _extract_json_from_json_rpc_message(raw_message)
+            self._assert_json_equal(
+                json_string,
                 expected_raw_response,
             )
 
@@ -1163,7 +1188,7 @@ class PersistentTest(testslide.TestCase):
         handler = MockRequestHandler(
             mock_hover_response=expected_response,
         )
-        server, output_writer = await self._set_up_server_for_request_test(
+        server, output_writer = await _create_server_for_request_test(
             opened_documents={tracked_path},
             handler=handler,
         )
@@ -1200,7 +1225,7 @@ class PersistentTest(testslide.TestCase):
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
         handler = MockRequestHandler()
-        server, output_writer = await self._set_up_server_for_request_test(
+        server, output_writer = await _create_server_for_request_test(
             opened_documents={tracked_path},
             handler=handler,
         )
@@ -1242,7 +1267,7 @@ class PersistentTest(testslide.TestCase):
         handler = MockRequestHandler(
             mock_definition_response=expected_response,
         )
-        server, output_writer = await self._set_up_server_for_request_test(
+        server, output_writer = await _create_server_for_request_test(
             opened_documents={tracked_path},
             handler=handler,
         )
@@ -1280,7 +1305,7 @@ class PersistentTest(testslide.TestCase):
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
         handler = MockRequestHandler()
-        server, output_writer = await self._set_up_server_for_request_test(
+        server, output_writer = await _create_server_for_request_test(
             opened_documents={tracked_path},
             handler=handler,
         )
@@ -1316,7 +1341,7 @@ class PersistentTest(testslide.TestCase):
         handler = MockRequestHandler(
             mock_references_response=expected_response,
         )
-        server, output_writer = await self._set_up_server_for_request_test(
+        server, output_writer = await _create_server_for_request_test(
             opened_documents={tracked_path},
             handler=handler,
         )
@@ -1355,7 +1380,7 @@ class PersistentTest(testslide.TestCase):
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
         handler = MockRequestHandler()
-        server, output_writer = await self._set_up_server_for_request_test(
+        server, output_writer = await _create_server_for_request_test(
             opened_documents={tracked_path},
             handler=handler,
         )
@@ -1378,7 +1403,7 @@ class PersistentTest(testslide.TestCase):
             temporary_file.write(b"def foo(x):\n  pass\n")
             temporary_file.flush()
             test_path = Path(temporary_file.name)
-            server, output_writer = await self._set_up_server_for_request_test(
+            server, output_writer = await _create_server_for_request_test(
                 opened_documents={test_path},
                 handler=MockRequestHandler(),
             )
