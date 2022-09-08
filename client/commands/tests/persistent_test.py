@@ -1747,28 +1747,6 @@ class RequestHandlerTest(testslide.TestCase):
             self.assertEqual(result.covered_percent, 100.0)
 
     @setup.async_test
-    async def test_get_type_coverage__expression_level__not_typechecked(self) -> None:
-        pyre_query_manager = RequestHandler(
-            server_state=_create_server_state_with_options(
-                strict_default=True,
-                ide_features=configuration_module.IdeFeatures(
-                    expression_level_coverage_enabled=True
-                ),
-            ),
-        )
-        input_channel = create_memory_text_reader(
-            '["Query", {"response": []}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/test.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
-        )
-        output_channel = AsyncTextWriter(MemoryBytesWriter())
-        with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_type_coverage(
-                path=Path("test.py"),
-            )
-        self.assertTrue(result is not None)
-        self.assertEqual(result.covered_percent, 100.0)
-        self.assertEqual(len(result.uncovered_ranges), 0)
-
-    @setup.async_test
     async def test_query_hover(self) -> None:
         json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
         pyre_query_manager = RequestHandler(

@@ -1193,7 +1193,9 @@ class RequestHandler(AbstractRequestHandler):
         is_typechecked = await self._query_is_typechecked(path)
         if is_typechecked is None:
             return None
-        elif self.is_expression_level_coverage_enabled():
+        elif not is_typechecked:
+            return file_not_typechecked_coverage_result()
+        if self.is_expression_level_coverage_enabled():
             response = await daemon_query.attempt_async_query(
                 socket_path=self.socket_path,
                 query_text=f"expression_level_coverage('{path}')",
@@ -1201,18 +1203,14 @@ class RequestHandler(AbstractRequestHandler):
             if response is None:
                 return None
             else:
-                expression_coverage = (
+                return path_to_expression_coverage_response(
+                    self.is_strict_by_default(),
                     expression_level_coverage._make_expression_level_coverage_response(
                         response.payload
-                    )
+                    ),
                 )
-                return path_to_expression_coverage_response(
-                    self.is_strict_by_default(), expression_coverage
-                )
-        elif is_typechecked:
-            return path_to_coverage_response(path, self.is_strict_by_default())
         else:
-            return file_not_typechecked_coverage_result()
+            return path_to_coverage_response(path, self.is_strict_by_default())
 
     async def get_hover(
         self,
