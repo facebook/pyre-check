@@ -13,7 +13,7 @@ module IncrementalBuildResult = struct
   type t = {
     build_map: BuildMap.t;
     targets: Target.t list;
-    changed_artifacts: PyrePath.t list;
+    changed_artifacts: ArtifactPath.Event.t list;
   }
 end
 
@@ -45,7 +45,18 @@ let update_artifacts ~source_root ~artifact_root difference =
   >>= function
   | Result.Error message -> raise (LinkTreeConstructionError message)
   | Result.Ok () ->
-      let to_artifact_path (relative, _) = PyrePath.create_relative ~root:artifact_root ~relative in
+      let to_artifact_path (relative, difference_kind) =
+        let kind =
+          match difference_kind with
+          | BuildMap.Difference.Kind.New _
+          | BuildMap.Difference.Kind.Changed _ ->
+              ArtifactPath.Event.Kind.CreatedOrChanged
+          | BuildMap.Difference.Kind.Deleted -> ArtifactPath.Event.Kind.Deleted
+        in
+        PyrePath.create_relative ~root:artifact_root ~relative
+        |> ArtifactPath.create
+        |> ArtifactPath.Event.create ~kind
+      in
       BuildMap.Difference.to_alist difference |> List.map ~f:to_artifact_path |> Lwt.return
 
 
@@ -213,7 +224,10 @@ let incremental_build_with_unchanged_build_map
   let changed_artifacts =
     to_relative_paths ~root:source_root changed_sources
     |> List.concat_map ~f:(BuildMap.Indexed.lookup_artifact build_map_index)
-    |> List.map ~f:(fun relative -> PyrePath.create_relative ~root:artifact_root ~relative)
+    |> List.map ~f:(fun relative ->
+           PyrePath.create_relative ~root:artifact_root ~relative
+           |> ArtifactPath.create
+           |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged))
   in
   Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
 

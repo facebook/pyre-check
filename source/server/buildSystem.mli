@@ -25,7 +25,7 @@ type t
 (** [update build_system source_paths] notifies [build_system] that certain [source_paths] may have
     been updated on the filesystem. The build system should use the provided info to update its
     internal mapping, and return a list of artifact paths whose content may change by this update.*)
-val update : t -> SourcePath.t list -> ArtifactPath.t list Lwt.t
+val update : t -> SourcePath.Event.t list -> ArtifactPath.Event.t list Lwt.t
 
 (** Given an artifact path, return the corresponding source path, which is guaranteed to be unique
     if exists. Return [None] if no such source path exists. *)
@@ -43,7 +43,7 @@ val store : t -> unit
 (* This function allows the client to fully tweak the behavior of a build system. Expose for testing
    purpose only. *)
 val create_for_testing
-  :  ?update:(SourcePath.t list -> ArtifactPath.t list Lwt.t) ->
+  :  ?update:(SourcePath.Event.t list -> ArtifactPath.Event.t list Lwt.t) ->
   ?lookup_source:(ArtifactPath.t -> SourcePath.t option) ->
   ?lookup_artifact:(SourcePath.t -> ArtifactPath.t list) ->
   ?store:(unit -> unit) ->

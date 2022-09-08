@@ -79,6 +79,25 @@ let create_info_response
     }
 
 
+let create_source_path_event path =
+  let kind =
+    if PyrePath.file_exists path then
+      SourcePath.Event.Kind.CreatedOrChanged
+    else
+      SourcePath.Event.Kind.Deleted
+  in
+  SourcePath.create path |> SourcePath.Event.create ~kind
+
+
+let create_artifact_path_event ~build_system { SourcePath.Event.kind; path } =
+  let kind =
+    match kind with
+    | SourcePath.Event.Kind.CreatedOrChanged -> ArtifactPath.Event.Kind.CreatedOrChanged
+    | SourcePath.Event.Kind.Deleted -> ArtifactPath.Event.Kind.Deleted
+  in
+  BuildSystem.lookup_artifact build_system path |> List.map ~f:(ArtifactPath.Event.create ~kind)
+
+
 let process_incremental_update_request
     ~properties:({ ServerProperties.configuration; critical_files; _ } as properties)
     ~state:({ ServerState.overlaid_environment; subscriptions; build_system; _ } as state)
@@ -100,7 +119,7 @@ let process_incremental_update_request
       Subscription.batch_send subscriptions ~response:(lazy (Response.Error message))
       >>= fun () -> Stop.log_and_stop_waiting_server ~reason:"critical file update" ~properties ()
   | None ->
-      let source_paths = List.map paths ~f:SourcePath.create in
+      let source_path_events = List.map paths ~f:create_source_path_event in
       let create_status_update_response status = lazy (Response.StatusUpdate status) in
       let create_type_errors_response =
         lazy
@@ -119,17 +138,16 @@ let process_incremental_update_request
         ~response:(create_status_update_response Response.ServerStatus.Rebuilding)
         subscriptions
       >>= fun () ->
-      BuildSystem.update build_system source_paths
+      BuildSystem.update build_system source_path_events
       >>= fun changed_paths_from_rebuild ->
       Subscription.batch_send
         ~response:(create_status_update_response Response.ServerStatus.Rechecking)
         subscriptions
       >>= fun () ->
       let changed_paths =
-        List.concat_map source_paths ~f:(BuildSystem.lookup_artifact build_system)
+        List.concat_map source_path_events ~f:(create_artifact_path_event ~build_system)
         |> List.append changed_paths_from_rebuild
-        |> List.dedup_and_sort ~compare:ArtifactPath.compare
-        |> List.map ~f:ArtifactPath.Event.(create ~kind:Kind.Unknown)
+        |> List.dedup_and_sort ~compare:ArtifactPath.Event.compare
       in
       let () =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->

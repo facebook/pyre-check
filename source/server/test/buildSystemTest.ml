@@ -264,13 +264,13 @@ let test_update context =
         else
           []
       in
-      let update actual_paths =
+      let update actual_path_events =
         assert_equal
           ~ctxt:context
-          ~cmp:[%compare.equal: SourcePath.t list]
-          ~printer:(fun paths -> List.map paths ~f:SourcePath.show |> String.concat ~sep:", ")
-          [test_source_path]
-          actual_paths;
+          ~cmp:[%compare.equal: SourcePath.Event.t list]
+          ~printer:(fun paths -> [%sexp_of: SourcePath.Event.t list] paths |> Sexp.to_string_hum)
+          [(test_source_path |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged))]
+          actual_path_events;
         internal_state := "updated";
         Lwt.return []
       in
@@ -376,21 +376,37 @@ let test_buck_renormalize context =
   BuildSystem.update buck_build_system []
   >>= fun _ ->
   assert_normalize_counter 1;
-  BuildSystem.update buck_build_system [foo_source]
+  BuildSystem.update
+    buck_build_system
+    [(foo_source |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged))]
   >>= fun _ ->
   assert_normalize_counter 1;
 
   (* Normalization will happen if target file has changes. *)
   BuildSystem.update
     buck_build_system
-    [create_relative_source_path ~root:source_root ~relative:"bar/TARGETS"]
+    [
+      (create_relative_source_path ~root:source_root ~relative:"bar/TARGETS"
+      |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged));
+    ]
   >>= fun _ ->
   assert_normalize_counter 2;
   BuildSystem.update
     buck_build_system
-    [create_relative_source_path ~root:source_root ~relative:"BUCK"]
+    [
+      (create_relative_source_path ~root:source_root ~relative:"BUCK"
+      |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged));
+    ]
   >>= fun _ ->
   assert_normalize_counter 3;
+  BuildSystem.update
+    buck_build_system
+    [
+      (create_relative_source_path ~root:source_root ~relative:"BUCK"
+      |> SourcePath.Event.(create ~kind:Kind.Deleted));
+    ]
+  >>= fun _ ->
+  assert_normalize_counter 4;
   Lwt.return_unit
 
 
@@ -464,8 +480,17 @@ let test_buck_update context =
     (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
 
   (* Rebuild the project. The fake TARGET file is needed to force a full rebuild. *)
-  let fake_target_file = create_relative_source_path ~root:source_root ~relative:"TARGETS" in
-  BuildSystem.update buck_build_system [bar_source; baz_source; fake_target_file]
+  let fake_target_file =
+    create_relative_source_path ~root:source_root ~relative:"TARGETS"
+    |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged)
+  in
+  BuildSystem.update
+    buck_build_system
+    [
+      (bar_source |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged));
+      (baz_source |> SourcePath.Event.(create ~kind:Kind.Deleted));
+      fake_target_file;
+    ]
   >>= fun _ ->
   (* After the rebuild, both bar.py and baz.py should be included in build map. *)
   assert_optional_path
@@ -485,11 +510,11 @@ let test_buck_update context =
 
 
 let assert_paths_no_order ~context ~expected actual =
-  let compare = [%compare: ArtifactPath.t] in
+  let compare = [%compare: ArtifactPath.Event.t] in
   assert_equal
     ~ctxt:context
-    ~cmp:[%compare.equal: ArtifactPath.t list]
-    ~printer:(fun paths -> List.map paths ~f:ArtifactPath.show |> String.concat ~sep:" ")
+    ~cmp:[%compare.equal: ArtifactPath.Event.t list]
+    ~printer:(fun paths -> [%sexp_of: ArtifactPath.Event.t list] paths |> Sexp.to_string_hum)
     (List.sort ~compare expected)
     (List.sort ~compare actual)
 
@@ -531,11 +556,22 @@ let test_buck_update_without_rebuild context =
   let baz_source = create_relative_source_path ~root:source_root ~relative:"foo/baz.py" in
   File.create (SourcePath.raw bar_source) ~content:"" |> File.write;
   File.create (SourcePath.raw baz_source) ~content:"" |> File.write;
-  BuildSystem.update buck_build_system [bar_source; baz_source]
+  BuildSystem.update
+    buck_build_system
+    [
+      (bar_source |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged));
+      (baz_source |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged));
+    ]
   >>= fun changed_artifacts ->
   (* After the rebuild, both bar.py and baz.py should be included in build map. *)
-  let bar_artifact = Test.relative_artifact_path ~root:artifact_root ~relative:"bar.py" in
-  let baz_artifact = Test.relative_artifact_path ~root:artifact_root ~relative:"baz.py" in
+  let bar_artifact =
+    Test.relative_artifact_path ~root:artifact_root ~relative:"bar.py"
+    |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged)
+  in
+  let baz_artifact =
+    Test.relative_artifact_path ~root:artifact_root ~relative:"baz.py"
+    |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged)
+  in
   assert_paths_no_order changed_artifacts ~expected:[bar_artifact; baz_artifact];
   Lwt.return_unit
 
@@ -557,7 +593,10 @@ let test_unwatched_dependency_no_failure_on_initialize context =
   BuildSystem.Initializer.run test_initializer
   >>= fun build_system ->
   (* Initialization should not crash, even when the checksum path does not exist *)
-  let bucket_path = create_relative_source_path ~root:bucket_root ~relative:bucket in
+  let bucket_path =
+    create_relative_source_path ~root:bucket_root ~relative:bucket
+    |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged)
+  in
   Lwt.catch
     (fun () ->
       (* Update should crash, if the checksum path does not exist *)
@@ -572,7 +611,10 @@ let test_unwatched_dependency_update context =
   let assert_paths_no_order = assert_paths_no_order ~context in
   let bucket_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let bucket = "BUCKET" in
-  let bucket_path = create_relative_source_path ~root:bucket_root ~relative:bucket in
+  let bucket_path_event =
+    create_relative_source_path ~root:bucket_root ~relative:bucket
+    |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged)
+  in
   let wheel_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let checksum_path = "CHECKSUM" in
   let checksum_full_path = PyrePath.create_relative ~root:wheel_root ~relative:checksum_path in
@@ -597,15 +639,19 @@ let test_unwatched_dependency_update context =
   in
   BuildSystem.Initializer.run instagram_initializer
   >>= fun build_system ->
-  let test_path = PyrePath.create_absolute "/some/source/file.py" |> SourcePath.create in
+  let test_path_event =
+    PyrePath.create_absolute "/some/source/file.py"
+    |> SourcePath.create
+    |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged)
+  in
   (* Normal update does not yield additional changed paths. *)
-  BuildSystem.update build_system [test_path]
+  BuildSystem.update build_system [test_path_event]
   >>= fun updated ->
   assert_paths_no_order updated ~expected:[];
 
   (* Touching the change indicator but not the checksum file does not yield additional changed
      paths. *)
-  BuildSystem.update build_system [bucket_path]
+  BuildSystem.update build_system [bucket_path_event]
   >>= fun updated ->
   assert_paths_no_order updated ~expected:[];
 
@@ -620,15 +666,18 @@ let test_unwatched_dependency_update context =
     |}
   in
   File.create checksum_full_path ~content |> File.write;
-  BuildSystem.update build_system [test_path; bucket_path]
+  BuildSystem.update build_system [test_path_event; bucket_path_event]
   >>= fun updated ->
   assert_paths_no_order
     updated
     ~expected:
       [
-        Test.relative_artifact_path ~root:wheel_root ~relative:"a.py";
-        Test.relative_artifact_path ~root:wheel_root ~relative:"b/c.py";
-        Test.relative_artifact_path ~root:wheel_root ~relative:"g.py";
+        (Test.relative_artifact_path ~root:wheel_root ~relative:"a.py"
+        |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+        (Test.relative_artifact_path ~root:wheel_root ~relative:"b/c.py"
+        |> ArtifactPath.Event.(create ~kind:Kind.Deleted));
+        (Test.relative_artifact_path ~root:wheel_root ~relative:"g.py"
+        |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
       ];
 
   Lwt.return_unit

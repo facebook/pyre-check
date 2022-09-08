@@ -8,7 +8,7 @@
 open Base
 
 type t = {
-  update: SourcePath.t list -> ArtifactPath.t list Lwt.t;
+  update: SourcePath.Event.t list -> ArtifactPath.Event.t list Lwt.t;
   lookup_source: ArtifactPath.t -> SourcePath.t option;
   lookup_artifact: SourcePath.t -> ArtifactPath.t list;
   store: unit -> unit;
@@ -140,12 +140,11 @@ module BuckBuildSystem = struct
   end
 
   let initialize_from_state (state : State.t) =
-    let update source_paths =
-      let raw_paths = List.map source_paths ~f:SourcePath.raw in
+    let update source_path_events =
       let incremental_builder =
         let should_renormalize paths =
-          let f path =
-            let file_name = PyrePath.last path in
+          let f { SourcePath.Event.path; _ } =
+            let file_name = SourcePath.raw path |> PyrePath.last in
             String.equal file_name "TARGETS" || String.equal file_name "BUCK"
           in
           List.exists paths ~f
@@ -160,7 +159,7 @@ module BuckBuildSystem = struct
           in
           List.exists paths ~f
         in
-        if should_renormalize raw_paths then
+        if should_renormalize source_path_events then
           {
             IncrementalBuilder.name = "full";
             run =
@@ -170,9 +169,13 @@ module BuckBuildSystem = struct
           }
         else
           let changed_paths, removed_paths =
-            (* TODO (T90174546): This check may lead to temporary inconsistent view of the
-               filesystem with `ModuleTracker`. *)
-            List.partition_tf raw_paths ~f:PyrePath.file_exists
+            let categorize { SourcePath.Event.kind; path } =
+              let path = SourcePath.raw path in
+              match kind with
+              | SourcePath.Event.Kind.CreatedOrChanged -> Either.First path
+              | SourcePath.Event.Kind.Deleted -> Either.Second path
+            in
+            List.partition_map source_path_events ~f:categorize
           in
           if List.is_empty removed_paths && not (should_reconstruct_build_map changed_paths) then
             {
@@ -182,7 +185,7 @@ module BuckBuildSystem = struct
                   ~build_map:state.build_map
                   ~build_map_index:state.build_map_index
                   ~targets:state.normalized_targets
-                  ~changed_sources:raw_paths;
+                  ~changed_sources:changed_paths;
             }
           else
             {
@@ -200,7 +203,7 @@ module BuckBuildSystem = struct
       with_logging
         ~integers:(fun changed_analysis_paths ->
           [
-            "number_of_user_changed_files", List.length source_paths;
+            "number_of_user_changed_files", List.length source_path_events;
             "number_of_updated_files", List.length changed_analysis_paths;
           ])
         ~normals:(fun _ ->
@@ -217,8 +220,7 @@ module BuckBuildSystem = struct
                     changed_artifacts;
                   } ->
           State.update ~normalized_targets ~build_map state;
-          let changed_analysis_paths = List.map changed_artifacts ~f:ArtifactPath.create in
-          Lwt.return changed_analysis_paths)
+          Lwt.return changed_artifacts)
     in
     let lookup_source path =
       ArtifactPath.raw path
@@ -300,14 +302,17 @@ module TrackUnwatchedDependencyBuildSystem = struct
   end
 
   let unwatched_files_may_change ~change_indicator_path paths =
-    List.exists paths ~f:(PyrePath.equal change_indicator_path)
+    List.exists paths ~f:(fun { SourcePath.Event.path; _ } ->
+        SourcePath.raw path |> PyrePath.equal change_indicator_path)
 
 
   let initialize_from_state (state : State.t) =
-    let update source_paths =
-      let raw_paths = List.map source_paths ~f:SourcePath.raw in
+    let update source_path_events =
       let paths =
-        if unwatched_files_may_change ~change_indicator_path:state.change_indicator_path raw_paths
+        if
+          unwatched_files_may_change
+            ~change_indicator_path:state.change_indicator_path
+            source_path_events
         then (
           Log.info "Detecting potential changes in unwatched files...";
           (* NOTE(grievejia): If checksum map loading fails, there will be no way for us to figure
@@ -316,13 +321,21 @@ module TrackUnwatchedDependencyBuildSystem = struct
           let new_checksum_map = ChecksumMap.load_exn state.unwatched_files in
           let differences = ChecksumMap.difference ~original:state.checksum_map new_checksum_map in
           state.checksum_map <- new_checksum_map;
-          List.map differences ~f:(fun { ChecksumMap.Difference.path; _ } ->
-              (* TODO (T90174546): Utilizes the info provided by `ChecksumMap.Difference.kind`. *)
-              PyrePath.create_relative ~root:state.unwatched_files.root ~relative:path))
+          List.map differences ~f:(fun { ChecksumMap.Difference.path; kind = difference_kind } ->
+              let kind =
+                match difference_kind with
+                | ChecksumMap.Difference.Kind.New
+                | ChecksumMap.Difference.Kind.Changed ->
+                    ArtifactPath.Event.Kind.CreatedOrChanged
+                | ChecksumMap.Difference.Kind.Deleted -> ArtifactPath.Event.Kind.Deleted
+              in
+              PyrePath.create_relative ~root:state.unwatched_files.root ~relative:path
+              |> ArtifactPath.create
+              |> ArtifactPath.Event.create ~kind))
         else
           []
       in
-      List.map paths ~f:ArtifactPath.create |> Lwt.return
+      Lwt.return paths
     in
     let lookup_source = default_lookup_source in
     let lookup_artifact = default_lookup_artifact in

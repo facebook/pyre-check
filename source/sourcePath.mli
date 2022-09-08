@@ -10,3 +10,22 @@ type t [@@deriving show, compare, hash]
 val create : PyrePath.t -> t
 
 val raw : t -> PyrePath.t
+
+module Event : sig
+  module Kind : sig
+    type t =
+      | CreatedOrChanged
+      | Deleted
+    [@@deriving sexp, compare]
+  end
+
+  type source_path = t
+
+  type t = private {
+    kind: Kind.t;
+    path: source_path;
+  }
+  [@@deriving sexp, compare]
+
+  val create : kind:Kind.t -> source_path -> t
+end

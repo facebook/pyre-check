@@ -439,7 +439,7 @@ module Builder : sig
     type t = {
       build_map: BuildMap.t;
       targets: Target.t list;
-      changed_artifacts: PyrePath.t list;
+      changed_artifacts: ArtifactPath.Event.t list;
     }
   end
 
