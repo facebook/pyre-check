@@ -62,7 +62,7 @@ val load : EnvironmentControls.t -> t
 
 val store : t -> unit
 
-val update : scheduler:Scheduler.t -> t -> ArtifactPath.t list -> UpdateResult.t
+val update : scheduler:Scheduler.t -> t -> ArtifactPath.Event.t list -> UpdateResult.t
 
 val clear_memory_for_tests : scheduler:Scheduler.t -> t -> unit
 

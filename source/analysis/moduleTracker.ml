@@ -260,16 +260,23 @@ module ModulePaths = struct
       | NewOrChanged of ModulePath.t
       | Remove of ModulePath.t
 
-    let create ~configuration path =
+    let create ~configuration { ArtifactPath.Event.kind; path } =
       match ModulePath.create ~configuration path with
       | None ->
           Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
           None
       | Some module_path ->
-          if PyrePath.file_exists (ArtifactPath.raw path) then
-            Some (NewOrChanged module_path)
-          else
-            Some (Remove module_path)
+          let result =
+            match kind with
+            | ArtifactPath.Event.Kind.CreatedOrChanged -> NewOrChanged module_path
+            | ArtifactPath.Event.Kind.Deleted -> Remove module_path
+            | ArtifactPath.Event.Kind.Unknown ->
+                if PyrePath.file_exists (ArtifactPath.raw path) then
+                  NewOrChanged module_path
+                else
+                  Remove module_path
+          in
+          Some result
 
 
     let module_path = function
@@ -278,11 +285,12 @@ module ModulePaths = struct
           module_path
 
 
-    let from_artifact_paths ~configuration artifact_paths =
+    let from_artifact_events ~configuration events =
       (* Since the logic in `process_module_path_update` is not idempotent, we don't want any
          duplicate ArtifactPaths in our module_path updates *)
-      List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
-      |> List.filter ~f:(Finder.is_valid_filename (Finder.create configuration))
+      List.dedup_and_sort ~compare:ArtifactPath.Event.compare events
+      |> List.filter ~f:(fun { ArtifactPath.Event.path; _ } ->
+             Finder.is_valid_filename (Finder.create configuration) path)
       |> List.filter_map ~f:(create ~configuration)
   end
 end
@@ -768,12 +776,10 @@ module Layouts = struct
 
     let update
         ~configuration
-        ~artifact_paths
+        ~events
         { explicit_modules; implicit_modules; process_module_path_updates; _ }
       =
-      let module_path_updates =
-        ModulePaths.Update.from_artifact_paths ~configuration artifact_paths
-      in
+      let module_path_updates = ModulePaths.Update.from_artifact_events ~configuration events in
       let () = process_module_path_updates module_path_updates in
       let explicit_updates =
         ExplicitModules.Table.Api.update_module_paths
@@ -968,12 +974,12 @@ module Base = struct
 
   let controls { controls; _ } = controls
 
-  let update { layouts; controls; _ } ~artifact_paths =
+  let update { layouts; controls; _ } ~events =
     let timer = Timer.start () in
     EnvironmentControls.assert_allow_updates controls;
     let result =
       let configuration = EnvironmentControls.configuration controls in
-      Layouts.Api.update layouts ~configuration ~artifact_paths
+      Layouts.Api.update layouts ~configuration ~events
     in
     Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
     result

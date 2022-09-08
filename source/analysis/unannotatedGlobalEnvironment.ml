@@ -1044,9 +1044,9 @@ module Base = struct
   let update_this_and_all_preceding_environments
       { ast_environment; from_read_only_upstream }
       ~scheduler
-      artifact_paths
+      events
     =
-    let update_result = AstEnvironment.update ~scheduler ast_environment artifact_paths in
+    let update_result = AstEnvironment.update ~scheduler ast_environment events in
     FromReadOnlyUpstream.update from_read_only_upstream ~scheduler update_result
 
 

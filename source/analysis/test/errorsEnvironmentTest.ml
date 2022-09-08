@@ -159,7 +159,10 @@ let test_update_ancestor context =
   let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
   ScratchProject.update_environment
     project
-    [Test.relative_artifact_path ~root:local_root ~relative:"a.py"]
+    [
+      (Test.relative_artifact_path ~root:local_root ~relative:"a.py"
+      |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+    ]
   |> ignore;
   assert_errors ~context ~project [];
   ()
@@ -201,8 +204,10 @@ let test_update_mode context =
   ScratchProject.update_environment
     project
     [
-      Test.relative_artifact_path ~root:local_root ~relative:"a.py";
-      Test.relative_artifact_path ~root:local_root ~relative:"changes_from_unsafe_to_strict.py";
+      (Test.relative_artifact_path ~root:local_root ~relative:"a.py"
+      |> ArtifactPath.Event.(create ~kind:Kind.Unknown));
+      (Test.relative_artifact_path ~root:local_root ~relative:"changes_from_unsafe_to_strict.py"
+      |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
     ]
   |> ignore;
   assert_errors

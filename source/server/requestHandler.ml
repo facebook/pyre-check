@@ -129,6 +129,7 @@ let process_incremental_update_request
         List.concat_map source_paths ~f:(BuildSystem.lookup_artifact build_system)
         |> List.append changed_paths_from_rebuild
         |> List.dedup_and_sort ~compare:ArtifactPath.compare
+        |> List.map ~f:ArtifactPath.Event.(create ~kind:Kind.Unknown)
       in
       let () =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->

@@ -153,7 +153,8 @@ let test_updates context =
     let update_result =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map new_sources ~f:(fun (relative, _) ->
-          Test.relative_artifact_path ~root:local_root ~relative)
+          Test.relative_artifact_path ~root:local_root ~relative
+          |> ArtifactPath.Event.(create ~kind:Kind.Unknown))
       |> ScratchProject.update_environment project ~scheduler:(Test.mock_scheduler ())
       |> ErrorsEnvironment.Testing.UpdateResult.class_metadata_environment
     in
@@ -644,7 +645,10 @@ let test_overlay_propagation context =
   let parent_update_result =
     ScratchProject.update_environment
       project
-      [Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"]
+      [
+        (Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"
+        |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+      ]
     |> ErrorsEnvironment.Testing.UpdateResult.class_metadata_environment
   in
   assert_overlay_state

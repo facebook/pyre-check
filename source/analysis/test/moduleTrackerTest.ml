@@ -1229,11 +1229,11 @@ module IncrementalTest = struct
         | Update ->
             (* A file is added/updated *)
             File.create path ~content:"" |> File.write;
-            Some path
+            Some ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged (ArtifactPath.create path))
         | Remove ->
             (* A file is removed *)
             PyrePath.remove path;
-            Some path
+            Some ArtifactPath.Event.(create ~kind:Kind.Deleted (ArtifactPath.create path))
         | LeftAlone -> None
       in
       let paths = List.filter_map setups ~f:(update_file ~root:local_root) in
@@ -1241,7 +1241,7 @@ module IncrementalTest = struct
         let external_root = List.hd_exn search_paths |> SearchPath.get_root in
         List.filter_map external_setups ~f:(update_file ~root:external_root)
       in
-      List.append external_paths paths |> List.map ~f:ArtifactPath.create
+      List.append external_paths paths
     in
     (* Set up the initial project *)
     let configuration, module_tracker =
@@ -1269,8 +1269,8 @@ module IncrementalTest = struct
       configuration, module_tracker
     in
     (* Compute the updates *)
-    let artifact_paths = update_filesystem_state configuration in
-    let updates = ModuleTracker.update ~artifact_paths module_tracker in
+    let events = update_filesystem_state configuration in
+    let updates = ModuleTracker.update ~events module_tracker in
     let actual =
       let create_event = function
         | ModuleTracker.IncrementalUpdate.NewExplicit
@@ -1755,13 +1755,14 @@ let test_invalidate_lazy_tracker_cache__removal context =
   PyrePath.create_relative ~root:local_root ~relative:"package"
   |> PyrePath.remove_contents_of_directory
   |> ignore;
-  let artifact_paths =
+  let events =
     ["package/a.py"]
-    |> List.map ~f:(fun relative -> PyrePath.create_relative ~root:local_root ~relative)
-    |> List.map ~f:ArtifactPath.create
+    |> List.map ~f:(fun relative ->
+           let path = PyrePath.create_relative ~root:local_root ~relative |> ArtifactPath.create in
+           ArtifactPath.Event.(create ~kind:Kind.Unknown path))
   in
   (* Verify that the lazy tracker only updates the qualifier we actually looked up *)
-  let updates = ModuleTracker.update tracker ~artifact_paths in
+  let updates = ModuleTracker.update tracker ~events in
   assert_equal
     ~ctxt:context
     ~printer:[%show: ModuleTracker.IncrementalUpdate.t list]
@@ -1801,13 +1802,13 @@ let test_invalidate_lazy_tracker_cache__add context =
     (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
     (Some !&"package.a");
   (* Add a second file next to a.py - the cached directory reads won't know about this *)
-  let artifact_paths =
+  let events =
     let path_to_b = PyrePath.create_relative ~root:local_root ~relative:"package/b.py" in
     let () = File.create path_to_b ~content:"" |> File.write in
-    [ArtifactPath.create path_to_b]
+    [(ArtifactPath.create path_to_b |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged))]
   in
   (* Verify that the lazy tracker does not update anything *)
-  let updates = ModuleTracker.update tracker ~artifact_paths in
+  let updates = ModuleTracker.update tracker ~events in
   assert_equal ~ctxt:context ~printer:[%show: ModuleTracker.IncrementalUpdate.t list] [] updates;
   (* Verify that both the previously-read and non-previously-read modules no longer exist if we
      remove the entire directory. *)
@@ -1837,13 +1838,13 @@ let test_invalidate_lazy_tracker_cache__add context =
     (ModuleTracker.ReadOnly.lookup_module_path read_only !&"a" >>| ModulePath.qualifier)
     (Some !&"a");
   (* Add a second file next to a.py - the cached directory reads won't know about this *)
-  let artifact_paths =
+  let events =
     let path_to_b = PyrePath.create_relative ~root:local_root ~relative:"b.py" in
     let () = File.create path_to_b ~content:"" |> File.write in
-    [ArtifactPath.create path_to_b]
+    [(ArtifactPath.create path_to_b |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged))]
   in
   (* Verify that the lazy tracker does not update anything *)
-  let updates = ModuleTracker.update tracker ~artifact_paths in
+  let updates = ModuleTracker.update tracker ~events in
   assert_equal ~ctxt:context ~printer:[%show: ModuleTracker.IncrementalUpdate.t list] [] updates;
   (* Verify that both the previously-read and non-previously-read modules no longer exist if we
      remove the entire directory. *)
@@ -1960,7 +1961,11 @@ let test_overlay_code_hiding context =
     let _ =
       ModuleTracker.update
         parent_tracker
-        ~artifact_paths:[Test.relative_artifact_path ~root:local_root ~relative:"code.pyi"]
+        ~events:
+          [
+            (Test.relative_artifact_path ~root:local_root ~relative:"code.pyi"
+            |> ArtifactPath.Event.(create ~kind:Kind.Unknown));
+          ]
     in
     ()
   in

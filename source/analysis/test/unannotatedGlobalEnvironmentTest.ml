@@ -879,9 +879,12 @@ let assert_updates
     ScratchProject.delete_file project ~relative:"test.py";
   new_source >>| ScratchProject.add_file project ~relative:"test.py" |> Option.value ~default:();
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let path = Test.relative_artifact_path ~root:local_root ~relative:"test.py" in
+  let event =
+    Test.relative_artifact_path ~root:local_root ~relative:"test.py"
+    |> ArtifactPath.Event.(create ~kind:Kind.Unknown)
+  in
   let update_result =
-    ScratchProject.update_environment project [path]
+    ScratchProject.update_environment project [event]
     |> ErrorsEnvironment.Testing.UpdateResult.unannotated_global_environment
   in
   let printer set =
@@ -2556,7 +2559,10 @@ let test_overlay_propagation context =
   let parent_update_result =
     ScratchProject.update_environment
       project
-      [Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"]
+      [
+        (Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"
+        |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+      ]
     |> ErrorsEnvironment.Testing.UpdateResult.unannotated_global_environment
   in
   assert_global ~exists:false !&"on_filesystem.on_filesystem_old";

@@ -158,7 +158,7 @@ val read_only : t -> ReadOnly.t
 val update_this_and_all_preceding_environments
   :  t ->
   scheduler:Scheduler.t ->
-  ArtifactPath.t list ->
+  ArtifactPath.Event.t list ->
   UpdateResult.t
 
 val store : t -> unit

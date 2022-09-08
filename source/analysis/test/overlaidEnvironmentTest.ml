@@ -91,7 +91,10 @@ let test_update_root context =
   OverlaidEnvironment.update_root
     overlaid_environment
     ~scheduler:(Test.mock_scheduler ())
-    [Test.relative_artifact_path ~root:local_root ~relative:"a.py"]
+    [
+      (Test.relative_artifact_path ~root:local_root ~relative:"a.py"
+      |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+    ]
   |> ignore;
   assert_root_errors
     ~context
@@ -131,7 +134,10 @@ let test_update_lazy_root context =
   OverlaidEnvironment.update_root
     overlaid_environment
     ~scheduler:(Test.mock_scheduler ())
-    [Test.relative_artifact_path ~root:local_root ~relative:"a.py"]
+    [
+      (Test.relative_artifact_path ~root:local_root ~relative:"a.py"
+      |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+    ]
   |> ignore;
   assert_root_errors_for_qualifier
     ~context
@@ -275,7 +281,10 @@ let test_overlay_propagation context =
   OverlaidEnvironment.run_update_root
     overlaid_environment
     ~scheduler:(Test.mock_scheduler ())
-    [Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"];
+    [
+      (Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"
+      |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+    ];
   assert_overlay_errors
     ~context
     ~overlaid_environment

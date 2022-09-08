@@ -65,7 +65,7 @@ val module_paths : t -> Ast.ModulePath.t list
 
 val controls : t -> EnvironmentControls.t
 
-val update : t -> artifact_paths:ArtifactPath.t list -> IncrementalUpdate.t list
+val update : t -> events:ArtifactPath.Event.t list -> IncrementalUpdate.t list
 
 module Serializer : sig
   val store_layouts : t -> unit

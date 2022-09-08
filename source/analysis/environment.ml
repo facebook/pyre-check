@@ -49,7 +49,7 @@ module PreviousEnvironment = struct
     val update_this_and_all_preceding_environments
       :  t ->
       scheduler:Scheduler.t ->
-      ArtifactPath.t list ->
+      ArtifactPath.Event.t list ->
       UpdateResult.t
 
     val store : t -> unit
@@ -191,7 +191,7 @@ module EnvironmentTable = struct
     val update_this_and_all_preceding_environments
       :  t ->
       scheduler:Scheduler.t ->
-      ArtifactPath.t list ->
+      ArtifactPath.Event.t list ->
       UpdateResult.t
 
     val store : t -> unit
@@ -397,13 +397,13 @@ module EnvironmentTable = struct
       let update_this_and_all_preceding_environments
           { upstream_environment; from_read_only_upstream }
           ~scheduler
-          artifact_paths
+          events
         =
         let upstream_update =
           In.PreviousEnvironment.update_this_and_all_preceding_environments
             upstream_environment
             ~scheduler
-            artifact_paths
+            events
         in
         let triggered_dependencies =
           In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update

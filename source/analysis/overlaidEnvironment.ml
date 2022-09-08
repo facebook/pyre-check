@@ -108,13 +108,13 @@ let log_update_stats update_type ~timer ~updated_paths_count ~update_result =
   ()
 
 
-let run_update_root ({ overlays; _ } as overlaid_environment) ~scheduler artifact_paths =
+let run_update_root ({ overlays; _ } as overlaid_environment) ~scheduler events =
   let timer = Timer.start () in
   prepare_for_update overlaid_environment ~scheduler;
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment...";
-  let updated_paths_count = List.length artifact_paths in
-  let update_result = update_root overlaid_environment ~scheduler artifact_paths in
+  let updated_paths_count = List.length events in
+  let update_result = update_root overlaid_environment ~scheduler events in
   String.Table.iter overlays ~f:(fun overlay ->
       ErrorsEnvironment.Overlay.propagate_parent_update overlay update_result |> ignore);
   (* Log updates *)

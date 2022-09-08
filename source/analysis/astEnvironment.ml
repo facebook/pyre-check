@@ -492,8 +492,8 @@ module Base = struct
 
   let store { module_tracker; _ } = ModuleTracker.Serializer.store_layouts module_tracker
 
-  let update ~scheduler { module_tracker; from_read_only_upstream } artifact_paths =
-    ModuleTracker.update module_tracker ~artifact_paths
+  let update ~scheduler { module_tracker; from_read_only_upstream } events =
+    ModuleTracker.update module_tracker ~events
     |> FromReadOnlyUpstream.process_module_updates ~scheduler from_read_only_upstream
 
 

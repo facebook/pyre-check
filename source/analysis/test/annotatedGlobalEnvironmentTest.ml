@@ -112,7 +112,10 @@ let test_updates context =
     let update_result =
       ScratchProject.update_environment
         project
-        [Test.relative_artifact_path ~root:local_root ~relative:"test.py"]
+        [
+          (Test.relative_artifact_path ~root:local_root ~relative:"test.py"
+          |> ArtifactPath.Event.(create ~kind:Kind.Unknown));
+        ]
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

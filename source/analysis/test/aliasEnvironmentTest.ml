@@ -332,7 +332,8 @@ let test_updates context =
     let update_result =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map new_sources ~f:(fun (relative, _) ->
-          Test.relative_artifact_path ~root:local_root ~relative)
+          Test.relative_artifact_path ~root:local_root ~relative
+          |> ArtifactPath.Event.(create ~kind:Kind.Unknown))
       |> ScratchProject.update_environment project
       |> ErrorsEnvironment.Testing.UpdateResult.alias_environment
     in

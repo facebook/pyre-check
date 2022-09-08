@@ -259,7 +259,8 @@ let test_updates context =
     let update_result =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map ["test.py", ()] ~f:(fun (relative, _) ->
-          Test.relative_artifact_path ~root:local_root ~relative)
+          Test.relative_artifact_path ~root:local_root ~relative
+          |> ArtifactPath.Event.(create ~kind:Kind.Unknown))
       |> ScratchProject.update_environment project
       |> ErrorsEnvironment.Testing.UpdateResult.class_hierarchy_environment
     in

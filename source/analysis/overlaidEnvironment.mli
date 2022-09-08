@@ -22,7 +22,7 @@ val overlay_errors : t -> overlay_identifier -> AnalysisError.t list
 val update_root
   :  t ->
   scheduler:Scheduler.t ->
-  ArtifactPath.t list ->
+  ArtifactPath.Event.t list ->
   ErrorsEnvironment.UpdateResult.t
 
 val update_overlay_with_code
@@ -35,7 +35,7 @@ val store : t -> unit
 
 val load : EnvironmentControls.t -> t
 
-val run_update_root : t -> scheduler:Scheduler.t -> ArtifactPath.t list -> unit
+val run_update_root : t -> scheduler:Scheduler.t -> ArtifactPath.Event.t list -> unit
 
 val run_update_overlay_with_code
   :  t ->

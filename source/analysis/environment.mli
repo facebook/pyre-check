@@ -48,7 +48,7 @@ module PreviousEnvironment : sig
     val update_this_and_all_preceding_environments
       :  t ->
       scheduler:Scheduler.t ->
-      ArtifactPath.t list ->
+      ArtifactPath.Event.t list ->
       UpdateResult.t
 
     val store : t -> unit
@@ -182,7 +182,7 @@ module EnvironmentTable : sig
     val update_this_and_all_preceding_environments
       :  t ->
       scheduler:Scheduler.t ->
-      ArtifactPath.t list ->
+      ArtifactPath.Event.t list ->
       UpdateResult.t
 
     val store : t -> unit

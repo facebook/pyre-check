@@ -1258,8 +1258,11 @@ let test_update_and_compute_dependencies context =
       ScratchProject.add_file project repopulate_source_to ~relative:"source.py";
       let update_result =
         let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
-        let path = Test.relative_artifact_path ~root:local_root ~relative:"source.py" in
-        ScratchProject.update_environment project [path]
+        let event =
+          Test.relative_artifact_path ~root:local_root ~relative:"source.py"
+          |> ArtifactPath.Event.(create ~kind:Kind.Unknown)
+        in
+        ScratchProject.update_environment project [event]
       in
       ErrorsEnvironment.Testing.UpdateResult.annotated_global_environment update_result
       |> AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies
