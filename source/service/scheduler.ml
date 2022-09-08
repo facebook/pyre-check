@@ -167,6 +167,11 @@ let is_parallel = function
   | ParallelScheduler _ -> true
 
 
+let number_workers = function
+  | SequentialScheduler -> 1
+  | ParallelScheduler workers -> List.length workers
+
+
 let once_per_worker scheduler ~configuration:_ ~f =
   match scheduler with
   | SequentialScheduler -> ()

@@ -76,4 +76,6 @@ val iter : t -> policy:Policy.t -> f:('input list -> unit) -> inputs:'input list
 
 val is_parallel : t -> bool
 
+val number_workers : t -> int
+
 val once_per_worker : t -> configuration:Configuration.Analysis.t -> f:(unit -> unit) -> unit

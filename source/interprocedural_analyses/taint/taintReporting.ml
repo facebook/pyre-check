@@ -109,8 +109,15 @@ let emit_externalization ~fixpoint_state ~filename_lookup ~override_graph emitte
   |> List.iter ~f:emitter
 
 
+type callable_shard = {
+  shard_index: int;
+  callables: Target.t list;
+}
+
 let save_results_to_directory
+    ~scheduler
     ~result_directory
+    ~output_format
     ~local_root
     ~filename_lookup
     ~override_graph
@@ -120,25 +127,58 @@ let save_results_to_directory
     ~errors
   =
   let timer = Timer.start () in
-  let models_path = "taint-output.json" in
   let root = local_root |> PyrePath.absolute in
   let open_file ~filename =
     let path = PyrePath.append result_directory ~element:filename in
     open_out (PyrePath.absolute path)
   in
   let save_models () =
-    let out_channel = open_file ~filename:models_path in
-    `Assoc ["file_version", `Int 3; "config", `Assoc ["repo", `String root]]
-    |> Json.to_channel out_channel;
-    Printf.fprintf out_channel "\n";
-    let emitter json =
-      Json.to_channel out_channel json;
+    let write_header ~out_channel =
+      `Assoc ["file_version", `Int 3; "config", `Assoc ["repo", `String root]]
+      |> Json.to_channel out_channel;
       Printf.fprintf out_channel "\n"
     in
-    Target.Set.iter
-      (emit_externalization ~fixpoint_state ~filename_lookup ~override_graph emitter)
-      callables;
-    close_out out_channel
+    let write_model ~out_channel callable =
+      let emitter json =
+        Json.to_channel out_channel json;
+        Printf.fprintf out_channel "\n"
+      in
+      emit_externalization ~fixpoint_state ~filename_lookup ~override_graph emitter callable
+    in
+    match output_format with
+    | Configuration.TaintOutputFormat.Json ->
+        let out_channel = open_file ~filename:"taint-output.json" in
+        write_header ~out_channel;
+        Target.Set.iter (write_model ~out_channel) callables;
+        close_out out_channel
+    | Configuration.TaintOutputFormat.ShardedJson ->
+        let shard_size =
+          Int.max 1 (Target.Set.cardinal callables / Scheduler.number_workers scheduler)
+        in
+        let shards =
+          callables
+          |> Target.Set.elements
+          |> List.chunks_of ~length:shard_size
+          |> List.mapi ~f:(fun shard_index callables -> { shard_index; callables })
+        in
+        let number_shards = List.length shards in
+        let write_json_shard { shard_index; callables } =
+          let filename =
+            Format.sprintf "taint-output@%05d-of-%05d.json" shard_index number_shards
+          in
+          let out_channel = open_file ~filename in
+          write_header ~out_channel;
+          List.iter ~f:(write_model ~out_channel) callables;
+          close_out out_channel
+        in
+        Scheduler.map_reduce
+          scheduler
+          ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1)
+          ~initial:()
+          ~map:(fun () shards -> List.iter shards ~f:write_json_shard)
+          ~reduce:(fun () () -> ())
+          ~inputs:shards
+          ()
   in
   let save_errors () =
     let out_channel = open_file ~filename:"errors.json" in
@@ -162,7 +202,10 @@ let save_results_to_directory
     let toplevel_metadata =
       `Assoc
         [
-          "filename_spec", `String models_path;
+          ( "filename_spec",
+            match output_format with
+            | Configuration.TaintOutputFormat.Json -> `String "taint-output.json"
+            | Configuration.TaintOutputFormat.ShardedJson -> `String "taint-output@*.json" );
           "root", `String root;
           "tool", `String "pysa";
           "version", `String (Version.version ());
@@ -189,6 +232,7 @@ let report
     ~static_analysis_configuration:
       {
         Configuration.StaticAnalysis.save_results_to;
+        output_format;
         configuration = { local_root; show_error_traces; _ };
         _;
       }
@@ -230,7 +274,9 @@ let report
   match save_results_to with
   | Some result_directory ->
       save_results_to_directory
+        ~scheduler
         ~result_directory
+        ~output_format
         ~local_root
         ~filename_lookup
         ~override_graph
