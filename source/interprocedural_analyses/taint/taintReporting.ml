@@ -180,6 +180,15 @@ let save_results_to_directory
           ~inputs:shards
           ()
   in
+  let remove_existing_models () =
+    if PyrePath.is_directory result_directory then
+      PyrePath.read_directory_ordered result_directory
+      |> List.filter ~f:(fun path ->
+             let filename = PyrePath.last path in
+             String_utils.string_starts_with filename "taint-output@"
+             && String_utils.string_ends_with filename ".json")
+      |> List.iter ~f:PyrePath.remove
+  in
   let save_errors () =
     let out_channel = open_file ~filename:"errors.json" in
     Json.to_channel out_channel (`List errors);
@@ -216,6 +225,7 @@ let save_results_to_directory
     Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_channel out_channel;
     close_out out_channel
   in
+  remove_existing_models ();
   save_models ();
   save_metadata ();
   save_errors ();
