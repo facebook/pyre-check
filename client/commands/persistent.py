@@ -1205,8 +1205,6 @@ class RequestHandler(AbstractRequestHandler):
                     response.payload
                 )
             )
-            if expression_coverage is None:
-                return file_not_typechecked_coverage_result()
             return path_to_expression_coverage_response(
                 self.is_strict_by_default(), expression_coverage
             )
