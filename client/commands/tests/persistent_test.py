@@ -38,6 +38,7 @@ from ..connections import (
 )
 from ..persistent import (
     AbstractRequestHandler,
+    Availability,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     InitializationExit,
     InitializationFailure,
@@ -1753,7 +1754,9 @@ class RequestHandlerTest(testslide.TestCase):
         json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                language_server_features=LanguageServerFeatures(hover_enabled=True),
+                language_server_features=LanguageServerFeatures(
+                    hover=Availability.ENABLED
+                ),
             ),
         )
         memory_bytes_writer = MemoryBytesWriter()
@@ -1782,7 +1785,9 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_hover__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                language_server_features=LanguageServerFeatures(hover_enabled=True),
+                language_server_features=LanguageServerFeatures(
+                    hover=Availability.ENABLED
+                ),
             ),
         )
 
@@ -1823,7 +1828,9 @@ class RequestHandlerTest(testslide.TestCase):
         """
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                language_server_features=LanguageServerFeatures(hover_enabled=True),
+                language_server_features=LanguageServerFeatures(
+                    hover=Availability.ENABLED
+                ),
             ),
         )
         memory_bytes_writer = MemoryBytesWriter()
@@ -1861,7 +1868,9 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_definition_location__bad_json(self) -> None:
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
-                language_server_features=LanguageServerFeatures(hover_enabled=True),
+                language_server_features=LanguageServerFeatures(
+                    hover=Availability.ENABLED
+                )
             ),
         )
 
@@ -1916,7 +1925,7 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
-                    references_enabled=True
+                    references=Availability.ENABLED,
                 ),
             ),
         )
@@ -1963,7 +1972,7 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
-                    references_enabled=True
+                    references=Availability.ENABLED,
                 ),
             ),
         )

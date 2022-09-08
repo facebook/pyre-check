@@ -101,6 +101,25 @@ PyreServerOptionsReader = Callable[[], "PyreServerOptions"]
 FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
 
 
+class Availability(enum.Enum):
+    """
+    Default enum for feature availability: a feature can be on or off.
+    """
+
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+
+    @staticmethod
+    def from_enabled(enabled: bool) -> Availability:
+        return Availability.ENABLED if enabled else Availability.DISABLED
+
+    def is_enabled(self) -> bool:
+        return self == Availability.ENABLED
+
+    def is_disabled(self) -> bool:
+        return self == Availability.DISABLED
+
+
 class TypeCoverageLevel(enum.Enum):
     NONE = "none"
     FUNCTION_LEVEL = "function_level"
@@ -109,11 +128,11 @@ class TypeCoverageLevel(enum.Enum):
 
 @dataclasses.dataclass(frozen=True)
 class LanguageServerFeatures:
-    hover_enabled: bool = False
-    definition_enabled: bool = False
-    references_enabled: bool = False
-    document_symbols_enabled: bool = False
-    unsaved_changes_enabled: bool = False
+    hover: Availability = Availability.DISABLED
+    definition: Availability = Availability.DISABLED
+    references: Availability = Availability.DISABLED
+    document_symbols: Availability = Availability.DISABLED
+    unsaved_changes: Availability = Availability.DISABLED
     type_coverage_level: TypeCoverageLevel = TypeCoverageLevel.NONE
 
     @staticmethod
@@ -123,20 +142,28 @@ class LanguageServerFeatures:
         ide_features = configuration.get_ide_features()
         if ide_features is None:
             return LanguageServerFeatures(
-                hover_enabled=False,
-                definition_enabled=False,
-                references_enabled=False,
-                document_symbols_enabled=False,
-                unsaved_changes_enabled=False,
+                hover=Availability.DISABLED,
+                definition=Availability.DISABLED,
+                references=Availability.DISABLED,
+                document_symbols=Availability.DISABLED,
+                unsaved_changes=Availability.DISABLED,
                 type_coverage_level=TypeCoverageLevel.FUNCTION_LEVEL,
             )
         else:
             return LanguageServerFeatures(
-                hover_enabled=ide_features.is_hover_enabled(),
-                definition_enabled=ide_features.is_go_to_definition_enabled(),
-                references_enabled=ide_features.is_find_all_references_enabled(),
-                document_symbols_enabled=ide_features.is_find_symbols_enabled(),
-                unsaved_changes_enabled=ide_features.is_consume_unsaved_changes_enabled(),
+                hover=Availability.from_enabled(ide_features.is_hover_enabled()),
+                definition=Availability.from_enabled(
+                    ide_features.is_go_to_definition_enabled()
+                ),
+                references=Availability.from_enabled(
+                    ide_features.is_find_all_references_enabled()
+                ),
+                document_symbols=Availability.from_enabled(
+                    ide_features.is_find_symbols_enabled()
+                ),
+                unsaved_changes=Availability.from_enabled(
+                    ide_features.is_consume_unsaved_changes_enabled()
+                ),
                 type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
                 if ide_features.is_expression_level_coverage_enabled()
                 else TypeCoverageLevel.FUNCTION_LEVEL,
@@ -144,10 +171,10 @@ class LanguageServerFeatures:
 
     def capabilities(self) -> Dict[str, bool]:
         return {
-            "hover_provider": self.hover_enabled,
-            "definition_provider": self.definition_enabled,
-            "references_provider": self.references_enabled,
-            "document_symbol_provider": self.document_symbols_enabled,
+            "hover_provider": not self.hover.is_disabled(),
+            "definition_provider": not self.definition.is_disabled(),
+            "references_provider": not self.references.is_disabled(),
+            "document_symbol_provider": not self.document_symbols.is_disabled(),
         }
 
 
@@ -243,7 +270,7 @@ def process_initialize_request(
     server_info = lsp.Info(name="pyre", version=version.__version__)
     did_change_result = (
         lsp.TextDocumentSyncKind.FULL
-        if language_server_features.unsaved_changes_enabled
+        if language_server_features.unsaved_changes.is_enabled()
         else lsp.TextDocumentSyncKind.NONE
     )
     server_capabilities = lsp.ServerCapabilities(
@@ -1192,7 +1219,7 @@ class RequestHandler(AbstractRequestHandler):
     ) -> Optional[QueryModulesOfPathResponse]:
         overlay_id = (
             str(path)
-            if self.get_language_server_features().unsaved_changes_enabled
+            if self.get_language_server_features().unsaved_changes.is_enabled()
             else None
         )
         return await daemon_query.attempt_typed_async_query(
@@ -1216,7 +1243,7 @@ class RequestHandler(AbstractRequestHandler):
 
     def _get_overlay_id(self, path: Path) -> Optional[str]:
         unsaved_changes_enabled = (
-            self.get_language_server_features().unsaved_changes_enabled
+            self.get_language_server_features().unsaved_changes.is_enabled()
         )
         return str(path) if unsaved_changes_enabled else None
 
