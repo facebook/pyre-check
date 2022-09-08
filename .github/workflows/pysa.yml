@@ -50,3 +50,7 @@ jobs:
           cd ./documentation/deliberately_vulnerable_flask_app
           . ./setup.sh
           ./run_integration_tests.sh
+
+      - name: Test Pysa playground
+        run: |
+          python3 ./tools/playground/tests/taint_output_parse_test.py

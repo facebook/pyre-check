@@ -7,7 +7,8 @@
 set +e
 python3 ../../tools/pysa_integration_tests/run.py \
     --skip-model-verification \
-    --run-from-source
+    --run-from-source \
+    --save-results-to=./
 
 exit_code=$?
 

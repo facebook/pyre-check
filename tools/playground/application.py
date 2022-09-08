@@ -15,7 +15,7 @@ import subprocess
 import tempfile
 import threading
 from pathlib import Path
-from typing import IO, List
+from typing import Dict, IO, List
 
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
@@ -60,7 +60,7 @@ def _consume(stream: IO[str]) -> str:
 @functools.lru_cache(maxsize=128)
 def _get_cache_contents(file_path: Path) -> str:
     with file_path.open() as cache_file:
-        return cache_file.read()
+        return json.loads(cache_file.read())
 
 
 @functools.lru_cache(maxsize=128)
@@ -72,6 +72,59 @@ def _get_cache_file_path(input: str, model: str) -> Path:
     )
     cache_file_path = cache_directory / sha1_hash_file_name
     return cache_file_path
+
+
+def _generate_cache_contents(
+    return_code: int, lines: List[str], annotations: List[Dict[str, str]]
+):
+    return json.dumps(
+        {"return_code": return_code, "lines": lines, "annotations": annotations}
+    )
+
+
+def _parse_annotations_from_taint_output(
+    taint_output_file_path: Path,
+) -> List[Dict[str, str]]:
+    if not (taint_output_file_path.is_file() and taint_output_file_path.exists()):
+        return []
+    annotations = []
+    with taint_output_file_path.open() as taint_output_file:
+        taint_output_contents = taint_output_file.readlines()
+        for taint_output_line in taint_output_contents:
+            taint_output_line_json = json.loads(taint_output_line)
+            if taint_output_line_json.get("kind") != "issue":
+                continue
+            data = taint_output_line_json.get("data")
+            if data is None:
+                continue
+            message = data.get("message")
+            if message is None:
+                continue
+            traces = data.get("traces")
+            if traces is None:
+                continue
+            for trace in traces:
+                trace_roots = trace.get("roots")
+                if trace_roots is None:
+                    continue
+                for trace_root in trace_roots:
+                    root = trace_root.get("root")
+                    if root is None:
+                        continue
+                    line = root.get("line")
+                    start = root.get("start")
+                    end = root.get("end")
+                    if line is None or start is None or end is None:
+                        continue
+                    annotations.append(
+                        {
+                            "message": message,
+                            "line": line,
+                            "start": start,
+                            "end": end,
+                        }
+                    )
+    return annotations
 
 
 class Pyre:
@@ -143,6 +196,7 @@ class Pysa:
         self._stubs: Path = Path(tempfile.mkdtemp())
         self.input: str = input
         self.model: str = model
+        self.taint_output_file_path = Path(self._directory / "taint_output.json")
 
         LOG.debug(f"Intializing Pysa in `{self._directory}`...")
         pyre_configuration = json.dumps(
@@ -171,14 +225,14 @@ class Pysa:
     def analyze(self) -> None:
         LOG.debug("Running pysa")
         with subprocess.Popen(
-            ["pyre", "-n", "analyze"],
+            ["pyre", "-n", "analyze", "--no-verify", "--save-results-to", "./"],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
             cwd=self._directory,
             text=True,
         ) as process:
             model_verification_errors = []
-            cache_lines = ""
+            cache_lines = []
             # pyre-fixme[16]: process.stderr is marked as Optional
             for line in iter(process.stderr.readline, b""):
                 line = line.rstrip()
@@ -204,19 +258,28 @@ class Pysa:
                         model_verification_errors = []
                     emit("pysa_results_channel", {"type": "output", "line": line})
                 LOG.debug(line)
-                cache_lines += line + "\n"
+                cache_lines.append(line)
 
             return_code = process.wait()
             if return_code != 0:
                 result = {"type": "finished", "result": "error"}
             else:
                 result = {"type": "finished", "result": "ok"}
-
+            annotations = _parse_annotations_from_taint_output(
+                self.taint_output_file_path
+            )
+            if len(annotations) > 0:
+                emit(
+                    "pysa_result_channel",
+                    {"type": "annotations", "annotations": annotations},
+                )
             emit("pysa_results_channel", result)
             # write to cache now:
             with _get_cache_file_path(self.input, self.model).open("w") as cache_file:
-                cache_file.write(str(return_code) + "\n")
-                cache_file.write(cache_lines)
+                cache_contents = _generate_cache_contents(
+                    return_code, cache_lines, annotations
+                )
+                cache_file.write(cache_contents)
 
 
 def get_server():
@@ -266,16 +329,23 @@ def get_server():
             cache_file_path = _get_cache_file_path(input, model)
             if cache_file_path.exists():
                 LOG.info(f"Using cache `{cache_file_path}`...")
-                cache_contents = _get_cache_contents(cache_file_path).split("\n")
-                run_status = cache_contents.pop(0)
+                cache_contents = _get_cache_contents(cache_file_path)
+                run_status = cache_contents["return_code"]
+                lines = cache_contents["lines"]
+                annotations = cache_contents["annotations"]
                 emit(
                     "pysa_results_channel",
                     {
                         "type": "output",
-                        "line": "\n".join(cache_contents),
+                        "line": "\n".join(lines),
                     },
                 )
-                if run_status != "0":
+                if len(annotations) > 0:
+                    emit(
+                        "pysa_result_channel",
+                        {"type": "annotations", "annotations": annotations},
+                    )
+                if run_status != 0:
                     result = {"type": "finished", "result": "error"}
                 else:
                     result = {"type": "finished", "result": "ok"}
