@@ -1312,28 +1312,44 @@ class PersistentTest(testslide.TestCase):
             expected_handler_requests=[],
         )
 
-    async def _assert_references_response(
-        self,
-        opened_documents: Set[Path],
-        parameters: lsp.ReferencesParameters,
-        handler_response: Optional[List[lsp.LspDefinitionResponse]],
-        expected_response: List[lsp.LspDefinitionResponse],
-        expected_handler_requests: List[object],
-    ) -> None:
+    @setup.async_test
+    async def test_references__basic(self) -> None:
+        tracked_path = Path("/tracked.py")
+        lsp_line = 3
+        daemon_line = 3 + 1
+        expected_response = [
+            lsp.LspDefinitionResponse(
+                uri="file:///path/to/foo.py",
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=5, character=6),
+                    end=lsp.LspPosition(line=5, character=9),
+                ),
+            )
+        ]
         handler = MockRequestHandler(
-            mock_references_response=handler_response,
+            mock_references_response=expected_response,
         )
         server, output_writer = await self._set_up_server_for_request_test(
-            opened_documents=opened_documents,
+            opened_documents={tracked_path},
             handler=handler,
         )
         await server.process_find_all_references_request(
-            parameters,
+            lsp.ReferencesParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=lsp_line, character=4),
+            ),
             request_id=DEFAULT_REQUEST_ID,
         )
         self.assertEqual(
             handler.requests,
-            expected_handler_requests,
+            [
+                {
+                    "path": tracked_path,
+                    "position": lsp.PyrePosition(line=daemon_line, character=4),
+                }
+            ],
         )
         self._assert_output_messages(
             output_writer,
@@ -1347,58 +1363,26 @@ class PersistentTest(testslide.TestCase):
         )
 
     @setup.async_test
-    async def test_references(self) -> None:
+    async def test_references__unopened(self) -> None:
         tracked_path = Path("/tracked.py")
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
-        daemon_line = 3 + 1
-        # tracked file
-        await self._assert_references_response(
+        handler = MockRequestHandler()
+        server, output_writer = await self._set_up_server_for_request_test(
             opened_documents={tracked_path},
-            parameters=lsp.ReferencesParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
-                ),
-                position=lsp.LspPosition(line=lsp_line, character=4),
-            ),
-            handler_response=[
-                lsp.LspDefinitionResponse(
-                    uri="file:///path/to/foo.py",
-                    range=lsp.LspRange(
-                        start=lsp.LspPosition(line=5, character=6),
-                        end=lsp.LspPosition(line=5, character=9),
-                    ),
-                )
-            ],
-            expected_response=[
-                lsp.LspDefinitionResponse(
-                    uri="file:///path/to/foo.py",
-                    range=lsp.LspRange(
-                        start=lsp.LspPosition(line=5, character=6),
-                        end=lsp.LspPosition(line=5, character=9),
-                    ),
-                )
-            ],
-            expected_handler_requests=[
-                {
-                    "path": tracked_path,
-                    "position": lsp.PyrePosition(line=daemon_line, character=4),
-                }
-            ],
+            handler=handler,
         )
-        # untracked file
-        await self._assert_references_response(
-            opened_documents={tracked_path},
-            parameters=lsp.ReferencesParameters(
+        await server.process_find_all_references_request(
+            lsp.ReferencesParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(untracked_path).unparse(),
                 ),
                 position=lsp.LspPosition(line=lsp_line, character=4),
             ),
-            handler_response=None,
-            expected_response=[],
-            expected_handler_requests=[],
+            request_id=DEFAULT_REQUEST_ID,
         )
+        self.assertEqual(handler.requests, [])
+        self._assert_output_messages(output_writer, [_success_response_json(result=[])])
 
     @setup.async_test
     async def test_document_symbols_request(self) -> None:
