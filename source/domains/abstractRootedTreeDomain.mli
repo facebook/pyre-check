@@ -58,6 +58,8 @@ module Make (_ : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) () : 
 
   val get_root : t -> Root.t * Element.t
 
+  val set_root : t -> Root.t -> t
+
   (* Returns the set of labels rooted in the tree that lead to non-trivial subtrees *)
   val labels : t -> Label.t list
 end

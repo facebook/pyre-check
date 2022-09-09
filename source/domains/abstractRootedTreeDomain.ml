@@ -109,5 +109,7 @@ module Make (Config : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) 
     get ProductConfig.Root product, Tree.get_root (get ProductConfig.Tree product)
 
 
+  let set_root product root = update ProductConfig.Root root product
+
   let labels product = Tree.labels (get ProductConfig.Tree product)
 end
