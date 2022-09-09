@@ -38,9 +38,9 @@ from ..connections import (
 )
 from ..persistent import (
     AbstractRequestHandler,
-    Availability,
-    AvailabilityWithShadow,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+    DefinitionAvailability,
+    HoverAvailability,
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
@@ -52,13 +52,14 @@ from ..persistent import (
     PyreServerOptions,
     PyreServerOptionsReader,
     read_lsp_request,
+    ReferencesAvailability,
     RequestHandler,
     ServerState,
     to_coverage_result,
     try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
-    TypeCoverageLevel,
+    TypeCoverageAvailability,
     uncovered_range_to_diagnostic,
 )
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
@@ -75,7 +76,7 @@ DEFAULT_START_ARGUMENTS: start.Arguments = start.Arguments(
     socket_path=Path("irrelevant_socket_path.sock"),
 )
 DEFAULT_FEATURES: LanguageServerFeatures = LanguageServerFeatures(
-    type_coverage_level=TypeCoverageLevel.FUNCTION_LEVEL
+    type_coverage=TypeCoverageAvailability.FUNCTION_LEVEL
 )
 DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
@@ -1380,7 +1381,7 @@ class PersistentTest(testslide.TestCase):
             server_options=_create_server_options(
                 enabled_telemetry_event=True,
                 language_server_features=LanguageServerFeatures(
-                    definition=AvailabilityWithShadow.SHADOW
+                    definition=DefinitionAvailability.SHADOW
                 ),
             ),
         )
@@ -1713,7 +1714,7 @@ class RequestHandlerTest(testslide.TestCase):
                 server_state=_create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
-                        type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
+                        type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
                     ),
                 ),
             )
@@ -1744,7 +1745,7 @@ class RequestHandlerTest(testslide.TestCase):
                 server_state=_create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
-                        type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
+                        type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
                     ),
                 ),
             )
@@ -1773,7 +1774,7 @@ class RequestHandlerTest(testslide.TestCase):
             server_state=_create_server_state_with_options(
                 strict_default=False,
                 language_server_features=LanguageServerFeatures(
-                    type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
+                    type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
                 ),
             ),
         )
@@ -1797,7 +1798,7 @@ class RequestHandlerTest(testslide.TestCase):
                 server_state=_create_server_state_with_options(
                     strict_default=True,
                     language_server_features=LanguageServerFeatures(
-                        type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
+                        type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
                     ),
                 ),
             )
@@ -1819,7 +1820,7 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
-                    hover=Availability.ENABLED
+                    hover=HoverAvailability.ENABLED
                 ),
             ),
         )
@@ -1850,7 +1851,7 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
-                    hover=Availability.ENABLED
+                    hover=HoverAvailability.ENABLED
                 ),
             ),
         )
@@ -1893,7 +1894,7 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
-                    hover=Availability.ENABLED
+                    hover=HoverAvailability.ENABLED
                 ),
             ),
         )
@@ -1933,7 +1934,7 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
-                    hover=Availability.ENABLED
+                    hover=HoverAvailability.ENABLED
                 )
             ),
         )
@@ -1989,7 +1990,7 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
-                    references=Availability.ENABLED,
+                    references=ReferencesAvailability.ENABLED,
                 ),
             ),
         )
@@ -2036,7 +2037,7 @@ class RequestHandlerTest(testslide.TestCase):
         pyre_query_manager = RequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
-                    references=Availability.ENABLED,
+                    references=ReferencesAvailability.ENABLED,
                 ),
             ),
         )

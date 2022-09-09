@@ -101,58 +101,65 @@ PyreServerOptionsReader = Callable[[], "PyreServerOptions"]
 FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
 
 
-class Availability(enum.Enum):
+class _Availability(enum.Enum):
     ENABLED = "enabled"
     DISABLED = "disabled"
 
     @staticmethod
-    def from_enabled(enabled: bool) -> Availability:
-        return Availability.ENABLED if enabled else Availability.DISABLED
+    def from_enabled(enabled: bool) -> _Availability:
+        return _Availability.ENABLED if enabled else _Availability.DISABLED
 
     def is_enabled(self) -> bool:
-        return self == Availability.ENABLED
+        return self == _Availability.ENABLED
 
     def is_disabled(self) -> bool:
-        return self == Availability.DISABLED
+        return self == _Availability.DISABLED
 
 
-class AvailabilityWithShadow(enum.Enum):
+class _AvailabilityWithShadow(enum.Enum):
     ENABLED = "enabled"
     DISABLED = "disabled"
     SHADOW = "shadow"
 
     @staticmethod
-    def from_enabled(enabled: bool) -> AvailabilityWithShadow:
+    def from_enabled(enabled: bool) -> _AvailabilityWithShadow:
         return (
-            AvailabilityWithShadow.ENABLED
+            _AvailabilityWithShadow.ENABLED
             if enabled
-            else AvailabilityWithShadow.DISABLED
+            else _AvailabilityWithShadow.DISABLED
         )
 
     def is_enabled(self) -> bool:
-        return self == AvailabilityWithShadow.ENABLED
+        return self == _AvailabilityWithShadow.ENABLED
 
     def is_shadow(self) -> bool:
-        return self == AvailabilityWithShadow.SHADOW
+        return self == _AvailabilityWithShadow.SHADOW
 
     def is_disabled(self) -> bool:
-        return self == AvailabilityWithShadow.DISABLED
+        return self == _AvailabilityWithShadow.DISABLED
 
 
-class TypeCoverageLevel(enum.Enum):
-    NONE = "none"
+class TypeCoverageAvailability(enum.Enum):
+    DISABLED = "disabled"
     FUNCTION_LEVEL = "function_level"
     EXPRESSION_LEVEL = "expression_level"
 
 
+HoverAvailability = _Availability
+DefinitionAvailability = _AvailabilityWithShadow
+ReferencesAvailability = _Availability
+DocumentSymbolsAvailability = _Availability
+UnsavedChangesAvailability = _Availability
+
+
 @dataclasses.dataclass(frozen=True)
 class LanguageServerFeatures:
-    hover: Availability = Availability.DISABLED
-    definition: AvailabilityWithShadow = AvailabilityWithShadow.DISABLED
-    references: Availability = Availability.DISABLED
-    document_symbols: Availability = Availability.DISABLED
-    unsaved_changes: Availability = Availability.DISABLED
-    type_coverage_level: TypeCoverageLevel = TypeCoverageLevel.NONE
+    hover: HoverAvailability = HoverAvailability.DISABLED
+    definition: DefinitionAvailability = DefinitionAvailability.DISABLED
+    references: ReferencesAvailability = ReferencesAvailability.DISABLED
+    document_symbols: DocumentSymbolsAvailability = DocumentSymbolsAvailability.DISABLED
+    unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
+    type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
 
     @staticmethod
     def create(
@@ -161,31 +168,31 @@ class LanguageServerFeatures:
         ide_features = configuration.get_ide_features()
         if ide_features is None:
             return LanguageServerFeatures(
-                hover=Availability.DISABLED,
-                definition=AvailabilityWithShadow.DISABLED,
-                references=Availability.DISABLED,
-                document_symbols=Availability.DISABLED,
-                unsaved_changes=Availability.DISABLED,
-                type_coverage_level=TypeCoverageLevel.FUNCTION_LEVEL,
+                hover=HoverAvailability.DISABLED,
+                definition=DefinitionAvailability.DISABLED,
+                references=ReferencesAvailability.DISABLED,
+                document_symbols=DocumentSymbolsAvailability.DISABLED,
+                unsaved_changes=UnsavedChangesAvailability.DISABLED,
+                type_coverage=TypeCoverageAvailability.FUNCTION_LEVEL,
             )
         else:
             return LanguageServerFeatures(
-                hover=Availability.from_enabled(ide_features.is_hover_enabled()),
-                definition=AvailabilityWithShadow.from_enabled(
+                hover=HoverAvailability.from_enabled(ide_features.is_hover_enabled()),
+                definition=DefinitionAvailability.from_enabled(
                     ide_features.is_go_to_definition_enabled()
                 ),
-                references=Availability.from_enabled(
+                references=ReferencesAvailability.from_enabled(
                     ide_features.is_find_all_references_enabled()
                 ),
-                document_symbols=Availability.from_enabled(
+                document_symbols=DocumentSymbolsAvailability.from_enabled(
                     ide_features.is_find_symbols_enabled()
                 ),
-                unsaved_changes=Availability.from_enabled(
+                unsaved_changes=UnsavedChangesAvailability.from_enabled(
                     ide_features.is_consume_unsaved_changes_enabled()
                 ),
-                type_coverage_level=TypeCoverageLevel.EXPRESSION_LEVEL
+                type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
                 if ide_features.is_expression_level_coverage_enabled()
-                else TypeCoverageLevel.FUNCTION_LEVEL,
+                else TypeCoverageAvailability.FUNCTION_LEVEL,
             )
 
     def capabilities(self) -> Dict[str, bool]:
@@ -1275,9 +1282,9 @@ class RequestHandler(AbstractRequestHandler):
             return None
         elif not is_typechecked:
             return file_not_typechecked_coverage_result()
-        type_coverage_level = self.get_language_server_features().type_coverage_level
+        type_coverage = self.get_language_server_features().type_coverage
         strict_by_default = self.server_state.server_options.strict_default
-        if type_coverage_level == TypeCoverageLevel.EXPRESSION_LEVEL:
+        if type_coverage == TypeCoverageAvailability.EXPRESSION_LEVEL:
             response = await daemon_query.attempt_async_query(
                 socket_path=self.socket_path,
                 query_text=f"expression_level_coverage('{path}')",
