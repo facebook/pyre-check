@@ -498,138 +498,8 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationExit)
 
-    @setup.async_test
-    async def test_server_exit(self) -> None:
-        server_state = mock_server_state
-        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
-        input_channel = await _create_input_channel_with_requests(
-            [
-                json_rpc.Request(method="shutdown", parameters=None),
-                json_rpc.Request(method="exit", parameters=None),
-            ]
-        )
-        server = PyreServer(
-            input_channel=input_channel,
-            output_channel=create_memory_text_writer(),
-            server_state=server_state,
-            pyre_manager=noop_task_manager,
-            handler=MockRequestHandler(),
-        )
 
-        exit_code = await server.run()
-        self.assertEqual(exit_code, 0)
-
-    @setup.async_test
-    async def test_server_exit_unknown_request_after_shutdown(self) -> None:
-        server_state = mock_server_state
-        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
-        input_channel = await _create_input_channel_with_requests(
-            [
-                json_rpc.Request(method="shutdown", parameters=None),
-                json_rpc.Request(method="derp", parameters=None),
-                json_rpc.Request(method="exit", parameters=None),
-            ]
-        )
-        server = PyreServer(
-            input_channel=input_channel,
-            output_channel=create_memory_text_writer(),
-            server_state=server_state,
-            pyre_manager=noop_task_manager,
-            handler=MockRequestHandler(),
-        )
-
-        exit_code = await server.run()
-        self.assertEqual(exit_code, 0)
-
-    @setup.async_test
-    async def test_server_exit_gracefully_after_shutdown(self) -> None:
-        server_state = mock_server_state
-        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
-        input_channel = await _create_input_channel_with_requests(
-            [
-                json_rpc.Request(method="shutdown", parameters=None),
-            ]
-        )
-        server = PyreServer(
-            # Feed only a shutdown request to input channel
-            input_channel=input_channel,
-            # Always rasing in the output channel
-            output_channel=AsyncTextWriter(
-                ExceptionRaisingBytesWriter(ConnectionResetError())
-            ),
-            server_state=server_state,
-            pyre_manager=noop_task_manager,
-            handler=MockRequestHandler(),
-        )
-
-        exit_code = await server.run()
-        self.assertEqual(exit_code, 0)
-
-    @setup.async_test
-    async def test_server_exit_gracefully_on_channel_closure(self) -> None:
-        server_state = mock_server_state
-        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
-        server = PyreServer(
-            # Feed nothing to input channel
-            input_channel=create_memory_text_reader(""),
-            # Always rasing in the output channel
-            output_channel=AsyncTextWriter(
-                ExceptionRaisingBytesWriter(ConnectionResetError())
-            ),
-            server_state=server_state,
-            pyre_manager=noop_task_manager,
-            handler=MockRequestHandler(),
-        )
-
-        exit_code = await server.run()
-        self.assertEqual(exit_code, 0)
-
-    @setup.async_test
-    async def test_open_close(self) -> None:
-        server_state = mock_server_state
-        server = PyreServer(
-            input_channel=create_memory_text_reader(""),
-            output_channel=create_memory_text_writer(),
-            server_state=server_state,
-            pyre_manager=background.TaskManager(NoOpBackgroundTask()),
-            handler=MockRequestHandler(),
-        )
-        test_path0 = Path("/foo/bar")
-        test_path1 = Path("/foo/baz")
-
-        await server.process_open_request(
-            lsp.DidOpenTextDocumentParameters(
-                text_document=lsp.TextDocumentItem(
-                    language_id="python",
-                    text="",
-                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse(),
-                    version=0,
-                )
-            )
-        )
-        self.assertIn(test_path0, server_state.opened_documents)
-
-        await server.process_open_request(
-            lsp.DidOpenTextDocumentParameters(
-                text_document=lsp.TextDocumentItem(
-                    language_id="python",
-                    text="",
-                    uri=lsp.DocumentUri.from_file_path(test_path1).unparse(),
-                    version=0,
-                )
-            )
-        )
-        self.assertIn(test_path1, server_state.opened_documents)
-
-        await server.process_close_request(
-            lsp.DidCloseTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse()
-                )
-            )
-        )
-        self.assertNotIn(test_path0, server_state.opened_documents)
-
+class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_subscription_protocol(self) -> None:
         server_state = ServerState(
@@ -1089,6 +959,140 @@ class PersistentTest(testslide.TestCase):
                 parameters=json_rpc.ByNameParameters({"type": 2, "message": "derp"}),
             ),
         )
+
+
+class PyreServerTest(testslide.TestCase):
+    @setup.async_test
+    async def test_exit(self) -> None:
+        server_state = mock_server_state
+        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+                json_rpc.Request(method="exit", parameters=None),
+            ]
+        )
+        server = PyreServer(
+            input_channel=input_channel,
+            output_channel=create_memory_text_writer(),
+            server_state=server_state,
+            pyre_manager=noop_task_manager,
+            handler=MockRequestHandler(),
+        )
+
+        exit_code = await server.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_exit_unknown_request_after_shutdown(self) -> None:
+        server_state = mock_server_state
+        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+                json_rpc.Request(method="derp", parameters=None),
+                json_rpc.Request(method="exit", parameters=None),
+            ]
+        )
+        server = PyreServer(
+            input_channel=input_channel,
+            output_channel=create_memory_text_writer(),
+            server_state=server_state,
+            pyre_manager=noop_task_manager,
+            handler=MockRequestHandler(),
+        )
+
+        exit_code = await server.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_exit_gracefully_after_shutdown(self) -> None:
+        server_state = mock_server_state
+        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+            ]
+        )
+        server = PyreServer(
+            # Feed only a shutdown request to input channel
+            input_channel=input_channel,
+            # Always rasing in the output channel
+            output_channel=AsyncTextWriter(
+                ExceptionRaisingBytesWriter(ConnectionResetError())
+            ),
+            server_state=server_state,
+            pyre_manager=noop_task_manager,
+            handler=MockRequestHandler(),
+        )
+
+        exit_code = await server.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_exit_gracefully_on_channel_closure(self) -> None:
+        server_state = mock_server_state
+        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
+        server = PyreServer(
+            # Feed nothing to input channel
+            input_channel=create_memory_text_reader(""),
+            # Always rasing in the output channel
+            output_channel=AsyncTextWriter(
+                ExceptionRaisingBytesWriter(ConnectionResetError())
+            ),
+            server_state=server_state,
+            pyre_manager=noop_task_manager,
+            handler=MockRequestHandler(),
+        )
+
+        exit_code = await server.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_open_close(self) -> None:
+        server_state = mock_server_state
+        server = PyreServer(
+            input_channel=create_memory_text_reader(""),
+            output_channel=create_memory_text_writer(),
+            server_state=server_state,
+            pyre_manager=background.TaskManager(NoOpBackgroundTask()),
+            handler=MockRequestHandler(),
+        )
+        test_path0 = Path("/foo/bar")
+        test_path1 = Path("/foo/baz")
+
+        await server.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse(),
+                    version=0,
+                )
+            )
+        )
+        self.assertIn(test_path0, server_state.opened_documents)
+
+        await server.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path1).unparse(),
+                    version=0,
+                )
+            )
+        )
+        self.assertIn(test_path1, server_state.opened_documents)
+
+        await server.process_close_request(
+            lsp.DidCloseTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse()
+                )
+            )
+        )
+        self.assertNotIn(test_path0, server_state.opened_documents)
 
     @setup.async_test
     async def test_type_coverage_request(self) -> None:
