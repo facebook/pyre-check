@@ -11,6 +11,8 @@ import tempfile
 from pathlib import Path
 from typing import Iterable
 
+from ..identifiers import PyreFlavor
+
 
 # Socket path logic ---
 
@@ -25,6 +27,7 @@ def get_md5(identifier_string: str) -> str:
 def get_socket_path(
     socket_root: Path,
     project_identifier: str,
+    flavor: PyreFlavor = PyreFlavor.CLASSIC,
 ) -> Path:
     """
     Determine where the server socket file is located. We can't directly use
@@ -32,7 +35,8 @@ def get_socket_path(
     file paths.
     """
     project_hash = get_md5(project_identifier)
-    return socket_root / f"pyre_server_{project_hash}.sock"
+    suffix = flavor.socket_path_suffix()
+    return socket_root / f"pyre_server_{project_hash}{suffix}.sock"
 
 
 def get_default_socket_root() -> Path:
@@ -43,13 +47,18 @@ def get_default_socket_root() -> Path:
 
 def get_default_socket_path(
     project_identifier: str,
+    flavor: PyreFlavor = PyreFlavor.CLASSIC,
 ) -> Path:
-    return get_socket_path(get_default_socket_root(), project_identifier)
+    return get_socket_path(
+        get_default_socket_root(),
+        project_identifier,
+        flavor,
+    )
 
 
 def socket_file_glob_pattern() -> str:
     md5_hash_pattern = "[0-9a-f]" * MD5_LENGTH
-    return f"pyre_server_{md5_hash_pattern}.sock"
+    return f"pyre_server_{md5_hash_pattern}*.sock"
 
 
 def find_socket_files(socket_root: Path) -> Iterable[Path]:

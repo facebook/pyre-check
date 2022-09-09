@@ -9,7 +9,7 @@ from typing import Optional
 
 import testslide
 
-from ...identifiers import get_project_identifier
+from ...identifiers import get_project_identifier, PyreFlavor
 
 from ..daemon_socket import find_socket_files, get_md5, get_socket_path, MD5_LENGTH
 
@@ -50,13 +50,17 @@ class SocketTest(testslide.TestCase):
         socket_root: Path,
         project_root: Path,
         relative_local_root: Optional[str],
+        flavor: PyreFlavor = PyreFlavor.CLASSIC,
+        suffix: str = "",
     ) -> None:
         md5_hash = get_md5(get_project_identifier(project_root, relative_local_root))
         self.assertEqual(
             get_socket_path(
-                socket_root, get_project_identifier(project_root, relative_local_root)
+                socket_root,
+                get_project_identifier(project_root, relative_local_root),
+                flavor,
             ),
-            socket_root / f"pyre_server_{md5_hash}.sock",
+            socket_root / f"pyre_server_{md5_hash}{suffix}.sock",
         )
 
     def test_get_socket_path(self) -> None:
@@ -73,6 +77,14 @@ class SocketTest(testslide.TestCase):
             project_root=Path("project_root"),
             relative_local_root=None,
         )
+        # No local directory
+        self._assert_socket_path(
+            socket_root=socket_root,
+            project_root=Path("project_root"),
+            relative_local_root=None,
+            flavor=PyreFlavor.SHADOW,
+            suffix="::shadow",
+        )
 
     def test_find_socket_files(self) -> None:
         with tempfile.TemporaryDirectory(dir="/tmp") as socket_root:
@@ -80,6 +92,7 @@ class SocketTest(testslide.TestCase):
             socket_a = get_socket_path(
                 socket_root_path,
                 project_identifier="a",
+                flavor=PyreFlavor.CLASSIC,
             )
             socket_a.touch()
             self.assertEqual(
@@ -89,9 +102,35 @@ class SocketTest(testslide.TestCase):
             socket_b = get_socket_path(
                 socket_root_path,
                 project_identifier="b//relative_to_b",
+                flavor=PyreFlavor.CLASSIC,
             )
             socket_b.touch()
             self.assertEqual(
                 set(find_socket_files(socket_root_path)),
                 {socket_a, socket_b},
+            )
+            socket_c = get_socket_path(
+                socket_root_path,
+                project_identifier="c",
+                flavor=PyreFlavor.SHADOW,
+            )
+            socket_c.touch()
+            self.assertEqual(
+                set(find_socket_files(socket_root_path)),
+                {socket_a, socket_b, socket_c},
+            )
+
+    def test_no_flavor_leads_to_too_long_name(self) -> None:
+        # This isn't really a unit test of functionality per se; it is a
+        # sanity check to make sure that PyreFlavor never leads to
+        # socket name too long to be instantiated.
+        for flavor in PyreFlavor:
+            path = get_socket_path(
+                socket_root=Path("/dummy/socket/root"),
+                project_identifier="dummy_project_identifier",
+                flavor=flavor,
+            )
+            self.assertTrue(
+                len(str(path)) < 100,
+                msg=f"Path {path} is too long for a socket path",
             )
