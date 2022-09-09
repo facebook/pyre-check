@@ -156,43 +156,57 @@ UnsavedChangesAvailability = _Availability
 class LanguageServerFeatures:
     hover: HoverAvailability = HoverAvailability.DISABLED
     definition: DefinitionAvailability = DefinitionAvailability.DISABLED
-    references: ReferencesAvailability = ReferencesAvailability.DISABLED
     document_symbols: DocumentSymbolsAvailability = DocumentSymbolsAvailability.DISABLED
-    unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
+    references: ReferencesAvailability = ReferencesAvailability.DISABLED
     type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
+    unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
 
     @staticmethod
     def create(
         configuration: frontend_configuration.Base,
+        hover: Optional[HoverAvailability],
+        definition: Optional[DefinitionAvailability],
+        document_symbols: Optional[DocumentSymbolsAvailability],
+        references: Optional[ReferencesAvailability],
+        type_coverage: Optional[TypeCoverageAvailability],
+        unsaved_changes: Optional[UnsavedChangesAvailability],
     ) -> LanguageServerFeatures:
         ide_features = configuration.get_ide_features()
         if ide_features is None:
             ide_features = configuration_module.IdeFeatures()
         return LanguageServerFeatures(
-            hover=HoverAvailability.from_enabled(ide_features.is_hover_enabled()),
-            definition=DefinitionAvailability.from_enabled(
+            hover=hover
+            or HoverAvailability.from_enabled(ide_features.is_hover_enabled()),
+            definition=definition
+            or DefinitionAvailability.from_enabled(
                 ide_features.is_go_to_definition_enabled()
             ),
-            references=ReferencesAvailability.from_enabled(
-                ide_features.is_find_all_references_enabled()
-            ),
-            document_symbols=DocumentSymbolsAvailability.from_enabled(
+            document_symbols=document_symbols
+            or DocumentSymbolsAvailability.from_enabled(
                 ide_features.is_find_symbols_enabled()
             ),
-            unsaved_changes=UnsavedChangesAvailability.from_enabled(
+            references=references
+            or ReferencesAvailability.from_enabled(
+                ide_features.is_find_all_references_enabled()
+            ),
+            type_coverage=type_coverage
+            or (
+                TypeCoverageAvailability.EXPRESSION_LEVEL
+                if ide_features.is_expression_level_coverage_enabled()
+                else TypeCoverageAvailability.FUNCTION_LEVEL
+            ),
+            unsaved_changes=unsaved_changes
+            or UnsavedChangesAvailability.from_enabled(
                 ide_features.is_consume_unsaved_changes_enabled()
             ),
-            type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
-            if ide_features.is_expression_level_coverage_enabled()
-            else TypeCoverageAvailability.FUNCTION_LEVEL,
         )
 
     def capabilities(self) -> Dict[str, bool]:
         return {
             "hover_provider": not self.hover.is_disabled(),
             "definition_provider": not self.definition.is_disabled(),
-            "references_provider": not self.references.is_disabled(),
             "document_symbol_provider": not self.document_symbols.is_disabled(),
+            "references_provider": not self.references.is_disabled(),
         }
 
 
@@ -214,6 +228,12 @@ class PyreServerOptions:
         start_command_argument: command_arguments.StartArguments,
         configuration: frontend_configuration.Base,
         enabled_telemetry_event: bool,
+        hover: Optional[HoverAvailability],
+        definition: Optional[DefinitionAvailability],
+        document_symbols: Optional[DocumentSymbolsAvailability],
+        references: Optional[ReferencesAvailability],
+        type_coverage: Optional[TypeCoverageAvailability],
+        unsaved_changes: Optional[UnsavedChangesAvailability],
     ) -> PyreServerOptions:
         binary_location = configuration.get_binary_location(download_if_needed=True)
         if binary_location is None:
@@ -235,7 +255,15 @@ class PyreServerOptions:
             binary=str(binary_location),
             project_identifier=configuration.get_project_identifier(),
             start_arguments=start_arguments,
-            language_server_features=LanguageServerFeatures.create(configuration),
+            language_server_features=LanguageServerFeatures.create(
+                configuration=configuration,
+                hover=hover,
+                definition=definition,
+                document_symbols=document_symbols,
+                references=references,
+                type_coverage=type_coverage,
+                unsaved_changes=unsaved_changes,
+            ),
             strict_default=configuration.is_strict(),
             excludes=configuration.get_excludes(),
             enabled_telemetry_event=enabled_telemetry_event,
@@ -246,12 +274,24 @@ class PyreServerOptions:
         start_command_argument: command_arguments.StartArguments,
         read_frontend_configuration: FrontendConfigurationReader,
         enabled_telemetry_event: bool,
+        hover: Optional[HoverAvailability],
+        definition: Optional[DefinitionAvailability],
+        document_symbols: Optional[DocumentSymbolsAvailability],
+        references: Optional[ReferencesAvailability],
+        type_coverage: Optional[TypeCoverageAvailability],
+        unsaved_changes: Optional[UnsavedChangesAvailability],
     ) -> PyreServerOptionsReader:
         def read() -> PyreServerOptions:
             return PyreServerOptions.create(
                 start_command_argument=start_command_argument,
                 configuration=read_frontend_configuration(),
                 enabled_telemetry_event=enabled_telemetry_event,
+                hover=hover,
+                definition=definition,
+                document_symbols=document_symbols,
+                references=references,
+                type_coverage=type_coverage,
+                unsaved_changes=unsaved_changes,
             )
 
         return read

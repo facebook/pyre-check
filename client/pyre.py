@@ -772,8 +772,62 @@ def kill(context: click.Context, with_fire: bool) -> int:
 
 
 @pyre.command()
+@click.option(
+    "--hover",
+    type=click.Choice([kind.value for kind in commands.persistent.HoverAvailability]),
+    help="Availability of the hover langauge server feature",
+    hidden=True,
+)
+@click.option(
+    "--definition",
+    type=click.Choice(
+        [kind.value for kind in commands.persistent.DefinitionAvailability]
+    ),
+    help="Availability of the definition langauge server feature",
+    hidden=True,
+)
+@click.option(
+    "--document-symbols",
+    type=click.Choice(
+        [kind.value for kind in commands.persistent.DocumentSymbolsAvailability]
+    ),
+    help="Availability of the document symbols langauge server feature",
+    hidden=True,
+)
+@click.option(
+    "--references",
+    type=click.Choice(
+        [kind.value for kind in commands.persistent.DocumentSymbolsAvailability]
+    ),
+    help="Availability of the references langauge server feature",
+    hidden=True,
+)
+@click.option(
+    "--type-coverage",
+    type=click.Choice(
+        [kind.value for kind in commands.persistent.TypeCoverageAvailability]
+    ),
+    help="Availability of the type coverage langauge server feature",
+    hidden=True,
+)
+@click.option(
+    "--unsaved-changes",
+    type=click.Choice(
+        [kind.value for kind in commands.persistent.DocumentSymbolsAvailability]
+    ),
+    help="Availability support for Pyre analyzing unsaved editor buffers",
+    hidden=True,
+)
 @click.pass_context
-def persistent(context: click.Context) -> int:
+def persistent(
+    context: click.Context,
+    hover: Optional[str],
+    definition: Optional[str],
+    document_symbols: Optional[str],
+    references: Optional[str],
+    type_coverage: Optional[str],
+    unsaved_changes: Optional[str],
+) -> int:
     """
     Entry point for IDE integration to Pyre. Communicates with a Pyre server using
     the Language Server Protocol, accepts input from stdin and writing diagnostics
@@ -798,6 +852,24 @@ def persistent(context: click.Context) -> int:
                 )
             ),
             enabled_telemetry_event=False,
+            hover=None
+            if hover is None
+            else commands.persistent.HoverAvailability(hover),
+            definition=None
+            if definition is None
+            else commands.persistent.DefinitionAvailability(definition),
+            document_symbols=None
+            if document_symbols is None
+            else commands.persistent.DocumentSymbolsAvailability(document_symbols),
+            references=None
+            if references is None
+            else commands.persistent.ReferencesAvailability(references),
+            type_coverage=None
+            if type_coverage is None
+            else commands.persistent.TypeCoverageAvailability(type_coverage),
+            unsaved_changes=None
+            if unsaved_changes is None
+            else commands.persistent.UnsavedChangesAvailability(unsaved_changes),
         ),
         remote_logging=commands.backend_arguments.RemoteLogging.create(
             configuration.logger, command_argument.log_identifier
