@@ -12,8 +12,8 @@ module type PRODUCT_CONFIG = sig
      Must be constant constructors.
 
      type _ slot =
-       | Left: LeftDomain.t AbstractDomainCore.abstract_domain slot
-       | Right: RightDomain.t AbstractDomainCore.abstract_domain slot
+       | Left: LeftDomain.t slot
+       | Right: RightDomain.t slot
   *)
   type 'a slot
 
@@ -28,7 +28,7 @@ module type PRODUCT_CONFIG = sig
   (* The abstract domain of values in a given product slot. E.g.,
 
      let slot_domain (type a) (a slot) =
-       | Left -> (module LeftDomain : AbstractDomainCore.S with type t = a) ...
+       | Left -> (module LeftDomain : AbstractDomainCore.S with type t = LeftDomain.t) ...
   *)
   val slot_domain : 'a slot -> 'a AbstractDomainCore.abstract_domain
 
