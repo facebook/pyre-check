@@ -9,47 +9,11 @@ from __future__ import annotations
 import contextlib
 
 import dataclasses
-import json
 import subprocess
 from typing import Any, Dict, Iterator, Optional
 
 from .. import configuration as configuration_module
-from . import backend_arguments, frontend_configuration
-
-
-class InvalidQueryResponse(Exception):
-    pass
-
-
-@dataclasses.dataclass(frozen=True)
-class Response:
-    payload: object
-
-    @staticmethod
-    def from_json(
-        response_json: object,
-    ) -> Response:
-        if (
-            isinstance(response_json, list)
-            and len(response_json) > 1
-            and response_json[0] == "Query"
-        ):
-            return Response(response_json[1])
-        else:
-            raise InvalidQueryResponse(
-                f"Unexpected JSON response from server: {response_json}"
-            )
-
-    @staticmethod
-    def parse(
-        response_text: str,
-    ) -> Response:
-        try:
-            response_json = json.loads(response_text)
-            return Response.from_json(response_json)
-        except json.JSONDecodeError as decode_error:
-            message = f"Cannot parse response as JSON: {decode_error}"
-            raise InvalidQueryResponse(message) from decode_error
+from . import backend_arguments, frontend_configuration, query_response
 
 
 @dataclasses.dataclass(frozen=True)
@@ -104,7 +68,7 @@ def create_no_daemon_arguments_and_cleanup(
 
 def execute_query(
     configuration: frontend_configuration.Base, query_text: str
-) -> Optional[Response]:
+) -> Optional[query_response.Response]:
 
     binary_location = configuration.get_binary_location(download_if_needed=True)
     if binary_location is None:

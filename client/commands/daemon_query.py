@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import dataclasses
-
 import json
 import logging
 from pathlib import Path
@@ -18,6 +16,7 @@ import dataclasses_json
 from .. import dataclasses_json_extensions as json_mixins
 
 from . import daemon_connection
+from .query_response import InvalidQueryResponse, Response
 
 
 QueryResponseType = TypeVar(
@@ -25,41 +24,6 @@ QueryResponseType = TypeVar(
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-class InvalidQueryResponse(Exception):
-    pass
-
-
-@dataclasses.dataclass(frozen=True)
-class Response:
-    payload: object
-
-    @staticmethod
-    def from_json(
-        response_json: object,
-    ) -> Response:
-        if (
-            isinstance(response_json, list)
-            and len(response_json) > 1
-            and response_json[0] == "Query"
-        ):
-            return Response(response_json[1])
-        else:
-            raise InvalidQueryResponse(
-                f"Unexpected JSON response from server: {response_json}"
-            )
-
-    @staticmethod
-    def parse(
-        response_text: str,
-    ) -> Response:
-        try:
-            response_json = json.loads(response_text)
-            return Response.from_json(response_json)
-        except json.JSONDecodeError as decode_error:
-            message = f"Cannot parse response as JSON: {decode_error}"
-            raise InvalidQueryResponse(message) from decode_error
 
 
 def execute_query(socket_path: Path, query_text: str) -> Response:
