@@ -1260,7 +1260,7 @@ class PyreServerTest(testslide.TestCase):
     async def test_hover__basic(self) -> None:
         tracked_path = Path("/tracked.py")
         lsp_line = 3
-        daemon_line = 3 + 1
+        daemon_line = lsp_line + 1
         expected_response = lsp.LspHoverResponse(contents="```foo.Foo```")
         for enabled_telemetry_event in (True, False):
             handler = MockRequestHandler(
@@ -1347,7 +1347,7 @@ class PyreServerTest(testslide.TestCase):
     async def test_definition__basic(self) -> None:
         tracked_path = Path("/tracked.py")
         lsp_line = 3
-        daemon_line = 3 + 1
+        daemon_line = lsp_line + 1
         expected_response = [
             lsp.LspDefinitionResponse(
                 uri="file:///path/to/foo.py",
@@ -1411,7 +1411,7 @@ class PyreServerTest(testslide.TestCase):
     async def test_definition__shadow(self) -> None:
         tracked_path = Path("/tracked.py")
         lsp_line = 3
-        daemon_line = 3 + 1
+        daemon_line = lsp_line + 1
         expected_editor_response = []
         expected_telemetry_response = [
             lsp.LspDefinitionResponse(
@@ -1498,7 +1498,7 @@ class PyreServerTest(testslide.TestCase):
     async def test_references__basic(self) -> None:
         tracked_path = Path("/tracked.py")
         lsp_line = 3
-        daemon_line = 3 + 1
+        daemon_line = lsp_line + 1
         expected_response = [
             lsp.LspDefinitionResponse(
                 uri="file:///path/to/foo.py",
