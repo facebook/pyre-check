@@ -459,6 +459,103 @@ let test_location_of_definition_request context =
   |> ScratchProject.test_server_with ~f:test_location_of_definition_request
 
 
+let watchman_version = "fake_watchman_version"
+
+let watchman_initial_clock = "fake:clock:0"
+
+(* We use a mailbox variable in this test to get a more precise control of when a given watchman
+   response can reach the Pyre serer. *)
+let create_mock_watchman mailbox =
+  let initialize_stage = ref 0 in
+  let send _ = Lwt.return_unit in
+  let receive () =
+    match !initialize_stage with
+    | 0 ->
+        let watchman_watch_response =
+          `Assoc ["version", `String watchman_version; "watcher", `String "fake_watcher"]
+        in
+        initialize_stage := 1;
+        Lwt.return_some watchman_watch_response
+    | 1 ->
+        let watchman_subscribe_response =
+          `Assoc ["version", `String watchman_version; "clock", `String watchman_initial_clock]
+        in
+        initialize_stage := 2;
+        Lwt.return_some watchman_subscribe_response
+    | _ ->
+        let%lwt message = Lwt_mvar.take mailbox in
+        Lwt.return_some message
+  in
+  Server.Watchman.Raw.create_for_testing ~send ~receive ()
+
+
+let test_watchman_integration context =
+  let watchman_mailbox = Lwt_mvar.create_empty () in
+  let mock_watchman = create_mock_watchman watchman_mailbox in
+  let test_watchman_integration client =
+    let root = ScratchProject.Client.get_source_root client in
+    let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+    let watchman_update_response file_names =
+      `Assoc
+        [
+          "is_fresh_instance", `Bool false;
+          "files", `List (List.map file_names ~f:(fun name -> `String name));
+          "root", `String (PyrePath.absolute root);
+          "version", `String watchman_version;
+          "clock", `String "fake:clock:update";
+          "since", `String watchman_initial_clock;
+        ]
+    in
+
+    let%lwt () = assert_type_error_count "test" ~client ~expected:0 in
+
+    File.create ~content:"reveal_type(42)" test_path |> File.write;
+    let%lwt () = Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]) in
+    let%lwt () = assert_type_error_count "test" ~client ~expected:1 in
+
+    PyrePath.remove test_path;
+    let%lwt () = Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]) in
+    let%lwt () =
+      ScratchProject.Client.assert_error_response
+        client
+        ~request:
+          Request.(
+            GetTypeErrors
+              { overlay_id = None; module_ = Module.OfPath (PyrePath.absolute test_path) })
+        ~kind:"ModuleNotTracked"
+    in
+
+    Lwt.return_unit
+  in
+  ScratchProject.setup
+    ~context
+    ~include_typeshed_stubs:false
+    ~watchman:mock_watchman
+    ["test.py", ""]
+  |> ScratchProject.test_server_with ~f:test_watchman_integration
+
+
+let test_watchman_failure context =
+  let watchman_mailbox = Lwt_mvar.create_empty () in
+  let mock_watchman = create_mock_watchman watchman_mailbox in
+  let test_watchman_failure _ =
+    let cancel_response = `Assoc ["canceled", `Bool true] in
+    let%lwt () = Lwt_mvar.put watchman_mailbox cancel_response in
+    (* Consuming the watchman cancel notification would make the server terminate itself
+       immeidately, bypassing this eternal-wait. *)
+    let wait_forever, _ = Lwt.wait () in
+    wait_forever
+  in
+  let project =
+    ScratchProject.setup ~context ~include_typeshed_stubs:false ~watchman:mock_watchman []
+  in
+  try%lwt
+    let%lwt () = ScratchProject.test_server_with ~f:test_watchman_failure project in
+    assert_failure "Server is expected to crash but it returned normally instead"
+  with
+  | Server.Watchman.SubscriptionError _ -> Lwt.return_unit
+
+
 let () =
   "basic_test"
   >::: [
@@ -472,5 +569,7 @@ let () =
          "hover_request" >:: OUnitLwt.lwt_wrapper test_hover_request;
          "location_of_definition_request"
          >:: OUnitLwt.lwt_wrapper test_location_of_definition_request;
+         "watchman_integration" >:: OUnitLwt.lwt_wrapper test_watchman_integration;
+         "watchman_failure" >:: OUnitLwt.lwt_wrapper test_watchman_failure;
        ]
   |> Test.run

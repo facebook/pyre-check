@@ -444,19 +444,29 @@ let initialize_server_state
   Lwt.return state
 
 
-let get_watchman_subscriber ~critical_files ~extensions ~source_paths = function
+let get_watchman_subscriber
+    ~critical_files
+    ~extensions
+    ~source_paths
+    { StartOptions.Watchman.root; raw }
+  =
+  let subscriber_setting =
+    {
+      Watchman.Subscriber.Setting.raw;
+      root;
+      filter =
+        Watchman.Filter.from_server_configurations ~critical_files ~extensions ~source_paths ();
+    }
+  in
+  Watchman.Subscriber.subscribe subscriber_setting
+
+
+let get_optional_watchman_subscriber ~critical_files ~extensions ~source_paths = function
   | None -> Lwt.return_none
-  | Some { StartOptions.Watchman.root; raw } ->
+  | Some watchman_option ->
       let open Lwt.Infix in
-      let subscriber_setting =
-        {
-          Watchman.Subscriber.Setting.raw;
-          root;
-          filter =
-            Watchman.Filter.from_server_configurations ~critical_files ~extensions ~source_paths ();
-        }
-      in
-      Watchman.Subscriber.subscribe subscriber_setting >>= Lwt.return_some
+      get_watchman_subscriber ~critical_files ~extensions ~source_paths watchman_option
+      >>= Lwt.return_some
 
 
 let on_watchman_update ~server_properties ~server_state paths =
@@ -501,7 +511,7 @@ let with_server
   in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
-  get_watchman_subscriber ~critical_files ~extensions ~source_paths watchman
+  get_optional_watchman_subscriber ~critical_files ~extensions ~source_paths watchman
   >>= fun watchman_subscriber ->
   let server_properties = ServerProperties.create ~socket_path ~critical_files ~configuration () in
   let server_state =

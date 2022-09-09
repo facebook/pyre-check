@@ -12,6 +12,13 @@ exception ServerInterrupted of Core.Signal.t
 (* Return a promise which will invoke [on_caught] when given unix signals are received. *)
 val wait_for_signal : on_caught:(Core.Signal.t -> 'a Lwt.t) -> Core.Signal.t list -> 'a Lwt.t
 
+val get_optional_watchman_subscriber
+  :  critical_files:CriticalFile.t list ->
+  extensions:Configuration.Extension.t list ->
+  source_paths:Configuration.SourcePaths.t ->
+  StartOptions.Watchman.t option ->
+  Watchman.Subscriber.t option Lwt.t
+
 (* Start the server from a given configuration. Then invoke `on_started` if the server starts and
    its state fully initialized. *)
 (* If `on_server_socket_ready` is provided, it will be invoked right after the server socket gets
