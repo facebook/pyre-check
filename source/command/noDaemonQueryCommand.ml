@@ -8,15 +8,78 @@
 open Core
 
 module ExitStatus = struct
-  type t = Ok [@@deriving sexp, compare, hash]
+  type t =
+    | Ok
+    | PyreError
+  [@@deriving sexp, compare, hash]
 
   let exit_code = function
     | Ok -> 0
+    | PyreError -> 1
 end
 
-let run_query _ =
-  let () = Printf.printf "In run query" in
-  exit (ExitStatus.exit_code Ok)
+module QueryConfiguration = struct
+  type t = {
+    base: CommandStartup.BaseConfiguration.t;
+    query: string;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open Yojson.Safe.Util in
+    let open JsonParsing in
+    (* Parsing logic *)
+    try
+      match CommandStartup.BaseConfiguration.of_yojson json with
+      | Result.Error _ as error -> error
+      | Result.Ok base ->
+          let query = json |> string_member "query" ~default:"" in
+          Result.Ok { base; query }
+    with
+    | Type_error (message, _)
+    | Undefined (message, _) ->
+        Result.Error message
+    | other_exception -> Result.Error (Exn.to_string other_exception)
+end
+
+let run_query configuration_file =
+  let exit_status =
+    match CommandStartup.read_and_parse_json configuration_file ~f:QueryConfiguration.of_yojson with
+    | Result.Error message ->
+        Log.error "%s" message;
+        ExitStatus.PyreError
+    | Result.Ok
+        ({
+           QueryConfiguration.base =
+             {
+               CommandStartup.BaseConfiguration.global_root;
+               local_root;
+               debug;
+               remote_logging;
+               profiling_output;
+               memory_profiling_output;
+               _;
+             };
+           _;
+         } as query_configuration) ->
+        CommandStartup.setup_global_states
+          ~global_root
+          ~local_root
+          ~debug
+          ~additional_logging_sections:[]
+          ~remote_logging
+          ~profiling_output
+          ~memory_profiling_output
+          ();
+        let () =
+          Printf.printf
+            "Done setting up global states, with configuration value: %s"
+            (Sexp.to_string (QueryConfiguration.sexp_of_t query_configuration))
+        in
+        ExitStatus.Ok
+  in
+  Statistics.flush ();
+  exit (ExitStatus.exit_code exit_status)
 
 
 let command =
