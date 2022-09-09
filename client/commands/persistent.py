@@ -149,6 +149,7 @@ HoverAvailability = _Availability
 DefinitionAvailability = _AvailabilityWithShadow
 ReferencesAvailability = _Availability
 DocumentSymbolsAvailability = _Availability
+TypeErrorsAvailability = _Availability
 UnsavedChangesAvailability = _Availability
 
 
@@ -159,6 +160,7 @@ class LanguageServerFeatures:
     document_symbols: DocumentSymbolsAvailability = DocumentSymbolsAvailability.DISABLED
     references: ReferencesAvailability = ReferencesAvailability.DISABLED
     type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
+    type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
 
     @staticmethod
@@ -170,6 +172,7 @@ class LanguageServerFeatures:
         references: Optional[ReferencesAvailability],
         type_coverage: Optional[TypeCoverageAvailability],
         unsaved_changes: Optional[UnsavedChangesAvailability],
+        type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED,
     ) -> LanguageServerFeatures:
         ide_features = configuration.get_ide_features()
         if ide_features is None:
@@ -195,6 +198,7 @@ class LanguageServerFeatures:
                 if ide_features.is_expression_level_coverage_enabled()
                 else TypeCoverageAvailability.FUNCTION_LEVEL
             ),
+            type_errors=type_errors,
             unsaved_changes=unsaved_changes
             or UnsavedChangesAvailability.from_enabled(
                 ide_features.is_consume_unsaved_changes_enabled()
@@ -232,6 +236,7 @@ class PyreServerOptions:
         definition: Optional[DefinitionAvailability],
         document_symbols: Optional[DocumentSymbolsAvailability],
         references: Optional[ReferencesAvailability],
+        type_errors: TypeErrorsAvailability,
         type_coverage: Optional[TypeCoverageAvailability],
         unsaved_changes: Optional[UnsavedChangesAvailability],
     ) -> PyreServerOptions:
@@ -261,6 +266,7 @@ class PyreServerOptions:
                 definition=definition,
                 document_symbols=document_symbols,
                 references=references,
+                type_errors=type_errors,
                 type_coverage=type_coverage,
                 unsaved_changes=unsaved_changes,
             ),
@@ -278,6 +284,7 @@ class PyreServerOptions:
         definition: Optional[DefinitionAvailability],
         document_symbols: Optional[DocumentSymbolsAvailability],
         references: Optional[ReferencesAvailability],
+        type_errors: TypeErrorsAvailability,
         type_coverage: Optional[TypeCoverageAvailability],
         unsaved_changes: Optional[UnsavedChangesAvailability],
     ) -> PyreServerOptionsReader:
@@ -290,6 +297,7 @@ class PyreServerOptions:
                 definition=definition,
                 document_symbols=document_symbols,
                 references=references,
+                type_errors=type_errors,
                 type_coverage=type_coverage,
                 unsaved_changes=unsaved_changes,
             )
@@ -902,15 +910,19 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     async def handle_type_error_subscription(
         self, type_error_subscription: subscription.TypeErrors
     ) -> None:
-        await self.clear_type_errors_for_client()
-        self.update_type_errors(type_error_subscription.errors)
-        await self.show_type_errors_to_client()
-        await self.log_and_show_status_message_to_client(
-            "Pyre has completed an incremental check and is currently "
-            "watching on further source changes.",
-            short_message="Pyre Ready",
-            level=lsp.MessageType.INFO,
+        availability = (
+            self.server_state.server_options.language_server_features.type_errors
         )
+        if availability.is_enabled():
+            await self.clear_type_errors_for_client()
+            self.update_type_errors(type_error_subscription.errors)
+            await self.show_type_errors_to_client()
+            await self.log_and_show_status_message_to_client(
+                "Pyre has completed an incremental check and is currently "
+                "watching on further source changes.",
+                short_message="Pyre Ready",
+                level=lsp.MessageType.INFO,
+            )
 
     async def handle_status_update_subscription(
         self, status_update_subscription: subscription.StatusUpdate

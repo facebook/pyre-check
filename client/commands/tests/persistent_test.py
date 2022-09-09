@@ -60,6 +60,7 @@ from ..persistent import (
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
     TypeCoverageAvailability,
+    TypeErrorsAvailability,
     uncovered_range_to_diagnostic,
 )
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
@@ -554,6 +555,51 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         self.assertIn("textDocument/publishDiagnostics", client_messages[2])
         # Notify the user that incremental check has finished
         self.assertIn("window/showStatus", client_messages[3])
+
+    @setup.async_test
+    async def test_subscription_type_errors_disabled(self) -> None:
+        server_state = ServerState(
+            client_capabilities=lsp.ClientCapabilities(
+                window=lsp.WindowClientCapabilities(
+                    status=lsp.ShowStatusRequestClientCapabilities(),
+                ),
+            ),
+            server_options=_create_server_options(
+                language_server_features=LanguageServerFeatures(
+                    type_errors=TypeErrorsAvailability.DISABLED,
+                )
+            ),
+        )
+        bytes_writer = MemoryBytesWriter()
+
+        def fake_server_options_reader() -> PyreServerOptions:
+            # Server start option is not relevant to this test
+            raise NotImplementedError()
+
+        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+            server_options_reader=fake_server_options_reader,
+            client_output_channel=AsyncTextWriter(bytes_writer),
+            server_state=server_state,
+        )
+        await server_handler.handle_type_error_subscription(
+            subscription.TypeErrors(
+                errors=[
+                    error.Error(
+                        line=1,
+                        column=1,
+                        stop_line=2,
+                        stop_column=2,
+                        path=Path("derp.py"),
+                        code=42,
+                        name="name",
+                        description="description",
+                    )
+                ]
+            )
+        )
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        # When the type errors feature is disabled, we should ignore errors
+        self.assertEqual(len(client_messages), 0)
 
     @setup.async_test
     async def test_subscription_error(self) -> None:

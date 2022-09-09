@@ -803,6 +803,14 @@ def kill(context: click.Context, with_fire: bool) -> int:
     hidden=True,
 )
 @click.option(
+    "--type-errors",
+    type=click.Choice(
+        [kind.value for kind in commands.persistent.TypeErrorsAvailability]
+    ),
+    help="Availability of the type errors langauge server feature",
+    hidden=True,
+)
+@click.option(
     "--type-coverage",
     type=click.Choice(
         [kind.value for kind in commands.persistent.TypeCoverageAvailability]
@@ -825,6 +833,7 @@ def persistent(
     definition: Optional[str],
     document_symbols: Optional[str],
     references: Optional[str],
+    type_errors: Optional[str],
     type_coverage: Optional[str],
     unsaved_changes: Optional[str],
 ) -> int:
@@ -864,6 +873,9 @@ def persistent(
             references=None
             if references is None
             else commands.persistent.ReferencesAvailability(references),
+            type_errors=commands.persistent.TypeErrorsAvailability.ENABLED
+            if type_errors is None
+            else commands.persistent.TypeErrorsAvailability(type_errors),
             type_coverage=None
             if type_coverage is None
             else commands.persistent.TypeCoverageAvailability(type_coverage),
