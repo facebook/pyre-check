@@ -1022,6 +1022,460 @@ let test_handle_query_basic context =
              };
            ]))
   >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+      def foo(x: int = 10, y: str = "bar") -> None:
+        a = 42
+    |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 ( 2,
+                   4,
+                   2,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.none;
+                           parameters =
+                             Type.Callable.Defined
+                               [
+                                 Named
+                                   {
+                                     name = "$parameter$x";
+                                     annotation = Type.integer;
+                                     default = true;
+                                   };
+                                 Named
+                                   {
+                                     name = "$parameter$y";
+                                     annotation = Type.string;
+                                     default = true;
+                                   };
+                               ];
+                         };
+                       overloads = [];
+                     } );
+                 2, 8, 2, 9, Type.integer;
+                 2, 11, 2, 14, Type.meta Type.integer;
+                 2, 17, 2, 19, Type.literal_integer 10;
+                 2, 21, 2, 22, Type.string;
+                 2, 24, 2, 27, Type.meta Type.string;
+                 2, 30, 2, 35, Type.literal_string "bar";
+                 2, 40, 2, 44, Type.none;
+                 3, 2, 3, 3, Type.literal_integer 42;
+                 3, 6, 3, 8, Type.literal_integer 42;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+       def foo(x: int, y: str) -> str:
+        x = 4
+        y = 5
+        return x
+    |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 ( 2,
+                   4,
+                   2,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.string;
+                           parameters =
+                             Type.Callable.Defined
+                               [
+                                 Named
+                                   {
+                                     name = "$parameter$x";
+                                     annotation = Type.integer;
+                                     default = false;
+                                   };
+                                 Named
+                                   {
+                                     name = "$parameter$y";
+                                     annotation = Type.string;
+                                     default = false;
+                                   };
+                               ];
+                         };
+                       overloads = [];
+                     } );
+                 2, 8, 2, 9, Type.integer;
+                 2, 11, 2, 14, Type.meta Type.integer;
+                 2, 16, 2, 17, Type.string;
+                 2, 19, 2, 22, Type.meta Type.string;
+                 2, 27, 2, 30, Type.meta Type.string;
+                 3, 1, 3, 2, Type.integer;
+                 3, 5, 3, 6, Type.literal_integer 4;
+                 4, 1, 4, 2, Type.string;
+                 4, 5, 4, 6, Type.literal_integer 5;
+                 5, 8, 5, 9, Type.integer;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+        x = 4
+        y = 3
+     |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 2, 0, 2, 1, Type.integer;
+                 2, 4, 2, 5, Type.literal_integer 4;
+                 3, 0, 3, 1, Type.integer;
+                 3, 4, 3, 5, Type.literal_integer 3;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+              def identity(a: int) -> int: ...
+            |}
+    ~handle:"test_stub.pyi"
+    ~query:"references_used_by_file(path='test_stub.pyi')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test_stub.pyi";
+             types =
+               [
+                 ( 2,
+                   4,
+                   2,
+                   12,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test_stub.identity";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.integer;
+                           parameters =
+                             Type.Callable.Defined
+                               [
+                                 Named
+                                   {
+                                     name = "$parameter$a";
+                                     annotation = Type.integer;
+                                     default = false;
+                                   };
+                               ];
+                         };
+                       overloads = [];
+                     } );
+                 2, 16, 2, 19, Type.meta Type.integer;
+                 2, 24, 2, 27, Type.meta Type.integer;
+                 2, 29, 2, 32, Type.Any;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+      def foo():
+        if True:
+         x = 1
+    |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 ( 2,
+                   4,
+                   2,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.Any;
+                           parameters = Type.Callable.Defined [];
+                         };
+                       overloads = [];
+                     } );
+                 (* TODO (T68817342): Should be `Literal (Boolean true)` *)
+                 3, 5, 3, 9, Type.Literal (Boolean false);
+                 4, 3, 4, 4, Type.literal_integer 1;
+                 4, 7, 4, 8, Type.literal_integer 1;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+       def foo():
+         for x in [1, 2]:
+          y = 1
+     |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 ( 2,
+                   4,
+                   2,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.Any;
+                           parameters = Type.Callable.Defined [];
+                         };
+                       overloads = [];
+                     } );
+                 3, 6, 3, 7, Type.integer;
+                 (* TODO(T124426942): We are mistakenly overwriting the type of the iterator
+                    variable (list[int]) with the type of `<variable>.__iter__().__next__()` (int),
+                    because they have the same location. *)
+                 3, 11, 3, 17, Type.integer;
+                 3, 12, 3, 13, Type.literal_integer 1;
+                 3, 15, 3, 16, Type.literal_integer 2;
+                 4, 3, 4, 4, Type.literal_integer 1;
+                 4, 7, 4, 8, Type.literal_integer 1;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+        def foo() -> None:
+          try:
+            x = 1
+          except Exception:
+            y = 2
+      |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 ( 2,
+                   4,
+                   2,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.none;
+                           parameters = Type.Callable.Defined [];
+                         };
+                       overloads = [];
+                     } );
+                 2, 13, 2, 17, Type.none;
+                 4, 4, 4, 5, Type.literal_integer 1;
+                 4, 8, 4, 9, Type.literal_integer 1;
+                 5, 9, 5, 18, Type.parametric "type" [Single (Type.Primitive "Exception")];
+                 6, 4, 6, 5, Type.literal_integer 2;
+                 6, 8, 6, 9, Type.literal_integer 2;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+       with open() as x:
+        y = 2
+    |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 2, 5, 2, 11, Type.Any;
+                 2, 15, 2, 16, Type.Any;
+                 3, 1, 3, 2, Type.integer;
+                 3, 5, 3, 6, Type.literal_integer 2;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+      while x is True:
+        y = 1
+   |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 2, 6, 2, 15, Type.bool;
+                 2, 11, 2, 15, Type.Literal (Boolean true);
+                 3, 2, 3, 3, Type.literal_integer 1;
+                 3, 6, 3, 7, Type.literal_integer 1;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+       def foo(x: int) -> str:
+         def bar(y: int) -> str:
+           return y
+         return x
+    |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 ( 2,
+                   4,
+                   2,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.string;
+                           parameters =
+                             Type.Callable.Defined
+                               [
+                                 Named
+                                   {
+                                     name = "$parameter$x";
+                                     annotation = Type.integer;
+                                     default = false;
+                                   };
+                               ];
+                         };
+                       overloads = [];
+                     } );
+                 2, 8, 2, 9, Type.integer;
+                 2, 11, 2, 14, Type.meta Type.integer;
+                 2, 19, 2, 22, Type.meta Type.string;
+                 3, 10, 3, 11, Type.integer;
+                 3, 13, 3, 16, Type.meta Type.integer;
+                 3, 21, 3, 24, Type.meta Type.string;
+                 4, 11, 4, 12, Type.integer;
+                 5, 9, 5, 10, Type.integer;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+       def foo(x: typing.List[int]) -> None:
+        pass
+    |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 ( 2,
+                   4,
+                   2,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.none;
+                           parameters =
+                             Type.Callable.Defined
+                               [
+                                 Named
+                                   {
+                                     name = "$parameter$x";
+                                     annotation = Type.list Type.integer;
+                                     default = false;
+                                   };
+                               ];
+                         };
+                       overloads = [];
+                     } );
+                 2, 8, 2, 9, Type.list Type.integer;
+                 2, 11, 2, 27, Type.meta (Type.list Type.integer);
+                 2, 32, 2, 36, Type.none;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+       class Foo:
+         x = 1
+     |}
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 {
+                   Base.location = create_location 2 6 2 9;
+                   annotation = parse_annotation "typing.Type[test.Foo]";
+                 };
+                 { Base.location = create_location 3 2 3 3; annotation = Type.integer };
+                 { Base.location = create_location 3 6 3 7; annotation = Type.literal_integer 1 };
+               ];
+           }))
+  >>= fun () ->
   assert_type_query_response
     ~source:{|
       class C:
