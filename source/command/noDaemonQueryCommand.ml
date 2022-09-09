@@ -40,13 +40,103 @@ module QueryConfiguration = struct
     | Undefined (message, _) ->
         Result.Error message
     | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let analysis_configuration_of
+      {
+        base =
+          {
+            CommandStartup.BaseConfiguration.source_paths;
+            search_paths;
+            excludes;
+            checked_directory_allowlist;
+            checked_directory_blocklist;
+            extensions;
+            log_path;
+            global_root;
+            local_root;
+            debug;
+            enable_type_comments;
+            python_version = { Configuration.PythonVersion.major; minor; micro };
+            parallel;
+            number_of_workers;
+            shared_memory =
+              { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+            remote_logging = _;
+            profiling_output = _;
+            memory_profiling_output = _;
+          };
+        query = _;
+      }
+    =
+    let () = Printf.printf "Analysis configuration of " in
+    Configuration.Analysis.create
+      ~parallel
+      ~analyze_external_sources:false
+      ~filter_directories:checked_directory_allowlist
+      ~ignore_all_errors:checked_directory_blocklist
+      ~number_of_workers
+      ~local_root:(Option.value local_root ~default:global_root)
+      ~project_root:global_root
+      ~search_paths:(List.map search_paths ~f:SearchPath.normalize)
+      ~debug
+      ~excludes
+      ~extensions
+      ~incremental_style:Configuration.Analysis.Shallow
+      ~log_directory:(PyrePath.absolute log_path)
+      ~python_major_version:major
+      ~python_minor_version:minor
+      ~python_micro_version:micro
+      ~shared_memory_heap_size:heap_size
+      ~shared_memory_dependency_table_power:dependency_table_power
+      ~shared_memory_hash_table_power:hash_table_power
+      ~enable_type_comments
+      ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
+      ()
 end
+
+let get_environment configuration =
+  Scheduler.with_scheduler ~configuration ~f:(fun _ ->
+      let read_write_environment =
+        Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
+        |> Analysis.ErrorsEnvironment.create
+      in
+      Analysis.OverlaidEnvironment.create read_write_environment)
+
+
+let perform_query ~configuration ~build_system ~query () =
+  let environment = get_environment configuration in
+  let query_response =
+    (* Add overlay support later *)
+    Server.Query.parse_and_process_request ~environment ~build_system query None
+  in
+  query_response
+
+
+let run_query_on_query_configuration query_configuration =
+  let { QueryConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ }; query; _ } =
+    query_configuration
+  in
+  let () = Printf.printf "Run query on query configuration" in
+  Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+      let query_response =
+        perform_query
+          ~configuration:(QueryConfiguration.analysis_configuration_of query_configuration)
+          ~build_system
+          ~query
+          ()
+      in
+      Printf.printf
+        "Printing query response: %s"
+        (Sexp.to_string (Server.Query.Response.sexp_of_t query_response));
+      Lwt.return ExitStatus.Ok)
+
 
 let run_query configuration_file =
   let exit_status =
     match CommandStartup.read_and_parse_json configuration_file ~f:QueryConfiguration.of_yojson with
     | Result.Error message ->
-        Log.error "%s" message;
+        let () = Log.info "Encountered error with message: %s" message in
         ExitStatus.PyreError
     | Result.Ok
         ({
@@ -71,12 +161,12 @@ let run_query configuration_file =
           ~profiling_output
           ~memory_profiling_output
           ();
-        let () =
-          Printf.printf
-            "Done setting up global states, with configuration value: %s"
-            (Sexp.to_string (QueryConfiguration.sexp_of_t query_configuration))
-        in
-        ExitStatus.Ok
+        Lwt_main.run
+          (Lwt.catch
+             (fun () -> run_query_on_query_configuration query_configuration)
+             (fun exn ->
+               let () = Log.info "Got exception: %s" (Exn.to_string exn) in
+               Lwt.return ExitStatus.PyreError))
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)
