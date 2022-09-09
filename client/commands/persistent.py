@@ -167,33 +167,25 @@ class LanguageServerFeatures:
     ) -> LanguageServerFeatures:
         ide_features = configuration.get_ide_features()
         if ide_features is None:
-            return LanguageServerFeatures(
-                hover=HoverAvailability.DISABLED,
-                definition=DefinitionAvailability.DISABLED,
-                references=ReferencesAvailability.DISABLED,
-                document_symbols=DocumentSymbolsAvailability.DISABLED,
-                unsaved_changes=UnsavedChangesAvailability.DISABLED,
-                type_coverage=TypeCoverageAvailability.FUNCTION_LEVEL,
-            )
-        else:
-            return LanguageServerFeatures(
-                hover=HoverAvailability.from_enabled(ide_features.is_hover_enabled()),
-                definition=DefinitionAvailability.from_enabled(
-                    ide_features.is_go_to_definition_enabled()
-                ),
-                references=ReferencesAvailability.from_enabled(
-                    ide_features.is_find_all_references_enabled()
-                ),
-                document_symbols=DocumentSymbolsAvailability.from_enabled(
-                    ide_features.is_find_symbols_enabled()
-                ),
-                unsaved_changes=UnsavedChangesAvailability.from_enabled(
-                    ide_features.is_consume_unsaved_changes_enabled()
-                ),
-                type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
-                if ide_features.is_expression_level_coverage_enabled()
-                else TypeCoverageAvailability.FUNCTION_LEVEL,
-            )
+            ide_features = configuration_module.IdeFeatures()
+        return LanguageServerFeatures(
+            hover=HoverAvailability.from_enabled(ide_features.is_hover_enabled()),
+            definition=DefinitionAvailability.from_enabled(
+                ide_features.is_go_to_definition_enabled()
+            ),
+            references=ReferencesAvailability.from_enabled(
+                ide_features.is_find_all_references_enabled()
+            ),
+            document_symbols=DocumentSymbolsAvailability.from_enabled(
+                ide_features.is_find_symbols_enabled()
+            ),
+            unsaved_changes=UnsavedChangesAvailability.from_enabled(
+                ide_features.is_consume_unsaved_changes_enabled()
+            ),
+            type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
+            if ide_features.is_expression_level_coverage_enabled()
+            else TypeCoverageAvailability.FUNCTION_LEVEL,
+        )
 
     def capabilities(self) -> Dict[str, bool]:
         return {
