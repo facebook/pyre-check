@@ -241,6 +241,44 @@ let test_check_method_returns context =
   ()
 
 
+let test_check_attributes_from_unknown_imports context =
+  assert_type_errors
+    ~context
+    {|
+      # test.py
+      from other_module import Bar
+
+      class Foo:
+          foo_attribute: Bar
+
+      reveal_type(Foo().foo_attribute)
+    |}
+    [
+      "Undefined import [21]: Could not find a module corresponding to import `other_module`.";
+      "Undefined or invalid type [11]: Annotation `Bar` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `test.Foo().foo_attribute` is `unknown`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+    # test.py
+    from other_module import Bar
+
+    my_bar: Bar
+
+    def my_foo(bar: Bar) -> None:
+      reveal_type(bar)
+      reveal_type(my_bar)
+    |}
+    [
+      "Undefined import [21]: Could not find a module corresponding to import `other_module`.";
+      "Undefined or invalid type [11]: Annotation `Bar` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `bar` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `my_bar` is `unknown`.";
+    ];
+  ()
+
+
 let test_check_inverse_operator context =
   assert_type_errors
     ~context
@@ -3334,6 +3372,7 @@ let () =
   "method"
   >::: [
          "check_method_returns" >:: test_check_method_returns;
+         "check_attributes_from_unknown_imports" >:: test_check_attributes_from_unknown_imports;
          "check_inverse_operator" >:: test_check_inverse_operator;
          "check_method_parameters" >:: test_check_method_parameters;
          "check_private_member_access" >:: test_check_private_member_access;
