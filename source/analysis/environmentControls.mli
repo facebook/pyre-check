@@ -12,6 +12,7 @@ type t
 val create
   :  ?populate_call_graph:bool ->
   ?in_memory_sources:(Ast.ModulePath.t * string) list ->
+  ?no_validation_on_class_lookup_failure:bool ->
   ?use_lazy_module_tracking:bool ->
   Configuration.Analysis.t ->
   t
@@ -25,6 +26,8 @@ val track_dependencies : t -> bool
 val debug : t -> bool
 
 val in_memory_sources : t -> (Ast.ModulePath.t * string) list option
+
+val no_validation_on_class_lookup_failure : t -> bool
 
 val assert_allow_updates : t -> unit
 
