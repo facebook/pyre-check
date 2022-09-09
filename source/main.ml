@@ -20,6 +20,7 @@ let commands =
     "newcheck", Check.command;
     "newinfer", Infer.command;
     "newserver", Server.command;
+    "no-daemon-query", NoDaemonQuery.command;
   ]
 
 

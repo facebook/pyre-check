@@ -10,4 +10,5 @@ module Analyze = AnalyzeCommand
 module Check = CheckCommand
 module CodeNavigation = CodeNavigationCommand
 module Infer = InferCommand
+module NoDaemonQuery = NoDaemonQueryCommand
 module Server = ServerCommand
