@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import dataclasses
 import logging
@@ -77,8 +78,13 @@ async def attempt_send_async_raw_request(
             socket_path,
             request,
         )
-    except connections.ConnectionFailure:
+    except (
+        connections.ConnectionFailure,
+        asyncio.IncompleteReadError,
+        ConnectionError,
+    ) as error:
         LOG.error(
             "Could not establish connection with an existing Pyre server "
-            f"at {socket_path}."
+            f"at {socket_path}: {error}"
         )
+        return None
