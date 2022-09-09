@@ -7,7 +7,15 @@ import json
 import logging
 
 from .. import configuration as configuration_module, log
-from . import commands, connections, daemon_query, daemon_socket, frontend_configuration
+
+from . import (
+    commands,
+    connections,
+    daemon_query,
+    daemon_socket,
+    frontend_configuration,
+    no_daemon_query,
+)
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -80,6 +88,13 @@ def run_query(
 
 
 def run(
-    configuration: configuration_module.Configuration, query_text: str
+    configuration: configuration_module.Configuration, query_text: str, no_daemon: bool
 ) -> commands.ExitCode:
-    return run_query(frontend_configuration.OpenSource(configuration), query_text)
+    if no_daemon:
+        response = no_daemon_query.execute_query(
+            frontend_configuration.OpenSource(configuration), query_text
+        )
+        log.stdout.write(json.dumps(response))
+        return commands.ExitCode.SUCCESS
+    else:
+        return run_query(frontend_configuration.OpenSource(configuration), query_text)

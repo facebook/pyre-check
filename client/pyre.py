@@ -945,8 +945,9 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
 
 @pyre.command()
 @click.argument("query", type=str)
+@click.option("--no-daemon", is_flag=True, default=False)
 @click.pass_context
-def query(context: click.Context, query: str) -> int:
+def query(context: click.Context, query: str, no_daemon: bool) -> int:
     """
     Query a running Pyre server for type, function, and attribute information.
 
@@ -960,7 +961,7 @@ def query(context: click.Context, query: str) -> int:
         command_argument, Path(".")
     )
     start_logging_to_directory(configuration.log_directory)
-    return commands.query.run(configuration, query)
+    return commands.query.run(configuration, query, no_daemon)
 
 
 @pyre.command()
