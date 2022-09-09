@@ -39,6 +39,7 @@ from ..connections import (
 from ..persistent import (
     AbstractRequestHandler,
     Availability,
+    AvailabilityWithShadow,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     InitializationExit,
     InitializationFailure,
@@ -1354,6 +1355,69 @@ class PersistentTest(testslide.TestCase):
                 output_writer,
                 expectations,
             )
+
+    @setup.async_test
+    async def test_definition__shadow(self) -> None:
+        tracked_path = Path("/tracked.py")
+        lsp_line = 3
+        daemon_line = 3 + 1
+        expected_editor_response = []
+        expected_telemetry_response = [
+            lsp.LspDefinitionResponse(
+                uri="file:///path/to/foo.py",
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=5, character=6),
+                    end=lsp.LspPosition(line=5, character=9),
+                ),
+            )
+        ]
+        handler = MockRequestHandler(
+            mock_definition_response=expected_telemetry_response,
+        )
+        server, output_writer = await _create_server_for_request_test(
+            opened_documents={tracked_path},
+            handler=handler,
+            server_options=_create_server_options(
+                enabled_telemetry_event=True,
+                language_server_features=LanguageServerFeatures(
+                    definition=AvailabilityWithShadow.SHADOW
+                ),
+            ),
+        )
+        await server.process_definition_request(
+            parameters=lsp.DefinitionParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=lsp_line, character=4),
+            ),
+            request_id=DEFAULT_REQUEST_ID,
+        )
+        self.assertEqual(
+            handler.requests,
+            [
+                {
+                    "path": tracked_path,
+                    "position": lsp.PyrePosition(line=daemon_line, character=4),
+                }
+            ],
+        )
+        self._assert_output_messages(
+            output_writer,
+            [
+                self._expect_success_message(
+                    lsp.LspDefinitionResponse.cached_schema().dump(
+                        expected_editor_response, many=True
+                    )
+                ),
+                self._expect_telemetry_event(
+                    operation="definition",
+                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                        expected_telemetry_response, many=True
+                    ),
+                ),
+            ],
+        )
 
     async def test_definition__unopened(self) -> None:
         tracked_path = Path("/tracked.py")

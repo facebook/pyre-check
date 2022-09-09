@@ -102,10 +102,6 @@ FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
 
 
 class Availability(enum.Enum):
-    """
-    Default enum for feature availability: a feature can be on or off.
-    """
-
     ENABLED = "enabled"
     DISABLED = "disabled"
 
@@ -120,6 +116,29 @@ class Availability(enum.Enum):
         return self == Availability.DISABLED
 
 
+class AvailabilityWithShadow(enum.Enum):
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+    SHADOW = "shadow"
+
+    @staticmethod
+    def from_enabled(enabled: bool) -> AvailabilityWithShadow:
+        return (
+            AvailabilityWithShadow.ENABLED
+            if enabled
+            else AvailabilityWithShadow.DISABLED
+        )
+
+    def is_enabled(self) -> bool:
+        return self == AvailabilityWithShadow.ENABLED
+
+    def is_shadow(self) -> bool:
+        return self == AvailabilityWithShadow.SHADOW
+
+    def is_disabled(self) -> bool:
+        return self == AvailabilityWithShadow.DISABLED
+
+
 class TypeCoverageLevel(enum.Enum):
     NONE = "none"
     FUNCTION_LEVEL = "function_level"
@@ -129,7 +148,7 @@ class TypeCoverageLevel(enum.Enum):
 @dataclasses.dataclass(frozen=True)
 class LanguageServerFeatures:
     hover: Availability = Availability.DISABLED
-    definition: Availability = Availability.DISABLED
+    definition: AvailabilityWithShadow = AvailabilityWithShadow.DISABLED
     references: Availability = Availability.DISABLED
     document_symbols: Availability = Availability.DISABLED
     unsaved_changes: Availability = Availability.DISABLED
@@ -143,7 +162,7 @@ class LanguageServerFeatures:
         if ide_features is None:
             return LanguageServerFeatures(
                 hover=Availability.DISABLED,
-                definition=Availability.DISABLED,
+                definition=AvailabilityWithShadow.DISABLED,
                 references=Availability.DISABLED,
                 document_symbols=Availability.DISABLED,
                 unsaved_changes=Availability.DISABLED,
@@ -152,7 +171,7 @@ class LanguageServerFeatures:
         else:
             return LanguageServerFeatures(
                 hover=Availability.from_enabled(ide_features.is_hover_enabled()),
-                definition=Availability.from_enabled(
+                definition=AvailabilityWithShadow.from_enabled(
                     ide_features.is_go_to_definition_enabled()
                 ),
                 references=Availability.from_enabled(
@@ -1399,6 +1418,9 @@ class PyreServer:
                 ),
             )
 
+    def get_language_server_features(self) -> LanguageServerFeatures:
+        return self.server_state.server_options.language_server_features
+
     async def wait_for_exit(self) -> int:
         await _wait_for_exit(self.input_channel, self.output_channel)
         return 0
@@ -1568,13 +1590,32 @@ class PyreServer:
                 activity_key,
             )
 
+    async def _get_definition_result(
+        self, document_path: Path, position: lsp.LspPosition
+    ) -> List[Dict[str, object]]:
+        """
+        Helper function to call the handler. Exists only to reduce code duplication
+        due to shadow mode, please don't make more of these - we already have enough
+        layers of handling.
+        """
+        definitions = await self.handler.get_definition_locations(
+            path=document_path,
+            position=position.to_pyre_position(),
+        )
+        return lsp.LspDefinitionResponse.cached_schema().dump(
+            definitions,
+            many=True,
+        )
+
     async def process_definition_request(
         self,
         parameters: lsp.DefinitionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
+        document_path: Optional[
+            Path
+        ] = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
@@ -1592,28 +1633,43 @@ class PyreServer:
                 ),
             )
         else:
-            definitions = await self.handler.get_definition_locations(
-                path=document_path,
-                position=parameters.position.to_pyre_position(),
-            )
-            raw_result = lsp.LspDefinitionResponse.cached_schema().dump(
-                definitions,
-                many=True,
-            )
-            await lsp.write_json_rpc(
-                self.output_channel,
-                json_rpc.SuccessResponse(
-                    id=request_id,
-                    activity_key=activity_key,
-                    result=raw_result,
-                ),
-            )
+            shadow_mode = self.get_language_server_features().definition.is_shadow()
+            if not shadow_mode:
+                raw_result = await self._get_definition_result(
+                    document_path=document_path,
+                    position=parameters.position,
+                )
+                await lsp.write_json_rpc(
+                    self.output_channel,
+                    json_rpc.SuccessResponse(
+                        id=request_id,
+                        activity_key=activity_key,
+                        result=raw_result,
+                    ),
+                )
+            else:
+                # send an empty result to the client first, then get the real
+                # result so we can log it (and realistic perf) in telemetry.
+                await lsp.write_json_rpc(
+                    self.output_channel,
+                    json_rpc.SuccessResponse(
+                        id=request_id,
+                        activity_key=activity_key,
+                        result=lsp.LspDefinitionResponse.cached_schema().dump(
+                            [], many=True
+                        ),
+                    ),
+                )
+                raw_result = await self._get_definition_result(
+                    document_path=document_path,
+                    position=parameters.position,
+                )
             await self.write_telemetry(
                 {
                     "type": "LSP",
                     "operation": "definition",
                     "filePath": str(document_path),
-                    "count": len(definitions),
+                    "count": len(raw_result),
                     "response": raw_result,
                 },
                 activity_key,
