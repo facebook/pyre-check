@@ -66,6 +66,32 @@ def create_no_daemon_arguments_and_cleanup(
         arguments.base_arguments.source_paths.cleanup()
 
 
+def _create_no_daemon_query_arguments(
+    configuration: frontend_configuration.Base,
+    query: str,
+) -> Arguments:
+    """
+    Translate client configurations to backend query configurations.
+    """
+
+    return Arguments(
+        base_arguments=backend_arguments.BaseArguments(
+            log_path=str(configuration.get_log_directory()),
+            global_root=str(configuration.get_global_root()),
+            source_paths=backend_arguments.get_source_path_for_check(configuration),
+            excludes=configuration.get_excludes(),
+            extensions=configuration.get_valid_extension_suffixes(),
+            relative_local_root=configuration.get_relative_local_root(),
+            number_of_workers=configuration.get_number_of_workers(),
+            python_version=configuration.get_python_version(),
+            shared_memory=configuration.get_shared_memory(),
+            search_paths=configuration.get_existent_search_paths(),
+            checked_directory_blocklist=(configuration.get_ignore_all_errors()),
+        ),
+        query=query,
+    )
+
+
 def execute_query(
     configuration: frontend_configuration.Base, query_text: str
 ) -> Optional[query_response.Response]:
@@ -96,10 +122,10 @@ def execute_query(
         )
         print(result)
         return_code = result.returncode
-
         # Interpretation of the return code needs to be kept in sync with
         # `source/command/noDaemonQueryCommand.ml`.
-        # TODO:Implement noDaemonQueryCommand
         if return_code == 0:
+            raw_response = result.stdout
+            print(raw_response)
             # TODO:Parse response and return it.
             return None
