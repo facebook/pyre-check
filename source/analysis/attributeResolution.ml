@@ -1004,11 +1004,13 @@ module ClassDecorators = struct
           methods
     in
     let dataclass_attributes () =
-      (* TODO (T43210531): Warn about inconsistent annotations *)
+      (* TODO (T43210531): Warn about inconsistent annotations
+       * TODO (T131540506): Decouple dataclass options from other options *)
       generate_attributes ~options:(dataclass_options ~class_metadata_environment ?dependency)
     in
     let attrs_attributes () =
-      (* TODO (T41039225): Add support for other methods *)
+      (* TODO (T41039225): Add support for other methods
+       * TODO (T129741558): support type annotations in attr *)
       generate_attributes ~options:(attrs_attributes ~class_metadata_environment ?dependency)
     in
     let dataclass_transform_attributes () =
