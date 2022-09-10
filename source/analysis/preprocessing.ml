@@ -4249,7 +4249,7 @@ module SelfType = struct
      whether it was changed. But our current `Visit.Transformer` or `Expression.Mapper` APIs aren't
      powerful enough to express such a use. So, we do a separate check to decide whether we want to
      replace Self types in a signature. *)
-  let signature_uses_self_type { Define.Signature.return_annotation; _ } =
+  let signature_uses_self_type { Define.Signature.return_annotation; parameters; _ } =
     let expression_uses_self_type expression =
       let fold_name ~folder:_ ~state = function
         | Name.Attribute
@@ -4264,7 +4264,19 @@ module SelfType = struct
       let folder = Folder.create_with_uniform_location_fold ~fold_name () in
       Folder.fold ~folder ~state:false expression
     in
-    return_annotation >>| expression_uses_self_type |> Option.value ~default:false
+    let parameter_annotations =
+      List.filter_map
+        ~f:(function
+          | { Node.value = { Parameter.annotation = Some annotation; _ }; _ } -> Some annotation
+          | _ -> None)
+        parameters
+    in
+    let annotations =
+      match return_annotation with
+      | Some annotation -> annotation :: parameter_annotations
+      | None -> parameter_annotations
+    in
+    List.exists ~f:expression_uses_self_type annotations
 
 
   let replace_self_type_in_signature
@@ -4297,6 +4309,24 @@ module SelfType = struct
             self_or_class_parameter with
             value = { self_or_class_parameter_value with annotation = Some annotation };
           }
+        in
+        let rest_parameters =
+          rest_parameters
+          |> List.map ~f:(function
+                 | {
+                     Node.value = { Parameter.annotation = Some annotation; _ } as parameter_value;
+                     _;
+                   } as parameter ->
+                     let annotation =
+                       replace_self_type_with
+                         annotation
+                         ~synthetic_type_variable:mangled_self_type_variable_reference
+                     in
+                     {
+                       parameter with
+                       value = { parameter_value with annotation = Some annotation };
+                     }
+                 | parameter -> parameter)
         in
         ( {
             signature with

@@ -3812,6 +3812,38 @@ let test_self_type context =
        (bound to Shape)]]`.";
       "Revealed type [-1]: Revealed type for `circle` is `Circle`.";
     ];
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+
+      class HasEqual:
+        def __eq__(self, other: Self) -> bool:
+          reveal_type(self)
+          reveal_type(other)
+          return True
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `self` is `Variable[_Self_test_HasEqual__ (bound to \
+       HasEqual)]`.";
+      "Revealed type [-1]: Revealed type for `other` is `Variable[_Self_test_HasEqual__ (bound to \
+       HasEqual)]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+
+      class Merger:
+        def merge(self, other: Self) -> Self:
+          reveal_type(self)
+          reveal_type(other)
+          return self
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `self` is `Variable[_Self_test_Merger__ (bound to \
+       Merger)]`.";
+      "Revealed type [-1]: Revealed type for `other` is `Variable[_Self_test_Merger__ (bound to \
+       Merger)]`.";
+    ];
   ()
 
 
