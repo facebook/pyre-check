@@ -21,6 +21,7 @@ from . import (
     commands,
     configuration as configuration_module,
     filesystem,
+    identifiers,
     log,
 )
 from .version import __version__
@@ -773,6 +774,15 @@ def kill(context: click.Context, with_fire: bool) -> int:
 
 @pyre.command()
 @click.option(
+    "--flavor",
+    type=click.Choice([kind.value for kind in identifiers.PyreFlavor]),
+    help=(
+        "Flavor of the pyre server. "
+        "This is used to disambiguate paths and log handling."
+    ),
+    hidden=True,
+)
+@click.option(
     "--hover",
     type=click.Choice([kind.value for kind in commands.persistent.HoverAvailability]),
     help="Availability of the hover langauge server feature",
@@ -829,6 +839,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @click.pass_context
 def persistent(
     context: click.Context,
+    flavor: Optional[str],
     hover: Optional[str],
     definition: Optional[str],
     document_symbols: Optional[str],
@@ -843,6 +854,12 @@ def persistent(
     and responses from the Pyre server to stdout.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    start_command_argument = command_arguments.StartArguments.create(
+        flavor=identifiers.PyreFlavor.CLASSIC
+        if flavor is None
+        else identifiers.PyreFlavor(flavor),
+        command_argument=command_argument,
+    )
     base_directory: Path = Path(".")
     configuration = configuration_module.create_configuration(
         command_argument, base_directory
@@ -852,9 +869,7 @@ def persistent(
     )
     return commands.persistent.run(
         read_server_options=commands.persistent.PyreServerOptions.create_reader(
-            start_command_argument=command_arguments.StartArguments.create(
-                command_argument=command_argument,
-            ),
+            start_command_argument=start_command_argument,
             read_frontend_configuration=lambda: commands.frontend_configuration.OpenSource(
                 configuration_module.create_configuration(
                     command_argument, base_directory
@@ -884,7 +899,8 @@ def persistent(
             else commands.persistent.UnsavedChangesAvailability(unsaved_changes),
         ),
         remote_logging=commands.backend_arguments.RemoteLogging.create(
-            configuration.logger, command_argument.log_identifier
+            configuration.logger,
+            start_command_argument.get_log_identifier(),
         ),
     )
 
