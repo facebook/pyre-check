@@ -39,5 +39,5 @@ class PyreFlavor(enum.Enum):
     CLASSIC = "classic"
     SHADOW = "shadow"
 
-    def socket_path_suffix(self) -> str:
+    def path_suffix(self) -> str:
         return "" if self == PyreFlavor.CLASSIC else f"::{self.value}"

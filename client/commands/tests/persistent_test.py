@@ -16,7 +16,7 @@ from unittest.mock import CallableMixin, patch
 import testslide
 from libcst.metadata import CodePosition, CodeRange
 
-from ... import error, json_rpc
+from ... import error, identifiers, json_rpc
 from ...commands.language_server_protocol import SymbolKind
 from ...coverage_collector import CoveredAndUncoveredLines
 from ...tests import setup
@@ -81,6 +81,7 @@ DEFAULT_FEATURES: LanguageServerFeatures = LanguageServerFeatures(
 )
 DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
+DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 DEFAULT_ENABLE_TELEMETRY: bool = False
 
 
@@ -91,6 +92,7 @@ def _create_server_options(
     language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
+    flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
     enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> PyreServerOptions:
     return PyreServerOptions(
@@ -100,6 +102,7 @@ def _create_server_options(
         language_server_features,
         strict_default,
         excludes if excludes else [],
+        flavor,
         enabled_telemetry_event,
     )
 
@@ -111,6 +114,7 @@ def _create_server_options_reader(
     language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
+    flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
     enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> PyreServerOptionsReader:
     return lambda: _create_server_options(
@@ -120,6 +124,7 @@ def _create_server_options_reader(
         language_server_features,
         strict_default,
         excludes,
+        flavor,
         enabled_telemetry_event,
     )
 
@@ -131,6 +136,7 @@ def _create_server_state_with_options(
     language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
+    flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
     enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> ServerState:
     return ServerState(
@@ -141,6 +147,7 @@ def _create_server_state_with_options(
             language_server_features,
             strict_default,
             excludes,
+            flavor,
             enabled_telemetry_event,
         )
     )

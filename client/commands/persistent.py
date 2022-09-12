@@ -25,6 +25,7 @@ from .. import (
     configuration as configuration_module,
     dataclasses_json_extensions as json_mixins,
     error,
+    identifiers,
     json_rpc,
     log,
     statistics_logger,
@@ -222,6 +223,7 @@ class PyreServerOptions:
     language_server_features: LanguageServerFeatures
     strict_default: bool
     excludes: Sequence[str]
+    flavor: identifiers.PyreFlavor
     enabled_telemetry_event: bool = False
 
     def get_socket_path(self) -> Path:
@@ -272,6 +274,7 @@ class PyreServerOptions:
             ),
             strict_default=configuration.is_strict(),
             excludes=configuration.get_excludes(),
+            flavor=start_command_argument.flavor,
             enabled_telemetry_event=enabled_telemetry_event,
         )
 
@@ -567,7 +570,9 @@ class OtherStartFailure:
 
 
 async def _start_pyre_server(
-    binary_location: str, pyre_arguments: start.Arguments
+    binary_location: str,
+    pyre_arguments: start.Arguments,
+    flavor: identifiers.PyreFlavor,
 ) -> Union[StartSuccess, BuckStartFailure, OtherStartFailure]:
     try:
         with backend_arguments.temporary_argument_file(
@@ -583,7 +588,8 @@ async def _start_pyre_server(
             }
 
             with start.background_server_log_file(
-                Path(pyre_arguments.base_arguments.log_path)
+                Path(pyre_arguments.base_arguments.log_path),
+                flavor=flavor,
             ) as server_stderr:
                 server_process = await asyncio.create_subprocess_exec(
                     binary_location,
@@ -1072,6 +1078,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         project_identifier = server_options.project_identifier
         start_arguments = server_options.start_arguments
         socket_path = server_options.get_socket_path()
+        flavor = server_options.flavor
 
         connection_timer = timer.Timer()
         try:
@@ -1091,7 +1098,11 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             level=lsp.MessageType.WARNING,
             fallback_to_notification=True,
         )
-        start_status = await _start_pyre_server(server_options.binary, start_arguments)
+        start_status = await _start_pyre_server(
+            server_options.binary,
+            start_arguments,
+            flavor,
+        )
         if isinstance(start_status, StartSuccess):
             await self._try_connect_and_subscribe(
                 server_options,

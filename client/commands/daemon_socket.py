@@ -35,8 +35,8 @@ def get_socket_path(
     file paths.
     """
     project_hash = get_md5(project_identifier)
-    suffix = flavor.socket_path_suffix()
-    return socket_root / f"pyre_server_{project_hash}{suffix}.sock"
+    flavor_suffix = flavor.path_suffix()
+    return socket_root / f"pyre_server_{project_hash}{flavor_suffix}.sock"
 
 
 def get_default_socket_root() -> Path:

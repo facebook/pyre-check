@@ -12,6 +12,7 @@ import testslide
 
 from ... import command_arguments, configuration
 from ...configuration import search_path
+from ...identifiers import PyreFlavor
 from ...tests import setup
 from .. import backend_arguments, daemon_socket, frontend_configuration
 from ..start import (
@@ -146,12 +147,26 @@ class ArgumentTest(testslide.TestCase):
 class StartTest(testslide.TestCase):
     def test_daemon_log_path(self) -> None:
         now = datetime.datetime(2018, 5, 6)
+        # classic flavor has empty suffix
         path = daemon_log_path(
             log_directory=Path("some_directory"),
+            flavor=PyreFlavor.CLASSIC,
             now=now,
         )
         self.assertEqual(
-            path, Path("some_directory/server.stderr.2018_05_06_00_00_00_000000")
+            path,
+            Path("some_directory/server.stderr.2018_05_06_00_00_00_000000"),
+        )
+        self.assertEqual(datetime_from_log_path(path), now)
+        # other flavors have nonempty suffix
+        path = daemon_log_path(
+            log_directory=Path("some_directory"),
+            flavor=PyreFlavor.SHADOW,
+            now=now,
+        )
+        self.assertEqual(
+            path,
+            Path("some_directory/server::shadow.stderr.2018_05_06_00_00_00_000000"),
         )
         self.assertEqual(datetime_from_log_path(path), now)
 
@@ -483,7 +498,9 @@ class StartTest(testslide.TestCase):
     def test_background_server_log_placement(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            with background_server_log_file(root_path) as log_file:
+            with background_server_log_file(
+                root_path, flavor=PyreFlavor.CLASSIC
+            ) as log_file:
                 print("foo", file=log_file)
             # Make sure that the log content can be read from a known location.
             self.assertEqual(
