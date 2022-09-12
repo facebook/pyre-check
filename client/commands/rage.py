@@ -91,13 +91,6 @@ def _watchman_section(watchman: str, name: str) -> Optional[Section]:
     )
 
 
-def _parse_log_file_name(name: str) -> Optional[datetime.datetime]:
-    try:
-        return datetime.datetime.strptime(name, start.SERVER_LOG_FILE_FORMAT)
-    except ValueError:
-        return None
-
-
 def _get_server_log_timestamp_and_paths(
     log_directory: Path,
 ) -> List[Tuple[datetime.datetime, Path]]:
@@ -106,7 +99,7 @@ def _get_server_log_timestamp_and_paths(
             (
                 (timestamp, path)
                 for timestamp, path in (
-                    (_parse_log_file_name(path.name), path)
+                    (start.datetime_from_log_path(path), path)
                     for path in (log_directory / "new_server").iterdir()
                     if path.is_file()
                 )

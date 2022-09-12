@@ -43,7 +43,27 @@ from . import (
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-SERVER_LOG_FILE_FORMAT: str = "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
+DAEMON_LOG_PATH_FORMAT: str = "server.stderr.{time}"
+DAEMON_LOG_TIME_FORMAT: str = "%Y_%m_%d_%H_%M_%S_%f"
+DAEMON_CURRENT_LOG_PATH_FORMAT: str = "server.stderr"
+
+
+def deamon_current_log_path(log_directory: Path) -> Path:
+    return log_directory / DAEMON_CURRENT_LOG_PATH_FORMAT
+
+
+def daemon_log_path(log_directory: Path, now: datetime.datetime) -> Path:
+    return log_directory / DAEMON_LOG_PATH_FORMAT.format(
+        time=now.strftime(DAEMON_LOG_TIME_FORMAT)
+    )
+
+
+def datetime_from_log_path(path: Path) -> Optional[datetime.datetime]:
+    try:
+        time_portion = path.name.split(".")[-1]
+        return datetime.datetime.strptime(time_portion, DAEMON_LOG_TIME_FORMAT)
+    except (IndexError, ValueError):
+        return None
 
 
 class MatchPolicy(enum.Enum):
@@ -378,15 +398,19 @@ def _create_symbolic_link(source: Path, target: Path) -> None:
 def background_server_log_file(log_directory: Path) -> Iterator[TextIO]:
     new_server_log_directory = log_directory / "new_server"
     new_server_log_directory.mkdir(parents=True, exist_ok=True)
-    log_file_path = new_server_log_directory / datetime.datetime.now().strftime(
-        SERVER_LOG_FILE_FORMAT
+    log_file_path = daemon_log_path(
+        log_directory=new_server_log_directory,
+        now=datetime.datetime.now(),
     )
     # lint-ignore: NoUnsafeFilesystemRule
     with open(str(log_file_path), "a") as log_file:
         yield log_file
     # Symlink the log file to a known location for subsequent `pyre incremental`
     # to find.
-    _create_symbolic_link(new_server_log_directory / "server.stderr", log_file_path)
+    _create_symbolic_link(
+        deamon_current_log_path(log_directory=new_server_log_directory),
+        log_file_path,
+    )
 
 
 def _run_in_background(

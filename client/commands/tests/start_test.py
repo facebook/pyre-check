@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import datetime
 import tempfile
 from pathlib import Path
 from typing import Iterable, Tuple
@@ -18,6 +19,8 @@ from ..start import (
     background_server_log_file,
     create_server_arguments,
     CriticalFile,
+    daemon_log_path,
+    datetime_from_log_path,
     get_critical_files,
     get_saved_state_action,
     LoadSavedStateFromFile,
@@ -141,6 +144,17 @@ class ArgumentTest(testslide.TestCase):
 
 
 class StartTest(testslide.TestCase):
+    def test_daemon_log_path(self) -> None:
+        now = datetime.datetime(2018, 5, 6)
+        path = daemon_log_path(
+            log_directory=Path("some_directory"),
+            now=now,
+        )
+        self.assertEqual(
+            path, Path("some_directory/server.stderr.2018_05_06_00_00_00_000000")
+        )
+        self.assertEqual(datetime_from_log_path(path), now)
+
     def test_get_critical_files(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
