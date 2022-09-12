@@ -95,7 +95,10 @@ def run(
         response = no_daemon_query.execute_query(
             frontend_configuration.OpenSource(configuration), query_text
         )
-        log.stdout.write(json.dumps(response))
-        return commands.ExitCode.SUCCESS
+        if response is not None:
+            log.stdout.write(json.dumps(response.payload))
+            return commands.ExitCode.SUCCESS
+        else:
+            return commands.ExitCode.FAILURE
     else:
         return run_query(frontend_configuration.OpenSource(configuration), query_text)

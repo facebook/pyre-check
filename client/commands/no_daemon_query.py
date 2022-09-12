@@ -42,37 +42,6 @@ def _create_no_daemon_query_arguments(
     """
     Translate client configurations to backend query configurations.
     """
-    return Arguments(
-        base_arguments=backend_arguments.BaseArguments(
-            log_path=str(configuration.get_log_directory()),
-            global_root=str(configuration.get_global_root()),
-            source_paths=backend_arguments.get_source_path_for_check(configuration),
-        ),
-        query=query,
-    )
-
-
-@contextlib.contextmanager
-def create_no_daemon_arguments_and_cleanup(
-    configuration: frontend_configuration.Base,
-    query_str: str,
-) -> Iterator[Arguments]:
-    arguments = _create_no_daemon_query_arguments(configuration, query_str)
-    try:
-        yield arguments
-    finally:
-        # It is safe to clean up source paths after check command since
-        # any created artifact directory won't be reused by other commands.
-        arguments.base_arguments.source_paths.cleanup()
-
-
-def _create_no_daemon_query_arguments(
-    configuration: frontend_configuration.Base,
-    query: str,
-) -> Arguments:
-    """
-    Translate client configurations to backend query configurations.
-    """
     source_paths = backend_arguments.get_source_path_for_check(configuration)
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
@@ -93,6 +62,20 @@ def _create_no_daemon_query_arguments(
         ),
         query=query,
     )
+
+
+@contextlib.contextmanager
+def create_no_daemon_arguments_and_cleanup(
+    configuration: frontend_configuration.Base,
+    query_str: str,
+) -> Iterator[Arguments]:
+    arguments = _create_no_daemon_query_arguments(configuration, query_str)
+    try:
+        yield arguments
+    finally:
+        # It is safe to clean up source paths after check command since
+        # any created artifact directory won't be reused by other commands.
+        arguments.base_arguments.source_paths.cleanup()
 
 
 def execute_query(
@@ -123,12 +106,9 @@ def execute_query(
             stdout=subprocess.PIPE,
             stderr=log_file.file,
         )
-        print(result)
         return_code = result.returncode
         # Interpretation of the return code needs to be kept in sync with
         # `source/command/noDaemonQueryCommand.ml`.
         if return_code == 0:
-            raw_response = result.stdout
-            print(raw_response)
-            # TODO:Parse response and return it.
-            return None
+            raw_response = result.stdout.decode("utf-8")
+            return query_response.Response.parse(raw_response)
