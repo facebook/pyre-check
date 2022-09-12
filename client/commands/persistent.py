@@ -227,7 +227,7 @@ class PyreServerOptions:
     enabled_telemetry_event: bool = False
 
     def get_socket_path(self) -> Path:
-        return daemon_socket.get_default_socket_path(
+        return daemon_socket.get_socket_path(
             self.project_identifier,
             flavor=self.flavor,
         )

@@ -159,9 +159,7 @@ def run_incremental(
     configuration: frontend_configuration.Base,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> ExitStatus:
-    socket_path = daemon_socket.get_default_socket_path(
-        configuration.get_project_identifier()
-    )
+    socket_path = daemon_socket.get_socket_path(configuration.get_project_identifier())
     # Need to be consistent with the log symlink location in start command
     log_path = configuration.get_log_directory() / "new_server" / "server.stderr"
     output = incremental_arguments.output

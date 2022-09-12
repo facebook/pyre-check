@@ -373,9 +373,7 @@ class StartTest(testslide.TestCase):
                     strict=True,
                     taint_models_path=[str(root_path / "taint")],
                     watchman_root=root_path,
-                    socket_path=daemon_socket.get_default_socket_path(
-                        f"{root_path}//local"
-                    ),
+                    socket_path=daemon_socket.get_socket_path(f"{root_path}//local"),
                 ),
             )
 

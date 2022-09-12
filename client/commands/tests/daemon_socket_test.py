@@ -11,7 +11,12 @@ import testslide
 
 from ...identifiers import get_project_identifier, PyreFlavor
 
-from ..daemon_socket import find_socket_files, get_md5, get_socket_path, MD5_LENGTH
+from ..daemon_socket import (
+    _get_socket_path_in_root,
+    find_socket_files,
+    get_md5,
+    MD5_LENGTH,
+)
 
 
 class SocketTest(testslide.TestCase):
@@ -55,7 +60,7 @@ class SocketTest(testslide.TestCase):
     ) -> None:
         md5_hash = get_md5(get_project_identifier(project_root, relative_local_root))
         self.assertEqual(
-            get_socket_path(
+            _get_socket_path_in_root(
                 socket_root,
                 get_project_identifier(project_root, relative_local_root),
                 flavor,
@@ -89,7 +94,7 @@ class SocketTest(testslide.TestCase):
     def test_find_socket_files(self) -> None:
         with tempfile.TemporaryDirectory(dir="/tmp") as socket_root:
             socket_root_path = Path(socket_root)
-            socket_a = get_socket_path(
+            socket_a = _get_socket_path_in_root(
                 socket_root_path,
                 project_identifier="a",
                 flavor=PyreFlavor.CLASSIC,
@@ -99,7 +104,7 @@ class SocketTest(testslide.TestCase):
                 set(find_socket_files(socket_root_path)),
                 {socket_a},
             )
-            socket_b = get_socket_path(
+            socket_b = _get_socket_path_in_root(
                 socket_root_path,
                 project_identifier="b//relative_to_b",
                 flavor=PyreFlavor.CLASSIC,
@@ -109,7 +114,7 @@ class SocketTest(testslide.TestCase):
                 set(find_socket_files(socket_root_path)),
                 {socket_a, socket_b},
             )
-            socket_c = get_socket_path(
+            socket_c = _get_socket_path_in_root(
                 socket_root_path,
                 project_identifier="c",
                 flavor=PyreFlavor.SHADOW,
@@ -125,7 +130,7 @@ class SocketTest(testslide.TestCase):
         # sanity check to make sure that PyreFlavor never leads to
         # socket name too long to be instantiated.
         for flavor in PyreFlavor:
-            path = get_socket_path(
+            path = _get_socket_path_in_root(
                 socket_root=Path("/dummy/socket/root"),
                 project_identifier="dummy_project_identifier",
                 flavor=flavor,

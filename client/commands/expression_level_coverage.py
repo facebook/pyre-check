@@ -295,9 +295,7 @@ def run_query(
     query_text: str,
     print_summary: bool = False,
 ) -> commands.ExitCode:
-    socket_path = daemon_socket.get_default_socket_path(
-        configuration.get_project_identifier()
-    )
+    socket_path = daemon_socket.get_socket_path(configuration.get_project_identifier())
     try:
         response = daemon_query.execute_query(socket_path, query_text)
         _log_expression_level_coverage_to_remote(configuration, response.payload)

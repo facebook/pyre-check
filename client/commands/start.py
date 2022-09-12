@@ -354,7 +354,7 @@ def create_server_arguments(
         ),
         skip_initial_type_check=start_arguments.skip_initial_type_check,
         use_lazy_module_tracking=start_arguments.use_lazy_module_tracking,
-        socket_path=daemon_socket.get_default_socket_path(
+        socket_path=daemon_socket.get_socket_path(
             configuration.get_project_identifier(),
             flavor=start_arguments.flavor,
         ),
@@ -519,7 +519,7 @@ def run_start(
         if start_arguments.terminal:
             return _run_in_foreground(server_command, server_environment)
         else:
-            socket_path = daemon_socket.get_default_socket_path(
+            socket_path = daemon_socket.get_socket_path(
                 configuration.get_project_identifier(),
             )
             return _run_in_background(

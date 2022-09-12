@@ -39,9 +39,7 @@ def remove_socket_if_exists(socket_path: Path) -> None:
 
 
 def run_stop(configuration: frontend_configuration.Base) -> commands.ExitCode:
-    socket_path = daemon_socket.get_default_socket_path(
-        configuration.get_project_identifier()
-    )
+    socket_path = daemon_socket.get_socket_path(configuration.get_project_identifier())
     try:
         LOG.info("Stopping server...")
         stop_server(socket_path)

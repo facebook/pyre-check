@@ -53,7 +53,7 @@ class Info(dataclasses_json.DataClassJsonMixin):
             binary_version = configuration.get_binary_version()
         except Exception:
             binary_version = None
-        socket_path = daemon_socket.get_default_socket_path(
+        socket_path = daemon_socket.get_socket_path(
             configuration.get_project_identifier(),
         )
         return cls(
