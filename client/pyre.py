@@ -783,6 +783,18 @@ def kill(context: click.Context, with_fire: bool) -> int:
     hidden=True,
 )
 @click.option(
+    "--skip-initial-type-check/--no-skip-initial-type-check",
+    default=False,
+    hidden=True,
+    help="Skip the initial type check of all in-project modules.",
+)
+@click.option(
+    "--use-lazy-module-tracking/--no-use-lazy-module-tracking",
+    default=False,
+    hidden=True,
+    help="Use lazy module tracking. This is experimental and cannot power full checks.",
+)
+@click.option(
     "--hover",
     type=click.Choice([kind.value for kind in commands.persistent.HoverAvailability]),
     help="Availability of the hover langauge server feature",
@@ -840,6 +852,8 @@ def kill(context: click.Context, with_fire: bool) -> int:
 def persistent(
     context: click.Context,
     flavor: Optional[str],
+    skip_initial_type_check: bool,
+    use_lazy_module_tracking: bool,
     hover: Optional[str],
     definition: Optional[str],
     document_symbols: Optional[str],
@@ -855,10 +869,12 @@ def persistent(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     start_command_argument = command_arguments.StartArguments.create(
+        command_argument=command_argument,
         flavor=identifiers.PyreFlavor.CLASSIC
         if flavor is None
         else identifiers.PyreFlavor(flavor),
-        command_argument=command_argument,
+        skip_initial_type_check=skip_initial_type_check,
+        use_lazy_module_tracking=use_lazy_module_tracking,
     )
     base_directory: Path = Path(".")
     configuration = configuration_module.create_configuration(
