@@ -161,6 +161,11 @@ let run_query configuration_file =
           ~profiling_output
           ~memory_profiling_output
           ();
+        let () =
+          Printf.printf
+            "Done setting up global states, with configuration value: %s"
+            (Sexp.to_string (QueryConfiguration.sexp_of_t query_configuration))
+        in
         Lwt_main.run
           (Lwt.catch
              (fun () -> run_query_on_query_configuration query_configuration)
