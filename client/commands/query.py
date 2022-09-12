@@ -6,7 +6,7 @@
 import json
 import logging
 
-from .. import configuration as configuration_module, log
+from .. import configuration as configuration_module, identifiers, log
 
 from . import (
     commands,
@@ -68,7 +68,10 @@ def _print_help_message() -> None:
 def run_query(
     configuration: frontend_configuration.Base, query_text: str
 ) -> commands.ExitCode:
-    socket_path = daemon_socket.get_socket_path(configuration.get_project_identifier())
+    socket_path = daemon_socket.get_socket_path(
+        configuration.get_project_identifier(),
+        flavor=identifiers.PyreFlavor.CLASSIC,
+    )
     try:
         if query_text == "help":
             _print_help_message()

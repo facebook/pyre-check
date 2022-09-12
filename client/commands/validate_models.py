@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from typing import Dict, List
 
-from .. import configuration as configuration_module, error as error_module
+from .. import configuration as configuration_module, error as error_module, identifiers
 from . import commands, connections, daemon_query, daemon_socket, frontend_configuration
 
 
@@ -63,7 +63,10 @@ def parse_validation_errors_response(
 def run_validate_models(
     configuration: frontend_configuration.Base, output: str
 ) -> commands.ExitCode:
-    socket_path = daemon_socket.get_socket_path(configuration.get_project_identifier())
+    socket_path = daemon_socket.get_socket_path(
+        configuration.get_project_identifier(),
+        flavor=identifiers.PyreFlavor.CLASSIC,
+    )
     try:
         response = daemon_query.execute_query(socket_path, "validate_taint_models()")
         validation_errors = parse_validation_errors_response(response.payload)

@@ -9,7 +9,12 @@ from typing import Optional
 
 import dataclasses_json
 
-from .. import command_arguments, configuration as configuration_module, version
+from .. import (
+    command_arguments,
+    configuration as configuration_module,
+    identifiers,
+    version,
+)
 from . import commands, daemon_socket, frontend_configuration
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -55,6 +60,7 @@ class Info(dataclasses_json.DataClassJsonMixin):
             binary_version = None
         socket_path = daemon_socket.get_socket_path(
             configuration.get_project_identifier(),
+            flavor=identifiers.PyreFlavor.CLASSIC,
         )
         return cls(
             socket_path=str(socket_path),

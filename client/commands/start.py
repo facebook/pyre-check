@@ -521,6 +521,7 @@ def run_start(
         else:
             socket_path = daemon_socket.get_socket_path(
                 configuration.get_project_identifier(),
+                flavor=start_arguments.flavor,
             )
             return _run_in_background(
                 server_command,

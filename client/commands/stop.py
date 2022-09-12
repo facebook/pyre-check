@@ -6,7 +6,7 @@
 import logging
 from pathlib import Path
 
-from .. import configuration as configuration_module
+from .. import configuration as configuration_module, identifiers
 from . import commands, connections, daemon_socket, frontend_configuration
 
 
@@ -39,7 +39,10 @@ def remove_socket_if_exists(socket_path: Path) -> None:
 
 
 def run_stop(configuration: frontend_configuration.Base) -> commands.ExitCode:
-    socket_path = daemon_socket.get_socket_path(configuration.get_project_identifier())
+    socket_path = daemon_socket.get_socket_path(
+        configuration.get_project_identifier(),
+        flavor=identifiers.PyreFlavor.CLASSIC,
+    )
     try:
         LOG.info("Stopping server...")
         stop_server(socket_path)

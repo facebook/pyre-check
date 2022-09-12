@@ -47,7 +47,7 @@ def get_default_socket_root() -> Path:
 
 def get_socket_path(
     project_identifier: str,
-    flavor: PyreFlavor = PyreFlavor.CLASSIC,
+    flavor: PyreFlavor,
 ) -> Path:
     return _get_socket_path_in_root(
         get_default_socket_root(),
