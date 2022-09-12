@@ -30,12 +30,9 @@ def validate_configuration(temporary_project_path: Path) -> None:
         configuration = json.loads(configuration_path.read_text())
     except json.JSONDecodeError:
         raise AssertionError(f"Invalid configuration at `{configuration_path}`")
+
     LOG.warning(f"Successfully created configuration at `{configuration_path}`:")
     LOG.warning(json.dumps(configuration, indent=2))
-
-    # Confirm configuration contains taint files.
-    taint_path = Path(configuration["taint_models_path"])
-    production_assert(taint_path.is_dir(), "Taint path is not a directory.")
 
     # Confirm configuration explicit typeshed and binary are valid. Missing fields are
     # expected if typeshed and binary can be found in a standard location.
