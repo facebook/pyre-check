@@ -69,7 +69,6 @@ module QueryConfiguration = struct
         query = _;
       }
     =
-    let () = Printf.printf "Analysis configuration of " in
     Configuration.Analysis.create
       ~parallel
       ~analyze_external_sources:false
@@ -110,14 +109,13 @@ let perform_query ~configuration ~build_system ~query () =
     (* Add overlay support later *)
     Server.Query.parse_and_process_request ~environment ~build_system query None
   in
-  query_response
+  Server.Response.to_yojson (Server.Response.Query query_response)
 
 
 let run_query_on_query_configuration query_configuration =
   let { QueryConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ }; query; _ } =
     query_configuration
   in
-  let () = Printf.printf "Run query on query configuration" in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       let query_response =
         perform_query
@@ -126,9 +124,7 @@ let run_query_on_query_configuration query_configuration =
           ~query
           ()
       in
-      Printf.printf
-        "Printing query response: %s"
-        (Sexp.to_string (Server.Query.Response.sexp_of_t query_response));
+      Printf.printf "%s" (Yojson.Safe.to_string query_response);
       Lwt.return ExitStatus.Ok)
 
 
@@ -161,11 +157,6 @@ let run_query configuration_file =
           ~profiling_output
           ~memory_profiling_output
           ();
-        let () =
-          Printf.printf
-            "Done setting up global states, with configuration value: %s"
-            (Sexp.to_string (QueryConfiguration.sexp_of_t query_configuration))
-        in
         Lwt_main.run
           (Lwt.catch
              (fun () -> run_query_on_query_configuration query_configuration)
