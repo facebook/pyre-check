@@ -3108,6 +3108,7 @@ module State (Context : Context) = struct
           List.map ~f:parse_meta elements |> fun elements -> Type.Union elements
       | _ -> parse_meta annotation
     in
+    (* TODO(T131546670) replace with meet *)
     let partition annotation ~boundary =
       let consistent_with_boundary, not_consistent_with_boundary =
         let unfolded_annotation =
@@ -3369,23 +3370,24 @@ module State (Context : Context) = struct
           callee = { Node.value = Name (Name.Identifier "callable"); _ };
           arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
         }
-      when is_simple_name name ->
-        let resolution =
-          match existing_annotation name with
-          | Some existing_annotation ->
-              let undefined =
-                Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
-              in
-              let { consistent_with_boundary; _ } =
-                partition (Annotation.annotation existing_annotation) ~boundary:undefined
-              in
-              if Type.equal consistent_with_boundary Type.Bottom then
-                Annotation.create_mutable undefined |> refine_local ~name
-              else
-                Annotation.create_mutable consistent_with_boundary |> refine_local ~name
-          | _ -> resolution
-        in
-        Value resolution
+      when is_simple_name name -> (
+        match existing_annotation name with
+        | Some existing_annotation ->
+            let callable =
+              Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
+            in
+            let existing_type = Annotation.annotation existing_annotation in
+            let { consistent_with_boundary; _ } = partition existing_type ~boundary:callable in
+            (* Check for supertypes of callable: e.g. object is only returned on
+               not_consistent_with_boundary in partition *)
+            if GlobalResolution.less_or_equal global_resolution ~left:callable ~right:existing_type
+            then
+              Value (Annotation.create_mutable callable |> refine_local ~name)
+            else if not (Type.is_unbound consistent_with_boundary) then
+              Value (Annotation.create_mutable consistent_with_boundary |> refine_local ~name)
+            else
+              Unreachable
+        | _ -> Value resolution)
     (* Is not callable *)
     | UnaryOperator
         {
@@ -3403,24 +3405,19 @@ module State (Context : Context) = struct
             };
         }
       when is_simple_name name -> (
-        let resolution =
-          match existing_annotation name with
-          | Some existing_annotation ->
-              let { not_consistent_with_boundary; _ } =
-                partition
-                  (Annotation.annotation existing_annotation)
-                  ~boundary:
-                    (Type.Callable.create
-                       ~parameters:Undefined
-                       ~annotation:Type.object_primitive
-                       ())
-              in
-              not_consistent_with_boundary >>| Annotation.create_mutable >>| refine_local ~name
-          | _ -> Some resolution
-        in
-        match resolution with
-        | Some resolution -> Value resolution
-        | None -> Unreachable)
+        match existing_annotation name with
+        | Some existing_annotation -> (
+            let callable =
+              Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
+            in
+            let existing_type = Annotation.annotation existing_annotation in
+            let { not_consistent_with_boundary; _ } = partition existing_type ~boundary:callable in
+            match not_consistent_with_boundary with
+            | Some type_ -> Value (Annotation.create_mutable type_ |> refine_local ~name)
+            | None when Type.is_any existing_type ->
+                Value (Annotation.create_mutable existing_type |> refine_local ~name)
+            | None -> Unreachable)
+        | _ -> Value resolution)
     (* `is` and `in` refinement *)
     | ComparisonOperator
         {

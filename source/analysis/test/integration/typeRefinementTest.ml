@@ -716,11 +716,32 @@ let test_check_callable context =
         def __call__(self, x:int) -> str:
           return "A"
       def foo(x: Dict[int, Optional[CallableClass]]) -> None:
-        ret = x[0]
-        if callable(ret):
-          reveal_type(ret)
+        y = x[0]
+        if callable(y):
+          z = y
+          reveal_type(z)
+        else:
+          reveal_type(y)
     |}
-    ["Revealed type [-1]: Revealed type for `ret` is `CallableClass`."];
+    [
+      "Revealed type [-1]: Revealed type for `z` is `CallableClass`.";
+      "Revealed type [-1]: Revealed type for `y` is `None`.";
+    ];
+  assert_type_errors
+    {|
+      class CallableClass:
+        def __call__(self, x:int) -> str:
+          return "A"
+      class CallableClassChild(CallableClass):
+        ...
+      def foo(x: CallableClassChild) -> None:
+        if callable(x):
+          y = x
+          reveal_type(y)
+        else:
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `CallableClassChild`."];
   assert_type_errors
     {|
       from typing import Dict, Callable, Optional
@@ -728,10 +749,13 @@ let test_check_callable context =
         ret = x[0]
         if callable(ret):
           reveal_type(ret)
+        else:
+          reveal_type(ret)
         reveal_type(ret)
     |}
     [
       "Revealed type [-1]: Revealed type for `ret` is `typing.Callable[[], int]`.";
+      "Revealed type [-1]: Revealed type for `ret` is `None`.";
       "Revealed type [-1]: Revealed type for `ret` is `Optional[typing.Callable[[], int]]`.";
     ];
   assert_type_errors
@@ -740,12 +764,27 @@ let test_check_callable context =
       def foo(x: Union[Callable[[], int], int]) -> None:
         if callable(x):
           reveal_type(x)
+        else:
+          y = x
+          reveal_type(y)
         reveal_type(x)
     |}
     [
       "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
       "Revealed type [-1]: Revealed type for `x` is `Union[typing.Callable[[], int], int]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Union, Callable
+      def foo(x: Callable[[], int]) -> None:
+        if callable(x):
+          reveal_type(x)
+        else:
+          y = x
+          reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`."];
   assert_type_errors
     {|
       from typing import Union, Type
@@ -775,20 +814,43 @@ let test_check_callable context =
       "Revealed type [-1]: Revealed type for `x` is `int`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[int], str]`.";
     ];
-  (* Look into bottoming callable expressions *)
   assert_type_errors
     {|
       from typing import Callable
       def foo(x: Callable[[], int]) -> None:
         if callable(x):
-          reveal_type(x)
+          y = x
+          reveal_type(y)
         else:
           reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`."];
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Callable[[], int]`."];
   assert_type_errors
     {|
-      def foo(x:int) -> None:
+      def foo(x: int) -> None:
+        if callable(x):
+          y = x
+          reveal_type(y)
+        else:
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      def foo(x: object) -> None:
+        if callable(x):
+          y = x
+          reveal_type(y)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing.Callable[..., object]`.";
+      "Revealed type [-1]: Revealed type for `x` is `object`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: object) -> None:
         if callable(x):
           reveal_type(x)
         else:
@@ -796,20 +858,50 @@ let test_check_callable context =
     |}
     [
       "Revealed type [-1]: Revealed type for `x` is `typing.Callable[..., object]`.";
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `object`.";
     ];
   assert_type_errors
     {|
-      class CallableClass:
-        def __call__(self, x:int) -> str:
-          return "A"
-      def foo(x: CallableClass) -> None:
+      from typing import Any
+      def foo(x: Any) -> None:
         if callable(x):
-          pass
+          y = x
+          reveal_type(y)
         else:
           reveal_type(x)
     |}
-    [];
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Callable[..., object]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+      class Test:
+        ...
+      def foo(x: Test) -> None:
+        if callable(x):
+          y = x
+          reveal_type(y)
+        else:
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Test`."];
+  assert_type_errors
+    {|
+      from typing import Any, Union
+      def foo(x: Union[int, Any]) -> None:
+        if callable(x):
+          y = x
+          reveal_type(y)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Callable[..., object]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+    ];
   ()
 
 
