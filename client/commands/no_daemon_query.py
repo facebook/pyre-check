@@ -73,12 +73,16 @@ def _create_no_daemon_query_arguments(
     """
     Translate client configurations to backend query configurations.
     """
-
+    source_paths = backend_arguments.get_source_path_for_check(configuration)
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
             log_path=str(configuration.get_log_directory()),
             global_root=str(configuration.get_global_root()),
-            source_paths=backend_arguments.get_source_path_for_check(configuration),
+            source_paths=source_paths,
+            checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
+                configuration, source_paths
+            ),
+            checked_directory_blocklist=(configuration.get_ignore_all_errors()),
             excludes=configuration.get_excludes(),
             extensions=configuration.get_valid_extension_suffixes(),
             relative_local_root=configuration.get_relative_local_root(),
@@ -86,7 +90,6 @@ def _create_no_daemon_query_arguments(
             python_version=configuration.get_python_version(),
             shared_memory=configuration.get_shared_memory(),
             search_paths=configuration.get_existent_search_paths(),
-            checked_directory_blocklist=(configuration.get_ignore_all_errors()),
         ),
         query=query,
     )
