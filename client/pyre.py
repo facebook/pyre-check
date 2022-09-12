@@ -779,7 +779,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @pyre.command()
 @click.option(
     "--flavor",
-    type=click.Choice([kind.value for kind in identifiers.PyreFlavor]),
+    type=click.Choice(identifiers.PyreFlavor.persistent_choices()),
     help=(
         "Flavor of the pyre server. "
         "This is used to disambiguate paths and log handling."
