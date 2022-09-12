@@ -514,8 +514,8 @@ class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
     def to_lsp_definition_response(
         self,
-    ) -> "LspDefinitionResponse":
-        return LspDefinitionResponse(uri=self.path, range=self.range.to_lsp_range())
+    ) -> "LspLocation":
+        return LspLocation(uri=self.path, range=self.range.to_lsp_range())
 
 
 @dataclasses.dataclass(frozen=True)
@@ -559,12 +559,12 @@ class PyreDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
     def to_lsp_definition_response(
         self,
-    ) -> "LspDefinitionResponse":
-        return LspDefinitionResponse(uri=self.path, range=self.range.to_lsp_range())
+    ) -> "LspLocation":
+        return LspLocation(uri=self.path, range=self.range.to_lsp_range())
 
 
 @dataclasses.dataclass(frozen=True)
-class LspDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+class LspLocation(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains one possible definition for a symbol."""
 
     uri: str

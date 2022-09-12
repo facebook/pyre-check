@@ -163,8 +163,8 @@ class MockRequestHandler(AbstractRequestHandler):
         self,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
         mock_hover_response: Optional[lsp.LspHoverResponse] = None,
-        mock_definition_response: Optional[List[lsp.LspDefinitionResponse]] = None,
-        mock_references_response: Optional[List[lsp.LspDefinitionResponse]] = None,
+        mock_definition_response: Optional[List[lsp.LspLocation]] = None,
+        mock_references_response: Optional[List[lsp.LspLocation]] = None,
     ) -> None:
         self.requests: List[object] = []
         self.mock_type_coverage = mock_type_coverage
@@ -194,7 +194,7 @@ class MockRequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> List[lsp.LspDefinitionResponse]:
+    ) -> List[lsp.LspLocation]:
         self.requests.append({"path": path, "position": position})
         if self.mock_definition_response is None:
             raise ValueError("You need to set hover response in the mock handler")
@@ -205,7 +205,7 @@ class MockRequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> List[lsp.LspDefinitionResponse]:
+    ) -> List[lsp.LspLocation]:
         self.requests.append({"path": path, "position": position})
         if self.mock_references_response is None:
             raise ValueError("You need to set hover response in the mock handler")
@@ -1356,7 +1356,7 @@ class PyreServerTest(testslide.TestCase):
         lsp_line = 3
         daemon_line = lsp_line + 1
         expected_response = [
-            lsp.LspDefinitionResponse(
+            lsp.LspLocation(
                 uri="file:///path/to/foo.py",
                 range=lsp.LspRange(
                     start=lsp.LspPosition(line=5, character=6),
@@ -1393,7 +1393,7 @@ class PyreServerTest(testslide.TestCase):
                     }
                 ],
             )
-            raw_expected_response = lsp.LspDefinitionResponse.cached_schema().dump(
+            raw_expected_response = lsp.LspLocation.cached_schema().dump(
                 expected_response, many=True
             )
             expect_correct_response = self._expect_success_message(
@@ -1421,7 +1421,7 @@ class PyreServerTest(testslide.TestCase):
         daemon_line = lsp_line + 1
         expected_editor_response = []
         expected_telemetry_response = [
-            lsp.LspDefinitionResponse(
+            lsp.LspLocation(
                 uri="file:///path/to/foo.py",
                 range=lsp.LspRange(
                     start=lsp.LspPosition(line=5, character=6),
@@ -1464,13 +1464,13 @@ class PyreServerTest(testslide.TestCase):
             output_writer,
             [
                 self._expect_success_message(
-                    lsp.LspDefinitionResponse.cached_schema().dump(
+                    lsp.LspLocation.cached_schema().dump(
                         expected_editor_response, many=True
                     )
                 ),
                 self._expect_telemetry_event(
                     operation="definition",
-                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                    result=lsp.LspLocation.cached_schema().dump(
                         expected_telemetry_response, many=True
                     ),
                 ),
@@ -1507,7 +1507,7 @@ class PyreServerTest(testslide.TestCase):
         lsp_line = 3
         daemon_line = lsp_line + 1
         expected_response = [
-            lsp.LspDefinitionResponse(
+            lsp.LspLocation(
                 uri="file:///path/to/foo.py",
                 range=lsp.LspRange(
                     start=lsp.LspPosition(line=5, character=6),
@@ -1544,7 +1544,7 @@ class PyreServerTest(testslide.TestCase):
             output_writer,
             [
                 self._expect_success_message(
-                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                    result=lsp.LspLocation.cached_schema().dump(
                         expected_response, many=True
                     ),
                 )
@@ -1976,7 +1976,7 @@ class RequestHandlerTest(testslide.TestCase):
         self.assertEqual(
             response,
             [
-                lsp.LspDefinitionResponse(
+                lsp.LspLocation(
                     uri="/foo.py",
                     range=lsp.LspRange(
                         start=lsp.LspPosition(line=8, character=6),
@@ -2072,14 +2072,14 @@ class RequestHandlerTest(testslide.TestCase):
         self.assertEqual(
             result,
             [
-                lsp.LspDefinitionResponse(
+                lsp.LspLocation(
                     uri="/foo.py",
                     range=lsp.LspRange(
                         start=lsp.LspPosition(line=8, character=6),
                         end=lsp.LspPosition(line=9, character=11),
                     ),
                 ),
-                lsp.LspDefinitionResponse(
+                lsp.LspLocation(
                     uri="/bar.py",
                     range=lsp.LspRange(
                         start=lsp.LspPosition(line=1, character=3),

@@ -1266,7 +1266,7 @@ class AbstractRequestHandler(abc.ABC):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> List[lsp.LspDefinitionResponse]:
+    ) -> List[lsp.LspLocation]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -1274,7 +1274,7 @@ class AbstractRequestHandler(abc.ABC):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> List[lsp.LspDefinitionResponse]:
+    ) -> List[lsp.LspLocation]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -1385,7 +1385,7 @@ class RequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> List[lsp.LspDefinitionResponse]:
+    ) -> List[lsp.LspLocation]:
         path_string = f"'{path}'"
         query_text = (
             f"location_of_definition(path={path_string},"
@@ -1411,7 +1411,7 @@ class RequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> List[lsp.LspDefinitionResponse]:
+    ) -> List[lsp.LspLocation]:
         path_string = f"'{path}'"
         query_text = (
             f"find_references(path={path_string},"
@@ -1667,7 +1667,7 @@ class PyreServer:
             path=document_path,
             position=position.to_pyre_position(),
         )
-        return lsp.LspDefinitionResponse.cached_schema().dump(
+        return lsp.LspLocation.cached_schema().dump(
             definitions,
             many=True,
         )
@@ -1692,9 +1692,7 @@ class PyreServer:
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    result=lsp.LspDefinitionResponse.cached_schema().dump(
-                        [], many=True
-                    ),
+                    result=lsp.LspLocation.cached_schema().dump([], many=True),
                 ),
             )
         else:
@@ -1720,9 +1718,7 @@ class PyreServer:
                     json_rpc.SuccessResponse(
                         id=request_id,
                         activity_key=activity_key,
-                        result=lsp.LspDefinitionResponse.cached_schema().dump(
-                            [], many=True
-                        ),
+                        result=lsp.LspLocation.cached_schema().dump([], many=True),
                     ),
                 )
                 raw_result = await self._get_definition_result(
@@ -1793,9 +1789,7 @@ class PyreServer:
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    result=lsp.LspDefinitionResponse.cached_schema().dump(
-                        [], many=True
-                    ),
+                    result=lsp.LspLocation.cached_schema().dump([], many=True),
                 ),
             )
             return
@@ -1809,7 +1803,7 @@ class PyreServer:
             json_rpc.SuccessResponse(
                 id=request_id,
                 activity_key=activity_key,
-                result=lsp.LspDefinitionResponse.cached_schema().dump(
+                result=lsp.LspLocation.cached_schema().dump(
                     reference_locations,
                     many=True,
                 ),
