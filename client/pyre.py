@@ -28,6 +28,7 @@ from .version import __version__
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+CLASSIC_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 
 
 def _show_pyre_version_as_text(
@@ -62,10 +63,13 @@ def show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
         _show_pyre_version_as_text(binary_version, client_version)
 
 
-def start_logging_to_directory(log_directory: str) -> None:
+def start_logging_to_directory(
+    log_directory: str,
+    flavor: identifiers.PyreFlavor,
+) -> None:
     log_directory_path = Path(log_directory)
     log_directory_path.mkdir(parents=True, exist_ok=True)
-    log.enable_file_logging(log_directory_path / "pyre.stderr")
+    log.enable_file_logging(log_directory_path / f"pyre{flavor.path_suffix()}.stderr")
 
 
 def _run_check_command(
@@ -73,7 +77,7 @@ def _run_check_command(
 ) -> commands.ExitCode:
     configuration = configuration_module.create_configuration(arguments, Path("."))
     _check_open_source_version(configuration)
-    start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     check_arguments = command_arguments.CheckArguments.create(arguments)
     return commands.check.run(configuration, check_arguments)
 
@@ -85,7 +89,7 @@ def _run_incremental_command(
 ) -> commands.ExitCode:
     configuration = configuration_module.create_configuration(arguments, Path("."))
     _check_open_source_version(configuration)
-    start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     start_arguments = command_arguments.StartArguments.create(
         arguments,
         no_watchman=no_watchman,
@@ -513,7 +517,7 @@ def analyze(
         command_argument, Path(".")
     )
     _check_open_source_version(configuration)
-    start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.analyze.run(
         configuration,
         command_arguments.AnalyzeArguments(
@@ -870,9 +874,7 @@ def persistent(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     start_command_argument = command_arguments.StartArguments.create(
         command_argument=command_argument,
-        flavor=identifiers.PyreFlavor.CLASSIC
-        if flavor is None
-        else identifiers.PyreFlavor(flavor),
+        flavor=CLASSIC_FLAVOR if flavor is None else identifiers.PyreFlavor(flavor),
         skip_initial_type_check=skip_initial_type_check,
         use_lazy_module_tracking=use_lazy_module_tracking,
     )
@@ -882,6 +884,7 @@ def persistent(
     )
     start_logging_to_directory(
         configuration.log_directory,
+        flavor=start_command_argument.flavor,
     )
     return commands.persistent.run(
         read_server_options=commands.persistent.PyreServerOptions.create_reader(
@@ -960,9 +963,7 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    start_logging_to_directory(
-        configuration.log_directory,
-    )
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.pysa_server.run(
         configuration,
         command_arguments.StartArguments.create(
@@ -992,7 +993,7 @@ def query(context: click.Context, query: str, no_daemon: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.query.run(configuration, query, no_daemon)
 
 
@@ -1081,7 +1082,7 @@ def restart(
         command_argument, Path(".")
     )
     _check_open_source_version(configuration)
-    start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     start_arguments = command_arguments.StartArguments.create(
         command_argument=command_argument,
         no_watchman=no_watchman,
@@ -1200,7 +1201,7 @@ def start(
         command_argument, Path(".")
     )
     _check_open_source_version(configuration)
-    start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.start.run(
         configuration,
         command_arguments.StartArguments.create(
@@ -1329,7 +1330,7 @@ def stop(context: click.Context) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.stop.run(configuration)
 
 
@@ -1343,7 +1344,7 @@ def validate_models(context: click.Context) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.validate_models.run(configuration, output=command_argument.output)
 
 
