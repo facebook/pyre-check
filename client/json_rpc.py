@@ -153,6 +153,14 @@ class Request(JSONRPC):
             **({"params": parameters.values} if parameters is not None else {}),
         }
 
+    def extract_parameters(self) -> Parameters:
+        parameters = self.parameters
+        if parameters is None:
+            raise InvalidRequestError(
+                f"No parameters to extract for JSON-RPC {self.method} method"
+            )
+        return parameters
+
     @staticmethod
     def from_json(request_json: JSON) -> "Request":
         """

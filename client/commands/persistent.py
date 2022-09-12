@@ -1831,95 +1831,68 @@ class PyreServer:
         elif request.method == "shutdown":
             return await self.process_shutdown_request(request.id)
         elif request.method == "textDocument/definition":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Missing parameters for definition method"
-                )
             await self.process_definition_request(
-                lsp.DefinitionParameters.from_json_rpc_parameters(parameters),
+                lsp.DefinitionParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
                 request.id,
                 request.activity_key,
             )
         elif request.method == "textDocument/didOpen":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Missing parameters for didOpen method"
-                )
             await self.process_open_request(
-                lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(parameters),
+                lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
                 request.activity_key,
             )
         elif request.method == "textDocument/didChange":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Missing parameters for didChange method"
-                )
             await self.process_did_change_request(
-                lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(parameters)
+                lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                )
             )
         elif request.method == "textDocument/didClose":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Missing parameters for didClose method"
-                )
             await self.process_close_request(
-                lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(parameters)
+                lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                )
             )
         elif request.method == "textDocument/didSave":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Missing parameters for didSave method"
-                )
             await self.process_did_save_request(
-                lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(parameters),
+                lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
                 request.activity_key,
             )
         elif request.method == "textDocument/hover":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Missing parameters for hover method"
-                )
             await self.process_hover_request(
-                lsp.HoverParameters.from_json_rpc_parameters(parameters),
+                lsp.HoverParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
                 request.id,
                 request.activity_key,
             )
         elif request.method == "textDocument/typeCoverage":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Missing parameters for typeCoverage method"
-                )
             await self.process_type_coverage_request(
-                lsp.TypeCoverageParameters.from_json_rpc_parameters(parameters),
+                lsp.TypeCoverageParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
                 request.id,
                 request.activity_key,
             )
         elif request.method == "textDocument/documentSymbol":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Mising Parameters for document symbols"
-                )
             await self.process_document_symbols_request(
-                lsp.DocumentSymbolsParameters.from_json_rpc_parameters(parameters),
+                lsp.DocumentSymbolsParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
                 request.id,
                 request.activity_key,
             )
         elif request.method == "textDocument/references":
-            parameters = request.parameters
-            if parameters is None:
-                raise json_rpc.InvalidRequestError(
-                    "Missing parameters for find all references"
-                )
             await self.process_find_all_references_request(
-                lsp.ReferencesParameters.from_json_rpc_parameters(parameters),
+                lsp.ReferencesParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
                 request.id,
                 request.activity_key,
             )
