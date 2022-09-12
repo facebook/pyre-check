@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Set
 
+from .identifiers import PyreFlavor
+
 
 TEXT: str = "text"
 JSON: str = "json"
@@ -91,8 +93,9 @@ class StartArguments:
     debug: bool = False
     enable_memory_profiling: bool = False
     enable_profiling: bool = False
+    flavor: PyreFlavor = PyreFlavor.CLASSIC
     load_initial_state_from: Optional[str] = None
-    log_identifier: Optional[str] = None
+    _log_identifier: Optional[str] = None
     logging_sections: Optional[str] = None
     no_saved_state: bool = False
     no_watchman: bool = False
@@ -110,6 +113,7 @@ class StartArguments:
     @staticmethod
     def create(
         command_argument: CommandArguments,
+        flavor: PyreFlavor = PyreFlavor.CLASSIC,
         no_watchman: bool = False,
         store_type_check_resolution: bool = False,
         wait_on_initialization: bool = False,
@@ -122,8 +126,9 @@ class StartArguments:
             debug=command_argument.debug,
             enable_memory_profiling=command_argument.enable_memory_profiling,
             enable_profiling=command_argument.enable_profiling,
+            flavor=flavor,
             load_initial_state_from=command_argument.load_initial_state_from,
-            log_identifier=command_argument.log_identifier,
+            _log_identifier=command_argument.log_identifier,
             logging_sections=command_argument.logging_sections,
             no_saved_state=command_argument.no_saved_state,
             no_watchman=no_watchman,
@@ -138,6 +143,20 @@ class StartArguments:
             skip_initial_type_check=skip_initial_type_check,
             use_lazy_module_tracking=use_lazy_module_tracking,
         )
+
+    def get_log_identifier(self) -> str:
+        """
+        If a log identifier was manually set (this is usually done specifically
+        to isolate telemetry, e.g. when running a performance experiment), we
+        use that.
+
+        Otherwise, we use the flavor. This keeps telemetry from various kinds
+        of language servers separate so that our metrics can distinguish them.
+        """
+        if self._log_identifier is not None:
+            return self._log_identifier
+        else:
+            return self.flavor.value
 
 
 @dataclass(frozen=True)

@@ -167,7 +167,7 @@ def run_incremental(
     output = incremental_arguments.output
     remote_logging = backend_arguments.RemoteLogging.create(
         configuration.get_remote_logger(),
-        incremental_arguments.start_arguments.log_identifier,
+        incremental_arguments.start_arguments.get_log_identifier(),
     )
     try:
         exit_code = _show_progress_log_and_display_type_errors(

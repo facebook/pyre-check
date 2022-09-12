@@ -301,7 +301,8 @@ def create_server_arguments(
             python_version=configuration.get_python_version(),
             shared_memory=configuration.get_shared_memory(),
             remote_logging=backend_arguments.RemoteLogging.create(
-                configuration.get_remote_logger(), start_arguments.log_identifier
+                configuration.get_remote_logger(),
+                start_arguments.get_log_identifier(),
             ),
             search_paths=configuration.get_existent_search_paths(),
             source_paths=source_paths,
@@ -323,7 +324,8 @@ def create_server_arguments(
         skip_initial_type_check=start_arguments.skip_initial_type_check,
         use_lazy_module_tracking=start_arguments.use_lazy_module_tracking,
         socket_path=daemon_socket.get_default_socket_path(
-            configuration.get_project_identifier()
+            configuration.get_project_identifier(),
+            flavor=start_arguments.flavor,
         ),
     )
 

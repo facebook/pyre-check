@@ -444,7 +444,7 @@ class StartTest(testslide.TestCase):
                     noninteractive=True,
                     enable_profiling=True,
                     enable_memory_profiling=True,
-                    log_identifier="derp",
+                    _log_identifier="derp",
                 ),
             )
             self.assertListEqual(
