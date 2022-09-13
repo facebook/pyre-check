@@ -137,6 +137,7 @@ module ScratchProject = struct
       Analysis.EnvironmentControls.create
         ~populate_call_graph:true
         ~use_lazy_module_tracking:false
+        ~no_validation_on_class_lookup_failure:false
         configuration
     in
     let start_options =

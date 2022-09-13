@@ -138,6 +138,55 @@ let test_parse_annotation context =
     (parse_single_expression "typing.Dict[str, empty.stub.Annotation]")
 
 
+(** The purpose of this test is to test environments in which the value for the global variable
+    no_validation_on_class_lookup_failure is set to true. If both
+    no_validation_on_class_lookup_failure is true and the validation parameter of the
+    parse_annotation function is unset, we will NOT validate the annotation. **)
+let test_parse_annotation_for_no_validation_on_class_lookup_failure_environment context =
+  let assert_parse_annotation ?validation ~resolution ~expected expression =
+    assert_equal
+      ~cmp:Type.equal
+      ~printer:Type.show
+      expected
+      (GlobalResolution.parse_annotation ?validation resolution expression)
+  in
+  let resolution =
+    ScratchProject.setup ~context ~no_validation_on_class_lookup_failure:true []
+    |> ScratchProject.build_global_environment
+    |> (fun { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } -> global_environment)
+    |> GlobalResolution.create
+  in
+  assert_parse_annotation
+    ~validation:NoValidation
+    ~resolution
+    ~expected:(Type.Primitive "qualifier.int")
+    !"$local_qualifier$int";
+  assert_parse_annotation
+    ~resolution
+    ~expected:(Type.Primitive "qualifier.int")
+    !"$local_qualifier$int";
+  assert_parse_annotation
+    ~validation:ValidatePrimitivesAndTypeParameters
+    ~resolution
+    ~expected:Type.Top
+    !"$local_qualifier$int";
+  assert_parse_annotation
+    ~validation:NoValidation
+    ~resolution
+    ~expected:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "Empty"))
+    (parse_single_expression "typing.Dict[str, Empty]");
+  assert_parse_annotation
+    ~resolution
+    ~expected:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "Empty"))
+    (parse_single_expression "typing.Dict[str, Empty]");
+  assert_parse_annotation
+    ~validation:ValidatePrimitivesAndTypeParameters
+    ~resolution
+    ~expected:Type.Top
+    (parse_single_expression "typing.Dict[str, Empty]");
+  ()
+
+
 let make_resolution ~context source =
   ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
 
@@ -1587,6 +1636,8 @@ let () =
   >::: [
          "new_and_refine" >:: test_new_and_refine;
          "parse_annotation" >:: test_parse_annotation;
+         "parse_annotation_no_validation_on_class_lookup_failure"
+         >:: test_parse_annotation_for_no_validation_on_class_lookup_failure_environment;
          "parse_reference" >:: test_parse_reference;
          "partition_name" >:: test_partition_name;
          "resolve_literal" >:: test_resolve_literal;
