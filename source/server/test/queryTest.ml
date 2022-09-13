@@ -243,84 +243,6 @@ let test_handle_query_basic context =
   in
   let open Lwt.Infix in
   let open Test in
-  assert_type_query_response_with_local_root
-    ~source:
-      {|
-        # foo.py
-        from other_module import Bar
-
-        my_bar: Bar
-
-        def my_foo(bar: Bar) -> None:
-          x = bar
-      |}
-    ~query:"types(path='test.py')"
-    (fun _ ->
-      Single
-        (Base.TypesByPath
-           [
-             {
-               Base.path = "test.py";
-               types =
-                 [
-                   5, 0, 5, 6, Type.Any;
-                   5, 8, 5, 11, Type.meta Type.Top;
-                   (* TODO:T131449054 *)
-                   5, 11, 5, 11, Type.Any;
-                   ( 7,
-                     4,
-                     7,
-                     10,
-                     Type.Callable
-                       {
-                         Type.Callable.kind = Type.Callable.Named !&"test.my_foo";
-                         implementation =
-                           {
-                             Type.Callable.annotation = Type.none;
-                             parameters =
-                               Type.Callable.Defined
-                                 [Named { name = "bar"; annotation = Type.Top; default = false }];
-                           };
-                         overloads = [];
-                       } );
-                   7, 16, 7, 19, Type.meta Type.Top;
-                   7, 24, 7, 28, Type.none;
-                 ]
-                 |> create_types_at_locations;
-             };
-           ]))
-  >>= fun () ->
-  assert_type_query_response_with_local_root
-    ~source:
-      {|
-      # foo.py
-      from other_module import Bar
-
-      class Foo:
-          foo_attribute: Bar
-
-      f = Foo().foo_attribute
-    |}
-    ~query:"types(path='test.py')"
-    (fun _ ->
-      Single
-        (Base.TypesByPath
-           [
-             {
-               Base.path = "test.py";
-               types =
-                 [
-                   5, 6, 5, 9, Type.meta (Type.Primitive "test.Foo");
-                   6, 4, 6, 17, Type.Any;
-                   6, 19, 6, 22, Type.meta Type.Top;
-                   6, 22, 6, 22, Type.Any;
-                   8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
-                   8, 4, 8, 9, Type.Primitive "test.Foo";
-                 ]
-                 |> create_types_at_locations;
-             };
-           ]))
-  >>= fun () ->
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, str)"
@@ -1019,6 +941,84 @@ let test_handle_query_basic context =
                    { Base.location = create_location 3 2 3 3; annotation = Type.integer };
                    { Base.location = create_location 3 6 3 7; annotation = Type.literal_integer 1 };
                  ];
+             };
+           ]))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+        # foo.py
+        from other_module import Bar
+
+        my_bar: Bar
+
+        def my_foo(bar: Bar) -> None:
+          x = bar
+      |}
+    ~query:"types(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.TypesByPath
+           [
+             {
+               Base.path = "test.py";
+               types =
+                 [
+                   5, 0, 5, 6, Type.Any;
+                   5, 8, 5, 11, Type.meta Type.Top;
+                   (* TODO:T131449054 *)
+                   5, 11, 5, 11, Type.Any;
+                   ( 7,
+                     4,
+                     7,
+                     10,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test.my_foo";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.none;
+                             parameters =
+                               Type.Callable.Defined
+                                 [Named { name = "bar"; annotation = Type.Top; default = false }];
+                           };
+                         overloads = [];
+                       } );
+                   7, 16, 7, 19, Type.meta Type.Top;
+                   7, 24, 7, 28, Type.none;
+                 ]
+                 |> create_types_at_locations;
+             };
+           ]))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+      # foo.py
+      from other_module import Bar
+
+      class Foo:
+          foo_attribute: Bar
+
+      f = Foo().foo_attribute
+    |}
+    ~query:"types(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.TypesByPath
+           [
+             {
+               Base.path = "test.py";
+               types =
+                 [
+                   5, 6, 5, 9, Type.meta (Type.Primitive "test.Foo");
+                   6, 4, 6, 17, Type.Any;
+                   6, 19, 6, 22, Type.meta Type.Top;
+                   6, 22, 6, 22, Type.Any;
+                   8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
+                   8, 4, 8, 9, Type.Primitive "test.Foo";
+                 ]
+                 |> create_types_at_locations;
              };
            ]))
   >>= fun () ->
