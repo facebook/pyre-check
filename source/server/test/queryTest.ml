@@ -194,27 +194,32 @@ let assert_queries_with_local_root
   |> ScratchProject.test_server_with ~f:test_handle_query
 
 
+let assert_type_query_response_with_local_root
+    ?custom_source_root
+    ?(handle = "test.py")
+    ?no_validation_on_class_lookup_failure
+    ~source
+    ~query
+    ~context
+    build_expected_response
+  =
+  let build_expected_response local_root =
+    Response.Query (build_expected_response local_root)
+    |> Response.to_yojson
+    |> Yojson.Safe.to_string
+  in
+  assert_queries_with_local_root
+    ?custom_source_root
+    ?no_validation_on_class_lookup_failure
+    ~context
+    ~sources:[handle, source]
+    [query, build_expected_response]
+
+
 let test_handle_query_basic context =
   let open Query.Response in
-  let assert_type_query_response_with_local_root
-      ?custom_source_root
-      ?(handle = "test.py")
-      ?no_validation_on_class_lookup_failure
-      ~source
-      ~query
-      build_expected_response
-    =
-    let build_expected_response local_root =
-      Response.Query (build_expected_response local_root)
-      |> Response.to_yojson
-      |> Yojson.Safe.to_string
-    in
-    assert_queries_with_local_root
-      ?custom_source_root
-      ?no_validation_on_class_lookup_failure
-      ~context
-      ~sources:[handle, source]
-      [query, build_expected_response]
+  let assert_type_query_response_with_local_root =
+    assert_type_query_response_with_local_root ~context
   in
   let assert_type_query_response ?custom_source_root ?handle ~source ~query response =
     assert_type_query_response_with_local_root ?custom_source_root ?handle ~source ~query (fun _ ->
