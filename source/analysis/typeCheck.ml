@@ -7105,6 +7105,7 @@ let check_function_definition
   Statistics.performance
     ~flush:false
     ~randomly_log_every:1000
+    ~always_log_time_threshold:1.0 (* Seconds *)
     ~section:`Check
     ~name:"SingleDefineTypeCheck"
     ~timer

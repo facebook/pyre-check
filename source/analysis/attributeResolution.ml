@@ -4724,6 +4724,7 @@ class base class_metadata_environment dependency =
         Statistics.performance
           ~flush:false
           ~randomly_log_every:500
+          ~always_log_time_threshold:1.0 (* Seconds *)
           ~section:`Check
           ~name:"SingleGlobalTypeCheck"
           ~timer
