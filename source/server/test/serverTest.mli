@@ -45,6 +45,7 @@ module ScratchProject : sig
     ?external_sources:(string * string) list ->
     ?include_typeshed_stubs:bool ->
     ?include_helper_builtins:bool ->
+    ?no_validation_on_class_lookup_failure:bool ->
     ?custom_source_root:PyrePath.t ->
     ?watchman:Watchman.Raw.t ->
     ?build_system_initializer:BuildSystem.Initializer.t ->

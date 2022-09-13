@@ -77,6 +77,7 @@ module ScratchProject = struct
       ?(external_sources = [])
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
+      ?(no_validation_on_class_lookup_failure = false)
       ?custom_source_root
       ?watchman
       ?build_system_initializer
@@ -137,7 +138,7 @@ module ScratchProject = struct
       Analysis.EnvironmentControls.create
         ~populate_call_graph:true
         ~use_lazy_module_tracking:false
-        ~no_validation_on_class_lookup_failure:false
+        ~no_validation_on_class_lookup_failure
         configuration
     in
     let start_options =

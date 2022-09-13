@@ -162,6 +162,7 @@ let test_parse_query context =
 let assert_queries_with_local_root
     ?custom_source_root
     ?build_system_initializer
+    ?no_validation_on_class_lookup_failure
     ~context
     ~sources
     queries_and_responses
@@ -186,6 +187,7 @@ let assert_queries_with_local_root
   ScratchProject.setup
     ?custom_source_root
     ?build_system_initializer
+    ?no_validation_on_class_lookup_failure
     ~context
     ~include_helper_builtins:false
     sources
@@ -197,6 +199,7 @@ let test_handle_query_basic context =
   let assert_type_query_response_with_local_root
       ?custom_source_root
       ?(handle = "test.py")
+      ?no_validation_on_class_lookup_failure
       ~source
       ~query
       build_expected_response
@@ -208,6 +211,7 @@ let test_handle_query_basic context =
     in
     assert_queries_with_local_root
       ?custom_source_root
+      ?no_validation_on_class_lookup_failure
       ~context
       ~sources:[handle, source]
       [query, build_expected_response]
@@ -1474,6 +1478,90 @@ let test_handle_query_basic context =
                  { Base.location = create_location 3 2 3 3; annotation = Type.integer };
                  { Base.location = create_location 3 6 3 7; annotation = Type.literal_integer 1 };
                ];
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+      # foo.py
+      from other_module import Bar
+
+      my_bar: Bar
+
+      def my_foo(bar: Bar) -> None:
+        x = bar
+    |}
+    ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 5, 0, 5, 6, Type.Any;
+                 5, 8, 5, 11, Type.meta (Type.Primitive "other_module.Bar");
+                 5, 11, 5, 11, Type.Any;
+                 ( 7,
+                   4,
+                   7,
+                   10,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.my_foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.none;
+                           parameters =
+                             Type.Callable.Defined
+                               [
+                                 Named
+                                   {
+                                     name = "bar";
+                                     annotation = parse_annotation "other_module.Bar";
+                                     default = false;
+                                   };
+                               ];
+                         };
+                       overloads = [];
+                     } );
+                 7, 16, 7, 19, Type.meta (Type.Primitive "other_module.Bar");
+                 7, 24, 7, 28, Type.none;
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+      # foo.py
+      from other_module import Bar
+
+      class Foo:
+          foo_attribute: Bar
+
+      f = Foo().foo_attribute
+    |}
+    ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 5, 6, 5, 9, Type.meta (Type.Primitive "test.Foo");
+                 6, 4, 6, 17, Type.Any;
+                 6, 19, 6, 22, Type.meta (Type.Primitive "other_module.Bar");
+                 6, 22, 6, 22, Type.Any;
+                 8, 0, 8, 1, Type.Primitive "other_module.Bar";
+                 8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
+                 8, 4, 8, 9, Type.Primitive "test.Foo";
+                 8, 4, 8, 23, Type.Primitive "other_module.Bar";
+               ]
+               |> create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response
