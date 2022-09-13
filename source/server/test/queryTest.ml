@@ -1500,7 +1500,7 @@ let test_handle_query_basic context =
              Base.path = "test.py";
              types =
                [
-                 5, 0, 5, 6, Type.Any;
+                 5, 0, 5, 6, Type.Primitive "other_module.Bar";
                  5, 8, 5, 11, Type.meta (Type.Primitive "other_module.Bar");
                  5, 11, 5, 11, Type.Any;
                  ( 7,
@@ -1526,8 +1526,11 @@ let test_handle_query_basic context =
                          };
                        overloads = [];
                      } );
+                 7, 11, 7, 14, Type.Primitive "other_module.Bar";
                  7, 16, 7, 19, Type.meta (Type.Primitive "other_module.Bar");
                  7, 24, 7, 28, Type.none;
+                 8, 2, 8, 3, Type.Primitive "other_module.Bar";
+                 8, 6, 8, 9, Type.Primitive "other_module.Bar";
                ]
                |> create_types_at_locations;
            }))
@@ -1553,13 +1556,94 @@ let test_handle_query_basic context =
              types =
                [
                  5, 6, 5, 9, Type.meta (Type.Primitive "test.Foo");
-                 6, 4, 6, 17, Type.Any;
+                 6, 4, 6, 17, Type.Primitive "other_module.Bar";
                  6, 19, 6, 22, Type.meta (Type.Primitive "other_module.Bar");
                  6, 22, 6, 22, Type.Any;
                  8, 0, 8, 1, Type.Primitive "other_module.Bar";
                  8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
                  8, 4, 8, 9, Type.Primitive "test.Foo";
                  8, 4, 8, 23, Type.Primitive "other_module.Bar";
+               ]
+               |> create_types_at_locations;
+           }))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+        # foo.py
+        from other_module import Bar
+
+        def foo(x: str) -> Bar:
+          return Bar()
+
+        def baz(x: str) -> int:
+          return foo(x)
+    |}
+    ~no_validation_on_class_lookup_failure:true
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 ( 5,
+                   4,
+                   5,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = parse_annotation "other_module.Bar";
+                           parameters =
+                             Type.Callable.Defined
+                               [Named { name = "x"; annotation = Type.string; default = false }];
+                         };
+                       overloads = [];
+                     } );
+                 5, 8, 5, 9, Type.string;
+                 5, 11, 5, 14, Type.meta Type.string;
+                 6, 9, 6, 14, Type.Any;
+                 ( 8,
+                   4,
+                   8,
+                   7,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.baz";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.integer;
+                           parameters =
+                             Type.Callable.Defined
+                               [Named { name = "x"; annotation = Type.string; default = false }];
+                         };
+                       overloads = [];
+                     } );
+                 8, 8, 8, 9, Type.string;
+                 8, 11, 8, 14, Type.meta Type.string;
+                 8, 19, 8, 22, Type.meta Type.integer;
+                 ( 9,
+                   9,
+                   9,
+                   12,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = parse_annotation "other_module.Bar";
+                           parameters =
+                             Type.Callable.Defined
+                               [Named { name = "x"; annotation = Type.string; default = false }];
+                         };
+                       overloads = [];
+                     } );
+                 9, 9, 9, 15, Type.Primitive "other_module.Bar";
+                 9, 13, 9, 14, Type.string;
                ]
                |> create_types_at_locations;
            }))

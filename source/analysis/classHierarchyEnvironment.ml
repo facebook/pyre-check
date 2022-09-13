@@ -211,10 +211,14 @@ module ReadOnly = struct
       let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency
 
       let contains key =
-        UnannotatedGlobalEnvironment.ReadOnly.class_exists
-          unannotated_global_environment
-          ?dependency
-          key
+        let env_controls = AliasEnvironment.ReadOnly.controls alias_environment in
+        if EnvironmentControls.no_validation_on_class_lookup_failure env_controls then
+          true
+        else
+          UnannotatedGlobalEnvironment.ReadOnly.class_exists
+            unannotated_global_environment
+            ?dependency
+            key
     end : ClassHierarchy.Handler)
 
 
