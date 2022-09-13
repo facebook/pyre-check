@@ -194,32 +194,57 @@ let assert_queries_with_local_root
   |> ScratchProject.test_server_with ~f:test_handle_query
 
 
-let assert_type_query_response_with_local_root
-    ?custom_source_root
-    ?(handle = "test.py")
-    ?no_validation_on_class_lookup_failure
-    ~source
-    ~query
-    ~context
-    build_expected_response
-  =
-  let build_expected_response local_root =
-    Response.Query (build_expected_response local_root)
-    |> Response.to_yojson
-    |> Yojson.Safe.to_string
-  in
-  assert_queries_with_local_root
-    ?custom_source_root
-    ?no_validation_on_class_lookup_failure
-    ~context
-    ~sources:[handle, source]
-    [query, build_expected_response]
+module QueryTestTypes = struct
+  open Query.Response
 
+  let assert_type_query_response_with_local_root
+      ?custom_source_root
+      ?(handle = "test.py")
+      ?no_validation_on_class_lookup_failure
+      ~source
+      ~query
+      ~context
+      build_expected_response
+    =
+    let build_expected_response local_root =
+      Response.Query (build_expected_response local_root)
+      |> Response.to_yojson
+      |> Yojson.Safe.to_string
+    in
+    assert_queries_with_local_root
+      ?custom_source_root
+      ?no_validation_on_class_lookup_failure
+      ~context
+      ~sources:[handle, source]
+      [query, build_expected_response]
+
+
+  let parse_annotation serialized =
+    serialized
+    |> (fun literal ->
+         Expression.Expression.Constant
+           (Expression.Constant.String (Expression.StringLiteral.create literal)))
+    |> Node.create_with_default_location
+    |> Type.create ~aliases:Type.empty_aliases
+
+
+  let create_location start_line start_column stop_line stop_column =
+    let start = { Location.line = start_line; column = start_column } in
+    let stop = { Location.line = stop_line; column = stop_column } in
+    { Location.start; stop }
+
+
+  let create_types_at_locations types =
+    let convert (start_line, start_column, end_line, end_column, annotation) =
+      { Base.location = create_location start_line start_column end_line end_column; annotation }
+    in
+    List.map ~f:convert types
+end
 
 let test_handle_query_basic context =
   let open Query.Response in
   let assert_type_query_response_with_local_root =
-    assert_type_query_response_with_local_root ~context
+    QueryTestTypes.assert_type_query_response_with_local_root ~context
   in
   let assert_type_query_response ?custom_source_root ?handle ~source ~query response =
     assert_type_query_response_with_local_root ?custom_source_root ?handle ~source ~query (fun _ ->
@@ -230,25 +255,6 @@ let test_handle_query_basic context =
       ~source
       ~query
       (Single (Base.Compatibility { actual; expected; result }))
-  in
-  let parse_annotation serialized =
-    serialized
-    |> (fun literal ->
-         Expression.Expression.Constant
-           (Expression.Constant.String (Expression.StringLiteral.create literal)))
-    |> Node.create_with_default_location
-    |> Type.create ~aliases:Type.empty_aliases
-  in
-  let create_location start_line start_column stop_line stop_column =
-    let start = { Location.line = start_line; column = start_column } in
-    let stop = { Location.line = stop_line; column = stop_column } in
-    { Location.start; stop }
-  in
-  let create_types_at_locations =
-    let convert (start_line, start_column, end_line, end_column, annotation) =
-      { Base.location = create_location start_line start_column end_line end_column; annotation }
-    in
-    List.map ~f:convert
   in
   let open Lwt.Infix in
   let open Test in
@@ -528,7 +534,7 @@ let test_handle_query_basic context =
                    3, 2, 3, 3, Type.literal_integer 42;
                    3, 6, 3, 8, Type.literal_integer 42;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -589,7 +595,7 @@ let test_handle_query_basic context =
                    4, 5, 4, 6, Type.literal_integer 5;
                    5, 8, 5, 9, Type.integer;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -612,7 +618,7 @@ let test_handle_query_basic context =
                    3, 0, 3, 1, Type.integer;
                    3, 4, 3, 5, Type.literal_integer 3;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -657,7 +663,7 @@ let test_handle_query_basic context =
                    2, 24, 2, 27, Type.meta Type.integer;
                    2, 29, 2, 32, Type.Any;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -695,7 +701,7 @@ let test_handle_query_basic context =
                    4, 3, 4, 4, Type.literal_integer 1;
                    4, 7, 4, 8, Type.literal_integer 1;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -738,7 +744,7 @@ let test_handle_query_basic context =
                    4, 3, 4, 4, Type.literal_integer 1;
                    4, 7, 4, 8, Type.literal_integer 1;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -781,7 +787,7 @@ let test_handle_query_basic context =
                    6, 4, 6, 5, Type.literal_integer 2;
                    6, 8, 6, 9, Type.literal_integer 2;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -804,7 +810,7 @@ let test_handle_query_basic context =
                    3, 1, 3, 2, Type.integer;
                    3, 5, 3, 6, Type.literal_integer 2;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -827,7 +833,7 @@ let test_handle_query_basic context =
                    3, 2, 3, 3, Type.literal_integer 1;
                    3, 6, 3, 7, Type.literal_integer 1;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -880,7 +886,7 @@ let test_handle_query_basic context =
                    4, 11, 4, 12, Type.integer;
                    5, 9, 5, 10, Type.integer;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -925,7 +931,7 @@ let test_handle_query_basic context =
                    2, 11, 2, 27, Type.meta (Type.list Type.integer);
                    2, 32, 2, 36, Type.none;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -944,11 +950,17 @@ let test_handle_query_basic context =
                types =
                  [
                    {
-                     Base.location = create_location 2 6 2 9;
-                     annotation = parse_annotation "typing.Type[test.Foo]";
+                     Base.location = QueryTestTypes.create_location 2 6 2 9;
+                     annotation = QueryTestTypes.parse_annotation "typing.Type[test.Foo]";
                    };
-                   { Base.location = create_location 3 2 3 3; annotation = Type.integer };
-                   { Base.location = create_location 3 6 3 7; annotation = Type.literal_integer 1 };
+                   {
+                     Base.location = QueryTestTypes.create_location 3 2 3 3;
+                     annotation = Type.integer;
+                   };
+                   {
+                     Base.location = QueryTestTypes.create_location 3 6 3 7;
+                     annotation = Type.literal_integer 1;
+                   };
                  ];
              };
            ]))
@@ -996,7 +1008,7 @@ let test_handle_query_basic context =
                    7, 16, 7, 19, Type.meta Type.Top;
                    7, 24, 7, 28, Type.none;
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -1027,7 +1039,7 @@ let test_handle_query_basic context =
                    8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
                    8, 4, 8, 9, Type.Primitive "test.Foo";
                  ]
-                 |> create_types_at_locations;
+                 |> QueryTestTypes.create_types_at_locations;
              };
            ]))
   >>= fun () ->
@@ -1083,7 +1095,7 @@ let test_handle_query_basic context =
                  3, 2, 3, 3, Type.literal_integer 42;
                  3, 6, 3, 8, Type.literal_integer 42;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1142,7 +1154,7 @@ let test_handle_query_basic context =
                  4, 5, 4, 6, Type.literal_integer 5;
                  5, 8, 5, 9, Type.integer;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1163,7 +1175,7 @@ let test_handle_query_basic context =
                  3, 0, 3, 1, Type.integer;
                  3, 4, 3, 5, Type.literal_integer 3;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1206,7 +1218,7 @@ let test_handle_query_basic context =
                  2, 24, 2, 27, Type.meta Type.integer;
                  2, 29, 2, 32, Type.Any;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1242,7 +1254,7 @@ let test_handle_query_basic context =
                  4, 3, 4, 4, Type.literal_integer 1;
                  4, 7, 4, 8, Type.literal_integer 1;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1283,7 +1295,7 @@ let test_handle_query_basic context =
                  4, 3, 4, 4, Type.literal_integer 1;
                  4, 7, 4, 8, Type.literal_integer 1;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1324,7 +1336,7 @@ let test_handle_query_basic context =
                  6, 4, 6, 5, Type.literal_integer 2;
                  6, 8, 6, 9, Type.literal_integer 2;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1345,7 +1357,7 @@ let test_handle_query_basic context =
                  3, 1, 3, 2, Type.integer;
                  3, 5, 3, 6, Type.literal_integer 2;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1366,7 +1378,7 @@ let test_handle_query_basic context =
                  3, 2, 3, 3, Type.literal_integer 1;
                  3, 6, 3, 7, Type.literal_integer 1;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1417,7 +1429,7 @@ let test_handle_query_basic context =
                  4, 11, 4, 12, Type.integer;
                  5, 9, 5, 10, Type.integer;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1460,7 +1472,7 @@ let test_handle_query_basic context =
                  2, 11, 2, 27, Type.meta (Type.list Type.integer);
                  2, 32, 2, 36, Type.none;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1477,11 +1489,17 @@ let test_handle_query_basic context =
              types =
                [
                  {
-                   Base.location = create_location 2 6 2 9;
-                   annotation = parse_annotation "typing.Type[test.Foo]";
+                   Base.location = QueryTestTypes.create_location 2 6 2 9;
+                   annotation = QueryTestTypes.parse_annotation "typing.Type[test.Foo]";
                  };
-                 { Base.location = create_location 3 2 3 3; annotation = Type.integer };
-                 { Base.location = create_location 3 6 3 7; annotation = Type.literal_integer 1 };
+                 {
+                   Base.location = QueryTestTypes.create_location 3 2 3 3;
+                   annotation = Type.integer;
+                 };
+                 {
+                   Base.location = QueryTestTypes.create_location 3 6 3 7;
+                   annotation = Type.literal_integer 1;
+                 };
                ];
            }))
   >>= fun () ->
@@ -1524,7 +1542,7 @@ let test_handle_query_basic context =
                                  Named
                                    {
                                      name = "bar";
-                                     annotation = parse_annotation "other_module.Bar";
+                                     annotation = QueryTestTypes.parse_annotation "other_module.Bar";
                                      default = false;
                                    };
                                ];
@@ -1537,7 +1555,7 @@ let test_handle_query_basic context =
                  8, 2, 8, 3, Type.Primitive "other_module.Bar";
                  8, 6, 8, 9, Type.Primitive "other_module.Bar";
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1569,7 +1587,7 @@ let test_handle_query_basic context =
                  8, 4, 8, 9, Type.Primitive "test.Foo";
                  8, 4, 8, 23, Type.Primitive "other_module.Bar";
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response_with_local_root
@@ -1602,7 +1620,8 @@ let test_handle_query_basic context =
                        Type.Callable.kind = Type.Callable.Named !&"test.foo";
                        implementation =
                          {
-                           Type.Callable.annotation = parse_annotation "other_module.Bar";
+                           Type.Callable.annotation =
+                             QueryTestTypes.parse_annotation "other_module.Bar";
                            parameters =
                              Type.Callable.Defined
                                [Named { name = "x"; annotation = Type.string; default = false }];
@@ -1640,7 +1659,8 @@ let test_handle_query_basic context =
                        Type.Callable.kind = Type.Callable.Named !&"test.foo";
                        implementation =
                          {
-                           Type.Callable.annotation = parse_annotation "other_module.Bar";
+                           Type.Callable.annotation =
+                             QueryTestTypes.parse_annotation "other_module.Bar";
                            parameters =
                              Type.Callable.Defined
                                [Named { name = "x"; annotation = Type.string; default = false }];
@@ -1650,7 +1670,7 @@ let test_handle_query_basic context =
                  9, 9, 9, 15, Type.Primitive "other_module.Bar";
                  9, 13, 9, 14, Type.string;
                ]
-               |> create_types_at_locations;
+               |> QueryTestTypes.create_types_at_locations;
            }))
   >>= fun () ->
   assert_type_query_response
