@@ -16,34 +16,34 @@ Before using the explore script, you should already have run Pysa on your codeba
 $ pyre analyze --save-results-to /tmp/output_dir
 ```
 
-After the analysis succeeds, Pysa will write a file, `/tmp/output_dir/taint-output.json`, containing the taint of each callable in addition to the issues found. Let's load this JSON into our explore script:
+After the analysis succeeds, Pysa will write one or multiple taint output files `/tmp/output_dir/taint-output.json`, containing the taint of each callable in addition to the issues found. Let's load this JSON into our explore script:
 
 ```bash
 $ python3 -i ~/fbsource/fbcode/tools/pyre/scripts/explore_pysa_models.py
 # Pysa Model Explorer
 Available commands:
-  index('taint-output.json')      Index all available models in the given taint output file or directory.
-  callables_containing('foo.bar') Find all callables containing the given string.
-  callables_matching(r'foo\..*')  Find all callables matching the given regular expression.
-  get_model('foo.bar')            Get the model for the given callable.
-  print_model('foo.bar')          Pretty print the model for the given callable.
-                                  Optional parameters:
-                                    kind='UserControlled'      Filter by taint kind.
-                                    caller_port='result'       Filter by caller port.
-                                    remove_sources=False
-                                    remove_sinks=False
-                                    remove_tito=False
-                                    remove_tito_positions=True
-                                    remove_features=True
-                                    remove_leaf_names=True
-  get_issues('foo.bar')           Get all issues within the given callable.
-  print_issues('foo.bar')         Pretty print the issues within the given callable.
-  print_json({'a': 'b'})          Pretty print json objects with syntax highlighting.
+  index('/path/to/results-directory') Index all available models in the given taint output directory.
+  callables_containing('foo.bar')     Find all callables containing the given string.
+  callables_matching(r'foo\..*')      Find all callables matching the given regular expression.
+  get_model('foo.bar')                Get the model for the given callable.
+  print_model('foo.bar')              Pretty print the model for the given callable.
+                                      Optional parameters:
+                                        kind='UserControlled'      Filter by taint kind.
+                                        caller_port='result'       Filter by caller port.
+                                        remove_sources=False
+                                        remove_sinks=False
+                                        remove_tito=False
+                                        remove_tito_positions=True
+                                        remove_features=True
+                                        remove_leaf_names=True
+  get_issues('foo.bar')               Get all issues within the given callable.
+  print_issues('foo.bar')             Pretty print the issues within the given callable.
+  print_json({'a': 'b'})              Pretty print json objects with syntax highlighting.
 ```
 ```python
 >>> index('/tmp/output_dir')
-Indexing `/tmp/output_dir`
-Indexed 307120 models and 35357 issues
+Indexing `/tmp/output_dir/taint-output.json`
+Indexed 307120 models
 ```
 
 Once we've indexed our taint JSON, we're good to go! Let's investigate what models Pysa finds for HttpRequest. First, we'll need to get the full name of the relevant callables:

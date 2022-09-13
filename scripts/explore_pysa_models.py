@@ -9,19 +9,30 @@ import io
 import json
 import re
 import subprocess
+import multiprocessing
 import textwrap
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 
 class FilePosition(NamedTuple):
+    file_index: int
     offset: int
     length: int
 
 
-__handle: Optional[io.BufferedReader] = None
-__model_index: Dict[str, FilePosition] = {}
-__issue_index: Dict[str, List[FilePosition]] = collections.defaultdict(list)
+class TaintOutputIndex(NamedTuple):
+    models: Dict[str, FilePosition] = {}
+    issues: Dict[str, List[FilePosition]] = {}
+
+
+class TaintOutputDirectory(NamedTuple):
+    files: List[Path]
+    handles: List[io.BufferedReader]
+    index_: TaintOutputIndex
+
+
+__current_directory: Optional[TaintOutputDirectory] = None
 __warned_missing_jq: bool = False
 
 
@@ -32,68 +43,99 @@ def _iter_with_offset(lines: Iterable[bytes]) -> Iterable[Tuple[bytes, int]]:
         offset += len(line)
 
 
-def _resolve_taint_output_path(taint_output_filename: str) -> Path:
-    taint_output_path = Path(taint_output_filename)
-    if taint_output_path.is_dir():
-        taint_output_path = taint_output_path / "taint-output.json"
-    return taint_output_path
+def index_taint_output_file(arguments: Tuple[int, Path]) -> TaintOutputIndex:
+    file_index, file_path = arguments
+    index = TaintOutputIndex()
+
+    print(f"Indexing {file_path}")
+    with open(file_path, "rb") as handle:
+        for line, offset in _iter_with_offset(handle):
+            message = json.loads(line)
+            if "kind" not in message:
+                continue
+
+            kind = message["kind"]
+            if kind == "model":
+                callable = message["data"]["callable"]
+                assert callable not in index.models
+                index.models[callable] = FilePosition(
+                    file_index=file_index, offset=offset, length=len(line)
+                )
+            elif kind == "issue":
+                callable = message["data"]["callable"]
+                if callable not in index.issues:
+                    index.issues[callable] = []
+                index.issues[callable].append(
+                    FilePosition(file_index=file_index, offset=offset, length=len(line))
+                )
+            else:
+                raise AssertionError("Unexpected kind `{kind}` in `{file_path}`")
+
+    return index
 
 
-def index(taint_output_filename: str = "taint-output.json") -> None:
-    """Index all available models in the given taint output file or directory."""
-    global __handle, __model_index, __issue_index
+def index(path: str = ".") -> None:
+    """Index all available models in the given taint output directory."""
 
-    print(f"Indexing `{taint_output_filename}`")
-    taint_output_path = _resolve_taint_output_path(taint_output_filename)
-    handle = open(taint_output_path, "rb")
-    __handle = handle
-    __model_index = {}
-    __issue_index = collections.defaultdict(list)
+    taint_output_directory = Path(path)
+    if not taint_output_directory.is_dir():
+        raise AssertionError(f"No such directory `{path}`")
 
-    count_models = 0
-    count_issues = 0
-    for line, offset in _iter_with_offset(handle):
-        message = json.loads(line)
-        if "kind" not in message:
-            continue
+    taint_output_files: List[Path] = []
+    for filepath in taint_output_directory.iterdir():
+        if (
+            filepath.is_file()
+            and filepath.name.startswith("taint-output")
+            and filepath.suffix == ".json"
+        ):
+            taint_output_files.append(filepath)
 
-        if message["kind"] == "model":
-            callable = message["data"]["callable"]
-            assert callable not in __model_index
-            __model_index[callable] = FilePosition(offset=offset, length=len(line))
-            count_models += 1
-        elif message["kind"] == "issue":
-            callable = message["data"]["callable"]
-            __issue_index[callable].append(
-                FilePosition(offset=offset, length=len(line))
-            )
-            count_issues += 1
+    if len(taint_output_files) == 0:
+        raise AssertionError(f"Could not find taint output files in `{path}`")
 
-    print(f"Indexed {count_models} models and {count_issues} issues")
+    with multiprocessing.Pool() as pool:
+        index = TaintOutputIndex()
+        for new_index in pool.imap_unordered(
+            index_taint_output_file, enumerate(taint_output_files), chunksize=1
+        ):
+            index.models.update(new_index.models)
+            index.issues.update(new_index.issues)
+
+    print(f"Indexed {len(index.models)} models")
+
+    global __current_directory
+    __current_directory = TaintOutputDirectory(
+        files=taint_output_files,
+        handles=[open(path, "rb") for path in taint_output_files],
+        index_=index,
+    )
 
 
-def _assert_loaded() -> io.BufferedReader:
-    handle = __handle
-    if handle is None or len(__model_index) == 0:
+def _assert_loaded() -> TaintOutputDirectory:
+    current_directory = __current_directory
+    if current_directory is None:
         raise AssertionError("call index() first")
-    return handle
+    return current_directory
 
 
 def callables_containing(string: str) -> List[str]:
     """Find all callables containing the given string."""
-    _assert_loaded()
-    return sorted(filter(lambda name: string in name, __model_index.keys()))
+    directory = _assert_loaded()
+    return sorted(filter(lambda name: string in name, directory.index_.models.keys()))
 
 
 def callables_matching(pattern: str) -> List[str]:
     """Find all callables matching the given regular expression."""
-    _assert_loaded()
+    directory = _assert_loaded()
     regex = re.compile(pattern)
-    return sorted(filter(lambda name: re.search(regex, name), __model_index.keys()))
+    return sorted(
+        filter(lambda name: re.search(regex, name), directory.index_.models.keys())
+    )
 
 
 def _read(position: FilePosition) -> bytes:
-    handle = _assert_loaded()
+    directory = _assert_loaded()
+    handle = directory.handles[position.file_index]
     handle.seek(position.offset)
     return handle.read(position.length)
 
@@ -237,12 +279,12 @@ def get_model(
     remove_leaf_names: bool = False,
 ) -> Dict[str, Any]:
     """Get the model for the given callable."""
-    _assert_loaded()
+    directory = _assert_loaded()
 
-    if callable not in __model_index:
+    if callable not in directory.index_.models:
         raise AssertionError(f"no model for callable `{callable}`.")
 
-    message = json.loads(_read(__model_index[callable]))
+    message = json.loads(_read(directory.index_.models[callable]))
     assert message["kind"] == "model"
 
     model = message["data"]
@@ -324,10 +366,10 @@ def print_model(
 
 def get_issues(callable: str) -> List[Dict[str, Any]]:
     """Get all issues within the given callable."""
-    _assert_loaded()
+    directory = _assert_loaded()
 
     issues = []
-    for position in __issue_index[callable]:
+    for position in directory.index_.issues.get(callable, []):
         message = json.loads(_read(position))
         assert message["kind"] == "issue"
         issues.append(message["data"])
@@ -344,7 +386,7 @@ def print_help() -> None:
     print("# Pysa Model Explorer")
     print("Available commands:")
     commands = [
-        (index, "index('taint-output.json')"),
+        (index, "index('/path/to/results-directory')"),
         (callables_containing, "callables_containing('foo.bar')"),
         (callables_matching, "callables_matching(r'foo\\..*')"),
         (get_model, "get_model('foo.bar')"),
