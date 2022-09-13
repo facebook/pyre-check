@@ -152,6 +152,11 @@ and type_variance_origin =
   | Return
   | Inheritance of Type.t
 
+and annotation_kind =
+  | Annotation
+  | TypeVariable
+  | TypeAlias
+
 and illegal_action_on_incomplete_type =
   | Naming
   | Calling
@@ -370,7 +375,7 @@ and kind =
       parent: Type.t;
     }
   | ProhibitedAny of {
-      is_type_alias: bool;
+      annotation_kind: annotation_kind;
       missing_annotation: missing_annotation;
     }
   | RedefinedClass of {
@@ -661,9 +666,9 @@ let weaken_literals kind =
       MissingParameterAnnotation (weaken_missing_annotation missing_annotation)
   | MissingReturnAnnotation missing_annotation ->
       MissingReturnAnnotation (weaken_missing_annotation missing_annotation)
-  | ProhibitedAny { is_type_alias; missing_annotation } ->
+  | ProhibitedAny { annotation_kind; missing_annotation } ->
       ProhibitedAny
-        { is_type_alias; missing_annotation = weaken_missing_annotation missing_annotation }
+        { annotation_kind; missing_annotation = weaken_missing_annotation missing_annotation }
   | UnsupportedOperand (Binary { operator_name; left_operand; right_operand }) ->
       UnsupportedOperand
         (Binary
@@ -1999,12 +2004,17 @@ let rec messages ~concise ~signature location kind =
   | NotCallable annotation -> [Format.asprintf "`%a` is not a function." pp_type annotation]
   | PrivateProtocolProperty { name; parent } ->
       [Format.asprintf "Protocol `%a` has private property `%a`." pp_type parent pp_identifier name]
-  | ProhibitedAny { is_type_alias; missing_annotation = { given_annotation; _ } } when concise ->
-      let annotation_kind = if is_type_alias then "Aliased" else "Given" in
+  | ProhibitedAny { annotation_kind; missing_annotation = { given_annotation; _ } } when concise ->
+      let annotation_kind =
+        match annotation_kind with
+        | Annotation -> "Given annotation"
+        | TypeVariable -> "Type variable bound"
+        | TypeAlias -> "Aliased annotation"
+      in
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
-        [Format.asprintf "%s annotation cannot be `Any`." annotation_kind]
+        [Format.asprintf "%s cannot be `Any`." annotation_kind]
       else
-        [Format.asprintf "%s annotation cannot contain `Any`." annotation_kind]
+        [Format.asprintf "%s cannot contain `Any`." annotation_kind]
   | ProhibitedAny
       { missing_annotation = { name; annotation = Some annotation; given_annotation; _ }; _ }
     when Type.is_concrete annotation -> (
@@ -2027,16 +2037,26 @@ let rec messages ~concise ~signature location kind =
               pp_type
               annotation;
           ])
-  | ProhibitedAny { is_type_alias = false; missing_annotation = { name; given_annotation; _ } } -> (
-      match given_annotation with
-      | Some given_annotation when Type.is_any given_annotation ->
+  | ProhibitedAny { annotation_kind; missing_annotation = { name; given_annotation; _ } } -> (
+      match annotation_kind, given_annotation with
+      | Annotation, Some Type.Any ->
           [Format.asprintf "Explicit annotation for `%a` cannot be `Any`." pp_reference name]
-      | _ ->
-          [Format.asprintf "Explicit annotation for `%a` cannot contain `Any`." pp_reference name])
-  | ProhibitedAny { is_type_alias = true; missing_annotation = { name; given_annotation; _ } } -> (
-      match given_annotation with
-      | Some Type.Any -> [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
-      | _ -> [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name])
+      | Annotation, _ ->
+          [Format.asprintf "Explicit annotation for `%a` cannot contain `Any`." pp_reference name]
+      | TypeVariable, Some (Type.Variable variable)
+        when Type.is_any (Type.Variable.Unary.upper_bound variable) ->
+          [Format.asprintf "Type variable `%a` cannot have `Any` as a bound." pp_reference name]
+      | TypeVariable, _ ->
+          [
+            Format.asprintf
+              "Type variable `%a` cannot have a bound containing `Any`."
+              pp_reference
+              name;
+          ]
+      | TypeAlias, Some Type.Any ->
+          [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
+      | TypeAlias, _ ->
+          [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name])
   | RedefinedClass { shadowed_class; _ } when concise ->
       [Format.asprintf "Class `%a` redefined" pp_reference shadowed_class]
   | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported } ->
@@ -3174,12 +3194,12 @@ let join ~resolution left right =
         MissingOverloadImplementation left
     | NotCallable left, NotCallable right ->
         NotCallable (GlobalResolution.join resolution left right)
-    | ( ProhibitedAny { is_type_alias = is_type_alias_left; missing_annotation = left },
-        ProhibitedAny { is_type_alias = is_type_alias_right; missing_annotation = right } )
-      when Bool.equal is_type_alias_left is_type_alias_right ->
+    | ( ProhibitedAny { annotation_kind = annotation_kind_left; missing_annotation = left },
+        ProhibitedAny { annotation_kind = annotation_kind_right; missing_annotation = right } )
+      when [%compare.equal: annotation_kind] annotation_kind_left annotation_kind_right ->
         ProhibitedAny
           {
-            is_type_alias = is_type_alias_left;
+            annotation_kind = annotation_kind_left;
             missing_annotation = join_missing_annotation left right;
           }
     | RedundantCast left, RedundantCast right ->
@@ -4017,11 +4037,11 @@ let dequalify
     | NotCallable annotation -> NotCallable (dequalify annotation)
     | PrivateProtocolProperty ({ parent; _ } as private_property) ->
         PrivateProtocolProperty { private_property with parent = dequalify parent }
-    | ProhibitedAny { is_type_alias; missing_annotation = { annotation; _ } as missing_annotation }
-      ->
+    | ProhibitedAny
+        { annotation_kind; missing_annotation = { annotation; _ } as missing_annotation } ->
         ProhibitedAny
           {
-            is_type_alias;
+            annotation_kind;
             missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
           }
     | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported }

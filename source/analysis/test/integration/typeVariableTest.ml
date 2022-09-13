@@ -139,6 +139,19 @@ let test_check_bounded_variables context =
         f()
     |}
     [];
+  (* Test strict mode bounds with explicit Any types *)
+  assert_type_errors
+    {|
+      from typing import Any, List, TypeVar
+      T = TypeVar("T", bound=List[Any])
+      |}
+    ["Prohibited any [33]: Type variable `T` cannot have a bound containing `Any`."];
+  assert_type_errors
+    {|
+      from typing import Any, TypeVar
+      T = TypeVar("T", bound=Any)
+      |}
+    ["Prohibited any [33]: Type variable `T` cannot have `Any` as a bound."];
   ()
 
 

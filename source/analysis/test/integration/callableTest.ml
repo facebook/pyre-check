@@ -330,7 +330,7 @@ let test_reexported_callable context =
         reveal_type(Foo.my_method)
     |}
     [
-      "Prohibited any [33]: `_FuncT` cannot alias to a type containing `Any`.";
+      "Prohibited any [33]: Type variable `_FuncT` cannot have a bound containing `Any`.";
       "Revealed type [-1]: Revealed type for `f1` is `typing.Callable[[int], str]`.";
       "Revealed type [-1]: Revealed type for `test.Foo.my_method` is \
        `typing.Callable(Foo.my_method)[[Named(self, Foo)], int]`.";

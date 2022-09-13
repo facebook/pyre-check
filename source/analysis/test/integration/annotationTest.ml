@@ -1899,7 +1899,7 @@ let test_check_variable_bounds_with_any context =
       from typing import TypeVar, Any, List
       T = TypeVar("T", bound=List[Any])
     |}
-    ["Prohibited any [33]: `T` cannot alias to a type containing `Any`."]
+    ["Prohibited any [33]: Type variable `T` cannot have a bound containing `Any`."]
 
 
 let test_check_variable_bounds_with_quoted_bound context =
@@ -1909,7 +1909,7 @@ let test_check_variable_bounds_with_quoted_bound context =
       from typing import TypeVar, Any, List
       T = TypeVar("T", bound="List[Any]")
     |}
-    ["Prohibited any [33]: `T` cannot alias to a type containing `Any`."]
+    ["Prohibited any [33]: Type variable `T` cannot have a bound containing `Any`."]
 
 
 let test_check_variable_bounds_with_quoted_any context =
@@ -1919,7 +1919,7 @@ let test_check_variable_bounds_with_quoted_any context =
       from typing import TypeVar, Any, List
       T = TypeVar("T", bound=List["Any"])
     |}
-    ["Prohibited any [33]: `T` cannot alias to a type containing `Any`."]
+    ["Prohibited any [33]: Type variable `T` cannot have a bound containing `Any`."]
 
 
 let test_check_typevar_arithmetic context =

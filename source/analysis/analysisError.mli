@@ -148,6 +148,11 @@ and illegal_action_on_incomplete_type =
   | Calling
   | AttributeAccess of Identifier.t
 
+and annotation_kind =
+  | Annotation
+  | TypeVariable
+  | TypeAlias
+
 and override_kind =
   | Method
   | Attribute
@@ -361,7 +366,7 @@ and kind =
       parent: Type.t;
     }
   | ProhibitedAny of {
-      is_type_alias: bool;
+      annotation_kind: annotation_kind;
       missing_annotation: missing_annotation;
     }
   | RedefinedClass of {

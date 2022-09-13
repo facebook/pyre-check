@@ -1961,7 +1961,7 @@ module State (Context : Context) = struct
                          evidence_locations = [];
                          thrown_at_source = true;
                        };
-                     is_type_alias = false;
+                     annotation_kind = Annotation;
                    })
           else if Type.equal cast_annotation resolved then
             emit_error ~errors ~location ~kind:(Error.RedundantCast resolved)
@@ -3684,6 +3684,11 @@ module State (Context : Context) = struct
             | Expression.Name (Name.Identifier identifier) -> Reference.create identifier
             | _ -> failwith "not possible"
           in
+          let annotation_kind =
+            match parsed with
+            | Variable _ -> Error.TypeVariable
+            | _ -> Error.TypeAlias
+          in
           if Type.expression_contains_any value && Type.contains_prohibited_any parsed then
             emit_error
               ~errors
@@ -3699,7 +3704,7 @@ module State (Context : Context) = struct
                          evidence_locations = [instantiate_path ~global_resolution target.location];
                          thrown_at_source = true;
                        };
-                     is_type_alias = true;
+                     annotation_kind;
                    })
           else
             errors
@@ -4292,7 +4297,7 @@ module State (Context : Context) = struct
                                        evidence_locations;
                                        thrown_at_source = true;
                                      };
-                                   is_type_alias = false;
+                                   annotation_kind = Annotation;
                                  }),
                           true )
                       else
@@ -4318,7 +4323,7 @@ module State (Context : Context) = struct
                                        evidence_locations;
                                        thrown_at_source = true;
                                      };
-                                   is_type_alias = false;
+                                   annotation_kind = Annotation;
                                  }),
                           true )
                       else
@@ -4384,7 +4389,7 @@ module State (Context : Context) = struct
                                            evidence_locations;
                                            thrown_at_source = true;
                                          };
-                                       is_type_alias = false;
+                                       annotation_kind = Annotation;
                                      }),
                               true )
                           else
@@ -4410,7 +4415,7 @@ module State (Context : Context) = struct
                                            evidence_locations;
                                            thrown_at_source = true;
                                          };
-                                       is_type_alias = false;
+                                       annotation_kind = Annotation;
                                      }),
                               true )
                           else
