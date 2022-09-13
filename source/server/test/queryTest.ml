@@ -481,6 +481,131 @@ let test_handle_query_basic context =
     ~query:(Format.sprintf "types(path='%s')" temporary_directory)
     (Error (Format.sprintf "Not able to get lookups in: `%s` (file not found)" temporary_directory))
   >>= fun () ->
+  assert_type_query_response
+    ~source:{|
+      class C:
+        x = 1
+        y = ""
+        def foo() -> int: ...
+    |}
+    ~query:"attributes(test.C)"
+    (Single
+       (Base.FoundAttributes
+          [
+            {
+              Base.name = "foo";
+              annotation =
+                Type.parametric
+                  "BoundMethod"
+                  [
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Callable.kind = Type.Callable.Named !&"test.C.foo";
+                           implementation =
+                             {
+                               Type.Callable.annotation = Type.integer;
+                               parameters = Type.Callable.Defined [];
+                             };
+                           overloads = [];
+                         });
+                    Single (Primitive "test.C");
+                  ];
+              kind = Base.Regular;
+              final = false;
+            };
+            { Base.name = "x"; annotation = Type.integer; kind = Base.Regular; final = false };
+            { Base.name = "y"; annotation = Type.string; kind = Base.Regular; final = false };
+          ]))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:
+      {|
+      class C:
+        @property
+        def foo(self) -> int:
+          return 0
+    |}
+    ~query:"attributes(test.C)"
+    (Single
+       (Base.FoundAttributes
+          [{ Base.name = "foo"; annotation = Type.integer; kind = Base.Property; final = false }]))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:{|
+      foo: str = "bar"
+    |}
+    ~query:"type(test.foo)"
+    (Single (Base.Type Type.string))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:{|
+      foo = 7
+    |}
+    ~query:"type(test.foo)"
+    (Single (Base.Type Type.integer))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:{|
+    |}
+    ~query:"type(8)"
+    (Single (Base.Type (Type.literal_integer 8)))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:{|
+      def foo(a: str) -> str:
+        return a
+      bar: str = "baz"
+    |}
+    ~query:"type(test.foo(test.bar))"
+    (Single (Base.Type Type.string))
+  >>= fun () ->
+  (* TODO: Return some sort of error *)
+  assert_type_query_response
+    ~source:{|
+      def foo(a: str) -> str:
+        return a
+      bar: int = 7
+    |}
+    ~query:"type(test.foo(test.bar))"
+    (Single (Base.Type Type.string))
+  >>= fun () ->
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let handle = "my_test_file.py" in
+  assert_type_query_response
+    ~custom_source_root
+    ~handle
+    ~source:""
+    ~query:
+      (Format.sprintf
+         "modules_of_path('%s')"
+         (PyrePath.append custom_source_root ~element:handle |> PyrePath.absolute))
+    (Single (Base.FoundModules [Reference.create "my_test_file"]))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:""
+    ~query:"modules_of_path('/non_existent_file.py')"
+    (Single (Base.FoundModules []))
+  >>= fun () ->
+  let temporary_directory = OUnit2.bracket_tmpdir context in
+  assert_type_query_response
+    ~source:""
+    ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
+    (Single (Base.Success "Saved state."))
+  >>= fun () ->
+  assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"));
+  Lwt.return_unit
+
+
+let test_handle_types_query context =
+  let open Query.Response in
+  let open Lwt.Infix in
+  let open Test in
+  let assert_type_query_response_with_local_root =
+    QueryTestTypes.assert_type_query_response_with_local_root ~context
+  in
   assert_type_query_response_with_local_root
     ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
@@ -1042,123 +1167,6 @@ let test_handle_query_basic context =
                  |> QueryTestTypes.create_types_at_locations;
              };
            ]))
-  >>= fun () ->
-  assert_type_query_response
-    ~source:{|
-      class C:
-        x = 1
-        y = ""
-        def foo() -> int: ...
-    |}
-    ~query:"attributes(test.C)"
-    (Single
-       (Base.FoundAttributes
-          [
-            {
-              Base.name = "foo";
-              annotation =
-                Type.parametric
-                  "BoundMethod"
-                  [
-                    Single
-                      (Type.Callable
-                         {
-                           Type.Callable.kind = Type.Callable.Named !&"test.C.foo";
-                           implementation =
-                             {
-                               Type.Callable.annotation = Type.integer;
-                               parameters = Type.Callable.Defined [];
-                             };
-                           overloads = [];
-                         });
-                    Single (Primitive "test.C");
-                  ];
-              kind = Base.Regular;
-              final = false;
-            };
-            { Base.name = "x"; annotation = Type.integer; kind = Base.Regular; final = false };
-            { Base.name = "y"; annotation = Type.string; kind = Base.Regular; final = false };
-          ]))
-  >>= fun () ->
-  assert_type_query_response
-    ~source:
-      {|
-      class C:
-        @property
-        def foo(self) -> int:
-          return 0
-    |}
-    ~query:"attributes(test.C)"
-    (Single
-       (Base.FoundAttributes
-          [{ Base.name = "foo"; annotation = Type.integer; kind = Base.Property; final = false }]))
-  >>= fun () ->
-  assert_type_query_response
-    ~source:{|
-      foo: str = "bar"
-    |}
-    ~query:"type(test.foo)"
-    (Single (Base.Type Type.string))
-  >>= fun () ->
-  assert_type_query_response
-    ~source:{|
-      foo = 7
-    |}
-    ~query:"type(test.foo)"
-    (Single (Base.Type Type.integer))
-  >>= fun () ->
-  assert_type_query_response
-    ~source:{|
-    |}
-    ~query:"type(8)"
-    (Single (Base.Type (Type.literal_integer 8)))
-  >>= fun () ->
-  assert_type_query_response
-    ~source:{|
-      def foo(a: str) -> str:
-        return a
-      bar: str = "baz"
-    |}
-    ~query:"type(test.foo(test.bar))"
-    (Single (Base.Type Type.string))
-  >>= fun () ->
-  (* TODO: Return some sort of error *)
-  assert_type_query_response
-    ~source:{|
-      def foo(a: str) -> str:
-        return a
-      bar: int = 7
-    |}
-    ~query:"type(test.foo(test.bar))"
-    (Single (Base.Type Type.string))
-  >>= fun () ->
-  let custom_source_root =
-    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  let handle = "my_test_file.py" in
-  assert_type_query_response
-    ~custom_source_root
-    ~handle
-    ~source:""
-    ~query:
-      (Format.sprintf
-         "modules_of_path('%s')"
-         (PyrePath.append custom_source_root ~element:handle |> PyrePath.absolute))
-    (Single (Base.FoundModules [Reference.create "my_test_file"]))
-  >>= fun () ->
-  assert_type_query_response
-    ~source:""
-    ~query:"modules_of_path('/non_existent_file.py')"
-    (Single (Base.FoundModules []))
-  >>= fun () ->
-  let temporary_directory = OUnit2.bracket_tmpdir context in
-  assert_type_query_response
-    ~source:""
-    ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
-    (Single (Base.Success "Saved state."))
-  >>= fun () ->
-  assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"));
-  Lwt.return_unit
 
 
 let test_handle_references_used_by_file_query context =
@@ -2997,6 +3005,7 @@ let () =
          "handle_query_basic" >:: OUnitLwt.lwt_wrapper test_handle_query_basic;
          "handle_query_references_used_by_file"
          >:: OUnitLwt.lwt_wrapper test_handle_references_used_by_file_query;
+         "handle_query_types" >:: OUnitLwt.lwt_wrapper test_handle_types_query;
          "handle_query_with_build_system"
          >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
