@@ -17,6 +17,7 @@ from . import (  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401
     kill,
     persistent,
     profile,
+    pyre_server,
     pysa_server,
     query,
     rage,

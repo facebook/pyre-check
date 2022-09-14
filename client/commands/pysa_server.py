@@ -24,13 +24,13 @@ from . import (
 )
 from .log_lsp_event import _log_lsp_event, LSPEvent
 from .persistent import (
-    _wait_for_exit,
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
     process_initialize_request,
-    read_lsp_request,
 )
+
+from .pyre_server import _wait_for_exit, read_lsp_request
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

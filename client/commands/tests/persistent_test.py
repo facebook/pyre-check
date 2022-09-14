@@ -44,7 +44,6 @@ from ..language_server_features import (
     TypeErrorsAvailability,
 )
 from ..persistent import (
-    AbstractRequestHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     InitializationExit,
     InitializationFailure,
@@ -55,14 +54,15 @@ from ..persistent import (
     PyreServer,
     PyreServerOptions,
     PyreServerOptionsReader,
-    read_lsp_request,
-    RequestHandler,
     try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
 )
+from ..pyre_server import read_lsp_request
 from ..request_handler import (
+    AbstractRequestHandler,
     path_to_coverage_response,
+    RequestHandler,
     ServerState,
     to_coverage_result,
     uncovered_range_to_diagnostic,
