@@ -23,7 +23,6 @@ from libcst.metadata import CodeRange
 from .. import (
     command_arguments,
     configuration as configuration_module,
-    dataclasses_json_extensions as json_mixins,
     error,
     identifiers,
     json_rpc,
@@ -50,6 +49,13 @@ from . import (
     start,
     statistics,
     subscription,
+)
+
+from .ide_response import (
+    DefinitionLocationResponse,
+    HoverResponse,
+    QueryModulesOfPathResponse,
+    ReferencesResponse,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -1223,26 +1229,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     ),
                 },
             )
-
-
-@dataclasses.dataclass(frozen=True)
-class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: lsp.LspHoverResponse
-
-
-@dataclasses.dataclass(frozen=True)
-class DefinitionLocationResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: List[lsp.PyreDefinitionResponse]
-
-
-@dataclasses.dataclass(frozen=True)
-class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: List[lsp.ReferencesResponse]
-
-
-@dataclasses.dataclass(frozen=True)
-class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: List[str]
 
 
 class AbstractRequestHandler(abc.ABC):
