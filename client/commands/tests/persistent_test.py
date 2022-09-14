@@ -36,11 +36,17 @@ from ..connections import (
     MemoryBytesReader,
     MemoryBytesWriter,
 )
+
+from ..language_server_features import (
+    DefinitionAvailability,
+    HoverAvailability,
+    ReferencesAvailability,
+    TypeCoverageAvailability,
+    TypeErrorsAvailability,
+)
 from ..persistent import (
     AbstractRequestHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
-    DefinitionAvailability,
-    HoverAvailability,
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
@@ -52,17 +58,15 @@ from ..persistent import (
     PyreServerOptions,
     PyreServerOptionsReader,
     read_lsp_request,
-    ReferencesAvailability,
     RequestHandler,
     ServerState,
     to_coverage_result,
     try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
-    TypeCoverageAvailability,
-    TypeErrorsAvailability,
     uncovered_range_to_diagnostic,
 )
+
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
 
 

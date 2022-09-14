@@ -8,7 +8,6 @@ from __future__ import annotations
 import abc
 import asyncio
 import dataclasses
-import enum
 import json
 import logging
 import os
@@ -16,18 +15,16 @@ import subprocess
 import tempfile
 import traceback
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Set, Union
+from typing import Dict, List, Optional, Sequence, Set, Union
 
 from libcst.metadata import CodeRange
 
 from .. import (
-    command_arguments,
     configuration as configuration_module,
     error,
     identifiers,
     json_rpc,
     log,
-    statistics_logger,
     timer,
     version,
 )
@@ -39,10 +36,8 @@ from . import (
     connections,
     daemon_connection,
     daemon_query,
-    daemon_socket,
     expression_level_coverage,
     find_symbols,
-    frontend_configuration,
     incremental,
     language_server_protocol as lsp,
     server_event,
@@ -57,161 +52,18 @@ from .ide_response import (
     QueryModulesOfPathResponse,
     ReferencesResponse,
 )
-from .language_server_features import (
-    DefinitionAvailability,
-    DocumentSymbolsAvailability,
-    HoverAvailability,
-    LanguageServerFeatures,
-    ReferencesAvailability,
-    TypeCoverageAvailability,
-    TypeErrorsAvailability,
-    UnsavedChangesAvailability,
-)
+
+from .language_server_features import LanguageServerFeatures, TypeCoverageAvailability
+
+from .log_lsp_event import _log_lsp_event, LSPEvent
+
+from .pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 COMMAND_NAME = "persistent"
 
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
-
-
-class LSPEvent(enum.Enum):
-    INITIALIZED = "initialized"
-    NOT_INITIALIZED = "not initialized"
-    CONNECTED = "connected"
-    NOT_CONNECTED = "not connected"
-    NOT_CONFIGURED = "not configured"
-    DISCONNECTED = "disconnected"
-    SUSPENDED = "suspended"
-    STOPPED = "stopped"
-    COVERED = "covered"
-
-
-def _log_lsp_event(
-    remote_logging: Optional[backend_arguments.RemoteLogging],
-    event: LSPEvent,
-    integers: Optional[Dict[str, int]] = None,
-    normals: Optional[Dict[str, Optional[str]]] = None,
-) -> None:
-    if remote_logging is not None:
-        logger = remote_logging.logger
-        if logger is not None:
-            log_identifier = remote_logging.identifier
-            statistics_logger.log(
-                category=statistics_logger.LoggerCategory.LSP_EVENTS,
-                logger=logger,
-                integers=integers,
-                normals={
-                    **(normals or {}),
-                    "event": event.value,
-                    "pyre client version": version.__version__,
-                    **(
-                        {"identifier": log_identifier}
-                        if log_identifier is not None
-                        else {}
-                    ),
-                },
-            )
-
-
-PyreServerOptionsReader = Callable[[], "PyreServerOptions"]
-FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
-
-
-@dataclasses.dataclass(frozen=True)
-class PyreServerOptions:
-    binary: str
-    project_identifier: str
-    start_arguments: start.Arguments
-    language_server_features: LanguageServerFeatures
-    strict_default: bool
-    excludes: Sequence[str]
-    flavor: identifiers.PyreFlavor
-    enabled_telemetry_event: bool = False
-
-    def get_socket_path(self) -> Path:
-        return daemon_socket.get_socket_path(
-            self.project_identifier,
-            flavor=self.flavor,
-        )
-
-    @staticmethod
-    def create(
-        start_command_argument: command_arguments.StartArguments,
-        configuration: frontend_configuration.Base,
-        enabled_telemetry_event: bool,
-        hover: Optional[HoverAvailability],
-        definition: Optional[DefinitionAvailability],
-        document_symbols: Optional[DocumentSymbolsAvailability],
-        references: Optional[ReferencesAvailability],
-        type_errors: TypeErrorsAvailability,
-        type_coverage: Optional[TypeCoverageAvailability],
-        unsaved_changes: Optional[UnsavedChangesAvailability],
-    ) -> PyreServerOptions:
-        binary_location = configuration.get_binary_location(download_if_needed=True)
-        if binary_location is None:
-            raise configuration_module.InvalidConfiguration(
-                "Cannot locate a Pyre binary to run."
-            )
-
-        start_arguments = start.create_server_arguments(
-            configuration,
-            start_command_argument,
-        )
-        if start_arguments.watchman_root is None:
-            raise commands.ClientException(
-                "Cannot locate a `watchman` root. Pyre's server will not function "
-                "properly."
-            )
-
-        return PyreServerOptions(
-            binary=str(binary_location),
-            project_identifier=configuration.get_project_identifier(),
-            start_arguments=start_arguments,
-            language_server_features=LanguageServerFeatures.create(
-                configuration=configuration,
-                hover=hover,
-                definition=definition,
-                document_symbols=document_symbols,
-                references=references,
-                type_errors=type_errors,
-                type_coverage=type_coverage,
-                unsaved_changes=unsaved_changes,
-            ),
-            strict_default=configuration.is_strict(),
-            excludes=configuration.get_excludes(),
-            flavor=start_command_argument.flavor,
-            enabled_telemetry_event=enabled_telemetry_event,
-        )
-
-    @staticmethod
-    def create_reader(
-        start_command_argument: command_arguments.StartArguments,
-        read_frontend_configuration: FrontendConfigurationReader,
-        enabled_telemetry_event: bool,
-        hover: Optional[HoverAvailability],
-        definition: Optional[DefinitionAvailability],
-        document_symbols: Optional[DocumentSymbolsAvailability],
-        references: Optional[ReferencesAvailability],
-        type_errors: TypeErrorsAvailability,
-        type_coverage: Optional[TypeCoverageAvailability],
-        unsaved_changes: Optional[UnsavedChangesAvailability],
-    ) -> PyreServerOptionsReader:
-        def read() -> PyreServerOptions:
-            return PyreServerOptions.create(
-                start_command_argument=start_command_argument,
-                configuration=read_frontend_configuration(),
-                enabled_telemetry_event=enabled_telemetry_event,
-                hover=hover,
-                definition=definition,
-                document_symbols=document_symbols,
-                references=references,
-                type_errors=type_errors,
-                type_coverage=type_coverage,
-                unsaved_changes=unsaved_changes,
-            )
-
-        return read
 
 
 def read_server_options(

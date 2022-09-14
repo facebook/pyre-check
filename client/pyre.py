@@ -800,14 +800,19 @@ def kill(context: click.Context, with_fire: bool) -> int:
 )
 @click.option(
     "--hover",
-    type=click.Choice([kind.value for kind in commands.persistent.HoverAvailability]),
+    type=click.Choice(
+        [kind.value for kind in commands.language_server_features.HoverAvailability]
+    ),
     help="Availability of the hover langauge server feature",
     hidden=True,
 )
 @click.option(
     "--definition",
     type=click.Choice(
-        [kind.value for kind in commands.persistent.DefinitionAvailability]
+        [
+            kind.value
+            for kind in commands.language_server_features.DefinitionAvailability
+        ]
     ),
     help="Availability of the definition langauge server feature",
     hidden=True,
@@ -815,7 +820,10 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @click.option(
     "--document-symbols",
     type=click.Choice(
-        [kind.value for kind in commands.persistent.DocumentSymbolsAvailability]
+        [
+            kind.value
+            for kind in commands.language_server_features.DocumentSymbolsAvailability
+        ]
     ),
     help="Availability of the document symbols langauge server feature",
     hidden=True,
@@ -823,7 +831,10 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @click.option(
     "--references",
     type=click.Choice(
-        [kind.value for kind in commands.persistent.DocumentSymbolsAvailability]
+        [
+            kind.value
+            for kind in commands.language_server_features.DocumentSymbolsAvailability
+        ]
     ),
     help="Availability of the references langauge server feature",
     hidden=True,
@@ -831,7 +842,10 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @click.option(
     "--type-errors",
     type=click.Choice(
-        [kind.value for kind in commands.persistent.TypeErrorsAvailability]
+        [
+            kind.value
+            for kind in commands.language_server_features.TypeErrorsAvailability
+        ]
     ),
     help="Availability of the type errors langauge server feature",
     hidden=True,
@@ -839,7 +853,10 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @click.option(
     "--type-coverage",
     type=click.Choice(
-        [kind.value for kind in commands.persistent.TypeCoverageAvailability]
+        [
+            kind.value
+            for kind in commands.language_server_features.TypeCoverageAvailability
+        ]
     ),
     help="Availability of the type coverage langauge server feature",
     hidden=True,
@@ -847,7 +864,10 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @click.option(
     "--unsaved-changes",
     type=click.Choice(
-        [kind.value for kind in commands.persistent.DocumentSymbolsAvailability]
+        [
+            kind.value
+            for kind in commands.language_server_features.DocumentSymbolsAvailability
+        ]
     ),
     help="Availability support for Pyre analyzing unsaved editor buffers",
     hidden=True,
@@ -897,25 +917,31 @@ def persistent(
             enabled_telemetry_event=False,
             hover=None
             if hover is None
-            else commands.persistent.HoverAvailability(hover),
+            else commands.language_server_features.HoverAvailability(hover),
             definition=None
             if definition is None
-            else commands.persistent.DefinitionAvailability(definition),
+            else commands.language_server_features.DefinitionAvailability(definition),
             document_symbols=None
             if document_symbols is None
-            else commands.persistent.DocumentSymbolsAvailability(document_symbols),
+            else commands.language_server_features.DocumentSymbolsAvailability(
+                document_symbols
+            ),
             references=None
             if references is None
-            else commands.persistent.ReferencesAvailability(references),
-            type_errors=commands.persistent.TypeErrorsAvailability.ENABLED
+            else commands.language_server_features.ReferencesAvailability(references),
+            type_errors=commands.language_server_features.TypeErrorsAvailability.ENABLED
             if type_errors is None
-            else commands.persistent.TypeErrorsAvailability(type_errors),
+            else commands.language_server_features.TypeErrorsAvailability(type_errors),
             type_coverage=None
             if type_coverage is None
-            else commands.persistent.TypeCoverageAvailability(type_coverage),
+            else commands.language_server_features.TypeCoverageAvailability(
+                type_coverage
+            ),
             unsaved_changes=None
             if unsaved_changes is None
-            else commands.persistent.UnsavedChangesAvailability(unsaved_changes),
+            else commands.language_server_features.UnsavedChangesAvailability(
+                unsaved_changes
+            ),
         ),
         remote_logging=commands.backend_arguments.RemoteLogging.create(
             configuration.logger,
