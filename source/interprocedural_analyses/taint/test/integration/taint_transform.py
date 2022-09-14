@@ -476,6 +476,39 @@ def a_sanitize_b_x_to_b_issue():
     sink_b(alpha)
 
 
+# ... -> transforms -> tito sanitizer -> ...
+
+
+def transform_x_tito_sanitize_b(x, y):
+    return transform_x(x)
+
+
+def no_issue_transform_x_tito_sanitize_b():
+    alpha = source_a()
+    beta = transform_x_tito_sanitize_b(alpha)
+    sink_b(beta)
+
+
+def transform_x_tito_sanitize_b_all_parameters(x, y):
+    return transform_x(x)
+
+
+def no_issue_transform_x_tito_sanitize_b_all_parameters():
+    alpha = source_a()
+    beta = transform_x_tito_sanitize_b_all_parameters(alpha)
+    sink_b(beta)
+
+
+def transform_x_tito_global_sanitize_b(x, y):
+    return transform_x(x)
+
+
+def no_issue_transform_x_tito_global_sanitize_b():
+    alpha = source_a()
+    beta = transform_x_tito_global_sanitize_b(alpha)
+    sink_b(beta)
+
+
 # additional sanitize propagation with transform tests
 
 
