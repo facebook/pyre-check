@@ -10,7 +10,11 @@ open Core
 module type S = sig
   type elt
 
-  type t [@@deriving compare, eq, hash, sexp, show]
+  type set [@@deriving compare, eq, hash, sexp, show]
+
+  include Abstract.Domain.S with type t = set
+
+  type t = set [@@deriving compare, eq, hash, sexp, show]
 
   val empty : t
 
@@ -18,11 +22,7 @@ module type S = sig
 
   val mem : elt -> t -> bool
 
-  val union : t -> t -> t
-
   val diff : t -> t -> t
-
-  val subset : t -> t -> bool
 
   val singleton : elt -> t
 
@@ -72,22 +72,53 @@ end
 module MakeSet (Kind : TAINT_KIND) = struct
   module Set = Data_structures.SerializableSet.Make (Kind)
 
-  type t =
+  type set =
     (* Represent all taint kinds to sanitize. We should not create a source or sink kind that
        contains `All`. *)
     | All
     (* Represent a set of taint kinds to sanitize. *)
     | Specific of Set.t
-  [@@deriving compare, eq, hash, sexp]
+  [@@deriving compare, eq, hash, sexp, show]
 
   type elt = Kind.t
 
-  let empty = Specific Set.empty
+  include Abstract.SimpleDomain.Make (struct
+    type t = set [@@deriving show]
 
-  let is_empty = function
-    | All -> false
-    | Specific set -> Set.is_empty set
+    let name = Format.sprintf "sanitize %ss" Kind.name
 
+    let bottom = Specific Set.empty
+
+    let less_or_equal ~left ~right =
+      if phys_equal left right then
+        true
+      else
+        match left, right with
+        | All, All -> true
+        | All, Specific _ -> false
+        | Specific _, All -> true
+        | Specific left, Specific right -> Set.subset left right
+
+
+    let join left right =
+      if phys_equal left right then
+        left
+      else
+        match left, right with
+        | All, _
+        | _, All ->
+            All
+        | Specific left, Specific right -> Specific (Set.union left right)
+
+
+    let meet a b = if less_or_equal ~left:b ~right:a then b else a
+  end)
+
+  type t = set [@@deriving compare, eq, hash, sexp]
+
+  let empty = bottom
+
+  let is_empty = is_bottom
 
   let is_all = function
     | All -> true
@@ -100,13 +131,6 @@ module MakeSet (Kind : TAINT_KIND) = struct
     | Specific set -> Set.mem element set
 
 
-  let union left right =
-    match left, right with
-    | All, _ -> All
-    | _, All -> All
-    | Specific left, Specific right -> Specific (Set.union left right)
-
-
   let diff left right =
     match left, right with
     | All, Specific _ ->
@@ -115,14 +139,6 @@ module MakeSet (Kind : TAINT_KIND) = struct
     | Specific _, All ->
         Specific Set.empty
     | Specific left, Specific right -> Specific (Set.diff left right)
-
-
-  let subset left right =
-    match left, right with
-    | All, Specific _ -> false
-    | All, All -> true
-    | Specific _, All -> true
-    | Specific left, Specific right -> Set.subset left right
 
 
   let singleton element = Specific (Set.singleton element)

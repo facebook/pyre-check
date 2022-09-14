@@ -8,7 +8,11 @@
 module type S = sig
   type elt
 
-  type t [@@deriving compare, eq, hash, sexp, show]
+  type set [@@deriving compare, eq, hash, sexp, show]
+
+  include Abstract.Domain.S with type t = set
+
+  type t = set [@@deriving compare, eq, hash, sexp, show]
 
   val empty : t
 
@@ -16,11 +20,7 @@ module type S = sig
 
   val mem : elt -> t -> bool
 
-  val union : t -> t -> t
-
   val diff : t -> t -> t
-
-  val subset : t -> t -> bool
 
   val singleton : elt -> t
 

@@ -50,8 +50,8 @@ let union
     { sources = sources_right; sinks = sinks_right }
   =
   {
-    sources = SanitizeTransform.SourceSet.union sources_left sources_right;
-    sinks = SanitizeTransform.SinkSet.union sinks_left sinks_right;
+    sources = SanitizeTransform.SourceSet.join sources_left sources_right;
+    sinks = SanitizeTransform.SinkSet.join sinks_left sinks_right;
   }
 
 
@@ -69,8 +69,8 @@ let subset
     { sources = sources_left; sinks = sinks_left }
     { sources = sources_right; sinks = sinks_right }
   =
-  SanitizeTransform.SourceSet.subset sources_left sources_right
-  && SanitizeTransform.SinkSet.subset sinks_left sinks_right
+  SanitizeTransform.SourceSet.less_or_equal ~left:sources_left ~right:sources_right
+  && SanitizeTransform.SinkSet.less_or_equal ~left:sinks_left ~right:sinks_right
 
 
 let mem { sources; sinks } = function
