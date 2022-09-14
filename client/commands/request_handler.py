@@ -4,12 +4,15 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
+import dataclasses
 import json
 import logging
 from pathlib import Path
 from typing import List, Optional
 
 from libcst.metadata import CodeRange
+
+from .. import dataclasses_json_extensions as json_mixins
 
 from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 
@@ -20,17 +23,31 @@ from . import (
     language_server_protocol as lsp,
     statistics,
 )
-from .ide_response import (
-    DefinitionLocationResponse,
-    HoverResponse,
-    QueryModulesOfPathResponse,
-    ReferencesResponse,
-)
 
 from .language_server_features import LanguageServerFeatures, TypeCoverageAvailability
 from .server_state import ServerState
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+@dataclasses.dataclass(frozen=True)
+class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    response: lsp.LspHoverResponse
+
+
+@dataclasses.dataclass(frozen=True)
+class DefinitionLocationResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    response: List[lsp.PyreDefinitionResponse]
+
+
+@dataclasses.dataclass(frozen=True)
+class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    response: List[lsp.ReferencesResponse]
+
+
+@dataclasses.dataclass(frozen=True)
+class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    response: List[str]
 
 
 def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
