@@ -1183,23 +1183,35 @@ let rec process_request ~environment ~build_system request =
         | _ ->
             (* Find-all-references is not supported for syntax, keywords, or literal values. *)
             Single (Base.FoundReferences []))
-    | ReferencesUsedByFile path -> (
-        let resolved_types =
-          LocationBasedLookupProcessor.find_all_resolved_types_for_path
-            ~environment
-            ~build_system
-            path
-        in
-        match resolved_types with
-        | Result.Ok types ->
-            let result = { Base.path; types = List.map ~f:create_type_at_location types } in
-            Single (Base.ReferenceTypesInPath result)
-        | Error error_reason ->
-            Error
-              (Format.asprintf
-                 "Not able get lookups in: %s, with error: %s"
-                 path
-                 (LocationBasedLookupProcessor.show_error_reason error_reason)))
+    | ReferencesUsedByFile path ->
+        if
+          TypeEnvironment.ReadOnly.controls environment
+          |> EnvironmentControls.no_validation_on_class_lookup_failure
+        then
+          let resolved_types =
+            LocationBasedLookupProcessor.find_all_resolved_types_for_path
+              ~environment
+              ~build_system
+              path
+          in
+          match resolved_types with
+          | Result.Ok types ->
+              let result = { Base.path; types = List.map ~f:create_type_at_location types } in
+              Single (Base.ReferenceTypesInPath result)
+          | Error error_reason ->
+              Error
+                (Format.asprintf
+                   "Not able get lookups in: %s, with error: %s"
+                   path
+                   (LocationBasedLookupProcessor.show_error_reason error_reason))
+        else
+          Error
+            (Format.asprintf
+               "Cannot run query references_used_by_file(path='%s') because flag \
+                'no_validation_on_class_lookup_failure' flag is false, and it is expected to be \
+                set to true for all 'references_used_by_file queries'. Please set the value of \
+                'no_validation_on_class_lookup_failure' to true."
+               path)
     | SaveServerState path ->
         let path = PyrePath.absolute path in
         Log.info "Saving server state into `%s`" path;

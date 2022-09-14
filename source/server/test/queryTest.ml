@@ -1182,6 +1182,7 @@ let test_handle_references_used_by_file_query context =
         a = 42
     |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1240,6 +1241,7 @@ let test_handle_references_used_by_file_query context =
         return x
     |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1296,6 +1298,7 @@ let test_handle_references_used_by_file_query context =
         y = 3
      |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1317,6 +1320,7 @@ let test_handle_references_used_by_file_query context =
             |}
     ~handle:"test_stub.pyi"
     ~query:"references_used_by_file(path='test_stub.pyi')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1361,6 +1365,7 @@ let test_handle_references_used_by_file_query context =
          x = 1
     |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1397,6 +1402,7 @@ let test_handle_references_used_by_file_query context =
           y = 1
      |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1441,6 +1447,7 @@ let test_handle_references_used_by_file_query context =
             y = 2
       |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1478,6 +1485,7 @@ let test_handle_references_used_by_file_query context =
         y = 2
     |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1499,6 +1507,7 @@ let test_handle_references_used_by_file_query context =
         y = 1
    |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1523,6 +1532,7 @@ let test_handle_references_used_by_file_query context =
          return x
     |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1571,6 +1581,7 @@ let test_handle_references_used_by_file_query context =
         pass
     |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1614,6 +1625,7 @@ let test_handle_references_used_by_file_query context =
          x = 1
      |}
     ~query:"references_used_by_file(path='test.py')"
+    ~no_validation_on_class_lookup_failure:true
     (fun _ ->
       Single
         (Base.ReferenceTypesInPath
@@ -1805,6 +1817,23 @@ let test_handle_references_used_by_file_query context =
                ]
                |> QueryTestTypes.create_types_at_locations;
            }))
+  >>= fun () ->
+  (* Failure occurs because no_validation_on_class_lookup_failure must be true for
+     references_used_by_file queries *)
+  assert_type_query_response_with_local_root
+    ~source:{|
+        x = 4
+        y = 3
+     |}
+    ~no_validation_on_class_lookup_failure:false
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Error
+        (Format.asprintf
+           "Cannot run query references_used_by_file(path='test.py') because flag \
+            'no_validation_on_class_lookup_failure' flag is false, and it is expected to be set to \
+            true for all 'references_used_by_file queries'. Please set the value of \
+            'no_validation_on_class_lookup_failure' to true."))
 
 
 let test_handle_query_with_build_system context =
