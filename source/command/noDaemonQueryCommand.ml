@@ -21,6 +21,7 @@ end
 module QueryConfiguration = struct
   type t = {
     base: CommandStartup.BaseConfiguration.t;
+    no_validation_on_class_lookup_failure: bool;
     query: string;
   }
   [@@deriving sexp, compare, hash]
@@ -33,7 +34,10 @@ module QueryConfiguration = struct
       | Result.Error _ as error -> error
       | Result.Ok base ->
           let query = json |> string_member "query" ~default:"" in
-          Result.Ok { base; query }
+          let no_validation_on_class_lookup_failure =
+            json |> bool_member "no_validation_on_class_lookup_failure" ~default:false
+          in
+          Result.Ok { base; no_validation_on_class_lookup_failure; query }
     with
     | Type_error (message, _)
     | Undefined (message, _) ->
@@ -66,6 +70,7 @@ module QueryConfiguration = struct
             memory_profiling_output = _;
           };
         query = _;
+        no_validation_on_class_lookup_failure = _;
       }
     =
     Configuration.Analysis.create
@@ -93,17 +98,20 @@ module QueryConfiguration = struct
       ()
 end
 
-let get_environment configuration =
+let get_environment configuration no_validation_on_class_lookup_failure =
   Scheduler.with_scheduler ~configuration ~f:(fun _ ->
       let read_write_environment =
-        Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
+        Analysis.EnvironmentControls.create
+          ~populate_call_graph:false
+          configuration
+          ~no_validation_on_class_lookup_failure
         |> Analysis.ErrorsEnvironment.create
       in
       Analysis.OverlaidEnvironment.create read_write_environment)
 
 
-let perform_query ~configuration ~build_system ~query () =
-  let environment = get_environment configuration in
+let perform_query ~configuration ~build_system ~query ~no_validation_on_class_lookup_failure () =
+  let environment = get_environment configuration no_validation_on_class_lookup_failure in
   let query_response =
     (* This query does not support overlay logic *)
     Server.Query.parse_and_process_request ~environment ~build_system query None
@@ -112,7 +120,13 @@ let perform_query ~configuration ~build_system ~query () =
 
 
 let run_query_on_query_configuration query_configuration =
-  let { QueryConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ }; query; _ } =
+  let {
+    QueryConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ };
+    query;
+    no_validation_on_class_lookup_failure;
+    _;
+  }
+    =
     query_configuration
   in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
@@ -121,8 +135,10 @@ let run_query_on_query_configuration query_configuration =
           ~configuration:(QueryConfiguration.analysis_configuration_of query_configuration)
           ~build_system
           ~query
+          ~no_validation_on_class_lookup_failure
           ()
       in
+      (* Prints the query response to stdout, which will be picked up by the client *)
       Printf.printf "%s" (Yojson.Safe.to_string query_response);
       Lwt.return ExitStatus.Ok)
 
