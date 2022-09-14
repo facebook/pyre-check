@@ -5,11 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t = {
+type sets = {
   sources: SanitizeTransform.SourceSet.t;
   sinks: SanitizeTransform.SinkSet.t;
 }
 [@@deriving compare, eq, hash, sexp, show]
+
+include Abstract.Domain.S with type t = sets
+
+type t = sets [@@deriving compare, eq, hash, sexp, show]
 
 val empty : t
 
@@ -19,11 +23,7 @@ val from_sources : SanitizeTransform.SourceSet.t -> t
 
 val from_sinks : SanitizeTransform.SinkSet.t -> t
 
-val union : t -> t -> t
-
 val diff : t -> t -> t
-
-val subset : t -> t -> bool
 
 val mem : t -> SanitizeTransform.t -> bool
 

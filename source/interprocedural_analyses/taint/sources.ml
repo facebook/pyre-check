@@ -225,4 +225,6 @@ let get_named_transforms = function
 
 
 let contains_sanitize_transforms source sanitize_transforms =
-  SanitizeTransformSet.subset sanitize_transforms (extract_sanitize_transforms source)
+  SanitizeTransformSet.less_or_equal
+    ~left:sanitize_transforms
+    ~right:(extract_sanitize_transforms source)

@@ -12,6 +12,7 @@ module TaintConfiguration = TaintConfiguration
 module PartialSinkConverter = PartialSinkConverter
 module Domains = Domains
 module SanitizeTransform = SanitizeTransform
+module SanitizeTransformSet = SanitizeTransformSet
 module TaintTransform = TaintTransform
 module TaintTransforms = TaintTransforms
 module TaintProfiler = TaintProfiler

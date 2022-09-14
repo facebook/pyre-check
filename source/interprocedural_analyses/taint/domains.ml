@@ -646,7 +646,7 @@ module SanitizeTito = struct
     | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
         let sources = Sources.Set.to_sanitize_transform_set_exn sanitized_tito_sources in
         let sinks = Sinks.Set.to_sanitize_transform_set_exn sanitized_tito_sinks in
-        SanitizeTransformSet.union sources sinks
+        SanitizeTransformSet.join sources sinks
     | None -> SanitizeTransformSet.empty
 end
 

@@ -36,7 +36,7 @@ let split_sanitizers transforms =
     | TaintTransform.Named _ :: _ ->
         sofar, transforms
     | TaintTransform.Sanitize sanitizers :: tail ->
-        let sofar = SanitizeTransformSet.union sofar sanitizers in
+        let sofar = SanitizeTransformSet.join sofar sanitizers in
         split sofar tail
   in
   split SanitizeTransformSet.empty transforms
@@ -79,7 +79,7 @@ let add_sanitize_transforms_internal
         Some transforms
       else
         let existing_sanitizers, rest = split_sanitizers transforms in
-        let sanitizers = SanitizeTransformSet.union sanitizers existing_sanitizers in
+        let sanitizers = SanitizeTransformSet.join sanitizers existing_sanitizers in
         Some (TaintTransform.Sanitize sanitizers :: rest)
 
 

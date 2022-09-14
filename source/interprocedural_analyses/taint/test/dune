@@ -11,7 +11,8 @@
  (names accessPathTest annotationParserTest configurationTest domainTest
    dumpModelQueryResultsTest integrationTest fixpointTest issueTest
    forwardAnalysisTest backwardAnalysisTest modelTest
-   modelVerificationErrorTest missingFlowsTest modelVerifierTest sanitizeTransformTest)
+   modelVerificationErrorTest missingFlowsTest modelVerifierTest
+   sanitizeTransformTest sanitizeTransformSetTest)
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))
