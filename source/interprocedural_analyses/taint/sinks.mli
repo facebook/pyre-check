@@ -76,8 +76,6 @@ val extract_sanitize_transforms : t -> SanitizeTransformSet.t
 
 val extract_partial_sink : t -> partial_sink option
 
-val is_sanitize_all : SanitizeTransformSet.t -> bool
-
 val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t option
 
 val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t option

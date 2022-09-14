@@ -199,8 +199,6 @@ let should_preserve_sanitize_sinks = function
   | _ -> false
 
 
-let is_sanitize_all { SanitizeTransformSet.sinks; _ } = SanitizeTransform.SinkSet.is_all sinks
-
 let apply_sanitize_transforms transforms sink =
   match sink with
   | Attach

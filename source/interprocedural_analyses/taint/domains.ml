@@ -462,8 +462,6 @@ module type KIND_ARG = sig
 
   val discard_sanitize_transforms : t -> t
 
-  val is_sanitize_all : SanitizeTransformSet.t -> bool
-
   val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t option
 
   val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t option
@@ -1128,10 +1126,11 @@ end = struct
         taint
 
 
-  let apply_sanitize_transforms transforms taint =
+  let apply_sanitize_transforms ({ SanitizeTransformSet.sources; sinks } as transforms) taint =
     if SanitizeTransformSet.is_empty transforms then
       taint
-    else if Kind.is_sanitize_all transforms then
+    else if SanitizeTransform.SourceSet.is_all sources || SanitizeTransform.SinkSet.is_all sinks
+    then
       bottom
     else
       transform KindTaintDomain.Key FilterMap ~f:(Kind.apply_sanitize_transforms transforms) taint
@@ -1469,9 +1468,12 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       transform Taint.Self Map ~f:(Taint.sanitize_taint_kinds sanitized_kinds) taint
 
 
-  let apply_sanitize_transforms transforms taint =
+  let apply_sanitize_transforms ({ SanitizeTransformSet.sources; sinks } as transforms) taint =
     if SanitizeTransformSet.is_empty transforms then
       taint
+    else if SanitizeTransform.SourceSet.is_all sources || SanitizeTransform.SinkSet.is_all sinks
+    then
+      bottom
     else
       transform Taint.Self Map ~f:(Taint.apply_sanitize_transforms transforms) taint
 
