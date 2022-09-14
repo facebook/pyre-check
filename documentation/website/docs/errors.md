@@ -151,7 +151,7 @@ def process_data(data: Data) -> None:
 ```
 
 ### Third-Party Libraries
-Not all third-party libraries come with Python code that Pyre can analyze (e.g. `cython` modules), and some libraries contain source code without annotations. This will often show up in the form of undefined attribute errors:
+Not all third-party libraries come with Python code that Pyre can analyze (e.g. `Cython` modules), and some libraries contain source code without annotations. This will often show up in the form of undefined attribute errors:
 
 ```
 Undefined attribute [16]: Module <library> has no attribute <some attribute>.
@@ -1948,7 +1948,7 @@ def foo() -> int:
     return ""
 ```
 
-Pyre also supports `# type: ignore` comments for backwards-compatibility with *mypy*.
+Pyre also supports `# type: ignore` comments for backwards-compatibility with *MyPy*.
 
 ### Suppressing Errors within Format Strings
 
