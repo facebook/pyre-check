@@ -1767,8 +1767,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               match sanitizer.sinks with
               | Some (Specific sanitized_sinks) ->
                   let sanitized_sinks_transforms =
-                    Sinks.Set.to_sanitize_transforms_exn sanitized_sinks
-                    |> SanitizeTransformSet.from_sinks
+                    Sinks.Set.to_sanitize_transform_set_exn sanitized_sinks
                   in
                   taint
                   |> ForwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms

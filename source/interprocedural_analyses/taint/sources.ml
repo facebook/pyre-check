@@ -63,12 +63,16 @@ module Set = struct
 
   let pp format set = Format.fprintf format "%s" (show set)
 
-  let to_sanitize_transforms_exn set =
+  let to_sanitize_transform_set_exn set =
     let to_transform = function
       | NamedSource name -> SanitizeTransform.Source.Named name
       | source -> Format.asprintf "cannot sanitize the source `%a`" T.pp source |> failwith
     in
-    set |> elements |> List.map ~f:to_transform |> SanitizeTransform.SourceSet.of_list
+    set
+    |> elements
+    |> List.map ~f:to_transform
+    |> SanitizeTransform.SourceSet.of_list
+    |> SanitizeTransformSet.from_sources
 
 
   let is_singleton set =

@@ -82,12 +82,16 @@ module Set = struct
 
   let pp format set = Format.fprintf format "%s" (show set)
 
-  let to_sanitize_transforms_exn set =
+  let to_sanitize_transform_set_exn set =
     let to_transform = function
       | NamedSink name -> SanitizeTransform.Sink.Named name
       | sink -> Format.asprintf "cannot sanitize the sink `%a`" T.pp sink |> failwith
     in
-    set |> elements |> List.map ~f:to_transform |> SanitizeTransform.SinkSet.of_list
+    set
+    |> elements
+    |> List.map ~f:to_transform
+    |> SanitizeTransform.SinkSet.of_list
+    |> SanitizeTransformSet.from_sinks
 
 
   let is_singleton set =

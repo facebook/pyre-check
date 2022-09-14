@@ -847,8 +847,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               | Some All -> BackwardState.Tree.empty
               | Some (Specific sanitized_sinks) ->
                   let sanitized_sinks_transforms =
-                    Sinks.Set.to_sanitize_transforms_exn sanitized_sinks
-                    |> SanitizeTransformSet.from_sinks
+                    Sinks.Set.to_sanitize_transform_set_exn sanitized_sinks
                   in
                   BackwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms taint
               | _ -> taint
@@ -857,8 +856,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               match sanitizer.sources with
               | Some (Specific sanitized_sources) ->
                   let sanitized_sources_transforms =
-                    Sources.Set.to_sanitize_transforms_exn sanitized_sources
-                    |> SanitizeTransformSet.from_sources
+                    Sources.Set.to_sanitize_transform_set_exn sanitized_sources
                   in
                   taint
                   |> BackwardState.Tree.apply_sanitize_transforms sanitized_sources_transforms

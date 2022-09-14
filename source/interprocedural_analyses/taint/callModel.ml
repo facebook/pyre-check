@@ -153,11 +153,9 @@ let taint_in_taint_out_mapping
       | Some All -> mapping
       | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
           let sanitize_transforms =
-            {
-              SanitizeTransformSet.sources =
-                Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources;
-              sinks = Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks;
-            }
+            let sources_set = Sources.Set.to_sanitize_transform_set_exn sanitized_tito_sources in
+            let sinks_set = Sinks.Set.to_sanitize_transform_set_exn sanitized_tito_sinks in
+            SanitizeTransformSet.union sources_set sinks_set
           in
           let tito_kind =
             Sinks.Transform

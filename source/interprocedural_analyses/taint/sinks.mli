@@ -47,7 +47,7 @@ module Set : sig
 
   val show : t -> string
 
-  val to_sanitize_transforms_exn : t -> SanitizeTransform.SinkSet.t
+  val to_sanitize_transform_set_exn : t -> SanitizeTransformSet.t
 
   val as_singleton : t -> elt option
 end

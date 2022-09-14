@@ -472,6 +472,8 @@ module type KIND_ARG = sig
     val pp : Format.formatter -> t -> unit
 
     val show : t -> string
+
+    val to_sanitize_transform_set_exn : t -> SanitizeTransformSet.t
   end
 end
 

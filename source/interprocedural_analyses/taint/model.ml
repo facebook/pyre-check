@@ -378,9 +378,9 @@ let apply_sanitizers
     }
   =
   let kinds_to_sanitize_transforms ~sources ~sinks =
-    let sources = Sources.Set.to_sanitize_transforms_exn sources in
-    let sinks = Sinks.Set.to_sanitize_transforms_exn sinks in
-    { SanitizeTransformSet.sources; sinks }
+    let sources_set = Sources.Set.to_sanitize_transform_set_exn sources in
+    let sinks_set = Sinks.Set.to_sanitize_transform_set_exn sinks in
+    SanitizeTransformSet.union sources_set sinks_set
   in
   let sanitize_tito ?(sources = Sources.Set.empty) ?(sinks = Sinks.Set.empty) taint_in_taint_out =
     let transforms = kinds_to_sanitize_transforms ~sources ~sinks in
@@ -437,8 +437,7 @@ let apply_sanitizers
     | Some All -> sink_taint, taint_in_taint_out
     | Some (Specific sanitized_sources) ->
         let sanitized_sources_transforms =
-          Sources.Set.to_sanitize_transforms_exn sanitized_sources
-          |> SanitizeTransformSet.from_sources
+          Sources.Set.to_sanitize_transform_set_exn sanitized_sources
         in
         let sink_taint =
           sink_taint
@@ -509,7 +508,7 @@ let apply_sanitizers
       | Some All -> source_taint, taint_in_taint_out
       | Some (Specific sanitized_sinks) ->
           let sanitized_sinks_transforms =
-            Sinks.Set.to_sanitize_transforms_exn sanitized_sinks |> SanitizeTransformSet.from_sinks
+            Sinks.Set.to_sanitize_transform_set_exn sanitized_sinks
           in
           let source_taint =
             source_taint
@@ -537,8 +536,7 @@ let apply_sanitizers
             | None -> BackwardState.Tree.bottom
             | Some taint_tree ->
                 let sanitized_sources_transforms =
-                  Sources.Set.to_sanitize_transforms_exn sanitized_sources
-                  |> SanitizeTransformSet.from_sources
+                  Sources.Set.to_sanitize_transform_set_exn sanitized_sources
                 in
                 taint_tree
                 |> BackwardState.Tree.apply_sanitize_transforms sanitized_sources_transforms
