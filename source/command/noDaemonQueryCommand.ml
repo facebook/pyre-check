@@ -28,7 +28,6 @@ module QueryConfiguration = struct
   let of_yojson json =
     let open Yojson.Safe.Util in
     let open JsonParsing in
-    (* Parsing logic *)
     try
       match CommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error
@@ -106,7 +105,7 @@ let get_environment configuration =
 let perform_query ~configuration ~build_system ~query () =
   let environment = get_environment configuration in
   let query_response =
-    (* Add overlay support later *)
+    (* This query does not support overlay logic *)
     Server.Query.parse_and_process_request ~environment ~build_system query None
   in
   Server.Response.to_yojson (Server.Response.Query query_response)
@@ -164,7 +163,6 @@ let run_query configuration_file =
                let () = Log.info "Got exception: %s" (Exn.to_string exn) in
                Lwt.return ExitStatus.PyreError))
   in
-  Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)
 
 
