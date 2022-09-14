@@ -20,11 +20,23 @@ let is_empty { sources; sinks } =
 
 
 let pp formatter { sources; sinks } =
-  let sources =
-    SanitizeTransform.SourceSet.elements sources |> List.map ~f:SanitizeTransform.Source.show
-  in
-  let sinks = SanitizeTransform.SinkSet.elements sinks |> List.map ~f:SanitizeTransform.Sink.show in
-  sources @ sinks |> String.concat ~sep:":" |> Format.fprintf formatter "%s"
+  let is_empty_sources = SanitizeTransform.SourceSet.is_empty sources in
+  let is_empty_sinks = SanitizeTransform.SinkSet.is_empty sinks in
+  if is_empty_sources then
+    if is_empty_sinks then
+      Format.fprintf formatter ""
+    else
+      SanitizeTransform.SinkSet.pp formatter sinks
+  else if is_empty_sinks then
+    SanitizeTransform.SourceSet.pp formatter sources
+  else
+    Format.fprintf
+      formatter
+      "%a:%a"
+      SanitizeTransform.SourceSet.pp
+      sources
+      SanitizeTransform.SinkSet.pp
+      sinks
 
 
 let show = Format.asprintf "%a" pp
@@ -64,3 +76,9 @@ let subset
 let mem { sources; sinks } = function
   | SanitizeTransform.Source source -> SanitizeTransform.SourceSet.mem source sources
   | SanitizeTransform.Sink sink -> SanitizeTransform.SinkSet.mem sink sinks
+
+
+let all = { sources = SanitizeTransform.SourceSet.all; sinks = SanitizeTransform.SinkSet.all }
+
+let is_all { sources; sinks } =
+  SanitizeTransform.SourceSet.is_all sources && SanitizeTransform.SinkSet.is_all sinks

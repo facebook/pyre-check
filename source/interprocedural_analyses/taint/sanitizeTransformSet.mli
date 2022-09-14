@@ -26,3 +26,7 @@ val diff : t -> t -> t
 val subset : t -> t -> bool
 
 val mem : t -> SanitizeTransform.t -> bool
+
+val all : t
+
+val is_all : t -> bool
