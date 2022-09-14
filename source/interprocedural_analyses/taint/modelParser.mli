@@ -42,13 +42,13 @@ module Internal : sig
 
   type sanitize_annotation =
     | AllSources
-    | SpecificSource of Sources.t
+    | SpecificSource of SanitizeTransform.Source.t
     | AllSinks
-    | SpecificSink of Sinks.t
+    | SpecificSink of SanitizeTransform.Sink.t
     | AllTito
     | SpecificTito of {
-        sources: Sources.t list;
-        sinks: Sinks.t list;
+        sources: SanitizeTransform.Source.t list;
+        sinks: SanitizeTransform.Sink.t list;
       }
   [@@deriving show, equal]
 

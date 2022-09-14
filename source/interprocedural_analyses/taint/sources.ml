@@ -138,6 +138,14 @@ let extract_sanitized_sources_from_transforms transforms =
   SanitizeTransform.SourceSet.fold extract transforms Set.empty
 
 
+let to_sanitized_source_exn = function
+  | NamedSource name -> SanitizeTransform.Source.Named name
+  | ParametricSource { source_name = name; _ } -> SanitizeTransform.Source.Named name
+  | _ -> failwith "Unsupported source sanitizer"
+
+
+let from_sanitized_source (SanitizeTransform.Source.Named name) = NamedSource name
+
 let extract_sanitize_transforms = function
   | Transform { local; global; _ } ->
       TaintTransforms.merge ~local ~global |> TaintTransforms.get_sanitize_transforms

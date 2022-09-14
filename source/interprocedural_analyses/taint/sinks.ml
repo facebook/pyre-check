@@ -157,6 +157,14 @@ let extract_sanitized_sinks_from_transforms transforms =
   SanitizeTransform.SinkSet.fold extract transforms Set.empty
 
 
+let to_sanitized_sink_exn = function
+  | NamedSink name -> SanitizeTransform.Sink.Named name
+  | ParametricSink { sink_name = name; _ } -> SanitizeTransform.Sink.Named name
+  | _ -> failwith "Unsupported sink sanitizer"
+
+
+let from_sanitized_sink (SanitizeTransform.Sink.Named name) = NamedSink name
+
 let extract_sanitize_transforms = function
   | Transform { local; global; _ } ->
       TaintTransforms.merge ~local ~global |> TaintTransforms.get_sanitize_transforms

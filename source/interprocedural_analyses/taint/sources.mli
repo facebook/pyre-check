@@ -55,6 +55,10 @@ val discard_sanitize_transforms : t -> t
 
 val extract_sanitized_sources_from_transforms : SanitizeTransform.SourceSet.t -> Set.t
 
+val to_sanitized_source_exn : t -> SanitizeTransform.Source.t
+
+val from_sanitized_source : SanitizeTransform.Source.t -> t
+
 val extract_sanitize_transforms : t -> SanitizeTransformSet.t
 
 val is_sanitize_all : SanitizeTransformSet.t -> bool

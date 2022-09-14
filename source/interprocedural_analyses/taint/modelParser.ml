@@ -58,13 +58,13 @@ module Internal = struct
 
   type sanitize_annotation =
     | AllSources
-    | SpecificSource of Sources.t
+    | SpecificSource of SanitizeTransform.Source.t
     | AllSinks
-    | SpecificSink of Sinks.t
+    | SpecificSink of SanitizeTransform.Sink.t
     | AllTito
     | SpecificTito of {
-        sources: Sources.t list;
-        sinks: Sinks.t list;
+        sources: SanitizeTransform.Source.t list;
+        sinks: SanitizeTransform.Sink.t list;
       }
   [@@deriving show, equal]
 
@@ -938,7 +938,10 @@ let rec parse_annotations
         in
         parse_annotation expression
         >>= List.fold_result ~init:([], []) ~f:gather_sources_sinks
-        >>| fun (sources, sinks) -> [SpecificTito { sources; sinks }]
+        >>| fun (sources, sinks) ->
+        let sources = List.map ~f:(fun source -> Sources.to_sanitized_source_exn source) sources in
+        let sinks = List.map ~f:(fun sink -> Sinks.to_sanitized_sink_exn sink) sinks in
+        [SpecificTito { sources; sinks }]
     | Expression.Name (Name.Identifier ("TaintSource" as identifier))
     | Expression.Name (Name.Identifier ("TaintSink" as identifier)) ->
         Error
@@ -959,7 +962,7 @@ let rec parse_annotations
                 trace_length = None;
                 path = [];
               } ->
-              Ok (SpecificSource source)
+              Ok (SpecificSource (Sources.to_sanitized_source_exn source))
           | Sink
               {
                 sink;
@@ -970,7 +973,7 @@ let rec parse_annotations
                 trace_length = None;
                 path = [];
               } ->
-              Ok (SpecificSink sink)
+              Ok (SpecificSink (Sinks.to_sanitized_sink_exn sink))
           | taint_annotation ->
               Error
                 (annotation_error
@@ -1178,23 +1181,33 @@ let sanitize_from_annotations ~source_sink_filter annotations =
     match source_sink_filter with
     | None -> true
     | Some source_sink_filter ->
-        TaintConfiguration.SourceSinkFilter.should_keep_source source_sink_filter source
+        TaintConfiguration.SourceSinkFilter.should_keep_source
+          source_sink_filter
+          (Sources.from_sanitized_source source)
   in
   let should_keep_sink sink =
     match source_sink_filter with
     | None -> true
     | Some source_sink_filter ->
-        TaintConfiguration.SourceSinkFilter.should_keep_sink source_sink_filter sink
+        TaintConfiguration.SourceSinkFilter.should_keep_sink
+          source_sink_filter
+          (Sinks.from_sanitized_sink sink)
   in
   let open Domains in
   let to_sanitize = function
     | AllSources -> { Sanitize.empty with sources = Some All }
     | SpecificSource source when should_keep_source source ->
-        { Sanitize.empty with sources = Some (Specific (Sources.Set.singleton source)) }
+        {
+          Sanitize.empty with
+          sources = Some (Specific (Sources.Set.singleton (Sources.from_sanitized_source source)));
+        }
     | SpecificSource _ -> Sanitize.empty
     | AllSinks -> { Sanitize.empty with sinks = Some All }
     | SpecificSink sink when should_keep_sink sink ->
-        { Sanitize.empty with sinks = Some (Specific (Sinks.Set.singleton sink)) }
+        {
+          Sanitize.empty with
+          sinks = Some (Specific (Sinks.Set.singleton (Sinks.from_sanitized_sink sink)));
+        }
     | SpecificSink _ -> Sanitize.empty
     | AllTito -> { Sanitize.empty with tito = Some All }
     | SpecificTito { sources; sinks } ->
@@ -1207,8 +1220,10 @@ let sanitize_from_annotations ~source_sink_filter annotations =
               Some
                 (Specific
                    {
-                     sanitized_tito_sources = Sources.Set.of_list sources;
-                     sanitized_tito_sinks = Sinks.Set.of_list sinks;
+                     sanitized_tito_sources =
+                       sources |> List.map ~f:Sources.from_sanitized_source |> Sources.Set.of_list;
+                     sanitized_tito_sinks =
+                       sinks |> List.map ~f:Sinks.from_sanitized_sink |> Sinks.Set.of_list;
                    });
           }
         else
