@@ -352,7 +352,7 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
         ForwardTaint.fold ForwardTaint.kind ~init:None ~f:gather_sanitized_sinks source_taint
         |> Option.value ~default:Sinks.Set.empty
       in
-      let sink_taint = BackwardTaint.sanitize sanitized_sinks sink_taint in
+      let sink_taint = BackwardTaint.sanitize_taint_kinds sanitized_sinks sink_taint in
 
       let gather_sanitized_sources kind sofar =
         let sanitized =
@@ -369,7 +369,7 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
         BackwardTaint.fold BackwardTaint.kind ~init:None ~f:gather_sanitized_sources sink_taint
         |> Option.value ~default:Sources.Set.empty
       in
-      let source_taint = ForwardTaint.sanitize sanitized_sources source_taint in
+      let source_taint = ForwardTaint.sanitize_taint_kinds sanitized_sources source_taint in
 
       (* If all sources have the same base, we can remove sink flows that sanitize
        * that base (and vice versa). *)
