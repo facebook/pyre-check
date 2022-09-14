@@ -89,11 +89,16 @@ def run_query(
 
 
 def run(
-    configuration: configuration_module.Configuration, query_text: str, no_daemon: bool
+    configuration: configuration_module.Configuration,
+    query_text: str,
+    no_daemon: bool,
+    no_validation_on_class_lookup_failure: bool,
 ) -> commands.ExitCode:
     if no_daemon:
         response = no_daemon_query.execute_query(
-            frontend_configuration.OpenSource(configuration), query_text
+            frontend_configuration.OpenSource(configuration),
+            query_text,
+            no_validation_on_class_lookup_failure,
         )
         if response is not None:
             log.stdout.write(json.dumps(response.payload))

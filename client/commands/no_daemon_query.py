@@ -26,11 +26,13 @@ class Arguments:
     base_arguments: backend_arguments.BaseArguments
 
     query: str
+    no_validation_on_class_lookup_failure: bool
 
     def serialize(self) -> Dict[str, Any]:
         return {
             **self.base_arguments.serialize(),
             "query": self.query,
+            "no_validation_on_class_lookup_failure": self.no_validation_on_class_lookup_failure,
         }
 
 
@@ -38,6 +40,7 @@ class Arguments:
 def _create_no_daemon_query_arguments(
     configuration: frontend_configuration.Base,
     query: str,
+    no_validation_on_class_lookup_failure: bool,
 ) -> Arguments:
     """
     Translate client configurations to backend query configurations.
@@ -61,6 +64,7 @@ def _create_no_daemon_query_arguments(
             search_paths=configuration.get_existent_search_paths(),
         ),
         query=query,
+        no_validation_on_class_lookup_failure=no_validation_on_class_lookup_failure,
     )
 
 
@@ -68,8 +72,11 @@ def _create_no_daemon_query_arguments(
 def create_no_daemon_arguments_and_cleanup(
     configuration: frontend_configuration.Base,
     query_str: str,
+    no_validation_on_class_lookup_failure: bool,
 ) -> Iterator[Arguments]:
-    arguments = _create_no_daemon_query_arguments(configuration, query_str)
+    arguments = _create_no_daemon_query_arguments(
+        configuration, query_str, no_validation_on_class_lookup_failure
+    )
     try:
         yield arguments
     finally:
@@ -79,7 +86,9 @@ def create_no_daemon_arguments_and_cleanup(
 
 
 def execute_query(
-    configuration: frontend_configuration.Base, query_text: str
+    configuration: frontend_configuration.Base,
+    query_text: str,
+    no_validation_on_class_lookup_failure: bool,
 ) -> Optional[query_response.Response]:
 
     binary_location = configuration.get_binary_location(download_if_needed=True)
@@ -89,7 +98,7 @@ def execute_query(
         )
 
     with create_no_daemon_arguments_and_cleanup(
-        configuration, query_text
+        configuration, query_text, no_validation_on_class_lookup_failure
     ) as arguments, backend_arguments.temporary_argument_file(
         arguments
     ) as argument_file_path, backend_arguments.backend_log_file(
