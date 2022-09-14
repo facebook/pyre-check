@@ -191,6 +191,8 @@ let should_preserve_sanitize_sinks = function
   | _ -> false
 
 
+let is_sanitize_all { SanitizeTransformSet.sinks; _ } = SanitizeTransform.SinkSet.is_all sinks
+
 let apply_sanitize_transforms transforms sink =
   match sink with
   | Attach
@@ -210,6 +212,7 @@ let apply_sanitize_transforms transforms sink =
           transforms
       with
       | None -> None
+      | _ when SanitizeTransformSet.is_all transforms -> None
       | Some local when TaintTransforms.is_empty local -> Some sink
       | Some local -> Some (Transform { local; global = TaintTransforms.empty; base = sink }))
   | Transform { local; global; base } -> (

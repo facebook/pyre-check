@@ -149,43 +149,39 @@ let taint_in_taint_out_mapping
         |> Features.BreadcrumbSet.add (Features.obscure_model ())
       in
       let mapping = TaintInTaintOutMap.remove mapping ~kind:Sinks.LocalReturn in
-      match obscure_sanitize with
-      | Some All -> mapping
-      | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
-          let sanitize_transforms =
-            let sources_set = Sources.Set.to_sanitize_transform_set_exn sanitized_tito_sources in
-            let sinks_set = Sinks.Set.to_sanitize_transform_set_exn sanitized_tito_sinks in
-            SanitizeTransformSet.union sources_set sinks_set
-          in
-          let tito_kind =
-            Sinks.Transform
-              {
-                local =
-                  TaintTransforms.of_sanitize_transforms
-                    ~preserve_sanitize_sources:true
-                    ~preserve_sanitize_sinks:true
-                    ~base:None
-                    sanitize_transforms
-                  |> Option.value ~default:TaintTransforms.empty;
-                global = TaintTransforms.empty;
-                base = Sinks.LocalReturn;
-              }
-          in
-          let return_tito =
-            Domains.local_return_frame
-            |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
-            |> BackwardTaint.singleton tito_kind
-            |> BackwardState.Tree.create_leaf
-          in
-          TaintInTaintOutMap.set mapping ~kind:tito_kind ~tito_tree:return_tito
-      | None ->
-          let return_tito =
-            Domains.local_return_frame
-            |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
-            |> BackwardTaint.singleton Sinks.LocalReturn
-            |> BackwardState.Tree.create_leaf
-          in
-          TaintInTaintOutMap.set mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
+      let sanitize_transform_set = SanitizeTito.to_sanitize_transform_set_exn obscure_sanitize in
+      if SanitizeTransformSet.is_all sanitize_transform_set then
+        mapping
+      else if SanitizeTransformSet.is_empty sanitize_transform_set then
+        let return_tito =
+          Domains.local_return_frame
+          |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
+          |> BackwardTaint.singleton Sinks.LocalReturn
+          |> BackwardState.Tree.create_leaf
+        in
+        TaintInTaintOutMap.set mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
+      else
+        let tito_kind =
+          Sinks.Transform
+            {
+              local =
+                TaintTransforms.of_sanitize_transforms
+                  ~preserve_sanitize_sources:true
+                  ~preserve_sanitize_sinks:true
+                  ~base:None
+                  sanitize_transform_set
+                |> Option.value ~default:TaintTransforms.empty;
+              global = TaintTransforms.empty;
+              base = Sinks.LocalReturn;
+            }
+        in
+        let return_tito =
+          Domains.local_return_frame
+          |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
+          |> BackwardTaint.singleton tito_kind
+          |> BackwardState.Tree.create_leaf
+        in
+        TaintInTaintOutMap.set mapping ~kind:tito_kind ~tito_tree:return_tito
     else
       mapping
   in

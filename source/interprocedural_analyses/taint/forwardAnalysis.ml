@@ -1757,27 +1757,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let apply_attribute_sanitizers taint =
             let sanitizer = GlobalModel.get_sanitize global_model in
             let taint =
-              match sanitizer.sources with
-              | Some All -> ForwardState.Tree.empty
-              | Some (Specific sanitized_sources) ->
-                  ForwardState.Tree.sanitize sanitized_sources taint
-              | None -> taint
+              let source_sanitizers =
+                SanitizeSources.to_sanitize_transform_set_exn sanitizer.sources
+              in
+              ForwardState.Tree.apply_sanitize_transforms source_sanitizers taint
             in
             let taint =
-              match sanitizer.sinks with
-              | Some (Specific sanitized_sinks) ->
-                  let sanitized_sinks_transforms =
-                    Sinks.Set.to_sanitize_transform_set_exn sanitized_sinks
-                  in
-                  taint
-                  |> ForwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms
-                  |> ForwardState.Tree.transform
-                       ForwardTaint.kind
-                       Filter
-                       ~f:
-                         (TaintConfiguration.source_can_match_rule
-                            FunctionContext.taint_configuration)
-              | _ -> taint
+              let sink_sanitizers = SanitizeSinks.to_sanitize_transform_set_exn sanitizer.sinks in
+              ForwardState.Tree.apply_sanitize_transforms sink_sanitizers taint
+              |> ForwardState.Tree.transform
+                   ForwardTaint.kind
+                   Filter
+                   ~f:(TaintConfiguration.source_can_match_rule FunctionContext.taint_configuration)
             in
             taint
           in

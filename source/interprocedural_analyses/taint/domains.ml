@@ -462,6 +462,8 @@ module type KIND_ARG = sig
 
   val discard_sanitize_transforms : t -> t
 
+  val is_sanitize_all : SanitizeTransformSet.t -> bool
+
   val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t option
 
   val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t option
@@ -890,6 +892,8 @@ end = struct
   let apply_sanitize_transforms transforms taint =
     if SanitizeTransformSet.is_empty transforms then
       taint
+    else if Kind.is_sanitize_all transforms then
+      bottom
     else
       transform KindTaintDomain.Key FilterMap ~f:(Kind.apply_sanitize_transforms transforms) taint
 
@@ -1435,6 +1439,12 @@ module MakeSanitizeKinds (Kind : KIND_ARG) = struct
             `List (set |> Kind.Set.elements |> List.map ~f:Kind.show |> List.map ~f:to_string) );
         ]
     | None -> []
+
+
+  let to_sanitize_transform_set_exn = function
+    | Some All -> SanitizeTransformSet.all
+    | Some (Specific set) -> Kind.Set.to_sanitize_transform_set_exn set
+    | None -> SanitizeTransformSet.empty
 end
 
 module SanitizeSources = MakeSanitizeKinds (Sources)
@@ -1517,6 +1527,16 @@ module SanitizeTito = struct
           "tito_sinks", sinks_to_json sanitized_tito_sinks;
         ]
     | None -> []
+
+
+  let to_sanitize_transform_set_exn = function
+    | Some All -> SanitizeTransformSet.all
+    | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
+        let sources = Sources.Set.to_sanitize_transform_set_exn sanitized_tito_sources in
+        let sinks = Sinks.Set.to_sanitize_transform_set_exn sanitized_tito_sinks in
+
+        SanitizeTransformSet.union sources sinks
+    | None -> SanitizeTransformSet.empty
 end
 
 module Sanitize = struct

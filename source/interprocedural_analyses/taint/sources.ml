@@ -152,6 +152,8 @@ let rec base_as_sanitizer = function
   | Attach -> None
 
 
+let is_sanitize_all { SanitizeTransformSet.sources; _ } = SanitizeTransform.SourceSet.is_all sources
+
 let apply_sanitize_transforms transforms source =
   match source with
   | Attach -> Some Attach

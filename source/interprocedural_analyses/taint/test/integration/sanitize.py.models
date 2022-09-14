@@ -4139,21 +4139,6 @@
         ]
       }
     ],
-    "tito": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 693, "start": 28, "end": 29 } ],
-            "decl": null
-          }
-        ]
-      }
-    ],
     "sanitizers": [
       { "port": "result", "sources": "All", "sinks": "All", "tito": "All" }
     ]
