@@ -173,6 +173,7 @@ let apply_sanitize_transforms transforms source =
           transforms
       with
       | None -> None
+      | _ when SanitizeTransformSet.is_all transforms -> None
       | Some local when TaintTransforms.is_empty local -> Some source
       | Some local -> Some (Transform { local; global = TaintTransforms.empty; base = source }))
   | Transform { local; global; base } -> (

@@ -454,7 +454,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_sink_tito",
-    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestA" ] },
+    "global_sanitizer": { "tito": { "sinks": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
 }
@@ -462,7 +462,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_source_tito",
-    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] },
+    "global_sanitizer": { "tito": { "sources": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
 }
@@ -470,7 +470,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_tito",
-    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] },
+    "global_sanitizer": { "tito": { "sources": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
 }
@@ -478,7 +478,11 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_all",
-    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" },
+    "global_sanitizer": {
+      "sources": "All",
+      "sinks": "All",
+      "tito": { "sources": "All", "sinks": "All" }
+    },
     "modes": [ "Obscure" ]
   }
 }
@@ -495,7 +499,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a_tito",
     "sanitizers": [
-      { "port": "formal(x)", "tito_sources": [], "tito_sinks": [ "TestA" ] }
+      { "port": "formal(x)", "tito": { "sinks": [ "TestA" ] } }
     ],
     "modes": [ "Obscure" ]
   }
@@ -513,7 +517,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_source_a_tito",
     "sanitizers": [
-      { "port": "formal(x)", "tito_sources": [ "TestA" ], "tito_sinks": [] }
+      { "port": "formal(x)", "tito": { "sources": [ "TestA" ] } }
     ],
     "modes": [ "Obscure" ]
   }
@@ -530,9 +534,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_return_sink_a_tito",
-    "sanitizers": [
-      { "port": "result", "tito_sources": [], "tito_sinks": [ "TestA" ] }
-    ],
+    "sanitizers": [ { "port": "result", "tito": { "sinks": [ "TestA" ] } } ],
     "modes": [ "Obscure" ]
   }
 }
@@ -549,7 +551,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_return_source_a_tito",
     "sanitizers": [
-      { "port": "result", "tito_sources": [ "TestA" ], "tito_sinks": [] }
+      { "port": "result", "tito": { "sources": [ "TestA" ] } }
     ],
     "modes": [ "Obscure" ]
   }
@@ -558,7 +560,7 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_tito",
-    "global_sanitizer": { "tito": "All" },
+    "global_sanitizer": { "tito": { "sources": "All", "sinks": "All" } },
     "modes": [ "Obscure" ]
   }
 }

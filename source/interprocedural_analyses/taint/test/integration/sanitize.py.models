@@ -2968,7 +2968,11 @@
   "kind": "model",
   "data": {
     "callable": "sanitize.return_taint_sanitize",
-    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" }
+    "global_sanitizer": {
+      "sources": "All",
+      "sinks": "All",
+      "tito": { "sources": "All", "sinks": "All" }
+    }
   }
 }
 {
@@ -3120,7 +3124,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestA" ] }
+    "global_sanitizer": { "tito": { "sinks": [ "TestA" ] } }
   }
 }
 {
@@ -3143,7 +3147,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
+    "global_sanitizer": { "tito": { "sources": [ "TestA" ] } }
   }
 }
 {
@@ -3187,7 +3191,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
+    "global_sanitizer": { "tito": { "sources": [ "TestA" ] } }
   }
 }
 {
@@ -3240,7 +3244,7 @@
     "parameters_sanitizer": {
       "sources": "All",
       "sinks": "All",
-      "tito": "All"
+      "tito": { "sources": "All", "sinks": "All" }
     }
   }
 }
@@ -3325,7 +3329,7 @@
         ]
       }
     ],
-    "parameters_sanitizer": { "tito": "All" }
+    "parameters_sanitizer": { "tito": { "sources": "All", "sinks": "All" } }
   }
 }
 {
@@ -3349,8 +3353,7 @@
       }
     ],
     "parameters_sanitizer": {
-      "tito_sources": [ "Cookies" ],
-      "tito_sinks": [ "SQL" ]
+      "tito": { "sources": [ "Cookies" ], "sinks": [ "SQL" ] }
     }
   }
 }
@@ -3451,7 +3454,7 @@
         ]
       }
     ],
-    "parameters_sanitizer": { "tito_sources": [], "tito_sinks": [ "SQL" ] }
+    "parameters_sanitizer": { "tito": { "sinks": [ "SQL" ] } }
   }
 }
 {
@@ -3518,10 +3521,7 @@
         ]
       }
     ],
-    "parameters_sanitizer": {
-      "tito_sources": [ "UserControlled" ],
-      "tito_sinks": []
-    }
+    "parameters_sanitizer": { "tito": { "sources": [ "UserControlled" ] } }
   }
 }
 {
@@ -3652,7 +3652,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestB" ] }
+    "global_sanitizer": { "tito": { "sinks": [ "TestB" ] } }
   }
 }
 {
@@ -3675,7 +3675,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [ "TestB" ], "tito_sinks": [] }
+    "global_sanitizer": { "tito": { "sources": [ "TestB" ] } }
   }
 }
 {
@@ -3769,7 +3769,7 @@
         "port": "formal(x)",
         "sources": "All",
         "sinks": "All",
-        "tito": "All"
+        "tito": { "sources": "All", "sinks": "All" }
       }
     ]
   }
@@ -3876,7 +3876,9 @@
         ]
       }
     ],
-    "sanitizers": [ { "port": "formal(x)", "tito": "All" } ]
+    "sanitizers": [
+      { "port": "formal(x)", "tito": { "sources": "All", "sinks": "All" } }
+    ]
   }
 }
 {
@@ -3987,9 +3989,7 @@
         ]
       }
     ],
-    "sanitizers": [
-      { "port": "formal(x)", "tito_sources": [], "tito_sinks": [ "SQL" ] }
-    ]
+    "sanitizers": [ { "port": "formal(x)", "tito": { "sinks": [ "SQL" ] } } ]
   }
 }
 {
@@ -4096,11 +4096,7 @@
       }
     ],
     "sanitizers": [
-      {
-        "port": "formal(x)",
-        "tito_sources": [ "UserControlled" ],
-        "tito_sinks": []
-      }
+      { "port": "formal(x)", "tito": { "sources": [ "UserControlled" ] } }
     ]
   }
 }
@@ -4140,7 +4136,12 @@
       }
     ],
     "sanitizers": [
-      { "port": "result", "sources": "All", "sinks": "All", "tito": "All" }
+      {
+        "port": "result",
+        "sources": "All",
+        "sinks": "All",
+        "tito": { "sources": "All", "sinks": "All" }
+      }
     ]
   }
 }
@@ -4498,7 +4499,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [ "Test" ], "tito_sinks": [] }
+    "global_sanitizer": { "tito": { "sources": [ "Test" ] } }
   }
 }
 {
@@ -4544,7 +4545,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito": "All" }
+    "global_sanitizer": { "tito": { "sources": "All", "sinks": "All" } }
   }
 }
 {

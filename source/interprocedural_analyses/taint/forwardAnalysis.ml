@@ -1755,16 +1755,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ForwardState.Tree.add_local_breadcrumbs attribute_breadcrumbs taint
           in
           let apply_attribute_sanitizers taint =
-            let sanitizer = GlobalModel.get_sanitize global_model in
-            let taint =
-              let source_sanitizers =
-                SanitizeSources.to_sanitize_transform_set_exn sanitizer.sources
-              in
-              ForwardState.Tree.apply_sanitize_transforms source_sanitizers taint
+            let sanitizers =
+              let sanitizer = GlobalModel.get_sanitize global_model in
+              { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
             in
             let taint =
-              let sink_sanitizers = SanitizeSinks.to_sanitize_transform_set_exn sanitizer.sinks in
-              ForwardState.Tree.apply_sanitize_transforms sink_sanitizers taint
+              ForwardState.Tree.apply_sanitize_transforms sanitizers taint
               |> ForwardState.Tree.transform
                    ForwardTaint.kind
                    Filter

@@ -201,7 +201,11 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
-    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" }
+    "global_sanitizer": {
+      "sources": "All",
+      "sinks": "All",
+      "tito": { "sources": "All", "sinks": "All" }
+    }
   }
 }
 {
@@ -214,7 +218,11 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
-    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" }
+    "global_sanitizer": {
+      "sources": "All",
+      "sinks": "All",
+      "tito": { "sources": "All", "sinks": "All" }
+    }
   }
 }
 {

@@ -71,34 +71,16 @@ let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments
 
 let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
   let to_tito_sanitize { Sanitize.sources; sinks; tito } =
-    let sources_tito =
-      match sources with
-      | None -> None
-      | Some SanitizeSources.All -> Some SanitizeTito.All
-      | Some (SanitizeSources.Specific sources) ->
-          Some
-            (SanitizeTito.Specific
-               { sanitized_tito_sources = sources; sanitized_tito_sinks = Sinks.Set.empty })
-    in
-    let sinks_tito =
-      match sinks with
-      | None -> None
-      | Some SanitizeSinks.All -> Some SanitizeTito.All
-      | Some (SanitizeSinks.Specific sinks) ->
-          Some
-            (SanitizeTito.Specific
-               { sanitized_tito_sources = Sources.Set.empty; sanitized_tito_sinks = sinks })
-    in
-    tito |> SanitizeTito.join sources_tito |> SanitizeTito.join sinks_tito
+    SanitizeTransformSet.join tito { SanitizeTransformSet.sources; sinks }
   in
   List.map
     ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots |> to_tito_sanitize)
     sanitize_matches
-  |> List.fold ~f:SanitizeTito.join ~init:SanitizeTito.bottom
-  |> SanitizeTito.join
+  |> List.fold ~f:SanitizeTransformSet.join ~init:SanitizeTransformSet.bottom
+  |> SanitizeTransformSet.join
        (SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots |> to_tito_sanitize)
-  |> SanitizeTito.join (to_tito_sanitize sanitizers.global)
-  |> SanitizeTito.join (to_tito_sanitize sanitizers.parameters)
+  |> SanitizeTransformSet.join (to_tito_sanitize sanitizers.global)
+  |> SanitizeTransformSet.join (to_tito_sanitize sanitizers.parameters)
 
 
 module TaintInTaintOutMap = struct
@@ -149,10 +131,9 @@ let taint_in_taint_out_mapping
         |> Features.BreadcrumbSet.add (Features.obscure_model ())
       in
       let mapping = TaintInTaintOutMap.remove mapping ~kind:Sinks.LocalReturn in
-      let sanitize_transform_set = SanitizeTito.to_sanitize_transform_set_exn obscure_sanitize in
-      if SanitizeTransformSet.is_all sanitize_transform_set then
+      if SanitizeTransformSet.is_all obscure_sanitize then
         mapping
-      else if SanitizeTransformSet.is_empty sanitize_transform_set then
+      else if SanitizeTransformSet.is_empty obscure_sanitize then
         let return_tito =
           Domains.local_return_frame
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
@@ -169,7 +150,7 @@ let taint_in_taint_out_mapping
                   ~preserve_sanitize_sources:true
                   ~preserve_sanitize_sinks:true
                   ~base:None
-                  sanitize_transform_set
+                  obscure_sanitize
                 |> Option.value ~default:TaintTransforms.empty;
               global = TaintTransforms.empty;
               base = Sinks.LocalReturn;

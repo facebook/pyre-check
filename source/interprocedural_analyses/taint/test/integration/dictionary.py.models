@@ -1364,7 +1364,12 @@
   "kind": "model",
   "data": {
     "callable": "dict.__getitem__",
-    "sanitizers": [ { "port": "formal(__key)", "tito": "All" } ],
+    "sanitizers": [
+      {
+        "port": "formal(__key)",
+        "tito": { "sources": "All", "sinks": "All" }
+      }
+    ],
     "modes": [ "Obscure" ]
   }
 }
@@ -2862,7 +2867,12 @@
   "kind": "model",
   "data": {
     "callable": "typing.Mapping.__getitem__",
-    "sanitizers": [ { "port": "formal(__key)", "tito": "All" } ],
+    "sanitizers": [
+      {
+        "port": "formal(__key)",
+        "tito": { "sources": "All", "sinks": "All" }
+      }
+    ],
     "modes": [ "Obscure" ]
   }
 }
@@ -2881,6 +2891,11 @@
         ]
       }
     ],
-    "sanitizers": [ { "port": "formal(__key)", "tito": "All" } ]
+    "sanitizers": [
+      {
+        "port": "formal(__key)",
+        "tito": { "sources": "All", "sinks": "All" }
+      }
+    ]
   }
 }

@@ -140,13 +140,6 @@ let is_sanitized { models; _ } =
   let is_sanitized_model
       { Model.WithCallTarget.model = { Model.sanitizers = { global = sanitize; _ }; _ }; _ }
     =
-    match sanitize with
-    | {
-     sources = Some SanitizeSources.All;
-     sinks = Some SanitizeSinks.All;
-     tito = Some SanitizeTito.All;
-    } ->
-        true
-    | _ -> false
+    Sanitize.is_all sanitize
   in
   List.exists ~f:is_sanitized_model models

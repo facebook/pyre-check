@@ -228,7 +228,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestA" ] }
+    "global_sanitizer": { "tito": { "sinks": [ "TestA" ] } }
   }
 }
 {
@@ -251,6 +251,6 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
+    "global_sanitizer": { "tito": { "sources": [ "TestA" ] } }
   }
 }

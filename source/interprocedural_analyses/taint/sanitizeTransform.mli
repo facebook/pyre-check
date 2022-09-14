@@ -31,6 +31,8 @@ module type S = sig
   val of_list : elt list -> t
 
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val to_json : t -> Yojson.Safe.t option
 end
 
 module Source : sig

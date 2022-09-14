@@ -843,14 +843,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let apply_attribute_sanitizers taint =
             let sanitizer = GlobalModel.get_sanitize global_model in
             let taint =
-              let sink_sanitizers = SanitizeSinks.to_sanitize_transform_set_exn sanitizer.sinks in
-              BackwardState.Tree.apply_sanitize_transforms sink_sanitizers taint
-            in
-            let taint =
-              let source_sanitizers =
-                SanitizeSources.to_sanitize_transform_set_exn sanitizer.sources
+              let sanitizers =
+                { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
               in
-              BackwardState.Tree.apply_sanitize_transforms source_sanitizers taint
+              BackwardState.Tree.apply_sanitize_transforms sanitizers taint
               |> BackwardState.Tree.transform
                    BackwardTaint.kind
                    Filter

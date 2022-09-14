@@ -2874,7 +2874,7 @@
         ]
       }
     ],
-    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "SinkB" ] }
+    "global_sanitizer": { "tito": { "sinks": [ "SinkB" ] } }
   }
 }
 {
@@ -2901,7 +2901,7 @@
       }
     ],
     "sanitizers": [
-      { "port": "formal(x)", "tito_sources": [], "tito_sinks": [ "SinkB" ] }
+      { "port": "formal(x)", "tito": { "sinks": [ "SinkB" ] } }
     ]
   }
 }
@@ -2928,9 +2928,9 @@
         ]
       }
     ],
-    "parameters_sanitizer": { "tito_sources": [], "tito_sinks": [ "SinkB" ] },
+    "parameters_sanitizer": { "tito": { "sinks": [ "SinkB" ] } },
     "sanitizers": [
-      { "port": "formal(x)", "tito_sources": [], "tito_sinks": [ "SinkB" ] }
+      { "port": "formal(x)", "tito": { "sinks": [ "SinkB" ] } }
     ]
   }
 }

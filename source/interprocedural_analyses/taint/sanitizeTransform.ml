@@ -33,6 +33,8 @@ module type S = sig
   val of_list : elt list -> t
 
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val to_json : t -> Yojson.Safe.t option
 end
 
 module type TAINT_KIND = sig
@@ -43,6 +45,8 @@ module type TAINT_KIND = sig
   val pp : Format.formatter -> t -> unit
 
   val show : t -> string
+
+  val show_kind : t -> string
 end
 
 module Source : sig
@@ -55,6 +59,8 @@ end = struct
   let pp formatter (Named taint_kind) = Format.fprintf formatter "Not%s[%s]" name taint_kind
 
   let show = Format.asprintf "%a" pp
+
+  let show_kind (Named taint_kind) = Format.sprintf "%s" taint_kind
 end
 
 module Sink : sig
@@ -67,6 +73,8 @@ end = struct
   let pp formatter (Named taint_kind) = Format.fprintf formatter "Not%s[%s]" name taint_kind
 
   let show = Format.asprintf "%a" pp
+
+  let show_kind (Named taint_kind) = Format.sprintf "%s" taint_kind
 end
 
 module MakeSet (Kind : TAINT_KIND) = struct
@@ -164,6 +172,17 @@ module MakeSet (Kind : TAINT_KIND) = struct
 
 
   let show = Format.asprintf "%a" pp
+
+  let to_json set =
+    match set with
+    | All -> Some (`String "All")
+    | Specific set ->
+        if Set.is_empty set then
+          None
+        else
+          Some
+            (let to_string name = `String name in
+             `List (set |> Set.elements |> List.map ~f:Kind.show_kind |> List.map ~f:to_string))
 end
 
 module SourceSet = MakeSet (Source)
