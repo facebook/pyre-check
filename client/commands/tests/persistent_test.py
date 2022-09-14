@@ -36,7 +36,6 @@ from ..connections import (
     MemoryBytesReader,
     MemoryBytesWriter,
 )
-
 from ..language_server_features import (
     DefinitionAvailability,
     HoverAvailability,
@@ -51,7 +50,6 @@ from ..persistent import (
     InitializationFailure,
     InitializationSuccess,
     LanguageServerFeatures,
-    path_to_coverage_response,
     PyreDaemonLaunchAndSubscribeHandler,
     PyreDaemonShutdown,
     PyreServer,
@@ -59,14 +57,16 @@ from ..persistent import (
     PyreServerOptionsReader,
     read_lsp_request,
     RequestHandler,
-    ServerState,
-    to_coverage_result,
     try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
+)
+from ..request_handler import (
+    path_to_coverage_response,
+    ServerState,
+    to_coverage_result,
     uncovered_range_to_diagnostic,
 )
-
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
 
 

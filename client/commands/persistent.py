@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import abc
 import asyncio
 import dataclasses
 import json
@@ -15,9 +14,7 @@ import subprocess
 import tempfile
 import traceback
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Set, Union
-
-from libcst.metadata import CodeRange
+from typing import Dict, List, Optional, Sequence, Union
 
 from .. import (
     configuration as configuration_module,
@@ -28,36 +25,27 @@ from .. import (
     timer,
     version,
 )
-from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 from . import (
     backend_arguments,
     background,
     commands,
     connections,
-    daemon_connection,
-    daemon_query,
-    expression_level_coverage,
     find_symbols,
     incremental,
     language_server_protocol as lsp,
     server_event,
     start,
-    statistics,
     subscription,
 )
 
-from .ide_response import (
-    DefinitionLocationResponse,
-    HoverResponse,
-    QueryModulesOfPathResponse,
-    ReferencesResponse,
-)
-
-from .language_server_features import LanguageServerFeatures, TypeCoverageAvailability
+from .language_server_features import LanguageServerFeatures
 
 from .log_lsp_event import _log_lsp_event, LSPEvent
 
 from .pyre_server_options import PyreServerOptions, PyreServerOptionsReader
+
+from .request_handler import AbstractRequestHandler, RequestHandler
+from .server_state import ServerState
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -291,26 +279,6 @@ async def _read_server_response(
     return await server_input_channel.read_until(separator="\n")
 
 
-@dataclasses.dataclass
-class ServerState:
-    # State that can only change on config reload
-    server_options: PyreServerOptions
-
-    # Immutable States
-    client_capabilities: lsp.ClientCapabilities = lsp.ClientCapabilities()
-
-    # Mutable States
-    consecutive_start_failure: int = 0
-    is_user_notified_on_buck_failure: bool = False
-    opened_documents: Set[Path] = dataclasses.field(default_factory=set)
-    diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
-        default_factory=dict
-    )
-    last_diagnostic_update_timer: timer.Timer = dataclasses.field(
-        default_factory=timer.Timer
-    )
-
-
 @dataclasses.dataclass(frozen=True)
 class StartSuccess:
     pass
@@ -417,104 +385,6 @@ def type_errors_to_diagnostics(
             type_error_to_diagnostic(type_error)
         )
     return result
-
-
-def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
-    return lsp.Diagnostic(
-        range=lsp.LspRange(
-            start=lsp.LspPosition(
-                line=uncovered_range.start.line - 1,
-                character=uncovered_range.start.column,
-            ),
-            end=lsp.LspPosition(
-                line=uncovered_range.end.line - 1, character=uncovered_range.end.column
-            ),
-        ),
-        message=(
-            "This function is not type checked. "
-            "Consider adding parameter or return type annotations."
-        ),
-    )
-
-
-def to_coverage_result(
-    covered_and_uncovered_lines: CoveredAndUncoveredLines,
-    uncovered_ranges: List[CodeRange],
-) -> lsp.TypeCoverageResponse:
-    num_covered = len(covered_and_uncovered_lines.covered_lines)
-    num_uncovered = len(covered_and_uncovered_lines.uncovered_lines)
-    num_total = num_covered + num_uncovered
-    if num_total == 0:
-        return lsp.TypeCoverageResponse(
-            covered_percent=100.0, uncovered_ranges=[], default_message=""
-        )
-    else:
-        return lsp.TypeCoverageResponse(
-            covered_percent=100.0 * num_covered / num_total,
-            uncovered_ranges=[
-                uncovered_range_to_diagnostic(uncovered_range)
-                for uncovered_range in uncovered_ranges
-            ],
-            default_message="Consider adding type annotations.",
-        )
-
-
-def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
-    return lsp.TypeCoverageResponse(
-        covered_percent=0.0,
-        uncovered_ranges=[
-            lsp.Diagnostic(
-                range=lsp.LspRange(
-                    start=lsp.LspPosition(
-                        line=0,
-                        character=0,
-                    ),
-                    end=lsp.LspPosition(line=1, character=0),
-                ),
-                message="This file is not type checked by Pyre.",
-            )
-        ],
-        default_message="",
-    )
-
-
-def path_to_coverage_response(
-    path: Path, strict_default: bool
-) -> Optional[lsp.TypeCoverageResponse]:
-    module = statistics.parse_path_to_module(path)
-    if module is None:
-        return None
-
-    coverage_collector = coverage_collector_for_module(
-        str(path), module, strict_default
-    )
-    covered_and_uncovered_lines = coverage_collector.covered_and_uncovered_lines()
-    uncovered_ranges = [f.code_range for f in coverage_collector.uncovered_functions()]
-    return to_coverage_result(covered_and_uncovered_lines, uncovered_ranges)
-
-
-def path_to_expression_coverage_response(
-    strict_default: bool,
-    expression_coverage: expression_level_coverage.ExpressionLevelCoverageResponse,
-) -> lsp.TypeCoverageResponse:
-    path_coverage = expression_coverage.response[0]
-    if isinstance(path_coverage, expression_level_coverage.ErrorAtPathResponse):
-        uncovered_expressions_diagnostics = []
-        covered_percent = 0
-    else:
-        uncovered_expressions_diagnostics = (
-            expression_level_coverage.get_uncovered_expression_diagnostics(
-                expression_coverage
-            )
-        )
-        covered_percent = expression_level_coverage.get_percent_covered_per_path(
-            path_coverage
-        )
-    return lsp.TypeCoverageResponse(
-        covered_percent=covered_percent,
-        uncovered_ranges=uncovered_expressions_diagnostics,
-        default_message="Consider adding type annotations.",
-    )
 
 
 def _client_has_status_bar_support(
@@ -978,213 +848,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     ),
                 },
             )
-
-
-class AbstractRequestHandler(abc.ABC):
-    @abc.abstractmethod
-    async def get_type_coverage(
-        self,
-        path: Path,
-    ) -> Optional[lsp.TypeCoverageResponse]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    async def get_hover(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> lsp.LspHoverResponse:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    async def get_definition_locations(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> List[lsp.LspLocation]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    async def get_reference_locations(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> List[lsp.LspLocation]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    async def update_overlay(
-        self,
-        path: Path,
-        code: str,
-    ) -> None:
-        raise NotImplementedError()
-
-
-class RequestHandler(AbstractRequestHandler):
-    def __init__(
-        self,
-        server_state: ServerState,
-    ) -> None:
-        self.server_state = server_state
-        self.socket_path: Path = server_state.server_options.get_socket_path()
-
-    def get_language_server_features(self) -> LanguageServerFeatures:
-        return self.server_state.server_options.language_server_features
-
-    async def _query_modules_of_path(
-        self,
-        path: Path,
-    ) -> Optional[QueryModulesOfPathResponse]:
-        overlay_id = (
-            str(path)
-            if self.get_language_server_features().unsaved_changes.is_enabled()
-            else None
-        )
-        return await daemon_query.attempt_typed_async_query(
-            response_type=QueryModulesOfPathResponse,
-            socket_path=self.socket_path,
-            query_text=f"modules_of_path('{path}')",
-            overlay_id=overlay_id,
-        )
-
-    async def _query_is_typechecked(
-        self,
-        path: Path,
-    ) -> Optional[bool]:
-        response = await self._query_modules_of_path(
-            path,
-        )
-        if response is None:
-            return None
-        else:
-            return len(response.response) > 0
-
-    def _get_overlay_id(self, path: Path) -> Optional[str]:
-        unsaved_changes_enabled = (
-            self.get_language_server_features().unsaved_changes.is_enabled()
-        )
-        return str(path) if unsaved_changes_enabled else None
-
-    async def get_type_coverage(
-        self,
-        path: Path,
-    ) -> Optional[lsp.TypeCoverageResponse]:
-        is_typechecked = await self._query_is_typechecked(path)
-        if is_typechecked is None:
-            return None
-        elif not is_typechecked:
-            return file_not_typechecked_coverage_result()
-        type_coverage = self.get_language_server_features().type_coverage
-        strict_by_default = self.server_state.server_options.strict_default
-        if type_coverage == TypeCoverageAvailability.EXPRESSION_LEVEL:
-            response = await daemon_query.attempt_async_query(
-                socket_path=self.socket_path,
-                query_text=f"expression_level_coverage('{path}')",
-            )
-            if response is None:
-                return None
-            else:
-                return path_to_expression_coverage_response(
-                    strict_by_default,
-                    expression_level_coverage._make_expression_level_coverage_response(
-                        response.payload
-                    ),
-                )
-        else:
-            return path_to_coverage_response(path, strict_by_default)
-
-    async def get_hover(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> lsp.LspHoverResponse:
-        path_string = f"'{path}'"
-        query_text = (
-            f"hover_info_for_position(path={path_string},"
-            f" line={position.line}, column={position.character})"
-        )
-        daemon_response = await daemon_query.attempt_typed_async_query(
-            response_type=HoverResponse,
-            socket_path=self.socket_path,
-            query_text=query_text,
-            overlay_id=self._get_overlay_id(path),
-        )
-        return (
-            daemon_response.response
-            if daemon_response
-            else lsp.LspHoverResponse.empty()
-        )
-
-    async def get_definition_locations(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> List[lsp.LspLocation]:
-        path_string = f"'{path}'"
-        query_text = (
-            f"location_of_definition(path={path_string},"
-            f" line={position.line}, column={position.character})"
-        )
-        daemon_response = await daemon_query.attempt_typed_async_query(
-            response_type=DefinitionLocationResponse,
-            socket_path=self.socket_path,
-            query_text=query_text,
-            overlay_id=self._get_overlay_id(path),
-        )
-        definitions = (
-            [
-                response.to_lsp_definition_response()
-                for response in daemon_response.response
-            ]
-            if daemon_response is not None
-            else []
-        )
-        return definitions
-
-    async def get_reference_locations(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> List[lsp.LspLocation]:
-        path_string = f"'{path}'"
-        query_text = (
-            f"find_references(path={path_string},"
-            f" line={position.line}, column={position.character})"
-        )
-        daemon_response = await daemon_query.attempt_typed_async_query(
-            response_type=ReferencesResponse,
-            socket_path=self.socket_path,
-            query_text=query_text,
-            overlay_id=self._get_overlay_id(path),
-        )
-        return (
-            [
-                response.to_lsp_definition_response()
-                for response in daemon_response.response
-            ]
-            if daemon_response is not None
-            else []
-        )
-
-    async def update_overlay(
-        self,
-        path: Path,
-        code: str,
-    ) -> None:
-        source_path = f"{path}"
-        overlay_update_dict = {
-            # TODO: T126924773 Include a language server identifier (e.g. PID of
-            # the current process) in this overlay id.
-            "overlay_id": path,
-            "source_path": source_path,
-            "code_update": ["NewCode", code],
-        }
-        # Drop the response (the daemon code will log it for us)
-        await daemon_connection.attempt_send_async_raw_request(
-            socket_path=self.socket_path,
-            request=json.dumps(overlay_update_dict),
-        )
 
 
 @dataclasses.dataclass(frozen=True)
