@@ -57,7 +57,7 @@ As you can see in the example, `Any` can still sneak into modules that are stric
 Strict mode can also be set as the default in a [project configuration](configuration.md). To opt individual files out of strict mode, use `# pyre-unsafe` in place of `# pyre-strict`.
 
 ## When Source Code is not Available
-We do not always have access to all the source code that contributes type information to our project: e.g. `builtins` is compiled native code, and other libraries may be using *cython*. Other times, we may be working with Python code that is just too dynamic to be reasonably typed.
+We do not always have access to all the source code that contributes type information to our project: e.g. `builtins` is compiled native code, and other libraries may be using *Cython*. Other times, we may be working with Python code that is just too dynamic to be reasonably typed.
 
 To address these cases, Pyre will give precedence to type *stub files* with a `*.pyi` extension over source files when these are specified in the search path in the [project configuration](configuration.md) or if they are located next to the implementation file.
 Stub files have the same structure as implementation files but only contain class and function signatures:
