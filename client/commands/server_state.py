@@ -7,7 +7,7 @@ import dataclasses
 from pathlib import Path
 from typing import Dict, List, Set
 
-from tools.pyre.client import timer
+from .. import timer
 
 from . import language_server_protocol as lsp
 

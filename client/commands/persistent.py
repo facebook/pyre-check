@@ -16,8 +16,6 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
-from tools.pyre.client.commands.pyre_server import PyreServer
-
 from .. import (
     configuration as configuration_module,
     error,
@@ -37,11 +35,11 @@ from . import (
     start,
     subscription,
 )
-
 from .language_server_features import LanguageServerFeatures
 
 from .log_lsp_event import _log_lsp_event, LSPEvent
-from .pyre_server import _wait_for_exit
+
+from .pyre_server import _wait_for_exit, PyreServer
 
 from .pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 
