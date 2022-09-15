@@ -2322,7 +2322,7 @@ let test_unpack_callable_and_self_argument context =
 
 
 let () =
-  "type"
+  "typeCheck"
   >::: [
          "initial" >:: test_initial;
          "less_or_equal" >:: test_less_or_equal;
