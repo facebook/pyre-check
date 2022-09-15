@@ -2492,6 +2492,7 @@ let run
     ~qualifier
     ~callable
     ~define
+    ~cfg
     ~call_graph_of_define
     ~get_callee_model
     ~existing_model
@@ -2538,7 +2539,6 @@ let run
       call_graph_of_define;
   State.log "Forward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable;
   let timer = Timer.start () in
-  let cfg = Cfg.create define.value in
   let initial =
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     State.create ~existing_model normalized_parameters

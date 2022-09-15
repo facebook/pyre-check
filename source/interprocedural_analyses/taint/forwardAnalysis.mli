@@ -18,6 +18,7 @@ val run
   qualifier:Reference.t ->
   callable:Interprocedural.Target.t ->
   define:Define.t Node.t ->
+  cfg:Cfg.t ->
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->

@@ -55,6 +55,13 @@ let assert_taint ?models ?models_source ~context source expect =
   let analyze_and_store_in_order models define =
     let call_target = Target.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
+    let define =
+      (* Apply decorators to make sure we match parameters up correctly. *)
+      let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+      Analysis.Annotated.Define.create define
+      |> Analysis.Annotated.Define.decorate ~resolution
+      |> Analysis.Annotated.Define.define
+    in
     let call_graph_of_define =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
@@ -64,6 +71,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~qualifier
         ~define:(Ast.Node.value define)
     in
+    let cfg = Cfg.create define.value in
     let forward, _errors, _ =
       ForwardAnalysis.run
         ?profiler:None
@@ -72,6 +80,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~qualifier
         ~callable:call_target
         ~define
+        ~cfg
         ~call_graph_of_define
         ~get_callee_model:(Registry.get models)
         ~existing_model:Model.empty_model

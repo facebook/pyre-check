@@ -2218,6 +2218,7 @@ let run
     ~qualifier
     ~callable
     ~define
+    ~cfg
     ~call_graph_of_define
     ~get_callee_model
     ~existing_model
@@ -2225,19 +2226,12 @@ let run
     ()
   =
   let timer = Timer.start () in
-  let define =
-    (* Apply decorators to make sure we match parameters up correctly. *)
-    let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-    Annotated.Define.create define
-    |> Annotated.Define.decorate ~resolution
-    |> Annotated.Define.define
-  in
   let module FunctionContext = struct
     let qualifier = qualifier
 
     let definition = define
 
-    let debug = Statement.Define.dump define.value
+    let debug = Statement.Define.dump define.Node.value
 
     let profiler = profiler
 
@@ -2262,7 +2256,6 @@ let run
   let module State = State (FunctionContext) in
   let module Fixpoint = Analysis.Fixpoint.Make (State) in
   let initial = State.{ taint = initial_taint } in
-  let cfg = Cfg.create define.value in
   let () =
     State.log "Backward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable
   in

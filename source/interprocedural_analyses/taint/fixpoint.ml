@@ -99,6 +99,13 @@ module Analysis = struct
       else
         TaintProfiler.none
     in
+    let define =
+      (* Apply decorators to make sure we match parameters up correctly. *)
+      let resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+      Analysis.Annotated.Define.create define
+      |> Analysis.Annotated.Define.decorate ~resolution
+      |> Analysis.Annotated.Define.define
+    in
     let call_graph_of_define =
       match
         Interprocedural.CallGraph.DefineCallGraphSharedMemory.get define_call_graphs ~callable
@@ -107,6 +114,10 @@ module Analysis = struct
       | None ->
           Format.asprintf "Missing call graph for `%a`" Interprocedural.Target.pp callable
           |> failwith
+    in
+    let cfg =
+      TaintProfiler.track_duration ~profiler ~name:"Control flow graph" ~f:(fun () ->
+          Analysis.Cfg.create define.value)
     in
     let forward, result, triggered_sinks =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->
@@ -117,6 +128,7 @@ module Analysis = struct
             ~qualifier
             ~callable
             ~define
+            ~cfg
             ~call_graph_of_define
             ~get_callee_model
             ~existing_model:previous_model
@@ -131,6 +143,7 @@ module Analysis = struct
             ~qualifier
             ~callable
             ~define
+            ~cfg
             ~call_graph_of_define
             ~get_callee_model
             ~existing_model:previous_model
