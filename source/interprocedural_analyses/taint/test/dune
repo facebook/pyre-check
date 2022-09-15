@@ -17,4 +17,5 @@
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))
  (libraries pyrelib.taintTestHelper pyrelib.taintAnalysis
-   pyrelib.taintIntegrationTest))
+   pyrelib.taintIntegrationTest)
+ (action (setenv PYSA_CHECK_INVARIANTS 1 (run %{test}))))

@@ -1250,7 +1250,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       (struct
         let max_tree_depth_after_widening () = TaintConfiguration.maximum_tree_depth_after_widening
 
-        let check_invariants = true
+        let check_invariants =
+          (* Only enabled in tests. *)
+          Sys.getenv "PYSA_CHECK_INVARIANTS" |> Option.is_some
       end)
       (Taint)
       ()
