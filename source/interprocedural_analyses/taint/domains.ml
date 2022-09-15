@@ -220,7 +220,7 @@ module CallInfoIntervals = struct
     let pp formatter { caller_interval; receiver_interval; is_self_call } =
       Format.fprintf
         formatter
-        "@[caller_interval: [%a] receiver_interval: [%a] is_self_call: [%b]@]"
+        "@[[caller_interval: %a receiver_interval: %a is_self_call: %b]@]"
         ClassIntervalSet.pp
         caller_interval
         ClassIntervalSet.pp

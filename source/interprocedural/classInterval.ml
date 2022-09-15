@@ -33,8 +33,10 @@ let is_top interval =
 let less_or_equal ~left ~right = Interval.Int.is_subset left ~of_:right
 
 let pp_interval formatter interval =
-  if Interval.Int.is_empty interval then
+  if is_empty interval then
     Format.fprintf formatter "<empty>"
+  else if is_top interval then
+    Format.fprintf formatter "<top>"
   else
     Format.fprintf
       formatter

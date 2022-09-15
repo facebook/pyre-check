@@ -10,6 +10,19 @@ open Core
 (* A list of non-overlapping intervals sorted with the lower bounds of intervals *)
 type t = ClassInterval.t list
 
+let empty = []
+
+let bottom = empty
+
+let top = [ClassInterval.top]
+
+let is_empty = List.is_empty
+
+let is_top = function
+  | [head] -> ClassInterval.is_top head
+  | _ -> false
+
+
 (* For example, (1,2);(3,4) becomes (1,4) *)
 let remove_gaps_between_nonoverlapping_intervals list =
   let rec remove_gaps list result =
@@ -62,8 +75,13 @@ let of_list = sort_list
 let to_list intervals = intervals
 
 let pp formatter intervals =
-  List.iter intervals ~f:(fun interval ->
-      Format.fprintf formatter "@[(%a);@]" ClassInterval.pp_interval interval)
+  if is_empty intervals then
+    Format.fprintf formatter "<empty>"
+  else if is_top intervals then
+    Format.fprintf formatter "<top>"
+  else
+    List.iter intervals ~f:(fun interval ->
+        Format.fprintf formatter "@[(%a);@]" ClassInterval.pp_interval interval)
 
 
 let show = Format.asprintf "%a" pp
@@ -71,19 +89,6 @@ let show = Format.asprintf "%a" pp
 let show_list = show
 
 let equal left right = List.equal ClassInterval.equal left right
-
-let empty = []
-
-let bottom = empty
-
-let top = [ClassInterval.top]
-
-let is_empty = List.is_empty
-
-let is_top = function
-  | [head] -> ClassInterval.is_top head
-  | _ -> false
-
 
 let lower_bound_exn intervals = List.hd_exn intervals |> ClassInterval.lower_bound_exn
 
