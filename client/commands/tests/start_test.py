@@ -166,7 +166,7 @@ class StartTest(testslide.TestCase):
         )
         self.assertEqual(
             path,
-            Path("some_directory/server::shadow.stderr.2018_05_06_00_00_00_000000"),
+            Path("some_directory/server__shadow.stderr.2018_05_06_00_00_00_000000"),
         )
         self.assertEqual(datetime_from_log_path(path), now)
 

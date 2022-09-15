@@ -40,7 +40,7 @@ class PyreFlavor(enum.Enum):
     SHADOW = "shadow"
 
     def path_suffix(self) -> str:
-        return "" if self == PyreFlavor.CLASSIC else f"::{self.value}"
+        return "" if self == PyreFlavor.CLASSIC else f"__{self.value}"
 
     @staticmethod
     def persistent_choices() -> List[str]:

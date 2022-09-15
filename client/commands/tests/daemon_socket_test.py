@@ -88,7 +88,7 @@ class SocketTest(testslide.TestCase):
             project_root=Path("project_root"),
             relative_local_root=None,
             flavor=PyreFlavor.SHADOW,
-            suffix="::shadow",
+            suffix="__shadow",
         )
 
     def test_find_socket_files(self) -> None:
