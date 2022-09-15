@@ -4,12 +4,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import collections
 import io
 import json
+import multiprocessing
 import re
 import subprocess
-import multiprocessing
 import textwrap
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
