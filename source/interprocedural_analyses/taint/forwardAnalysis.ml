@@ -256,6 +256,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let apply_call_target
       ~resolution
+      ~is_result_used
       ~triggered_sinks
       ~call_location
       ~self
@@ -373,6 +374,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let tito_effects =
         CallModel.taint_in_taint_out_mapping
           ~transform_non_leaves:(fun _ tito -> tito)
+          ~ignore_local_return:(not is_result_used)
           ~model:taint_model
           ~tito_matches
           ~sanitize_matches
@@ -445,17 +447,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~init:(TaintInTaintOutEffects.empty, initial_state)
     in
     let result_taint =
-      ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
-      |> ForwardState.Tree.apply_call
-           ~resolution
-           ~location:
-             (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
-           ~callee:(Some target)
-           ~arguments
-           ~port:AccessPath.Root.LocalResult
-           ~is_self_call
-           ~caller_class_interval:FunctionContext.caller_class_interval
-           ~receiver_class_interval
+      if is_result_used then
+        ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
+        |> ForwardState.Tree.apply_call
+             ~resolution
+             ~location:
+               (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
+             ~callee:(Some target)
+             ~arguments
+             ~port:AccessPath.Root.LocalResult
+             ~is_self_call
+             ~caller_class_interval:FunctionContext.caller_class_interval
+             ~receiver_class_interval
+      else
+        ForwardState.Tree.empty
     in
     let tito = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     (if not (Hash_set.is_empty triggered_sinks) then
@@ -559,6 +564,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let apply_constructor_targets
       ~resolution
+      ~is_result_used
       ~triggered_sinks
       ~call_location
       ~callee
@@ -586,6 +592,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           List.map new_targets ~f:(fun target ->
               apply_call_target
                 ~resolution
+                ~is_result_used:true
                 ~triggered_sinks
                 ~call_location
                 ~self:(Some callee)
@@ -613,6 +620,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           List.map init_targets ~f:(fun target ->
               apply_call_target
                 ~resolution
+                ~is_result_used
                 ~triggered_sinks
                 ~call_location
                 ~self:(Some call_expression)
@@ -634,6 +642,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let apply_callees_with_arguments_taint
       ~resolution
+      ~is_result_used
       ~callee
       ~call_location
       ~arguments
@@ -671,6 +680,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~f:
           (apply_call_target
              ~resolution
+             ~is_result_used
              ~triggered_sinks
              ~call_location
              ~self
@@ -705,6 +715,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let new_taint, new_state =
             apply_constructor_targets
               ~resolution
+              ~is_result_used
               ~triggered_sinks
               ~call_location
               ~callee
@@ -767,6 +778,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_attribute_access
             ~resolution
             ~state
+            ~is_attribute_used:true
             ~location:callee.Node.location
             ~resolve_properties
             ~base
@@ -775,7 +787,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         { self_taint = Some base_taint; callee_taint = Some attribute_taint; state }
     | _ ->
-        let taint, state = analyze_expression ~resolution ~state ~expression:callee in
+        let taint, state =
+          analyze_expression ~resolution ~state ~is_result_used:true ~expression:callee
+        in
         { self_taint = Some ForwardState.Tree.bottom; callee_taint = Some taint; state }
 
 
@@ -810,7 +824,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let taint, state =
           match callee.Node.value with
           | Expression.Name (Name.Attribute { base; _ }) ->
-              analyze_expression ~resolution ~state ~expression:base
+              analyze_expression ~resolution ~state ~is_result_used:true ~expression:base
           | _ -> ForwardState.Tree.bottom, state
         in
         { self_taint = Some taint; callee_taint = None; state }
@@ -822,7 +836,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   and analyze_arguments ~resolution ~state ~arguments =
     let compute_argument_taint (arguments_taint, state) argument =
       let taint, state =
-        analyze_unstarred_expression ~resolution argument.Call.Argument.value state
+        analyze_unstarred_expression
+          ~resolution
+          ~is_result_used:true
+          argument.Call.Argument.value
+          state
       in
       taint :: arguments_taint, state
     in
@@ -831,32 +849,37 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     List.rev arguments_taint, state
 
 
-  and analyze_dictionary_entry ~resolution (taint, state) { Dictionary.Entry.key; value } =
+  and analyze_dictionary_entry
+      ~resolution
+      ~is_result_used
+      (taint, state)
+      { Dictionary.Entry.key; value }
+    =
     let field_name =
       match key.Node.value with
       | Constant (Constant.String literal) -> Abstract.TreeDomain.Label.Index literal.value
       | _ -> Abstract.TreeDomain.Label.AnyIndex
     in
     let key_taint, state =
-      analyze_expression ~resolution ~state ~expression:key
+      analyze_expression ~resolution ~state ~is_result_used ~expression:key
       |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]
     in
-    analyze_expression ~resolution ~state ~expression:value
+    analyze_expression ~resolution ~state ~is_result_used ~expression:value
     |>> ForwardState.Tree.prepend [field_name]
     |>> ForwardState.Tree.join taint
     |>> ForwardState.Tree.join key_taint
 
 
-  and analyze_list_element ~resolution position (taint, state) expression =
+  and analyze_list_element ~resolution ~is_result_used position (taint, state) expression =
     let index_name = Abstract.TreeDomain.Label.Index (string_of_int position) in
-    analyze_expression ~resolution ~state ~expression
+    analyze_expression ~resolution ~state ~is_result_used ~expression
     |>> ForwardState.Tree.prepend [index_name]
     |>> ForwardState.Tree.join taint
 
 
-  and analyze_set_element ~resolution (taint, state) expression =
+  and analyze_set_element ~resolution ~is_result_used (taint, state) expression =
     let value_taint, state =
-      analyze_expression ~resolution ~state ~expression
+      analyze_expression ~resolution ~state ~is_result_used ~expression
       |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
     in
     ForwardState.Tree.join taint value_taint, state
@@ -867,7 +890,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let ({ Statement.Assign.target; value; _ } as assignment) =
         Statement.Statement.generator_assignment generator
       in
-      let assign_value_taint, state = analyze_expression ~resolution ~state ~expression:value in
+      let assign_value_taint, state =
+        analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+      in
       let state =
         analyze_assignment ~resolution target assign_value_taint assign_value_taint state
       in
@@ -876,43 +901,49 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let resolution = Resolution.resolve_assignment resolution assignment in
       (* Analyzing the conditions might have issues and side effects. *)
       let analyze_condition state condiiton =
-        analyze_expression ~resolution ~state ~expression:condiiton |> snd
+        analyze_expression ~resolution ~state ~is_result_used:false ~expression:condiiton |> snd
       in
       List.fold conditions ~init:state ~f:analyze_condition, resolution
     in
     List.fold ~f:add_binding generators ~init:(state, resolution)
 
 
-  and analyze_comprehension ~resolution { Comprehension.element; generators; _ } state =
+  and analyze_comprehension
+      ~resolution
+      ~state
+      ~is_result_used
+      { Comprehension.element; generators; _ }
+    =
     let bound_state, resolution = analyze_comprehension_generators ~resolution ~state generators in
-    analyze_expression ~resolution ~state:bound_state ~expression:element
+    analyze_expression ~resolution ~state:bound_state ~is_result_used ~expression:element
     |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
 
 
   and analyze_dictionary_comprehension
       ~resolution
       ~state
+      ~is_result_used
       { Comprehension.element = { Dictionary.Entry.key; value }; generators; _ }
     =
     let state, resolution = analyze_comprehension_generators ~resolution ~state generators in
     let value_taint, state =
-      analyze_expression ~resolution ~state ~expression:value
+      analyze_expression ~resolution ~state ~is_result_used ~expression:value
       |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
     in
     let key_taint, state =
-      analyze_expression ~resolution ~state ~expression:key
+      analyze_expression ~resolution ~state ~is_result_used ~expression:key
       |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]
     in
     ForwardState.Tree.join key_taint value_taint, state
 
 
   (* Skip through * and **. Used at call sites where * and ** are handled explicitly *)
-  and analyze_unstarred_expression ~resolution expression state =
+  and analyze_unstarred_expression ~resolution ~is_result_used expression state =
     match expression.Node.value with
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
-        analyze_expression ~resolution ~state ~expression
-    | _ -> analyze_expression ~resolution ~state ~expression
+        analyze_expression ~resolution ~state ~is_result_used ~expression
+    | _ -> analyze_expression ~resolution ~state ~is_result_used ~expression
 
 
   and analyze_arguments_for_lambda_call
@@ -947,7 +978,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let non_lambda_arguments_taint, state =
       let compute_argument_taint (arguments_taint, state) (index, argument) =
         let taint, state =
-          analyze_unstarred_expression ~resolution argument.Call.Argument.value state
+          analyze_unstarred_expression
+            ~resolution
+            ~is_result_used:true
+            argument.Call.Argument.value
+            state
         in
         (index, taint) :: arguments_taint, state
       in
@@ -989,6 +1024,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let taint, state =
         apply_callees_with_arguments_taint
           ~resolution
+          ~is_result_used:true
           ~callee:lambda_callee
           ~call_location:lambda_location
           ~arguments
@@ -1018,7 +1054,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     arguments_taint, state
 
 
-  and apply_callees ~resolution ~is_property ~callee ~call_location ~arguments ~state callees =
+  and apply_callees
+      ~resolution
+      ~is_result_used
+      ~is_property
+      ~callee
+      ~call_location
+      ~arguments
+      ~state
+      callees
+    =
     let { self_taint; callee_taint; state } =
       analyze_callee_for_callees ~resolution ~is_property_call:is_property ~state ~callee callees
     in
@@ -1044,6 +1089,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     apply_callees_with_arguments_taint
       ~resolution
+      ~is_result_used
       ~callee
       ~call_location
       ~arguments
@@ -1056,6 +1102,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and analyze_getitem_call_target
       ~resolution
+      ~is_result_used
       ~index
       ~index_number
       ~state
@@ -1077,6 +1124,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   analyze_attribute_access
                     ~resolution
                     ~state
+                    ~is_attribute_used:is_result_used
                     ~resolve_properties:false
                     ~location
                     ~base
@@ -1116,8 +1164,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         Lazy.force taint_and_state_after_index_access
 
 
-  and analyze_call ~resolution ~location ~state ~callee ~arguments =
-    let assign_super_constructor_taint_to_self_if_necessary taint state =
+  and analyze_call ~resolution ~location ~state ~is_result_used ~callee ~arguments =
+    (* To properly treat attribute assignments in the constructor, we treat
+     * `__init__` calls as an assignment `self = self.__init__()`. *)
+    let should_assign_return_to_parameter =
       match Node.value callee, FunctionContext.definition with
       | ( Expression.Name (Name.Attribute { base; attribute = "__init__"; _ }),
           {
@@ -1132,23 +1182,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 _;
               };
             _;
-          } ) ->
-          if
-            is_constructor ()
-            && Interprocedural.CallResolution.is_super
-                 ~resolution
-                 ~define:FunctionContext.definition
-                 base
-          then
-            let self = AccessPath.Root.Variable self_parameter in
-            let self_taint =
-              ForwardState.read ~root:self ~path:[] state.taint |> ForwardState.Tree.join taint
-            in
-            taint, { taint = ForwardState.assign ~root:self ~path:[] self_taint state.taint }
-          else
-            taint, state
-      | _ -> taint, state
+          } )
+        when is_constructor ()
+             && Interprocedural.CallResolution.is_super
+                  ~resolution
+                  ~define:FunctionContext.definition
+                  base ->
+          Some self_parameter
+      | _ -> None
     in
+    let is_result_used = is_result_used || Option.is_some should_assign_return_to_parameter in
 
     let taint, state =
       match { Call.callee; arguments } with
@@ -1157,11 +1200,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments =
          [{ Call.Argument.value = { Node.value = argument_expression; _ } as argument_value; _ }];
       } ->
-          let _, state = analyze_expression ~resolution ~state ~expression:argument_value in
+          let _, state =
+            analyze_expression ~resolution ~state ~is_result_used:false ~expression:argument_value
+          in
           let index = AccessPath.get_index argument_value in
           let taint_and_state_after_index_access =
             lazy
-              (analyze_expression ~resolution ~state ~expression:base
+              (analyze_expression ~resolution ~state ~is_result_used ~expression:base
               |>> ForwardState.Tree.read [index]
               |>> ForwardState.Tree.add_local_first_index index)
           in
@@ -1183,9 +1228,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~f:(fun (taint_so_far, state_so_far) call_target ->
                 let taint, state =
                   analyze_getitem_call_target
+                    ~resolution
+                    ~is_result_used
                     ~index
                     ~index_number
-                    ~resolution
                     ~state
                     ~location
                     ~base
@@ -1199,13 +1245,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
        arguments = [];
       } ->
-          analyze_expression ~resolution ~state ~expression:base
+          analyze_expression ~resolution ~state ~is_result_used ~expression:base
       | {
        callee =
          { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; special = true }); _ };
        arguments = [];
       } ->
-          let taint, state = analyze_expression ~resolution ~state ~expression:base in
+          let taint, state =
+            analyze_expression ~resolution ~state ~is_result_used ~expression:base
+          in
           let label =
             (* For dictionaries, the default iterator is keys. *)
             if
@@ -1251,7 +1299,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                because we assume in most cases, we run into an expression whose type is exactly
                `dict`, rather than a (strict) subtype of `dict` that overrides `__setitem__`. *)
             let state =
-              let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
+              let value_taint, state =
+                analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+              in
               analyze_assignment
                 ~resolution
                 ~fields:[AccessPath.get_index index]
@@ -1261,7 +1311,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 state
             in
             let state =
-              let key_taint, state = analyze_expression ~resolution ~state ~expression:index in
+              let key_taint, state =
+                analyze_expression ~resolution ~state ~is_result_used:true ~expression:index
+              in
               (* Smash the taint of ALL keys into one place, i.e., a special field of the
                  dictionary: `d[**keys] = index`. *)
               analyze_assignment
@@ -1284,6 +1336,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let taint, state =
               apply_callees
                 ~resolution
+                ~is_result_used:true
                 ~is_property:false
                 ~callee
                 ~call_location:location
@@ -1323,7 +1376,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            { Call.Argument.value = assigned_value; name = None };
          ];
       } ->
-          let taint, state = analyze_expression ~resolution ~state ~expression:assigned_value in
+          let taint, state =
+            analyze_expression ~resolution ~state ~is_result_used:true ~expression:assigned_value
+          in
           let state =
             analyze_assignment
               ~resolution
@@ -1357,16 +1412,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> Node.create ~location
           in
           let attribute_taint, state =
-            analyze_expression ~resolution ~state ~expression:attribute_expression
+            analyze_expression ~resolution ~state ~is_result_used ~expression:attribute_expression
           in
-          let default_taint, state = analyze_expression ~resolution ~state ~expression:default in
+          let default_taint, state =
+            analyze_expression ~resolution ~state ~is_result_used ~expression:default
+          in
           ForwardState.Tree.join attribute_taint default_taint, state
       (* `zip(a, b, ...)` creates a taint object which, when iterated on, has first index equal to
          a[*]'s taint, second index with b[*]'s taint, etc. *)
       | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
           let add_list_to_taint index (taint, state) { Call.Argument.value; _ } =
             let index_name = Abstract.TreeDomain.Label.Index (string_of_int index) in
-            analyze_expression ~resolution ~state ~expression:value
+            analyze_expression ~resolution ~state ~is_result_used ~expression:value
             |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
             |>> ForwardState.Tree.prepend [index_name]
             |>> ForwardState.Tree.join taint
@@ -1388,6 +1445,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression
             ~resolution
             ~state
+            ~is_result_used
             ~expression:
               {
                 Node.location = Node.location callee;
@@ -1400,13 +1458,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
         when CallResolution.resolve_ignoring_untracked ~resolution base
              |> Type.is_dictionary_or_mapping ->
-          analyze_expression ~resolution ~state ~expression:base
+          analyze_expression ~resolution ~state ~is_result_used ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
         when CallResolution.resolve_ignoring_untracked ~resolution base
              |> Type.is_dictionary_or_mapping ->
-          analyze_expression ~resolution ~state ~expression:base
+          analyze_expression ~resolution ~state ~is_result_used ~expression:base
           |>> ForwardState.Tree.read [AccessPath.dictionary_keys]
       | {
        callee =
@@ -1438,7 +1496,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint
           in
           let override_taint_from_update (taint, state) (key, value) =
-            let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
+            let value_taint, state =
+              analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+            in
             let value_taint =
               ForwardState.Tree.transform
                 Features.TitoPositionSet.Element
@@ -1510,7 +1570,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
         when CallResolution.resolve_ignoring_untracked ~resolution base
              |> Type.is_dictionary_or_mapping ->
-          let taint, state = analyze_expression ~resolution ~state ~expression:base in
+          let taint, state =
+            analyze_expression ~resolution ~state ~is_result_used ~expression:base
+          in
           let taint =
             let key_taint = ForwardState.Tree.read [AccessPath.dictionary_keys] taint in
             let value_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] taint in
@@ -1635,7 +1697,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        callee = { Node.value = Expression.Name (Name.Identifier "reveal_taint"); _ };
        arguments = [{ Call.Argument.value = expression; _ }];
       } ->
-          let taint, _ = analyze_expression ~resolution ~state ~expression in
+          let taint, _ = analyze_expression ~resolution ~state ~is_result_used:true ~expression in
           let location =
             Node.location callee |> Location.with_module ~module_reference:FunctionContext.qualifier
           in
@@ -1666,6 +1728,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
           apply_callees
             ~resolution
+            ~is_result_used
             ~is_property:false
             ~call_location:location
             ~callee
@@ -1673,12 +1736,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~state
             callees
     in
-    let taint, state = assign_super_constructor_taint_to_self_if_necessary taint state in
+
+    let taint, state =
+      match should_assign_return_to_parameter with
+      | Some self_parameter ->
+          let self = AccessPath.Root.Variable self_parameter in
+          let self_taint =
+            ForwardState.read ~root:self ~path:[] state.taint |> ForwardState.Tree.join taint
+          in
+          taint, { taint = ForwardState.assign ~root:self ~path:[] self_taint state.taint }
+      | None -> taint, state
+    in
+
     if not FunctionContext.taint_configuration.lineage_analysis then
       taint, state
     else
       let analyze_expression_unwrap ~resolution ~state ~expression =
-        let taint, state = analyze_expression ~resolution ~state:{ taint = state } ~expression in
+        let taint, state =
+          analyze_expression ~resolution ~state:{ taint = state } ~is_result_used:true ~expression
+        in
         taint, state.taint
       in
       let taint, forward_state =
@@ -1696,6 +1772,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   and analyze_attribute_access
       ~resolution
       ~state
+      ~is_attribute_used
       ~location
       ~resolve_properties
       ~base
@@ -1705,7 +1782,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let expression =
       Expression.Name (Name.Attribute { base; attribute; special }) |> Node.create ~location
     in
-    let base_taint, state = analyze_expression ~resolution ~state ~expression:base in
+    let base_taint, state =
+      analyze_expression ~resolution ~state ~is_result_used:true ~expression:base
+    in
     let attribute_access_callees =
       if resolve_properties then get_attribute_access_callees ~location ~attribute else None
     in
@@ -1716,6 +1795,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint, state =
             apply_callees_with_arguments_taint
               ~resolution
+              ~is_result_used:is_attribute_used
               ~callee:expression
               ~call_location:location
               ~arguments:[]
@@ -1769,14 +1849,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             taint
           in
           let attribute_taint =
-            base_taint
-            |> add_tito_features
-            |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index attribute]
-            |> ForwardState.Tree.add_local_first_field attribute
-            (* This should be applied before the join with the attribute taint, so inferred taint
-             * is sanitized, but user-specified taint on the attribute is still propagated. *)
-            |> apply_attribute_sanitizers
-            |> ForwardState.Tree.join attribute_taint
+            if is_attribute_used then
+              base_taint
+              |> add_tito_features
+              |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index attribute]
+              |> ForwardState.Tree.add_local_first_field attribute
+              (* This should be applied before the join with the attribute taint, so inferred taint
+               * is sanitized, but user-specified taint on the attribute is still propagated. *)
+              |> apply_attribute_sanitizers
+              |> ForwardState.Tree.join attribute_taint
+            else
+              ForwardState.Tree.bottom
           in
           { base_taint; attribute_taint; state }
       | _ ->
@@ -1841,6 +1924,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let new_taint, new_state =
             apply_callees_with_arguments_taint
               ~resolution
+              ~is_result_used:true
               ~call_location
               ~arguments:[]
               ~self_taint:(Some base_taint)
@@ -1857,7 +1941,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ({ Node.location = expression_location; _ } as expression)
           =
           let base_taint, base_state =
-            analyze_expression ~resolution ~state ~expression
+            analyze_expression ~resolution ~state ~is_result_used:true ~expression
             |>> ForwardState.Tree.transform
                   Features.TitoPositionSet.Element
                   Add
@@ -1910,26 +1994,41 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         taint, state
 
 
-  and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
+  and analyze_expression
+      ~resolution
+      ~state
+      ~is_result_used
+      ~expression:({ Node.location; _ } as expression)
+    =
     let taint, state =
       match expression.Node.value with
-      | Await expression -> analyze_expression ~resolution ~state ~expression
+      | Await expression -> analyze_expression ~resolution ~state ~is_result_used ~expression
       | BooleanOperator { left; operator = _; right } ->
-          let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
-          let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
+          let left_taint, state =
+            analyze_expression ~resolution ~state ~is_result_used ~expression:left
+          in
+          let right_taint, state =
+            analyze_expression ~resolution ~state ~is_result_used ~expression:right
+          in
           ForwardState.Tree.join left_taint right_taint, state
       | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
           match ComparisonOperator.override ~location comparison with
-          | Some override -> analyze_expression ~resolution ~state ~expression:override
+          | Some override ->
+              analyze_expression ~resolution ~state ~is_result_used ~expression:override
           | None ->
-              let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
-              let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
+              let left_taint, state =
+                analyze_expression ~resolution ~state ~is_result_used ~expression:left
+              in
+              let right_taint, state =
+                analyze_expression ~resolution ~state ~is_result_used ~expression:right
+              in
               let taint =
                 ForwardState.Tree.join left_taint right_taint
                 |> ForwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ())
               in
               taint, state)
-      | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
+      | Call { callee; arguments } ->
+          analyze_call ~resolution ~location ~state ~is_result_used ~callee ~arguments
       | Constant (Constant.String { StringLiteral.value; _ }) ->
           analyze_string_literal
             ~resolution
@@ -1943,37 +2042,42 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint, state =
             List.fold
               entries
-              ~f:(analyze_dictionary_entry ~resolution)
+              ~f:(analyze_dictionary_entry ~resolution ~is_result_used)
               ~init:(ForwardState.Tree.empty, state)
           in
           let analyze_dictionary_keywords (taint, state) keywords =
-            let new_taint, state = analyze_expression ~resolution ~state ~expression:keywords in
+            let new_taint, state =
+              analyze_expression ~resolution ~state ~is_result_used ~expression:keywords
+            in
             ForwardState.Tree.join new_taint taint, state
           in
           List.fold keywords ~f:analyze_dictionary_keywords ~init:(taint, state)
       | DictionaryComprehension comprehension ->
-          analyze_dictionary_comprehension ~resolution ~state comprehension
-      | Generator comprehension -> analyze_comprehension ~resolution comprehension state
+          analyze_dictionary_comprehension ~resolution ~state ~is_result_used comprehension
+      | Generator comprehension ->
+          analyze_comprehension ~resolution ~state ~is_result_used comprehension
       | Lambda { parameters = _; body } ->
           (* Ignore parameter bindings and pretend body is inlined *)
-          analyze_expression ~resolution ~state ~expression:body
+          analyze_expression ~resolution ~state ~is_result_used ~expression:body
       | List list ->
           List.foldi
             list
-            ~f:(analyze_list_element ~resolution)
+            ~f:(analyze_list_element ~resolution ~is_result_used)
             ~init:(ForwardState.Tree.empty, state)
-      | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
+      | ListComprehension comprehension ->
+          analyze_comprehension ~resolution ~state ~is_result_used comprehension
       | Name (Name.Identifier identifier) ->
           ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
       (* __dict__ reveals an object's underlying data structure, so we should analyze the base under
          the existing taint instead of adding the index to the taint. *)
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
-          analyze_expression ~resolution ~state ~expression:base
+          analyze_expression ~resolution ~state ~is_result_used ~expression:base
       | Name (Name.Attribute { base; attribute; special }) ->
           let { attribute_taint; state; _ } =
             analyze_attribute_access
               ~resolution
               ~state
+              ~is_attribute_used:is_result_used
               ~resolve_properties:true
               ~location
               ~base
@@ -1982,11 +2086,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           attribute_taint, state
       | Set set ->
-          List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
-      | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state
+          List.fold
+            ~f:(analyze_set_element ~resolution ~is_result_used)
+            set
+            ~init:(ForwardState.Tree.empty, state)
+      | SetComprehension comprehension ->
+          analyze_comprehension ~resolution ~state ~is_result_used comprehension
       | Starred (Starred.Once expression)
       | Starred (Starred.Twice expression) ->
-          analyze_expression ~resolution ~state ~expression
+          analyze_expression ~resolution ~state ~is_result_used ~expression
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
       | FormatString substrings ->
           let value =
@@ -2009,26 +2117,32 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             value
       | Ternary { target; test; alternative } ->
           let state = analyze_condition ~resolution test state in
-          let taint_then, state_then = analyze_expression ~resolution ~state ~expression:target in
+          let taint_then, state_then =
+            analyze_expression ~resolution ~state ~is_result_used ~expression:target
+          in
           let taint_else, state_else =
-            analyze_expression ~resolution ~state ~expression:alternative
+            analyze_expression ~resolution ~state ~is_result_used ~expression:alternative
           in
           ForwardState.Tree.join taint_then taint_else, join state_then state_else
       | Tuple expressions ->
           List.foldi
-            ~f:(analyze_list_element ~resolution)
+            ~f:(analyze_list_element ~resolution ~is_result_used)
             expressions
             ~init:(ForwardState.Tree.empty, state)
       | UnaryOperator { operator = _; operand } ->
-          analyze_expression ~resolution ~state ~expression:operand
+          analyze_expression ~resolution ~state ~is_result_used ~expression:operand
       | WalrusOperator { target; value } ->
-          let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
+          let value_taint, state =
+            analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+          in
           let state = analyze_assignment ~resolution target value_taint value_taint state in
           value_taint, state
       | Yield None -> ForwardState.Tree.empty, state
       | Yield (Some expression)
       | YieldFrom expression ->
-          let taint, state = analyze_expression ~resolution ~state ~expression in
+          let taint, state =
+            analyze_expression ~resolution ~state ~is_result_used:true ~expression
+          in
           taint, store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
     in
     log "Forward taint of expression `%a`: %a" Expression.pp expression ForwardState.Tree.pp taint;
@@ -2095,7 +2209,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   and analyze_condition ~resolution expression state =
     let { Node.location; _ } = expression in
     let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
-    let taint, state = analyze_expression ~resolution ~state ~expression in
+    let taint, state = analyze_expression ~resolution ~state ~is_result_used:true ~expression in
     (* There maybe configured sinks for conditionals, so test them here. *)
     let () =
       FunctionContext.taint_configuration.implicit_sinks.conditional_test
@@ -2143,7 +2257,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~interval:FunctionContext.caller_class_interval
         in
         if GlobalModel.is_sanitized target_global_model then
-          analyze_expression ~resolution ~state ~expression:value |> snd
+          analyze_expression ~resolution ~state ~is_result_used:false ~expression:value |> snd
         else
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) ->
@@ -2156,6 +2270,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     let taint, state =
                       apply_callees
                         ~resolution
+                        ~is_result_used:true
                         ~is_property:true
                         ~callee:target
                         ~call_location:location
@@ -2171,14 +2286,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 match attribute_access_callees with
                 | Some { is_attribute = true; _ }
                 | None ->
-                    let taint, state = analyze_expression ~resolution ~state ~expression:value in
+                    let taint, state =
+                      analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+                    in
                     analyze_assignment ~resolution target taint taint state
                 | _ -> bottom
               in
 
               join property_call_state regular_attribute_state
           | _ ->
-              let taint, state = analyze_expression ~resolution ~state ~expression:value in
+              let taint, state =
+                analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+              in
               analyze_assignment ~resolution target taint taint state)
     | Assert { test; _ } -> analyze_condition ~resolution test state
     | Break
@@ -2195,7 +2314,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         List.fold expressions ~init:state ~f:process_expression
     | Expression expression ->
-        let _, state = analyze_expression ~resolution ~state ~expression in
+        let _, state = analyze_expression ~resolution ~state ~is_result_used:false ~expression in
         state
     | For _
     | Global _
@@ -2207,10 +2326,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Raise { expression = None; _ } ->
         state
     | Raise { expression = Some expression; _ } ->
-        let _, state = analyze_expression ~resolution ~state ~expression in
+        let _, state = analyze_expression ~resolution ~state ~is_result_used:false ~expression in
         state
     | Return { expression = Some expression; _ } ->
-        let taint, state = analyze_expression ~resolution ~state ~expression in
+        let taint, state = analyze_expression ~resolution ~state ~is_result_used:true ~expression in
         let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         check_flow
           ~location
@@ -2254,7 +2373,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let default_value_taint, state =
         match value with
         | None -> ForwardState.Tree.bottom, state
-        | Some expression -> analyze_expression ~resolution ~state ~expression
+        | Some expression -> analyze_expression ~resolution ~state ~is_result_used:true ~expression
       in
       let root = AccessPath.Root.Variable name in
       let taint =

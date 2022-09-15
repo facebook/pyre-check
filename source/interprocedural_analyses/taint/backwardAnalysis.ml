@@ -427,6 +427,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let taint_in_taint_out =
         CallModel.taint_in_taint_out_mapping
           ~transform_non_leaves
+          ~ignore_local_return:(BackwardState.Tree.is_bottom call_taint)
           ~model:taint_model
           ~tito_matches
           ~sanitize_matches

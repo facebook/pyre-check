@@ -104,23 +104,38 @@ module TaintInTaintOutMap = struct
   let remove map ~kind = Map.Poly.remove map kind
 
   let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~tito_tree:data)
+
+  let filter map ~f = Map.Poly.filter_keys map ~f
 end
 
 let taint_in_taint_out_mapping
     ~transform_non_leaves
+    ~ignore_local_return
     ~model:({ Model.backward; modes; _ } as model)
     ~tito_matches
     ~sanitize_matches
   =
   let combine_tito sofar { AccessPath.root; actual_path; formal_path } =
-    BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
-    |> BackwardState.Tree.prepend actual_path
-    |> BackwardState.Tree.partition Domains.BackwardTaint.kind By ~f:Fn.id
-    |> TaintInTaintOutMap.join sofar
+    let mapping_for_path =
+      BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
+      |> BackwardState.Tree.prepend actual_path
+      |> BackwardState.Tree.partition Domains.BackwardTaint.kind By ~f:Fn.id
+    in
+    let mapping_for_path =
+      if ignore_local_return then
+        TaintInTaintOutMap.filter mapping_for_path ~f:(function
+            | Sinks.LocalReturn
+            | Sinks.Transform { base = Sinks.LocalReturn; _ } ->
+                false
+            | _ -> true)
+      else
+        mapping_for_path
+    in
+    TaintInTaintOutMap.join sofar mapping_for_path
   in
   let mapping = List.fold tito_matches ~f:combine_tito ~init:TaintInTaintOutMap.empty in
   let mapping =
-    if Model.ModeSet.contains Obscure modes then
+    if Model.ModeSet.contains Obscure modes && not ignore_local_return then
       (* Turn source- and sink- specific tito sanitizers into a tito taint with
        * sanitize taint transforms for obscure models. *)
       let obscure_sanitize = tito_sanitize_of_argument ~model ~sanitize_matches in
