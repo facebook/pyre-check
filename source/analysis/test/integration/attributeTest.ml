@@ -398,7 +398,8 @@ let test_check_attributes context =
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have "
       ^ "type `typing.Generic[Variable[_T]]` but is never initialized.";
       "Invalid type variable [34]: The current class isn't generic with respect to the type \
-       variable `Variable[_T]`.";
+       variable `Variable[_T]`. To reference the type variable, you can modify the class to \
+       inherit from `typing.Generic[_T]`.";
       "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type "
       ^ "`Generic[Variable[_T]]` but is used as type `int`.";
       "Incompatible return type [7]: Expected `int` but got `Generic[Variable[_T]]`.";

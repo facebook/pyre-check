@@ -208,7 +208,8 @@ let test_check_undefined_type context =
     [
       "Unbound name [10]: Name `Generic` is used but not defined in the current scope.";
       "Invalid type variable [34]: The current class isn't generic with respect to the type \
-       variable `Variable[_T]`.";
+       variable `Variable[_T]`. To reference the type variable, you can modify the class to \
+       inherit from `typing.Generic[_T]`.";
     ];
   assert_type_errors
     {|
@@ -1260,7 +1261,8 @@ let test_check_invalid_type_variables context =
     |}
     [
       "Invalid type variable [34]: The current class isn't generic with respect to the type \
-       variable `Variable[T]`.";
+       variable `Variable[T]`. To reference the type variable, you can modify the class to inherit \
+       from `typing.Generic[T]`.";
     ];
   assert_type_errors
     {|
