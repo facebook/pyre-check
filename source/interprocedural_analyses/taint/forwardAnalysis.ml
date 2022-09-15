@@ -2540,12 +2540,14 @@ let run
   State.log "Forward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable;
   let timer = Timer.start () in
   let initial =
-    let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
-    State.create ~existing_model normalized_parameters
+    TaintProfiler.track_duration ~profiler ~name:"Forward analysis - initial state" ~f:(fun () ->
+        let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+        State.create ~existing_model normalized_parameters)
   in
   let () = State.log "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state =
-    Metrics.with_alarm callable (fun () -> Fixpoint.forward ~cfg ~initial |> Fixpoint.exit) ()
+    TaintProfiler.track_duration ~profiler ~name:"Forward analysis - fixpoint" ~f:(fun () ->
+        Metrics.with_alarm callable (fun () -> Fixpoint.forward ~cfg ~initial |> Fixpoint.exit) ())
   in
   let () =
     match exit_state with
@@ -2561,13 +2563,14 @@ let run
         existing_model.forward.source_taint
     in
     let source_taint =
-      extract_source_model
-        ~define:define.value
-        ~resolution
-        ~taint_configuration:FunctionContext.taint_configuration
-        ~breadcrumbs_to_attach
-        ~via_features_to_attach
-        taint
+      TaintProfiler.track_duration ~profiler ~name:"Forward analysis - extract model" ~f:(fun () ->
+          extract_source_model
+            ~define:define.value
+            ~resolution
+            ~taint_configuration:FunctionContext.taint_configuration
+            ~breadcrumbs_to_attach
+            ~via_features_to_attach
+            taint)
     in
     let model = Model.Forward.{ source_taint } in
     let () = State.log "Forward Model:@,%a" Model.Forward.pp model in

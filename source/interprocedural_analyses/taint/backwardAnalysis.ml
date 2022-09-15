@@ -2260,7 +2260,8 @@ let run
     State.log "Backward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable
   in
   let entry_state =
-    Metrics.with_alarm callable (fun () -> Fixpoint.backward ~cfg ~initial |> Fixpoint.entry) ()
+    TaintProfiler.track_duration ~profiler ~name:"Backward analysis - fixpoint" ~f:(fun () ->
+        Metrics.with_alarm callable (fun () -> Fixpoint.backward ~cfg ~initial |> Fixpoint.entry) ())
   in
   let () =
     match entry_state with
@@ -2270,13 +2271,14 @@ let run
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let extract_model State.{ taint; _ } =
     let model =
-      extract_tito_and_sink_models
-        ~is_constructor:(State.is_constructor ())
-        define.value
-        ~resolution
-        ~taint_configuration:FunctionContext.taint_configuration
-        ~existing_backward:existing_model.Model.backward
-        taint
+      TaintProfiler.track_duration ~profiler ~name:"Backward analysis - extract model" ~f:(fun () ->
+          extract_tito_and_sink_models
+            ~is_constructor:(State.is_constructor ())
+            define.value
+            ~resolution
+            ~taint_configuration:FunctionContext.taint_configuration
+            ~existing_backward:existing_model.Model.backward
+            taint)
     in
     let () = State.log "Backward Model:@,%a" Model.Backward.pp model in
     model
