@@ -808,61 +808,22 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             )
 
 
-async def run_persistent(
-    server_options_reader: PyreServerOptionsReader,
+async def try_initialize_loop(
+    server_options: PyreServerOptions,
+    input_channel: connections.AsyncTextReader,
+    output_channel: connections.AsyncTextWriter,
     remote_logging: Optional[backend_arguments.RemoteLogging],
-) -> int:
-    try:
-        initial_server_options = read_server_options(
-            server_options_reader, remote_logging=None
-        )
-    except configuration_module.InvalidConfiguration as e:
-        raise lsp.ServerNotInitializedError(str(e)) from None
-    stdin, stdout = await connections.create_async_stdin_stdout()
+) -> InitializationSuccess | InitializationExit:
     while True:
-        initialize_result = await try_initialize(stdin, stdout, initial_server_options)
+        initialize_result = await try_initialize(
+            input_channel, output_channel, server_options
+        )
         if isinstance(initialize_result, InitializationExit):
             LOG.info("Received exit request before initialization.")
-            return 0
+            return initialize_result
         elif isinstance(initialize_result, InitializationSuccess):
             LOG.info("Initialization successful.")
-            client_info = initialize_result.client_info
-            _log_lsp_event(
-                remote_logging=remote_logging,
-                event=LSPEvent.INITIALIZED,
-                normals=(
-                    {}
-                    if client_info is None
-                    else {
-                        "lsp client name": client_info.name,
-                        "lsp client version": client_info.version,
-                    }
-                ),
-            )
-
-            client_capabilities = initialize_result.client_capabilities
-            LOG.debug(f"Client capabilities: {client_capabilities}")
-            server_state = ServerState(
-                client_capabilities=client_capabilities,
-                server_options=initial_server_options,
-            )
-            server = PyreServer(
-                input_channel=stdin,
-                output_channel=stdout,
-                server_state=server_state,
-                pyre_manager=background.TaskManager(
-                    PyreDaemonLaunchAndSubscribeHandler(
-                        server_options_reader=server_options_reader,
-                        remote_logging=remote_logging,
-                        client_output_channel=stdout,
-                        server_state=server_state,
-                    )
-                ),
-                handler=RequestHandler(
-                    server_state=server_state,
-                ),
-            )
-            return await server.run()
+            return initialize_result
         elif isinstance(initialize_result, InitializationFailure):
             exception = initialize_result.exception
             message = (
@@ -881,6 +842,63 @@ async def run_persistent(
             # Loop until we get either InitializeExit or InitializeSuccess
         else:
             raise RuntimeError("Cannot determine the type of initialize_result")
+
+
+async def run_persistent(
+    server_options_reader: PyreServerOptionsReader,
+    remote_logging: Optional[backend_arguments.RemoteLogging],
+) -> int:
+    try:
+        initial_server_options = read_server_options(
+            server_options_reader, remote_logging=None
+        )
+    except configuration_module.InvalidConfiguration as e:
+        raise lsp.ServerNotInitializedError(str(e)) from None
+    stdin, stdout = await connections.create_async_stdin_stdout()
+
+    initialize_result = await try_initialize_loop(
+        initial_server_options, stdin, stdout, remote_logging
+    )
+    if isinstance(initialize_result, InitializationExit):
+        return 0
+
+    client_info = initialize_result.client_info
+    _log_lsp_event(
+        remote_logging=remote_logging,
+        event=LSPEvent.INITIALIZED,
+        normals=(
+            {}
+            if client_info is None
+            else {
+                "lsp client name": client_info.name,
+                "lsp client version": client_info.version,
+            }
+        ),
+    )
+
+    client_capabilities = initialize_result.client_capabilities
+    LOG.debug(f"Client capabilities: {client_capabilities}")
+    server_state = ServerState(
+        client_capabilities=client_capabilities,
+        server_options=initial_server_options,
+    )
+    server = PyreServer(
+        input_channel=stdin,
+        output_channel=stdout,
+        server_state=server_state,
+        pyre_manager=background.TaskManager(
+            PyreDaemonLaunchAndSubscribeHandler(
+                server_options_reader=server_options_reader,
+                remote_logging=remote_logging,
+                client_output_channel=stdout,
+                server_state=server_state,
+            )
+        ),
+        handler=RequestHandler(
+            server_state=server_state,
+        ),
+    )
+    return await server.run()
 
 
 def run(
