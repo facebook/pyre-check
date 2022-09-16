@@ -550,6 +550,30 @@ let test_pep_675 context =
     ];
   assert_type_errors
     {|
+      from typing import LiteralString
+
+      def expect_literal_string(s: LiteralString) -> None: ...
+
+      def bar() -> None:
+        x = 42
+        y = True
+        z = "world"
+        expect_literal_string(f"hello")
+        expect_literal_string(f"hello {x}")
+        expect_literal_string(f"hello {y}")
+        expect_literal_string(f"hello {z}")
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import LiteralString
+
+      x: LiteralString = f"hello"
+      y: LiteralString = f"{x} world"
+    |}
+    [];
+  assert_type_errors
+    {|
       from typing_extensions import LiteralString
 
       def expect_literal_string(s: LiteralString) -> None: ...

@@ -2308,6 +2308,8 @@ let literal_string literal = Literal (String (LiteralValue literal))
 
 let literal_bytes literal = Literal (Bytes literal)
 
+let literal_any_string = Literal (String AnyLiteral)
+
 let tuple parameters = Tuple (Concrete parameters)
 
 let union parameters =

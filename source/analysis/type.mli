@@ -507,6 +507,8 @@ val literal_string : string -> t
 
 val literal_bytes : string -> t
 
+val literal_any_string : t
+
 val tuple : t list -> t
 
 val union : t list -> t

@@ -877,8 +877,8 @@ let test_forward_expression context =
 
   (* String literals. *)
   assert_forward "'string'" (Type.literal_string "string");
-  assert_forward "f'string'" Type.string;
-  assert_forward "f'string{1}'" Type.string;
+  assert_forward "f'string'" Type.literal_any_string;
+  assert_forward "f'string{1}'" Type.literal_any_string;
   assert_forward "f'string{undefined}'" Type.string;
 
   (* Ternaries. *)

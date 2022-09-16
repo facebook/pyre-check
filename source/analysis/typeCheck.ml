@@ -2708,15 +2708,23 @@ module State (Context : Context) = struct
           base = None;
         }
     | FormatString substrings ->
-        let forward_substring ((resolution, errors) as sofar) = function
+        let forward_substring ((resolution, has_non_literal, errors) as sofar) = function
           | Substring.Literal _ -> sofar
           | Substring.Format expression ->
               forward_expression ~resolution expression
-              |> fun { resolution; errors = new_errors; _ } ->
-              resolution, List.append new_errors errors
+              |> fun { resolution; errors = new_errors; resolved; _ } ->
+              let has_non_literal =
+                match resolved with
+                | Type.Literal _ -> has_non_literal
+                | _ -> true
+              in
+              resolution, has_non_literal, List.append new_errors errors
         in
-        let resolution, errors = List.fold substrings ~f:forward_substring ~init:(resolution, []) in
-        { resolution; errors; resolved = Type.string; resolved_annotation = None; base = None }
+        let resolution, has_non_literal, errors =
+          List.fold substrings ~f:forward_substring ~init:(resolution, false, [])
+        in
+        let resolved = if has_non_literal then Type.string else Type.literal_any_string in
+        { resolution; errors; resolved; resolved_annotation = None; base = None }
     | Generator { Comprehension.element; generators } ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_comprehension ~resolution ~errors:[] ~element ~generators
