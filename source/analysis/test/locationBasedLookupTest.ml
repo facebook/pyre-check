@@ -2650,33 +2650,22 @@ let test_coverage_gaps_in_module context =
     let lookup = generate_lookup ~context source in
     let all_nodes_and_coverage = LocationBasedLookup.get_all_nodes_and_coverage_data lookup in
     let coverage_data = List.map ~f:(fun (_, coverage) -> coverage) all_nodes_and_coverage in
-    let actual_coverage_gaps = LocationBasedLookup.coverage_gaps_in_module coverage_data in
-    let equal_coverage_gap left right =
-      let {
-        LocationBasedLookup.coverage_data = { expression = left_expression; type_ = left_type };
-        reason = left_reason;
-      }
-        =
-        left
-      in
-      let {
-        LocationBasedLookup.coverage_data =
-          { LocationBasedLookup.expression = right_expression; type_ = right_type };
-        reason = right_reason;
-      }
-        =
-        right
-      in
-      let option_insensitive_compare left right =
-        match left, right with
-        | Some left, Some right -> location_insensitive_compare left right = 0
-        | None, None -> true
-        | _ -> false
-      in
-      option_insensitive_compare left_expression right_expression
+    let equal_coverage_gap
+        {
+          LocationBasedLookup.coverage_data = { expression = left_expression; type_ = left_type };
+          reason = left_reason;
+        }
+        {
+          LocationBasedLookup.coverage_data =
+            { LocationBasedLookup.expression = right_expression; type_ = right_type };
+          reason = right_reason;
+        }
+      =
+      Option.compare location_insensitive_compare left_expression right_expression = 0
       && Type.equal left_type right_type
       && [%compare.equal: LocationBasedLookup.reason] left_reason right_reason
     in
+    let actual_coverage_gaps = LocationBasedLookup.coverage_gaps_in_module coverage_data in
     assert_equal
       ~printer:(fun x -> [%sexp_of: LocationBasedLookup.coverage_gap list] x |> Sexp.to_string_hum)
       ~cmp:(List.equal equal_coverage_gap)
