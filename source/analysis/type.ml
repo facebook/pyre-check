@@ -4398,13 +4398,6 @@ let primitives annotation =
   collect annotation ~predicate
 
 
-let typed_dictionary_class_name ~total =
-  if total then
-    "TypedDictionary"
-  else
-    "NonTotalTypedDictionary"
-
-
 type elements_state = {
   elements: Primitive.t list;
   recursive_type_names: Primitive.t list;
@@ -6434,7 +6427,15 @@ module TypedDictionary = struct
     |> Option.value ~default:false
 
 
-  let class_name = typed_dictionary_class_name
+  (** typing.TypedDict gets preprocessed into TypedDictionary *)
+  let class_name ~total =
+    if total then
+      "TypedDictionary"
+    else
+      "NonTotalTypedDictionary"
+
+
+  let base_typed_dictionary = Primitive (class_name ~total:true)
 
   let is_builtin_typed_dictionary_class base_name =
     List.mem [class_name ~total:true; class_name ~total:false] base_name ~equal:String.equal

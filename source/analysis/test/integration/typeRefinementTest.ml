@@ -1599,6 +1599,156 @@ let test_check_temporary_refinement context =
   ()
 
 
+let test_check_is_typeddict context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+    import typing
+
+    class MovieTypedDict(typing.TypedDict):
+      ...
+
+    x = MovieTypedDict
+    if typing.is_typeddict(x):
+      y = x
+      reveal_type(y)
+    else:
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Type[MovieTypedDict]`."];
+  assert_type_errors
+    {|
+    from typing import is_typeddict, TypedDict
+
+    class MovieTypedDict(TypedDict):
+      ...
+
+    x = MovieTypedDict
+    if is_typeddict(tp=x):
+      y = x
+      reveal_type(y)
+    else:
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Type[MovieTypedDict]`."];
+  assert_type_errors
+    {|
+    from typing import TypedDict, is_typeddict, Dict, Optional
+
+    class NotTypedDict:
+      ...
+
+    x = NotTypedDict
+    if is_typeddict(x):
+      y = x
+      reveal_type(y)
+    else:
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Type[NotTypedDict]`."];
+  (* Type[Optional[A]] is never A since it is not a concrete type. *)
+  assert_type_errors
+    {|
+    from typing import TypedDict, is_typeddict, Dict, Optional
+
+    class MovieTypedDict(TypedDict):
+      ...
+
+    x = Optional[MovieTypedDict]
+    if is_typeddict(x):
+      y = x
+      reveal_type(y)
+    else:
+       reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Type[Optional[MovieTypedDict]]`."];
+  (* TODO(T131953571) Support Type[parametric types] *)
+  assert_type_errors
+    {|
+    from typing import TypedDict, is_typeddict, Dict, Union
+
+    class MovieTypedDict(TypedDict):
+      ...
+    class BookTypedDict(TypedDict):
+      ...
+
+    x = Union[MovieTypedDict, BookTypedDict]
+    if is_typeddict(x):
+      reveal_type(x)
+    else:
+      reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+    from typing import TypedDict, is_typeddict, Dict, Union
+
+    class MovieTypedDict(TypedDict):
+      ...
+    class Child(MovieTypedDict):
+      ...
+
+    x = Child
+    if is_typeddict(x):
+      y = x
+      reveal_type(y)
+    else:
+       reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Type[Child]`."];
+  (* is_typeddict checks for Type[ConcreteTypedDict], not ConcreteTypedDict. *)
+  assert_type_errors
+    {|
+    from typing import is_typeddict, TypedDict
+
+    class MovieTypedDict(TypedDict):
+      ...
+
+    def foo(x: MovieTypedDict) -> None:
+      if is_typeddict(x):
+        y = x
+        reveal_type(y)
+      else:
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `MovieTypedDict`."];
+  assert_type_errors
+    {|
+    from typing import is_typeddict, TypedDict, Any
+
+    def foo(x: Any) -> None:
+      if is_typeddict(x):
+        reveal_type(x)
+      else:
+        reveal_type(x)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+    from typing import is_typeddict, TypedDict, Type, Any
+
+    def foo(x: Type[Any]) -> None:
+      if is_typeddict(x):
+        reveal_type(x)
+      else:
+        reveal_type(x)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type that does not contain `Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `Type[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Type[typing.Any]`.";
+    ];
+
+  ()
+
+
 let () =
   "refinement"
   >::: [
@@ -1611,5 +1761,6 @@ let () =
          "check_callable" >:: test_check_callable;
          "check_final_attribute_refinement" >:: test_check_final_attribute_refinement;
          "check_temporary_refinement" >:: test_check_temporary_refinement;
+         "check_is_typeddict" >:: test_check_is_typeddict;
        ]
   |> Test.run

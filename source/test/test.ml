@@ -1173,6 +1173,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         NotRequired: _SpecialForm = ...
 
         Self: _SpecialForm = ...
+
+        if sys.version_info >= (3, 10):
+          def is_typeddict(tp: object) -> bool: ...
       |}
     );
     "asyncio/coroutines.pyi", {|

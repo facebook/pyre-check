@@ -3426,6 +3426,83 @@ module State (Context : Context) = struct
                 Value (Annotation.create_mutable existing_type |> refine_local ~name)
             | None -> Unreachable)
         | _ -> Value resolution)
+    (* Is typeddict *)
+    | Call
+        {
+          callee =
+            {
+              Node.value =
+                Name
+                  (Name.Attribute
+                    {
+                      base = { Node.location = _; value = Name (Name.Identifier "typing") };
+                      attribute = "is_typeddict";
+                      special = false;
+                    });
+              _;
+            };
+          arguments = [{ value = { Node.value = Name name; _ }; _ }];
+        }
+      when is_simple_name name -> (
+        match existing_annotation name with
+        | Some existing_annotation -> (
+            match Annotation.annotation existing_annotation with
+            | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
+                if
+                  Type.is_any typed_dictionary
+                  or GlobalResolution.is_typed_dictionary
+                       ~resolution:global_resolution
+                       typed_dictionary
+                then
+                  Value resolution
+                else
+                  Unreachable
+            | Type.Any -> Value resolution
+            | _ -> Unreachable)
+        | _ -> Value resolution)
+    (* Is not typeddict *)
+    | UnaryOperator
+        {
+          UnaryOperator.operator = UnaryOperator.Not;
+          operand =
+            {
+              Node.value =
+                Call
+                  {
+                    callee =
+                      {
+                        Node.value =
+                          Name
+                            (Name.Attribute
+                              {
+                                base =
+                                  { Node.location = _; value = Name (Name.Identifier "typing") };
+                                attribute = "is_typeddict";
+                                special = false;
+                              });
+                        _;
+                      };
+                    arguments = [{ value = { Node.value = Name name; _ }; _ }];
+                  };
+              _;
+            };
+          _;
+        }
+      when is_simple_name name -> (
+        match existing_annotation name with
+        | Some existing_annotation -> (
+            match Annotation.annotation existing_annotation with
+            | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
+                if
+                  GlobalResolution.is_typed_dictionary
+                    ~resolution:global_resolution
+                    typed_dictionary
+                then
+                  Unreachable
+                else
+                  Value resolution
+            | _ -> Value resolution)
+        | _ -> Value resolution)
     (* `is` and `in` refinement *)
     | ComparisonOperator
         {

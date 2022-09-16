@@ -1067,6 +1067,8 @@ val is_concrete : t -> bool
 module TypedDictionary : sig
   open Record.TypedDictionary
 
+  val base_typed_dictionary : t
+
   val anonymous : t typed_dictionary_field list -> t record
 
   val create_field
