@@ -191,9 +191,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let transform_non_leaves path taint =
     let f prefix = prefix @ path in
-    match path with
-    | Abstract.TreeDomain.Label.AnyIndex :: _ -> taint
-    | _ -> BackwardTaint.transform Features.ReturnAccessPathSet.Element Map ~f taint
+    BackwardTaint.transform Features.ReturnAccessPathSet.Element Map ~f taint
 
 
   let read_tree = BackwardState.Tree.read ~transform_non_leaves

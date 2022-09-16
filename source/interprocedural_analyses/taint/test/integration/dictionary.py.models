@@ -924,7 +924,10 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "obscure:model" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "tito": [ { "line": 296, "start": 38, "end": 52 } ],
             "root": {
@@ -961,7 +964,9 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
       { "via": "obscure:model" },
-      { "always-via": "tito" }
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -996,7 +1001,10 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "obscure:model" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
             ],
             "tito": [ { "line": 301, "start": 41, "end": 55 } ],
             "root": {
@@ -1033,7 +1041,9 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
       { "via": "obscure:model" },
-      { "always-via": "tito" }
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1442,7 +1452,11 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+              {
+                "return_paths": [ "[*]", ".**keys" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
             "local_features": [
               { "has": "first-index" },
@@ -1470,7 +1484,9 @@
         "port": "formal(keys)[*]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": [ "[*]", ".**keys" ], "kind": "LocalReturn" }
+            ],
             "local_features": [
               { "via": "obscure:model" }, { "via": "tito" }
             ],
@@ -1492,7 +1508,11 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+              {
+                "return_paths": [ "[*]", ".**keys" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
             "local_features": [
               { "has": "first-index" },
@@ -2123,6 +2143,23 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.dictionary_tito_any_index",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[*]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.forward_comprehension_key_sink",
     "sinks": [
       {
@@ -2269,7 +2306,7 @@
         "port": "formal(d).**keys",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": [ "[*]" ], "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -2855,7 +2892,9 @@
         "port": "formal(y)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "[0]" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": [ "[0][*]" ], "kind": "LocalReturn" }
+            ],
             "decl": null
           }
         ]

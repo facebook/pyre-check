@@ -445,3 +445,7 @@ def issue_in_keys():
     d[_test_source()] = "bar"
     backward_weak_update(d)  # Issue here
     _test_sink(d.keys())  # Issue here
+
+
+def dictionary_tito_any_index(arg):
+    return {i: arg for i in range(10)}
