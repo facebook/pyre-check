@@ -2422,11 +2422,7 @@ let extract_source_model
     ~define
     ~resolution
     ~taint_configuration:
-      {
-        TaintConfiguration.analysis_model_constraints =
-          { maximum_model_width; maximum_return_access_path_length; maximum_trace_length; _ };
-        _;
-      }
+      { TaintConfiguration.analysis_model_constraints = { maximum_trace_length; _ }; _ }
     ~breadcrumbs_to_attach
     ~via_features_to_attach
     exit_taint
@@ -2455,8 +2451,9 @@ let extract_source_model
     |> ForwardState.Tree.add_local_breadcrumbs return_type_breadcrumbs
     |> ForwardState.Tree.limit_to
          ~transform:(ForwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
-         ~width:maximum_model_width
-    |> ForwardState.Tree.approximate_return_access_paths ~maximum_return_access_path_length
+         ~width:TaintConfiguration.maximum_model_width
+    |> ForwardState.Tree.approximate_return_access_paths
+         ~maximum_return_access_path_length:TaintConfiguration.maximum_return_access_path_length
   in
   let return_taint =
     let return_variable =

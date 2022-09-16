@@ -37,8 +37,6 @@ type literal_string_source = {
 type implicit_sources = { literal_strings: literal_string_source list }
 
 type analysis_model_constraints = {
-  maximum_model_width: int;
-  maximum_return_access_path_length: int;
   maximum_overrides_to_analyze: int option;
   maximum_trace_length: int option;
   maximum_tito_depth: int option;
@@ -195,20 +193,22 @@ val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> 
 
 val is_missing_flow_analysis : Configuration.MissingFlowKind.t -> bool
 
-val get_maximum_model_width : unit -> int
+val transform_splits : 'a list -> ('a list * 'a list) list
 
 val get_maximum_overrides_to_analyze : unit -> int option
 
 val runtime_check_invariants : unit -> bool
 
+val maximum_model_width : int
+
 val maximum_return_access_path_width : int
 
 val maximum_return_access_path_depth : int
+
+val maximum_return_access_path_length : int
 
 val maximum_tito_positions : int
 
 val maximum_tree_depth_after_widening : int
 
 val maximum_tito_leaves : int
-
-val transform_splits : 'a list -> ('a list * 'a list) list

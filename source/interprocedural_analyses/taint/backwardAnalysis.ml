@@ -2084,13 +2084,7 @@ let extract_tito_and_sink_models
     ~taint_configuration:
       {
         TaintConfiguration.analysis_model_constraints =
-          {
-            maximum_model_width;
-            maximum_return_access_path_length;
-            maximum_trace_length;
-            maximum_tito_depth;
-            _;
-          };
+          { maximum_trace_length; maximum_tito_depth; _ };
         _;
       }
     ~existing_backward
@@ -2121,8 +2115,9 @@ let extract_tito_and_sink_models
     |> BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs
     |> BackwardState.Tree.limit_to
          ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
-         ~width:maximum_model_width
-    |> BackwardState.Tree.approximate_return_access_paths ~maximum_return_access_path_length
+         ~width:TaintConfiguration.maximum_model_width
+    |> BackwardState.Tree.approximate_return_access_paths
+         ~maximum_return_access_path_length:TaintConfiguration.maximum_return_access_path_length
   in
 
   let split_and_simplify model (parameter, name, original) =

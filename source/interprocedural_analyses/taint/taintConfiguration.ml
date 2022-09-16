@@ -43,21 +43,13 @@ type implicit_sources = { literal_strings: literal_string_source list }
 let empty_implicit_sources = { literal_strings = [] }
 
 type analysis_model_constraints = {
-  maximum_model_width: int;
-  maximum_return_access_path_length: int;
   maximum_overrides_to_analyze: int option;
   maximum_trace_length: int option;
   maximum_tito_depth: int option;
 }
 
 let default_analysis_model_constraints =
-  {
-    maximum_model_width = 25;
-    maximum_return_access_path_length = 10;
-    maximum_overrides_to_analyze = None;
-    maximum_trace_length = None;
-    maximum_tito_depth = None;
-  }
+  { maximum_overrides_to_analyze = None; maximum_trace_length = None; maximum_tito_depth = None }
 
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
@@ -1467,11 +1459,6 @@ let is_missing_flow_analysis kind =
       Option.equal Configuration.MissingFlowKind.equal (Some kind) find_missing_flows
 
 
-let get_maximum_model_width () =
-  match get () with
-  | { analysis_model_constraints = { maximum_model_width; _ }; _ } -> maximum_model_width
-
-
 let literal_string_sources () =
   let { implicit_sources; _ } = get () in
   implicit_sources.literal_strings
@@ -1487,9 +1474,13 @@ let runtime_check_invariants () =
   Sys.getenv "PYSA_CHECK_INVARIANTS" |> Option.is_some
 
 
+let maximum_model_width = 25
+
 let maximum_return_access_path_width = 5
 
 let maximum_return_access_path_depth = 3
+
+let maximum_return_access_path_length = 10
 
 let maximum_tito_positions = 50
 
