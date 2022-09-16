@@ -26,7 +26,7 @@ val get_sinks : t -> Issue.SinkTreeWithHandle.t list
 
 val get_tito : t -> Domains.BackwardState.Tree.t
 
-val get_sanitize : t -> Domains.Sanitize.t
+val get_sanitize : t -> Sanitize.t
 
 val get_modes : t -> Model.ModeSet.t
 

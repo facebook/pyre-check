@@ -27,7 +27,7 @@ type parameter_source_taint = {
 
 type parameter_sanitize = {
   name: string;
-  sanitize: Domains.Sanitize.t;
+  sanitize: Sanitize.t;
 }
 
 type error_expectation = {
@@ -43,9 +43,9 @@ type expectation = {
   tito_parameters: parameter_taint list;
   returns: Sources.t list;
   errors: error_expectation list;
-  global_sanitizer: Domains.Sanitize.t;
-  parameters_sanitizer: Domains.Sanitize.t;
-  return_sanitizer: Domains.Sanitize.t;
+  global_sanitizer: Sanitize.t;
+  parameters_sanitizer: Sanitize.t;
+  return_sanitizer: Sanitize.t;
   parameter_sanitizers: parameter_sanitize list;
   analysis_modes: Model.ModeSet.t;
 }
@@ -57,9 +57,9 @@ let outcome
     ?(tito_parameters = [])
     ?(returns = [])
     ?(errors = [])
-    ?(global_sanitizer = Domains.Sanitize.empty)
-    ?(parameters_sanitizer = Domains.Sanitize.empty)
-    ?(return_sanitizer = Domains.Sanitize.empty)
+    ?(global_sanitizer = Sanitize.empty)
+    ?(parameters_sanitizer = Sanitize.empty)
+    ?(return_sanitizer = Sanitize.empty)
     ?(parameter_sanitizers = [])
     ?(analysis_modes = Model.ModeSet.empty)
     define_name
@@ -168,7 +168,7 @@ let check_expectation
     | _ -> map
   in
   let parameter_sanitize_map =
-    Domains.SanitizeRootMap.to_alist sanitizers.roots
+    Sanitize.RootMap.to_alist sanitizers.roots
     |> List.fold ~init:String.Map.empty ~f:extract_parameter_sanitize
   in
   let parameter_taint_in_taint_out_map =
@@ -225,24 +225,24 @@ let check_expectation
     match data with
     | `Both (expected, actual) ->
         assert_equal
-          ~cmp:Domains.Sanitize.equal
-          ~printer:Domains.Sanitize.show
+          ~cmp:Sanitize.equal
+          ~printer:Sanitize.show
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           actual
     | `Left expected ->
         assert_equal
-          ~cmp:Domains.Sanitize.equal
-          ~printer:Domains.Sanitize.show
+          ~cmp:Sanitize.equal
+          ~printer:Sanitize.show
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
-          Domains.Sanitize.empty
+          Sanitize.empty
     | `Right actual ->
         assert_equal
-          ~cmp:Domains.Sanitize.equal
-          ~printer:Domains.Sanitize.show
+          ~cmp:Sanitize.equal
+          ~printer:Sanitize.show
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
-          Domains.Sanitize.empty
+          Sanitize.empty
           actual
   in
   let expected_sinks =
@@ -331,21 +331,13 @@ let check_expectation
   String.Map.iter2 ~f:check_each_sink expected_tito parameter_taint_in_taint_out_map;
 
   (* Check sanitizers *)
+  assert_equal ~cmp:Sanitize.equal ~printer:Sanitize.show global_sanitizer sanitizers.global;
+  assert_equal ~cmp:Sanitize.equal ~printer:Sanitize.show parameters_sanitizer sanitizers.parameters;
   assert_equal
-    ~cmp:Domains.Sanitize.equal
-    ~printer:Domains.Sanitize.show
-    global_sanitizer
-    sanitizers.global;
-  assert_equal
-    ~cmp:Domains.Sanitize.equal
-    ~printer:Domains.Sanitize.show
-    parameters_sanitizer
-    sanitizers.parameters;
-  assert_equal
-    ~cmp:Domains.Sanitize.equal
-    ~printer:Domains.Sanitize.show
+    ~cmp:Sanitize.equal
+    ~printer:Sanitize.show
     return_sanitizer
-    (Domains.SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots);
+    (Sanitize.RootMap.get AccessPath.Root.LocalResult sanitizers.roots);
 
   assert_equal
     (Map.length expected_parameter_sanitizers)

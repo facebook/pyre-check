@@ -1193,7 +1193,6 @@ let sanitize_from_annotations ~source_sink_filter annotations =
           source_sink_filter
           (Sinks.from_sanitized_sink sink)
   in
-  let open Domains in
   let to_sanitize = function
     | AllSources -> Sanitize.from_sources_only SanitizeTransform.SourceSet.all
     | SpecificSource source when should_keep_source source ->
@@ -1216,9 +1215,8 @@ let sanitize_from_annotations ~source_sink_filter annotations =
 
 let introduce_sanitize ~source_sink_filter ~root model annotations =
   let roots =
-    Domains.SanitizeRootMap.of_list
-      [root, sanitize_from_annotations ~source_sink_filter annotations]
-    |> Domains.SanitizeRootMap.join model.Model.sanitizers.roots
+    Sanitize.RootMap.of_list [root, sanitize_from_annotations ~source_sink_filter annotations]
+    |> Sanitize.RootMap.join model.Model.sanitizers.roots
   in
   let sanitizers = { model.sanitizers with roots } in
   { model with sanitizers }

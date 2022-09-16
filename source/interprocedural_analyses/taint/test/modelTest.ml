@@ -352,7 +352,6 @@ let test_source_models context =
 
 
 let test_global_sanitize context =
-  let open Taint.Domains in
   let assert_model = assert_model ~context in
   let assert_invalid_model = assert_invalid_model ~context in
   assert_model
@@ -516,7 +515,6 @@ let test_global_sanitize context =
 
 
 let test_sanitize_single_trace context =
-  let open Taint.Domains in
   let assert_model = assert_model ~context in
   let assert_invalid_model = assert_invalid_model ~context in
   assert_invalid_model
@@ -682,7 +680,6 @@ let test_sanitize_single_trace context =
 
 
 let test_attribute_sanitize context =
-  let open Taint.Domains in
   let assert_model = assert_model ~context in
   assert_model
     ~model_source:"django.http.Request.GET: Sanitize = ..."
@@ -761,7 +758,6 @@ let test_attribute_sanitize context =
 
 
 let test_parameter_sanitize context =
-  let open Taint.Domains in
   let assert_model = assert_model ~context in
   let assert_invalid_model = assert_invalid_model ~context in
   assert_model
@@ -968,7 +964,6 @@ let test_parameter_sanitize context =
 
 
 let test_return_sanitize context =
-  let open Taint.Domains in
   let assert_model = assert_model ~context in
   let assert_invalid_model = assert_invalid_model ~context in
   assert_model
@@ -1128,7 +1123,6 @@ let test_return_sanitize context =
 
 
 let test_parameters_sanitize context =
-  let open Taint.Domains in
   let assert_model = assert_model ~context in
   let assert_invalid_model = assert_invalid_model ~context in
   assert_model
@@ -3904,7 +3898,6 @@ let test_filter_by_rules context =
 
 
 let test_filter_by_sources context =
-  let open Taint.Domains in
   let assert_model = assert_model ~context in
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
@@ -4001,7 +3994,6 @@ let test_filter_by_sources context =
 
 
 let test_filter_by_sinks context =
-  let open Taint.Domains in
   let assert_model = assert_model ~context in
   assert_model
     ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])

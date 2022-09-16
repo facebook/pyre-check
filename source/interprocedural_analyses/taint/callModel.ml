@@ -58,7 +58,7 @@ let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments
            argument.Expression.Call.Argument.value, argument_match)
   in
   let sanitize_argument_matches =
-    SanitizeRootMap.roots sanitizers.roots
+    Sanitize.RootMap.roots sanitizers.roots
     |> AccessPath.match_actuals_to_formals arguments
     |> List.map ~f:(fun (argument, argument_match) ->
            argument.Expression.Call.Argument.value, argument_match)
@@ -74,11 +74,12 @@ let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
     SanitizeTransformSet.join tito { SanitizeTransformSet.sources; sinks }
   in
   List.map
-    ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots |> to_tito_sanitize)
+    ~f:(fun { AccessPath.root; _ } ->
+      Sanitize.RootMap.get root sanitizers.roots |> to_tito_sanitize)
     sanitize_matches
   |> List.fold ~f:SanitizeTransformSet.join ~init:SanitizeTransformSet.bottom
   |> SanitizeTransformSet.join
-       (SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots |> to_tito_sanitize)
+       (Sanitize.RootMap.get AccessPath.Root.LocalResult sanitizers.roots |> to_tito_sanitize)
   |> SanitizeTransformSet.join (to_tito_sanitize sanitizers.global)
   |> SanitizeTransformSet.join (to_tito_sanitize sanitizers.parameters)
 

@@ -29,7 +29,7 @@ module Sanitizers : sig
   type t = {
     global: Sanitize.t;
     parameters: Sanitize.t;
-    roots: SanitizeRootMap.t;
+    roots: Sanitize.RootMap.t;
   }
   [@@deriving show]
 

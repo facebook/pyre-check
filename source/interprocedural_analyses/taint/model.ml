@@ -137,7 +137,7 @@ module Sanitizers = struct
     (* Sanitizers applying to all parameters, in both traces. *)
     parameters: Sanitize.t;
     (* Map from parameter or return value to sanitizers applying in both traces. *)
-    roots: SanitizeRootMap.t;
+    roots: Sanitize.RootMap.t;
   }
 
   let pp formatter { global; parameters; roots } =
@@ -146,17 +146,17 @@ module Sanitizers = struct
       "  Global Sanitizer: %s\n  Parameters Sanitizer: %s\n  Sanitizers: %s"
       (json_to_string ~indent:"    " (Sanitize.to_json global))
       (json_to_string ~indent:"    " (Sanitize.to_json parameters))
-      (json_to_string ~indent:"    " (SanitizeRootMap.to_json roots))
+      (json_to_string ~indent:"    " (Sanitize.RootMap.to_json roots))
 
 
   let show = Format.asprintf "%a" pp
 
   let empty =
-    { global = Sanitize.empty; parameters = Sanitize.empty; roots = SanitizeRootMap.bottom }
+    { global = Sanitize.empty; parameters = Sanitize.empty; roots = Sanitize.RootMap.bottom }
 
 
   let is_empty { global; parameters; roots } =
-    Sanitize.is_empty global && Sanitize.is_empty parameters && SanitizeRootMap.is_bottom roots
+    Sanitize.is_empty global && Sanitize.is_empty parameters && Sanitize.RootMap.is_bottom roots
 
 
   let join
@@ -166,7 +166,7 @@ module Sanitizers = struct
     {
       global = Sanitize.join global_left global_right;
       parameters = Sanitize.join parameters_left parameters_right;
-      roots = SanitizeRootMap.join roots_left roots_right;
+      roots = Sanitize.RootMap.join roots_left roots_right;
     }
 
 
@@ -178,7 +178,7 @@ module Sanitizers = struct
     =
     Sanitize.less_or_equal ~left:global_left ~right:global_right
     && Sanitize.less_or_equal ~left:parameters_left ~right:parameters_right
-    && SanitizeRootMap.less_or_equal ~left:roots_left ~right:roots_right
+    && Sanitize.RootMap.less_or_equal ~left:roots_left ~right:roots_right
 end
 
 module Mode = struct
@@ -528,8 +528,8 @@ let apply_sanitizers
     | Variable _ -> failwith "unexpected"
   in
   let source_taint, taint_in_taint_out, sink_taint =
-    SanitizeRootMap.fold
-      SanitizeRootMap.KeyValue
+    Sanitize.RootMap.fold
+      Sanitize.RootMap.KeyValue
       ~f:sanitize_root
       ~init:(source_taint, taint_in_taint_out, sink_taint)
       roots
@@ -641,8 +641,8 @@ let to_json
       model_json
   in
   let model_json =
-    if not (SanitizeRootMap.is_bottom root_sanitizers) then
-      model_json @ ["sanitizers", SanitizeRootMap.to_json root_sanitizers]
+    if not (Sanitize.RootMap.is_bottom root_sanitizers) then
+      model_json @ ["sanitizers", Sanitize.RootMap.to_json root_sanitizers]
     else
       model_json
   in
