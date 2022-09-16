@@ -9,15 +9,13 @@ from typing import Dict, List, Set
 
 from .. import timer
 
-from . import language_server_protocol as lsp
-
-from .pyre_server_options import PyreServerOptions
+from . import language_server_protocol as lsp, pyre_server_options
 
 
 @dataclasses.dataclass
 class ServerState:
     # State that can only change on config reload
-    server_options: PyreServerOptions
+    server_options: pyre_server_options.PyreServerOptions
 
     # Immutable States
     client_capabilities: lsp.ClientCapabilities = lsp.ClientCapabilities()

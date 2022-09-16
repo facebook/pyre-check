@@ -39,6 +39,7 @@ from ..connections import (
 from ..language_server_features import (
     DefinitionAvailability,
     HoverAvailability,
+    LanguageServerFeatures,
     ReferencesAvailability,
     TypeCoverageAvailability,
     TypeErrorsAvailability,
@@ -48,25 +49,22 @@ from ..persistent import (
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
-    LanguageServerFeatures,
     PyreDaemonLaunchAndSubscribeHandler,
     PyreDaemonShutdown,
-    PyreServer,
-    PyreServerOptions,
-    PyreServerOptionsReader,
     try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
 )
-from ..pyre_server import read_lsp_request
+from ..pyre_server import PyreServer, read_lsp_request
+from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 from ..request_handler import (
     AbstractRequestHandler,
     path_to_coverage_response,
     RequestHandler,
-    ServerState,
     to_coverage_result,
     uncovered_range_to_diagnostic,
 )
+from ..server_state import ServerState
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
 
 

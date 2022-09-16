@@ -15,10 +15,11 @@ from . import (
     commands,
     connections,
     find_symbols,
+    language_server_features as features,
     language_server_protocol as lsp,
+    request_handler,
+    server_state as state,
 )
-from .language_server_features import LanguageServerFeatures
-from .request_handler import AbstractRequestHandler, ServerState
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
@@ -74,9 +75,9 @@ class PyreServer:
     # inside this task manager is a PyreDaemonLaunchAndSubscribeHandler
     pyre_manager: background.TaskManager
     # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
-    server_state: ServerState
+    server_state: state.ServerState
 
-    handler: AbstractRequestHandler
+    handler: request_handler.AbstractRequestHandler
 
     async def write_telemetry(
         self,
@@ -96,7 +97,7 @@ class PyreServer:
                 ),
             )
 
-    def get_language_server_features(self) -> LanguageServerFeatures:
+    def get_language_server_features(self) -> features.LanguageServerFeatures:
         return self.server_state.server_options.language_server_features
 
     async def wait_for_exit(self) -> commands.ExitCode:

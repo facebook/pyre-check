@@ -13,19 +13,15 @@ from typing import Callable, Optional, Sequence
 
 from .. import command_arguments, configuration as configuration_module, identifiers
 
-from . import backend_arguments, commands, daemon_socket, frontend_configuration, start
-from .language_server_features import (
-    DefinitionAvailability,
-    DocumentSymbolsAvailability,
-    HoverAvailability,
-    LanguageServerFeatures,
-    ReferencesAvailability,
-    TypeCoverageAvailability,
-    TypeErrorsAvailability,
-    UnsavedChangesAvailability,
+from . import (
+    backend_arguments,
+    commands,
+    daemon_socket,
+    frontend_configuration,
+    language_server_features as features,
+    log_lsp_event,
+    start,
 )
-
-from .log_lsp_event import _log_lsp_event, LSPEvent
 
 PyreServerOptionsReader = Callable[[], "PyreServerOptions"]
 FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
@@ -37,7 +33,7 @@ class PyreServerOptions:
     binary: str
     project_identifier: str
     start_arguments: start.Arguments
-    language_server_features: LanguageServerFeatures
+    language_server_features: features.LanguageServerFeatures
     strict_default: bool
     excludes: Sequence[str]
     flavor: identifiers.PyreFlavor
@@ -54,13 +50,13 @@ class PyreServerOptions:
         start_command_argument: command_arguments.StartArguments,
         configuration: frontend_configuration.Base,
         enabled_telemetry_event: bool,
-        hover: Optional[HoverAvailability],
-        definition: Optional[DefinitionAvailability],
-        document_symbols: Optional[DocumentSymbolsAvailability],
-        references: Optional[ReferencesAvailability],
-        type_errors: TypeErrorsAvailability,
-        type_coverage: Optional[TypeCoverageAvailability],
-        unsaved_changes: Optional[UnsavedChangesAvailability],
+        hover: Optional[features.HoverAvailability],
+        definition: Optional[features.DefinitionAvailability],
+        document_symbols: Optional[features.DocumentSymbolsAvailability],
+        references: Optional[features.ReferencesAvailability],
+        type_errors: features.TypeErrorsAvailability,
+        type_coverage: Optional[features.TypeCoverageAvailability],
+        unsaved_changes: Optional[features.UnsavedChangesAvailability],
     ) -> PyreServerOptions:
         binary_location = configuration.get_binary_location(download_if_needed=True)
         if binary_location is None:
@@ -82,7 +78,7 @@ class PyreServerOptions:
             binary=str(binary_location),
             project_identifier=configuration.get_project_identifier(),
             start_arguments=start_arguments,
-            language_server_features=LanguageServerFeatures.create(
+            language_server_features=features.LanguageServerFeatures.create(
                 configuration=configuration,
                 hover=hover,
                 definition=definition,
@@ -103,13 +99,13 @@ class PyreServerOptions:
         start_command_argument: command_arguments.StartArguments,
         read_frontend_configuration: FrontendConfigurationReader,
         enabled_telemetry_event: bool,
-        hover: Optional[HoverAvailability],
-        definition: Optional[DefinitionAvailability],
-        document_symbols: Optional[DocumentSymbolsAvailability],
-        references: Optional[ReferencesAvailability],
-        type_errors: TypeErrorsAvailability,
-        type_coverage: Optional[TypeCoverageAvailability],
-        unsaved_changes: Optional[UnsavedChangesAvailability],
+        hover: Optional[features.HoverAvailability],
+        definition: Optional[features.DefinitionAvailability],
+        document_symbols: Optional[features.DocumentSymbolsAvailability],
+        references: Optional[features.ReferencesAvailability],
+        type_errors: features.TypeErrorsAvailability,
+        type_coverage: Optional[features.TypeCoverageAvailability],
+        unsaved_changes: Optional[features.UnsavedChangesAvailability],
     ) -> PyreServerOptionsReader:
         def read() -> PyreServerOptions:
             return PyreServerOptions.create(
@@ -136,9 +132,9 @@ def read_server_options(
         LOG.info("Reading Pyre server configurations...")
         return server_options_reader()
     except Exception:
-        _log_lsp_event(
+        log_lsp_event._log_lsp_event(
             remote_logging=remote_logging,
-            event=LSPEvent.NOT_CONFIGURED,
+            event=log_lsp_event.LSPEvent.NOT_CONFIGURED,
             normals={
                 "exception": traceback.format_exc(),
             },

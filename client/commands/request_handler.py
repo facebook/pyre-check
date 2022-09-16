@@ -20,12 +20,11 @@ from . import (
     daemon_connection,
     daemon_query,
     expression_level_coverage,
+    language_server_features as features,
     language_server_protocol as lsp,
+    server_state as state,
     statistics,
 )
-
-from .language_server_features import LanguageServerFeatures, TypeCoverageAvailability
-from .server_state import ServerState
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -192,12 +191,12 @@ class AbstractRequestHandler(abc.ABC):
 class RequestHandler(AbstractRequestHandler):
     def __init__(
         self,
-        server_state: ServerState,
+        server_state: state.ServerState,
     ) -> None:
         self.server_state = server_state
         self.socket_path: Path = server_state.server_options.get_socket_path()
 
-    def get_language_server_features(self) -> LanguageServerFeatures:
+    def get_language_server_features(self) -> features.LanguageServerFeatures:
         return self.server_state.server_options.language_server_features
 
     async def _query_modules_of_path(
@@ -245,7 +244,7 @@ class RequestHandler(AbstractRequestHandler):
             return file_not_typechecked_coverage_result()
         type_coverage = self.get_language_server_features().type_coverage
         strict_by_default = self.server_state.server_options.strict_default
-        if type_coverage == TypeCoverageAvailability.EXPRESSION_LEVEL:
+        if type_coverage == features.TypeCoverageAvailability.EXPRESSION_LEVEL:
             response = await daemon_query.attempt_async_query(
                 socket_path=self.socket_path,
                 query_text=f"expression_level_coverage('{path}')",

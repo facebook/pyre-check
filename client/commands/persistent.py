@@ -22,21 +22,18 @@ from . import (
     background,
     connections,
     incremental,
+    language_server_features as features,
     language_server_protocol as lsp,
+    log_lsp_event,
+    pyre_server,
+    pyre_server_options,
+    request_handler,
     server_event,
+    server_state as state,
     start,
     subscription,
 )
-from .language_server_features import LanguageServerFeatures
 
-from .log_lsp_event import _log_lsp_event, LSPEvent
-
-from .pyre_server import _wait_for_exit, PyreServer
-
-from .pyre_server_options import PyreServerOptions, PyreServerOptionsReader
-
-from .request_handler import RequestHandler
-from .server_state import ServerState
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -46,16 +43,16 @@ CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
 
 
 def read_server_options(
-    server_options_reader: PyreServerOptionsReader,
+    server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
-) -> "PyreServerOptions":
+) -> "pyre_server_options.PyreServerOptions":
     try:
         LOG.info("Reading Pyre server configurations...")
         return server_options_reader()
     except Exception:
-        _log_lsp_event(
+        log_lsp_event._log_lsp_event(
             remote_logging=remote_logging,
-            event=LSPEvent.NOT_CONFIGURED,
+            event=log_lsp_event.LSPEvent.NOT_CONFIGURED,
             normals={
                 "exception": traceback.format_exc(),
             },
@@ -65,14 +62,14 @@ def read_server_options(
 
 def process_initialize_request(
     parameters: lsp.InitializeParameters,
-    language_server_features: Optional[LanguageServerFeatures] = None,
+    language_server_features: Optional[features.LanguageServerFeatures] = None,
 ) -> lsp.InitializeResult:
     LOG.info(
         f"Received initialization request from {parameters.client_info} "
         f" (pid = {parameters.process_id})"
     )
     if language_server_features is None:
-        language_server_features = LanguageServerFeatures()
+        language_server_features = features.LanguageServerFeatures()
     server_info = lsp.Info(name="pyre", version=version.__version__)
     did_change_result = (
         lsp.TextDocumentSyncKind.FULL
@@ -112,7 +109,7 @@ class InitializationExit:
 async def try_initialize(
     input_channel: connections.AsyncTextReader,
     output_channel: connections.AsyncTextWriter,
-    server_options: PyreServerOptions,
+    server_options: pyre_server_options.PyreServerOptions,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
     Read an LSP message from the input channel and try to initialize an LSP
@@ -166,7 +163,7 @@ async def try_initialize(
         initialized_notification = await lsp.read_json_rpc(input_channel)
         if initialized_notification.method == "shutdown":
             try:
-                await _wait_for_exit(input_channel, output_channel)
+                await pyre_server._wait_for_exit(input_channel, output_channel)
             except lsp.ReadChannelClosedError:
                 # This error can happen when the connection gets closed unilaterally
                 # from the language client, which causes issue when we try to access
@@ -400,16 +397,16 @@ class PyreDaemonShutdown(Exception):
 
 
 class PyreDaemonLaunchAndSubscribeHandler(background.Task):
-    server_options_reader: PyreServerOptionsReader
+    server_options_reader: pyre_server_options.PyreServerOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
     client_output_channel: connections.AsyncTextWriter
-    server_state: ServerState
+    server_state: state.ServerState
 
     def __init__(
         self,
-        server_options_reader: PyreServerOptionsReader,
+        server_options_reader: pyre_server_options.PyreServerOptionsReader,
         client_output_channel: connections.AsyncTextWriter,
-        server_state: ServerState,
+        server_state: state.ServerState,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         self.server_options_reader = server_options_reader
@@ -478,9 +475,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         for path in self.server_state.diagnostics:
             await _publish_diagnostics(self.client_output_channel, path, [])
         last_update_timer = self.server_state.last_diagnostic_update_timer
-        _log_lsp_event(
+        log_lsp_event._log_lsp_event(
             self.remote_logging,
-            LSPEvent.COVERED,
+            log_lsp_event.LSPEvent.COVERED,
             integers={"duration": int(last_update_timer.stop_in_millisecond())},
         )
         # Reset the timestamp to avoid duplicate counting
@@ -592,7 +589,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
 
     @staticmethod
     def _auxiliary_logging_info(
-        server_options: PyreServerOptions,
+        server_options: pyre_server_options.PyreServerOptions,
     ) -> Dict[str, Optional[str]]:
         relative_local_root = (
             server_options.start_arguments.base_arguments.relative_local_root
@@ -610,7 +607,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
 
     async def _try_connect_and_subscribe(
         self,
-        server_options: PyreServerOptions,
+        server_options: pyre_server_options.PyreServerOptions,
         socket_path: Path,
         connection_timer: timer.Timer,
         is_preexisting: bool,
@@ -637,9 +634,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 )
             self.server_state.consecutive_start_failure = 0
             self.server_state.is_user_notified_on_buck_failure = False
-            _log_lsp_event(
+            log_lsp_event._log_lsp_event(
                 remote_logging=self.remote_logging,
-                event=LSPEvent.CONNECTED,
+                event=log_lsp_event.LSPEvent.CONNECTED,
                 integers={"duration": int(connection_timer.stop_in_millisecond())},
                 normals={
                     "connected_to": (
@@ -652,7 +649,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             )
             await self.subscribe_to_type_error(input_channel, output_channel)
 
-    async def launch_and_subscribe(self, server_options: PyreServerOptions) -> None:
+    async def launch_and_subscribe(
+        self, server_options: pyre_server_options.PyreServerOptions
+    ) -> None:
         project_identifier = server_options.project_identifier
         start_arguments = server_options.start_arguments
         socket_path = server_options.get_socket_path()
@@ -692,9 +691,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             # Buck start failures are intentionally not counted towards
             # `consecutive_start_failure` -- they happen far too often in practice
             # so we do not want them to trigger suspensions.
-            _log_lsp_event(
+            log_lsp_event._log_lsp_event(
                 remote_logging=self.remote_logging,
-                event=LSPEvent.NOT_CONNECTED,
+                event=log_lsp_event.LSPEvent.NOT_CONNECTED,
                 integers={"duration": int(connection_timer.stop_in_millisecond())},
                 normals={
                     **self._auxiliary_logging_info(server_options),
@@ -725,9 +724,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 self.server_state.consecutive_start_failure
                 < CONSECUTIVE_START_ATTEMPT_THRESHOLD
             ):
-                _log_lsp_event(
+                log_lsp_event._log_lsp_event(
                     remote_logging=self.remote_logging,
-                    event=LSPEvent.NOT_CONNECTED,
+                    event=log_lsp_event.LSPEvent.NOT_CONNECTED,
                     integers={"duration": int(connection_timer.stop_in_millisecond())},
                     normals={
                         **self._auxiliary_logging_info(server_options),
@@ -742,9 +741,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     fallback_to_notification=True,
                 )
             else:
-                _log_lsp_event(
+                log_lsp_event._log_lsp_event(
                     remote_logging=self.remote_logging,
-                    event=LSPEvent.SUSPENDED,
+                    event=log_lsp_event.LSPEvent.SUSPENDED,
                     integers={"duration": int(connection_timer.stop_in_millisecond())},
                     normals={
                         **self._auxiliary_logging_info(server_options),
@@ -785,9 +784,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             error_message = traceback.format_exc()
             raise
         finally:
-            _log_lsp_event(
+            log_lsp_event._log_lsp_event(
                 remote_logging=self.remote_logging,
-                event=LSPEvent.DISCONNECTED,
+                event=log_lsp_event.LSPEvent.DISCONNECTED,
                 integers={"duration": int(session_timer.stop_in_millisecond())},
                 normals={
                     **self._auxiliary_logging_info(server_options),
@@ -801,7 +800,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
 
 
 async def try_initialize_loop(
-    server_options: PyreServerOptions,
+    server_options: pyre_server_options.PyreServerOptions,
     input_channel: connections.AsyncTextReader,
     output_channel: connections.AsyncTextWriter,
     remote_logging: Optional[backend_arguments.RemoteLogging],
@@ -822,9 +821,9 @@ async def try_initialize_loop(
                 str(exception) if exception is not None else "ignoring notification"
             )
             LOG.info(f"Initialization failed: {message}")
-            _log_lsp_event(
+            log_lsp_event._log_lsp_event(
                 remote_logging=remote_logging,
-                event=LSPEvent.NOT_INITIALIZED,
+                event=log_lsp_event.LSPEvent.NOT_INITIALIZED,
                 normals=(
                     {
                         "exception": message,
@@ -837,7 +836,7 @@ async def try_initialize_loop(
 
 
 async def run_persistent(
-    server_options_reader: PyreServerOptionsReader,
+    server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     initial_server_options = read_server_options(
@@ -852,9 +851,9 @@ async def run_persistent(
         return 0
 
     client_info = initialize_result.client_info
-    _log_lsp_event(
+    log_lsp_event._log_lsp_event(
         remote_logging=remote_logging,
-        event=LSPEvent.INITIALIZED,
+        event=log_lsp_event.LSPEvent.INITIALIZED,
         normals=(
             {}
             if client_info is None
@@ -867,11 +866,11 @@ async def run_persistent(
 
     client_capabilities = initialize_result.client_capabilities
     LOG.debug(f"Client capabilities: {client_capabilities}")
-    server_state = ServerState(
+    server_state = state.ServerState(
         client_capabilities=client_capabilities,
         server_options=initial_server_options,
     )
-    server = PyreServer(
+    server = pyre_server.PyreServer(
         input_channel=stdin,
         output_channel=stdout,
         server_state=server_state,
@@ -883,7 +882,7 @@ async def run_persistent(
                 server_state=server_state,
             )
         ),
-        handler=RequestHandler(
+        handler=request_handler.RequestHandler(
             server_state=server_state,
         ),
     )
@@ -891,7 +890,7 @@ async def run_persistent(
 
 
 def run(
-    read_server_options: PyreServerOptionsReader,
+    read_server_options: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     command_timer = timer.Timer()
@@ -907,9 +906,9 @@ def run(
         error_message = traceback.format_exc()
         return 1
     finally:
-        _log_lsp_event(
+        log_lsp_event._log_lsp_event(
             remote_logging,
-            LSPEvent.STOPPED,
+            log_lsp_event.LSPEvent.STOPPED,
             integers={"duration": int(command_timer.stop_in_millisecond())},
             normals={
                 **({"exception": error_message} if error_message is not None else {})

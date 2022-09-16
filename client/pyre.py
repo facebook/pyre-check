@@ -907,7 +907,7 @@ def persistent(
         flavor=start_command_argument.flavor,
     )
     return commands.persistent.run(
-        read_server_options=commands.persistent.PyreServerOptions.create_reader(
+        read_server_options=commands.pyre_server_options.PyreServerOptions.create_reader(
             start_command_argument=start_command_argument,
             read_frontend_configuration=lambda: commands.frontend_configuration.OpenSource(
                 configuration_module.create_configuration(
