@@ -1482,6 +1482,11 @@ let get_maximum_overrides_to_analyze () =
   maximum_overrides_to_analyze
 
 
+let runtime_check_invariants () =
+  (* Only enabled in tests. *)
+  Sys.getenv "PYSA_CHECK_INVARIANTS" |> Option.is_some
+
+
 let maximum_return_access_path_width = 5
 
 let maximum_return_access_path_depth = 3

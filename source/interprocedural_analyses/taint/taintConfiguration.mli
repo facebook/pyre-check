@@ -199,6 +199,8 @@ val get_maximum_model_width : unit -> int
 
 val get_maximum_overrides_to_analyze : unit -> int option
 
+val runtime_check_invariants : unit -> bool
+
 val maximum_return_access_path_width : int
 
 val maximum_return_access_path_depth : int
