@@ -16,15 +16,7 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
-from .. import (
-    configuration as configuration_module,
-    error,
-    identifiers,
-    json_rpc,
-    log,
-    timer,
-    version,
-)
+from .. import error, identifiers, json_rpc, log, timer, version
 from . import (
     backend_arguments,
     background,
@@ -848,12 +840,9 @@ async def run_persistent(
     server_options_reader: PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
-    try:
-        initial_server_options = read_server_options(
-            server_options_reader, remote_logging=None
-        )
-    except configuration_module.InvalidConfiguration as e:
-        raise lsp.ServerNotInitializedError(str(e)) from None
+    initial_server_options = read_server_options(
+        server_options_reader, remote_logging=None
+    )
     stdin, stdout = await connections.create_async_stdin_stdout()
 
     initialize_result = await try_initialize_loop(
