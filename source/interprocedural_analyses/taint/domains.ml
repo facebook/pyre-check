@@ -578,6 +578,14 @@ module MakeTaint (Kind : KIND_ARG) : sig
   val kinds : t -> kind list
 
   val singleton : CallInfo.t -> Kind.t -> Frame.t -> t
+
+  val transform_call_info
+    :  CallInfo.t ->
+    'a Abstract.Domain.part ->
+    ([ `Transform ], 'a, 'f, 'b) Abstract.Domain.operation ->
+    f:'f ->
+    t ->
+    t
 end = struct
   type kind = Kind.t [@@deriving compare, eq]
 
@@ -1088,6 +1096,22 @@ end = struct
       call_info, local_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
+
+
+  (* Apply a transform operation for all parts under the given call info. *)
+  let transform_call_info
+      : type a b f.
+        CallInfo.t ->
+        a Abstract.Domain.part ->
+        ([ `Transform ], a, f, b) Abstract.Domain.operation ->
+        f:f ->
+        t ->
+        t
+    =
+   fun call_info part op ~f taint ->
+    Map.update taint call_info ~f:(function
+        | None -> LocalTaintDomain.bottom
+        | Some local_taint -> LocalTaintDomain.transform part op ~f local_taint)
 end
 
 module ForwardTaint = MakeTaint (Sources)

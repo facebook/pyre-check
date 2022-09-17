@@ -190,8 +190,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let transform_non_leaves path taint =
-    let f prefix = prefix @ path in
-    BackwardTaint.transform Features.ReturnAccessPathSet.Element Map ~f taint
+    let infer_output_path prefix = prefix @ path in
+    BackwardTaint.transform_call_info
+      local_return_call_info
+      Features.ReturnAccessPathSet.Element
+      Map
+      ~f:infer_output_path
+      taint
 
 
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
