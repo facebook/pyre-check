@@ -61,6 +61,8 @@ module CallInfo = struct
       }
   [@@deriving compare]
 
+  let declaration = Declaration { leaf_name_provided = false }
+
   let pp formatter = function
     | Declaration _ -> Format.fprintf formatter "Declaration"
     | Origin location -> Format.fprintf formatter "Origin(%a)" Location.WithModule.pp location
@@ -575,9 +577,7 @@ module MakeTaint (Kind : KIND_ARG) : sig
 
   val kinds : t -> kind list
 
-  val singleton : ?location:Location.WithModule.t -> Kind.t -> Frame.t -> t
-
-  val of_list : ?location:Location.WithModule.t -> Kind.t list -> t
+  val singleton : CallInfo.t -> Kind.t -> Frame.t -> t
 end = struct
   type kind = Kind.t [@@deriving compare, eq]
 
@@ -592,22 +592,9 @@ end = struct
   module Map = Abstract.MapDomain.Make (CallInfoKey) (LocalTaintDomain)
   include Map
 
-  let add ?location map kind frame =
-    let call_info =
-      match location with
-      | None -> CallInfo.Declaration { leaf_name_provided = false }
-      | Some location -> CallInfo.Origin location
-    in
+  let singleton call_info kind frame =
     let local_taint = LocalTaintDomain.singleton kind frame in
-    Map.update map call_info ~f:(function
-        | None -> local_taint
-        | Some existing -> LocalTaintDomain.join local_taint existing)
-
-
-  let singleton ?location kind frame = add ?location Map.bottom kind frame
-
-  let of_list ?location kinds =
-    List.fold kinds ~init:Map.bottom ~f:(fun taint kind -> add ?location taint kind Frame.initial)
+    Map.set Map.bottom ~key:call_info ~data:local_taint
 
 
   let kind = KindTaintDomain.Key
@@ -1418,5 +1405,8 @@ let local_return_frame =
     ]
 
 
+let local_return_call_info = CallInfo.Declaration { leaf_name_provided = false }
+
 (* Special sink as it needs the return access path *)
-let local_return_taint = BackwardTaint.singleton Sinks.LocalReturn local_return_frame
+let local_return_taint =
+  BackwardTaint.singleton local_return_call_info Sinks.LocalReturn local_return_frame

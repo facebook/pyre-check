@@ -18,7 +18,7 @@ let is_unknown_callee = function
 let unknown_callee_model _ =
   (* Add a model with sinks on *args and **kwargs. *)
   let sink_leaf =
-    BackwardTaint.singleton (Sinks.NamedSink "UnknownCallee") Frame.initial
+    BackwardTaint.singleton CallInfo.declaration (Sinks.NamedSink "UnknownCallee") Frame.initial
     |> BackwardState.Tree.create_leaf
   in
   let sink_taint =
@@ -34,7 +34,8 @@ let unknown_callee_model _ =
   in
   (* Add taint-in-taint-out for all parameters. *)
   let local_return =
-    BackwardTaint.singleton Sinks.LocalReturn Frame.initial |> BackwardState.Tree.create_leaf
+    BackwardTaint.singleton local_return_call_info Sinks.LocalReturn Frame.initial
+    |> BackwardState.Tree.create_leaf
   in
   let taint_in_taint_out =
     BackwardState.assign

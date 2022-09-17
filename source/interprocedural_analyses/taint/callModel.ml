@@ -153,7 +153,7 @@ let taint_in_taint_out_mapping
         let return_tito =
           Domains.local_return_frame
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
-          |> BackwardTaint.singleton Sinks.LocalReturn
+          |> BackwardTaint.singleton CallInfo.declaration Sinks.LocalReturn
           |> BackwardState.Tree.create_leaf
         in
         TaintInTaintOutMap.set mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
@@ -175,7 +175,7 @@ let taint_in_taint_out_mapping
         let return_tito =
           Domains.local_return_frame
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
-          |> BackwardTaint.singleton tito_kind
+          |> BackwardTaint.singleton local_return_call_info tito_kind
           |> BackwardState.Tree.create_leaf
         in
         TaintInTaintOutMap.set mapping ~kind:tito_kind ~tito_tree:return_tito

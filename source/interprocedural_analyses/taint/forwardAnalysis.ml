@@ -1881,7 +1881,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let add_matching_source_kind tree { TaintConfiguration.pattern; source_kind = kind } =
         if Re2.matches pattern value then
-          ForwardTaint.singleton ~location kind Frame.initial
+          ForwardTaint.singleton (CallInfo.Origin location) kind Frame.initial
           |> ForwardState.Tree.create_leaf
           |> ForwardState.Tree.join tree
         else
@@ -1982,7 +1982,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             List.iter literal_string_sinks ~f:(fun { TaintConfiguration.sink_kind; pattern } ->
                 if Re2.matches pattern value then
                   let sink_tree =
-                    BackwardTaint.singleton ~location sink_kind Frame.initial
+                    BackwardTaint.singleton (CallInfo.Origin location) sink_kind Frame.initial
                     |> BackwardState.Tree.create_leaf
                   in
                   check_flow
@@ -2215,7 +2215,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       FunctionContext.taint_configuration.implicit_sinks.conditional_test
       |> List.iter ~f:(fun sink_kind ->
              let sink_tree =
-               BackwardTaint.singleton ~location sink_kind Frame.initial
+               BackwardTaint.singleton (CallInfo.Origin location) sink_kind Frame.initial
                |> BackwardState.Tree.create_leaf
              in
              check_flow

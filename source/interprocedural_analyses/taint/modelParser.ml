@@ -1045,7 +1045,7 @@ let introduce_sink_taint
             |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
             |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
             |> transform_trace_length
-            |> BackwardTaint.singleton taint_sink_kind
+            |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
             |> transform_call_information
             |> BackwardState.Tree.create_leaf
           in
@@ -1079,7 +1079,7 @@ let introduce_taint_in_taint_out
           Domains.local_return_frame
           |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-          |> BackwardTaint.singleton taint_sink_kind
+          |> BackwardTaint.singleton local_return_call_info taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
@@ -1094,7 +1094,7 @@ let introduce_taint_in_taint_out
           Frame.initial
           |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-          |> BackwardTaint.singleton taint_sink_kind
+          |> BackwardTaint.singleton local_return_call_info taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
@@ -1165,7 +1165,7 @@ let introduce_source_taint
         |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
         |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
         |> transform_trace_length
-        |> ForwardTaint.singleton taint_source_kind
+        |> ForwardTaint.singleton CallInfo.declaration taint_source_kind
         |> transform_call_information
         |> ForwardState.Tree.create_leaf
       in

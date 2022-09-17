@@ -18,7 +18,7 @@ let infer ~environment ~user_models =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let add_parameter_tito position existing_state attribute =
     let leaf =
-      BackwardTaint.singleton Sinks.LocalReturn Frame.initial
+      BackwardTaint.singleton local_return_call_info Sinks.LocalReturn Frame.initial
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.transform Features.ReturnAccessPathSet.Self Map ~f:(fun _ ->
              Features.ReturnAccessPathSet.singleton

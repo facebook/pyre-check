@@ -23,7 +23,9 @@ let test_partition_call_map context =
       (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module TypeCheck.DummyContext)
   in
-  let taint = ForwardTaint.singleton (Sources.NamedSource "UserControlled") Frame.initial in
+  let taint =
+    ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "UserControlled") Frame.initial
+  in
   let callee =
     Some
       (Interprocedural.Target.Method { class_name = "test.Foo"; method_name = "bar"; kind = Normal })
@@ -99,7 +101,7 @@ let test_approximate_return_access_paths _ =
          tree)
   in
   let create ~return_access_paths =
-    ForwardTaint.singleton (Sources.NamedSource "Demo") Frame.initial
+    ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "Demo") Frame.initial
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.transform Features.ReturnAccessPathSet.Self Map ~f:(fun _ ->
            Features.ReturnAccessPathSet.of_list return_access_paths)

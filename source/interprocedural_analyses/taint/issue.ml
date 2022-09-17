@@ -263,7 +263,7 @@ let compute_triggered_sinks ~triggered_sinks ~location ~sink_handle ~source_tree
                   ~sink_tree:
                     (BackwardState.Tree.create_leaf
                        (BackwardTaint.singleton
-                          ~location
+                          (CallInfo.Origin location)
                           (Sinks.TriggeredPartialSink sink)
                           Frame.initial))
               in

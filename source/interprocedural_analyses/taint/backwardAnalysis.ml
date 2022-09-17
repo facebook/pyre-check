@@ -278,7 +278,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             items
             ~f:(fun state (root, sink) ->
               let new_taint =
-                BackwardTaint.singleton sink Frame.initial |> BackwardState.Tree.create_leaf
+                BackwardTaint.singleton CallInfo.declaration sink Frame.initial
+                |> BackwardState.Tree.create_leaf
               in
               BackwardState.assign ~root ~path:[] new_taint state)
             ~init:BackwardState.bottom
@@ -1677,7 +1678,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           literal_string_sinks
           ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
             if Re2.matches pattern value then
-              BackwardTaint.singleton ~location sink_kind Frame.initial
+              BackwardTaint.singleton (CallInfo.Origin location) sink_kind Frame.initial
               |> BackwardState.Tree.create_leaf
               |> BackwardState.Tree.join taint
             else
