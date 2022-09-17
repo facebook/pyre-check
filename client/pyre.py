@@ -482,6 +482,12 @@ def pyre(
     type=int,
     help="Limit the depth of inferred taint-in-taint-out in taint flows.",
 )
+@click.option(
+    "--check-invariants",
+    is_flag=True,
+    default=False,
+    help="Perform additional assertions about analysis invariants.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -504,6 +510,7 @@ def analyze(
     inline_decorators: bool,
     maximum_trace_length: Optional[int],
     maximum_tito_depth: Optional[int],
+    check_invariants: bool,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -548,6 +555,7 @@ def analyze(
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),
             use_cache=use_cache,
+            check_invariants=check_invariants,
         ),
     )
 

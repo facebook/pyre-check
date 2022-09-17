@@ -1470,7 +1470,7 @@ let get_maximum_overrides_to_analyze () =
 
 
 let runtime_check_invariants () =
-  (* Only enabled in tests. *)
+  (* This is enabled in tests or when using `--check-invariants`. *)
   Sys.getenv "PYSA_CHECK_INVARIANTS" |> Option.is_some
 
 

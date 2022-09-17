@@ -7,6 +7,7 @@ import contextlib
 import dataclasses
 import json
 import logging
+import os
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence
@@ -55,6 +56,7 @@ class Arguments:
     strict: bool = False
     taint_model_paths: Sequence[str] = dataclasses.field(default_factory=list)
     use_cache: bool = False
+    check_invariants: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         dump_call_graph = self.dump_call_graph
@@ -109,6 +111,7 @@ class Arguments:
             "strict": self.strict,
             "taint_model_paths": self.taint_model_paths,
             "use_cache": self.use_cache,
+            "check_invariants": self.check_invariants,
         }
 
 
@@ -200,6 +203,7 @@ def create_analyze_arguments(
         strict=configuration.is_strict(),
         taint_model_paths=taint_models_path,
         use_cache=analyze_arguments.use_cache,
+        check_invariants=analyze_arguments.check_invariants,
     )
 
 
@@ -233,7 +237,10 @@ def parse_model_validation_errors(
 
 
 def _run_analyze_command(
-    command: Sequence[str], output: str, forward_stdout: bool
+    command: Sequence[str],
+    output: str,
+    forward_stdout: bool,
+    environment: Optional[Dict[str, str]],
 ) -> commands.ExitCode:
     with backend_arguments.backend_log_file(prefix="pyre_analyze") as log_file:
         with start.background_logging(Path(log_file.name)):
@@ -244,6 +251,7 @@ def _run_analyze_command(
                 stderr=log_file.file,
                 universal_newlines=True,
                 errors="replace",
+                env=environment,
             )
             return_code = result.returncode
 
@@ -299,8 +307,15 @@ def run_analyze(
                 "newanalyze",
                 str(argument_file_path),
             ]
+            environment = None
+            if analyze_arguments.check_invariants:
+                # We need to pass this specific argument as an environment variable,
+                # because it is needed during the global initialization.
+                environment = dict(os.environ)
+                environment["PYSA_CHECK_INVARIANTS"] = "1"
             return _run_analyze_command(
                 command=analyze_command,
+                environment=environment,
                 output=analyze_arguments.output,
                 forward_stdout=(analyze_arguments.save_results_to is None),
             )

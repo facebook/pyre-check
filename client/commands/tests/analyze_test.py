@@ -55,6 +55,7 @@ class ArgumentTest(testslide.TestCase):
                 strict=True,
                 taint_model_paths=["/taint/models"],
                 use_cache=True,
+                check_invariants=True,
             ),
             [
                 ("log_path", "/log"),
@@ -78,6 +79,7 @@ class ArgumentTest(testslide.TestCase):
                 ("strict", True),
                 ("taint_model_paths", ["/taint/models"]),
                 ("use_cache", True),
+                ("check_invariants", True),
             ],
         )
 
@@ -135,6 +137,7 @@ class ArgumentTest(testslide.TestCase):
                         output_format=command_arguments.TaintOutputFormat.SHARDED_JSON,
                         taint_models_path=[str(root_path / "taint_models")],
                         use_cache=True,
+                        check_invariants=True,
                     ),
                 ),
                 Arguments(
@@ -182,5 +185,6 @@ class ArgumentTest(testslide.TestCase):
                     strict=True,
                     taint_model_paths=[str(root_path / "taint_models")],
                     use_cache=True,
+                    check_invariants=True,
                 ),
             )

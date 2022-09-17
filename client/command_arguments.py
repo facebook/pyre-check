@@ -263,3 +263,4 @@ class AnalyzeArguments:
     sequential: bool = False
     taint_models_path: List[str] = field(default_factory=list)
     use_cache: bool = False
+    check_invariants: bool = False
