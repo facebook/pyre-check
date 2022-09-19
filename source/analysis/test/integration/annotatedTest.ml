@@ -19,7 +19,7 @@ let test_annotated context =
         reveal_type(annotated)
         return annotated
     |}
-    ["Revealed type [-1]: Revealed type for `annotated` is `typing.Annotated[int]`."];
+    ["Revealed type [-1]: Revealed type for `annotated` is `int`."];
 
   assert_type_errors
     ~context
@@ -31,7 +31,29 @@ let test_annotated context =
         reveal_type(annotated)
         return annotated
     |}
-    ["Revealed type [-1]: Revealed type for `annotated` is `typing.Annotated[int]`."]
+    ["Revealed type [-1]: Revealed type for `annotated` is `int`."];
+  assert_type_errors
+    ~context
+    {|
+      from builtins import expect_int
+      from typing import Annotated
+      def foo(annotated: Annotated[Annotated[Annotated[int]]]) -> int:
+        expect_int(annotated)
+        reveal_type(annotated)
+        return annotated
+    |}
+    ["Revealed type [-1]: Revealed type for `annotated` is `int`."];
+  assert_type_errors
+    ~context
+    {|
+      from builtins import expect_int
+      from typing import Annotated
+      def foo(annotated: Annotated[Annotated[Annotated[int, "A"], "B"], "C"]) -> int:
+        expect_int(annotated)
+        reveal_type(annotated)
+        return annotated
+    |}
+    ["Revealed type [-1]: Revealed type for `annotated` is `int`."]
 
 
 let () = "annotated" >::: ["annotated" >:: test_annotated] |> Test.run

@@ -355,7 +355,6 @@ and literal =
     }
 
 and t =
-  | Annotated of t
   | Bottom
   | Callable of t Record.Callable.record
   | Any
@@ -442,8 +441,6 @@ val show_for_hover : t -> string
 val serialize : t -> string
 
 val parametric : string -> Parameter.t list -> t
-
-val annotated : t -> t
 
 val awaitable : t -> t
 

@@ -159,7 +159,7 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "z" },
-              { "always-via-type": "typing.Annotated[str]" },
+              { "always-via-type": "str" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
@@ -193,7 +193,7 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "z" },
-      { "always-via-type": "typing.Annotated[str]" },
+      { "always-via-type": "str" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
     ],
@@ -231,7 +231,6 @@
               { "first-field": "z" },
               { "first-field": "y" },
               { "via-type": "str" },
-              { "via-type": "typing.Annotated[str]" },
               { "via-type": "int" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
@@ -269,7 +268,6 @@
       { "first-field": "z" },
       { "first-field": "y" },
       { "via-type": "str" },
-      { "via-type": "typing.Annotated[str]" },
       { "via-type": "int" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
@@ -443,7 +441,7 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "z" },
-              { "always-via-type": "typing.Annotated[float]" },
+              { "always-via-type": "float" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
@@ -477,7 +475,7 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "z" },
-      { "always-via-type": "typing.Annotated[float]" },
+      { "always-via-type": "float" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
     ],
@@ -514,8 +512,8 @@
               { "first-field": "x" },
               { "first-field": "z" },
               { "first-field": "y" },
-              { "via-type": "typing.Annotated[float]" },
               { "via-type": "typing.List[str]" },
+              { "via-type": "float" },
               { "via-type": "typing.Dict[str, int]" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
@@ -552,8 +550,8 @@
       { "first-field": "x" },
       { "first-field": "z" },
       { "first-field": "y" },
-      { "via-type": "typing.Annotated[float]" },
       { "via-type": "typing.List[str]" },
+      { "via-type": "float" },
       { "via-type": "typing.Dict[str, int]" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
@@ -1401,9 +1399,7 @@
               }
             ],
             "local_features": [
-              {
-                "always-via-type": "typing.Annotated[typing.List[typing.List[str]]]"
-              }
+              { "always-via-type": "typing.List[typing.List[str]]" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1431,11 +1427,7 @@
         ]
       }
     ],
-    "features": [
-      {
-        "always-via-type": "typing.Annotated[typing.List[typing.List[str]]]"
-      }
-    ],
+    "features": [ { "always-via-type": "typing.List[typing.List[str]]" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1558,9 +1550,7 @@
               }
             ],
             "local_features": [
-              {
-                "always-via-type": "typing.Annotated[typing.List[typing.List[str]]]"
-              }
+              { "always-via-type": "typing.List[typing.List[str]]" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1589,8 +1579,8 @@
       }
     ],
     "features": [
+      { "via-type": "typing.List[typing.List[str]]" },
       { "via-type": "typing.Dict[str, typing.List[int]]" },
-      { "via-type": "typing.Annotated[typing.List[typing.List[str]]]" },
       { "via-type": "via_type_of.Test3_Foo" }
     ],
     "sink_handle": {

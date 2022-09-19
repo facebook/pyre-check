@@ -24,9 +24,7 @@
               }
             ],
             "local_features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
+              { "always-via-type": "typing.Optional[float]" }
             ],
             "root": {
               "filename": "model_query_annotated.py",
@@ -59,8 +57,8 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
+      { "always-via-type": "typing.Optional[float]" },
+      { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -96,9 +94,7 @@
               }
             ],
             "local_features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
+              { "always-via-type": "typing.Optional[float]" }
             ],
             "root": {
               "filename": "model_query_annotated.py",
@@ -131,8 +127,8 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
+      { "always-via-type": "typing.Optional[float]" },
+      { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -168,9 +164,7 @@
               }
             ],
             "local_features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
+              { "always-via-type": "typing.Optional[float]" }
             ],
             "root": {
               "filename": "model_query_annotated.py",
@@ -203,8 +197,8 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
+      { "always-via-type": "typing.Optional[float]" },
+      { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -240,9 +234,7 @@
               }
             ],
             "local_features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
+              { "always-via-type": "typing.Optional[float]" }
             ],
             "root": {
               "filename": "model_query_annotated.py",
@@ -275,8 +267,8 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
+      { "always-via-type": "typing.Optional[float]" },
+      { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -312,9 +304,7 @@
               }
             ],
             "local_features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
+              { "always-via-type": "typing.Optional[float]" }
             ],
             "root": {
               "filename": "model_query_annotated.py",
@@ -347,8 +337,8 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
+      { "always-via-type": "typing.Optional[float]" },
+      { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -384,9 +374,7 @@
               }
             ],
             "local_features": [
-              {
-                "always-via-type": "typing.Annotated[typing.Optional[float]]"
-              }
+              { "always-via-type": "typing.Optional[float]" }
             ],
             "root": {
               "filename": "model_query_annotated.py",
@@ -419,8 +407,8 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
+      { "always-via-type": "typing.Optional[float]" },
+      { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",

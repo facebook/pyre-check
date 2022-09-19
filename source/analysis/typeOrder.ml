@@ -151,8 +151,6 @@ module OrderImplementation = struct
         | Type.NoneType, _
         | _, Type.NoneType ->
             union
-        | Type.Annotated left, _ -> Type.annotated (join order left right)
-        | _, Type.Annotated right -> Type.annotated (join order left right)
         | Type.ReadOnly left, _ -> Type.ReadOnly.create (join order left right)
         | _, Type.ReadOnly right -> Type.ReadOnly.create (join order left right)
         | Type.RecursiveType left_recursive_type, Type.RecursiveType right_recursive_type ->
@@ -476,8 +474,6 @@ module OrderImplementation = struct
         | Type.ParameterVariadicComponent _, _
         | _, Type.ParameterVariadicComponent _ ->
             Type.Bottom
-        | Type.Annotated left, _ -> Type.annotated (meet order left right)
-        | _, Type.Annotated right -> Type.annotated (meet order left right)
         | Type.ReadOnly left, _ -> Type.ReadOnly.create (meet order left right)
         | _, Type.ReadOnly right -> Type.ReadOnly.create (meet order left right)
         | (Type.Variable _ as variable), other

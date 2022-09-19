@@ -110,9 +110,7 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "always-via-type": "typing.Annotated[str]" }
-            ],
+            "local_features": [ { "always-via-type": "str" } ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 21,
@@ -124,8 +122,7 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Annotated[str]" },
-      { "always-via": "special_source" }
+      { "always-via-type": "str" }, { "always-via": "special_source" }
     ],
     "sink_handle": {
       "kind": "Call",

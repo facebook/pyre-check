@@ -1461,7 +1461,6 @@ module T = struct
       }
 
   and t =
-    | Annotated of t
     | Bottom
     | Callable of t Record.Callable.record
     | Any
@@ -1967,9 +1966,7 @@ let rec is_falsy = function
   | Literal (String (LiteralValue ""))
   | Literal (Bytes "") ->
       true
-  | Annotated annotated
-  | ReadOnly annotated ->
-      is_falsy annotated
+  | ReadOnly annotated -> is_falsy annotated
   | Union types -> List.for_all types ~f:is_falsy
   | _ -> false
 
@@ -1982,9 +1979,7 @@ let rec is_truthy = function
   | Literal (String (LiteralValue value))
   | Literal (Bytes value) ->
       not (String.is_empty value)
-  | Annotated annotated
-  | ReadOnly annotated ->
-      is_truthy annotated
+  | ReadOnly annotated -> is_truthy annotated
   | Union types -> List.for_all types ~f:is_truthy
   | _ -> false
 
@@ -2055,7 +2050,6 @@ let rec pp format annotation =
     | ordered_type -> Format.asprintf "%a" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_type
   in
   match annotation with
-  | Annotated annotation -> Format.fprintf format "typing.Annotated[%a]" pp annotation
   | Bottom -> Format.fprintf format "undefined"
   | Callable { kind; implementation; overloads; _ } ->
       let kind =
@@ -2126,7 +2120,6 @@ and pp_concise format annotation =
     String.split ~on:'.' identifier |> List.last |> Option.value ~default:identifier
   in
   match annotation with
-  | Annotated annotation -> Format.fprintf format "typing.Annotated[%a]" pp_concise annotation
   | Bottom -> Format.fprintf format "?"
   | Callable { implementation; _ } ->
       let signature_to_string { annotation; parameters; _ } =
@@ -2231,12 +2224,6 @@ let serialize = function
 
 
 let parametric name parameters = Parametric { name; parameters }
-
-let rec annotated annotation =
-  match annotation with
-  | Annotated annotation -> annotated annotation
-  | _ -> Annotated annotation
-
 
 let awaitable parameter = Parametric { name = "typing.Awaitable"; parameters = [Single parameter] }
 
@@ -2448,7 +2435,6 @@ let rec expression annotation =
       | Concrete parameters -> List.map ~f:expression parameters
     in
     match annotation with
-    | Annotated annotation -> get_item_call "typing.Annotated" [expression annotation]
     | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } -> (
         let convert_signature { annotation; parameters; _ } =
@@ -2733,7 +2719,6 @@ module Transform = struct
         in
         match annotation with
         | NoneType -> NoneType
-        | Annotated annotation -> Annotated (visit_annotation annotation ~state)
         | Callable ({ implementation; overloads; _ } as callable) ->
             let open Record.Callable in
             let visit_overload ({ annotation; parameters; _ } as overload) =
@@ -4293,7 +4278,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
   | Parametric { name; parameters } -> (
       let replace_with_special_form ~name parameters =
         match name, Parameter.all_singles parameters with
-        | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> annotated head
+        | ("typing_extensions.Annotated" | "typing.Annotated"), Some (head :: _) -> head
         | "typing.Optional", Some [head] -> optional head
         | "typing.Union", Some parameters -> union parameters
         | "pyre_extensions.ReadOnly", Some [head] -> ReadOnly.create head
@@ -4418,7 +4403,6 @@ let elements annotation =
     let visit { elements = sofar; recursive_type_names } annotation =
       let elements, recursive_type_names =
         match annotation with
-        | Annotated _ -> "typing.Annotated" :: sofar, recursive_type_names
         | Callable _ -> "typing.Callable" :: sofar, recursive_type_names
         | Literal literal ->
             let sofar =
@@ -6638,9 +6622,7 @@ let resolve_class annotation =
                       ~recursive_type
                       instantiated;
                 })
-    | Annotated annotation
-    | ReadOnly annotation ->
-        extract ~meta annotation
+    | ReadOnly annotation -> extract ~meta annotation
     | annotation when is_meta annotation ->
         (* Metaclasses return accessed_through_class=true since they allow looking up only class
            attribute, etc. *)

@@ -90,13 +90,6 @@ let test_create _ =
     "typing.Union[typing.Optional[int], str]"
     (Type.union [Type.NoneType; Type.integer; Type.string]);
 
-  (* Annotated. *)
-  assert_create "typing.Annotated[int]" (Type.annotated Type.integer);
-  assert_create "typing.Annotated[int, Derp()]" (Type.annotated Type.integer);
-
-  assert_create "typing_extensions.Annotated[int]" (Type.annotated Type.integer);
-  assert_create "typing_extensions.Annotated[int, Derp()]" (Type.annotated Type.integer);
-
   (* Nested renaming. *)
   assert_create "typing.Set[typing.Any]" (Type.set Type.Any);
   assert_create "typing.Dict[str, typing.Any]" (Type.dictionary ~key:Type.string ~value:Type.Any);
@@ -3067,11 +3060,6 @@ let test_replace_all _ =
        (fun _ -> None)
        (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable)))
     (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation free_variable));
-  assert_equal
-    (Type.Variable.GlobalTransforms.Unary.replace_all
-       (fun variable -> Some (Type.Annotated (Type.Variable variable)))
-       free_variable)
-    (Type.annotated free_variable);
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all
        (fun _ -> Some Type.float)
@@ -6393,9 +6381,6 @@ let test_resolve_class _ =
     directly_recursive_type
     (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
 
-  assert_resolved_class
-    (Type.annotated Type.integer)
-    (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
   assert_resolved_class
     (Type.ReadOnly.create Type.integer)
     (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
