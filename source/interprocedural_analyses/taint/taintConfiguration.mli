@@ -46,6 +46,8 @@ type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
 module IntSet : Stdlib.Set.S with type elt = int
 
+val transform_splits : 'a list -> ('a list * 'a list) list
+
 module SourceSinkFilter : sig
   type t
 
@@ -71,30 +73,42 @@ module SourceSinkFilter : sig
   val possible_tito_transforms : t -> TaintTransforms.Set.t
 end
 
-type t = {
-  sources: AnnotationParser.source_or_sink list;
-  sinks: AnnotationParser.source_or_sink list;
-  transforms: TaintTransform.t list;
-  filtered_sources: Sources.Set.t option;
-  filtered_sinks: Sinks.Set.t option;
-  filtered_transforms: TaintTransform.t list option;
-  features: string list;
-  rules: Rule.t list;
-  filtered_rule_codes: IntSet.t option;
-  implicit_sinks: implicit_sinks;
-  implicit_sources: implicit_sources;
-  partial_sink_converter: partial_sink_converter;
-  partial_sink_labels: string list Core.String.Map.Tree.t;
-  find_missing_flows: Configuration.MissingFlowKind.t option;
-  dump_model_query_results_path: PyrePath.t option;
-  analysis_model_constraints: analysis_model_constraints;
-  lineage_analysis: bool;
-  source_sink_filter: SourceSinkFilter.t option;
-}
+(** Taint configuration, stored in the ocaml heap. *)
+module Heap : sig
+  type t = {
+    sources: AnnotationParser.source_or_sink list;
+    sinks: AnnotationParser.source_or_sink list;
+    transforms: TaintTransform.t list;
+    filtered_sources: Sources.Set.t option;
+    filtered_sinks: Sinks.Set.t option;
+    filtered_transforms: TaintTransform.t list option;
+    features: string list;
+    rules: Rule.t list;
+    filtered_rule_codes: IntSet.t option;
+    implicit_sinks: implicit_sinks;
+    implicit_sources: implicit_sources;
+    partial_sink_converter: partial_sink_converter;
+    partial_sink_labels: string list Core.String.Map.Tree.t;
+    find_missing_flows: Configuration.MissingFlowKind.t option;
+    dump_model_query_results_path: PyrePath.t option;
+    analysis_model_constraints: analysis_model_constraints;
+    lineage_analysis: bool;
+    source_sink_filter: SourceSinkFilter.t option;
+  }
 
-val empty : t
+  val empty : t
 
-val get : unit -> t
+  val default : t
+end
+
+(** Taint configuration, stored in shared memory. *)
+module SharedMemory : sig
+  type t
+
+  val from_heap : Heap.t -> t
+
+  val get : t -> Heap.t
+end
 
 module Error : sig
   type kind =
@@ -146,18 +160,14 @@ module Error : sig
 end
 
 (** Parse json files to create a taint configuration. *)
-val from_json_list : (PyrePath.t * Yojson.Safe.t) list -> (t, Error.t list) Result.t
-
-val register : t -> unit
-
-val default : t
+val from_json_list : (PyrePath.t * Yojson.Safe.t) list -> (Heap.t, Error.t list) Result.t
 
 (** Create a taint configuration by finding `.config` files in the given directories. *)
-val from_taint_model_paths : PyrePath.t list -> (t, Error.t list) Result.t
+val from_taint_model_paths : PyrePath.t list -> (Heap.t, Error.t list) Result.t
 
 (** Update a taint configuration with the given command line options. *)
 val with_command_line_options
-  :  t ->
+  :  Heap.t ->
   rule_filter:int list option ->
   source_filter:string list option ->
   sink_filter:string list option ->
@@ -166,36 +176,38 @@ val with_command_line_options
   dump_model_query_results_path:PyrePath.t option ->
   maximum_trace_length:int option ->
   maximum_tito_depth:int option ->
-  (t, Error.t list) Result.t
+  (Heap.t, Error.t list) Result.t
 
 (** Perform additional checks on the taint configuration. *)
-val validate : t -> (t, Error.t list) Result.t
+val validate : Heap.t -> (Heap.t, Error.t list) Result.t
 
 exception TaintConfigurationError of Error.t list
 
-val exception_on_error : (t, Error.t list) Result.t -> t
+val exception_on_error : (Heap.t, Error.t list) Result.t -> Heap.t
 
-val apply_missing_flows : t -> Configuration.MissingFlowKind.t -> t
+val apply_missing_flows : Heap.t -> Configuration.MissingFlowKind.t -> Heap.t
 
-val source_can_match_rule : t -> Sources.t -> bool
+val source_can_match_rule : Heap.t -> Sources.t -> bool
 
-val sink_can_match_rule : t -> Sinks.t -> bool
+val sink_can_match_rule : Heap.t -> Sinks.t -> bool
 
-val code_metadata : unit -> Yojson.Safe.t
+val code_metadata : Heap.t -> Yojson.Safe.t
 
-val conditional_test_sinks : unit -> Sinks.t list
+val conditional_test_sinks : Heap.t -> Sinks.t list
 
-val literal_string_sinks : unit -> literal_string_sink list
+val literal_string_sinks : Heap.t -> literal_string_sink list
 
-val literal_string_sources : unit -> literal_string_source list
+val literal_string_sources : Heap.t -> literal_string_source list
 
-val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> Sinks.t option
+val get_triggered_sink
+  :  Heap.t ->
+  partial_sink:Sinks.partial_sink ->
+  source:Sources.t ->
+  Sinks.t option
 
-val is_missing_flow_analysis : Configuration.MissingFlowKind.t -> bool
+val is_missing_flow_analysis : Heap.t -> Configuration.MissingFlowKind.t -> bool
 
-val transform_splits : 'a list -> ('a list * 'a list) list
-
-val get_maximum_overrides_to_analyze : unit -> int option
+val maximum_overrides_to_analyze : Heap.t -> int option
 
 val runtime_check_invariants : unit -> bool
 

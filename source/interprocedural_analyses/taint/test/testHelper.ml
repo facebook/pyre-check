@@ -93,7 +93,8 @@ let create_callable kind define_name =
 let check_expectation
     ~get_model
     ~get_errors
-    ~environment
+    ~type_environment
+    ~taint_configuration
     {
       kind;
       define_name;
@@ -352,10 +353,12 @@ let check_expectation
       Error.instantiate
         ~show_error_traces:true
         ~lookup:
-          (TypeEnvironment.ReadOnly.module_tracker environment
+          (TypeEnvironment.ReadOnly.module_tracker type_environment
           |> ModuleTracker.ReadOnly.lookup_relative_path)
     in
-    get_errors callable |> List.map ~f:Issue.to_error |> List.map ~f:to_analysis_error
+    get_errors callable
+    |> List.map ~f:(Issue.to_error ~taint_configuration)
+    |> List.map ~f:to_analysis_error
   in
   assert_errors errors actual_errors
 
@@ -397,7 +400,7 @@ let get_initial_models ~context =
            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
            (module TypeCheck.DummyContext))
       ~source:initial_models_source
-      ~configuration:TaintConfiguration.default
+      ~taint_configuration:TaintConfiguration.Heap.default
       ~source_sink_filter:None
       ~callables:None
       ~stubs:(Target.HashSet.create ())
@@ -413,6 +416,8 @@ let get_initial_models ~context =
 
 type test_environment = {
   static_analysis_configuration: Configuration.StaticAnalysis.t;
+  taint_configuration: TaintConfiguration.Heap.t;
+  taint_configuration_shared_memory: TaintConfiguration.SharedMemory.t;
   whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
   define_call_graphs: CallGraph.DefineCallGraphSharedMemory.t;
   override_graph_heap: OverrideGraph.Heap.t;
@@ -420,7 +425,7 @@ type test_environment = {
   initial_callables: FetchCallables.t;
   stubs: Target.t list;
   initial_models: Registry.t;
-  environment: TypeEnvironment.ReadOnly.t;
+  type_environment: TypeEnvironment.ReadOnly.t;
   class_interval_graph: ClassIntervalSetGraph.SharedMemory.t;
 }
 
@@ -440,13 +445,16 @@ let initialize
     ?models_source
     ?(add_initial_models = true)
     ?find_missing_flows
-    ?(taint_configuration = TaintConfiguration.default)
+    ?(taint_configuration = TaintConfiguration.Heap.default)
     ?expected_dump_string
     ?(verify_model_queries = true)
     ~context
     source_content
   =
-  let configuration, environment, errors =
+  let taint_configuration_shared_memory =
+    TaintConfiguration.SharedMemory.from_heap taint_configuration
+  in
+  let configuration, type_environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     set_up_decorator_inlining ~handle models_source;
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
@@ -457,7 +465,7 @@ let initialize
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create configuration ?find_missing_flows ()
   in
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
       ast_environment
@@ -485,7 +493,7 @@ let initialize
      in
      failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
 
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let resolution =
     TypeCheck.resolution
       global_resolution
@@ -501,7 +509,9 @@ let initialize
   in
   let stubs = FetchCallables.get_stubs initial_callables in
   let callables = FetchCallables.get_callables initial_callables in
-  let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~environment ~source in
+  let class_hierarchy_graph =
+    ClassHierarchyGraph.Heap.from_source ~environment:type_environment ~source
+  in
   let user_models, skip_overrides =
     let models_source =
       match models_source, add_initial_models with
@@ -517,7 +527,7 @@ let initialize
           ModelParser.parse
             ~resolution
             ~source:(Test.trim_extra_indentation source)
-            ~configuration:taint_configuration
+            ~taint_configuration
             ~source_sink_filter:taint_configuration.source_sink_filter
             ~callables:(Some (Target.HashSet.of_list callables))
             ~stubs:(Target.HashSet.of_list stubs)
@@ -533,11 +543,11 @@ let initialize
         let models_result =
           TaintModelQuery.ModelQuery.apply_all_rules
             ~resolution
-            ~configuration:taint_configuration
+            ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph:
               (ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
             ~scheduler:(Test.mock_scheduler ())
-            ~environment
+            ~environment:type_environment
             ~source_sink_filter:taint_configuration.source_sink_filter
             ~callables:(List.rev_append stubs callables)
             ~stubs:(Target.HashSet.of_list stubs)
@@ -567,30 +577,29 @@ let initialize
         let models =
           MissingFlow.add_obscure_models
             ~static_analysis_configuration
-            ~environment
+            ~environment:type_environment
             ~stubs:(Target.HashSet.of_list stubs)
             ~initial_models:models
         in
 
         models, skip_overrides
   in
-  let inferred_models = ClassModels.infer ~environment ~user_models in
+  let inferred_models = ClassModels.infer ~environment:type_environment ~user_models in
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let override_graph_heap =
-    OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source
+    OverrideGraph.Heap.from_source ~environment:type_environment ~include_unit_tests:true ~source
     |> OverrideGraph.Heap.skip_overrides ~to_skip:skip_overrides
   in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
 
   (* Initialize models *)
-  let () = TaintConfiguration.register taint_configuration in
   (* The call graph building depends on initial models for global targets. *)
   let { CallGraph.whole_program_call_graph; define_call_graphs } =
     CallGraph.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
-      ~environment
+      ~environment:type_environment
       ~override_graph:override_graph_shared_memory
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
@@ -608,6 +617,8 @@ let initialize
   in
   {
     static_analysis_configuration;
+    taint_configuration;
+    taint_configuration_shared_memory;
     whole_program_call_graph;
     define_call_graphs;
     override_graph_heap;
@@ -615,7 +626,7 @@ let initialize
     initial_callables;
     stubs;
     initial_models;
-    environment;
+    type_environment;
     class_interval_graph;
   }
 
@@ -695,7 +706,7 @@ let end_to_end_integration_test path context =
     in
     let add_initial_models = Option.is_none models_source && Option.is_none taint_configuration in
     let taint_configuration =
-      taint_configuration |> Option.value ~default:Taint.TaintConfiguration.default
+      taint_configuration |> Option.value ~default:Taint.TaintConfiguration.Heap.default
     in
     let handle = PyrePath.show path |> String.split ~on:'/' |> List.last_exn in
     let create_call_graph_files call_graph =
@@ -720,9 +731,11 @@ let end_to_end_integration_test path context =
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
     let {
+      taint_configuration;
+      taint_configuration_shared_memory;
       whole_program_call_graph;
       define_call_graphs;
-      environment;
+      type_environment;
       override_graph_heap;
       override_graph_shared_memory;
       initial_models;
@@ -751,12 +764,13 @@ let end_to_end_integration_test path context =
     let fixpoint_state =
       Fixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
-        ~type_environment:environment
+        ~type_environment
         ~override_graph:override_graph_shared_memory
         ~dependency_graph
         ~context:
           {
-            Fixpoint.Context.type_environment = environment;
+            Fixpoint.Context.taint_configuration = taint_configuration_shared_memory;
+            type_environment;
             class_interval_graph;
             define_call_graphs;
           }
@@ -771,10 +785,11 @@ let end_to_end_integration_test path context =
     let serialize_model callable : string =
       let externalization =
         let filename_lookup =
-          TypeEnvironment.ReadOnly.module_tracker environment
+          TypeEnvironment.ReadOnly.module_tracker type_environment
           |> ModuleTracker.ReadOnly.lookup_relative_path
         in
         Taint.Reporting.fetch_and_externalize
+          ~taint_configuration
           ~fixpoint_state
           ~filename_lookup
           ~override_graph:override_graph_shared_memory

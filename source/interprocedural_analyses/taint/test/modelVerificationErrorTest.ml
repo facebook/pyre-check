@@ -237,7 +237,7 @@ let test_to_json _ =
 
 
 let test_invalid_model_query context =
-  let configuration = TaintConfiguration.default in
+  let configuration = TaintConfiguration.Heap.default in
   let error_message =
     try
       let _ =

@@ -236,7 +236,14 @@ let generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree 
   { Candidate.flows; key = { location; sink_handle } }
 
 
-let compute_triggered_sinks ~triggered_sinks ~location ~sink_handle ~source_tree ~sink_tree =
+let compute_triggered_sinks
+    ~taint_configuration
+    ~triggered_sinks
+    ~location
+    ~sink_handle
+    ~source_tree
+    ~sink_tree
+  =
   let partial_sinks_to_taint =
     BackwardState.Tree.collapse
       ~transform:(BackwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
@@ -250,7 +257,7 @@ let compute_triggered_sinks ~triggered_sinks ~location ~sink_handle ~source_tree
     in
     let add_triggered_sinks (triggered, candidates) sink =
       let add_triggered_sinks_for_source source =
-        TaintConfiguration.get_triggered_sink ~partial_sink:sink ~source
+        TaintConfiguration.get_triggered_sink taint_configuration ~partial_sink:sink ~source
         |> function
         | Some (Sinks.TriggeredPartialSink triggered_sink) ->
             if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
@@ -292,7 +299,11 @@ module PartitionedFlow = struct
   }
 end
 
-let generate_issues ~define { Candidate.flows; key = { location; sink_handle } } =
+let generate_issues
+    ~taint_configuration
+    ~define
+    { Candidate.flows; key = { location; sink_handle } }
+  =
   let partitions =
     let partition { Flow.source_taint; sink_taint } =
       {
@@ -514,14 +525,13 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
     in
     HandleMap.update map issue.handle ~f:update
   in
-  let configuration = TaintConfiguration.get () in
-  if configuration.lineage_analysis then
+  if taint_configuration.Heap.lineage_analysis then
     (* Create different issues for same access path, e.g, Issue{[a] -> [b]}, Issue {[c] -> [d]}. *)
     (* Note that this breaks a SAPP invariant because there might be multiple issues with the same
        handle. This is fine because in that configuration we do not use SAPP. *)
-    List.fold configuration.rules ~init:[] ~f:apply_rule_separate_access_path
+    List.fold taint_configuration.rules ~init:[] ~f:apply_rule_separate_access_path
   else (* Create single issue for same access path, e.g, Issue{[a],[c] -> [b], [d]}. *)
-    List.filter_map ~f:apply_rule_merge_access_path configuration.rules
+    List.filter_map ~f:apply_rule_merge_access_path taint_configuration.rules
     |> List.fold ~init:HandleMap.empty ~f:group_by_handle
     |> HandleMap.data
 
@@ -544,6 +554,7 @@ module Candidates = struct
 
   let check_triggered_flows
       candidates
+      ~taint_configuration
       ~triggered_sinks
       ~location
       ~sink_handle
@@ -551,15 +562,21 @@ module Candidates = struct
       ~sink_tree
     =
     let triggered, new_candidates =
-      compute_triggered_sinks ~triggered_sinks ~sink_handle ~location ~source_tree ~sink_tree
+      compute_triggered_sinks
+        ~taint_configuration
+        ~triggered_sinks
+        ~sink_handle
+        ~location
+        ~source_tree
+        ~sink_tree
     in
     List.iter triggered ~f:(fun sink -> Hash_set.add triggered_sinks (Sinks.show_partial_sink sink));
     List.iter new_candidates ~f:(add_candidate candidates)
 
 
-  let generate_issues candidates ~define =
+  let generate_issues candidates ~taint_configuration ~define =
     let accumulate ~key:_ ~data:candidate issues =
-      let new_issues = generate_issues ~define candidate in
+      let new_issues = generate_issues ~taint_configuration ~define candidate in
       List.rev_append new_issues issues
     in
     CandidateKey.Table.fold candidates ~f:accumulate ~init:[]
@@ -597,9 +614,11 @@ let sources_regexp = Str.regexp_string "{$sources}"
 
 let transforms_regexp = Str.regexp_string "{$transforms}"
 
-let get_name_and_detailed_message { flow; handle = { code; _ }; _ } =
-  let configuration = TaintConfiguration.get () in
-  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
+let get_name_and_detailed_message
+    ~taint_configuration:{ TaintConfiguration.Heap.rules; _ }
+    { flow; handle = { code; _ }; _ }
+  =
+  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
   | None -> failwith "issue with code that has no rule"
   | Some { name; message_format; transforms; _ } ->
       let sources =
@@ -625,20 +644,22 @@ let get_name_and_detailed_message { flow; handle = { code; _ }; _ } =
       name, message
 
 
-let to_error ({ handle = { code; _ }; define; _ } as issue) =
-  let configuration = TaintConfiguration.get () in
-  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
+let to_error
+    ~taint_configuration:({ TaintConfiguration.Heap.rules; _ } as taint_configuration)
+    ({ handle = { code; _ }; define; _ } as issue)
+  =
+  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
   | None -> failwith "issue with code that has no rule"
   | Some _ ->
-      let name, detail = get_name_and_detailed_message issue in
+      let name, detail = get_name_and_detailed_message ~taint_configuration issue in
       let kind = { Error.name; messages = [detail]; code } in
       let location = canonical_location issue in
       Error.create ~location ~define ~kind
 
 
-let to_json ~expand_overrides ~is_valid_callee ~filename_lookup issue =
+let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lookup issue =
   let callable_name = Target.external_name issue.handle.callable in
-  let _, message = get_name_and_detailed_message issue in
+  let _, message = get_name_and_detailed_message ~taint_configuration issue in
   let source_traces =
     Domains.ForwardTaint.to_json
       ~expand_overrides

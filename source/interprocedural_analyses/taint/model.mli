@@ -98,7 +98,7 @@ val less_or_equal : left:t -> right:t -> bool
 
 val strip_for_callsite : t -> t
 
-val apply_sanitizers : t -> t
+val apply_sanitizers : taint_configuration:TaintConfiguration.Heap.t -> t -> t
 
 val should_externalize : t -> bool
 

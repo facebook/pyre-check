@@ -9,7 +9,8 @@ open Interprocedural
 module Json = Yojson.Safe
 
 val externalize
-  :  fixpoint_state:Fixpoint.t ->
+  :  taint_configuration:TaintConfiguration.Heap.t ->
+  fixpoint_state:Fixpoint.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   override_graph:OverrideGraph.SharedMemory.t ->
   Target.t ->
@@ -18,7 +19,8 @@ val externalize
   Yojson.Safe.t list
 
 val fetch_and_externalize
-  :  fixpoint_state:Fixpoint.t ->
+  :  taint_configuration:TaintConfiguration.Heap.t ->
+  fixpoint_state:Fixpoint.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   override_graph:OverrideGraph.SharedMemory.t ->
   Target.t ->
@@ -27,6 +29,7 @@ val fetch_and_externalize
 val report
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  taint_configuration:TaintConfiguration.SharedMemory.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   override_graph:OverrideGraph.SharedMemory.t ->
   callables:Target.Set.t ->

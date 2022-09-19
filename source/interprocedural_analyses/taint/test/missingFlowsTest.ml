@@ -26,12 +26,14 @@ let assert_fixpoint
   =
   let scheduler = Test.mock_scheduler () in
   let taint_configuration =
-    TaintConfiguration.apply_missing_flows TaintConfiguration.default missing_flows
+    TaintConfiguration.apply_missing_flows TaintConfiguration.Heap.default missing_flows
   in
   let {
+    taint_configuration;
+    taint_configuration_shared_memory;
     whole_program_call_graph;
     define_call_graphs;
-    environment;
+    type_environment;
     override_graph_heap;
     override_graph_shared_memory;
     initial_models;
@@ -59,12 +61,13 @@ let assert_fixpoint
   let fixpoint_state =
     Fixpoint.compute
       ~scheduler
-      ~type_environment:environment
+      ~type_environment
       ~override_graph:override_graph_shared_memory
       ~dependency_graph
       ~context:
         {
-          Fixpoint.Context.type_environment = environment;
+          Fixpoint.Context.taint_configuration = taint_configuration_shared_memory;
+          type_environment;
           class_interval_graph;
           define_call_graphs;
         }
@@ -86,7 +89,11 @@ let assert_fixpoint
     ~printer:Int.to_string;
   let get_model = Fixpoint.get_model fixpoint_state in
   let get_errors = Fixpoint.get_result fixpoint_state in
-  let () = List.iter ~f:(check_expectation ~environment ~get_model ~get_errors) expect in
+  let () =
+    List.iter
+      ~f:(check_expectation ~type_environment ~taint_configuration ~get_model ~get_errors)
+      expect
+  in
   let () = Fixpoint.cleanup fixpoint_state in
   ()
 

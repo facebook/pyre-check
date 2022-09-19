@@ -82,14 +82,15 @@ type issue = t
 val canonical_location : t -> Location.WithModule.t
 
 val to_json
-  :  expand_overrides:OverrideGraph.SharedMemory.t option ->
+  :  taint_configuration:TaintConfiguration.Heap.t ->
+  expand_overrides:OverrideGraph.SharedMemory.t option ->
   is_valid_callee:
     (port:AccessPath.Root.t -> path:Abstract.TreeDomain.Label.path -> callee:Target.t -> bool) ->
   filename_lookup:(Reference.t -> string option) ->
   t ->
   Yojson.Safe.t
 
-val to_error : t -> Error.t
+val to_error : taint_configuration:TaintConfiguration.Heap.t -> t -> Error.t
 
 module TriggeredSinks : sig
   type t = String.Hash_set.t
@@ -112,6 +113,7 @@ module Candidates : sig
   (* Will modify the triggered_sinks data structure, adding the newly triggered sinks. *)
   val check_triggered_flows
     :  t ->
+    taint_configuration:TaintConfiguration.Heap.t ->
     triggered_sinks:TriggeredSinks.t ->
     location:Location.WithModule.t ->
     sink_handle:SinkHandle.t ->
@@ -119,5 +121,9 @@ module Candidates : sig
     sink_tree:BackwardState.Tree.t ->
     unit
 
-  val generate_issues : t -> define:Define.t Node.t -> issue list
+  val generate_issues
+    :  t ->
+    taint_configuration:TaintConfiguration.Heap.t ->
+    define:Define.t Node.t ->
+    issue list
 end

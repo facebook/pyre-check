@@ -41,7 +41,9 @@ let initialize_configuration
           ~maximum_tito_depth
     |> TaintConfiguration.exception_on_error
   in
-  let () = TaintConfiguration.register taint_configuration in
+  let taint_configuration_shared_memory =
+    TaintConfiguration.SharedMemory.from_heap taint_configuration
+  in
   (* In order to save time, sanity check models before starting the analysis. *)
   let () =
     ModelParser.get_model_sources ~paths:taint_model_paths
@@ -54,7 +56,7 @@ let initialize_configuration
       ~timer
       ()
   in
-  taint_configuration
+  taint_configuration, taint_configuration_shared_memory
 
 
 let parse_and_save_decorators_to_skip
@@ -122,7 +124,7 @@ let join_parse_result
 
 
 let parse_models_and_queries_from_sources
-    ~configuration
+    ~taint_configuration
     ~scheduler
     ~resolution
     ~source_sink_filter
@@ -133,12 +135,13 @@ let parse_models_and_queries_from_sources
   (* TODO(T117715045): Do not pass all callables and stubs explicitly to map_reduce,
    * since this will marshal-ed between processes and hence is costly. *)
   let map state sources =
+    let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.fold sources ~init:state ~f:(fun state (path, source) ->
         ModelParser.parse
           ~resolution
           ~path
           ~source
-          ~configuration
+          ~taint_configuration
           ~source_sink_filter
           ~callables
           ~stubs
@@ -180,7 +183,7 @@ let parse_models_and_queries_from_configuration
   let { ModelParser.models = user_models; errors; skip_overrides; queries } =
     ModelParser.get_model_sources ~paths:taint_model_paths
     |> parse_models_and_queries_from_sources
-         ~configuration:taint_configuration
+         ~taint_configuration
          ~scheduler
          ~resolution
          ~source_sink_filter
@@ -201,11 +204,13 @@ let initialize_models
     ~scheduler
     ~static_analysis_configuration
     ~taint_configuration
+    ~taint_configuration_shared_memory
     ~class_hierarchy_graph
     ~environment
     ~callables
     ~stubs
   =
+  let open TaintConfiguration.Heap in
   let stubs = Target.HashSet.of_list stubs in
 
   Log.info "Parsing taint models...";
@@ -214,7 +219,7 @@ let initialize_models
     parse_models_and_queries_from_configuration
       ~scheduler
       ~static_analysis_configuration
-      ~taint_configuration
+      ~taint_configuration:taint_configuration_shared_memory
       ~environment
       ~source_sink_filter:taint_configuration.source_sink_filter
       ~callables:(Some (Target.HashSet.of_list callables))
@@ -230,7 +235,7 @@ let initialize_models
         let timer = Timer.start () in
         let models_and_names, errors =
           TaintModelQuery.ModelQuery.generate_models_from_queries
-            ~configuration:taint_configuration
+            ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph
             ~scheduler
             ~environment
@@ -293,7 +298,9 @@ let run_taint_analysis
     ()
   =
   try
-    let taint_configuration = initialize_configuration ~static_analysis_configuration in
+    let taint_configuration, taint_configuration_shared_memory =
+      initialize_configuration ~static_analysis_configuration
+    in
 
     (* Collect decorators to skip before type-checking because decorator inlining happens in an
        early phase of type-checking and needs to know which decorators to skip. *)
@@ -366,6 +373,7 @@ let run_taint_analysis
         ~scheduler
         ~static_analysis_configuration
         ~taint_configuration
+        ~taint_configuration_shared_memory
         ~class_hierarchy_graph:
           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
         ~environment:(Analysis.TypeEnvironment.read_only environment)
@@ -393,7 +401,7 @@ let run_taint_analysis
             ~environment:(Analysis.TypeEnvironment.read_only environment)
             ~include_unit_tests:false
             ~skip_overrides
-            ~maximum_overrides:(TaintConfiguration.get_maximum_overrides_to_analyze ())
+            ~maximum_overrides:(TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
             ~qualifiers)
     in
     Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
@@ -462,7 +470,8 @@ let run_taint_analysis
         ~dependency_graph
         ~context:
           {
-            Taint.Fixpoint.Context.type_environment = Analysis.TypeEnvironment.read_only environment;
+            Taint.Fixpoint.Context.taint_configuration = taint_configuration_shared_memory;
+            type_environment = Analysis.TypeEnvironment.read_only environment;
             class_interval_graph;
             define_call_graphs;
           }
@@ -494,6 +503,7 @@ let run_taint_analysis
       Reporting.report
         ~scheduler
         ~static_analysis_configuration
+        ~taint_configuration:taint_configuration_shared_memory
         ~filename_lookup
         ~override_graph:override_graph_shared_memory
         ~callables

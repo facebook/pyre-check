@@ -13,7 +13,7 @@ type t
 val load
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  taint_configuration:TaintConfiguration.t ->
+  taint_configuration:TaintConfiguration.Heap.t ->
   enabled:bool ->
   t
 

@@ -62,7 +62,7 @@ val apply_attribute_query_rule
 val apply_all_rules
   :  resolution:Analysis.Resolution.t ->
   scheduler:Scheduler.t ->
-  configuration:Taint.TaintConfiguration.t ->
+  taint_configuration:Taint.TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   source_sink_filter:Taint.TaintConfiguration.SourceSinkFilter.t option ->
   rules:Taint.ModelParser.Internal.ModelQuery.rule list ->
@@ -72,7 +72,7 @@ val apply_all_rules
   ModelQueryRegistryMap.t * Taint.ModelVerificationError.t list
 
 val generate_models_from_queries
-  :  configuration:Taint.TaintConfiguration.t ->
+  :  taint_configuration:Taint.TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->

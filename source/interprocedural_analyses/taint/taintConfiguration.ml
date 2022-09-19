@@ -301,60 +301,241 @@ let filter_implicit_sinks ~source_sink_filter { conditional_test; literal_string
   }
 
 
-type t = {
-  sources: AnnotationParser.source_or_sink list;
-  sinks: AnnotationParser.source_or_sink list;
-  transforms: TaintTransform.t list;
-  filtered_sources: Sources.Set.t option;
-  filtered_sinks: Sinks.Set.t option;
-  filtered_transforms: TaintTransform.t list option;
-  features: string list;
-  rules: Rule.t list;
-  filtered_rule_codes: IntSet.t option;
-  implicit_sinks: implicit_sinks;
-  implicit_sources: implicit_sources;
-  partial_sink_converter: partial_sink_converter;
-  partial_sink_labels: string list String.Map.Tree.t;
-  find_missing_flows: Configuration.MissingFlowKind.t option;
-  dump_model_query_results_path: PyrePath.t option;
-  analysis_model_constraints: analysis_model_constraints;
-  lineage_analysis: bool;
-  source_sink_filter: SourceSinkFilter.t option;
-}
-
-let empty =
-  {
-    sources = [];
-    sinks = [];
-    transforms = [];
-    filtered_sources = None;
-    filtered_sinks = None;
-    filtered_transforms = None;
-    features = [];
-    rules = [];
-    filtered_rule_codes = None;
-    partial_sink_converter = String.Map.Tree.empty;
-    implicit_sinks = empty_implicit_sinks;
-    implicit_sources = empty_implicit_sources;
-    partial_sink_labels = String.Map.Tree.empty;
-    find_missing_flows = None;
-    dump_model_query_results_path = None;
-    analysis_model_constraints = default_analysis_model_constraints;
-    lineage_analysis = false;
-    source_sink_filter = None;
+module Heap = struct
+  type t = {
+    sources: AnnotationParser.source_or_sink list;
+    sinks: AnnotationParser.source_or_sink list;
+    transforms: TaintTransform.t list;
+    filtered_sources: Sources.Set.t option;
+    filtered_sinks: Sinks.Set.t option;
+    filtered_transforms: TaintTransform.t list option;
+    features: string list;
+    rules: Rule.t list;
+    filtered_rule_codes: IntSet.t option;
+    implicit_sinks: implicit_sinks;
+    implicit_sources: implicit_sources;
+    partial_sink_converter: partial_sink_converter;
+    partial_sink_labels: string list String.Map.Tree.t;
+    find_missing_flows: Configuration.MissingFlowKind.t option;
+    dump_model_query_results_path: PyrePath.t option;
+    analysis_model_constraints: analysis_model_constraints;
+    lineage_analysis: bool;
+    source_sink_filter: SourceSinkFilter.t option;
   }
 
+  let empty =
+    {
+      sources = [];
+      sinks = [];
+      transforms = [];
+      filtered_sources = None;
+      filtered_sinks = None;
+      filtered_transforms = None;
+      features = [];
+      rules = [];
+      filtered_rule_codes = None;
+      partial_sink_converter = String.Map.Tree.empty;
+      implicit_sinks = empty_implicit_sinks;
+      implicit_sources = empty_implicit_sources;
+      partial_sink_labels = String.Map.Tree.empty;
+      find_missing_flows = None;
+      dump_model_query_results_path = None;
+      analysis_model_constraints = default_analysis_model_constraints;
+      lineage_analysis = false;
+      source_sink_filter = None;
+    }
 
-module ConfigurationSharedMemory =
-  Memory.WithCache.Make
-    (Memory.SingletonKey)
-    (struct
-      type nonrec t = t
 
-      let prefix = Prefix.make ()
+  let default =
+    let sources =
+      List.map
+        ~f:(fun name -> { AnnotationParser.name; kind = Named })
+        ["Demo"; "Test"; "UserControlled"; "PII"; "Secrets"; "Cookies"]
+    in
+    let sinks =
+      List.map
+        ~f:(fun name -> { AnnotationParser.name; kind = Named })
+        [
+          "Demo";
+          "FileSystem";
+          "GetAttr";
+          "Logging";
+          "RemoteCodeExecution";
+          "SQL";
+          "Test";
+          "XMLParser";
+          "XSS";
+        ]
+    in
+    let transforms =
+      List.map ~f:(fun name -> TaintTransform.Named name) ["DemoTransform"; "TestTransform"]
+    in
+    let rules =
+      [
+        {
+          Rule.sources = [Sources.NamedSource "UserControlled"];
+          sinks = [Sinks.NamedSink "RemoteCodeExecution"];
+          transforms = [];
+          code = 5001;
+          name = "Possible shell injection.";
+          message_format =
+            "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+        };
+        {
+          sources = [Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"];
+          sinks = [Sinks.NamedSink "Test"];
+          transforms = [];
+          code = 5002;
+          name = "Test flow.";
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+        };
+        {
+          sources = [Sources.NamedSource "UserControlled"];
+          sinks = [Sinks.NamedSink "SQL"];
+          transforms = [];
+          code = 5005;
+          name = "User controlled data to SQL execution.";
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+        };
+        {
+          sources =
+            [
+              Sources.NamedSource "Cookies"; Sources.NamedSource "PII"; Sources.NamedSource "Secrets";
+            ];
+          sinks = [Sinks.NamedSink "Logging"];
+          transforms = [];
+          code = 5006;
+          name = "Restricted data being logged.";
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+        };
+        {
+          sources = [Sources.NamedSource "UserControlled"];
+          sinks = [Sinks.NamedSink "XMLParser"];
+          transforms = [];
+          code = 5007;
+          name = "User data to XML Parser.";
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+        };
+        {
+          sources = [Sources.NamedSource "UserControlled"];
+          sinks = [Sinks.NamedSink "XSS"];
+          transforms = [];
+          code = 5008;
+          name = "XSS";
+          message_format = "Possible XSS due to [{$sources}] data reaching [{$sinks}] sink(s)";
+        };
+        {
+          sources = [Sources.NamedSource "Demo"];
+          sinks = [Sinks.NamedSink "Demo"];
+          transforms = [];
+          code = 5009;
+          name = "Demo flow.";
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+        };
+        {
+          sources = [Sources.NamedSource "UserControlled"];
+          sinks = [Sinks.NamedSink "GetAttr"];
+          transforms = [];
+          code = 5010;
+          name = "User data to getattr.";
+          message_format = "Attacker may control at least one argument to getattr(,).";
+        };
+        {
+          sources = [Sources.NamedSource "Test"];
+          sinks = [Sinks.NamedSink "Test"];
+          transforms = [TaintTransform.Named "TestTransform"];
+          code = 5011;
+          name = "Flow with one transform.";
+          message_format =
+            "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+        };
+        {
+          sources = [Sources.NamedSource "Test"];
+          sinks = [Sinks.NamedSink "Test"];
+          transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"];
+          code = 5011;
+          name = "Flow with two transforms.";
+          message_format =
+            "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+        };
+        {
+          sources = [Sources.NamedSource "Demo"];
+          sinks = [Sinks.NamedSink "Demo"];
+          transforms = [];
+          code = 6001;
+          name = "Duplicate demo flow.";
+          message_format =
+            "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+        };
+      ]
+    in
+    {
+      sources;
+      sinks;
+      transforms;
+      filtered_sources = None;
+      filtered_sinks = None;
+      filtered_transforms = None;
+      features =
+        [
+          "copy";
+          "default";
+          "object";
+          "special_source";
+          "special_sink";
+          "string_concat_lhs";
+          "string_concat_rhs";
+        ];
+      rules;
+      filtered_rule_codes = None;
+      partial_sink_converter = String.Map.Tree.empty;
+      partial_sink_labels = String.Map.Tree.empty;
+      implicit_sinks = empty_implicit_sinks;
+      implicit_sources = empty_implicit_sources;
+      find_missing_flows = None;
+      dump_model_query_results_path = None;
+      analysis_model_constraints = default_analysis_model_constraints;
+      lineage_analysis = false;
+      source_sink_filter =
+        Some
+          (SourceSinkFilter.create
+             ~rules
+             ~filtered_rule_codes:None
+             ~filtered_sources:None
+             ~filtered_sinks:None
+             ~filtered_transforms:None);
+    }
+end
 
-      let description = "Taint configuration"
-    end)
+module SharedMemory = struct
+  module T =
+    Memory.WithCache.Make
+      (Memory.SingletonKey)
+      (struct
+        type t = Heap.t
+
+        let prefix = Prefix.make ()
+
+        let description = "Taint configuration"
+      end)
+
+  type t = Handle
+
+  let from_heap configuration =
+    let key = Memory.SingletonKey.key in
+    let () =
+      if T.mem key then
+        T.remove_batch (T.KeySet.singleton key)
+    in
+    let () = T.add key configuration in
+    Handle
+
+
+  let get Handle =
+    match T.get Memory.SingletonKey.key with
+    | None -> failwith "taint configuration not in shared memory"
+    | Some configuration -> configuration
+end
 
 module Error = struct
   type kind =
@@ -960,7 +1141,7 @@ let from_json_list source_json_list =
   >>| fun lineage_analysis ->
   let rules = List.rev_append rules generated_combined_rules in
   {
-    sources;
+    Heap.sources;
     sinks;
     transforms;
     filtered_sources = None;
@@ -994,7 +1175,7 @@ let from_json_list source_json_list =
   }
 
 
-let validate ({ sources; sinks; transforms; features; _ } as configuration) =
+let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration) =
   let ensure_list_unique ~get_name ~get_error elements =
     let seen = String.Hash_set.create () in
     let ensure_unique element =
@@ -1039,180 +1220,14 @@ let exception_on_error = function
   | Error errors -> raise (TaintConfigurationError errors)
 
 
-let register configuration =
-  let key = Memory.SingletonKey.key in
-  let () =
-    if ConfigurationSharedMemory.mem key then
-      ConfigurationSharedMemory.remove_batch (ConfigurationSharedMemory.KeySet.singleton key)
-  in
-  ConfigurationSharedMemory.add key configuration
-
-
-let default =
-  let sources =
-    List.map
-      ~f:(fun name -> { AnnotationParser.name; kind = Named })
-      ["Demo"; "Test"; "UserControlled"; "PII"; "Secrets"; "Cookies"]
-  in
-  let sinks =
-    List.map
-      ~f:(fun name -> { AnnotationParser.name; kind = Named })
-      [
-        "Demo";
-        "FileSystem";
-        "GetAttr";
-        "Logging";
-        "RemoteCodeExecution";
-        "SQL";
-        "Test";
-        "XMLParser";
-        "XSS";
-      ]
-  in
-  let transforms =
-    List.map ~f:(fun name -> TaintTransform.Named name) ["DemoTransform"; "TestTransform"]
-  in
-  let rules =
-    [
-      {
-        Rule.sources = [Sources.NamedSource "UserControlled"];
-        sinks = [Sinks.NamedSink "RemoteCodeExecution"];
-        transforms = [];
-        code = 5001;
-        name = "Possible shell injection.";
-        message_format =
-          "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
-      };
-      {
-        sources = [Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"];
-        sinks = [Sinks.NamedSink "Test"];
-        transforms = [];
-        code = 5002;
-        name = "Test flow.";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
-      };
-      {
-        sources = [Sources.NamedSource "UserControlled"];
-        sinks = [Sinks.NamedSink "SQL"];
-        transforms = [];
-        code = 5005;
-        name = "User controlled data to SQL execution.";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
-      };
-      {
-        sources =
-          [Sources.NamedSource "Cookies"; Sources.NamedSource "PII"; Sources.NamedSource "Secrets"];
-        sinks = [Sinks.NamedSink "Logging"];
-        transforms = [];
-        code = 5006;
-        name = "Restricted data being logged.";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
-      };
-      {
-        sources = [Sources.NamedSource "UserControlled"];
-        sinks = [Sinks.NamedSink "XMLParser"];
-        transforms = [];
-        code = 5007;
-        name = "User data to XML Parser.";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
-      };
-      {
-        sources = [Sources.NamedSource "UserControlled"];
-        sinks = [Sinks.NamedSink "XSS"];
-        transforms = [];
-        code = 5008;
-        name = "XSS";
-        message_format = "Possible XSS due to [{$sources}] data reaching [{$sinks}] sink(s)";
-      };
-      {
-        sources = [Sources.NamedSource "Demo"];
-        sinks = [Sinks.NamedSink "Demo"];
-        transforms = [];
-        code = 5009;
-        name = "Demo flow.";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
-      };
-      {
-        sources = [Sources.NamedSource "UserControlled"];
-        sinks = [Sinks.NamedSink "GetAttr"];
-        transforms = [];
-        code = 5010;
-        name = "User data to getattr.";
-        message_format = "Attacker may control at least one argument to getattr(,).";
-      };
-      {
-        sources = [Sources.NamedSource "Test"];
-        sinks = [Sinks.NamedSink "Test"];
-        transforms = [TaintTransform.Named "TestTransform"];
-        code = 5011;
-        name = "Flow with one transform.";
-        message_format =
-          "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
-      };
-      {
-        sources = [Sources.NamedSource "Test"];
-        sinks = [Sinks.NamedSink "Test"];
-        transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"];
-        code = 5011;
-        name = "Flow with two transforms.";
-        message_format =
-          "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
-      };
-      {
-        sources = [Sources.NamedSource "Demo"];
-        sinks = [Sinks.NamedSink "Demo"];
-        transforms = [];
-        code = 6001;
-        name = "Duplicate demo flow.";
-        message_format =
-          "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
-      };
-    ]
-  in
-  {
-    sources;
-    sinks;
-    transforms;
-    filtered_sources = None;
-    filtered_sinks = None;
-    filtered_transforms = None;
-    features =
-      [
-        "copy";
-        "default";
-        "object";
-        "special_source";
-        "special_sink";
-        "string_concat_lhs";
-        "string_concat_rhs";
-      ];
-    rules;
-    filtered_rule_codes = None;
-    partial_sink_converter = String.Map.Tree.empty;
-    partial_sink_labels = String.Map.Tree.empty;
-    implicit_sinks = empty_implicit_sinks;
-    implicit_sources = empty_implicit_sources;
-    find_missing_flows = None;
-    dump_model_query_results_path = None;
-    analysis_model_constraints = default_analysis_model_constraints;
-    lineage_analysis = false;
-    source_sink_filter =
-      Some
-        (SourceSinkFilter.create
-           ~rules
-           ~filtered_rule_codes:None
-           ~filtered_sources:None
-           ~filtered_sinks:None
-           ~filtered_transforms:None);
-  }
-
-
 let obscure_flows_configuration configuration =
   let rules =
     [
       {
         Rule.sources =
-          List.map ~f:(fun { name = source; _ } -> Sources.NamedSource source) configuration.sources;
+          List.map
+            ~f:(fun { name = source; _ } -> Sources.NamedSource source)
+            configuration.Heap.sources;
         sinks = [Sinks.NamedSink "Obscure"];
         transforms = [];
         code = 9001;
@@ -1241,7 +1256,9 @@ let missing_type_flows_configuration configuration =
     [
       {
         Rule.sources =
-          List.map ~f:(fun { name = source; _ } -> Sources.NamedSource source) configuration.sources;
+          List.map
+            ~f:(fun { name = source; _ } -> Sources.NamedSource source)
+            configuration.Heap.sources;
         sinks = [Sinks.NamedSink "UnknownCallee"];
         transforms = [];
         code = 9002;
@@ -1268,12 +1285,6 @@ let missing_type_flows_configuration configuration =
 let apply_missing_flows configuration = function
   | Configuration.MissingFlowKind.Obscure -> obscure_flows_configuration configuration
   | Configuration.MissingFlowKind.Type -> missing_type_flows_configuration configuration
-
-
-let get () =
-  match ConfigurationSharedMemory.get Memory.SingletonKey.key with
-  | None -> default
-  | Some configuration -> configuration
 
 
 let from_taint_model_paths taint_model_paths =
@@ -1318,7 +1329,7 @@ let with_command_line_options
   | None -> Ok configuration
   | Some source_filter ->
       let parse_source_reference source =
-        AnnotationParser.parse_source ~allowed:configuration.sources source
+        AnnotationParser.parse_source ~allowed:configuration.Heap.sources source
         |> Result.map_error ~f:(fun _ ->
                { Error.path = None; kind = Error.UnsupportedSource source })
       in
@@ -1421,51 +1432,41 @@ let with_command_line_options
   }
 
 
-let source_can_match_rule { source_sink_filter; _ } source =
+let source_can_match_rule { Heap.source_sink_filter; _ } source =
   match source_sink_filter with
   | Some source_sink_filter -> SourceSinkFilter.should_keep_source source_sink_filter source
   | None -> true
 
 
-let sink_can_match_rule { source_sink_filter; _ } sink =
+let sink_can_match_rule { Heap.source_sink_filter; _ } sink =
   match source_sink_filter with
   | Some source_sink_filter -> SourceSinkFilter.should_keep_sink source_sink_filter sink
   | None -> true
 
 
-let code_metadata () =
-  let { rules; _ } = get () in
+let code_metadata { Heap.rules; _ } =
   `Assoc (List.map rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
 
 
-let conditional_test_sinks () =
-  match get () with
-  | { implicit_sinks = { conditional_test; _ }; _ } -> conditional_test
+let conditional_test_sinks { Heap.implicit_sinks = { conditional_test; _ }; _ } = conditional_test
+
+let literal_string_sinks { Heap.implicit_sinks = { literal_string_sinks; _ }; _ } =
+  literal_string_sinks
 
 
-let literal_string_sinks () =
-  match get () with
-  | { implicit_sinks = { literal_string_sinks; _ }; _ } -> literal_string_sinks
-
-
-let get_triggered_sink ~partial_sink ~source =
-  let { partial_sink_converter; _ } = get () in
+let get_triggered_sink { Heap.partial_sink_converter; _ } ~partial_sink ~source =
   PartialSinkConverter.get_triggered_sink partial_sink_converter ~partial_sink ~source
 
 
-let is_missing_flow_analysis kind =
-  match get () with
-  | { find_missing_flows; _ } ->
-      Option.equal Configuration.MissingFlowKind.equal (Some kind) find_missing_flows
+let is_missing_flow_analysis { Heap.find_missing_flows; _ } kind =
+  Option.equal Configuration.MissingFlowKind.equal (Some kind) find_missing_flows
 
 
-let literal_string_sources () =
-  let { implicit_sources; _ } = get () in
-  implicit_sources.literal_strings
+let literal_string_sources { Heap.implicit_sources = { literal_strings; _ }; _ } = literal_strings
 
-
-let get_maximum_overrides_to_analyze () =
-  let { analysis_model_constraints = { maximum_overrides_to_analyze; _ }; _ } = get () in
+let maximum_overrides_to_analyze
+    { Heap.analysis_model_constraints = { maximum_overrides_to_analyze; _ }; _ }
+  =
   maximum_overrides_to_analyze
 
 

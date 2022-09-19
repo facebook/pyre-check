@@ -38,10 +38,11 @@ let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
           not (Domains.BackwardTaint.is_bottom taint))
 
 
-let issues_to_json ~fixpoint_state ~filename_lookup ~override_graph issues =
+let issues_to_json ~taint_configuration ~fixpoint_state ~filename_lookup ~override_graph issues =
   let issue_to_json issue =
     let json =
       Issue.to_json
+        ~taint_configuration
         ~expand_overrides:(Some override_graph)
         ~is_valid_callee:(has_significant_summary ~fixpoint_state)
         ~filename_lookup
@@ -52,11 +53,6 @@ let issues_to_json ~fixpoint_state ~filename_lookup ~override_graph issues =
   List.map ~f:issue_to_json issues
 
 
-let metadata () =
-  let codes = TaintConfiguration.code_metadata () in
-  `Assoc ["codes", codes]
-
-
 let statistics () =
   let model_verification_errors =
     ModelVerificationError.get () |> List.map ~f:ModelVerificationError.to_json
@@ -64,10 +60,13 @@ let statistics () =
   `Assoc ["model_verification_errors", `List model_verification_errors]
 
 
-let extract_errors ~scheduler ~callables ~fixpoint_state =
+let extract_errors ~scheduler ~taint_configuration ~callables ~fixpoint_state =
   let extract_errors callables =
+    let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.map
-      ~f:(fun callable -> Fixpoint.get_result fixpoint_state callable |> List.map ~f:Issue.to_error)
+      ~f:(fun callable ->
+        Fixpoint.get_result fixpoint_state callable
+        |> List.map ~f:(Issue.to_error ~taint_configuration))
       callables
     |> List.concat_no_order
   in
@@ -82,8 +81,18 @@ let extract_errors ~scheduler ~callables ~fixpoint_state =
   |> List.concat_no_order
 
 
-let externalize ~fixpoint_state ~filename_lookup ~override_graph callable result model =
-  let issues = issues_to_json ~fixpoint_state ~filename_lookup ~override_graph result in
+let externalize
+    ~taint_configuration
+    ~fixpoint_state
+    ~filename_lookup
+    ~override_graph
+    callable
+    result
+    model
+  =
+  let issues =
+    issues_to_json ~taint_configuration ~fixpoint_state ~filename_lookup ~override_graph result
+  in
   if not (Model.should_externalize model) then
     issues
   else
@@ -96,16 +105,41 @@ let externalize ~fixpoint_state ~filename_lookup ~override_graph callable result
     :: issues
 
 
-let fetch_and_externalize ~fixpoint_state ~filename_lookup ~override_graph callable =
+let fetch_and_externalize
+    ~taint_configuration
+    ~fixpoint_state
+    ~filename_lookup
+    ~override_graph
+    callable
+  =
   let model =
     Fixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
   in
   let result = Fixpoint.get_result fixpoint_state callable in
-  externalize ~fixpoint_state ~filename_lookup ~override_graph callable result model
+  externalize
+    ~taint_configuration
+    ~fixpoint_state
+    ~filename_lookup
+    ~override_graph
+    callable
+    result
+    model
 
 
-let emit_externalization ~fixpoint_state ~filename_lookup ~override_graph emitter callable =
-  fetch_and_externalize ~fixpoint_state ~filename_lookup ~override_graph callable
+let emit_externalization
+    ~taint_configuration
+    ~fixpoint_state
+    ~filename_lookup
+    ~override_graph
+    emitter
+    callable
+  =
+  fetch_and_externalize
+    ~taint_configuration
+    ~fixpoint_state
+    ~filename_lookup
+    ~override_graph
+    callable
   |> List.iter ~f:emitter
 
 
@@ -116,6 +150,7 @@ type callable_shard = {
 
 let save_results_to_directory
     ~scheduler
+    ~taint_configuration
     ~result_directory
     ~output_format
     ~local_root
@@ -143,7 +178,14 @@ let save_results_to_directory
         Json.to_channel out_channel json;
         Printf.fprintf out_channel "\n"
       in
-      emit_externalization ~fixpoint_state ~filename_lookup ~override_graph emitter callable
+      let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
+      emit_externalization
+        ~taint_configuration
+        ~fixpoint_state
+        ~filename_lookup
+        ~override_graph
+        emitter
+        callable
     in
     match output_format with
     | Configuration.TaintOutputFormat.Json ->
@@ -208,7 +250,7 @@ let save_results_to_directory
       in
       Json.Util.combine global_statistics (statistics ())
     in
-    let toplevel_metadata =
+    let metadata_json =
       `Assoc
         [
           ( "filename_spec",
@@ -219,10 +261,13 @@ let save_results_to_directory
           "tool", `String "pysa";
           "version", `String (Version.version ());
           "stats", statistics;
+          ( "codes",
+            taint_configuration
+            |> TaintConfiguration.SharedMemory.get
+            |> TaintConfiguration.code_metadata );
         ]
     in
-    let analysis_metadata = metadata () in
-    Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_channel out_channel;
+    Json.to_channel out_channel metadata_json;
     close_out out_channel
   in
   remove_existing_models ();
@@ -246,6 +291,7 @@ let report
         configuration = { local_root; show_error_traces; _ };
         _;
       }
+    ~taint_configuration
     ~filename_lookup
     ~override_graph
     ~callables
@@ -254,7 +300,11 @@ let report
     ~fixpoint_state
   =
   let errors =
-    extract_errors ~scheduler ~callables:(Target.Set.elements callables) ~fixpoint_state
+    extract_errors
+      ~taint_configuration
+      ~scheduler
+      ~callables:(Target.Set.elements callables)
+      ~fixpoint_state
   in
   (* Log and record stats *)
   let () = Log.info "Found %d issues" (List.length errors) in
@@ -285,6 +335,7 @@ let report
   | Some result_directory ->
       save_results_to_directory
         ~scheduler
+        ~taint_configuration
         ~result_directory
         ~output_format
         ~local_root

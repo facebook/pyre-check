@@ -29,7 +29,9 @@ let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configurati
     >>= TaintConfiguration.validate
   in
   (* Test that the configuration can be written in shared memory. *)
-  let (_ : (unit, Error.t list) Result.t) = configuration >>| TaintConfiguration.register in
+  let (_ : (TaintConfiguration.SharedMemory.t, Error.t list) Result.t) =
+    configuration >>| TaintConfiguration.SharedMemory.from_heap
+  in
   configuration
 
 
@@ -407,8 +409,8 @@ let test_lineage_analysis _ =
 
 let test_partial_sink_converter _ =
   let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
-    assert_parse configuration |> Taint.TaintConfiguration.register;
-    Taint.TaintConfiguration.get_triggered_sink ~partial_sink ~source
+    let configuration = assert_parse configuration in
+    Taint.TaintConfiguration.get_triggered_sink configuration ~partial_sink ~source
     |> assert_equal
          ~cmp:(Option.equal Sinks.equal)
          ~printer:(fun value -> value >>| Sinks.show |> Option.value ~default:"None")

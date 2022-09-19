@@ -18,13 +18,13 @@ let assert_taint ~context source expected =
   let qualifier = Ast.Reference.create "qualifier" in
   let project = Test.ScratchProject.setup ~context [handle, source] in
   let configuration = Test.ScratchProject.configuration_of project in
-  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
+  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
     Test.ScratchProject.build_type_environment project
   in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
-      (TypeEnvironment.ReadOnly.ast_environment environment)
+      (TypeEnvironment.ReadOnly.ast_environment type_environment)
       qualifier
     |> fun option -> Option.value_exn option
   in
@@ -35,7 +35,7 @@ let assert_taint ~context source expected =
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let define =
       (* Apply decorators to make sure we match parameters up correctly. *)
-      let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+      let resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
       Analysis.Annotated.Define.create define
       |> Analysis.Annotated.Define.decorate ~resolution
       |> Analysis.Annotated.Define.define
@@ -43,7 +43,7 @@ let assert_taint ~context source expected =
     let call_graph_of_define =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
-        ~environment
+        ~environment:type_environment
         ~override_graph:(OverrideGraph.SharedMemory.get_for_testing_only ())
         ~attribute_targets:(Registry.object_targets initial_models)
         ~qualifier
@@ -53,7 +53,8 @@ let assert_taint ~context source expected =
     let backward =
       BackwardAnalysis.run
         ?profiler:None
-        ~environment
+        ~taint_configuration:TaintConfiguration.Heap.default
+        ~environment:type_environment
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.get_for_testing_only ())
         ~qualifier
         ~callable:call_target
@@ -71,7 +72,14 @@ let assert_taint ~context source expected =
   let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models defines in
   let get_model = Registry.get models in
   let get_errors _ = [] in
-  List.iter ~f:(check_expectation ~environment ~get_model ~get_errors) expected
+  List.iter
+    ~f:
+      (check_expectation
+         ~type_environment
+         ~taint_configuration:TaintConfiguration.Heap.default
+         ~get_model
+         ~get_errors)
+    expected
 
 
 let test_plus_taint_in_taint_out context =

@@ -10,7 +10,7 @@ open Taint
 open TestHelper
 
 let test_dump_model_query_results context =
-  let configuration = TaintConfiguration.default in
+  let configuration = TaintConfiguration.Heap.default in
   (* Test functions *)
   let _ =
     initialize

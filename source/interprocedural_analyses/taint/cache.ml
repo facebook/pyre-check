@@ -177,7 +177,9 @@ let load ~scheduler ~configuration ~taint_configuration ~enabled =
     in
     (* Re-write the original taint configuration in shared memory,
      * in case it was overwritten when loading the cache. *)
-    let () = TaintConfiguration.register taint_configuration in
+    let (_ : TaintConfiguration.SharedMemory.t) =
+      TaintConfiguration.SharedMemory.from_heap taint_configuration
+    in
     { cache; save_cache = true; scheduler; configuration }
 
 

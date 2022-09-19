@@ -942,6 +942,9 @@ let rec process_request ~environment ~build_system request =
           | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
           | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
           | Ok taint_configuration -> (
+              let taint_configuration_shared_memory =
+                Taint.TaintConfiguration.SharedMemory.from_heap taint_configuration
+              in
               let get_model_queries (path, source) =
                 Taint.ModelParser.parse
                   ~resolution:
@@ -951,7 +954,7 @@ let rec process_request ~environment ~build_system request =
                        (module TypeCheck.DummyContext))
                   ~path
                   ~source
-                  ~configuration:taint_configuration
+                  ~taint_configuration
                   ~source_sink_filter:None
                   ~callables:None
                   ~stubs:(Interprocedural.Target.HashSet.create ())
@@ -1028,7 +1031,7 @@ let rec process_request ~environment ~build_system request =
                           ~qualifiers
                       in
                       TaintModelQuery.ModelQuery.generate_models_from_queries
-                        ~configuration:taint_configuration
+                        ~taint_configuration:taint_configuration_shared_memory
                         ~class_hierarchy_graph:
                           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
                              class_hierarchy_graph)
@@ -1293,7 +1296,7 @@ let rec process_request ~environment ~build_system request =
                   [PyrePath.create_relative ~root ~relative:path]
             | None -> configuration.Configuration.Analysis.taint_model_paths
           in
-          let configuration =
+          let taint_configuration =
             Taint.TaintConfiguration.from_taint_model_paths paths
             |> Taint.TaintConfiguration.exception_on_error
           in
@@ -1307,7 +1310,7 @@ let rec process_request ~environment ~build_system request =
                      (module TypeCheck.DummyContext))
                 ~path
                 ~source
-                ~configuration
+                ~taint_configuration
                 ~source_sink_filter:None
                 ~callables:None
                 ~stubs:(Interprocedural.Target.HashSet.create ())

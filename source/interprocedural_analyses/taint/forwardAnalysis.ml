@@ -28,7 +28,7 @@ module type FUNCTION_CONTEXT = sig
 
   val environment : TypeEnvironment.ReadOnly.t
 
-  val taint_configuration : TaintConfiguration.t
+  val taint_configuration : TaintConfiguration.Heap.t
 
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
@@ -190,7 +190,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let generate_issues () =
-    Issue.Candidates.generate_issues candidates ~define:FunctionContext.definition
+    Issue.Candidates.generate_issues
+      candidates
+      ~taint_configuration:FunctionContext.taint_configuration
+      ~define:FunctionContext.definition
 
 
   let return_sink ~resolution ~return_location =
@@ -402,6 +405,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let () =
         List.iter sink_trees ~f:(fun { Issue.SinkTreeWithHandle.sink_tree; handle } ->
             check_triggered_flows
+              ~taint_configuration:FunctionContext.taint_configuration
               ~triggered_sinks
               ~sink_handle:handle
               ~location
@@ -2422,7 +2426,7 @@ let extract_source_model
     ~define
     ~resolution
     ~taint_configuration:
-      { TaintConfiguration.analysis_model_constraints = { maximum_trace_length; _ }; _ }
+      { TaintConfiguration.Heap.analysis_model_constraints = { maximum_trace_length; _ }; _ }
     ~breadcrumbs_to_attach
     ~via_features_to_attach
     exit_taint
@@ -2482,6 +2486,7 @@ let extract_source_model
 
 let run
     ?(profiler = TaintProfiler.none)
+    ~taint_configuration
     ~environment
     ~class_interval_graph
     ~qualifier
@@ -2505,7 +2510,7 @@ let run
 
     let environment = environment
 
-    let taint_configuration = TaintConfiguration.get ()
+    let taint_configuration = taint_configuration
 
     let class_interval_graph = class_interval_graph
 

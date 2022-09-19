@@ -52,7 +52,11 @@ let test_no_errors _ =
         ~source_tree
         ~sink_tree
     in
-    let errors = Candidates.generate_issues candidates ~define |> List.map ~f:to_error in
+    let taint_configuration = TaintConfiguration.Heap.default in
+    let errors =
+      Candidates.generate_issues candidates ~taint_configuration ~define
+      |> List.map ~f:(to_error ~taint_configuration)
+    in
     assert_equal
       ~msg:"Errors"
       ~printer:(fun errors -> Sexp.to_string [%message (errors : Interprocedural.Error.t list)])
@@ -105,7 +109,11 @@ let test_errors _ =
         ~source_tree
         ~sink_tree
     in
-    let errors = Candidates.generate_issues candidates ~define |> List.map ~f:to_error in
+    let taint_configuration = TaintConfiguration.Heap.default in
+    let errors =
+      Candidates.generate_issues candidates ~taint_configuration ~define
+      |> List.map ~f:(to_error ~taint_configuration)
+    in
     assert_equal
       ~msg:"Error"
       ~printer:(List.to_string ~f:Int.to_string)

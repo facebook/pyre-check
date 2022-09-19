@@ -370,6 +370,7 @@ let strip_for_callsite
 
 
 let apply_sanitizers
+    ~taint_configuration
     {
       forward = { source_taint };
       backward = { taint_in_taint_out; sink_taint };
@@ -458,7 +459,7 @@ let apply_sanitizers
       |> ForwardState.transform
            ForwardTaint.kind
            Filter
-           ~f:(TaintConfiguration.source_can_match_rule (TaintConfiguration.get ()))
+           ~f:(TaintConfiguration.source_can_match_rule taint_configuration)
     in
 
     let taint_in_taint_out =
@@ -485,7 +486,7 @@ let apply_sanitizers
       |> BackwardState.transform
            BackwardTaint.kind
            Filter
-           ~f:(TaintConfiguration.sink_can_match_rule (TaintConfiguration.get ()))
+           ~f:(TaintConfiguration.sink_can_match_rule taint_configuration)
     in
     let taint_in_taint_out =
       (* def foo(x: Sanitize[TaintSource[...]]): ... *)

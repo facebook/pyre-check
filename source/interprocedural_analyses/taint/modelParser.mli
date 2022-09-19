@@ -222,7 +222,7 @@ val parse
   :  resolution:Analysis.Resolution.t ->
   ?path:PyrePath.t ->
   source:string ->
-  configuration:TaintConfiguration.t ->
+  taint_configuration:TaintConfiguration.Heap.t ->
   source_sink_filter:TaintConfiguration.SourceSinkFilter.t option ->
   callables:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->

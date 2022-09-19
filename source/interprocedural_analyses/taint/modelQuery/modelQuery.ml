@@ -898,7 +898,7 @@ let get_class_attributes ~global_resolution ~class_name =
 let apply_all_rules
     ~resolution
     ~scheduler
-    ~configuration
+    ~taint_configuration
     ~class_hierarchy_graph
     ~source_sink_filter
     ~rules
@@ -919,12 +919,12 @@ let apply_all_rules
 
     (* Generate models for functions and methods. *)
     let apply_rules_for_callable models_and_names callable =
+      let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
       let taint_to_model_and_names =
         callable_rules
         |> List.map ~f:(fun rule ->
                apply_callable_query_rule
-                 ~verbose:
-                   (Option.is_some configuration.TaintConfiguration.dump_model_query_results_path)
+                 ~verbose:(Option.is_some taint_configuration.dump_model_query_results_path)
                  ~resolution:global_resolution
                  ~class_hierarchy_graph
                  ~rule
@@ -979,11 +979,12 @@ let apply_all_rules
     in
     (* Generate models for attributes. *)
     let apply_rules_for_attribute models_and_names (name, annotation) =
+      let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
       let taint_to_model_and_names =
         attribute_rules
         |> List.map ~f:(fun rule ->
                apply_attribute_query_rule
-                 ~verbose:(Option.is_some configuration.dump_model_query_results_path)
+                 ~verbose:(Option.is_some taint_configuration.dump_model_query_results_path)
                  ~resolution:global_resolution
                  ~class_hierarchy_graph
                  ~rule
@@ -1057,7 +1058,7 @@ let apply_all_rules
 
 
 let generate_models_from_queries
-    ~configuration
+    ~taint_configuration
     ~class_hierarchy_graph
     ~scheduler
     ~environment
@@ -1082,7 +1083,7 @@ let generate_models_from_queries
   apply_all_rules
     ~resolution
     ~scheduler
-    ~configuration
+    ~taint_configuration
     ~class_hierarchy_graph
     ~source_sink_filter
     ~rules:queries

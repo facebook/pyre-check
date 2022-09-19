@@ -25,7 +25,7 @@ module type FUNCTION_CONTEXT = sig
 
   val environment : TypeEnvironment.ReadOnly.t
 
-  val taint_configuration : TaintConfiguration.t
+  val taint_configuration : TaintConfiguration.Heap.t
 
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
@@ -2100,7 +2100,7 @@ let extract_tito_and_sink_models
     ~resolution
     ~taint_configuration:
       {
-        TaintConfiguration.analysis_model_constraints =
+        TaintConfiguration.Heap.analysis_model_constraints =
           { maximum_trace_length; maximum_tito_depth; _ };
         _;
       }
@@ -2211,6 +2211,7 @@ let extract_tito_and_sink_models
 
 let run
     ?(profiler = TaintProfiler.none)
+    ~taint_configuration
     ~environment
     ~class_interval_graph
     ~qualifier
@@ -2235,7 +2236,7 @@ let run
 
     let environment = environment
 
-    let taint_configuration = TaintConfiguration.get ()
+    let taint_configuration = taint_configuration
 
     let class_interval_graph = class_interval_graph
 

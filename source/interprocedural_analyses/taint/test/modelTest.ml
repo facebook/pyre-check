@@ -29,7 +29,7 @@ let set_up_environment
     | Some source -> source
   in
   let project = ScratchProject.setup ~context ["test.py", source] in
-  let configuration =
+  let taint_configuration =
     let named name = { AnnotationParser.name; kind = Named } in
     let sources =
       [
@@ -67,7 +67,7 @@ let set_up_environment
             };
           ]
     in
-    TaintConfiguration.
+    TaintConfiguration.Heap.
       {
         empty with
         sources;
@@ -99,8 +99,8 @@ let set_up_environment
     ModelParser.parse
       ~resolution
       ~source
-      ~configuration
-      ~source_sink_filter:configuration.source_sink_filter
+      ~taint_configuration
+      ~source_sink_filter:taint_configuration.source_sink_filter
       ~callables:None
       ~stubs:(Target.HashSet.create ())
       ()
@@ -112,7 +112,7 @@ let set_up_environment
     (List.is_empty errors);
 
   let environment = ScratchProject.type_environment project in
-  parse_result, environment, skip_overrides
+  parse_result, environment, taint_configuration, skip_overrides
 
 
 let assert_model
@@ -126,7 +126,7 @@ let assert_model
     ~expect
     ()
   =
-  let { ModelParser.models; _ }, environment, skip_overrides =
+  let { ModelParser.models; _ }, type_environment, taint_configuration, skip_overrides =
     set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context ~model_source ()
   in
   begin
@@ -138,7 +138,9 @@ let assert_model
   end;
   let get_model = Registry.get models in
   let get_errors _ = [] in
-  List.iter ~f:(check_expectation ~environment ~get_model ~get_errors) expect
+  List.iter
+    ~f:(check_expectation ~type_environment ~taint_configuration ~get_model ~get_errors)
+    expect
 
 
 let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~expect () =
@@ -174,8 +176,8 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
   in
   let sources = ("test.py", source) :: sources in
   let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in
-  let configuration =
-    TaintConfiguration.
+  let taint_configuration =
+    TaintConfiguration.Heap.
       {
         empty with
         sources = List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["A"; "B"];
@@ -189,7 +191,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
     let path = path >>| PyrePath.create_absolute in
     ModelParser.parse
       ~resolution
-      ~configuration
+      ~taint_configuration
       ~source_sink_filter:None
       ?path
       ~source:(Test.trim_extra_indentation model_source)
@@ -211,7 +213,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
-  let { ModelParser.queries; _ }, _, _ =
+  let { ModelParser.queries; _ }, _, _, _ =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   assert_equal
@@ -5202,7 +5204,7 @@ let test_query_parsing context =
 
   (* Expected models *)
   let create_expected_model ?source ?rules ~model_source function_name =
-    let { Taint.ModelParser.models; _ }, _, _ =
+    let { Taint.ModelParser.models; _ }, _, _, _ =
       set_up_environment ?source ?rules ~context ~model_source ()
     in
     let model = Option.value_exn (Registry.get models (List.hd_exn (Registry.targets models))) in

@@ -287,7 +287,7 @@ let rec parse_annotations
     ~path
     ~location
     ~model_name
-    ~configuration
+    ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
     ?(is_object_target = false)
@@ -321,13 +321,13 @@ let rec parse_annotations
         | None -> Error (annotation_error (Format.sprintf "No such parameter `%s`" name)))
   in
   let rec extract_breadcrumbs ?(is_dynamic = false) expression =
-    let open TaintConfiguration in
+    let open TaintConfiguration.Heap in
     match expression.Node.value with
     | Expression.Name (Name.Identifier breadcrumb) ->
         if is_dynamic then
           Ok [Features.Breadcrumb.SimpleVia breadcrumb]
         else
-          Features.Breadcrumb.simple_via ~allowed:configuration.features breadcrumb
+          Features.Breadcrumb.simple_via ~allowed:taint_configuration.features breadcrumb
           >>| (fun breadcrumb -> [breadcrumb])
           |> map_error ~f:annotation_error
     | Tuple expressions ->
@@ -489,11 +489,11 @@ let rec parse_annotations
     kinds, List.concat breadcrumbs, List.concat via_features
   in
   let get_source_kinds expression =
-    let open TaintConfiguration in
+    let open TaintConfiguration.Heap in
     extract_leafs expression
     >>= fun (kinds, breadcrumbs, via_features) ->
     List.map kinds ~f:(fun (kind, subkind) ->
-        AnnotationParser.parse_source ~allowed:configuration.sources ?subkind kind
+        AnnotationParser.parse_source ~allowed:taint_configuration.sources ?subkind kind
         >>| fun source ->
         Source
           {
@@ -509,11 +509,11 @@ let rec parse_annotations
     |> map_error ~f:annotation_error
   in
   let get_sink_kinds expression =
-    let open TaintConfiguration in
+    let open TaintConfiguration.Heap in
     extract_leafs expression
     >>= fun (kinds, breadcrumbs, via_features) ->
     List.map kinds ~f:(fun (kind, subkind) ->
-        AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind
+        AnnotationParser.parse_sink ~allowed:taint_configuration.sinks ?subkind kind
         >>| fun sink ->
         Sink
           {
@@ -529,14 +529,17 @@ let rec parse_annotations
     |> map_error ~f:annotation_error
   in
   let get_taint_in_taint_out expression =
-    let open TaintConfiguration in
+    let open TaintConfiguration.Heap in
     extract_leafs expression
     >>= fun (kinds, breadcrumbs, via_features) ->
     match kinds with
     | [] -> Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs; via_features; path = [] }]
     | _ ->
         List.map kinds ~f:(fun (kind, subkind) ->
-            AnnotationParser.parse_tito ~allowed_transforms:configuration.transforms ?subkind kind
+            AnnotationParser.parse_tito
+              ~allowed_transforms:taint_configuration.transforms
+              ?subkind
+              kind
             >>| fun tito -> Tito { tito; breadcrumbs; via_features; path = [] })
         |> all
         |> map_error ~f:annotation_error
@@ -753,7 +756,7 @@ let rec parse_annotations
               ~path
               ~location:expression.Node.location
               ~model_name
-              ~configuration
+              ~taint_configuration
               ~parameters
               ~callable_parameter_names_to_positions
               ~is_object_target
@@ -826,12 +829,12 @@ let rec parse_annotations
                         { Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ };
                       ];
                   } ->
-                  if not (String.Map.Tree.mem configuration.partial_sink_labels kind) then
+                  if not (String.Map.Tree.mem taint_configuration.partial_sink_labels kind) then
                     Error
                       (annotation_error (Format.asprintf "Unrecognized partial sink `%s`." kind))
                   else
                     let label_options =
-                      String.Map.Tree.find_exn configuration.partial_sink_labels kind
+                      String.Map.Tree.find_exn taint_configuration.partial_sink_labels kind
                     in
                     if not (List.mem label_options label ~equal:String.equal) then
                       Error
@@ -889,7 +892,7 @@ let rec parse_annotations
               ~path
               ~location:expression.Node.location
               ~model_name
-              ~configuration
+              ~taint_configuration
               ~parameters
               ~callable_parameter_names_to_positions
               ~is_object_target
@@ -1871,7 +1874,7 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
 
 let parse_model_clause
     ~path
-    ~configuration
+    ~taint_configuration
     ~find_clause
     ~is_object_target
     ({ Node.value; location } as expression)
@@ -1927,7 +1930,7 @@ let parse_model_clause
               ~path
               ~location
               ~model_name:"model query"
-              ~configuration
+              ~taint_configuration
               ~parameters:[]
               ~callable_parameter_names_to_positions:None
               ~is_object_target
@@ -2123,7 +2126,7 @@ let parse_parameter_taint
     ~path
     ~location
     ~model_name
-    ~configuration
+    ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
     ~is_object_target
@@ -2134,7 +2137,7 @@ let parse_parameter_taint
         ~path
         ~location
         ~model_name
-        ~configuration
+        ~taint_configuration
         ~parameters
         ~callable_parameter_names_to_positions
         ~is_object_target
@@ -2284,7 +2287,7 @@ let parse_return_taint
     ~path
     ~location
     ~model_name
-    ~configuration
+    ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
     ~is_object_target
@@ -2295,7 +2298,7 @@ let parse_return_taint
     ~path
     ~location
     ~model_name
-    ~configuration
+    ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
     ~is_object_target
@@ -2364,7 +2367,7 @@ let resolve_global_callable
 let adjust_sanitize_and_modes_and_skipped_override
     ~path
     ~define_name
-    ~configuration
+    ~taint_configuration
     ~source_sink_filter
     ~top_level_decorators
     ~is_object_target
@@ -2388,7 +2391,7 @@ let adjust_sanitize_and_modes_and_skipped_override
       ~path
       ~location
       ~model_name:(Reference.show define_name)
-      ~configuration
+      ~taint_configuration
       ~parameters:[]
       ~callable_parameter_names_to_positions:None
       ~is_object_target
@@ -2564,7 +2567,7 @@ let adjust_sanitize_and_modes_and_skipped_override
 let create_model_from_signature
     ~resolution
     ~path
-    ~configuration
+    ~taint_configuration
     ~source_sink_filter
     ~is_obscure
     {
@@ -2716,7 +2719,7 @@ let create_model_from_signature
            ~path
            ~location
            ~model_name:(Reference.show callable_name)
-           ~configuration
+           ~taint_configuration
            ~parameters
            ~callable_parameter_names_to_positions
            ~is_object_target)
@@ -2730,7 +2733,7 @@ let create_model_from_signature
               ~path
               ~location
               ~model_name:(Reference.show callable_name)
-              ~configuration
+              ~taint_configuration
               ~parameters
               ~callable_parameter_names_to_positions
               ~is_object_target)
@@ -2770,7 +2773,7 @@ let create_model_from_signature
   model
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
-        ~configuration
+        ~taint_configuration
         ~source_sink_filter
         ~top_level_decorators
         ~define_name:callable_name
@@ -2782,7 +2785,7 @@ let create_model_from_signature
 let create_model_from_attribute
     ~resolution
     ~path
-    ~configuration
+    ~taint_configuration
     ~source_sink_filter
     { name; source_annotation; sink_annotation; decorators; location; call_target }
   =
@@ -2797,7 +2800,7 @@ let create_model_from_attribute
             ~path
             ~location
             ~model_name:(Reference.show name)
-            ~configuration
+            ~taint_configuration
             ~parameters:[]
             ~callable_parameter_names_to_positions:None
             ~is_object_target)
@@ -2815,7 +2818,7 @@ let create_model_from_attribute
       ~path
       ~location
       ~model_name:(Reference.show name)
-      ~configuration
+      ~taint_configuration
       ~parameters:[]
       ~callable_parameter_names_to_positions:None
       ~is_object_target
@@ -2843,7 +2846,7 @@ let create_model_from_attribute
         annotation)
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
-        ~configuration
+        ~taint_configuration
         ~source_sink_filter
         ~top_level_decorators:decorators
         ~define_name:name
@@ -2859,7 +2862,7 @@ let is_obscure ~callables ~stubs call_target =
   || callables >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
 
 
-let parse_models ~resolution ~configuration ~source_sink_filter ~callables ~stubs models =
+let parse_models ~resolution ~taint_configuration ~source_sink_filter ~callables ~stubs models =
   let open Core.Result in
   List.map
     models
@@ -2867,7 +2870,7 @@ let parse_models ~resolution ~configuration ~source_sink_filter ~callables ~stub
       create_model_from_signature
         ~resolution
         ~path:None
-        ~configuration
+        ~taint_configuration
         ~source_sink_filter
         ~is_obscure:(is_obscure ~callables ~stubs call_target)
         parsed_signature
@@ -2888,7 +2891,7 @@ let parse_models ~resolution ~configuration ~source_sink_filter ~callables ~stub
 let rec parse_statement
     ~resolution
     ~path
-    ~configuration
+    ~taint_configuration
     ~source_sink_filter
     ~callables
     ~stubs
@@ -3212,7 +3215,7 @@ let rec parse_statement
                     (parse_statement
                        ~resolution
                        ~path
-                       ~configuration
+                       ~taint_configuration
                        ~source_sink_filter
                        ~callables
                        ~stubs)
@@ -3268,7 +3271,7 @@ let rec parse_statement
                 | Ok parsed_signatures ->
                     parse_models
                       ~resolution
-                      ~configuration
+                      ~taint_configuration
                       ~source_sink_filter
                       ~callables
                       ~stubs
@@ -3303,7 +3306,7 @@ let rec parse_statement
             convert_error_into_errors
               (parse_model_clause
                  ~path
-                 ~configuration
+                 ~taint_configuration
                  ~find_clause:parsed_find_clause
                  ~is_object_target
                  model_clause),
@@ -3421,7 +3424,7 @@ let verify_no_duplicate_model_query_names ~path (results, errors) =
   | None -> results, errors
 
 
-let create ~resolution ~path ~configuration ~source_sink_filter ~callables ~stubs source =
+let create ~resolution ~path ~taint_configuration ~source_sink_filter ~callables ~stubs source =
   let signatures_and_queries, errors =
     let open Core.Result in
     String.split ~on:'\n' source
@@ -3430,7 +3433,13 @@ let create ~resolution ~path ~configuration ~source_sink_filter ~callables ~stub
     >>| Source.statements
     >>| List.map
           ~f:
-            (parse_statement ~resolution ~path ~configuration ~source_sink_filter ~callables ~stubs)
+            (parse_statement
+               ~resolution
+               ~path
+               ~taint_configuration
+               ~source_sink_filter
+               ~callables
+               ~stubs)
     >>| List.partition_result
     >>| (fun (results, errors) -> List.concat results, errors)
     >>| verify_no_duplicate_model_query_names ~path
@@ -3444,7 +3453,7 @@ let create ~resolution ~path ~configuration ~source_sink_filter ~callables ~stub
         create_model_from_signature
           ~resolution
           ~path
-          ~configuration
+          ~taint_configuration
           ~source_sink_filter
           ~is_obscure:(is_obscure ~callables ~stubs call_target)
           parsed_signature
@@ -3452,7 +3461,7 @@ let create ~resolution ~path ~configuration ~source_sink_filter ~callables ~stub
         create_model_from_attribute
           ~resolution
           ~path
-          ~configuration
+          ~taint_configuration
           ~source_sink_filter
           parsed_attribute
     | ParsedQuery query -> Core.Result.return (Query query)
@@ -3479,9 +3488,9 @@ let get_model_sources ~paths =
   model_files |> List.map ~f:File.create |> List.filter_map ~f:path_and_content
 
 
-let parse ~resolution ?path ~source ~configuration ~source_sink_filter ~callables ~stubs () =
+let parse ~resolution ?path ~source ~taint_configuration ~source_sink_filter ~callables ~stubs () =
   let new_models_and_queries, errors =
-    create ~resolution ~path ~configuration ~source_sink_filter ~callables ~stubs source
+    create ~resolution ~path ~taint_configuration ~source_sink_filter ~callables ~stubs source
     |> List.partition_result
   in
   let new_models, new_queries =

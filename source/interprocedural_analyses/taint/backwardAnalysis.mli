@@ -11,6 +11,7 @@ open Statement
 
 val run
   :  ?profiler:TaintProfiler.t ->
+  taint_configuration:TaintConfiguration.Heap.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
   qualifier:Reference.t ->
