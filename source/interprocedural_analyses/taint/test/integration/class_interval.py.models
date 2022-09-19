@@ -1305,7 +1305,7 @@
         "port": "formal(self)[g]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "decl": null
           }
@@ -1651,7 +1651,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -1780,7 +1780,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]

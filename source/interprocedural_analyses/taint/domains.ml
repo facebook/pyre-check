@@ -137,20 +137,8 @@ module CallInfo = struct
     | Declaration _ -> Declaration { leaf_name_provided = false }
 end
 
-module TraceLength = Abstract.SimpleDomain.Make (struct
-  type t = int
-
+module TraceLength = Features.MakeScalarDomain (struct
   let name = "trace length"
-
-  let join = min
-
-  let meet = max
-
-  let less_or_equal ~left ~right = left >= right
-
-  let bottom = max_int
-
-  let show length = if Int.equal length max_int then "<bottom>" else string_of_int length
 end)
 
 (* This should be associated with every call site *)
@@ -300,7 +288,7 @@ module Frame = struct
     type 'a slot =
       | Breadcrumb : Features.BreadcrumbSet.t slot
       | ViaFeature : Features.ViaFeatureSet.t slot
-      | ReturnAccessPath : Features.ReturnAccessPathSet.t slot
+      | ReturnAccessPath : Features.ReturnAccessPathTree.t slot
       | TraceLength : TraceLength.t slot
       | LeafName : Features.LeafNameSet.t slot
       | FirstIndex : Features.FirstIndexSet.t slot
@@ -325,7 +313,7 @@ module Frame = struct
       | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
       | ViaFeature -> (module Features.ViaFeatureSet : Abstract.Domain.S with type t = a)
       | ReturnAccessPath ->
-          (module Features.ReturnAccessPathSet : Abstract.Domain.S with type t = a)
+          (module Features.ReturnAccessPathTree : Abstract.Domain.S with type t = a)
       | TraceLength -> (module TraceLength : Abstract.Domain.S with type t = a)
       | LeafName -> (module Features.LeafNameSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
@@ -429,7 +417,7 @@ module type TAINT_DOMAIN = sig
 
   (* Return the taint with only essential elements. *)
   val essential
-    :  return_access_paths:(Features.ReturnAccessPathSet.t -> Features.ReturnAccessPathSet.t) ->
+    :  return_access_paths:(Features.ReturnAccessPathTree.t -> Features.ReturnAccessPathTree.t) ->
     t ->
     t
 
@@ -683,11 +671,13 @@ end = struct
         let json = cons_if_non_empty "leaves" leaves json in
 
         let return_paths =
-          Frame.get Frame.Slots.ReturnAccessPath frame
-          |> ReturnAccessPathSet.elements
-          |> List.map ~f:ReturnAccessPath.to_json
+          Frame.get Frame.Slots.ReturnAccessPath frame |> ReturnAccessPathTree.to_json
         in
-        let json = cons_if_non_empty "return_paths" return_paths json in
+        let json =
+          match return_paths with
+          | [] -> json
+          | _ -> ("return_paths", `Assoc return_paths) :: json
+        in
 
         let via_features =
           Frame.get Frame.Slots.ViaFeature frame
@@ -1090,7 +1080,7 @@ end = struct
         |> Frame.update Frame.Slots.FirstIndex Features.FirstIndexSet.bottom
         |> Frame.update Frame.Slots.FirstField Features.FirstFieldSet.bottom
         |> Frame.update Frame.Slots.LeafName Features.LeafNameSet.bottom
-        |> Frame.transform Features.ReturnAccessPathSet.Self Map ~f:return_access_paths
+        |> Frame.transform Features.ReturnAccessPathTree.Self Map ~f:return_access_paths
       in
       let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
       call_info, local_taint
@@ -1164,24 +1154,12 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   (* Return the taint tree with only the essential structure. *)
   let essential tree =
-    let return_access_paths _ = Features.ReturnAccessPathSet.bottom in
+    let return_access_paths _ = Features.ReturnAccessPathTree.bottom in
     transform Taint.Self Map ~f:(Taint.essential ~return_access_paths) tree
 
 
   let essential_for_constructor tree =
     transform Taint.Self Map ~f:(Taint.essential ~return_access_paths:Fn.id) tree
-
-
-  let approximate_return_access_paths ~maximum_return_access_path_length tree =
-    let cut_off paths =
-      if Features.ReturnAccessPathSet.count paths > maximum_return_access_path_length then
-        Features.ReturnAccessPathSet.elements paths
-        |> Features.ReturnAccessPath.common_prefix
-        |> Features.ReturnAccessPathSet.singleton
-      else
-        paths
-    in
-    transform Features.ReturnAccessPathSet.Self Map ~f:cut_off tree
 
 
   let prune_maximum_length maximum_length =
@@ -1424,7 +1402,7 @@ let local_return_frame =
   Frame.create
     [
       Part (TraceLength.Self, 0);
-      Part (Features.ReturnAccessPathSet.Element, []);
+      Part (Features.ReturnAccessPathTree.Path, ([], 0));
       Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty);
     ]
 

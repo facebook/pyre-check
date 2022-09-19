@@ -1641,7 +1641,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "TransformX@LocalReturn"
               }
@@ -1728,7 +1728,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "NotSource[SourceA]:TransformX@LocalReturn"
               }
@@ -1756,7 +1756,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "NotSource[SourceA]:TransformX:NotSource[SourceC]:TransformY@LocalReturn"
               }
@@ -1785,7 +1785,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "NotSource[SourceA]:TransformX@LocalReturn"
               }
@@ -1813,7 +1813,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "NotSink[SinkB]:TransformX@LocalReturn"
               }
@@ -1841,7 +1841,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "NotSink[SinkB]@LocalReturn"
               }
             ],
@@ -1864,7 +1864,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "NotSink[SinkD]@LocalReturn"
               }
             ],
@@ -1887,7 +1887,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "NotSource[SourceA]@LocalReturn"
               }
             ],
@@ -1910,7 +1910,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "NotSource[SourceC]@LocalReturn"
               }
             ],
@@ -2409,7 +2409,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "NotSink[SinkB]:TransformX:NotSink[SinkD]@LocalReturn"
               }
@@ -2437,7 +2437,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "NotSink[SinkB]:NotSink[SinkD]:TransformX@LocalReturn"
               }
@@ -2465,7 +2465,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "TransformX:NotSink[SinkB]:NotSink[SinkD]@LocalReturn"
               }
@@ -2493,7 +2493,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "NotSink[SinkD]:TransformX:NotSink[SinkB]@LocalReturn"
               }
@@ -2521,7 +2521,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "NotSource[SourceA]:TransformX:NotSource[SourceC]@LocalReturn"
               }
@@ -2549,7 +2549,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "NotSource[SourceA]:NotSource[SourceC]:TransformX@LocalReturn"
               }
@@ -2577,7 +2577,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "TransformX:NotSource[SourceA]:NotSource[SourceC]@LocalReturn"
               }
@@ -2605,7 +2605,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "NotSource[SourceC]:TransformX:NotSource[SourceA]@LocalReturn"
               }
@@ -2633,7 +2633,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 2,
                 "kind": "NotSource[SourceA]:TransformX:NotSource[SourceC]:NotSink[SinkD]:TransformY:NotSink[SinkB]@LocalReturn"
               }
@@ -2663,7 +2663,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "TransformX@LocalReturn"
               }
@@ -2688,7 +2688,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "TransformY:TransformZ@LocalReturn"
               }
@@ -2715,7 +2715,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "kind": "TransformX@LocalReturn" }
+              { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
             "decl": null
           }
@@ -2734,7 +2734,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "kind": "TransformX@LocalReturn" }
+              { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
             "decl": null
           }
@@ -2787,7 +2787,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "TransformX:NotSource[SourceA]@LocalReturn"
               }
@@ -2815,7 +2815,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "TransformX:NotSink[SinkB]@LocalReturn"
               }
@@ -2842,7 +2842,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "kind": "TransformX@LocalReturn" }
+              { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
             "decl": null
           }
@@ -2862,7 +2862,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "NotSink[SinkB]:TransformX@LocalReturn"
               }
@@ -2888,7 +2888,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "NotSink[SinkB]:TransformX@LocalReturn"
               }
@@ -2916,7 +2916,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "NotSink[SinkB]:TransformX@LocalReturn"
               }
@@ -2944,7 +2944,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "kind": "TransformY@LocalReturn" }
+              { "return_paths": { "": 0 }, "kind": "TransformY@LocalReturn" }
             ],
             "decl": null
           }
@@ -2964,7 +2964,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "TransformY:NotSink[SinkB]@LocalReturn"
               }
@@ -2991,7 +2991,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "kind": "TransformZ@LocalReturn" }
+              { "return_paths": { "": 0 }, "kind": "TransformZ@LocalReturn" }
             ],
             "decl": null
           }

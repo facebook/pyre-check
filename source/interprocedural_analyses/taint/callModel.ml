@@ -188,7 +188,18 @@ let taint_in_taint_out_mapping
 let return_paths ~kind ~tito_taint =
   match Sinks.discard_transforms kind with
   | Sinks.LocalReturn ->
-      BackwardTaint.fold Features.ReturnAccessPathSet.Element tito_taint ~f:List.cons ~init:[]
+      let paths =
+        BackwardTaint.fold
+          Features.ReturnAccessPathTree.Path
+          tito_taint
+          ~f:(fun (path, _collapse_depth) sofar -> path :: sofar)
+          ~init:[]
+      in
+      let () =
+        if List.is_empty paths then
+          failwith "unexpected empty return path set"
+      in
+      paths
   | _ ->
       (* No special handling of paths for side effects *)
       [[]]

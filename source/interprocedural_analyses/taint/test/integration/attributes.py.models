@@ -439,7 +439,9 @@
         "port": "formal(b)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "[b]" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "[b]": 0 }, "kind": "LocalReturn" }
+            ],
             "decl": null
           }
         ]
@@ -448,7 +450,9 @@
         "port": "formal(a)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "[a]": 0 }, "kind": "LocalReturn" }
+            ],
             "decl": null
           }
         ]
@@ -457,7 +461,7 @@
         "port": "formal(self)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -495,7 +499,7 @@
         "port": "formal(t)[token]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -772,7 +776,7 @@
         "port": "formal(t)[unrelated]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -810,7 +814,7 @@
         "port": "formal(t)[token]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -979,7 +983,7 @@
         "port": "formal(request)[non_optional][access_token][token]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -1017,7 +1021,7 @@
         "port": "formal(request)[optional][access_token][token]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]

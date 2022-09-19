@@ -338,7 +338,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
+              { "return_paths": { "[id]": 0 }, "kind": "LocalReturn" }
             ],
             "decl": null
           }
@@ -348,7 +348,7 @@
         "port": "formal(self)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -367,7 +367,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "[id]" ],
+                "return_paths": { "[id]": 0 },
                 "length": 1,
                 "kind": "LocalReturn"
               }

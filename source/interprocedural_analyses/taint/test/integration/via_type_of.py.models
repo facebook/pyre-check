@@ -756,7 +756,7 @@
                     "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -784,7 +784,7 @@
                     "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -812,7 +812,7 @@
                     "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -840,7 +840,7 @@
                     "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -868,7 +868,7 @@
                     "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -896,7 +896,7 @@
                     "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -1602,7 +1602,11 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
             "local_features": [
               { "always-via-type": "str" }, { "always-via": "tito" }
@@ -1814,7 +1818,7 @@
                     "parameter": "PositionalParameter {position = 1; name = other; positional_only = false}"
                   }
                 ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],

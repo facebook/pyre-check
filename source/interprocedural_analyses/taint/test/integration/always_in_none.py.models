@@ -63,7 +63,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "string_concat_rhs" } ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],

@@ -539,7 +539,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "string_concat_rhs" } ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -554,7 +554,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "string_concat_lhs" } ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -574,7 +574,7 @@
         "port": "formal(source)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
@@ -595,7 +595,7 @@
         "port": "formal(source)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
@@ -680,7 +680,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],

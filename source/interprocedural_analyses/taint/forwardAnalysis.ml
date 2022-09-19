@@ -2452,8 +2452,6 @@ let extract_source_model
     |> ForwardState.Tree.limit_to
          ~transform:(ForwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
          ~width:TaintConfiguration.maximum_model_width
-    |> ForwardState.Tree.approximate_return_access_paths
-         ~maximum_return_access_path_length:TaintConfiguration.maximum_return_access_path_length
   in
   let return_taint =
     let return_variable =

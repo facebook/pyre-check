@@ -86,51 +86,6 @@ let test_partition_call_map context =
   assert_equal ~msg:"matches must be equal to original" ~printer:ForwardTaint.show matches joined
 
 
-let test_approximate_return_access_paths _ =
-  let assert_approximate_return_access_paths ~expected ~cutoff_at tree =
-    let compare left right =
-      ForwardState.Tree.less_or_equal ~left ~right
-      && ForwardState.Tree.less_or_equal ~left:right ~right:left
-    in
-    assert_equal
-      ~cmp:compare
-      ~printer:ForwardState.Tree.show
-      expected
-      (ForwardState.Tree.approximate_return_access_paths
-         ~maximum_return_access_path_length:cutoff_at
-         tree)
-  in
-  let create ~return_access_paths =
-    ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "Demo") Frame.initial
-    |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.transform Features.ReturnAccessPathSet.Self Map ~f:(fun _ ->
-           Features.ReturnAccessPathSet.of_list return_access_paths)
-  in
-  assert_approximate_return_access_paths
-    ~expected:(create ~return_access_paths:[[Abstract.TreeDomain.Label.Index "a"]])
-    ~cutoff_at:2
-    (create ~return_access_paths:[[Abstract.TreeDomain.Label.Index "a"]]);
-  assert_approximate_return_access_paths
-    ~expected:
-      (create
-         ~return_access_paths:
-           [[Abstract.TreeDomain.Label.Index "a"]; [Abstract.TreeDomain.Label.Index "b"]])
-    ~cutoff_at:2
-    (create
-       ~return_access_paths:
-         [[Abstract.TreeDomain.Label.Index "a"]; [Abstract.TreeDomain.Label.Index "b"]]);
-  assert_approximate_return_access_paths
-    ~expected:(create ~return_access_paths:[[]])
-    ~cutoff_at:2
-    (create
-       ~return_access_paths:
-         [
-           [Abstract.TreeDomain.Label.Index "a"];
-           [Abstract.TreeDomain.Label.Index "b"];
-           [Abstract.TreeDomain.Label.Index "c"];
-         ])
-
-
 let test_call_info_interval _ =
   let assert_equal_interval ~actual ~expected =
     assert_equal ~printer:CallInfoIntervals.show actual expected
@@ -153,7 +108,6 @@ let () =
   "taint_domain"
   >::: [
          "partition_call_map" >:: test_partition_call_map;
-         "approximate_return_access_paths" >:: test_approximate_return_access_paths;
          "call_info_interval" >:: test_call_info_interval;
        ]
   |> Test.run

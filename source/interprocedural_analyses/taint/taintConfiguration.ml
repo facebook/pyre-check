@@ -1478,9 +1478,7 @@ let maximum_model_width = 25
 
 let maximum_return_access_path_width = 5
 
-let maximum_return_access_path_depth = 3
-
-let maximum_return_access_path_length = 10
+let maximum_return_access_path_depth_after_widening = 4
 
 let maximum_tito_positions = 50
 

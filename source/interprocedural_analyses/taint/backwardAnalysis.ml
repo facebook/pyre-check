@@ -189,12 +189,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         BackwardState.bottom
 
 
-  let transform_non_leaves path taint =
-    let infer_output_path prefix = prefix @ path in
+  let transform_non_leaves new_path taint =
+    let infer_output_path sink paths =
+      match Sinks.discard_transforms sink with
+      | Sinks.LocalReturn ->
+          let open Features.ReturnAccessPathTree in
+          fold
+            Path
+            ~f:(fun (current_path, _collapse_depth) paths ->
+              create_leaf 0 |> prepend new_path |> prepend current_path |> join paths)
+            ~init:bottom
+            paths
+      | _ -> paths
+    in
     BackwardTaint.transform_call_info
       local_return_call_info
-      Features.ReturnAccessPathSet.Element
-      Map
+      Features.ReturnAccessPathTree.Self
+      (Context (BackwardTaint.kind, Map))
       ~f:infer_output_path
       taint
 
@@ -2122,8 +2133,6 @@ let extract_tito_and_sink_models
     |> BackwardState.Tree.limit_to
          ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
          ~width:TaintConfiguration.maximum_model_width
-    |> BackwardState.Tree.approximate_return_access_paths
-         ~maximum_return_access_path_length:TaintConfiguration.maximum_return_access_path_length
   in
 
   let split_and_simplify model (parameter, name, original) =

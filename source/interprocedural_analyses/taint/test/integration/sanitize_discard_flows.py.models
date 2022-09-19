@@ -49,7 +49,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "NotSink[TestA]@LocalReturn"
               }
             ],
@@ -72,7 +72,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "NotSource[TestA]@LocalReturn"
               }
             ],
@@ -95,7 +95,7 @@
           {
             "kinds": [
               {
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "NotSink[TestB]@LocalReturn"
               }
             ],

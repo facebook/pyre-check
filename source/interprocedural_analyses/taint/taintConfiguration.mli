@@ -203,9 +203,7 @@ val maximum_model_width : int
 
 val maximum_return_access_path_width : int
 
-val maximum_return_access_path_depth : int
-
-val maximum_return_access_path_length : int
+val maximum_return_access_path_depth_after_widening : int
 
 val maximum_tito_positions : int
 

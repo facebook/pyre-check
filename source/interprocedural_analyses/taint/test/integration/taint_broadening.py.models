@@ -353,7 +353,7 @@
         "port": "formal(**kw)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -362,7 +362,7 @@
         "port": "formal(*rest0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -398,7 +398,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "copy" } ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -443,7 +443,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "default" } ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -458,7 +458,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "object" } ],
-                "return_paths": [ "" ],
+                "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }
             ],
@@ -478,7 +478,9 @@
         "port": "formal(source)[f1]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "[1]" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "[1]": 0 }, "kind": "LocalReturn" }
+            ],
             "decl": null
           }
         ]
@@ -487,7 +489,9 @@
         "port": "formal(source)[f2]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "[2]" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "[2]": 0 }, "kind": "LocalReturn" }
+            ],
             "decl": null
           }
         ]
@@ -496,7 +500,9 @@
         "port": "formal(source)[f3]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "[3]" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "[3]": 0 }, "kind": "LocalReturn" }
+            ],
             "decl": null
           }
         ]
@@ -505,7 +511,9 @@
         "port": "formal(source)[f4]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "[4]" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "[4]": 0 }, "kind": "LocalReturn" }
+            ],
             "decl": null
           }
         ]
@@ -514,7 +522,9 @@
         "port": "formal(source)[f5]",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "[5]" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "[5]": 0 }, "kind": "LocalReturn" }
+            ],
             "decl": null
           }
         ]
@@ -531,7 +541,7 @@
         "port": "formal(source)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
@@ -1166,7 +1176,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]

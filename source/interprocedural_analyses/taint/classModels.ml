@@ -20,9 +20,14 @@ let infer ~environment ~user_models =
     let leaf =
       BackwardTaint.singleton local_return_call_info Sinks.LocalReturn Frame.initial
       |> BackwardState.Tree.create_leaf
-      |> BackwardState.Tree.transform Features.ReturnAccessPathSet.Self Map ~f:(fun _ ->
-             Features.ReturnAccessPathSet.singleton
-               [Abstract.TreeDomain.Label.create_name_index attribute])
+      |> BackwardState.Tree.transform Features.ReturnAccessPathTree.Self Map ~f:(fun _ ->
+             (* TODO(T118287187): Use the maximum collapse depth here. *)
+             Features.ReturnAccessPathTree.create
+               [
+                 Part
+                   ( Features.ReturnAccessPathTree.Path,
+                     ([Abstract.TreeDomain.Label.create_name_index attribute], 0) );
+               ])
     in
     BackwardState.assign
       ~root:
