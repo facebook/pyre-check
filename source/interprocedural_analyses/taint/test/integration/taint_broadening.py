@@ -102,6 +102,11 @@ def convert_2_update_dict_widening(source) -> Dict[str, Union[str, Optional[int]
     kvs["4"] = source.f4
     kvs["5"] = source.f5
     kvs["6"] = source.f6
+    kvs["7"] = source.f7
+    kvs["8"] = source.f8
+    kvs["9"] = source.f9
+    kvs["10"] = source.f10
+    kvs["11"] = source.f11
     # TODO(T116671305): Widening causes the entire dictionary to be tainted,
     # as opposed to only the values' being tainted. By contrast, fewer
     # entries in the dictionary do not seem to trigger broadening (see below).
@@ -115,6 +120,11 @@ def convert_2_update_dict_no_widening(source) -> Dict[str, Union[str, Optional[i
     kvs["3"] = source.f3
     kvs["4"] = source.f4
     kvs["5"] = source.f5
+    kvs["6"] = source.f6
+    kvs["7"] = source.f7
+    kvs["8"] = source.f8
+    kvs["9"] = source.f9
+    kvs["10"] = source.f10
     return kvs
 
 

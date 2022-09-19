@@ -154,9 +154,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_broadening.untainted_keys",
-    "callable_line": 121,
+    "callable_line": 131,
     "code": 5002,
-    "line": 125,
+    "line": 135,
     "start": 8,
     "end": 11,
     "filename": "taint_broadening.py",
@@ -181,13 +181,13 @@
               { "always-via": "widen-broadening" }
             ],
             "tito": [
-              { "line": 123, "start": 41, "end": 47 },
-              { "line": 126, "start": 22, "end": 43 },
-              { "line": 126, "start": 32, "end": 42 }
+              { "line": 133, "start": 41, "end": 47 },
+              { "line": 136, "start": 22, "end": 43 },
+              { "line": 136, "start": 32, "end": 42 }
             ],
             "root": {
               "filename": "taint_broadening.py",
-              "line": 122,
+              "line": 132,
               "start": 13,
               "end": 27
             }
@@ -207,7 +207,7 @@
             ],
             "root": {
               "filename": "taint_broadening.py",
-              "line": 125,
+              "line": 135,
               "start": 8,
               "end": 8
             }
@@ -475,55 +475,29 @@
     "callable": "taint_broadening.convert_2_update_dict_no_widening",
     "tito": [
       {
-        "port": "formal(source)[f1]",
+        "port": "formal(source)",
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[1]": 0 }, "kind": "LocalReturn" }
+              {
+                "return_paths": {
+                  "[9]": 0,
+                  "[8]": 0,
+                  "[7]": 0,
+                  "[6]": 0,
+                  "[5]": 0,
+                  "[4]": 0,
+                  "[3]": 0,
+                  "[2]": 0,
+                  "[10]": 0,
+                  "[1]": 0
+                },
+                "kind": "LocalReturn"
+              }
             ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(source)[f2]",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[2]": 0 }, "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(source)[f3]",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[3]": 0 }, "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(source)[f4]",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[4]": 0 }, "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(source)[f5]",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[5]": 0 }, "kind": "LocalReturn" }
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "decl": null
           }

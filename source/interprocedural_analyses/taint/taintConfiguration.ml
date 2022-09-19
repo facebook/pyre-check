@@ -1551,7 +1551,7 @@ let maximum_tree_depth_after_widening = 4
  * Above the provided threshold, we would collapse the taint and consider that the
  * whole return value is tainted whenever `arg` is tainted.
  *)
-let maximum_return_access_path_width = 5
+let maximum_return_access_path_width = 10
 
 (* This limits the depth of the return access path tree within loops, i.e the
  * length of output paths propagated to the return value, for a given parameter.

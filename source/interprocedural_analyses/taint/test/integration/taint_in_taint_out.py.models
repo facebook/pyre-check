@@ -1036,7 +1036,13 @@
               {
                 "return_paths": {
                   "[report]": 0,
-                  "[parent_data]": 0,
+                  "[parent_data][report]": 0,
+                  "[parent_data][parent_data][report]": 0,
+                  "[parent_data][parent_data][parent_data]": 0,
+                  "[parent_data][parent_data][name]": 0,
+                  "[parent_data][parent_data][id]": 0,
+                  "[parent_data][name]": 0,
+                  "[parent_data][id]": 0,
                   "[name]": 0,
                   "[id]": 0
                 },
@@ -1076,7 +1082,13 @@
               {
                 "return_paths": {
                   "[report]": 0,
-                  "[parent_data]": 0,
+                  "[parent_data][report]": 0,
+                  "[parent_data][parent_data][report]": 0,
+                  "[parent_data][parent_data][parent_data]": 0,
+                  "[parent_data][parent_data][name]": 0,
+                  "[parent_data][parent_data][id]": 0,
+                  "[parent_data][name]": 0,
+                  "[parent_data][id]": 0,
                   "[name]": 0,
                   "[id]": 0
                 },
@@ -1231,7 +1243,151 @@
         ]
       },
       {
-        "port": "result[parent_data]",
+        "port": "result[parent_data][id]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 55,
+              "start": 32,
+              "end": 46
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[parent_data][name]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 55,
+              "start": 32,
+              "end": 46
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[parent_data][parent_data][id]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 55,
+              "start": 32,
+              "end": 46
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[parent_data][parent_data][name]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 55,
+              "start": 32,
+              "end": 46
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[parent_data][parent_data][parent_data]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 55,
+              "start": 32,
+              "end": 46
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[parent_data][parent_data][report]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 55,
+              "start": 32,
+              "end": 46
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[parent_data][report]",
         "taint": [
           {
             "kinds": [
