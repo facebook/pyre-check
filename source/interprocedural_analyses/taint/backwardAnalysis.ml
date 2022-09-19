@@ -375,7 +375,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Sinks.Transform { local = transforms; global; _ } when TaintTransforms.is_empty global ->
             (* Apply tito transforms and source- and sink-specific sanitizers. *)
             taint_to_propagate
-            |> BackwardState.Tree.apply_transforms transforms TaintTransforms.Order.Backward
+            |> BackwardState.Tree.apply_transforms
+                 transforms
+                 TaintTransforms.InsertLocation.Front
+                 TaintTransforms.Order.Backward
             |> BackwardState.Tree.transform
                  BackwardTaint.kind
                  Filter
@@ -862,7 +865,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               let sanitizers =
                 { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
               in
-              BackwardState.Tree.apply_sanitize_transforms sanitizers taint
+              BackwardState.Tree.apply_sanitize_transforms
+                sanitizers
+                TaintTransforms.InsertLocation.Front
+                taint
               |> BackwardState.Tree.transform
                    BackwardTaint.kind
                    Filter

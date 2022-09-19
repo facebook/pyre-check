@@ -76,9 +76,18 @@ val extract_sanitize_transforms : t -> SanitizeTransformSet.t
 
 val extract_partial_sink : t -> partial_sink option
 
-val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t option
+val apply_sanitize_transforms
+  :  SanitizeTransformSet.t ->
+  TaintTransforms.InsertLocation.t ->
+  t ->
+  t option
 
-val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t option
+val apply_transforms
+  :  TaintTransforms.t ->
+  TaintTransforms.InsertLocation.t ->
+  TaintTransforms.Order.t ->
+  t ->
+  t option
 
 val get_named_transforms : t -> TaintTransform.t list
 

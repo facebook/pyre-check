@@ -16,6 +16,13 @@ module Order : sig
   [@@deriving show]
 end
 
+module InsertLocation : sig
+  type t =
+    | Front
+    | Back
+  [@@deriving show]
+end
+
 module Set : Stdlib.Set.S with type elt = t
 
 val add_sanitize_transforms
@@ -24,6 +31,7 @@ val add_sanitize_transforms
   base:SanitizeTransform.t option ->
   local:t ->
   global:t ->
+  insert_location:InsertLocation.t ->
   SanitizeTransformSet.t ->
   t option
 
@@ -34,6 +42,7 @@ val add_transforms
   local:t ->
   global:t ->
   order:Order.t ->
+  insert_location:InsertLocation.t ->
   to_add:t ->
   to_add_order:Order.t ->
   t option

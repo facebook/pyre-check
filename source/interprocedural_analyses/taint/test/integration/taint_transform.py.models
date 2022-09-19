@@ -1442,195 +1442,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "taint_transform.no_issue_transform_x_tito_global_sanitize_b",
-    "callable_line": 506,
-    "code": 123,
-    "line": 509,
-    "start": 11,
-    "end": 15,
-    "filename": "taint_transform.py",
-    "message": "[SourceA] transformed by [TransformX] to [SinkB]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.source_a" } ],
-                "kind": "TransformX:NotSink[SinkB]@SourceA"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 508, "start": 46, "end": 51 } ],
-            "root": {
-              "filename": "taint_transform.py",
-              "line": 507,
-              "start": 12,
-              "end": 22
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.sink_b" } ],
-                "kind": "SinkB"
-              }
-            ],
-            "root": {
-              "filename": "taint_transform.py",
-              "line": 509,
-              "start": 11,
-              "end": 15
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "taint_transform.sink_b",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "taint_transform.no_issue_transform_x_tito_global_sanitize_b:123:0:Call|taint_transform.sink_b|0|formal(arg):bc48a72c2314494aec8dc3ef0d18a2ab"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "taint_transform.no_issue_transform_x_tito_sanitize_b",
-    "callable_line": 486,
-    "code": 123,
-    "line": 489,
-    "start": 11,
-    "end": 15,
-    "filename": "taint_transform.py",
-    "message": "[SourceA] transformed by [TransformX] to [SinkB]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.source_a" } ],
-                "kind": "TransformX:NotSink[SinkB]@SourceA"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 488, "start": 39, "end": 44 } ],
-            "root": {
-              "filename": "taint_transform.py",
-              "line": 487,
-              "start": 12,
-              "end": 22
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.sink_b" } ],
-                "kind": "SinkB"
-              }
-            ],
-            "root": {
-              "filename": "taint_transform.py",
-              "line": 489,
-              "start": 11,
-              "end": 15
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "taint_transform.sink_b",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "taint_transform.no_issue_transform_x_tito_sanitize_b:123:0:Call|taint_transform.sink_b|0|formal(arg):f2560d3a376291a6aaae5f12fe0e7bf5"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "taint_transform.no_issue_transform_x_tito_sanitize_b_all_parameters",
-    "callable_line": 496,
-    "code": 123,
-    "line": 499,
-    "start": 11,
-    "end": 15,
-    "filename": "taint_transform.py",
-    "message": "[SourceA] transformed by [TransformX] to [SinkB]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.source_a" } ],
-                "kind": "TransformX:NotSink[SinkB]@SourceA"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 498, "start": 54, "end": 59 } ],
-            "root": {
-              "filename": "taint_transform.py",
-              "line": 497,
-              "start": 12,
-              "end": 22
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.sink_b" } ],
-                "kind": "SinkB"
-              }
-            ],
-            "root": {
-              "filename": "taint_transform.py",
-              "line": 499,
-              "start": 11,
-              "end": 15
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "taint_transform.sink_b",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "taint_transform.no_issue_transform_x_tito_sanitize_b_all_parameters:123:0:Call|taint_transform.sink_b|0|formal(arg):414d422a6500d6a0edf40069226794f0"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "taint_transform.nested_tito_transform_x",
@@ -2416,8 +2227,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 540, "start": 40, "end": 43 },
-              { "line": 541, "start": 32, "end": 37 }
+              { "line": 550, "start": 40, "end": 43 },
+              { "line": 551, "start": 32, "end": 37 }
             ],
             "decl": null
           }
@@ -2444,8 +2255,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 546, "start": 33, "end": 36 },
-              { "line": 547, "start": 39, "end": 44 }
+              { "line": 556, "start": 33, "end": 36 },
+              { "line": 557, "start": 39, "end": 44 }
             ],
             "decl": null
           }
@@ -2472,8 +2283,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 552, "start": 40, "end": 43 },
-              { "line": 553, "start": 32, "end": 37 }
+              { "line": 562, "start": 40, "end": 43 },
+              { "line": 563, "start": 32, "end": 37 }
             ],
             "decl": null
           }
@@ -2500,8 +2311,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 558, "start": 33, "end": 36 },
-              { "line": 559, "start": 39, "end": 44 }
+              { "line": 568, "start": 33, "end": 36 },
+              { "line": 569, "start": 39, "end": 44 }
             ],
             "decl": null
           }
@@ -2528,8 +2339,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 516, "start": 40, "end": 43 },
-              { "line": 517, "start": 34, "end": 39 }
+              { "line": 526, "start": 40, "end": 43 },
+              { "line": 527, "start": 34, "end": 39 }
             ],
             "decl": null
           }
@@ -2556,8 +2367,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 522, "start": 35, "end": 38 },
-              { "line": 523, "start": 39, "end": 44 }
+              { "line": 532, "start": 35, "end": 38 },
+              { "line": 533, "start": 39, "end": 44 }
             ],
             "decl": null
           }
@@ -2584,8 +2395,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 528, "start": 40, "end": 43 },
-              { "line": 529, "start": 34, "end": 39 }
+              { "line": 538, "start": 40, "end": 43 },
+              { "line": 539, "start": 34, "end": 39 }
             ],
             "decl": null
           }
@@ -2612,8 +2423,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 534, "start": 35, "end": 38 },
-              { "line": 535, "start": 39, "end": 44 }
+              { "line": 544, "start": 35, "end": 38 },
+              { "line": 545, "start": 39, "end": 44 }
             ],
             "decl": null
           }
@@ -2640,10 +2451,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 570, "start": 40, "end": 43 },
-              { "line": 571, "start": 34, "end": 39 },
-              { "line": 572, "start": 33, "end": 37 },
-              { "line": 573, "start": 40, "end": 45 }
+              { "line": 580, "start": 40, "end": 43 },
+              { "line": 581, "start": 34, "end": 39 },
+              { "line": 582, "start": 33, "end": 37 },
+              { "line": 583, "start": 40, "end": 45 }
             ],
             "decl": null
           }
@@ -2864,7 +2675,7 @@
               {
                 "return_paths": { "": 0 },
                 "length": 1,
-                "kind": "NotSink[SinkB]:TransformX@LocalReturn"
+                "kind": "TransformX:NotSink[SinkB]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2890,7 +2701,7 @@
               {
                 "return_paths": { "": 0 },
                 "length": 1,
-                "kind": "NotSink[SinkB]:TransformX@LocalReturn"
+                "kind": "TransformX:NotSink[SinkB]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2918,7 +2729,7 @@
               {
                 "return_paths": { "": 0 },
                 "length": 1,
-                "kind": "NotSink[SinkB]:TransformX@LocalReturn"
+                "kind": "TransformX:NotSink[SinkB]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2931,6 +2742,15 @@
     "parameters_sanitizer": { "tito": { "sinks": [ "SinkB" ] } },
     "sanitizers": [
       { "port": "formal(x)", "tito": { "sinks": [ "SinkB" ] } }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.transform_x_tito_sanitize_return",
+    "sanitizers": [
+      { "port": "result", "tito": { "sources": "All", "sinks": "All" } }
     ]
   }
 }
@@ -2971,8 +2791,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 564, "start": 24, "end": 27 },
-              { "line": 565, "start": 32, "end": 37 }
+              { "line": 574, "start": 24, "end": 27 },
+              { "line": 575, "start": 32, "end": 37 }
             ],
             "decl": null
           }

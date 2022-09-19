@@ -397,9 +397,18 @@ module type TAINT_DOMAIN = sig
 
   val sanitize_taint_kinds : kind_set -> t -> t
 
-  val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t
+  val apply_sanitize_transforms
+    :  SanitizeTransformSet.t ->
+    TaintTransforms.InsertLocation.t ->
+    t ->
+    t
 
-  val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t
+  val apply_transforms
+    :  TaintTransforms.t ->
+    TaintTransforms.InsertLocation.t ->
+    TaintTransforms.Order.t ->
+    t ->
+    t
 
   (* Add trace info at call-site *)
   val apply_call
@@ -452,9 +461,18 @@ module type KIND_ARG = sig
 
   val discard_sanitize_transforms : t -> t
 
-  val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t option
+  val apply_sanitize_transforms
+    :  SanitizeTransformSet.t ->
+    TaintTransforms.InsertLocation.t ->
+    t ->
+    t option
 
-  val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t option
+  val apply_transforms
+    :  TaintTransforms.t ->
+    TaintTransforms.InsertLocation.t ->
+    TaintTransforms.Order.t ->
+    t ->
+    t option
 
   module Set : sig
     include Stdlib.Set.S with type elt = t
@@ -872,21 +890,33 @@ end = struct
         taint
 
 
-  let apply_sanitize_transforms ({ SanitizeTransformSet.sources; sinks } as transforms) taint =
+  let apply_sanitize_transforms
+      ({ SanitizeTransformSet.sources; sinks } as transforms)
+      insert_location
+      taint
+    =
     if SanitizeTransformSet.is_empty transforms then
       taint
     else if SanitizeTransform.SourceSet.is_all sources || SanitizeTransform.SinkSet.is_all sinks
     then
       bottom
     else
-      transform KindTaintDomain.Key FilterMap ~f:(Kind.apply_sanitize_transforms transforms) taint
+      transform
+        KindTaintDomain.Key
+        FilterMap
+        ~f:(Kind.apply_sanitize_transforms transforms insert_location)
+        taint
 
 
-  let apply_transforms transforms order taint =
+  let apply_transforms transforms insert_location order taint =
     if TaintTransforms.is_empty transforms then
       taint
     else
-      transform KindTaintDomain.Key FilterMap ~f:(Kind.apply_transforms transforms order) taint
+      transform
+        KindTaintDomain.Key
+        FilterMap
+        ~f:(Kind.apply_transforms transforms insert_location order)
+        taint
 
 
   let apply_call
@@ -1218,21 +1248,25 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       transform Taint.Self Map ~f:(Taint.sanitize_taint_kinds sanitized_kinds) taint
 
 
-  let apply_sanitize_transforms ({ SanitizeTransformSet.sources; sinks } as transforms) taint =
+  let apply_sanitize_transforms
+      ({ SanitizeTransformSet.sources; sinks } as transforms)
+      insert_location
+      taint
+    =
     if SanitizeTransformSet.is_empty transforms then
       taint
     else if SanitizeTransform.SourceSet.is_all sources || SanitizeTransform.SinkSet.is_all sinks
     then
       bottom
     else
-      transform Taint.Self Map ~f:(Taint.apply_sanitize_transforms transforms) taint
+      transform Taint.Self Map ~f:(Taint.apply_sanitize_transforms transforms insert_location) taint
 
 
-  let apply_transforms transforms order taint =
+  let apply_transforms transforms order insert_location taint =
     if TaintTransforms.is_empty transforms then
       taint
     else
-      transform Taint.Self Map ~f:(Taint.apply_transforms transforms order) taint
+      transform Taint.Self Map ~f:(Taint.apply_transforms transforms order insert_location) taint
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
@@ -1350,6 +1384,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       ?(sanitize_sink = false)
       ?(sanitize_tito = false)
       ?(ignore_if_sanitize_all = false)
+      ?(insert_location = TaintTransforms.InsertLocation.Front)
       ?parameter
       ~sanitizer:{ Sanitize.sources; sinks; tito }
       taint
@@ -1365,10 +1400,16 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
         | Some parameter ->
             let apply_taint_transforms = function
               | None -> Tree.bottom
-              | Some taint_tree -> Tree.apply_sanitize_transforms sanitizers taint_tree
+              | Some taint_tree ->
+                  Tree.apply_sanitize_transforms sanitizers insert_location taint_tree
             in
             update taint parameter ~f:apply_taint_transforms
-        | None -> transform Taint.Self Map ~f:(Taint.apply_sanitize_transforms sanitizers) taint
+        | None ->
+            transform
+              Taint.Self
+              Map
+              ~f:(Taint.apply_sanitize_transforms sanitizers insert_location)
+              taint
     in
     let source_sanitizers =
       if sanitize_source then

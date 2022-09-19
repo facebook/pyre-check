@@ -509,6 +509,16 @@ def no_issue_transform_x_tito_global_sanitize_b():
     sink_b(beta)
 
 
+def transform_x_tito_sanitize_return(x, y):
+    return transform_x(x)
+
+
+def no_issue_transform_x_tito_sanitize_return():
+    alpha = source_a()
+    beta = transform_x_tito_sanitize_return(alpha)
+    sink_b(beta)
+
+
 # additional sanitize propagation with transform tests
 
 

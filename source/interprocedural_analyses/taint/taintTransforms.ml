@@ -23,6 +23,13 @@ module Order = struct
   [@@deriving show]
 end
 
+module InsertLocation = struct
+  type t =
+    | Front
+    | Back
+  [@@deriving show]
+end
+
 let empty = []
 
 let add_named_transform transforms named_transform = named_transform :: transforms
@@ -58,7 +65,7 @@ let preserve_sanitizers ~preserve_sanitize_sources ~preserve_sanitize_sinks sani
   sanitizers
 
 
-let add_sanitize_transforms_internal
+let prepend_sanitize_transforms
     ~preserve_sanitize_sources
     ~preserve_sanitize_sinks
     ~current_base
@@ -83,6 +90,41 @@ let add_sanitize_transforms_internal
         Some (TaintTransform.Sanitize sanitizers :: rest)
 
 
+let add_sanitize_transforms_internal
+    ~preserve_sanitize_sources
+    ~preserve_sanitize_sinks
+    ~current_base
+    ~global_sanitizers
+    ~insert_location
+    transforms
+    sanitizers
+  =
+  match insert_location with
+  | InsertLocation.Front ->
+      prepend_sanitize_transforms
+        ~preserve_sanitize_sources
+        ~preserve_sanitize_sinks
+        ~current_base
+        ~global_sanitizers
+        transforms
+        sanitizers
+  | InsertLocation.Back ->
+      if SanitizeTransformSet.is_empty global_sanitizers then
+        match
+          prepend_sanitize_transforms
+            ~preserve_sanitize_sources
+            ~preserve_sanitize_sinks
+            ~current_base
+            ~global_sanitizers
+            (List.rev transforms)
+            sanitizers
+        with
+        | None -> None
+        | Some list -> Some (List.rev list)
+      else
+        failwith "Unable to insert sanitizers in the back when there exist global sanitizers"
+
+
 let get_global_sanitizers ~local ~global =
   if List.exists local ~f:TaintTransform.is_named_transform then
     SanitizeTransformSet.empty
@@ -104,6 +146,7 @@ let add_sanitize_transforms
     ~base
     ~local
     ~global
+    ~insert_location
     sanitizers
   =
   let global_sanitizers = get_global_sanitizers ~local ~global in
@@ -113,6 +156,7 @@ let add_sanitize_transforms
     ~preserve_sanitize_sinks
     ~current_base
     ~global_sanitizers
+    ~insert_location
     local
     sanitizers
 
@@ -130,6 +174,7 @@ let add_transform
     ~preserve_sanitize_sinks
     ~current_base
     ~global_sanitizers
+    ~insert_location
     transforms
   = function
   | TaintTransform.Named _ as named_transform ->
@@ -145,6 +190,7 @@ let add_transform
           ~preserve_sanitize_sinks
           ~current_base
           ~global_sanitizers
+          ~insert_location
           transforms
           sanitizers
       in
@@ -157,6 +203,7 @@ let add_backward_into_forward_transforms
     ~base
     ~local
     ~global
+    ~insert_location
     ~to_add
   =
   let rec add ({ transforms; current_base; global_sanitizers } as sofar) to_add =
@@ -171,6 +218,7 @@ let add_backward_into_forward_transforms
              ~preserve_sanitize_sinks
              ~current_base
              ~global_sanitizers
+             ~insert_location
              transforms
              head)
           tail
@@ -187,6 +235,7 @@ let add_backward_into_backward_transforms
     ~base
     ~local
     ~global
+    ~insert_location
     ~to_add
   =
   let rec add sofar = function
@@ -200,6 +249,7 @@ let add_backward_into_backward_transforms
               ~preserve_sanitize_sinks
               ~current_base
               ~global_sanitizers
+              ~insert_location
               transforms
               head)
   in
@@ -216,6 +266,7 @@ let add_transforms
     ~local
     ~global
     ~order
+    ~insert_location
     ~to_add
     ~to_add_order
   =
@@ -227,6 +278,7 @@ let add_transforms
         ~base
         ~local
         ~global
+        ~insert_location
         ~to_add
   | Order.Backward, Order.Backward ->
       add_backward_into_backward_transforms
@@ -235,6 +287,7 @@ let add_transforms
         ~base
         ~local
         ~global
+        ~insert_location
         ~to_add
   | _ ->
       Format.asprintf

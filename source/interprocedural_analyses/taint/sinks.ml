@@ -199,7 +199,7 @@ let should_preserve_sanitize_sinks = function
   | _ -> false
 
 
-let apply_sanitize_transforms transforms sink =
+let apply_sanitize_transforms transforms insert_location sink =
   match sink with
   | Attach
   | AddFeatureToArgument ->
@@ -229,13 +229,14 @@ let apply_sanitize_transforms transforms sink =
           ~base:(base_as_sanitizer base)
           ~local
           ~global
+          ~insert_location
           transforms
       with
       | None -> None
       | Some local -> Some (Transform { local; global; base }))
 
 
-let apply_transforms transforms order sink =
+let apply_transforms transforms insert_location order sink =
   match sink with
   | Attach
   | AddFeatureToArgument ->
@@ -254,6 +255,7 @@ let apply_transforms transforms order sink =
           ~local:TaintTransforms.empty
           ~global:TaintTransforms.empty
           ~order:TaintTransforms.Order.Backward
+          ~insert_location
           ~to_add:transforms
           ~to_add_order:order
       with
@@ -269,6 +271,7 @@ let apply_transforms transforms order sink =
           ~local
           ~global
           ~order:TaintTransforms.Order.Backward
+          ~insert_location
           ~to_add:transforms
           ~to_add_order:order
       with

@@ -345,7 +345,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Sinks.Transform { local = transforms; global; _ } when TaintTransforms.is_empty global ->
             (* Apply source- and sink- specific tito sanitizers. *)
             taint_to_propagate
-            |> ForwardState.Tree.apply_transforms transforms TaintTransforms.Order.Backward
+            |> ForwardState.Tree.apply_transforms
+                 transforms
+                 TaintTransforms.InsertLocation.Front
+                 TaintTransforms.Order.Backward
             |> ForwardState.Tree.transform
                  ForwardTaint.kind
                  Filter
@@ -466,7 +469,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         ForwardState.Tree.empty
     in
-    let tito = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
+    let tito_taint = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     (if not (Hash_set.is_empty triggered_sinks) then
        let add_sink (key, taint) roots_and_sinks =
          let add roots_and_sinks sink =
@@ -522,7 +525,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       TaintInTaintOutEffects.fold tito_effects ~f:for_each_target ~init:state
     in
-    let returned_taint = ForwardState.Tree.join result_taint tito in
+    let returned_taint = ForwardState.Tree.join result_taint tito_taint in
     let returned_taint =
       if Model.ModeSet.contains Obscure modes then
         ForwardState.Tree.add_local_breadcrumbs
@@ -1844,7 +1847,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
             in
             let taint =
-              ForwardState.Tree.apply_sanitize_transforms sanitizers taint
+              ForwardState.Tree.apply_sanitize_transforms
+                sanitizers
+                TaintTransforms.InsertLocation.Front
+                taint
               |> ForwardState.Tree.transform
                    ForwardTaint.kind
                    Filter

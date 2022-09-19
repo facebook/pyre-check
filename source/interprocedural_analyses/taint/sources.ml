@@ -160,7 +160,7 @@ let rec base_as_sanitizer = function
   | Attach -> None
 
 
-let apply_sanitize_transforms transforms source =
+let apply_sanitize_transforms transforms insert_location source =
   match source with
   | Attach -> Some Attach
   | NamedSource _
@@ -184,13 +184,14 @@ let apply_sanitize_transforms transforms source =
           ~base:(base_as_sanitizer base)
           ~local
           ~global
+          ~insert_location
           transforms
       with
       | None -> None
       | Some local -> Some (Transform { local; global; base }))
 
 
-let apply_transforms transforms order source =
+let apply_transforms transforms insert_location order source =
   match source with
   | Attach -> Some Attach
   | NamedSource _
@@ -203,6 +204,7 @@ let apply_transforms transforms order source =
           ~local:TaintTransforms.empty
           ~global:TaintTransforms.empty
           ~order:TaintTransforms.Order.Forward
+          ~insert_location
           ~to_add:transforms
           ~to_add_order:order
       with
@@ -218,6 +220,7 @@ let apply_transforms transforms order source =
           ~local
           ~global
           ~order:TaintTransforms.Order.Forward
+          ~insert_location
           ~to_add:transforms
           ~to_add_order:order
       with

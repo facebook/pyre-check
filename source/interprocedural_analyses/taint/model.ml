@@ -387,7 +387,11 @@ let apply_sanitizers
   in
   let taint_in_taint_out =
     (* @SanitizeSingleTrace(TaintInTaintOut[...]) *)
-    BackwardState.apply_sanitizers ~sanitize_tito:true ~sanitizer:global taint_in_taint_out
+    BackwardState.apply_sanitizers
+      ~sanitize_tito:true
+      ~insert_location:TaintTransforms.InsertLocation.Back
+      ~sanitizer:global
+      taint_in_taint_out
   in
   let sink_taint =
     (* @SanitizeSingleTrace(TaintSink[...]) *)
@@ -416,7 +420,11 @@ let apply_sanitizers
   in
   let taint_in_taint_out =
     (* Sanitize(Parameters[TaintInTaintOut[...]]) *)
-    BackwardState.apply_sanitizers ~sanitize_tito:true ~sanitizer:parameters taint_in_taint_out
+    BackwardState.apply_sanitizers
+      ~sanitize_tito:true
+      ~insert_location:TaintTransforms.InsertLocation.Back
+      ~sanitizer:parameters
+      taint_in_taint_out
   in
   let sink_taint =
     (* Sanitize(Parameters[TaintSink[...]]) *)
@@ -447,7 +455,11 @@ let apply_sanitizers
     in
     let taint_in_taint_out =
       (* def foo() -> Sanitize[TaintInTaintOut[...]] *)
-      BackwardState.apply_sanitizers ~sanitize_tito:true ~sanitizer taint_in_taint_out
+      BackwardState.apply_sanitizers
+        ~sanitize_tito:true
+        ~insert_location:TaintTransforms.InsertLocation.Back
+        ~sanitizer
+        taint_in_taint_out
     in
     let source_taint =
       (* def foo() -> Sanitize[TaintSink[...]] *)
@@ -461,7 +473,6 @@ let apply_sanitizers
            Filter
            ~f:(TaintConfiguration.source_can_match_rule taint_configuration)
     in
-
     let taint_in_taint_out =
       (* def foo() -> Sanitize[TaintSink[...]] *)
       BackwardState.apply_sanitizers
@@ -499,7 +510,12 @@ let apply_sanitizers
     in
     let taint_in_taint_out =
       (* def foo(x: Sanitize[TaintInTaintOut[...]]): ... *)
-      BackwardState.apply_sanitizers ~sanitize_tito:true ~parameter ~sanitizer taint_in_taint_out
+      BackwardState.apply_sanitizers
+        ~sanitize_tito:true
+        ~insert_location:TaintTransforms.InsertLocation.Back
+        ~parameter
+        ~sanitizer
+        taint_in_taint_out
     in
     let sink_taint =
       (* def foo(x: Sanitize[TaintSink[...]]): ... *)
