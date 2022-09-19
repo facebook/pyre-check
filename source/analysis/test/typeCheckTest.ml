@@ -1029,9 +1029,9 @@ let test_forward_statement context =
       process_statement resolution parsed
     in
     match forwarded with
-    | None -> assert_bool "Expectd Resolution.Unreachable when `bottom` set to true" bottom
+    | None -> assert_bool "Expectd Resolution.Unreachable when `bottom` is set to true" bottom
     | Some actual_resolution ->
-        assert_bool "Expectd Resolution.Reachable when `bottom` set to false" (not bottom);
+        assert_bool "Expectd Resolution.Reachable when `bottom` is set to false" (not bottom);
         assert_annotation_store
           ~expected:(create_annotation_store ~immutables:postcondition_immutables postcondition)
           actual_resolution
