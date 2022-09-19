@@ -232,6 +232,7 @@ module StaticAnalysis : sig
     inline_decorators: bool;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
+    check_invariants: bool;
   }
 
   val create
@@ -252,6 +253,7 @@ module StaticAnalysis : sig
     ?inline_decorators:bool ->
     ?maximum_trace_length:int ->
     ?maximum_tito_depth:int ->
+    ?check_invariants:bool ->
     unit ->
     t
 end

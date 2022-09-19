@@ -505,6 +505,7 @@ module StaticAnalysis = struct
     inline_decorators: bool;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
+    check_invariants: bool;
   }
 
   let create
@@ -525,6 +526,7 @@ module StaticAnalysis = struct
       ?(inline_decorators = true)
       ?maximum_trace_length
       ?maximum_tito_depth
+      ?(check_invariants = false)
       ()
     =
     {
@@ -545,5 +547,6 @@ module StaticAnalysis = struct
       inline_decorators;
       maximum_trace_length;
       maximum_tito_depth;
+      check_invariants;
     }
 end

@@ -42,6 +42,7 @@ module AnalyzeConfiguration = struct
     strict: bool;
     taint_model_paths: PyrePath.t list;
     use_cache: bool;
+    check_invariants: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -79,6 +80,7 @@ module AnalyzeConfiguration = struct
           let strict = bool_member "strict" ~default:false json in
           let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
           let use_cache = bool_member "use_cache" ~default:false json in
+          let check_invariants = bool_member "check_invariants" ~default:false json in
 
           Result.Ok
             {
@@ -101,6 +103,7 @@ module AnalyzeConfiguration = struct
               strict;
               taint_model_paths;
               use_cache;
+              check_invariants;
             }
     with
     | Type_error (message, _)
@@ -151,6 +154,7 @@ module AnalyzeConfiguration = struct
         use_cache;
         inline_decorators;
         repository_root;
+        check_invariants;
       }
     =
     let configuration =
@@ -200,6 +204,7 @@ module AnalyzeConfiguration = struct
       inline_decorators;
       maximum_trace_length;
       maximum_tito_depth;
+      check_invariants;
     }
 end
 

@@ -45,6 +45,7 @@ let test_json_parsing context =
       use_cache = false;
       no_verify = false;
       verify_dsl = false;
+      check_invariants = false;
     }
   in
 
@@ -141,6 +142,9 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("use_cache", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with use_cache = true };
+  assert_parsed
+    (`Assoc (("check_invariants", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with check_invariants = true };
   ()
 
 
