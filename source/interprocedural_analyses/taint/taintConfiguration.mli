@@ -209,4 +209,4 @@ val maximum_tito_positions : int
 
 val maximum_tree_depth_after_widening : int
 
-val maximum_tito_leaves : int
+val maximum_tito_width : int

@@ -1484,4 +1484,4 @@ let maximum_tito_positions = 50
 
 let maximum_tree_depth_after_widening = 4
 
-let maximum_tito_leaves = 5
+let maximum_tito_width = 5

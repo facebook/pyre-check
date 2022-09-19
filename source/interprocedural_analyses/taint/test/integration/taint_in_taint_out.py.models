@@ -869,7 +869,7 @@
     "callable": "taint_in_taint_out.approximate_return_access_paths_common_prefix_input",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x)[y]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],

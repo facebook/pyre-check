@@ -2164,19 +2164,9 @@ let extract_tito_and_sink_models
         |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
         |> BackwardState.Tree.add_via_features via_features_to_attach
       in
-      let number_of_paths =
-        BackwardState.Tree.fold
-          BackwardState.Tree.Path
-          ~init:0
-          ~f:(fun _ count -> count + 1)
-          candidate_tree
-      in
-      if number_of_paths > TaintConfiguration.maximum_tito_leaves then
-        BackwardState.Tree.collapse_to
-          ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
-          ~depth:0
-          candidate_tree
-      else
+      BackwardState.Tree.limit_to
+        ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
+        ~width:TaintConfiguration.maximum_tito_width
         candidate_tree
     in
     let sink_taint =
