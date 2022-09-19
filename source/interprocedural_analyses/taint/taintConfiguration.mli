@@ -199,7 +199,11 @@ val get_maximum_overrides_to_analyze : unit -> int option
 
 val runtime_check_invariants : unit -> bool
 
-val maximum_model_width : int
+val maximum_model_source_tree_width : int
+
+val maximum_model_sink_tree_width : int
+
+val maximum_model_tito_tree_width : int
 
 val maximum_return_access_path_width : int
 
@@ -208,5 +212,3 @@ val maximum_return_access_path_depth_after_widening : int
 val maximum_tito_positions : int
 
 val maximum_tree_depth_after_widening : int
-
-val maximum_tito_width : int

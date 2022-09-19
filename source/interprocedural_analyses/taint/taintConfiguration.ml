@@ -1474,14 +1474,102 @@ let runtime_check_invariants () =
   Sys.getenv "PYSA_CHECK_INVARIANTS" |> Option.is_some
 
 
-let maximum_model_width = 25
+(* This limits the width of the source tree in the model for a callable, i.e
+ * the number of output paths in the return value.
+ *
+ * For instance:
+ * ```
+ * def foo():
+ *   return {"a": source(), "b": source(), "c": source()}
+ * ```
+ *
+ * The source tree for `foo` has a width of 3. Above the provided threshold, we
+ * would collapse the taint and consider the whole dictionary tainted.
+ *)
+let maximum_model_source_tree_width = 25
 
+(* This limits the width of the sink tree in the model for a callable, i.e
+ * the number of input paths leading to a sink for a given parameter.
+ *
+ * For instance:
+ * ```
+ * def foo(arg):
+ *   sink(arg[1])
+ *   sink(arg[2])
+ *   sink(arg[3])
+ * ```
+ *
+ * The sink tree for `foo` and parameter `arg` has a width of 3.
+ * Above the provided threshold, we would collapse the taint and consider that the
+ * whole argument leads to a sink.
+ *)
+let maximum_model_sink_tree_width = 25
+
+(* This limits the width of the tito tree in the model for a callable, i.e
+ * the number of input paths propagated to the return value, for a given parameter.
+ *
+ * For instance:
+ * ```
+ * def foo(arg):
+ *   return '%s:%s:%s' % (arg.a, arg.b, arg.c)
+ * ```
+ *
+ * The tito tree for `foo` and parameter `arg` has a width of 3.
+ * Above the provided threshold, we would collapse the taint and consider that the
+ * taint on the whole argument is propagated to the return value.
+ *)
+let maximum_model_tito_tree_width = 5
+
+(* This limits the depth of the source and sink trees within loops, i.e the
+ * length of source and sink paths for each variables.
+ *
+ * For instance:
+ * ```
+ * def foo():
+ *   variable = MyClass()
+ *   for x in generate():
+ *     variable.a.b.c = source()
+ *   return result
+ * ```
+ *
+ * The source tree for `variable` has a depth of 3 (i.e, `a` -> `b` -> `c`).
+ * Within a loop, we limit the depth to the provided threshold. For instance,
+ * if that threshold is 1, we would consider that `variable.a` is tainted.
+ *)
+let maximum_tree_depth_after_widening = 4
+
+(* This limits the width of the return access path tree in the model for a callable,
+ * i.e the number of output paths propagated to the return value, for a given parameter.
+ *
+ * For instance:
+ * ```
+ * def foo(arg):
+ *   return {'a': arg, 'b': arg, 'c': arg}
+ * ```
+ *
+ * The return access path tree for `foo` and parameter `arg` has a width of 3.
+ * Above the provided threshold, we would collapse the taint and consider that the
+ * whole return value is tainted whenever `arg` is tainted.
+ *)
 let maximum_return_access_path_width = 5
 
+(* This limits the depth of the return access path tree within loops, i.e the
+ * length of output paths propagated to the return value, for a given parameter.
+ *
+ * For instance:
+ * ```
+ * def foo(arg):
+ *   result = MyClass()
+ *   for x in generate():
+ *     result.a.b.c = arg
+ *   return result
+ * ```
+ *
+ * The return access path tree for `foo` and parameter `arg` has a depth  of 3
+ * (i.e, `a` -> `b` -> `c`). Within a loop, we limit the depth to the provided
+ * threshold. For instance, if that threshold is 2, we would cut the output path
+ * to just `a.b`.
+ *)
 let maximum_return_access_path_depth_after_widening = 4
 
 let maximum_tito_positions = 50
-
-let maximum_tree_depth_after_widening = 4
-
-let maximum_tito_width = 5
