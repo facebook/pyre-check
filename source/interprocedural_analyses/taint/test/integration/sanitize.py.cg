@@ -124,6 +124,7 @@ sanitize.sanitize_return (fun) -> [_test_sink (fun) sanitize.source_with_tito (f
 sanitize.sanitize_return_no_cookies (fun) -> [_cookies (fun) _user_controlled (fun) int::__gt__ (method) int::__le__ (method)]
 sanitize.sanitize_return_no_rce (fun) -> [_user_controlled (fun)]
 sanitize.sanitize_return_no_sql (fun) -> []
+sanitize.sanitize_single_argument_tito (fun) -> [int::__gt__ (method) int::__le__ (method)]
 sanitize.sanitize_sinks (fun) -> [_test_sink (fun) sanitize.source_with_tito (fun)]
 sanitize.sanitize_sources (fun) -> [_test_sink (fun) sanitize.source_with_tito (fun)]
 sanitize.sanitize_test_a_sink_attribute (fun) -> [_test_source (fun) sanitize.sanitize_a_sink_attribute (fun)]

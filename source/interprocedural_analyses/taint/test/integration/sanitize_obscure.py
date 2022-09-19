@@ -221,3 +221,11 @@ def no_propagation_of_a_sink_via_return(x):
 def propagation_of_b_sink_via_return(x):
     y = sanitize_return_sink_a(x)
     b_sink(y)
+
+
+def sanitize_obscure_single_argument(x, y):
+    ...
+
+
+def sanitize_obscure_single_argument_tito(x, y):
+    return sanitize_obscure_single_argument(x, y)

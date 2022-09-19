@@ -489,6 +489,78 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize_obscure.sanitize_obscure_single_argument",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(x)", "tito": { "sinks": [ "Test" ] } }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_obscure.sanitize_obscure_single_argument_tito",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 231, "start": 47, "end": 48 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "length": 1,
+                "kind": "NotSink[Test]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 231, "start": 44, "end": 45 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a",
     "sanitizers": [ { "port": "formal(x)", "sinks": [ "TestA" ] } ],
     "modes": [ "Obscure" ]

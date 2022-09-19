@@ -4323,6 +4323,37 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.sanitize_single_argument_tito",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "kind": "NotSink[Test]@LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(x)", "tito": { "sinks": [ "Test" ] } }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.sanitize_sinks",
     "sources": [
       {

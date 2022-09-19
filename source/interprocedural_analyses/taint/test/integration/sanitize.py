@@ -920,3 +920,10 @@ def sink_taint_sanitize_b_sanitize_a(arg):
 def sink_taint_sanitize_b_sanitize_a_santize_test(arg):
     arg = sanitize_test_source_tito(arg)
     sink_taint_sanitize_b_sanitize_a(arg)
+
+
+def sanitize_single_argument_tito(x, y):
+    if 1 > 1:
+        return x
+    else:
+        return y
