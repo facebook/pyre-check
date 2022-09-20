@@ -113,7 +113,7 @@ module.exports = {
           internal: [
             {
               to: 'docs/fb/development-getting-started',
-              label: 'Internal',
+              label: 'Development',
               position: 'left',
             },
           ],
