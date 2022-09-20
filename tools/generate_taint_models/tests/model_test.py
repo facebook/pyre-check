@@ -107,7 +107,10 @@ class ModelTest(unittest.TestCase):
             model.CallableModel(callable_object=CallMe)
 
     def assert_modeled(
-        self, source: str, expected: str, **kwargs: Union[str, ParameterAnnotation]
+        self,
+        source: str,
+        expected: str,
+        **kwargs: Union[str, ParameterAnnotation, WhitelistSpecification],
     ) -> None:
         parsed_function = ast.parse(textwrap.dedent(source)).body[0]
 
@@ -136,7 +139,7 @@ class ModelTest(unittest.TestCase):
                     definition=parsed_function,
                     annotations=annotations,
                     # pyre-ignore[6]: Too dynamic.
-                    qualifier=kwargs.get("qualifier"),
+                    **kwargs,
                 )
             ),
             expected,
@@ -258,6 +261,41 @@ class ModelTest(unittest.TestCase):
             ),
             returns="Return",
             qualifier="qualifier",
+        )
+
+        self.assert_modeled(
+            """def test_fn(arg1: Optional[TestClass], arg2: str):
+                    pass
+            """,
+            "def test_fn(arg1, arg2: TaintSource[UC]): ...",
+            parameter_annotation=AllParametersAnnotation(arg="TaintSource[UC]"),
+            whitelist=WhitelistSpecification(parameter_type={"Optional[TestClass]"}),
+        )
+
+        self.assert_modeled(
+            """def test_fn(arg1: Tuple[int, int], arg2: str):
+                    pass
+            """,
+            "def test_fn(arg1, arg2: TaintSource[UC]): ...",
+            parameter_annotation=AllParametersAnnotation(arg="TaintSource[UC]"),
+            whitelist=WhitelistSpecification(parameter_type={"Tuple[int, int]"}),
+        )
+
+        self.assert_modeled(
+            """def test_fn(arg1: Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))], arg2: str):
+                    pass
+            """,
+            "def test_fn(arg1, arg2: TaintSource[UC]): ...",
+            parameter_annotation=AllParametersAnnotation(arg="TaintSource[UC]"),
+            whitelist=WhitelistSpecification(parameter_type={"TestClass"}),
+        )
+        self.assert_modeled(
+            """def test_fn(arg1: Annotated[Optional[TestClass], ExampleAnnotation(accesses=(Access.REVIEWED,))], arg2: str):
+                    pass
+            """,
+            "def test_fn(arg1, arg2: TaintSource[UC]): ...",
+            parameter_annotation=AllParametersAnnotation(arg="TaintSource[UC]"),
+            whitelist=WhitelistSpecification(parameter_type={"Optional[TestClass]"}),
         )
 
     def test_assignment_model(self) -> None:

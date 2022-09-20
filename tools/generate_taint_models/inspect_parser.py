@@ -64,8 +64,8 @@ def extract_parameters(
     return parameters
 
 
-def _strip_annotated(annotation: str) -> str:
-    if matched_annotation := re.search("^Annotated\\[([^,]*),", annotation):
+def strip_custom_annotations(annotation: str) -> str:
+    if matched_annotation := re.search(r"^Annotated\[\(?([^,]*),", annotation):
         return matched_annotation.group(1)
     else:
         return annotation
@@ -77,7 +77,7 @@ def _extract_parameter_annotation(
     annotation = parameter.annotation
     if isinstance(annotation, str):
         if strip_annotated:
-            return _strip_annotated(annotation)
+            return strip_custom_annotations(annotation)
         else:
             return annotation
     elif isinstance(annotation, type):
