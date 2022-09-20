@@ -23,8 +23,16 @@ module AnalyzeConfiguration : sig
     dump_model_query_results: PyrePath.t option;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     inline_decorators: bool;
-    maximum_tito_depth: int option;
+    maximum_model_source_tree_width: int option;
+    maximum_model_sink_tree_width: int option;
+    maximum_model_tito_tree_width: int option;
+    maximum_tree_depth_after_widening: int option;
+    maximum_return_access_path_width: int option;
+    maximum_return_access_path_depth_after_widening: int option;
+    maximum_tito_positions: int option;
+    maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
+    maximum_tito_depth: int option;
     no_verify: bool;
     verify_dsl: bool;
     repository_root: PyrePath.t option;

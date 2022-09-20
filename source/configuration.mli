@@ -230,6 +230,14 @@ module StaticAnalysis : sig
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
     inline_decorators: bool;
+    maximum_model_source_tree_width: int option;
+    maximum_model_sink_tree_width: int option;
+    maximum_model_tito_tree_width: int option;
+    maximum_tree_depth_after_widening: int option;
+    maximum_return_access_path_width: int option;
+    maximum_return_access_path_depth_after_widening: int option;
+    maximum_tito_positions: int option;
+    maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
     check_invariants: bool;
@@ -251,6 +259,14 @@ module StaticAnalysis : sig
     ?dump_model_query_results:PyrePath.t ->
     ?use_cache:bool ->
     ?inline_decorators:bool ->
+    ?maximum_model_source_tree_width:int ->
+    ?maximum_model_sink_tree_width:int ->
+    ?maximum_model_tito_tree_width:int ->
+    ?maximum_tree_depth_after_widening:int ->
+    ?maximum_return_access_path_width:int ->
+    ?maximum_return_access_path_depth_after_widening:int ->
+    ?maximum_tito_positions:int ->
+    ?maximum_overrides_to_analyze:int ->
     ?maximum_trace_length:int ->
     ?maximum_tito_depth:int ->
     ?check_invariants:bool ->

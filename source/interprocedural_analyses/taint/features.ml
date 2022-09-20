@@ -165,7 +165,14 @@ module TitoPosition = struct
 
   type t = Location.t [@@deriving show, compare]
 
-  let max_count () = TaintConfiguration.maximum_tito_positions
+  let max_count =
+    let on_first_call =
+      lazy
+        (TaintConfiguration.SharedMemory.get_global ()
+        |> Option.value ~default:TaintConfiguration.Heap.default
+        |> TaintConfiguration.maximum_tito_positions)
+    in
+    fun () -> Lazy.force on_first_call
 end
 
 module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)
@@ -428,8 +435,14 @@ module ReturnAccessPathTree = struct
   module Tree =
     Abstract.TreeDomain.Make
       (struct
-        let max_tree_depth_after_widening () =
-          TaintConfiguration.maximum_return_access_path_depth_after_widening
+        let max_tree_depth_after_widening =
+          let cache_first_call =
+            lazy
+              (TaintConfiguration.SharedMemory.get_global ()
+              |> Option.value ~default:TaintConfiguration.Heap.default
+              |> TaintConfiguration.maximum_return_access_path_depth_after_widening)
+          in
+          fun () -> Lazy.force cache_first_call
 
 
         let check_invariants = TaintConfiguration.runtime_check_invariants ()
@@ -439,17 +452,25 @@ module ReturnAccessPathTree = struct
 
   include Tree
 
+  let maximum_width =
+    let cache_first_call =
+      lazy
+        (TaintConfiguration.SharedMemory.get_global ()
+        |> Option.value ~default:TaintConfiguration.Heap.default
+        |> TaintConfiguration.maximum_return_access_path_width)
+    in
+    fun () -> Lazy.force cache_first_call
+
+
   let join left right =
     if left == right || Tree.is_bottom right then
       left
     else
-      Tree.join left right
-      |> Tree.limit_to ~width:TaintConfiguration.maximum_return_access_path_width
+      Tree.join left right |> Tree.limit_to ~width:(maximum_width ())
 
 
   let widen ~iteration ~prev ~next =
-    Tree.widen ~iteration ~prev ~next
-    |> Tree.limit_to ~width:TaintConfiguration.maximum_return_access_path_width
+    Tree.widen ~iteration ~prev ~next |> Tree.limit_to ~width:(maximum_width ())
 
 
   let to_json tree =

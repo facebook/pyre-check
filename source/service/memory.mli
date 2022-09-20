@@ -27,6 +27,8 @@ val worker_garbage_control : Caml.Gc.control
 
 val report_statistics : unit -> unit
 
+val is_initialized : unit -> bool
+
 exception SavedStateLoadingFailure of string
 
 val save_shared_memory : path:string -> configuration:Configuration.Analysis.t -> unit

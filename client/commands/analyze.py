@@ -42,6 +42,14 @@ class Arguments:
     dump_model_query_results: Optional[str] = None
     find_missing_flows: Optional[str] = None
     inline_decorators: bool = False
+    maximum_model_source_tree_width: Optional[int] = None
+    maximum_model_sink_tree_width: Optional[int] = None
+    maximum_model_tito_tree_width: Optional[int] = None
+    maximum_tree_depth_after_widening: Optional[int] = None
+    maximum_return_access_path_width: Optional[int] = None
+    maximum_return_access_path_depth_after_widening: Optional[int] = None
+    maximum_tito_positions: Optional[int] = None
+    maximum_overrides_to_analyze: Optional[int] = None
     maximum_tito_depth: Optional[int] = None
     maximum_trace_length: Optional[int] = None
     no_verify: bool = False
@@ -62,6 +70,16 @@ class Arguments:
         dump_call_graph = self.dump_call_graph
         dump_model_query_results = self.dump_model_query_results
         find_missing_flows = self.find_missing_flows
+        maximum_model_source_tree_width = self.maximum_model_source_tree_width
+        maximum_model_sink_tree_width = self.maximum_model_sink_tree_width
+        maximum_model_tito_tree_width = self.maximum_model_tito_tree_width
+        maximum_tree_depth_after_widening = self.maximum_tree_depth_after_widening
+        maximum_return_access_path_width = self.maximum_return_access_path_width
+        maximum_return_access_path_depth_after_widening = (
+            self.maximum_return_access_path_depth_after_widening
+        )
+        maximum_tito_positions = self.maximum_tito_positions
+        maximum_overrides_to_analyze = self.maximum_overrides_to_analyze
         maximum_tito_depth = self.maximum_tito_depth
         maximum_trace_length = self.maximum_trace_length
         repository_root = self.repository_root
@@ -85,6 +103,54 @@ class Arguments:
                 else {"find_missing_flows": find_missing_flows}
             ),
             "inline_decorators": self.inline_decorators,
+            **(
+                {}
+                if maximum_model_source_tree_width is None
+                else {
+                    "maximum_model_source_tree_width": maximum_model_source_tree_width
+                }
+            ),
+            **(
+                {}
+                if maximum_model_sink_tree_width is None
+                else {"maximum_model_sink_tree_width": maximum_model_sink_tree_width}
+            ),
+            **(
+                {}
+                if maximum_model_tito_tree_width is None
+                else {"maximum_model_tito_tree_width": maximum_model_tito_tree_width}
+            ),
+            **(
+                {}
+                if maximum_tree_depth_after_widening is None
+                else {
+                    "maximum_tree_depth_after_widening": maximum_tree_depth_after_widening
+                }
+            ),
+            **(
+                {}
+                if maximum_return_access_path_width is None
+                else {
+                    "maximum_return_access_path_width": maximum_return_access_path_width
+                }
+            ),
+            **(
+                {}
+                if maximum_return_access_path_depth_after_widening is None
+                else {
+                    "maximum_return_access_path_depth_after_widening": maximum_return_access_path_depth_after_widening
+                }
+            ),
+            **(
+                {}
+                if maximum_tito_positions is None
+                else {"maximum_tito_positions": maximum_tito_positions}
+            ),
+            **(
+                {}
+                if maximum_overrides_to_analyze is None
+                else {"maximum_overrides_to_analyze": maximum_overrides_to_analyze}
+            ),
             **(
                 {}
                 if maximum_tito_depth is None
@@ -189,6 +255,14 @@ def create_analyze_arguments(
         if find_missing_flows is not None
         else None,
         inline_decorators=analyze_arguments.inline_decorators,
+        maximum_model_source_tree_width=analyze_arguments.maximum_model_source_tree_width,
+        maximum_model_sink_tree_width=analyze_arguments.maximum_model_sink_tree_width,
+        maximum_model_tito_tree_width=analyze_arguments.maximum_model_tito_tree_width,
+        maximum_tree_depth_after_widening=analyze_arguments.maximum_tree_depth_after_widening,
+        maximum_return_access_path_width=analyze_arguments.maximum_return_access_path_width,
+        maximum_return_access_path_depth_after_widening=analyze_arguments.maximum_return_access_path_depth_after_widening,
+        maximum_tito_positions=analyze_arguments.maximum_tito_positions,
+        maximum_overrides_to_analyze=analyze_arguments.maximum_overrides_to_analyze,
         maximum_tito_depth=analyze_arguments.maximum_tito_depth,
         maximum_trace_length=analyze_arguments.maximum_trace_length,
         no_verify=analyze_arguments.no_verify,

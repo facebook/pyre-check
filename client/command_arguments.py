@@ -248,6 +248,14 @@ class AnalyzeArguments:
     find_missing_flows: Optional[MissingFlowsKind] = None
     inline_decorators: bool = False
     log_identifier: Optional[str] = None
+    maximum_model_source_tree_width: Optional[int] = None
+    maximum_model_sink_tree_width: Optional[int] = None
+    maximum_model_tito_tree_width: Optional[int] = None
+    maximum_tree_depth_after_widening: Optional[int] = None
+    maximum_return_access_path_width: Optional[int] = None
+    maximum_return_access_path_depth_after_widening: Optional[int] = None
+    maximum_tito_positions: Optional[int] = None
+    maximum_overrides_to_analyze: Optional[int] = None
     maximum_tito_depth: Optional[int] = None
     maximum_trace_length: Optional[int] = None
     no_verify: bool = False

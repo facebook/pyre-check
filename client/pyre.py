@@ -473,6 +473,46 @@ def pyre(
     help="Inline decorators at use sites to catch flows through decorators.",
 )
 @click.option(
+    "--maximum-model-source-tree-width",
+    type=int,
+    help="Limits the width of the source tree in the model for a callable.",
+)
+@click.option(
+    "--maximum-model-sink-tree-width",
+    type=int,
+    help="Limits the width of the sink tree in the model for a callable.",
+)
+@click.option(
+    "--maximum-model-tito-tree-width",
+    type=int,
+    help="Limits the width of the tito tree in the model for a callable.",
+)
+@click.option(
+    "--maximum-tree-depth-after-widening",
+    type=int,
+    help="Limits the depth of source, sink and tito trees within loops.",
+)
+@click.option(
+    "--maximum-return-access-path-width",
+    type=int,
+    help="Limits the width of the return access path tree in the model for a callable.",
+)
+@click.option(
+    "--maximum-return-access-path-depth-after-widening",
+    type=int,
+    help="Limits the depth of the return access path tree within loops.",
+)
+@click.option(
+    "--maximum-tito-positions",
+    type=int,
+    help="Limits the number of tito positions.",
+)
+@click.option(
+    "--maximum-overrides-to-analyze",
+    type=int,
+    help="Limits the number of overrides to consider at a call site.",
+)
+@click.option(
     "--maximum-trace-length",
     type=int,
     help="Limit the trace length of taint flows.",
@@ -508,6 +548,14 @@ def analyze(
     dump_model_query_results: Optional[str],
     use_cache: bool,
     inline_decorators: bool,
+    maximum_model_source_tree_width: Optional[int],
+    maximum_model_sink_tree_width: Optional[int],
+    maximum_model_tito_tree_width: Optional[int],
+    maximum_tree_depth_after_widening: Optional[int],
+    maximum_return_access_path_width: Optional[int],
+    maximum_return_access_path_depth_after_widening: Optional[int],
+    maximum_tito_positions: Optional[int],
+    maximum_overrides_to_analyze: Optional[int],
     maximum_trace_length: Optional[int],
     maximum_tito_depth: Optional[int],
     check_invariants: bool,
@@ -538,6 +586,14 @@ def analyze(
             else None,
             inline_decorators=inline_decorators,
             log_identifier=command_argument.log_identifier,
+            maximum_model_source_tree_width=maximum_model_source_tree_width,
+            maximum_model_sink_tree_width=maximum_model_sink_tree_width,
+            maximum_model_tito_tree_width=maximum_model_tito_tree_width,
+            maximum_tree_depth_after_widening=maximum_tree_depth_after_widening,
+            maximum_return_access_path_width=maximum_return_access_path_width,
+            maximum_return_access_path_depth_after_widening=maximum_return_access_path_depth_after_widening,
+            maximum_tito_positions=maximum_tito_positions,
+            maximum_overrides_to_analyze=maximum_overrides_to_analyze,
             maximum_tito_depth=maximum_tito_depth,
             maximum_trace_length=maximum_trace_length,
             no_verify=no_verify,

@@ -120,6 +120,8 @@ let report_statistics () =
   Measure.print_distributions ()
 
 
+let is_initialized () = Option.is_some !configuration
+
 exception TarError of string
 
 type tar_structure = {

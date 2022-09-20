@@ -20,6 +20,14 @@ let initialize_configuration
         transform_filter;
         find_missing_flows;
         dump_model_query_results;
+        maximum_model_source_tree_width;
+        maximum_model_sink_tree_width;
+        maximum_model_tito_tree_width;
+        maximum_tree_depth_after_widening;
+        maximum_return_access_path_width;
+        maximum_return_access_path_depth_after_widening;
+        maximum_tito_positions;
+        maximum_overrides_to_analyze;
         maximum_trace_length;
         maximum_tito_depth;
         _;
@@ -37,6 +45,14 @@ let initialize_configuration
           ~transform_filter
           ~find_missing_flows
           ~dump_model_query_results_path:dump_model_query_results
+          ~maximum_model_source_tree_width
+          ~maximum_model_sink_tree_width
+          ~maximum_model_tito_tree_width
+          ~maximum_tree_depth_after_widening
+          ~maximum_return_access_path_width
+          ~maximum_return_access_path_depth_after_widening
+          ~maximum_tito_positions
+          ~maximum_overrides_to_analyze
           ~maximum_trace_length
           ~maximum_tito_depth
     |> TaintConfiguration.exception_on_error

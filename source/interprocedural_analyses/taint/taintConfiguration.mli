@@ -36,11 +36,22 @@ type literal_string_source = {
 
 type implicit_sources = { literal_strings: literal_string_source list }
 
-type analysis_model_constraints = {
-  maximum_overrides_to_analyze: int option;
-  maximum_trace_length: int option;
-  maximum_tito_depth: int option;
-}
+module ModelConstraints : sig
+  type t = {
+    maximum_model_source_tree_width: int;
+    maximum_model_sink_tree_width: int;
+    maximum_model_tito_tree_width: int;
+    maximum_tree_depth_after_widening: int;
+    maximum_return_access_path_width: int;
+    maximum_return_access_path_depth_after_widening: int;
+    maximum_tito_positions: int;
+    maximum_overrides_to_analyze: int option;
+    maximum_trace_length: int option;
+    maximum_tito_depth: int option;
+  }
+
+  val default : t
+end
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
@@ -91,7 +102,7 @@ module Heap : sig
     partial_sink_labels: string list Core.String.Map.Tree.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
-    analysis_model_constraints: analysis_model_constraints;
+    analysis_model_constraints: ModelConstraints.t;
     lineage_analysis: bool;
     source_sink_filter: SourceSinkFilter.t option;
   }
@@ -108,6 +119,10 @@ module SharedMemory : sig
   val from_heap : Heap.t -> t
 
   val get : t -> Heap.t
+
+  (* Get the current registered taint configuration.
+   * Prefer to use `get` whenever possible. *)
+  val get_global : unit -> Heap.t option
 end
 
 module Error : sig
@@ -174,6 +189,14 @@ val with_command_line_options
   transform_filter:string list option ->
   find_missing_flows:Configuration.MissingFlowKind.t option ->
   dump_model_query_results_path:PyrePath.t option ->
+  maximum_model_source_tree_width:int option ->
+  maximum_model_sink_tree_width:int option ->
+  maximum_model_tito_tree_width:int option ->
+  maximum_tree_depth_after_widening:int option ->
+  maximum_return_access_path_width:int option ->
+  maximum_return_access_path_depth_after_widening:int option ->
+  maximum_tito_positions:int option ->
+  maximum_overrides_to_analyze:int option ->
   maximum_trace_length:int option ->
   maximum_tito_depth:int option ->
   (Heap.t, Error.t list) Result.t
@@ -207,20 +230,24 @@ val get_triggered_sink
 
 val is_missing_flow_analysis : Heap.t -> Configuration.MissingFlowKind.t -> bool
 
+val maximum_model_source_tree_width : Heap.t -> int
+
+val maximum_model_sink_tree_width : Heap.t -> int
+
+val maximum_model_tito_tree_width : Heap.t -> int
+
+val maximum_tree_depth_after_widening : Heap.t -> int
+
+val maximum_return_access_path_width : Heap.t -> int
+
+val maximum_return_access_path_depth_after_widening : Heap.t -> int
+
+val maximum_tito_positions : Heap.t -> int
+
 val maximum_overrides_to_analyze : Heap.t -> int option
 
+val maximum_trace_length : Heap.t -> int option
+
+val maximum_tito_depth : Heap.t -> int option
+
 val runtime_check_invariants : unit -> bool
-
-val maximum_model_source_tree_width : int
-
-val maximum_model_sink_tree_width : int
-
-val maximum_model_tito_tree_width : int
-
-val maximum_return_access_path_width : int
-
-val maximum_return_access_path_depth_after_widening : int
-
-val maximum_tito_positions : int
-
-val maximum_tree_depth_after_widening : int

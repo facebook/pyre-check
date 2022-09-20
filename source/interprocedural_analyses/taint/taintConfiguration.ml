@@ -42,15 +42,175 @@ type implicit_sources = { literal_strings: literal_string_source list }
 
 let empty_implicit_sources = { literal_strings = [] }
 
-type analysis_model_constraints = {
-  maximum_overrides_to_analyze: int option;
-  maximum_trace_length: int option;
-  maximum_tito_depth: int option;
-}
+module ModelConstraints = struct
+  type t = {
+    (* This limits the width of the source tree in the model for a callable, i.e
+     * the number of output paths in the return value.
+     *
+     * For instance:
+     * ```
+     * def foo():
+     *   return {"a": source(), "b": source(), "c": source()}
+     * ```
+     *
+     * The source tree for `foo` has a width of 3. Above the provided threshold, we
+     * would collapse the taint and consider the whole dictionary tainted.
+     *)
+    maximum_model_source_tree_width: int;
+    (* This limits the width of the sink tree in the model for a callable, i.e
+     * the number of input paths leading to a sink for a given parameter.
+     *
+     * For instance:
+     * ```
+     * def foo(arg):
+     *   sink(arg[1])
+     *   sink(arg[2])
+     *   sink(arg[3])
+     * ```
+     *
+     * The sink tree for `foo` and parameter `arg` has a width of 3.
+     * Above the provided threshold, we would collapse the taint and consider that the
+     * whole argument leads to a sink.
+     *)
+    maximum_model_sink_tree_width: int;
+    (* This limits the width of the tito tree in the model for a callable, i.e
+     * the number of input paths propagated to the return value, for a given parameter.
+     *
+     * For instance:
+     * ```
+     * def foo(arg):
+     *   return '%s:%s:%s' % (arg.a, arg.b, arg.c)
+     * ```
+     *
+     * The tito tree for `foo` and parameter `arg` has a width of 3.
+     * Above the provided threshold, we would collapse the taint and consider that the
+     * taint on the whole argument is propagated to the return value.
+     *)
+    maximum_model_tito_tree_width: int;
+    (* This limits the depth of the source, sink and tito trees within loops, i.e the
+     * length of source, sink and tito paths for each variables.
+     *
+     * For instance:
+     * ```
+     * def foo():
+     *   variable = MyClass()
+     *   for x in generate():
+     *     variable.a.b.c = source()
+     *   return result
+     * ```
+     *
+     * The source tree for `variable` has a depth of 3 (i.e, `a` -> `b` -> `c`).
+     * Within a loop, we limit the depth to the provided threshold. For instance,
+     * if that threshold is 1, we would consider that `variable.a` is tainted.
+     *)
+    maximum_tree_depth_after_widening: int;
+    (* This limits the width of the return access path tree in the model for a callable,
+     * i.e the number of output paths propagated to the return value, for a given parameter.
+     *
+     * For instance:
+     * ```
+     * def foo(arg):
+     *   return {'a': arg, 'b': arg, 'c': arg}
+     * ```
+     *
+     * The return access path tree for `foo` and parameter `arg` has a width of 3.
+     * Above the provided threshold, we would collapse the taint and consider that the
+     * whole return value is tainted whenever `arg` is tainted.
+     *)
+    maximum_return_access_path_width: int;
+    (* This limits the depth of the return access path tree within loops, i.e the
+     * length of output paths propagated to the return value, for a given parameter.
+     *
+     * For instance:
+     * ```
+     * def foo(arg):
+     *   result = MyClass()
+     *   for x in generate():
+     *     result.a.b.c = arg
+     *   return result
+     * ```
+     *
+     * The return access path tree for `foo` and parameter `arg` has a depth  of 3
+     * (i.e, `a` -> `b` -> `c`). Within a loop, we limit the depth to the provided
+     * threshold. For instance, if that threshold is 2, we would cut the output path
+     * to just `a.b`.
+     *)
+    maximum_return_access_path_depth_after_widening: int;
+    maximum_tito_positions: int;
+    maximum_overrides_to_analyze: int option;
+    maximum_trace_length: int option;
+    maximum_tito_depth: int option;
+  }
 
-let default_analysis_model_constraints =
-  { maximum_overrides_to_analyze = None; maximum_trace_length = None; maximum_tito_depth = None }
+  let default =
+    {
+      maximum_model_source_tree_width = 25;
+      maximum_model_sink_tree_width = 25;
+      maximum_model_tito_tree_width = 5;
+      maximum_tree_depth_after_widening = 4;
+      maximum_return_access_path_width = 10;
+      maximum_return_access_path_depth_after_widening = 4;
+      maximum_tito_positions = 50;
+      maximum_overrides_to_analyze = None;
+      maximum_trace_length = None;
+      maximum_tito_depth = None;
+    }
 
+
+  let override_with
+      ~maximum_model_source_tree_width
+      ~maximum_model_sink_tree_width
+      ~maximum_model_tito_tree_width
+      ~maximum_tree_depth_after_widening
+      ~maximum_return_access_path_width
+      ~maximum_return_access_path_depth_after_widening
+      ~maximum_tito_positions
+      ~maximum_overrides_to_analyze
+      ~maximum_trace_length
+      ~maximum_tito_depth
+      constraints
+    =
+    {
+      maximum_model_source_tree_width =
+        Option.value
+          maximum_model_source_tree_width
+          ~default:constraints.maximum_model_source_tree_width;
+      maximum_model_sink_tree_width =
+        Option.value
+          maximum_model_sink_tree_width
+          ~default:constraints.maximum_model_sink_tree_width;
+      maximum_model_tito_tree_width =
+        Option.value
+          maximum_model_tito_tree_width
+          ~default:constraints.maximum_model_tito_tree_width;
+      maximum_tree_depth_after_widening =
+        Option.value
+          maximum_tree_depth_after_widening
+          ~default:constraints.maximum_tree_depth_after_widening;
+      maximum_return_access_path_width =
+        Option.value
+          maximum_return_access_path_width
+          ~default:constraints.maximum_return_access_path_width;
+      maximum_return_access_path_depth_after_widening =
+        Option.value
+          maximum_return_access_path_depth_after_widening
+          ~default:constraints.maximum_return_access_path_depth_after_widening;
+      maximum_tito_positions =
+        Option.value maximum_tito_positions ~default:constraints.maximum_tito_positions;
+      maximum_overrides_to_analyze =
+        (match maximum_overrides_to_analyze with
+        | None -> constraints.maximum_overrides_to_analyze
+        | Some _ -> maximum_overrides_to_analyze);
+      maximum_trace_length =
+        (match maximum_trace_length with
+        | None -> constraints.maximum_trace_length
+        | Some _ -> maximum_trace_length);
+      maximum_tito_depth =
+        (match maximum_tito_depth with
+        | None -> constraints.maximum_tito_depth
+        | Some _ -> maximum_tito_depth);
+    }
+end
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
@@ -318,7 +478,7 @@ module Heap = struct
     partial_sink_labels: string list String.Map.Tree.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
-    analysis_model_constraints: analysis_model_constraints;
+    analysis_model_constraints: ModelConstraints.t;
     lineage_analysis: bool;
     source_sink_filter: SourceSinkFilter.t option;
   }
@@ -340,7 +500,7 @@ module Heap = struct
       partial_sink_labels = String.Map.Tree.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
-      analysis_model_constraints = default_analysis_model_constraints;
+      analysis_model_constraints = ModelConstraints.default;
       lineage_analysis = false;
       source_sink_filter = None;
     }
@@ -494,7 +654,7 @@ module Heap = struct
       implicit_sources = empty_implicit_sources;
       find_missing_flows = None;
       dump_model_query_results_path = None;
-      analysis_model_constraints = default_analysis_model_constraints;
+      analysis_model_constraints = ModelConstraints.default;
       lineage_analysis = false;
       source_sink_filter =
         Some
@@ -535,6 +695,15 @@ module SharedMemory = struct
     match T.get Memory.SingletonKey.key with
     | None -> failwith "taint configuration not in shared memory"
     | Some configuration -> configuration
+
+
+  (* Get the current registered taint configuration.
+   * Prefer to use `get` whenever possible. *)
+  let get_global () =
+    if Memory.is_initialized () then
+      T.get Memory.SingletonKey.key
+    else
+      None
 end
 
 module Error = struct
@@ -1117,6 +1286,20 @@ let from_json_list source_json_list =
     | [value] -> Ok (Some value)
     | _ -> Error [{ Error.path = None; kind = Error.OptionDuplicate name }]
   in
+  parse_integer_option "maximum_model_source_tree_width"
+  >>= fun maximum_model_source_tree_width ->
+  parse_integer_option "maximum_model_sink_tree_width"
+  >>= fun maximum_model_sink_tree_width ->
+  parse_integer_option "maximum_model_tito_tree_width"
+  >>= fun maximum_model_tito_tree_width ->
+  parse_integer_option "maximum_tree_depth_after_widening"
+  >>= fun maximum_tree_depth_after_widening ->
+  parse_integer_option "maximum_return_access_path_width"
+  >>= fun maximum_return_access_path_width ->
+  parse_integer_option "maximum_return_access_path_depth_after_widening"
+  >>= fun maximum_return_access_path_depth_after_widening ->
+  parse_integer_option "maximum_tito_positions"
+  >>= fun maximum_tito_positions ->
   parse_integer_option "maximum_overrides_to_analyze"
   >>= fun maximum_overrides_to_analyze ->
   parse_integer_option "maximum_trace_length"
@@ -1157,12 +1340,18 @@ let from_json_list source_json_list =
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints =
-      {
-        default_analysis_model_constraints with
-        maximum_overrides_to_analyze;
-        maximum_trace_length;
-        maximum_tito_depth;
-      };
+      ModelConstraints.override_with
+        ~maximum_model_source_tree_width
+        ~maximum_model_sink_tree_width
+        ~maximum_model_tito_tree_width
+        ~maximum_tree_depth_after_widening
+        ~maximum_return_access_path_width
+        ~maximum_return_access_path_depth_after_widening
+        ~maximum_tito_positions
+        ~maximum_overrides_to_analyze
+        ~maximum_trace_length
+        ~maximum_tito_depth
+        ModelConstraints.default;
     lineage_analysis;
     source_sink_filter =
       Some
@@ -1321,6 +1510,14 @@ let with_command_line_options
     ~transform_filter
     ~find_missing_flows
     ~dump_model_query_results_path
+    ~maximum_model_source_tree_width
+    ~maximum_model_sink_tree_width
+    ~maximum_model_tito_tree_width
+    ~maximum_tree_depth_after_widening
+    ~maximum_return_access_path_width
+    ~maximum_return_access_path_depth_after_widening
+    ~maximum_tito_positions
+    ~maximum_overrides_to_analyze
     ~maximum_trace_length
     ~maximum_tito_depth
   =
@@ -1378,23 +1575,19 @@ let with_command_line_options
     | None -> configuration
   in
   let configuration = { configuration with dump_model_query_results_path } in
-  let configuration =
-    match maximum_trace_length with
-    | None -> configuration
-    | Some _ ->
-        let analysis_model_constraints =
-          { configuration.analysis_model_constraints with maximum_trace_length }
-        in
-        { configuration with analysis_model_constraints }
-  in
-  let configuration =
-    match maximum_tito_depth with
-    | None -> configuration
-    | Some _ ->
-        let analysis_model_constraints =
-          { configuration.analysis_model_constraints with maximum_tito_depth }
-        in
-        { configuration with analysis_model_constraints }
+  let analysis_model_constraints =
+    ModelConstraints.override_with
+      ~maximum_model_source_tree_width
+      ~maximum_model_sink_tree_width
+      ~maximum_model_tito_tree_width
+      ~maximum_tree_depth_after_widening
+      ~maximum_return_access_path_width
+      ~maximum_return_access_path_depth_after_widening
+      ~maximum_tito_positions
+      ~maximum_overrides_to_analyze
+      ~maximum_trace_length
+      ~maximum_tito_depth
+      configuration.analysis_model_constraints
   in
   let configuration =
     match rule_filter with
@@ -1425,6 +1618,7 @@ let with_command_line_options
   let implicit_sinks = filter_implicit_sinks ~source_sink_filter configuration.implicit_sinks in
   {
     configuration with
+    analysis_model_constraints;
     rules;
     implicit_sources;
     implicit_sinks;
@@ -1464,113 +1658,60 @@ let is_missing_flow_analysis { Heap.find_missing_flows; _ } kind =
 
 let literal_string_sources { Heap.implicit_sources = { literal_strings; _ }; _ } = literal_strings
 
+let maximum_model_source_tree_width
+    { Heap.analysis_model_constraints = { maximum_model_source_tree_width; _ }; _ }
+  =
+  maximum_model_source_tree_width
+
+
+let maximum_model_sink_tree_width
+    { Heap.analysis_model_constraints = { maximum_model_sink_tree_width; _ }; _ }
+  =
+  maximum_model_sink_tree_width
+
+
+let maximum_model_tito_tree_width
+    { Heap.analysis_model_constraints = { maximum_model_tito_tree_width; _ }; _ }
+  =
+  maximum_model_tito_tree_width
+
+
+let maximum_tree_depth_after_widening
+    { Heap.analysis_model_constraints = { maximum_tree_depth_after_widening; _ }; _ }
+  =
+  maximum_tree_depth_after_widening
+
+
+let maximum_return_access_path_width
+    { Heap.analysis_model_constraints = { maximum_return_access_path_width; _ }; _ }
+  =
+  maximum_return_access_path_width
+
+
+let maximum_return_access_path_depth_after_widening
+    { Heap.analysis_model_constraints = { maximum_return_access_path_depth_after_widening; _ }; _ }
+  =
+  maximum_return_access_path_depth_after_widening
+
+
+let maximum_tito_positions { Heap.analysis_model_constraints = { maximum_tito_positions; _ }; _ } =
+  maximum_tito_positions
+
+
 let maximum_overrides_to_analyze
     { Heap.analysis_model_constraints = { maximum_overrides_to_analyze; _ }; _ }
   =
   maximum_overrides_to_analyze
 
 
+let maximum_trace_length { Heap.analysis_model_constraints = { maximum_trace_length; _ }; _ } =
+  maximum_trace_length
+
+
+let maximum_tito_depth { Heap.analysis_model_constraints = { maximum_tito_depth; _ }; _ } =
+  maximum_tito_depth
+
+
 let runtime_check_invariants () =
   (* This is enabled in tests or when using `--check-invariants`. *)
   Sys.getenv "PYSA_CHECK_INVARIANTS" |> Option.is_some
-
-
-(* This limits the width of the source tree in the model for a callable, i.e
- * the number of output paths in the return value.
- *
- * For instance:
- * ```
- * def foo():
- *   return {"a": source(), "b": source(), "c": source()}
- * ```
- *
- * The source tree for `foo` has a width of 3. Above the provided threshold, we
- * would collapse the taint and consider the whole dictionary tainted.
- *)
-let maximum_model_source_tree_width = 25
-
-(* This limits the width of the sink tree in the model for a callable, i.e
- * the number of input paths leading to a sink for a given parameter.
- *
- * For instance:
- * ```
- * def foo(arg):
- *   sink(arg[1])
- *   sink(arg[2])
- *   sink(arg[3])
- * ```
- *
- * The sink tree for `foo` and parameter `arg` has a width of 3.
- * Above the provided threshold, we would collapse the taint and consider that the
- * whole argument leads to a sink.
- *)
-let maximum_model_sink_tree_width = 25
-
-(* This limits the width of the tito tree in the model for a callable, i.e
- * the number of input paths propagated to the return value, for a given parameter.
- *
- * For instance:
- * ```
- * def foo(arg):
- *   return '%s:%s:%s' % (arg.a, arg.b, arg.c)
- * ```
- *
- * The tito tree for `foo` and parameter `arg` has a width of 3.
- * Above the provided threshold, we would collapse the taint and consider that the
- * taint on the whole argument is propagated to the return value.
- *)
-let maximum_model_tito_tree_width = 5
-
-(* This limits the depth of the source and sink trees within loops, i.e the
- * length of source and sink paths for each variables.
- *
- * For instance:
- * ```
- * def foo():
- *   variable = MyClass()
- *   for x in generate():
- *     variable.a.b.c = source()
- *   return result
- * ```
- *
- * The source tree for `variable` has a depth of 3 (i.e, `a` -> `b` -> `c`).
- * Within a loop, we limit the depth to the provided threshold. For instance,
- * if that threshold is 1, we would consider that `variable.a` is tainted.
- *)
-let maximum_tree_depth_after_widening = 4
-
-(* This limits the width of the return access path tree in the model for a callable,
- * i.e the number of output paths propagated to the return value, for a given parameter.
- *
- * For instance:
- * ```
- * def foo(arg):
- *   return {'a': arg, 'b': arg, 'c': arg}
- * ```
- *
- * The return access path tree for `foo` and parameter `arg` has a width of 3.
- * Above the provided threshold, we would collapse the taint and consider that the
- * whole return value is tainted whenever `arg` is tainted.
- *)
-let maximum_return_access_path_width = 10
-
-(* This limits the depth of the return access path tree within loops, i.e the
- * length of output paths propagated to the return value, for a given parameter.
- *
- * For instance:
- * ```
- * def foo(arg):
- *   result = MyClass()
- *   for x in generate():
- *     result.a.b.c = arg
- *   return result
- * ```
- *
- * The return access path tree for `foo` and parameter `arg` has a depth  of 3
- * (i.e, `a` -> `b` -> `c`). Within a loop, we limit the depth to the provided
- * threshold. For instance, if that threshold is 2, we would cut the output path
- * to just `a.b`.
- *)
-let maximum_return_access_path_depth_after_widening = 4
-
-let maximum_tito_positions = 50

@@ -24,6 +24,14 @@ let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configurati
           ~transform_filter
           ~find_missing_flows:None
           ~dump_model_query_results_path:None
+          ~maximum_model_source_tree_width:None
+          ~maximum_model_sink_tree_width:None
+          ~maximum_model_tito_tree_width:None
+          ~maximum_tree_depth_after_widening:None
+          ~maximum_return_access_path_width:None
+          ~maximum_return_access_path_depth_after_widening:None
+          ~maximum_tito_positions:None
+          ~maximum_overrides_to_analyze:None
           ~maximum_trace_length:None
           ~maximum_tito_depth:None
     >>= TaintConfiguration.validate

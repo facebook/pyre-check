@@ -31,8 +31,16 @@ let test_json_parsing context =
       dump_model_query_results = None;
       find_missing_flows = None;
       inline_decorators = false;
-      maximum_tito_depth = None;
+      maximum_model_source_tree_width = None;
+      maximum_model_sink_tree_width = None;
+      maximum_model_tito_tree_width = None;
+      maximum_tree_depth_after_widening = None;
+      maximum_return_access_path_width = None;
+      maximum_return_access_path_depth_after_widening = None;
+      maximum_tito_positions = None;
+      maximum_overrides_to_analyze = None;
       maximum_trace_length = None;
+      maximum_tito_depth = None;
       repository_root = None;
       rule_filter = None;
       source_filter = None;
@@ -80,6 +88,31 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("maximum_trace_length", `Int 5) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with maximum_trace_length = Some 5 };
+  assert_parsed
+    (`Assoc (("maximum_model_source_tree_width", `Int 30) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with maximum_model_source_tree_width = Some 30 };
+  assert_parsed
+    (`Assoc (("maximum_model_sink_tree_width", `Int 30) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with maximum_model_sink_tree_width = Some 30 };
+  assert_parsed
+    (`Assoc (("maximum_model_tito_tree_width", `Int 30) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with maximum_model_tito_tree_width = Some 30 };
+  assert_parsed
+    (`Assoc
+      (("maximum_tree_depth_after_widening", `Int 5) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with maximum_tree_depth_after_widening = Some 5 };
+  assert_parsed
+    (`Assoc (("maximum_return_access_path_width", `Int 5) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with maximum_return_access_path_width = Some 5 };
+  assert_parsed
+    (`Assoc
+      (("maximum_return_access_path_depth_after_widening", `Int 5)
+       :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      { dummy_analyze_configuration with maximum_return_access_path_depth_after_widening = Some 5 };
+  assert_parsed
+    (`Assoc (("maximum_tito_positions", `Int 50) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with maximum_tito_positions = Some 50 };
   assert_parsed
     (`Assoc (("no_verify", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with no_verify = true };
