@@ -272,6 +272,9 @@ overriden method on the base class.
 }
 ```
 
+This option can also be provided in the command line, using
+`--maximum-overrides-to-analyze`.
+
 This can speed up the analysis, but it will lead to false negatives, because
 Pysa will only propagate taint to or from 60 (in the case of the above example)
 overriden methods on subclasses. The remaining overriding methods will be
@@ -311,8 +314,8 @@ vulnerabilities. Use it with caution.
 
 ## Limit the tito depth for better signal and performance
 
-Pysa infers automatically when a function propagate the taint from one argument
-to its return value. This is called tito, for Taint In Taint Out. In practice,
+Pysa automatically infers when a function propagate the taint from one argument
+to its return value. This is called tito, for "Taint In Taint Out". In practice,
 infering it can be very expensive since the taint can go through an arbitrary
 number of hops (i.e, depth).
 
@@ -348,7 +351,7 @@ This option can also be added in the `taint.config` as follows:
 }
 ```
 
-# Inlining Decorators during Analysis
+## Inlining Decorators during Analysis
 
 By default, Pysa ignores issues that arise in the bodies of decorators. For example, it misses issues like decorators logging data. In the code below, Pysa will not catch the flow from `loggable_string` to the sink within the decorator `with_logging`:
 
@@ -527,3 +530,169 @@ RuleZ: SourceC -> SinkD
 If transform `MyTransform` is applied to taint `SourceC`, there is no possible rule it can possibly match. As an optimization, we check for this continuously in our analysis and filter out eagerly.
 
 Also note that the existing TaintInTaintOut annotation semantics of TITO being assumed (instead of inferred) on the argument are unchanged.
+
+## Tune the taint tree width and depth
+
+Pysa provides many options to fine tune the taint analysis. The following
+options can be provided either via the command line or in the `taint.config` file,
+under the `options` section.
+
+For instance:
+```json
+{
+  "sources": [],
+  "sinks": [],
+  "features": [],
+  "rules": [],
+  "options": {
+    "maximum_model_source_tree_width": 10,
+    "maximum_model_sink_tree_width": 10,
+    "maximum_model_tito_tree_width": 10
+  }
+}
+```
+
+When not provided, these are set to the following defaults:
+```ocaml file=source/interprocedural_analyses/taint/taintConfiguration.ml start=DOCUMENTATION_CONFIGURATION_START end=DOCUMENTATION_CONFIGURATION_END
+
+```
+
+### Maximum model source tree width
+
+* Command line option: `--maximum-model-source-tree-width`
+* taint.config option: `maximum_model_source_tree_width`
+
+This limits the width of the source tree in the model for a callable, i.e
+the number of output paths in the return value.
+
+For instance:
+```python
+def foo():
+  return {"a": source(), "b": source(), "c": source()}
+```
+
+The source tree for `foo` has a width of 3. Above the provided threshold, pysa
+will collapse the taint and consider the whole dictionary tainted.
+
+### Maximum model sink tree width
+
+* Command line option: `--maximum-model-sink-tree-width`
+* taint.config option: `maximum_model_sink_tree_width`
+
+This limits the width of the sink tree in the model for a callable, i.e
+the number of input paths leading to a sink for a given parameter.
+
+For instance:
+```python
+def foo(arg):
+  sink(arg[1])
+  sink(arg[2])
+  sink(arg[3])
+```
+
+The sink tree for `foo` and parameter `arg` has a width of 3.
+Above the provided threshold, pysa will collapse the taint and consider that the
+whole argument leads to a sink.
+
+### Maximum model tito tree width
+
+* Command line option: `--maximum-model-tito-tree-width`
+* taint.config option: `maximum_model_tito_tree_width`
+
+This limits the width of the taint-in-taint-out tree in the model for a callable,
+i.e the number of input paths propagated to the return value, for a given parameter.
+
+For instance:
+```python
+def foo(arg):
+  return '%s:%s:%s' % (arg.a, arg.b, arg.c)
+```
+
+The taint-in-taint-out tree for `foo` and parameter `arg` has a width of 3.
+Above the provided threshold, pysa will collapse the taint and consider that the
+taint on the whole argument is propagated to the return value.
+
+### Maximum tree depth after widening
+
+* Command line option: `--maximum-tree-depth-after-widening`
+* taint.config option: `maximum_tree_depth_after_widening`
+
+This limits the depth of the source, sink and tito trees within loops, i.e the
+length of source, sink and tito paths for each variables.
+
+For instance:
+```python
+def foo():
+  variable = MyClass()
+  for x in generate():
+    variable.a.b.c = source()
+  return result
+```
+
+The source tree for `variable` has a depth of 3 (i.e, `a` -> `b` -> `c`).
+Within a loop, pysa limits the depth to the provided threshold. For instance,
+if that threshold is 1, we would consider that `variable.a` is entirely tainted.
+
+### Maximum return access path width
+
+* Command line option: `--maximum-return-access-path-width`
+* taint.config option: `maximum_return_access_path_width`
+
+This limits the width of the return access path tree in the model for a callable,
+i.e the number of output paths propagated to the return value, for a given parameter.
+
+For instance:
+```python
+def foo(arg):
+  return {'a': arg, 'b': arg, 'c': arg}
+```
+
+The return access path tree for `foo` and parameter `arg` has a width of 3.
+Above the provided threshold, pysa will collapse the taint and consider that the
+whole return value is tainted whenever `arg` is tainted.
+
+### Maximum return access path depth after widening
+
+* Command line option: `--maximum-return-access-path-depth-after-widening`
+* taint.config option: `maximum_return_access_path_depth_after_widening`
+
+This limits the depth of the return access path tree within loops, i.e the
+length of output paths propagated to the return value, for a given parameter.
+
+For instance:
+```python
+def foo(arg):
+  result = MyClass()
+  for x in generate():
+    result.a.b.c = arg
+  return result
+```
+
+The return access path tree for `foo` and parameter `arg` has a depth  of 3
+(i.e, `a` -> `b` -> `c`). Within a loop, pysa limits the depth to the provided
+threshold. For instance, if that threshold is 2, we would cut the output path
+to just `a.b`.
+
+### Maximum tito positions
+
+* Command line option: `--maximum-tito-positions`
+* taint.config option: `maximum_tito_positions`
+
+This limits the number of positions to keep track of when propagating taint.
+
+When taint is propagated through a function and returned (i.e, taint-in-taint-out),
+pysa will keep track of the position of the argument, and display it in the trace.
+
+For instance:
+```python
+def foo():
+  x = source()
+  y = tito(x)
+           ^
+  z = {"a": y}
+            ^
+  sink(z)
+```
+
+In this example, we have 2 tito positions. Above the provided threshold,
+pysa simply discards all positions. Note that the taint is still propagated.
