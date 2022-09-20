@@ -8,7 +8,11 @@ from typing import List
 
 from testing.types import File
 
-from ..inspect_parser import extract_parameters, extract_qualified_name
+from ..inspect_parser import (
+    extract_parameters,
+    extract_qualified_name,
+    strip_custom_annotations,
+)
 from ..parameter import Parameter
 
 
@@ -104,4 +108,26 @@ class InspectParserTest(unittest.TestCase):
         self.assertEqual(
             extract_qualified_name(File.__hash__),
             "testing.types.File.__hash__",
+        )
+
+    def test_strip_custom_annotations(self) -> None:
+        self.assertEqual(
+            strip_custom_annotations("TestClass"),
+            "TestClass",
+        )
+        self.assertEqual(
+            strip_custom_annotations("Tuple[int, int]"),
+            "Tuple[int, int]",
+        )
+        self.assertEqual(
+            strip_custom_annotations("Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]"),
+            "TestClass",
+        )
+        self.assertEqual(
+            strip_custom_annotations("Annotated[Tuple[int, int], ExampleAnnotation(accesses=(Access.REVIEWED,))]"),
+            "Tuple[int, int]",
+        )
+        self.assertEqual(
+            strip_custom_annotations("Annotated[Optional[TestClass], ExampleAnnotation(accesses=(Access.REVIEWED,))]"),
+            "Optional[TestClass]",
         )

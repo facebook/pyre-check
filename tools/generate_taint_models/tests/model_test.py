@@ -297,6 +297,14 @@ class ModelTest(unittest.TestCase):
             parameter_annotation=AllParametersAnnotation(arg="TaintSource[UC]"),
             whitelist=WhitelistSpecification(parameter_type={"Optional[TestClass]"}),
         )
+        self.assert_modeled(
+            """def test_fn(arg1: Annotated[Tuple[int, int], ExampleAnnotation(accesses=(Access.REVIEWED,))], arg2: str):
+                    pass
+            """,
+            "def test_fn(arg1, arg2: TaintSource[UC]): ...",
+            parameter_annotation=AllParametersAnnotation(arg="TaintSource[UC]"),
+            whitelist=WhitelistSpecification(parameter_type={"Tuple[int, int]"}),
+        )
 
     def test_assignment_model(self) -> None:
         model_1 = model.AssignmentModel(

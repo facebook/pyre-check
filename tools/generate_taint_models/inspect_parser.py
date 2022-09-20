@@ -6,10 +6,14 @@
 # pyre-strict
 
 
+import _ast
+import ast
 import inspect
 import re
 import types
 from typing import Callable, List, Mapping, Optional
+
+import astunparse
 
 from .parameter import Parameter
 
@@ -64,11 +68,32 @@ def extract_parameters(
     return parameters
 
 
+def ast_to_pretty_string(ast_expression: ast.expr) -> str:
+    """
+    This function unparse an expression and modifies the result to make it compatible with the type annotation syntax.
+    For example astunparse.unparse will return `Tuple[(int, int)]\n` when parsing a Tuple annotation.
+    This function converts this in Tuple[int, int] which is the valid type syntax
+    """
+    return (
+        astunparse.unparse(ast_expression).strip().replace("[(", "[").replace(")]", "]")
+    )
+
+
 def strip_custom_annotations(annotation: str) -> str:
-    if matched_annotation := re.search(r"^Annotated\[\(?([^,]*),", annotation):
-        return matched_annotation.group(1)
-    else:
-        return annotation
+    # This function extract the actual type inside the Annotated annotation
+    # e.g. Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]
+    # will return TestClass
+    if annotation.startswith("Annotated["):
+        parsed_annotation = ast.parse(annotation).body[0]
+        if (
+            isinstance(parsed_annotation, _ast.Expr)
+            and isinstance(parsed_annotation.value, _ast.Subscript)
+            and isinstance(parsed_annotation.value.slice, _ast.Index)
+            and isinstance(parsed_annotation.value.slice.value, _ast.Tuple)
+        ):
+            return ast_to_pretty_string(parsed_annotation.value.slice.value.elts[0])
+
+    return annotation
 
 
 def _extract_parameter_annotation(
