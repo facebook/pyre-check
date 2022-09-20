@@ -136,7 +136,32 @@ module ModelConstraints = struct
      * to just `a.b`.
      *)
     maximum_return_access_path_depth_after_widening: int;
+    (* This limits the number of positions to keep track of when propagating taint.
+     *
+     * When taint is propagated through a function and returned (i.e,
+     * taint-in-taint-out), we will keep track of the position of the argument,
+     * and display it in the trace.
+     *
+     * For instance:
+     * ```
+     * def foo():
+     *   x = source()
+     *   y = tito(x)
+     *            ^
+     *   z = {"a": y}
+     *             ^
+     *   sink(z)
+     * ```
+     *
+     * In this example, we have 2 tito positions. Above the provided threshold,
+     * we simply discard all positions. The taint is still propagated.
+     *)
     maximum_tito_positions: int;
+    (* This limits the number of method overrides that we consider at a call site.
+     *
+     * If the number of overrides is above that threshold, we simply consider that
+     * the method has no override.
+     *)
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
@@ -144,6 +169,7 @@ module ModelConstraints = struct
 
   let default =
     {
+      (* DOCUMENTATION_CONFIGURATION_START *)
       maximum_model_source_tree_width = 25;
       maximum_model_sink_tree_width = 25;
       maximum_model_tito_tree_width = 5;
@@ -151,6 +177,7 @@ module ModelConstraints = struct
       maximum_return_access_path_width = 10;
       maximum_return_access_path_depth_after_widening = 4;
       maximum_tito_positions = 50;
+      (* DOCUMENTATION_CONFIGURATION_END *)
       maximum_overrides_to_analyze = None;
       maximum_trace_length = None;
       maximum_tito_depth = None;
