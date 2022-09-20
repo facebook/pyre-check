@@ -452,9 +452,9 @@ class ClientStatusMessageHandler:
 class ClientTypeErrorHandler:
     def __init__(
         self,
-        remote_logging: Optional[backend_arguments.RemoteLogging],
         client_output_channel: connections.AsyncTextWriter,
         server_state: ServerState,
+        remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         self.client_output_channel = client_output_channel
         self.remote_logging = remote_logging
@@ -493,7 +493,6 @@ class ClientTypeErrorHandler:
 class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     server_options_reader: PyreServerOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
-    client_output_channel: connections.AsyncTextWriter
     server_state: ServerState
     client_status_message_handler: ClientStatusMessageHandler
     client_type_error_handler: ClientTypeErrorHandler
@@ -501,20 +500,16 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     def __init__(
         self,
         server_options_reader: PyreServerOptionsReader,
-        client_output_channel: connections.AsyncTextWriter,
         server_state: ServerState,
+        client_status_message_handler: ClientStatusMessageHandler,
+        client_type_error_handler: ClientTypeErrorHandler,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         self.server_options_reader = server_options_reader
         self.remote_logging = remote_logging
-        self.client_output_channel = client_output_channel
         self.server_state = server_state
-        self.client_status_message_handler = ClientStatusMessageHandler(
-            client_output_channel, server_state
-        )
-        self.client_type_error_handler = ClientTypeErrorHandler(
-            remote_logging, client_output_channel, server_state
-        )
+        self.client_status_message_handler = client_status_message_handler
+        self.client_type_error_handler = client_type_error_handler
 
     async def handle_type_error_subscription(
         self, type_error_subscription: subscription.TypeErrors
@@ -908,8 +903,13 @@ async def run_persistent(
             PyreDaemonLaunchAndSubscribeHandler(
                 server_options_reader=server_options_reader,
                 remote_logging=remote_logging,
-                client_output_channel=stdout,
                 server_state=server_state,
+                client_status_message_handler=ClientStatusMessageHandler(
+                    stdout, server_state
+                ),
+                client_type_error_handler=ClientTypeErrorHandler(
+                    stdout, server_state, remote_logging
+                ),
             )
         ),
         handler=request_handler.RequestHandler(

@@ -45,6 +45,8 @@ from ..language_server_features import (
     TypeErrorsAvailability,
 )
 from ..persistent import (
+    ClientStatusMessageHandler,
+    ClientTypeErrorHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     InitializationExit,
     InitializationFailure,
@@ -526,10 +528,17 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
+        client_output_channel = AsyncTextWriter(bytes_writer)
+
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
-            client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
+            client_status_message_handler=ClientStatusMessageHandler(
+                client_output_channel, server_state
+            ),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel, server_state
+            ),
         )
         await server_handler.handle_status_update_subscription(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -585,10 +594,16 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
+        client_output_channel = AsyncTextWriter(bytes_writer)
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
-            client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
+            client_status_message_handler=ClientStatusMessageHandler(
+                client_output_channel, server_state
+            ),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel, server_state
+            ),
         )
         await server_handler.handle_type_error_subscription(
             subscription.TypeErrors(
@@ -616,10 +631,16 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
+        client_output_channel = AsyncTextWriter(MemoryBytesWriter())
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
-            client_output_channel=AsyncTextWriter(MemoryBytesWriter()),
             server_state=mock_server_state,
+            client_status_message_handler=ClientStatusMessageHandler(
+                client_output_channel, mock_server_state
+            ),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel, mock_server_state
+            ),
         )
         with self.assertRaises(PyreDaemonShutdown):
             await server_handler.handle_error_subscription(
@@ -638,10 +659,16 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
+        client_output_channel = AsyncTextWriter(bytes_writer)
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
-            client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
+            client_status_message_handler=ClientStatusMessageHandler(
+                client_output_channel, server_state
+            ),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel, server_state
+            ),
         )
         await server_handler.handle_status_update_subscription(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -927,6 +954,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         )
 
         bytes_writer = MemoryBytesWriter()
+        client_output_channel = AsyncTextWriter(bytes_writer)
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
@@ -940,8 +968,13 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                     socket_path=Path("irrelevant_socket_path.sock"),
                 ),
             ),
-            client_output_channel=AsyncTextWriter(bytes_writer),
             server_state=server_state,
+            client_status_message_handler=ClientStatusMessageHandler(
+                client_output_channel, server_state
+            ),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel, server_state
+            ),
         )
 
         with self.assertRaises(asyncio.IncompleteReadError):
@@ -975,6 +1008,15 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_send_message_to_status_bar(self) -> None:
         bytes_writer = MemoryBytesWriter()
+        client_output_channel = AsyncTextWriter(bytes_writer)
+        server_state = ServerState(
+            client_capabilities=lsp.ClientCapabilities(
+                window=lsp.WindowClientCapabilities(
+                    status=lsp.ShowStatusRequestClientCapabilities(),
+                ),
+            ),
+            server_options=mock_initial_server_options,
+        )
         server_handler = PyreDaemonLaunchAndSubscribeHandler(
             server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
@@ -988,14 +1030,12 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                     socket_path=Path("irrelevant_socket_path.sock"),
                 ),
             ),
-            client_output_channel=AsyncTextWriter(bytes_writer),
-            server_state=ServerState(
-                client_capabilities=lsp.ClientCapabilities(
-                    window=lsp.WindowClientCapabilities(
-                        status=lsp.ShowStatusRequestClientCapabilities(),
-                    ),
-                ),
-                server_options=mock_initial_server_options,
+            server_state=server_state,
+            client_status_message_handler=ClientStatusMessageHandler(
+                client_output_channel, server_state
+            ),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel, server_state
             ),
         )
         await server_handler.client_status_message_handler.show_status_message_to_client(
