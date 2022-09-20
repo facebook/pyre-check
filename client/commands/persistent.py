@@ -34,6 +34,9 @@ from . import (
     subscription,
 )
 
+from .pyre_server_options import PyreServerOptionsReader
+from .server_state import ServerState
+
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -391,21 +394,12 @@ class PyreDaemonShutdown(Exception):
     pass
 
 
-class PyreDaemonLaunchAndSubscribeHandler(background.Task):
-    server_options_reader: pyre_server_options.PyreServerOptionsReader
-    remote_logging: Optional[backend_arguments.RemoteLogging]
-    client_output_channel: connections.AsyncTextWriter
-    server_state: state.ServerState
-
+class ClientStatusMessageHandler:
     def __init__(
         self,
-        server_options_reader: pyre_server_options.PyreServerOptionsReader,
         client_output_channel: connections.AsyncTextWriter,
-        server_state: state.ServerState,
-        remote_logging: Optional[backend_arguments.RemoteLogging] = None,
+        server_state: ServerState,
     ) -> None:
-        self.server_options_reader = server_options_reader
-        self.remote_logging = remote_logging
         self.client_output_channel = client_output_channel
         self.server_state = server_state
 
@@ -454,6 +448,18 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             message, short_message, level, fallback_to_notification
         )
 
+
+class ClientTypeErrorHandler:
+    def __init__(
+        self,
+        remote_logging: Optional[backend_arguments.RemoteLogging],
+        client_output_channel: connections.AsyncTextWriter,
+        server_state: ServerState,
+    ) -> None:
+        self.client_output_channel = client_output_channel
+        self.remote_logging = remote_logging
+        self.server_state = server_state
+
     def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
         LOG.info(
             "Refreshing type errors received from Pyre server. "
@@ -483,6 +489,33 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             await _publish_diagnostics(self.client_output_channel, path, diagnostics)
         self.server_state.last_diagnostic_update_timer.reset()
 
+
+class PyreDaemonLaunchAndSubscribeHandler(background.Task):
+    server_options_reader: PyreServerOptionsReader
+    remote_logging: Optional[backend_arguments.RemoteLogging]
+    client_output_channel: connections.AsyncTextWriter
+    server_state: ServerState
+    client_status_message_handler: ClientStatusMessageHandler
+    client_type_error_handler: ClientTypeErrorHandler
+
+    def __init__(
+        self,
+        server_options_reader: PyreServerOptionsReader,
+        client_output_channel: connections.AsyncTextWriter,
+        server_state: ServerState,
+        remote_logging: Optional[backend_arguments.RemoteLogging] = None,
+    ) -> None:
+        self.server_options_reader = server_options_reader
+        self.remote_logging = remote_logging
+        self.client_output_channel = client_output_channel
+        self.server_state = server_state
+        self.client_status_message_handler = ClientStatusMessageHandler(
+            client_output_channel, server_state
+        )
+        self.client_type_error_handler = ClientTypeErrorHandler(
+            remote_logging, client_output_channel, server_state
+        )
+
     async def handle_type_error_subscription(
         self, type_error_subscription: subscription.TypeErrors
     ) -> None:
@@ -490,10 +523,12 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             self.server_state.server_options.language_server_features.type_errors
         )
         if availability.is_enabled():
-            await self.clear_type_errors_for_client()
-            self.update_type_errors(type_error_subscription.errors)
-            await self.show_type_errors_to_client()
-            await self.log_and_show_status_message_to_client(
+            await self.client_type_error_handler.clear_type_errors_for_client()
+            self.client_type_error_handler.update_type_errors(
+                type_error_subscription.errors
+            )
+            await self.client_type_error_handler.show_type_errors_to_client()
+            await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "Pyre has completed an incremental check and is currently "
                 "watching on further source changes.",
                 short_message="Pyre Ready",
@@ -503,15 +538,15 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     async def handle_status_update_subscription(
         self, status_update_subscription: subscription.StatusUpdate
     ) -> None:
-        await self.clear_type_errors_for_client()
+        await self.client_type_error_handler.clear_type_errors_for_client()
         if status_update_subscription.kind == "Rebuilding":
-            await self.log_and_show_status_message_to_client(
+            await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "Pyre is busy rebuilding the project for type checking...",
                 short_message="Pyre (waiting for Buck)",
                 level=lsp.MessageType.WARNING,
             )
         elif status_update_subscription.kind == "Rechecking":
-            await self.log_and_show_status_message_to_client(
+            await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "Pyre is busy re-type-checking the project...",
                 short_message="Pyre (checking)",
                 level=lsp.MessageType.WARNING,
@@ -546,8 +581,8 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
 
         first_response = await _read_server_response(server_input_channel)
         initial_type_errors = incremental.parse_type_error_response(first_response)
-        self.update_type_errors(initial_type_errors)
-        await self.show_type_errors_to_client()
+        self.client_type_error_handler.update_type_errors(initial_type_errors)
+        await self.client_type_error_handler.show_type_errors_to_client()
 
         while True:
             raw_subscription_response = await _read_server_response(
@@ -569,7 +604,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 server_input_channel, server_output_channel
             )
         finally:
-            await self.show_status_message_to_client(
+            await self.client_status_message_handler.show_status_message_to_client(
                 "Lost connection to the background Pyre Server. "
                 "This usually happens when Pyre detect changes in project which "
                 "it was not able to handle incrementally. "
@@ -579,7 +614,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 level=lsp.MessageType.ERROR,
                 fallback_to_notification=True,
             )
-            await self.clear_type_errors_for_client()
+            await self.client_type_error_handler.clear_type_errors_for_client()
             self.server_state.diagnostics = {}
 
     @staticmethod
@@ -613,7 +648,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             output_channel,
         ):
             if is_preexisting:
-                await self.log_and_show_status_message_to_client(
+                await self.client_status_message_handler.log_and_show_status_message_to_client(
                     "Established connection with existing Pyre server at "
                     f"`{project_identifier}`.",
                     short_message="Pyre Ready",
@@ -621,7 +656,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     fallback_to_notification=True,
                 )
             else:
-                await self.log_and_show_status_message_to_client(
+                await self.client_status_message_handler.log_and_show_status_message_to_client(
                     f"Pyre server at `{project_identifier}` has been initialized.",
                     short_message="Pyre Ready",
                     level=lsp.MessageType.INFO,
@@ -663,7 +698,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         except connections.ConnectionFailure:
             pass
 
-        await self.log_and_show_status_message_to_client(
+        await self.client_status_message_handler.log_and_show_status_message_to_client(
             f"Starting a new Pyre server at `{project_identifier}` in "
             "the background.",
             short_message="Starting Pyre...",
@@ -696,7 +731,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 },
             )
             if not self.server_state.is_user_notified_on_buck_failure:
-                await self.show_notification_message_to_client(
+                await self.client_status_message_handler.show_notification_message_to_client(
                     f"Cannot start a new Pyre server at `{project_identifier}` "
                     "due to Buck failure. If you added or changed a target, "
                     "make sure the target file is parsable and the owning "
@@ -706,7 +741,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     level=lsp.MessageType.ERROR,
                 )
                 self.server_state.is_user_notified_on_buck_failure = True
-            await self.show_status_message_to_client(
+            await self.client_status_message_handler.show_status_message_to_client(
                 f"Cannot start a new Pyre server at `{project_identifier}`. "
                 f"{start_status.message}",
                 short_message="Pyre Stopped",
@@ -728,7 +763,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                         "exception": str(start_status.detail),
                     },
                 )
-                await self.show_status_message_to_client(
+                await self.client_status_message_handler.show_status_message_to_client(
                     f"Cannot start a new Pyre server at `{project_identifier}`. "
                     f"{start_status.message}",
                     short_message="Pyre Stopped",
@@ -745,7 +780,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                         "exception": str(start_status.detail),
                     },
                 )
-                await self.show_status_message_to_client(
+                await self.client_status_message_handler.show_status_message_to_client(
                     f"Pyre server restart at `{project_identifier}` has been "
                     "failing repeatedly. Disabling The Pyre plugin for now.",
                     short_message="Pyre Disabled",

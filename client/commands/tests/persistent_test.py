@@ -998,7 +998,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 server_options=mock_initial_server_options,
             ),
         )
-        await server_handler.show_status_message_to_client(
+        await server_handler.client_status_message_handler.show_status_message_to_client(
             message="derp", level=lsp.MessageType.WARNING
         )
 
