@@ -4329,7 +4329,7 @@
         "port": "formal(y)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -4339,7 +4339,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": [ "" ], "kind": "NotSink[Test]@LocalReturn" }
+              {
+                "return_paths": { "": 0 },
+                "kind": "NotSink[Test]@LocalReturn"
+              }
             ],
             "decl": null
           }
