@@ -71,15 +71,10 @@ def process_initialize_request(
     if language_server_features is None:
         language_server_features = features.LanguageServerFeatures()
     server_info = lsp.Info(name="pyre", version=version.__version__)
-    did_change_result = (
-        lsp.TextDocumentSyncKind.FULL
-        if language_server_features.unsaved_changes.is_enabled()
-        else lsp.TextDocumentSyncKind.NONE
-    )
     server_capabilities = lsp.ServerCapabilities(
         text_document_sync=lsp.TextDocumentSyncOptions(
             open_close=True,
-            change=did_change_result,
+            change=lsp.TextDocumentSyncKind.FULL,
             save=lsp.SaveOptions(include_text=False),
         ),
         **language_server_features.capabilities(),

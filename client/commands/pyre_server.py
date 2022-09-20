@@ -161,17 +161,22 @@ class PyreServer:
         if document_path not in self.server_state.opened_documents:
             return
 
-        await self.handler.update_overlay(
-            path=document_path.resolve(),
-            code=str(
-                "".join(
-                    [
-                        content_change.text
-                        for content_change in parameters.content_changes
-                    ]
-                )
-            ),
+        process_unsaved_changes = (
+            self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
+
+        if process_unsaved_changes:
+            await self.handler.update_overlay(
+                path=document_path.resolve(),
+                code=str(
+                    "".join(
+                        [
+                            content_change.text
+                            for content_change in parameters.content_changes
+                        ]
+                    )
+                ),
+            )
         # Attempt to trigger a background Pyre server start on each file change
         if not self.pyre_manager.is_task_running():
             await self._try_restart_pyre_server()
