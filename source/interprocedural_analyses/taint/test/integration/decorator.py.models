@@ -2469,6 +2469,68 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.function_two_args",
+    "callable_line": 243,
+    "code": 5002,
+    "line": 244,
+    "start": 15,
+    "end": 19,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "decorator.function_two_args" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "decorator.py",
+              "line": 243,
+              "start": 33,
+              "end": 42
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "decorator.py",
+              "line": 244,
+              "start": 15,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "decorator.function_two_args:5002:0:Call|_test_sink|0|formal(arg):5a12196c4f715f1c211ff11f995d5ae0"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging.inner",

@@ -2246,6 +2246,16 @@ let run
     ()
   =
   let timer = Timer.start () in
+  let define =
+    (* Apply decorators to make sure we match parameters up correctly. Decorators are not applied in
+       the forward analysis, because in case a decorator changes the parameters of the decorated
+       function, the user-defined models of the function may no longer be applicable to the
+       resultant function of the application (e.g., T132302522). *)
+    let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+    Analysis.Annotated.Define.create define
+    |> Analysis.Annotated.Define.decorate ~resolution
+    |> Analysis.Annotated.Define.define
+  in
   let module FunctionContext = struct
     let qualifier = qualifier
 

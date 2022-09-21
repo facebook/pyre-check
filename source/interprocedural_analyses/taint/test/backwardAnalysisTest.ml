@@ -33,13 +33,6 @@ let assert_taint ~context source expected =
   let analyze_and_store_in_order models define =
     let call_target = Target.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
-    let define =
-      (* Apply decorators to make sure we match parameters up correctly. *)
-      let resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
-      Analysis.Annotated.Define.create define
-      |> Analysis.Annotated.Define.decorate ~resolution
-      |> Analysis.Annotated.Define.define
-    in
     let call_graph_of_define =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
