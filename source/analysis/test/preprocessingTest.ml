@@ -6595,6 +6595,35 @@ let test_expand_self_type _ =
         ) -> _Self_test_Shape__:
           return cls(config["scale"])
   |};
+  assert_expand
+    {|
+      from typing_extensions import Self
+
+      class Merger:
+        def merge(self, other: Self) -> Self:
+          return self
+
+        def merge_with_new_name(self, other: Self, name: str) -> Self:
+          return self
+
+        def merge_into(self, other: Self) -> None:
+          return self
+     |}
+    {|
+      _Self_test_Merger__ = typing.TypeVar("_Self_test_Merger__", bound="Merger")
+
+      from typing_extensions import Self
+
+      class Merger:
+        def merge(self: _Self_test_Merger__, other: _Self_test_Merger__) -> _Self_test_Merger__:
+          return self
+
+        def merge_with_new_name(self: _Self_test_Merger__, other: _Self_test_Merger__, name: str) -> _Self_test_Merger__:
+          return self
+
+        def merge_into(self: _Self_test_Merger__, other: _Self_test_Merger__) -> None:
+          return self
+     |};
   ()
 
 
