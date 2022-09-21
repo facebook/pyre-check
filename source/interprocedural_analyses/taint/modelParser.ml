@@ -192,6 +192,7 @@ module Internal = struct
       | FunctionModel
       | MethodModel
       | AttributeModel
+      | GlobalModel
     [@@deriving show, equal]
 
     type produced_taint =
@@ -225,6 +226,7 @@ module Internal = struct
         }
       | ReturnTaint of produced_taint list
       | AttributeTaint of produced_taint list
+      | GlobalTaint of produced_taint list
     [@@deriving show, equal]
 
     type rule = {
@@ -1232,6 +1234,7 @@ let parse_find_clause ~path ({ Node.value; location } as expression) =
       | "functions" -> Ok ModelQuery.FunctionModel
       | "methods" -> Ok ModelQuery.MethodModel
       | "attributes" -> Ok ModelQuery.AttributeModel
+      | "globals" -> Ok ModelQuery.GlobalModel
       | unsupported ->
           Error (model_verification_error ~path ~location (UnsupportedFindClause unsupported)))
   | _ -> Error (model_verification_error ~path ~location (InvalidFindClauseType expression))
@@ -1242,23 +1245,30 @@ let get_find_clause_as_string find_clause =
   | Ok ModelQuery.AttributeModel -> "attributes"
   | Ok ModelQuery.MethodModel -> "methods"
   | Ok ModelQuery.FunctionModel -> "functions"
+  | Ok ModelQuery.GlobalModel -> "globals"
   | _ -> "unsupported"
 
 
-let is_callable_clause_kind find_clause =
-  match find_clause with
-  | Ok ModelQuery.MethodModel
-  | Ok ModelQuery.FunctionModel ->
-      true
+let is_clause_kind ~expected_kinds kind =
+  match kind with
+  | Ok clause -> List.mem expected_kinds clause ~equal:ModelQuery.equal_kind
   | _ -> false
+
+
+let is_callable_clause_kind find_clause =
+  is_clause_kind find_clause ~expected_kinds:[ModelQuery.MethodModel; ModelQuery.FunctionModel]
+
+
+let is_global_clause_kind find_clause =
+  is_clause_kind find_clause ~expected_kinds:[ModelQuery.GlobalModel]
+
+
+let is_attribute_clause_kind find_clause =
+  is_clause_kind find_clause ~expected_kinds:[ModelQuery.AttributeModel]
 
 
 let is_class_member_clause_kind find_clause =
-  match find_clause with
-  | Ok ModelQuery.MethodModel
-  | Ok ModelQuery.AttributeModel ->
-      true
-  | _ -> false
+  is_clause_kind find_clause ~expected_kinds:[ModelQuery.MethodModel; ModelQuery.AttributeModel]
 
 
 let parse_name_constraint ~path ~location ({ Node.value; _ } as constraint_expression) =
@@ -1629,7 +1639,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             } as callee;
           _;
         } ->
-        if is_callable_clause_kind find_clause then
+        if not (is_attribute_clause_kind find_clause) then
           Error (invalid_model_query_where_clause ~path ~location callee)
         else
           parse_annotation_constraint ~path ~location constraint_expression
@@ -1959,10 +1969,19 @@ let parse_model_clause
           Call.callee = { Node.value = Name (Name.Identifier "AttributeModel"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
-        if is_callable_clause_kind find_clause then
+        if not (is_attribute_clause_kind find_clause) then
           Error (invalid_model_query_model_clause ~path ~location callee)
         else
           parse_taint taint >>| fun taint -> ModelQuery.AttributeTaint taint
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "GlobalModel"); _ } as callee;
+          arguments = [{ Call.Argument.value = taint; _ }];
+        } ->
+        if not (is_global_clause_kind find_clause) then
+          Error (invalid_model_query_model_clause ~path ~location callee)
+        else
+          parse_taint taint >>| fun taint -> ModelQuery.GlobalTaint taint
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "NamedParameter"); _ } as callee;

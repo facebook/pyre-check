@@ -3732,6 +3732,31 @@ Unexpected statement: `food(y)`
       test.C.x: TaintSink[X, ViaTypeOf] = ...
     |}
     ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "globals",
+        where = name.matches("foo"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:"`Returns` is not a valid model for model queries with find clause of kind `globals`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "globals",
+        where = name.matches("foo"),
+        model = AttributeModel(TaintSource[X])
+      )
+    |}
+    ~expect:
+      "`AttributeModel` is not a valid model for model queries with find clause of kind `globals`."
+    ();
   ()
 
 
@@ -5582,6 +5607,86 @@ let test_query_parsing context =
                            });
                     ];
                 };
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo_finders",
+     find = "globals",
+     where = name.matches("foo"),
+     model = [GlobalModel([TaintSource[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "foo_finders";
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          rule_kind = GlobalModel;
+          productions =
+            [
+              GlobalTaint
+                [
+                  TaintAnnotation
+                    (ModelParser.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         via_features = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                         trace_length = None;
+                       });
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo_finders",
+     find = "globals",
+     where = name.matches("foo"),
+     model = [GlobalModel([TaintSource[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "foo_finders";
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          rule_kind = GlobalModel;
+          productions =
+            [
+              GlobalTaint
+                [
+                  TaintAnnotation
+                    (ModelParser.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         via_features = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                         trace_length = None;
+                       });
+                ];
             ];
           expected_models = [];
           unexpected_models = [];

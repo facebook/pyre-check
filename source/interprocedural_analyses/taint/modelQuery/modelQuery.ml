@@ -726,6 +726,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
         | ModelQuery.AttributeTaint _ -> failwith "impossible case"
+        | ModelQuery.GlobalTaint _ -> failwith "impossible case"
       in
       List.concat_map productions ~f:apply_production
 

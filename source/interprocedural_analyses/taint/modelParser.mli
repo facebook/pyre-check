@@ -161,6 +161,7 @@ module Internal : sig
       | FunctionModel
       | MethodModel
       | AttributeModel
+      | GlobalModel
     [@@deriving show, equal]
 
     type produced_taint =
@@ -194,6 +195,7 @@ module Internal : sig
         }
       | ReturnTaint of produced_taint list
       | AttributeTaint of produced_taint list
+      | GlobalTaint of produced_taint list
     [@@deriving show, equal]
 
     type rule = {
