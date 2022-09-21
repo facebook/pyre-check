@@ -1,0 +1,106 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_global_variable.f",
+    "callable_line": 12,
+    "code": 1000,
+    "line": 13,
+    "start": 15,
+    "end": 22,
+    "filename": "model_query_global_variable.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "Obj{os.environ}" } ], "kind": "Test" }
+            ],
+            "root": {
+              "filename": "model_query_global_variable.py",
+              "line": 13,
+              "start": 15,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+            ],
+            "root": {
+              "filename": "model_query_global_variable.py",
+              "line": 13,
+              "start": 15,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_global_variable.f:1000:0:Call|_test_sink|0|formal(arg):92e737841f0a37c8fa9b80048b375ffa"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.foo}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test1" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{os.environ}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "list.append",
+    "sinks": [
+      {
+        "port": "formal(self)",
+        "taint": [ { "kinds": [ { "kind": "Test1" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}

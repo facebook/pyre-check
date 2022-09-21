@@ -1,0 +1,29 @@
+def _test_sink(arg: TaintSink[Test]): ...
+def list.append(self: TaintSink[Test1]): ...
+
+ModelQuery(
+  name = "get_environ",
+  find = "globals",
+  where = [name.matches("environ")],
+  model = [
+    GlobalModel(TaintSource[Test]),
+  ]
+)
+
+ModelQuery(
+  name = "get_foo",
+  find = "globals",
+  where = [name.matches("foo")],
+  model = [
+    GlobalModel(TaintSource[Test1]),
+  ]
+)
+
+ModelQuery(
+  name = "get_Baz",
+  find = "globals",
+  where = [name.matches("Baz")],
+  model = [
+    GlobalModel(TaintSource[Test]),
+  ]
+)

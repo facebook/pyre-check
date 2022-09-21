@@ -107,6 +107,26 @@ let test_apply_rule context =
       expected
       actual
   in
+  let assert_applied_rules_for_globals ~source ~rule ~name ~expected =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+    in
+    let resolution = Analysis.GlobalResolution.create global_environment in
+    let actual =
+      TaintModelQuery.ModelQuery.GlobalVariableQueries.apply_global_query_rule
+        ~verbose:false
+        ~resolution
+        ~rule
+        ~name:(Ast.Reference.create name)
+      |> String.Map.data
+      |> List.concat
+    in
+    assert_equal
+      ~cmp:(List.equal ModelParser.equal_taint_annotation)
+      ~printer:(List.to_string ~f:ModelParser.show_taint_annotation)
+      expected
+      actual
+  in
   assert_applied_rules
     ~source:{|
       def foo(): ...
@@ -2710,6 +2730,54 @@ let test_apply_rule context =
       }
     ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
+  assert_applied_rules_for_globals
+    ~source:{|
+      foo = []
+     |}
+    ~rule:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        productions = [GlobalTaint [TaintAnnotation (source "Test")]];
+        rule_kind = GlobalModel;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~name:"test.foo"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_globals
+    ~source:{|
+      foo, bar = [], {}
+     |}
+    ~rule:
+      {
+        location = Ast.Location.any;
+        name = "get_bar";
+        query = [NameConstraint (Matches (Re2.create_exn "bar"))];
+        productions = [GlobalTaint [TaintAnnotation (source "Test")]];
+        rule_kind = GlobalModel;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~name:"test.bar"
+    ~expected:[source "Test"];
+  assert_applied_rules_for_globals
+    ~source:{|
+      foo = []
+     |}
+    ~rule:
+      {
+        location = Ast.Location.any;
+        name = "get_baz";
+        query = [NameConstraint (Matches (Re2.create_exn "baz"))];
+        productions = [GlobalTaint [TaintAnnotation (source "Test")]];
+        rule_kind = GlobalModel;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~name:"test.foo"
+    ~expected:[];
   ()
 
 

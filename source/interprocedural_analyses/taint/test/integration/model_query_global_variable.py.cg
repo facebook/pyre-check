@@ -1,0 +1,6 @@
+@generated
+Call dependencies
+model_query_global_variable.$toplevel (fun) -> [model_query_global_variable.foo (object)]
+model_query_global_variable.f (fun) -> [_test_sink (fun) os.environ (object)]
+model_query_global_variable.g (fun) -> [list::append (method) model_query_global_variable.foo (object)]
+model_query_global_variable.h (fun) -> [_test_sink (fun)]

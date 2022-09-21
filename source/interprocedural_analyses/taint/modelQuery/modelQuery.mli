@@ -34,6 +34,13 @@ module GlobalVariableQueries : sig
   val get_globals_and_annotations
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
     Ast.Reference.t list
+
+  val apply_global_query_rule
+    :  verbose:bool ->
+    resolution:Analysis.GlobalResolution.t ->
+    rule:Taint.ModelParser.Internal.ModelQuery.rule ->
+    name:Ast.Reference.t ->
+    Taint.ModelParser.Internal.taint_annotation list Core.String.Map.t
 end
 
 module DumpModelQueryResults : sig

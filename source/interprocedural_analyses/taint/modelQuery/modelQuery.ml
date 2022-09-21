@@ -918,6 +918,54 @@ module GlobalVariableQueries = struct
     in
     UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
     |> List.filter ~f:filter_globals
+
+
+  let rec global_matches_constraint query_constraint ~resolution ~name =
+    match query_constraint with
+    | ModelQuery.NameConstraint name_constraint ->
+        matches_name_constraint ~name_constraint (Reference.show name)
+    | ModelQuery.AnyOf constraints ->
+        List.exists constraints ~f:(global_matches_constraint ~resolution ~name)
+    | ModelQuery.AllOf constraints ->
+        List.for_all constraints ~f:(global_matches_constraint ~resolution ~name)
+    | ModelQuery.Not query_constraint ->
+        not (global_matches_constraint ~resolution ~name query_constraint)
+    | _ -> false
+
+
+  let apply_global_productions ~productions =
+    let production_to_taint = function
+      | ModelQuery.TaintAnnotation taint_annotation -> Some taint_annotation
+      | _ -> None
+    in
+    let apply_production = function
+      | ModelQuery.GlobalTaint productions -> List.filter_map productions ~f:production_to_taint
+      | _ -> []
+    in
+    List.concat_map productions ~f:apply_production
+
+
+  let apply_global_query_rule
+      ~verbose
+      ~resolution
+      ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
+      ~name
+    =
+    let kind_matches =
+      match rule_kind with
+      | ModelQuery.GlobalModel -> true
+      | _ -> false
+    in
+    if kind_matches && List.for_all ~f:(global_matches_constraint ~resolution ~name) query then begin
+      if verbose then
+        Log.info
+          "Global `%s` matches all constraints for the model query rule %s."
+          (Reference.show name)
+          rule_name;
+      String.Map.set String.Map.empty ~key:rule_name ~data:(apply_global_productions ~productions)
+    end
+    else
+      String.Map.empty
 end
 
 let apply_all_rules
@@ -933,27 +981,23 @@ let apply_all_rules
   =
   let global_resolution = Resolution.global_resolution resolution in
   if List.length rules > 0 then
-    let attribute_rules, callable_rules =
-      List.partition_tf
-        ~f:(fun { ModelQuery.rule_kind; _ } ->
-          match rule_kind with
-          | ModelQuery.AttributeModel -> true
-          | _ -> false)
+    let attribute_rules, global_rules, callable_rules =
+      List.partition3_map
+        ~f:(fun rule ->
+          match rule with
+          | { ModelQuery.rule_kind = ModelQuery.AttributeModel; _ } -> `Fst rule
+          | { ModelQuery.rule_kind = ModelQuery.GlobalModel; _ } -> `Snd rule
+          | _ -> `Trd rule)
         rules
     in
-
-    (* Generate models for functions and methods. *)
-    let apply_rules_for_callable models_and_names callable =
-      let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
+    (* let attribute_rules, other_rules = List.partition_tf ~f:(fun { ModelQuery.rule_kind; _ } ->
+       match rule_kind with | ModelQuery.AttributeModel -> true | _ -> false) rules in let
+       global_rules, callable_rules = List.partition_tf ~f:(fun { ModelQuery.rule_kind; _ } -> match
+       rule_kind with | ModelQuery.GlobalModel -> true | _ -> false) other_rules in *)
+    let apply_rules models_and_names target ~rules ~apply_query_rule ~model_from_annotation =
       let taint_to_model_and_names =
-        callable_rules
-        |> List.map ~f:(fun rule ->
-               apply_callable_query_rule
-                 ~verbose:(Option.is_some taint_configuration.dump_model_query_results_path)
-                 ~resolution:global_resolution
-                 ~class_hierarchy_graph
-                 ~rule
-                 ~callable)
+        rules
+        |> List.map ~f:apply_query_rule
         |> List.reduce ~f:(fun left right ->
                String.Map.merge left right ~f:(fun ~key:_ -> function
                  | `Both (taint_annotations_left, taint_annotations_right) ->
@@ -964,22 +1008,40 @@ let apply_all_rules
         |> Option.value ~default:String.Map.empty
       in
       String.Map.map taint_to_model_and_names ~f:(fun taint_to_model ->
-          match
-            ModelParser.create_callable_model_from_annotations
-              ~resolution
-              ~callable
-              ~source_sink_filter
-              ~is_obscure:(Hash_set.mem stubs callable)
-              taint_to_model
-          with
-          | Ok model ->
-              Registry.add Registry.empty ~join:Model.join_user_models ~target:callable ~model
+          match model_from_annotation ~taint_to_model with
+          | Ok model -> Registry.add Registry.empty ~join:Model.join_user_models ~target ~model
           | Error error ->
               Log.error
                 "Error while executing model query: %s"
                 (ModelVerificationError.display error);
               Registry.empty)
       |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models models_and_names
+    in
+    let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
+    let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
+
+    (* Generate models for functions and methods. *)
+    let apply_rules_for_callable models_and_names callable =
+      let callable_model_from_annotation ~taint_to_model =
+        ModelParser.create_callable_model_from_annotations
+          ~resolution
+          ~callable
+          ~source_sink_filter
+          ~is_obscure:(Hash_set.mem stubs callable)
+          taint_to_model
+      in
+      apply_rules
+        ~rules:callable_rules
+        ~apply_query_rule:(fun rule ->
+          apply_callable_query_rule
+            ~verbose
+            ~resolution:global_resolution
+            ~class_hierarchy_graph
+            ~rule
+            ~callable)
+        ~model_from_annotation:callable_model_from_annotation
+        models_and_names
+        callable
     in
     let callables =
       List.filter_map callables ~f:(function
@@ -1004,43 +1066,27 @@ let apply_all_rules
     in
     (* Generate models for attributes. *)
     let apply_rules_for_attribute models_and_names (name, annotation) =
-      let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
-      let taint_to_model_and_names =
-        attribute_rules
-        |> List.map ~f:(fun rule ->
-               apply_attribute_query_rule
-                 ~verbose:(Option.is_some taint_configuration.dump_model_query_results_path)
-                 ~resolution:global_resolution
-                 ~class_hierarchy_graph
-                 ~rule
-                 ~name
-                 ~annotation)
-        |> List.reduce ~f:(fun left right ->
-               String.Map.merge left right ~f:(fun ~key:_ -> function
-                 | `Both (taint_annotations_left, taint_annotations_right) ->
-                     Some (taint_annotations_left @ taint_annotations_right)
-                 | `Left taint_annotations
-                 | `Right taint_annotations ->
-                     Some taint_annotations))
-        |> Option.value ~default:String.Map.empty
+      let attribute_model_from_annotation ~taint_to_model =
+        ModelParser.create_attribute_model_from_annotations
+          ~resolution
+          ~name
+          ~source_sink_filter
+          taint_to_model
       in
-      String.Map.map taint_to_model_and_names ~f:(fun taint_to_model ->
-          let callable = Target.create_object name in
-          match
-            ModelParser.create_attribute_model_from_annotations
-              ~resolution
-              ~name
-              ~source_sink_filter
-              taint_to_model
-          with
-          | Ok model ->
-              Registry.add Registry.empty ~join:Model.join_user_models ~target:callable ~model
-          | Error error ->
-              Log.error
-                "Error while executing model query: %s"
-                (ModelVerificationError.display error);
-              Registry.empty)
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models models_and_names
+      let attribute = Target.create_object name in
+      apply_rules
+        ~rules:attribute_rules
+        ~apply_query_rule:(fun rule ->
+          apply_attribute_query_rule
+            ~verbose
+            ~resolution:global_resolution
+            ~class_hierarchy_graph
+            ~rule
+            ~name
+            ~annotation)
+        ~model_from_annotation:attribute_model_from_annotation
+        models_and_names
+        attribute
     in
     let attribute_models =
       if not (List.is_empty attribute_rules) then
@@ -1069,11 +1115,49 @@ let apply_all_rules
       else
         ModelQueryRegistryMap.empty
     in
+    (* Generate models for globals. *)
+    let apply_rules_for_globals models_and_names name =
+      let global_model_from_annotation ~taint_to_model =
+        ModelParser.create_attribute_model_from_annotations
+          ~resolution
+          ~name
+          ~source_sink_filter
+          taint_to_model
+      in
+      let global = Target.create_object name in
+      apply_rules
+        ~rules:global_rules
+        ~apply_query_rule:(fun rule ->
+          GlobalVariableQueries.apply_global_query_rule
+            ~verbose
+            ~resolution:global_resolution
+            ~rule
+            ~name)
+        ~model_from_annotation:global_model_from_annotation
+        models_and_names
+        global
+    in
+    let global_models =
+      Scheduler.map_reduce
+        scheduler
+        ~policy:
+          (Scheduler.Policy.fixed_chunk_count
+             ~minimum_chunk_size:500
+             ~preferred_chunks_per_worker:1
+             ())
+        ~initial:ModelQueryRegistryMap.empty
+        ~map:(fun models_and_names globals ->
+          List.fold globals ~init:models_and_names ~f:apply_rules_for_globals)
+        ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
+        ~inputs:(GlobalVariableQueries.get_globals_and_annotations ~environment)
+        ()
+    in
     let models_and_names =
       ModelQueryRegistryMap.merge
         ~model_join:Model.join_user_models
         callable_models
         attribute_models
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models global_models
     in
     ( models_and_names,
       ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~models_and_names ~rules
