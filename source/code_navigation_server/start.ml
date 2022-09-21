@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* TODO(T132410158) Add a module-level doc comment. *)
+
 open Core
 
 let handle_connection ~server _client_address (input_channel, output_channel) =

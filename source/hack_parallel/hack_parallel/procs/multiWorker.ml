@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* TODO(T132410158) Add a module-level doc comment. *)
+
+
 open Hack_core
 
 type 'a nextlist = 'a list Hack_bucket.next

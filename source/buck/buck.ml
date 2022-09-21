@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* TODO(T132410158) Add a module-level doc comment. *)
+
 module BuildMap = BuildMap
 module Raw = Raw
 module Interface = Interface

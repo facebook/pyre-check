@@ -5,5 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* TODO(T132410158) Add a module-level doc comment. *)
+
 let fetch ~bucket:_ ~path:_ ~target:_ () =
   failwith "Saved state fetching is not supported in open-source Pyre"

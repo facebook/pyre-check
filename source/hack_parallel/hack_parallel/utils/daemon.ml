@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* TODO(T132410158) Add a module-level doc comment. *)
+
+
 type 'a in_channel = Timeout.in_channel
 type 'a out_channel = Pervasives.out_channel
 

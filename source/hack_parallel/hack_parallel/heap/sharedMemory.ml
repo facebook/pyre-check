@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* TODO(T132410158) Add a module-level doc comment. *)
+
+
 open Hack_core
 
 (* Don't change the ordering of this record without updating hh_shared_init in

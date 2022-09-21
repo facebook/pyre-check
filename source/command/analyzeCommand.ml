@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* TODO(T132410158) Add a module-level doc comment. *)
+
 open Core
 
 (* Analyze command uses the same exit code scheme as check command. *)
