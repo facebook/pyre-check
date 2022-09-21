@@ -1199,6 +1199,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> None
     in
     let is_result_used = is_result_used || Option.is_some should_assign_return_to_parameter in
+    let add_type_breadcrumbs taint =
+      let type_breadcrumbs =
+        let { CallGraph.CallCallees.call_targets; _ } =
+          get_call_callees ~location ~call:{ Call.callee; arguments }
+        in
+        CallModel.type_breadcrumbs_of_calls call_targets
+      in
+      taint |> ForwardState.Tree.add_local_breadcrumbs type_breadcrumbs
+    in
 
     let taint, state =
       match { Call.callee; arguments } with
@@ -1253,6 +1262,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [];
       } ->
           analyze_expression ~resolution ~state ~is_result_used ~expression:base
+          |>> add_type_breadcrumbs
       | {
        callee =
          { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; special = true }); _ };

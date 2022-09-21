@@ -62,3 +62,5 @@ val sink_trees_of_argument
   caller_class_interval:ClassIntervalSet.t ->
   receiver_class_interval:ClassIntervalSet.t ->
   Issue.SinkTreeWithHandle.t list
+
+val type_breadcrumbs_of_calls : CallGraph.CallTarget.t list -> Features.BreadcrumbSet.t

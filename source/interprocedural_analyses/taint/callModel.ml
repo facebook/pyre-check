@@ -235,3 +235,11 @@ let sink_trees_of_argument
     { Issue.SinkTreeWithHandle.sink_tree; handle = Issue.SinkHandle.make_call ~call_target ~root }
   in
   List.map sink_matches ~f:to_sink_tree_with_identifier |> Issue.SinkTreeWithHandle.filter_bottom
+
+
+let type_breadcrumbs_of_calls targets =
+  List.fold targets ~init:Features.BreadcrumbSet.bottom ~f:(fun so_far call_target ->
+      match call_target.CallGraph.CallTarget.return_type with
+      | None -> so_far
+      | Some return_type ->
+          return_type |> Features.type_breadcrumbs |> Features.BreadcrumbSet.join so_far)

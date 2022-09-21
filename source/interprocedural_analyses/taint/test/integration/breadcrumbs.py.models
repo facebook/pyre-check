@@ -285,9 +285,9 @@
             ],
             "root": {
               "filename": "breadcrumbs.py",
-              "line": 51,
-              "start": 15,
-              "end": 31
+              "line": 52,
+              "start": 19,
+              "end": 35
             }
           }
         ]
@@ -305,9 +305,9 @@
             ],
             "root": {
               "filename": "breadcrumbs.py",
-              "line": 52,
-              "start": 15,
-              "end": 31
+              "line": 54,
+              "start": 19,
+              "end": 35
             }
           },
           {
@@ -319,17 +319,20 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
+              { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
             ],
             "tito": [
-              { "line": 54, "start": 23, "end": 57 },
-              { "line": 54, "start": 28, "end": 29 }
+              { "line": 57, "start": 27, "end": 61 },
+              { "line": 57, "start": 32, "end": 33 }
             ],
             "root": {
               "filename": "breadcrumbs.py",
-              "line": 54,
-              "start": 15,
-              "end": 57
+              "line": 57,
+              "start": 19,
+              "end": 61
             }
           }
         ]
@@ -357,17 +360,19 @@
               { "first-field": "ids_list" },
               { "first-field": "id_float" },
               { "via": "obscure:model" },
+              { "type": "integer" },
+              { "type": "scalar" },
               { "via": "tito-broadening" },
               { "via": "tito" },
               { "via": "broadening" }
             ],
             "tito": [
-              { "line": 65, "start": 23, "end": 57 },
-              { "line": 65, "start": 28, "end": 29 }
+              { "line": 68, "start": 23, "end": 57 },
+              { "line": 68, "start": 28, "end": 29 }
             ],
             "root": {
               "filename": "breadcrumbs.py",
-              "line": 58,
+              "line": 61,
               "start": 14,
               "end": 27
             }

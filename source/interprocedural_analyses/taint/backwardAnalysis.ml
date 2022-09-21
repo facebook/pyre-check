@@ -1152,6 +1152,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_call ~resolution ~location ~taint ~state ~callee ~arguments =
+    let add_type_breadcrumbs taint =
+      let type_breadcrumbs =
+        let { CallGraph.CallCallees.call_targets; _ } =
+          get_call_callees ~location ~call:{ Call.callee; arguments }
+        in
+        CallModel.type_breadcrumbs_of_calls call_targets
+      in
+      BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs taint
+    in
     match { Call.callee; arguments } with
     | {
      callee =
@@ -1305,7 +1314,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             Abstract.TreeDomain.Label.AnyIndex
         in
 
-        let taint = BackwardState.Tree.prepend [label] taint in
+        let taint = BackwardState.Tree.prepend [label] taint |> add_type_breadcrumbs in
         analyze_expression ~resolution ~taint ~state ~expression:base
     (* We special-case object.__setattr__, which is sometimes used in order to work around
        dataclasses being frozen post-initialization. *)
