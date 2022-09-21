@@ -9,7 +9,6 @@
 import _ast
 import ast
 import inspect
-import re
 import types
 from typing import Callable, List, Mapping, Optional
 
