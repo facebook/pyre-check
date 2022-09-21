@@ -158,14 +158,14 @@ let test_transform _ =
 
 
 let test_transform_splits _ =
-  assert_equal [[], []] (SourceSinkFilter.transform_splits []);
-  assert_equal [["T1"], []; [], ["T1"]] (SourceSinkFilter.transform_splits ["T1"]);
+  assert_equal [[], []] (Rule.transform_splits []);
+  assert_equal [["T1"], []; [], ["T1"]] (Rule.transform_splits ["T1"]);
   assert_equal
     [["T2"; "T1"], []; ["T1"], ["T2"]; [], ["T1"; "T2"]]
-    (SourceSinkFilter.transform_splits ["T1"; "T2"]);
+    (Rule.transform_splits ["T1"; "T2"]);
   assert_equal
     [["T3"; "T2"; "T1"], []; ["T2"; "T1"], ["T3"]; ["T1"], ["T2"; "T3"]; [], ["T1"; "T2"; "T3"]]
-    (SourceSinkFilter.transform_splits ["T1"; "T2"; "T3"]);
+    (Rule.transform_splits ["T1"; "T2"; "T3"]);
   ()
 
 

@@ -62,31 +62,11 @@ type t = {
   matching_sink_sanitize_transforms: MatchingSanitizeTransforms.t Sources.Map.t;
 }
 
-module IntSet = Stdlib.Set.Make (Int)
-
-(* Given a rule to find flows of the form:
- *   source -> T1 -> T2 -> T3 -> ... -> Tn -> sink
- * Following are different ways we can find matching flows:
- *   source -> T1:T2:T3:...:Tn:sink
- *   T1:source -> T2:T3:...:Tn:sink
- *   T2:T1:source -> T3:...:Tn:sink
- *   ...
- *   Tn:...:T3:T2:T1:source -> sink
- *)
-let transform_splits transforms =
-  let rec split ~result ~prefix ~suffix =
-    let result = (prefix, suffix) :: result in
-    match suffix with
-    | [] -> result
-    | next :: suffix -> split ~result ~prefix:(next :: prefix) ~suffix
-  in
-  split ~result:[] ~prefix:[] ~suffix:transforms
-
-
 let filter_rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms rules =
   let rules =
     match filtered_rule_codes with
-    | Some rule_codes -> List.filter rules ~f:(fun { Rule.code; _ } -> IntSet.mem code rule_codes)
+    | Some rule_codes ->
+        List.filter rules ~f:(fun { Rule.code; _ } -> Rule.CodeSet.mem code rule_codes)
     | None -> rules
   in
   let rules =
@@ -185,7 +165,7 @@ let matching_kinds_from_rules ~rules =
       in
       add_sources_sinks sofar (sources, sinks)
     in
-    transform_splits transforms |> List.fold ~init:sofar ~f:update
+    Rule.transform_splits transforms |> List.fold ~init:sofar ~f:update
   in
   List.fold ~f:add_rule ~init:(Sinks.Map.empty, Sources.Map.empty) rules
 

@@ -259,7 +259,7 @@ module Heap = struct
     filtered_transforms: TaintTransform.t list option;
     features: string list;
     rules: Rule.t list;
-    filtered_rule_codes: SourceSinkFilter.IntSet.t option;
+    filtered_rule_codes: Rule.CodeSet.t option;
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
     partial_sink_converter: partial_sink_converter;
@@ -1381,7 +1381,7 @@ let with_command_line_options
     match rule_filter with
     | None -> configuration
     | Some rule_filter ->
-        let filtered_rule_codes = SourceSinkFilter.IntSet.of_list rule_filter in
+        let filtered_rule_codes = Rule.CodeSet.of_list rule_filter in
         { configuration with filtered_rule_codes = Some filtered_rule_codes }
   in
   let rules =

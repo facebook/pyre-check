@@ -54,7 +54,7 @@ module Heap : sig
     filtered_transforms: TaintTransform.t list option;
     features: string list;
     rules: Rule.t list;
-    filtered_rule_codes: SourceSinkFilter.IntSet.t option;
+    filtered_rule_codes: Rule.CodeSet.t option;
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
     partial_sink_converter: partial_sink_converter;

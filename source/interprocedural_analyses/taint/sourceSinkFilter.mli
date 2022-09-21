@@ -7,18 +7,16 @@
 
 type t
 
-module IntSet : Stdlib.Set.S with type elt = int
-
 val create
   :  rules:Rule.t list ->
-  filtered_rule_codes:IntSet.t option ->
+  filtered_rule_codes:Rule.CodeSet.t option ->
   filtered_sources:Sources.Set.t option ->
   filtered_sinks:Sinks.Set.t option ->
   filtered_transforms:TaintTransform.t list option ->
   t
 
 val filter_rules
-  :  filtered_rule_codes:IntSet.t option ->
+  :  filtered_rule_codes:Rule.CodeSet.t option ->
   filtered_sources:Sources.Set.t option ->
   filtered_sinks:Sinks.Set.t option ->
   filtered_transforms:TaintTransform.t list option ->
@@ -37,5 +35,3 @@ val matching_sinks : t -> Sinks.Set.t Sources.Map.t
 
 (* Exposed for testing purpose *)
 val possible_tito_transforms : t -> TaintTransforms.Set.t
-
-val transform_splits : 'a list -> ('a list * 'a list) list

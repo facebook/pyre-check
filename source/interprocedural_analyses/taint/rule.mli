@@ -14,3 +14,7 @@ type t = {
   message_format: string; (* format *)
 }
 [@@deriving compare, show]
+
+module CodeSet : Stdlib.Set.S with type elt = int
+
+val transform_splits : 'a list -> ('a list * 'a list) list

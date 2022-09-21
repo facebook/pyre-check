@@ -470,8 +470,7 @@ let generate_issues
         >>| apply_sanitizers
         |> Option.value_map ~default:sofar ~f:(Flow.join sofar)
       in
-      SourceSinkFilter.transform_splits transforms
-      |> List.fold ~init:Flow.bottom ~f:add_and_sanitize_flow
+      Rule.transform_splits transforms |> List.fold ~init:Flow.bottom ~f:add_and_sanitize_flow
     in
     let partition_flow = apply_transforms { source_taint; sink_taint } in
     if Flow.is_bottom partition_flow then
