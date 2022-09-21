@@ -29,6 +29,9 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator_location.py",

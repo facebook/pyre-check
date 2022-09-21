@@ -303,7 +303,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~init:BackwardState.bottom
       | None -> BackwardState.bottom
     in
-    let ({ Model.modes; _ } as taint_model) =
+    let taint_model =
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Backward
@@ -334,11 +334,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       }
     in
     let call_taint =
-      if Model.ModeSet.contains Obscure modes then
-        BackwardState.Tree.add_local_breadcrumbs
-          (Features.type_breadcrumbs (Option.value_exn return_type))
-          call_taint
-      else
+      BackwardState.Tree.add_local_breadcrumbs
+        (Features.type_breadcrumbs (Option.value_exn return_type))
         call_taint
     in
     let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } =

@@ -292,7 +292,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         arguments, arguments_taint
     in
-    let ({ Model.forward; backward; modes; _ } as taint_model) =
+    let ({ Model.forward; backward; _ } as taint_model) =
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Forward
@@ -529,11 +529,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let returned_taint = ForwardState.Tree.join result_taint tito_taint in
     let returned_taint =
-      if Model.ModeSet.contains Obscure modes then
-        ForwardState.Tree.add_local_breadcrumbs
-          (Features.type_breadcrumbs (Option.value_exn return_type))
-          returned_taint
-      else
+      ForwardState.Tree.add_local_breadcrumbs
+        (Features.type_breadcrumbs (Option.value_exn return_type))
         returned_taint
     in
     let state = apply_tito_side_effects tito_effects state in
