@@ -16,11 +16,14 @@ import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 import {Controlled as CodeMirror} from 'react-codemirror2';
 import 'codemirror/lib/codemirror.css';
 import styles from './styles.module.css';
+import {
+  FbInternalOnly,
+  OssOnly,
+} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 if (ExecutionEnvironment.canUseDOM) {
   require('codemirror/mode/python/python');
 }
-
 
 const DEFAULT_INITIAL_CODE = `# Pyre is being run in gradual typing mode: https://pyre-check.org/docs/types-in-python/#gradual-typing
 # Use the \`# pyre-strict\` header to run in strict mode, which requires annotations.
@@ -30,8 +33,7 @@ from typing import *
 # reveal_type will produce a type error that tells you the type Pyre has
 # computed for the argument (in this case, int)
 reveal_type(1)
-`
-
+`;
 
 function Code(props) {
   return (
@@ -47,11 +49,13 @@ function Code(props) {
         }}
         editorDidMount={(editor, _) => {
           props.setEditor(editor);
-          editor.setOption("extraKeys", {
-            Tab: function(codeMirror) {
-              var spaces = Array(codeMirror.getOption("indentUnit") + 1).join(" ");
+          editor.setOption('extraKeys', {
+            Tab: function (codeMirror) {
+              var spaces = Array(codeMirror.getOption('indentUnit') + 1).join(
+                ' ',
+              );
               codeMirror.replaceSelection(spaces);
-            }
+            },
           });
         }}
         onBeforeChange={(editor, data, value) => {
@@ -86,7 +90,7 @@ function CopyUrlButton(props) {
 
   const copyCurrentUrl = () => {
     navigator.clipboard.writeText(window.location.href);
-  }
+  };
 
   return (
     <div style={{textAlign: 'right'}}>
@@ -103,7 +107,6 @@ function CopyUrlButton(props) {
   );
 }
 
-
 function Results(props) {
   const results = props.results;
   if (results == null) {
@@ -112,11 +115,15 @@ function Results(props) {
 
   let errors = results.data.errors;
   if (errors.length !== 0) {
-    let errorDivs = errors
-        .map(error => {
-          let message = `${error.line}:${error.column}: ${error.description}`;
-          return <div key={message}> <pre> {message} </pre> </div>
-        });
+    let errorDivs = errors.map(error => {
+      let message = `${error.line}:${error.column}: ${error.description}`;
+      return (
+        <div key={message}>
+          {' '}
+          <pre> {message} </pre>{' '}
+        </div>
+      );
+    });
     return <div>{errorDivs}</div>;
   } else {
     return <div>No Errors!</div>;
@@ -129,8 +136,8 @@ function Results(props) {
  */
 function getCodeFromURL() {
   if (ExecutionEnvironment.canUseDOM) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('input');
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('input');
   }
   return null;
 }
@@ -150,19 +157,18 @@ function markErrors(editor, results) {
   editor.getAllMarks().map(mark => mark.clear());
 
   if (results == null) {
-    return
+    return;
   }
   results.data.errors.map(error =>
     editor.markText(
       {line: error.line - 1, ch: error.column},
       {line: error.stop_line - 1, ch: error.stop_column},
       {className: 'pyre-type-error'},
-    )
+    ),
   );
 }
 
 function Playground() {
-
   const [results, setResults] = useState(null);
   const [modifierKey, setModifierKey] = useState(false);
   const [code, setCode] = useState(getInitialCode());
@@ -186,13 +192,13 @@ function Playground() {
       .catch(error => console.error(error));
   };
 
-  const checkOnCtrlEnter = (event) => {
+  const checkOnCtrlEnter = event => {
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       event.stopPropagation();
       check();
     }
-  }
+  };
 
   useEffect(() => {
     window.addEventListener('keydown', checkOnCtrlEnter);
@@ -204,16 +210,50 @@ function Playground() {
   return (
     <Layout title="Playground">
       <main className={styles.main}>
-        <h1 className={styles.heading}>Playground</h1>
-        <Code code={code} results={results} setCode={setCode} setEditor={setEditor} busy={busy} />
-        <br />
-        <div className={`${styles.buttons} check`}>
-          <CheckButton check={check} busy={busy} />
-          <CopyUrlButton busy={busy} />
-        </div>
-        <br />
-        <br />
-        <Results results={results} />
+        <OssOnly>
+          <h1 className={styles.heading}>Playground</h1>
+          <Code
+            code={code}
+            results={results}
+            setCode={setCode}
+            setEditor={setEditor}
+            busy={busy}
+          />
+          <br />
+          <div className={`${styles.buttons} check`}>
+            <CheckButton check={check} busy={busy} />
+            <CopyUrlButton busy={busy} />
+          </div>
+          <br />
+          <br />
+          <Results results={results} />
+        </OssOnly>
+        <FbInternalOnly>
+          <h1>
+            {' '}
+            The Playground is not available in the internal static docs.{' '}
+          </h1>
+          <p>
+            You can use either
+            <ul>
+              <li>
+                {' '}
+                <a href="https://pyre-check.org/play">
+                  the external playground
+                </a>{' '}
+                or
+              </li>
+              <li>
+                {' '}
+                <a href="https://www.internalfb.com/intern/pyre/sandbox/">
+                  {' '}
+                  the internal sandbox{' '}
+                </a>
+              </li>
+            </ul>
+            to try Pyre in the browser.
+          </p>
+        </FbInternalOnly>
       </main>
     </Layout>
   );
