@@ -15,6 +15,11 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 
+import {
+  FbInternalOnly,
+  OssOnly,
+} from 'docusaurus-plugin-internaldocs-fb/internal';
+
 const features = [
   {
     title: <>Fast</>,
@@ -100,14 +105,26 @@ function Home() {
               to={useBaseUrl('docs/getting-started')}>
               Getting Started
             </Link>
-            <Link
-              className={classnames(
-                'button button--outline button--secondary button--lg',
-                styles.getStarted,
-              )}
-              to={useBaseUrl('play')}>
-              Playground
-            </Link>
+            <OssOnly>
+              <Link
+                className={classnames(
+                  'button button--outline button--secondary button--lg',
+                  styles.getStarted,
+                )}
+                to={useBaseUrl('play')}>
+                Playground
+              </Link>
+            </OssOnly>
+            <FbInternalOnly>
+              <Link
+                className={classnames(
+                  'button button--outline button--secondary button--lg',
+                  styles.getStarted,
+                )}
+                to={'https://www.internalfb.com/intern/pyre/sandbox/'}>
+                Sandbox
+              </Link>
+            </FbInternalOnly>
           </div>
         </div>
       </header>
