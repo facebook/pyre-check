@@ -7,18 +7,6 @@
 
 open Core
 
-module Rule : sig
-  type t = {
-    sources: Sources.t list;
-    sinks: Sinks.t list;
-    transforms: TaintTransform.t list;
-    code: int;
-    name: string;
-    message_format: string; (* format *)
-  }
-  [@@deriving compare, show]
-end
-
 type literal_string_sink = {
   pattern: Re2.t;
   sink_kind: Sinks.t;
@@ -55,35 +43,6 @@ end
 
 type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
 
-module IntSet : Stdlib.Set.S with type elt = int
-
-val transform_splits : 'a list -> ('a list * 'a list) list
-
-module SourceSinkFilter : sig
-  type t
-
-  val create
-    :  rules:Rule.t list ->
-    filtered_rule_codes:IntSet.t option ->
-    filtered_sources:Sources.Set.t option ->
-    filtered_sinks:Sinks.Set.t option ->
-    filtered_transforms:TaintTransform.t list option ->
-    t
-
-  val should_keep_source : t -> Sources.t -> bool
-
-  val should_keep_sink : t -> Sinks.t -> bool
-
-  (* Exposed for testing purpose *)
-  val matching_sources : t -> Sources.Set.t Sinks.Map.t
-
-  (* Exposed for testing purpose *)
-  val matching_sinks : t -> Sinks.Set.t Sources.Map.t
-
-  (* Exposed for testing purpose *)
-  val possible_tito_transforms : t -> TaintTransforms.Set.t
-end
-
 (** Taint configuration, stored in the ocaml heap. *)
 module Heap : sig
   type t = {
@@ -95,7 +54,7 @@ module Heap : sig
     filtered_transforms: TaintTransform.t list option;
     features: string list;
     rules: Rule.t list;
-    filtered_rule_codes: IntSet.t option;
+    filtered_rule_codes: SourceSinkFilter.IntSet.t option;
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
     partial_sink_converter: partial_sink_converter;

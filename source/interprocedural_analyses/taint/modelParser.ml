@@ -1011,7 +1011,7 @@ let introduce_sink_taint
   if
     source_sink_filter
     |> Option.map ~f:(fun source_sink_filter ->
-           TaintConfiguration.SourceSinkFilter.should_keep_sink source_sink_filter taint_sink_kind)
+           SourceSinkFilter.should_keep_sink source_sink_filter taint_sink_kind)
     |> Option.value ~default:true
   then
     let backward =
@@ -1137,9 +1137,7 @@ let introduce_source_taint
   else if
     source_sink_filter
     |> Option.map ~f:(fun source_sink_filter ->
-           TaintConfiguration.SourceSinkFilter.should_keep_source
-             source_sink_filter
-             taint_source_kind)
+           SourceSinkFilter.should_keep_source source_sink_filter taint_source_kind)
     |> Option.value ~default:true
   then
     let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
@@ -1188,7 +1186,7 @@ let sanitize_from_annotations ~source_sink_filter annotations =
     match source_sink_filter with
     | None -> true
     | Some source_sink_filter ->
-        TaintConfiguration.SourceSinkFilter.should_keep_source
+        SourceSinkFilter.should_keep_source
           source_sink_filter
           (Sources.from_sanitized_source source)
   in
@@ -1196,9 +1194,7 @@ let sanitize_from_annotations ~source_sink_filter annotations =
     match source_sink_filter with
     | None -> true
     | Some source_sink_filter ->
-        TaintConfiguration.SourceSinkFilter.should_keep_sink
-          source_sink_filter
-          (Sinks.from_sanitized_sink sink)
+        SourceSinkFilter.should_keep_sink source_sink_filter (Sinks.from_sanitized_sink sink)
   in
   let to_sanitize = function
     | AllSources -> Sanitize.from_sources_only SanitizeTransform.SourceSet.all

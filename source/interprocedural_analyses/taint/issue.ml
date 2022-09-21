@@ -9,7 +9,6 @@
 
 open Core
 open Ast
-open TaintConfiguration
 open Domains
 open Interprocedural
 open Pyre
@@ -471,7 +470,8 @@ let generate_issues
         >>| apply_sanitizers
         |> Option.value_map ~default:sofar ~f:(Flow.join sofar)
       in
-      transform_splits transforms |> List.fold ~init:Flow.bottom ~f:add_and_sanitize_flow
+      SourceSinkFilter.transform_splits transforms
+      |> List.fold ~init:Flow.bottom ~f:add_and_sanitize_flow
     in
     let partition_flow = apply_transforms { source_taint; sink_taint } in
     if Flow.is_bottom partition_flow then
@@ -527,7 +527,7 @@ let generate_issues
     in
     HandleMap.update map issue.handle ~f:update
   in
-  if taint_configuration.Heap.lineage_analysis then
+  if taint_configuration.TaintConfiguration.Heap.lineage_analysis then
     (* Create different issues for same access path, e.g, Issue{[a] -> [b]}, Issue {[c] -> [d]}. *)
     (* Note that this breaks a SAPP invariant because there might be multiple issues with the same
        handle. This is fine because in that configuration we do not use SAPP. *)

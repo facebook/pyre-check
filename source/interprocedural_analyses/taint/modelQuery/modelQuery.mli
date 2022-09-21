@@ -77,7 +77,7 @@ val apply_all_rules
   scheduler:Scheduler.t ->
   taint_configuration:Taint.TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-  source_sink_filter:Taint.TaintConfiguration.SourceSinkFilter.t option ->
+  source_sink_filter:Taint.SourceSinkFilter.t option ->
   rules:Taint.ModelParser.Internal.ModelQuery.rule list ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
@@ -89,7 +89,7 @@ val generate_models_from_queries
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  source_sink_filter:Taint.TaintConfiguration.SourceSinkFilter.t option ->
+  source_sink_filter:Taint.SourceSinkFilter.t option ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
   Taint.ModelParser.Internal.ModelQuery.rule list ->
