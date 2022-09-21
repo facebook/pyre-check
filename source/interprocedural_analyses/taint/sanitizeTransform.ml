@@ -22,6 +22,8 @@ module type S = sig
 
   val is_empty : t -> bool
 
+  val add : elt -> t -> t
+
   val mem : elt -> t -> bool
 
   val diff : t -> t -> t
@@ -133,6 +135,11 @@ module MakeSet (Kind : TAINT_KIND) = struct
   let is_all = function
     | All -> true
     | Specific _ -> false
+
+
+  let add element = function
+    | All -> All
+    | Specific set -> Specific (Set.add element set)
 
 
   let mem element set =

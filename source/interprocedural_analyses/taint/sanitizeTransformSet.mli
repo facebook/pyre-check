@@ -19,6 +19,10 @@ val empty : t
 
 val is_empty : t -> bool
 
+val add_source : SanitizeTransform.Source.t -> t -> t
+
+val add_sink : SanitizeTransform.Sink.t -> t -> t
+
 val from_sources : SanitizeTransform.SourceSet.t -> t
 
 val from_sinks : SanitizeTransform.SinkSet.t -> t

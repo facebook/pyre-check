@@ -18,6 +18,8 @@ module type S = sig
 
   val is_empty : t -> bool
 
+  val add : elt -> t -> t
+
   val mem : elt -> t -> bool
 
   val diff : t -> t -> t

@@ -81,6 +81,12 @@ let empty = bottom
 
 let is_empty = is_bottom
 
+let add_source source { sources; sinks } =
+  { sources = SanitizeTransform.SourceSet.add source sources; sinks }
+
+
+let add_sink sink { sources; sinks } = { sinks = SanitizeTransform.SinkSet.add sink sinks; sources }
+
 let from_sources sources = { sources; sinks = SanitizeTransform.SinkSet.empty }
 
 let from_sinks sinks = { sources = SanitizeTransform.SourceSet.empty; sinks }
