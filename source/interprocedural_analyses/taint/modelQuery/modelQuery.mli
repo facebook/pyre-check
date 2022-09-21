@@ -30,6 +30,12 @@ module ModelQueryRegistryMap : sig
     Taint.Registry.t
 end
 
+module GlobalVariableQueries : sig
+  val get_globals_and_annotations
+    :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    Ast.Reference.t list
+end
+
 module DumpModelQueryResults : sig
   val dump_to_string : models_and_names:ModelQueryRegistryMap.t -> string
 

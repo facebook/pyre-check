@@ -895,6 +895,30 @@ let get_class_attributes ~global_resolution ~class_name =
       Identifier.SerializableMap.fold get_name_and_annotation_from_attributes all_attributes []
 
 
+module GlobalVariableQueries = struct
+  open Analysis
+
+  let get_globals_and_annotations ~environment =
+    let unannotated_global_environment =
+      environment
+      |> TypeEnvironment.ReadOnly.global_resolution
+      |> GlobalResolution.unannotated_global_environment
+    in
+    let filter_globals global_ref =
+      match
+        UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+          unannotated_global_environment
+          global_ref
+      with
+      | Some (SimpleAssign _)
+      | Some (TupleAssign _) ->
+          true
+      | _ -> false
+    in
+    UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
+    |> List.filter ~f:filter_globals
+end
+
 let apply_all_rules
     ~resolution
     ~scheduler

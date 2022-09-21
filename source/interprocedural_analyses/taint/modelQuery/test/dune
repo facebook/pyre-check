@@ -1,5 +1,5 @@
 (tests
- (names modelQueryTest)
+ (names modelQueryTest globalVariableQueryTest)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))
  (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis pyrelib.taint
