@@ -1232,6 +1232,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments =
        [{ Call.Argument.value = { Node.value = argument_expression; _ } as argument_value; _ }];
     } ->
+        let taint = add_type_breadcrumbs taint in
         let index = AccessPath.get_index argument_value in
         let state_before_index_access =
           lazy
@@ -1500,7 +1501,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.Tree.assign
             ~tree:old_taint
             [Abstract.TreeDomain.Label.Index value]
-            ~subtree:taint
+            ~subtree:(add_type_breadcrumbs taint)
         in
         store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] new_taint state
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }

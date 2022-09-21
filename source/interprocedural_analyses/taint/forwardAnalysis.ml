@@ -1230,7 +1230,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           if List.is_empty call_targets then
             (* This call may be unresolved, because for example the receiver type is unknown *)
-            Lazy.force taint_and_state_after_index_access
+            Lazy.force taint_and_state_after_index_access |>> add_type_breadcrumbs
           else
             let index_number =
               match argument_expression with
@@ -1252,6 +1252,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     ~base
                     ~taint_and_state_after_index_access
                     call_target
+                in
+                let taint =
+                  let type_breadcrumbs = CallModel.type_breadcrumbs_of_calls [call_target] in
+                  ForwardState.Tree.add_local_breadcrumbs type_breadcrumbs taint
                 in
                 ForwardState.Tree.join taint taint_so_far, join state state_so_far)
       (* We read the taint at the `__iter__` call to be able to properly reference key taint as
@@ -1581,7 +1585,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let new_state =
             store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] new_taint state
           in
-          let key_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.Index value] taint in
+          let key_taint =
+            ForwardState.Tree.read [Abstract.TreeDomain.Label.Index value] taint
+            |> add_type_breadcrumbs
+          in
           key_taint, new_state
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
         when CallResolution.resolve_ignoring_untracked ~resolution base
