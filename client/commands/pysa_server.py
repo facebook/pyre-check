@@ -6,7 +6,7 @@
 
 """
 This is an implementation of Pysa's language server. It is a refactored
-version of persistent.py.
+version of the server run by `pyre persistent`.
 """
 
 import asyncio

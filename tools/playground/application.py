@@ -3,6 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""
+Defines the backend flask application for the pyre open-source playground
+backend. The gunicorn layer will start up several processes; in each one
+the Pyre class sets up a worker-specific temp directory and runs pyre incremental
+there. As a result, all workers can process incremental requests in parallel.
+"""
+
 # pyre-unsafe
 
 import argparse
