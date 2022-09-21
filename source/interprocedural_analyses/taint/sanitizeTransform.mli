@@ -5,6 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module Source : sig
+  type t = Named of string [@@deriving compare, eq, hash, sexp, show]
+end
+
+module Sink : sig
+  type t = Named of string [@@deriving compare, eq, hash, sexp, show]
+end
+
+type t =
+  | Source of Source.t
+  | Sink of Sink.t
+
 module type S = sig
   type elt
 
@@ -37,18 +49,6 @@ module type S = sig
   val to_json : t -> Yojson.Safe.t option
 end
 
-module Source : sig
-  type t = Named of string [@@deriving compare, eq, hash, sexp, show]
-end
-
-module Sink : sig
-  type t = Named of string [@@deriving compare, eq, hash, sexp, show]
-end
-
 module SourceSet : S with type elt = Source.t
 
 module SinkSet : S with type elt = Sink.t
-
-type t =
-  | Source of Source.t
-  | Sink of Sink.t

@@ -9,38 +9,6 @@
 
 open Core
 
-module type S = sig
-  type elt
-
-  type set [@@deriving compare, eq, hash, sexp, show]
-
-  include Abstract.Domain.S with type t = set
-
-  type t = set [@@deriving compare, eq, hash, sexp, show]
-
-  val empty : t
-
-  val is_empty : t -> bool
-
-  val add : elt -> t -> t
-
-  val mem : elt -> t -> bool
-
-  val diff : t -> t -> t
-
-  val singleton : elt -> t
-
-  val all : t
-
-  val is_all : t -> bool
-
-  val of_list : elt list -> t
-
-  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
-
-  val to_json : t -> Yojson.Safe.t option
-end
-
 module type TAINT_KIND = sig
   type t = Named of string [@@deriving compare, eq, hash, sexp]
 
@@ -79,6 +47,42 @@ end = struct
   let show = Format.asprintf "%a" pp
 
   let show_kind (Named taint_kind) = Format.sprintf "%s" taint_kind
+end
+
+type t =
+  | Source of Source.t
+  | Sink of Sink.t
+
+module type S = sig
+  type elt
+
+  type set [@@deriving compare, eq, hash, sexp, show]
+
+  include Abstract.Domain.S with type t = set
+
+  type t = set [@@deriving compare, eq, hash, sexp, show]
+
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val add : elt -> t -> t
+
+  val mem : elt -> t -> bool
+
+  val diff : t -> t -> t
+
+  val singleton : elt -> t
+
+  val all : t
+
+  val is_all : t -> bool
+
+  val of_list : elt list -> t
+
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val to_json : t -> Yojson.Safe.t option
 end
 
 module MakeSet (Kind : TAINT_KIND) = struct
@@ -196,7 +200,3 @@ end
 
 module SourceSet = MakeSet (Source)
 module SinkSet = MakeSet (Sink)
-
-type t =
-  | Source of Source.t
-  | Sink of Sink.t
