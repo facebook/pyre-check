@@ -226,3 +226,19 @@ async def main() -> None:
     Foo().self_has_generic_type(Foo(), _test_source())
 
     Foo.some_class_method(_test_source())
+
+
+def discard_second_parameter_inner(first_parameter: int) -> None:
+    return
+
+
+def discard_second_parameter(
+    f: Callable[[int, str], None]
+) -> Callable[[int], None]:
+    # Return a function not defined here, to prevent from inlining decorators
+    return discard_second_parameter_inner
+
+
+@discard_second_parameter
+def function_two_args(arg1: int, arg2: str) -> None:
+    _test_sink(arg2)  # Issue here
