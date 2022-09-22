@@ -16,9 +16,7 @@ import dataclasses
 import subprocess
 from typing import Any, Dict, Iterator, Optional
 
-from tools.pyre.client.command_arguments import QueryArguments
-
-from .. import configuration as configuration_module
+from .. import command_arguments, configuration as configuration_module
 from . import backend_arguments, frontend_configuration, query_response
 
 
@@ -45,7 +43,7 @@ class Arguments:
 # TODO:T131533391 - Factor this function out as it is duplicated.
 def _create_no_daemon_query_arguments(
     configuration: frontend_configuration.Base,
-    query_arguments: QueryArguments,
+    query_arguments: command_arguments.QueryArguments,
 ) -> Arguments:
     """
     Translate client configurations to backend query configurations.
@@ -93,7 +91,7 @@ def _create_no_daemon_query_arguments(
 @contextlib.contextmanager
 def create_no_daemon_arguments_and_cleanup(
     configuration: frontend_configuration.Base,
-    query_arguments: QueryArguments,
+    query_arguments: command_arguments.QueryArguments,
 ) -> Iterator[Arguments]:
     arguments = _create_no_daemon_query_arguments(configuration, query_arguments)
     try:
@@ -105,7 +103,8 @@ def create_no_daemon_arguments_and_cleanup(
 
 
 def execute_query(
-    configuration: frontend_configuration.Base, query_arguments: QueryArguments
+    configuration: frontend_configuration.Base,
+    query_arguments: command_arguments.QueryArguments,
 ) -> Optional[query_response.Response]:
 
     binary_location = configuration.get_binary_location(download_if_needed=True)

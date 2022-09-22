@@ -11,9 +11,12 @@ TODO(T132414938) Add a module-level docstring
 import json
 import logging
 
-from tools.pyre.client.command_arguments import QueryArguments
-
-from .. import configuration as configuration_module, identifiers, log
+from .. import (
+    command_arguments,
+    configuration as configuration_module,
+    identifiers,
+    log,
+)
 
 from . import (
     commands,
@@ -97,7 +100,7 @@ def run_query(
 
 def run(
     configuration: configuration_module.Configuration,
-    query_arguments: QueryArguments,
+    query_arguments: command_arguments.QueryArguments,
 ) -> commands.ExitCode:
     if query_arguments.no_daemon:
         response = no_daemon_query.execute_query(
