@@ -135,7 +135,12 @@ let test_basic context =
 
 let test_subscription context =
   let input_channel, output_channel = Lwt_io.pipe () in
-  let subscription = Subscription.create ~name:"foo" ~output_channel () in
+  let subscription =
+    Subscription.create
+      ~subscription_request:(Subscription.Request.SubscribeToTypeErrors "foo")
+      ~output_channel
+      ()
+  in
   assert_equal
     ~ctxt:context
     ~cmp:String.equal
@@ -159,7 +164,12 @@ exception FakeLwtIOException
 let test_subscription_output_channel_error_dropped _ =
   (* Fake an output channel that always raise exception. *)
   let output_channel = Lwt_io.make ~mode:Lwt_io.Output (fun _ _ _ -> raise FakeLwtIOException) in
-  let subscription = Subscription.create ~name:"foo" ~output_channel () in
+  let subscription =
+    Subscription.create
+      ~subscription_request:(Subscription.Request.SubscribeToTypeErrors "foo")
+      ~output_channel
+      ()
+  in
   (* This invocation should raise no error, even if sending any data to the output channel would
      fail. *)
   Subscription.send ~response:Response.Ok subscription

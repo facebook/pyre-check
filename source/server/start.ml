@@ -95,12 +95,11 @@ let handle_request ~properties ~state request =
   Lwt.return (new_state, response)
 
 
-let handle_subscription ~state:{ ServerState.subscriptions; _ } ~output_channel request =
-  match request with
-  | Subscription.Request.SubscribeToTypeErrors subscriber_name ->
-      let subscription = Subscription.create ~name:subscriber_name ~output_channel () in
-      ServerState.Subscriptions.add subscriptions ~subscription;
-      subscription
+let handle_subscription ~state:{ ServerState.subscriptions; _ } ~output_channel subscription_request
+  =
+  let subscription = Subscription.create ~subscription_request ~output_channel () in
+  ServerState.Subscriptions.add subscriptions ~subscription;
+  subscription
 
 
 module ConnectionState = struct

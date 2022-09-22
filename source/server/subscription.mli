@@ -21,7 +21,7 @@ end
 
 type t
 
-val create : name:string -> output_channel:Lwt_io.output_channel -> unit -> t
+val create : subscription_request:Request.t -> output_channel:Lwt_io.output_channel -> unit -> t
 
 val name_of : t -> string
 

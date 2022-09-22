@@ -43,7 +43,10 @@ type t = {
   output_channel: Lwt_io.output_channel;
 }
 
-let create ~name ~output_channel () = { name; output_channel }
+let create ~subscription_request ~output_channel () =
+  match subscription_request with
+  | Request.SubscribeToTypeErrors name -> { name; output_channel }
+
 
 let name_of { name; _ } = name
 
