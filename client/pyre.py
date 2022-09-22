@@ -909,6 +909,17 @@ def kill(context: click.Context, with_fire: bool) -> int:
     hidden=True,
 )
 @click.option(
+    "--status-updates",
+    type=click.Choice(
+        [
+            kind.value
+            for kind in commands.language_server_features.StatusUpdatesAvailability
+        ]
+    ),
+    help="Availability of the status updates language server feature",
+    hidden=True,
+)
+@click.option(
     "--type-errors",
     type=click.Choice(
         [
@@ -951,6 +962,7 @@ def persistent(
     definition: Optional[str],
     document_symbols: Optional[str],
     references: Optional[str],
+    status_updates: Optional[str],
     type_errors: Optional[str],
     type_coverage: Optional[str],
     unsaved_changes: Optional[str],
@@ -998,6 +1010,11 @@ def persistent(
             references=None
             if references is None
             else commands.language_server_features.ReferencesAvailability(references),
+            status_updates=commands.language_server_features.StatusUpdatesAvailability.ENABLED
+            if status_updates is None
+            else commands.language_server_features.StatusUpdatesAvailability(
+                status_updates
+            ),
             type_errors=commands.language_server_features.TypeErrorsAvailability.ENABLED
             if type_errors is None
             else commands.language_server_features.TypeErrorsAvailability(type_errors),
