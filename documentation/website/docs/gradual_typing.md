@@ -1,7 +1,7 @@
 ---
 id: types-in-python
 title: Types in Python
-sidebar_label: Types in Python
+sidebar_label: Introduction
 ---
 
 Python's type system was specified in [PEP 484](https://www.python.org/dev/peps/pep-0484/). If you are new to Python's type system and want to learn the basics, we highly recommend you take a look at [mypy's cheatsheet](https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html) as well as their [type system reference](https://mypy.readthedocs.io/en/stable/builtin_types.html). The following discussion focuses on Pyre's approach to "gradual typing" and how you can get from an untyped codebase to a fully typed codebase.

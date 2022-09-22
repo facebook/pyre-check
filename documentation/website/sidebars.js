@@ -15,16 +15,36 @@ module.exports = {
     ...fbContent({
       external: ['installation'],
     }),
-    ...fbContent({
-      external: ['configuration'],
-      internal: ['fb/configuration'],
-    }),
-    'types-in-python',
-    ...fbInternalOnly(['fb/increasing-type-coverage']),
-    'errors',
     ...fbInternalOnly(['fb/open-source-setup']),
-    'querying-pyre',
-    'features',
+    {
+      type: 'category',
+      label: 'Types in Python',
+      link: {
+        type: 'generated-index',
+      },
+      collapsed: false,
+      items: [
+        'types-in-python',
+        ...fbInternalOnly(['fb/increasing-type-coverage']),
+        'errors',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Type Checker Features',
+      link: {
+        type: 'generated-index',
+      },
+      collapsed: false,
+      items: [
+        ...fbContent({
+          external: ['configuration'],
+          internal: ['fb/configuration'],
+        }),
+        'querying-pyre',
+        'features',
+      ],
+    },
     ...fbContent({
       external: ['contributing'],
       internal: ['fb/contributing'],

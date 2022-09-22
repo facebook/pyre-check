@@ -1,7 +1,7 @@
 ---
 id: errors
-title: Errors
-sidebar_label: Errors
+title: Type Errors
+sidebar_label: Type Errors
 ---
 
 import Internal from './fb/errors.md';
