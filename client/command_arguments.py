@@ -284,3 +284,4 @@ class QueryArguments:
     query: str
     no_daemon: bool
     no_validation_on_class_lookup_failure: bool
+    sequential: bool = True

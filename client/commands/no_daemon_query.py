@@ -67,6 +67,7 @@ def _create_no_daemon_query_arguments(
             python_version=configuration.get_python_version(),
             shared_memory=configuration.get_shared_memory(),
             search_paths=configuration.get_existent_search_paths(),
+            parallel=not query_arguments.sequential,
         ),
         query=query_arguments.query,
         no_validation_on_class_lookup_failure=query_arguments.no_validation_on_class_lookup_failure,

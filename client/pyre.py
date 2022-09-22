@@ -1101,6 +1101,7 @@ def query(
             query=query,
             no_daemon=no_daemon,
             no_validation_on_class_lookup_failure=no_validation_on_class_lookup_failure,
+            sequential=command_argument.sequential,
         ),
     )
 
