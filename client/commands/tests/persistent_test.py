@@ -565,7 +565,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         )
 
         client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
-        print(client_messages)
         self.assertTrue(len(client_messages) == 4)
         # Forward the rebuild status message
         self.assertIn("window/showStatus", client_messages[0])
@@ -575,6 +574,65 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         self.assertIn("textDocument/publishDiagnostics", client_messages[2])
         # Notify the user that incremental check has finished
         self.assertIn("window/showStatus", client_messages[3])
+
+    @setup.async_test
+    async def test_subscription_protocol_no_status_updates(self) -> None:
+        server_state = ServerState(
+            client_capabilities=lsp.ClientCapabilities(
+                window=lsp.WindowClientCapabilities(
+                    status=lsp.ShowStatusRequestClientCapabilities(),
+                ),
+            ),
+            server_options=_create_server_options(
+                language_server_features=LanguageServerFeatures(
+                    status_updates=StatusUpdatesAvailability.DISABLED,
+                )
+            ),
+        )
+        bytes_writer = MemoryBytesWriter()
+
+        def fake_server_options_reader() -> PyreServerOptions:
+            # Server start option is not relevant to this test
+            raise NotImplementedError()
+
+        client_output_channel = AsyncTextWriter(bytes_writer)
+
+        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+            server_options_reader=fake_server_options_reader,
+            server_state=server_state,
+            client_status_message_handler=ClientStatusMessageHandler(
+                client_output_channel, server_state
+            ),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel, server_state
+            ),
+        )
+        await server_handler.handle_status_update_subscription(
+            subscription.StatusUpdate(kind="Rebuilding")
+        )
+        await server_handler.handle_status_update_subscription(
+            subscription.StatusUpdate(kind="Rechecking")
+        )
+        await server_handler.handle_type_error_subscription(
+            subscription.TypeErrors(
+                errors=[
+                    error.Error(
+                        line=1,
+                        column=1,
+                        stop_line=2,
+                        stop_column=2,
+                        path=Path("derp.py"),
+                        code=42,
+                        name="name",
+                        description="description",
+                    )
+                ]
+            )
+        )
+
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        self.assertTrue(len(client_messages) == 1)
+        self.assertIn("textDocument/publishDiagnostics", client_messages[0])
 
     @setup.async_test
     async def test_subscription_error(self) -> None:
