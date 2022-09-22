@@ -129,7 +129,7 @@ module.exports = {
     footer: {
       logo: {
         alt: 'Meta Open Source Logo',
-        src: 'img/meta_open_source_logo.png',
+        src: 'img/meta_open_source_logo.svg',
         href: 'https://opensource.fb.com/',
       },
       links: [
