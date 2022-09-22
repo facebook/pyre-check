@@ -125,6 +125,10 @@ which provides typed stubs for library functions. This can also be set in `.pyre
 
 - `--version`: Print the current version of Pyre.
 
+### Helper Commands
+
+TODO: Add documentation for helper commands like pyre-upgrade, pyre-infer. Link from the Python type system page, as well.
+
 ## Working with Multi-Project Repositories
 
 If you have a single repository with multiple independent Python projects, we recommend you
