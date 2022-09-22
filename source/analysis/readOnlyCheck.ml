@@ -21,7 +21,13 @@ module ReadOnlyness = struct
     | _ -> [%compare.equal: t] left right
 
 
-  let join _left _right = failwith "TODO(T130377746)"
+  let join left right =
+    match left, right with
+    | ReadOnly, _
+    | _, ReadOnly ->
+        ReadOnly
+    | _ -> Mutable
+
 
   let meet _left _right = failwith "TODO(T130377746)"
 end
