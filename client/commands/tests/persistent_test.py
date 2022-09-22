@@ -575,57 +575,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         self.assertIn("window/showStatus", client_messages[3])
 
     @setup.async_test
-    async def test_subscription_type_errors_disabled(self) -> None:
-        server_state = ServerState(
-            client_capabilities=lsp.ClientCapabilities(
-                window=lsp.WindowClientCapabilities(
-                    status=lsp.ShowStatusRequestClientCapabilities(),
-                ),
-            ),
-            server_options=_create_server_options(
-                language_server_features=LanguageServerFeatures(
-                    type_errors=TypeErrorsAvailability.DISABLED,
-                )
-            ),
-        )
-        bytes_writer = MemoryBytesWriter()
-
-        def fake_server_options_reader() -> PyreServerOptions:
-            # Server start option is not relevant to this test
-            raise NotImplementedError()
-
-        client_output_channel = AsyncTextWriter(bytes_writer)
-        server_handler = PyreDaemonLaunchAndSubscribeHandler(
-            server_options_reader=fake_server_options_reader,
-            server_state=server_state,
-            client_status_message_handler=ClientStatusMessageHandler(
-                client_output_channel, server_state
-            ),
-            client_type_error_handler=ClientTypeErrorHandler(
-                client_output_channel, server_state
-            ),
-        )
-        await server_handler.handle_type_error_subscription(
-            subscription.TypeErrors(
-                errors=[
-                    error.Error(
-                        line=1,
-                        column=1,
-                        stop_line=2,
-                        stop_column=2,
-                        path=Path("derp.py"),
-                        code=42,
-                        name="name",
-                        description="description",
-                    )
-                ]
-            )
-        )
-        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
-        # When the type errors feature is disabled, we should ignore errors
-        self.assertEqual(len(client_messages), 0)
-
-    @setup.async_test
     async def test_subscription_error(self) -> None:
         def fake_server_options_reader() -> PyreServerOptions:
             # Server start option is not relevant to this test
@@ -678,10 +627,48 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         )
 
         client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
-        self.assertTrue(len(client_messages) >= 2)
+        self.assertTrue(len(client_messages) == 2)
         # Clear out diagnostics for rebuilding status
         self.assertIn('"diagnostics": []', client_messages[0])
         self.assertIn('"diagnostics": []', client_messages[1])
+
+    @setup.async_test
+    async def test_busy_status_no_clear_diagnostics_if_no_type_errors(self) -> None:
+        path = Path("foo.py")
+        server_state = ServerState(
+            server_options=_create_server_options(
+                language_server_features=LanguageServerFeatures(
+                    type_errors=TypeErrorsAvailability.DISABLED,
+                ),
+            ),
+            diagnostics={path: []},
+        )
+        bytes_writer = MemoryBytesWriter()
+        client_output_channel = AsyncTextWriter(bytes_writer)
+
+        def fake_server_options_reader() -> PyreServerOptions:
+            # Server start option is not relevant to this test
+            raise NotImplementedError()
+
+        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+            server_options_reader=fake_server_options_reader,
+            server_state=server_state,
+            client_status_message_handler=ClientStatusMessageHandler(
+                client_output_channel, server_state
+            ),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel, server_state
+            ),
+        )
+        await server_handler.handle_status_update_subscription(
+            subscription.StatusUpdate(kind="Rebuilding")
+        )
+        await server_handler.handle_status_update_subscription(
+            subscription.StatusUpdate(kind="Rechecking")
+        )
+
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        self.assertTrue(len(client_messages) == 0)
 
     @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
@@ -978,7 +965,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         )
 
         with self.assertRaises(asyncio.IncompleteReadError):
-            await server_handler.subscribe_to_type_error(
+            await server_handler.subscribe(
                 # Intentionally inject a broken server response
                 create_memory_text_reader("derp"),
                 create_memory_text_writer(),

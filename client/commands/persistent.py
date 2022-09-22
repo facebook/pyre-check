@@ -516,29 +516,29 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         self.client_status_message_handler = client_status_message_handler
         self.client_type_error_handler = client_type_error_handler
 
+    def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
+        return self.server_state.server_options.language_server_features.type_errors
+
     async def handle_type_error_subscription(
         self, type_error_subscription: subscription.TypeErrors
     ) -> None:
-        availability = (
-            self.server_state.server_options.language_server_features.type_errors
+        await self.client_type_error_handler.clear_type_errors_for_client()
+        self.client_type_error_handler.update_type_errors(
+            type_error_subscription.errors
         )
-        if availability.is_enabled():
-            await self.client_type_error_handler.clear_type_errors_for_client()
-            self.client_type_error_handler.update_type_errors(
-                type_error_subscription.errors
-            )
-            await self.client_type_error_handler.show_type_errors_to_client()
-            await self.client_status_message_handler.log_and_show_status_message_to_client(
-                "Pyre has completed an incremental check and is currently "
-                "watching on further source changes.",
-                short_message="Pyre Ready",
-                level=lsp.MessageType.INFO,
-            )
+        await self.client_type_error_handler.show_type_errors_to_client()
+        await self.client_status_message_handler.log_and_show_status_message_to_client(
+            "Pyre has completed an incremental check and is currently "
+            "watching on further source changes.",
+            short_message="Pyre Ready",
+            level=lsp.MessageType.INFO,
+        )
 
     async def handle_status_update_subscription(
         self, status_update_subscription: subscription.StatusUpdate
     ) -> None:
-        await self.client_type_error_handler.clear_type_errors_for_client()
+        if not self.get_type_errors_availability().is_disabled():
+            await self.client_type_error_handler.clear_type_errors_for_client()
         if status_update_subscription.kind == "Rebuilding":
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "Pyre is busy rebuilding the project for type checking...",
@@ -569,15 +569,20 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         elif isinstance(subscription_body, subscription.Error):
             await self.handle_error_subscription(subscription_body)
 
-    async def _subscribe_to_type_error(
+    async def _subscribe(
         self,
         server_input_channel: connections.AsyncTextReader,
         server_output_channel: connections.AsyncTextWriter,
     ) -> None:
         subscription_name = f"persistent_{os.getpid()}"
-        await server_output_channel.write(
-            f'["SubscribeToTypeErrors", "{subscription_name}"]\n'
-        )
+        if self.get_type_errors_availability().is_enabled():
+            await server_output_channel.write(
+                f'["SubscribeToTypeErrors", "{subscription_name}"]\n'
+            )
+        else:
+            await server_output_channel.write(
+                f'["SubscribeToStateChanges", "{subscription_name}"]\n'
+            )
 
         first_response = await _read_server_response(server_input_channel)
         initial_type_errors = incremental.parse_type_error_response(first_response)
@@ -594,14 +599,15 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             if subscription_name == subscription_response.name:
                 await self._handle_subscription_body(subscription_response.body)
 
-    async def subscribe_to_type_error(
+    async def subscribe(
         self,
         server_input_channel: connections.AsyncTextReader,
         server_output_channel: connections.AsyncTextWriter,
     ) -> None:
         try:
-            await self._subscribe_to_type_error(
-                server_input_channel, server_output_channel
+            await self._subscribe(
+                server_input_channel,
+                server_output_channel,
             )
         finally:
             await self.client_status_message_handler.show_status_message_to_client(
@@ -677,7 +683,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     **self._auxiliary_logging_info(server_options),
                 },
             )
-            await self.subscribe_to_type_error(input_channel, output_channel)
+            await self.subscribe(input_channel, output_channel)
 
     async def launch_and_subscribe(
         self, server_options: pyre_server_options.PyreServerOptions
