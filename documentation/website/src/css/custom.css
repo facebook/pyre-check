@@ -16,6 +16,9 @@
   --ifm-hero-text-color: #ffffff;
   --ifm-font-color-base-inverse: rgb(40,29,29);
   --ifm-footer-color: #c25725;
+  --ifm-footer-color: var(--ifm-navbar-link-color);
+  --ifm-footer-link-color: var(--ifm-navbar-link-color);
+  --ifm-footer-title-color: var(--ifm-color-primary);
   --ifm-navbar-background-color: rgb(40, 29, 29);
   --ifm-footer-color:rgb(40, 29, 29);
   --ifm-footer-background-color:rgb(40, 29, 29);
@@ -24,9 +27,30 @@
   --ifm-menu-color:#c25725;
   --ifm-menu-color-active: #c25725;
   --ifm-menu-color-background-active:rgba(0, 0, 0, 0.05);
-  --ifm-footer-color:#5e5e5e;
+  --ifm-footer-color:#ffffff;
   --ifm-container-width: 1300px;
   --ifm-tabs-color-active: #d66b00;
+}
+
+.check {
+  float: left
+}
+
+.cm-s-height100 {
+  height: 100px !important;
+}
+
+.CodeMirror {
+  height: auto !important;
+}
+
+.CodeMirror-scroll {
+  min-height: 25vh;
+  max-height: 50vh;
+}
+
+.footer__links {
+  margin-bottom: 0rem;
 }
 
 .navbar__link--active {
@@ -37,35 +61,20 @@
   padding-bottom: 0.75rem;
 }
 
+.navbar__toggle svg path {
+  stroke: #fff !important;
+}
+
+.react-codemirror2 {
+  height: 100%;
+}
+
 .table-of-contents__link:hover {
   color:#c25725;
 }
 
 .table-of-contents__link--active {
   color:#c25725;
-}
-
-.navbar__toggle svg path {
-  stroke: #fff !important;
-}
-
-.cm-s-height100 {
-  height: 100px !important;
-}
-
-.react-codemirror2 {
-  height: 100%;
-}
-.CodeMirror {
-  height: auto !important;
-}
-.CodeMirror-scroll {
-  min-height: 25vh;
-  max-height: 50vh;
-}
-
-.check {
-  float: left
 }
 
 /* Announcement banner */
