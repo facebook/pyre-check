@@ -127,7 +127,7 @@ which provides typed stubs for library functions. This can also be set in `.pyre
 
 ### Helper Commands
 
-TODO: Add documentation for helper commands like pyre-upgrade, pyre-infer. Link from the Python type system page, as well.
+<!-- TODO(T132521708) Add documentation for helper commands like pyre-upgrade, pyre-infer. Link from the Python type system page, as well. -->
 
 ## Working with Multi-Project Repositories
 

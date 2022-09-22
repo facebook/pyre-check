@@ -6,7 +6,7 @@ sidebar_label: Features
 
 Pyre has custom support for Python idioms that would otherwise not be supported by the usual type annotations.
 
-TODO: Add additional features illustrating behaviors in the Pyre type system that may not be explicitly specified by common docs, or remove this page entirely.
+<!-- TODO(T132521708) Add additional features illustrating behaviors in the Pyre type system that may not be explicitly specified by common docs, or remove this page entirely. -->
 
 ## Registering attributes using PyTorch's register_buffer
 

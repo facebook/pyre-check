@@ -14,16 +14,16 @@ import FbFAQ from './fb/faq.md';
 
 <OssOnly>
 
-TODO: OSS-specific docs
+<!-- TODO(T132521708) OSS-specific docs -->
 
 </OssOnly>
 
-TODO: OSS/Internal agnostic docs
+<!-- TODO(T132521708) OSS/Internal agnostic docs -->
 
 ## Pyre Rage
 
-TODO
+<!-- TODO(T132521708) -->
 
 ## Typeshed & Stubs
 
-TODO
+<!-- TODO(T132521708) -->

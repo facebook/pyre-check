@@ -8,9 +8,9 @@ Python's type system was specified in [PEP 484](https://www.python.org/dev/peps/
 
 ## Why Types?
 
-TODO: Link relevant talks. SEV prevention, privacy, security, dev speed and tooling, etc.
+<!-- TODO(T132521708) Link relevant talks. SEV prevention, privacy, security, dev speed and tooling, etc. -->
 
-TODO: Basic syntax examples, and type system cheat sheet link.
+<!-- TODO(T132521708) Basic syntax examples, and type system cheat sheet link. -->
 
 ## Gradual Typing
 Most Python code does not (yet) start out typed. PEP 484 specifies a [gradual type system](https://en.wikipedia.org/wiki/Gradual_typing), which is built to allow you to *gradually* add annotations over time. It does so by
@@ -90,7 +90,7 @@ reveal_type(my_stub.undefined)  # Reveals `Any`
 
 ### Typeshed
 
-TODO
+<!-- TODO(T132521708) -->
 
 ## Strategies for Increasing Coverage
 Pyre comes with tooling to make it easy to increase type coverage in your project.
