@@ -100,16 +100,37 @@ module QueryConfiguration = struct
       ()
 end
 
+let with_performance_tracking ~debug f =
+  let timer = Timer.start () in
+  let result = f () in
+  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+  Statistics.performance
+    ~name:"no_daemon_query"
+    ~timer
+    ~integers:
+      [
+        "gc_minor_collections", minor_collections;
+        "gc_major_collections", major_collections;
+        "gc_compactions", compactions;
+      ]
+    ~normals:["request kind", "NoDaemonQuery"]
+    ();
+  if debug then
+    Memory.report_statistics ();
+  result
+
+
 let get_environment configuration no_validation_on_class_lookup_failure =
   Scheduler.with_scheduler ~configuration ~f:(fun _ ->
-      let read_write_environment =
-        Analysis.EnvironmentControls.create
-          ~populate_call_graph:false
-          configuration
-          ~no_validation_on_class_lookup_failure
-        |> Analysis.ErrorsEnvironment.create
-      in
-      Analysis.OverlaidEnvironment.create read_write_environment)
+      with_performance_tracking ~debug:configuration.debug (fun () ->
+          let read_write_environment =
+            Analysis.EnvironmentControls.create
+              ~populate_call_graph:false
+              configuration
+              ~no_validation_on_class_lookup_failure
+            |> Analysis.ErrorsEnvironment.create
+          in
+          Analysis.OverlaidEnvironment.create read_write_environment))
 
 
 let perform_query ~configuration ~build_system ~query ~no_validation_on_class_lookup_failure () =
