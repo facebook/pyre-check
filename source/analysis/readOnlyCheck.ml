@@ -65,8 +65,17 @@ end
 
 module State = struct
   let forward_expression ~resolution { Node.value; _ } =
+    let open ReadOnlyness in
     match value with
     | Expression.Constant _ ->
         { Resolved.resolution; errors = []; resolved = ReadOnlyness.ReadOnly }
+    | Expression.Name (Name.Identifier identifier) ->
+        {
+          Resolved.resolution;
+          errors = [];
+          resolved =
+            Resolution.get_opt (Reference.create identifier) resolution
+            |> Option.value ~default:Mutable;
+        }
     | _ -> failwith "TODO(T130377746)"
 end

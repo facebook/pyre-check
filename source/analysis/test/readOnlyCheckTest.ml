@@ -64,6 +64,9 @@ let test_forward_expression _ =
   assert_resolved "'hello'" ReadOnly;
   assert_resolved "b'hello'" ReadOnly;
   assert_resolved "None" ReadOnly;
+  assert_resolved ~resolution:(Resolution.of_list [!&"x", ReadOnly]) "x" ReadOnly;
+  assert_resolved ~resolution:(Resolution.of_list [!&"x", Mutable]) "x" Mutable;
+  assert_resolved ~resolution:(Resolution.of_list []) "x" Mutable;
   ()
 
 
