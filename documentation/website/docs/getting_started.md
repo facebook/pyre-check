@@ -59,3 +59,27 @@ This first invocation will start a daemon listening for filesystem changes – 
 <YouTube videoId="k_xElpxw9aY" />
 
 </OssOnly>
+
+## Further Reading
+
+This page should contain all of the basic information you need to get started with type checking your own project.
+
+If you are new to the type system, the [introduction to types in Python](gradual_typing.md) is recommended reading to familiarize with the type system, gradual typing, and common type errors.
+
+<FbInternalOnly>
+
+If you are looking for more options to configure your type checking experience, the [configuration](fb/configuration.md) page explores command line and configuration file settings.
+
+</FbInternalOnly>
+
+<OssOnly>
+
+If you are looking for more options to configure your type checking experience, the [configuration](configuration.md) page explores command line and configuration file settings.
+
+</OssOnly>
+
+<FbInternalOnly>
+
+For questions and support, please use our [Pyre Q&A](https://fb.workplace.com/groups/pyreqa) workplace group. For more insight into our roadmap, new features, and progress, please read our [Pyre FYI](https://fb.workplace.com/groups/295311271085134) workplace group.
+
+</FbInternalOnly>

@@ -18,7 +18,7 @@ import FbFAQ from './fb/faq.md';
 
 </OssOnly>
 
-<!-- TODO(T132521708) OSS/Internal agnostic docs -->
+<!-- TODO(T132521708) OSS/Internal agnostic docs. ie., https://mypy.readthedocs.io/en/stable/faq.html  -->
 
 ## Pyre Rage
 
