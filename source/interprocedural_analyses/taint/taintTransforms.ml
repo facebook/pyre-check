@@ -14,7 +14,6 @@ module T = struct
 end
 
 include T
-module Set = Stdlib.Set.Make (T)
 
 module Order = struct
   type t =
@@ -25,16 +24,19 @@ module Order = struct
   [@@deriving show]
 end
 
-module InsertLocation = struct
-  type t =
-    | Front
-    | Back
-  [@@deriving show]
-end
-
 let empty = []
 
-let add_named_transform transforms named_transform = named_transform :: transforms
+let is_empty = List.is_empty
+
+let merge ~local ~global =
+  (* Note that this might introduce consecutive `TaintTransform.Sanitize`, which is expected.
+   * Preserving the order is required for trace expansion in the SAPP UI. *)
+  local @ global
+
+
+let of_named_transforms transforms = transforms
+
+let get_named_transforms = List.filter ~f:TaintTransform.is_named_transform
 
 (* Split a list of transforms into sanitizers present at the beginning and the rest. *)
 let split_sanitizers transforms =
@@ -51,279 +53,10 @@ let split_sanitizers transforms =
   split SanitizeTransformSet.empty transforms
 
 
-let preserve_sanitizers ~preserve_sanitize_sources ~preserve_sanitize_sinks sanitizers =
-  let sanitizers =
-    if not preserve_sanitize_sources then
-      { sanitizers with SanitizeTransformSet.sources = SanitizeTransform.SourceSet.empty }
-    else
-      sanitizers
-  in
-  let sanitizers =
-    if not preserve_sanitize_sinks then
-      { sanitizers with SanitizeTransformSet.sinks = SanitizeTransform.SinkSet.empty }
-    else
-      sanitizers
-  in
-  sanitizers
-
-
-let prepend_sanitize_transforms
-    ~preserve_sanitize_sources
-    ~preserve_sanitize_sinks
-    ~current_base
-    ~global_sanitizers
-    transforms
-    sanitizers
-  =
-  match current_base with
-  | Some base when SanitizeTransformSet.mem sanitizers base ->
-      (* Taint is sanitized and should be removed. *)
-      None
-  | _ ->
-      let sanitizers =
-        preserve_sanitizers ~preserve_sanitize_sources ~preserve_sanitize_sinks sanitizers
-      in
-      let sanitizers = SanitizeTransformSet.diff sanitizers global_sanitizers in
-      if SanitizeTransformSet.is_empty sanitizers then
-        Some transforms
-      else
-        let existing_sanitizers, rest = split_sanitizers transforms in
-        let sanitizers = SanitizeTransformSet.join sanitizers existing_sanitizers in
-        Some (TaintTransform.Sanitize sanitizers :: rest)
-
-
-let add_sanitize_transforms_internal
-    ~preserve_sanitize_sources
-    ~preserve_sanitize_sinks
-    ~current_base
-    ~global_sanitizers
-    ~insert_location
-    transforms
-    sanitizers
-  =
-  match insert_location with
-  | InsertLocation.Front ->
-      prepend_sanitize_transforms
-        ~preserve_sanitize_sources
-        ~preserve_sanitize_sinks
-        ~current_base
-        ~global_sanitizers
-        transforms
-        sanitizers
-  | InsertLocation.Back ->
-      if SanitizeTransformSet.is_empty global_sanitizers then
-        match
-          prepend_sanitize_transforms
-            ~preserve_sanitize_sources
-            ~preserve_sanitize_sinks
-            ~current_base
-            ~global_sanitizers
-            (List.rev transforms)
-            sanitizers
-        with
-        | None -> None
-        | Some list -> Some (List.rev list)
-      else
-        failwith "Unable to insert sanitizers in the back when there exist global sanitizers"
-
-
-let get_global_sanitizers ~local ~global =
-  if List.exists local ~f:TaintTransform.is_named_transform then
-    SanitizeTransformSet.empty
-  else
-    fst (split_sanitizers global)
-
-
-let get_current_base ~local ~global ~base =
-  match base with
-  | None -> None
-  | Some _ when List.exists local ~f:TaintTransform.is_named_transform -> None
-  | Some _ when List.exists global ~f:TaintTransform.is_named_transform -> None
-  | _ -> base
-
-
-let add_sanitize_transforms
-    ~preserve_sanitize_sources
-    ~preserve_sanitize_sinks
-    ~base
-    ~local
-    ~global
-    ~insert_location
-    sanitizers
-  =
-  let global_sanitizers = get_global_sanitizers ~local ~global in
-  let current_base = get_current_base ~local ~global ~base in
-  add_sanitize_transforms_internal
-    ~preserve_sanitize_sources
-    ~preserve_sanitize_sinks
-    ~current_base
-    ~global_sanitizers
-    ~insert_location
-    local
-    sanitizers
-
-
-type add_transform_result = {
-  (* None represents a sanitized taint. *)
-  transforms: TaintTransform.t list option;
-  (* None represents a kind that cannot be sanitized. *)
-  current_base: SanitizeTransform.t option;
-  global_sanitizers: SanitizeTransformSet.t;
-}
-
-let add_transform
-    ~preserve_sanitize_sources
-    ~preserve_sanitize_sinks
-    ~current_base
-    ~global_sanitizers
-    ~insert_location
-    transforms
-  = function
-  | TaintTransform.Named _ as named_transform ->
-      {
-        transforms = Some (add_named_transform transforms named_transform);
-        current_base = None;
-        global_sanitizers = SanitizeTransformSet.empty;
-      }
-  | TaintTransform.Sanitize sanitizers ->
-      let transforms =
-        add_sanitize_transforms_internal
-          ~preserve_sanitize_sources
-          ~preserve_sanitize_sinks
-          ~current_base
-          ~global_sanitizers
-          ~insert_location
-          transforms
-          sanitizers
-      in
-      { transforms; current_base; global_sanitizers }
-
-
-let add_backward_into_forward_transforms
-    ~preserve_sanitize_sources
-    ~preserve_sanitize_sinks
-    ~base
-    ~local
-    ~global
-    ~insert_location
-    ~to_add
-  =
-  let rec add ({ transforms; current_base; global_sanitizers } as sofar) to_add =
-    match transforms, to_add with
-    | None, _
-    | Some _, [] ->
-        sofar
-    | Some transforms, head :: tail ->
-        add
-          (add_transform
-             ~preserve_sanitize_sources
-             ~preserve_sanitize_sinks
-             ~current_base
-             ~global_sanitizers
-             ~insert_location
-             transforms
-             head)
-          tail
-  in
-  let global_sanitizers = get_global_sanitizers ~local ~global in
-  let current_base = get_current_base ~local ~global ~base in
-  let { transforms; _ } = add { transforms = Some local; current_base; global_sanitizers } to_add in
-  transforms
-
-
-let add_backward_into_backward_transforms
-    ~preserve_sanitize_sources
-    ~preserve_sanitize_sinks
-    ~base
-    ~local
-    ~global
-    ~insert_location
-    ~to_add
-  =
-  let rec add sofar = function
-    | [] -> sofar
-    | head :: tail -> (
-        match add sofar tail with
-        | { transforms = None; _ } as sofar -> sofar
-        | { transforms = Some transforms; current_base; global_sanitizers } ->
-            add_transform
-              ~preserve_sanitize_sources
-              ~preserve_sanitize_sinks
-              ~current_base
-              ~global_sanitizers
-              ~insert_location
-              transforms
-              head)
-  in
-  let global_sanitizers = get_global_sanitizers ~local ~global in
-  let current_base = get_current_base ~local ~global ~base in
-  let { transforms; _ } = add { transforms = Some local; current_base; global_sanitizers } to_add in
-  transforms
-
-
-let add_transforms
-    ~preserve_sanitize_sources
-    ~preserve_sanitize_sinks
-    ~base
-    ~local
-    ~global
-    ~order
-    ~insert_location
-    ~to_add
-    ~to_add_order
-  =
-  match order, to_add_order with
-  | Order.Forward, Order.Backward ->
-      add_backward_into_forward_transforms
-        ~preserve_sanitize_sources
-        ~preserve_sanitize_sinks
-        ~base
-        ~local
-        ~global
-        ~insert_location
-        ~to_add
-  | Order.Backward, Order.Backward ->
-      add_backward_into_backward_transforms
-        ~preserve_sanitize_sources
-        ~preserve_sanitize_sinks
-        ~base
-        ~local
-        ~global
-        ~insert_location
-        ~to_add
-  | _ ->
-      Format.asprintf
-        "unsupported: add_transforms ~order:%a ~to_add_order:%a"
-        Order.pp
-        order
-        Order.pp
-        to_add_order
-      |> failwith
-
-
-let of_named_transforms transforms = transforms
-
-let of_sanitize_transforms ~preserve_sanitize_sources ~preserve_sanitize_sinks ~base sanitizers =
-  match base with
-  | Some base when SanitizeTransformSet.mem sanitizers base -> None
-  | _ ->
-      let sanitizers =
-        preserve_sanitizers ~preserve_sanitize_sources ~preserve_sanitize_sinks sanitizers
-      in
-      if SanitizeTransformSet.is_empty sanitizers then
-        Some []
-      else
-        Some [TaintTransform.Sanitize sanitizers]
-
-
-let is_empty = List.is_empty
-
-let get_named_transforms = List.filter ~f:TaintTransform.is_named_transform
-
-(* This only returns sanitizers that are still valid (i.e, before a named transform. *)
+(* Return sanitizers that are still valid (i.e, before a named transform. *)
 let get_sanitize_transforms transforms = fst (split_sanitizers transforms)
 
-(* This discards all sanitizers, regardless of whether they are still valid or not. *)
+(* Discard all sanitizers, regardless of whether they are still valid or not. *)
 let discard_sanitize_transforms = List.filter ~f:TaintTransform.is_named_transform
 
 let discard_sanitize_source_transforms =
@@ -348,12 +81,6 @@ let discard_sanitize_sink_transforms =
       | transform -> Some transform)
 
 
-let merge ~local ~global =
-  (* Note that this might introduce consecutive `TaintTransform.Sanitize`, which is expected.
-   * Preserving the order is required for trace expansion in the SAPP UI. *)
-  local @ global
-
-
 let show_transforms transforms =
   List.map transforms ~f:TaintTransform.show |> String.concat ~sep:":"
 
@@ -367,3 +94,6 @@ let pp_kind ~formatter ~pp_base ~local ~global ~base =
     Format.fprintf formatter "%a@@%a" pp_transforms local pp_base base
   else
     Format.fprintf formatter "%a@@%a:%a" pp_transforms local pp_transforms global pp_base base
+
+
+module Set = Stdlib.Set.Make (T)

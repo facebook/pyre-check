@@ -61,19 +61,6 @@ val from_sanitized_source : SanitizeTransform.Source.t -> t
 
 val extract_sanitize_transforms : t -> SanitizeTransformSet.t
 
-val apply_sanitize_transforms
-  :  SanitizeTransformSet.t ->
-  TaintTransforms.InsertLocation.t ->
-  t ->
-  t option
-
-val apply_transforms
-  :  TaintTransforms.t ->
-  TaintTransforms.InsertLocation.t ->
-  TaintTransforms.Order.t ->
-  t ->
-  t option
-
 val get_named_transforms : t -> TaintTransform.t list
 
 val contains_sanitize_transforms : t -> SanitizeTransformSet.t -> bool

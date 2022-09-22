@@ -376,7 +376,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             taint_to_propagate
             |> BackwardState.Tree.apply_transforms
                  transforms
-                 TaintTransforms.InsertLocation.Front
+                 TaintTransformOperation.InsertLocation.Front
                  TaintTransforms.Order.Backward
             |> BackwardState.Tree.transform
                  BackwardTaint.kind
@@ -866,7 +866,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               BackwardState.Tree.apply_sanitize_transforms
                 sanitizers
-                TaintTransforms.InsertLocation.Front
+                TaintTransformOperation.InsertLocation.Front
                 taint
               |> BackwardState.Tree.transform
                    BackwardTaint.kind

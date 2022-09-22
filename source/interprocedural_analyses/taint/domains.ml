@@ -401,13 +401,13 @@ module type TAINT_DOMAIN = sig
 
   val apply_sanitize_transforms
     :  SanitizeTransformSet.t ->
-    TaintTransforms.InsertLocation.t ->
+    TaintTransformOperation.InsertLocation.t ->
     t ->
     t
 
   val apply_transforms
     :  TaintTransforms.t ->
-    TaintTransforms.InsertLocation.t ->
+    TaintTransformOperation.InsertLocation.t ->
     TaintTransforms.Order.t ->
     t ->
     t
@@ -465,13 +465,13 @@ module type KIND_ARG = sig
 
   val apply_sanitize_transforms
     :  SanitizeTransformSet.t ->
-    TaintTransforms.InsertLocation.t ->
+    TaintTransformOperation.InsertLocation.t ->
     t ->
     t option
 
   val apply_transforms
     :  TaintTransforms.t ->
-    TaintTransforms.InsertLocation.t ->
+    TaintTransformOperation.InsertLocation.t ->
     TaintTransforms.Order.t ->
     t ->
     t option
@@ -1136,8 +1136,15 @@ end = struct
         | Some local_taint -> LocalTaintDomain.transform part op ~f local_taint)
 end
 
-module ForwardTaint = MakeTaint (Sources)
-module BackwardTaint = MakeTaint (Sinks)
+module ForwardTaint = MakeTaint (struct
+  include Sources
+  include TaintTransformOperation.Source
+end)
+
+module BackwardTaint = MakeTaint (struct
+  include Sinks
+  include TaintTransformOperation.Sink
+end)
 
 module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   include
@@ -1394,7 +1401,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       ?(sanitize_sink = false)
       ?(sanitize_tito = false)
       ?(ignore_if_sanitize_all = false)
-      ?(insert_location = TaintTransforms.InsertLocation.Front)
+      ?(insert_location = TaintTransformOperation.InsertLocation.Front)
       ?parameter
       ~sanitizer:{ Sanitize.sources; sinks; tito }
       taint

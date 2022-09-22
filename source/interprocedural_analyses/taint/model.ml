@@ -391,7 +391,7 @@ let apply_sanitizers
     (* @SanitizeSingleTrace(TaintInTaintOut[...]) *)
     BackwardState.apply_sanitizers
       ~sanitize_tito:true
-      ~insert_location:TaintTransforms.InsertLocation.Back
+      ~insert_location:TaintTransformOperation.InsertLocation.Back
       ~sanitizer:global
       taint_in_taint_out
   in
@@ -424,7 +424,7 @@ let apply_sanitizers
     (* Sanitize(Parameters[TaintInTaintOut[...]]) *)
     BackwardState.apply_sanitizers
       ~sanitize_tito:true
-      ~insert_location:TaintTransforms.InsertLocation.Back
+      ~insert_location:TaintTransformOperation.InsertLocation.Back
       ~sanitizer:parameters
       taint_in_taint_out
   in
@@ -459,7 +459,7 @@ let apply_sanitizers
       (* def foo() -> Sanitize[TaintInTaintOut[...]] *)
       BackwardState.apply_sanitizers
         ~sanitize_tito:true
-        ~insert_location:TaintTransforms.InsertLocation.Back
+        ~insert_location:TaintTransformOperation.InsertLocation.Back
         ~sanitizer
         taint_in_taint_out
     in
@@ -514,7 +514,7 @@ let apply_sanitizers
       (* def foo(x: Sanitize[TaintInTaintOut[...]]): ... *)
       BackwardState.apply_sanitizers
         ~sanitize_tito:true
-        ~insert_location:TaintTransforms.InsertLocation.Back
+        ~insert_location:TaintTransformOperation.InsertLocation.Back
         ~parameter
         ~sanitizer
         taint_in_taint_out

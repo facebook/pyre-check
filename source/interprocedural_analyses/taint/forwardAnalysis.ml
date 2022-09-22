@@ -349,7 +349,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             taint_to_propagate
             |> ForwardState.Tree.apply_transforms
                  transforms
-                 TaintTransforms.InsertLocation.Front
+                 TaintTransformOperation.InsertLocation.Front
                  TaintTransforms.Order.Backward
             |> ForwardState.Tree.transform
                  ForwardTaint.kind
@@ -1865,7 +1865,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let taint =
               ForwardState.Tree.apply_sanitize_transforms
                 sanitizers
-                TaintTransforms.InsertLocation.Front
+                TaintTransformOperation.InsertLocation.Front
                 taint
               |> ForwardState.Tree.transform
                    ForwardTaint.kind

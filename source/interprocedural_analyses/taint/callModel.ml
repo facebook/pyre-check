@@ -161,18 +161,11 @@ let taint_in_taint_out_mapping
         TaintInTaintOutMap.set mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
       else
         let tito_kind =
-          Sinks.Transform
-            {
-              local =
-                TaintTransforms.of_sanitize_transforms
-                  ~preserve_sanitize_sources:true
-                  ~preserve_sanitize_sinks:true
-                  ~base:None
-                  obscure_sanitize
-                |> Option.value ~default:TaintTransforms.empty;
-              global = TaintTransforms.empty;
-              base = Sinks.LocalReturn;
-            }
+          Option.value_exn
+            (TaintTransformOperation.Sink.apply_sanitize_transforms
+               obscure_sanitize
+               TaintTransformOperation.InsertLocation.Front
+               Sinks.LocalReturn)
         in
         let return_tito =
           Domains.local_return_frame

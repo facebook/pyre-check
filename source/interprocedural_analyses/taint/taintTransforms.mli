@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t [@@deriving compare, eq, hash, sexp]
+type t = TaintTransform.t list [@@deriving compare, eq, hash, sexp]
 
 module Order : sig
   type t =
@@ -16,50 +16,7 @@ module Order : sig
   [@@deriving show]
 end
 
-module InsertLocation : sig
-  type t =
-    | Front
-    | Back
-  [@@deriving show]
-end
-
-module Set : Stdlib.Set.S with type elt = t
-
-val add_sanitize_transforms
-  :  preserve_sanitize_sources:bool ->
-  preserve_sanitize_sinks:bool ->
-  base:SanitizeTransform.t option ->
-  local:t ->
-  global:t ->
-  insert_location:InsertLocation.t ->
-  SanitizeTransformSet.t ->
-  t option
-
-val add_transforms
-  :  preserve_sanitize_sources:bool ->
-  preserve_sanitize_sinks:bool ->
-  base:SanitizeTransform.t option ->
-  local:t ->
-  global:t ->
-  order:Order.t ->
-  insert_location:InsertLocation.t ->
-  to_add:t ->
-  to_add_order:Order.t ->
-  t option
-
 val empty : t
-
-val get_named_transforms : t -> TaintTransform.t list
-
-(* This only returns sanitizers that are still valid (i.e, before a named transform. *)
-val get_sanitize_transforms : t -> SanitizeTransformSet.t
-
-(* This discards all sanitizers, regardless of whether they are still valid or not. *)
-val discard_sanitize_transforms : t -> t
-
-val discard_sanitize_source_transforms : t -> t
-
-val discard_sanitize_sink_transforms : t -> t
 
 val is_empty : t -> bool
 
@@ -67,12 +24,20 @@ val merge : local:t -> global:t -> t
 
 val of_named_transforms : TaintTransform.t list -> t
 
-val of_sanitize_transforms
-  :  preserve_sanitize_sources:bool ->
-  preserve_sanitize_sinks:bool ->
-  base:SanitizeTransform.t option ->
-  SanitizeTransformSet.t ->
-  t option
+val get_named_transforms : t -> TaintTransform.t list
+
+(* Split a list of transforms into sanitizers present at the beginning and the rest. *)
+val split_sanitizers : t -> SanitizeTransformSet.t * t
+
+(* Return sanitizers that are still valid (i.e, before a named transform. *)
+val get_sanitize_transforms : t -> SanitizeTransformSet.t
+
+(* Discard all sanitizers, regardless of whether they are still valid or not. *)
+val discard_sanitize_transforms : t -> t
+
+val discard_sanitize_source_transforms : t -> t
+
+val discard_sanitize_sink_transforms : t -> t
 
 val pp_kind
   :  formatter:Format.formatter ->
@@ -83,3 +48,7 @@ val pp_kind
   unit
 
 val show_transforms : t -> string
+
+(* See transform operations in `taintTransformOperation.mli`. *)
+
+module Set : Stdlib.Set.S with type elt = t
