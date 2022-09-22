@@ -118,10 +118,10 @@ class InitializeTest(unittest.TestCase):
     def test_get_local_configuration(self) -> None:
         with patch.object(
             initialize.log, "get_yes_no_input"
-        ) as yes_no_input, patch.object(
-            initialize.log, "get_input", return_value="//target/..."
-        ):
+        ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
             yes_no_input.side_effect = [True]
+            string_input.side_effect = ["//target/...", ""]
+
             self.assertEqual(
                 initialize._get_local_configuration(Path("/"), Path("/")),
                 {"targets": ["//target/..."]},
@@ -129,8 +129,9 @@ class InitializeTest(unittest.TestCase):
 
         with patch.object(
             initialize.log, "get_yes_no_input"
-        ) as yes_no_input, patch.object(initialize.log, "get_input", return_value=""):
+        ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
             yes_no_input.side_effect = [True]
+            string_input.side_effect = ["", ""]
             self.assertEqual(
                 initialize._get_local_configuration(Path("/project"), Path("/")),
                 {"targets": ["//project/..."]},
@@ -138,11 +139,20 @@ class InitializeTest(unittest.TestCase):
 
         with patch.object(
             initialize.log, "get_yes_no_input"
-        ) as yes_no_input, patch.object(
-            initialize.log, "get_input", return_value="project/a, project/b"
-        ):
+        ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
             yes_no_input.side_effect = [False]
+            string_input.side_effect = ["project/a, project/b", ""]
             self.assertEqual(
                 initialize._get_local_configuration(Path("/"), Path("/")),
                 {"source_directories": ["project/a", "project/b"]},
+            )
+
+        with patch.object(
+            initialize.log, "get_yes_no_input"
+        ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
+            yes_no_input.side_effect = [True]
+            string_input.side_effect = ["//target/...", "pyre"]
+            self.assertEqual(
+                initialize._get_local_configuration(Path("/"), Path("/")),
+                {"oncall": "pyre", "targets": ["//target/..."]},
             )

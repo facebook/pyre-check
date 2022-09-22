@@ -106,6 +106,11 @@ def _get_local_configuration(
         configuration["source_directories"] = [
             directory.strip() for directory in source_directories.split(",")
         ]
+
+    # TODO(T132432706): Ask for oncall in global configuration, but not in OSS.
+    oncall = log.get_input("What oncall is responsible for this project?\n").strip()
+    if oncall:
+        configuration["oncall"] = oncall
     return configuration
 
 
