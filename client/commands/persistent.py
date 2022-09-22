@@ -408,6 +408,9 @@ class ClientStatusMessageHandler:
         self.client_output_channel = client_output_channel
         self.server_state = server_state
 
+    def get_status_updates_availability(self) -> features.StatusUpdatesAvailability:
+        return self.server_state.server_options.language_server_features.status_updates
+
     async def show_notification_message_to_client(
         self,
         message: str,
@@ -422,6 +425,8 @@ class ClientStatusMessageHandler:
         level: lsp.MessageType = lsp.MessageType.INFO,
         fallback_to_notification: bool = False,
     ) -> None:
+        if self.get_status_updates_availability().is_disabled():
+            return
         if _client_has_status_bar_support(self.server_state.client_capabilities):
             await _write_status(
                 self.client_output_channel, message, short_message, level

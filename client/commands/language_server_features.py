@@ -68,6 +68,7 @@ HoverAvailability = _Availability
 DefinitionAvailability = _AvailabilityWithShadow
 ReferencesAvailability = _Availability
 DocumentSymbolsAvailability = _Availability
+StatusUpdatesAvailability = _Availability
 TypeErrorsAvailability = _Availability
 UnsavedChangesAvailability = _Availability
 
@@ -78,6 +79,7 @@ class LanguageServerFeatures:
     definition: DefinitionAvailability = DefinitionAvailability.DISABLED
     document_symbols: DocumentSymbolsAvailability = DocumentSymbolsAvailability.DISABLED
     references: ReferencesAvailability = ReferencesAvailability.DISABLED
+    status_updates: StatusUpdatesAvailability = StatusUpdatesAvailability.ENABLED
     type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
     type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
@@ -92,6 +94,7 @@ class LanguageServerFeatures:
         type_coverage: Optional[TypeCoverageAvailability],
         unsaved_changes: Optional[UnsavedChangesAvailability],
         type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED,
+        status_updates: StatusUpdatesAvailability = StatusUpdatesAvailability.ENABLED,
     ) -> LanguageServerFeatures:
         ide_features = configuration.get_ide_features()
         if ide_features is None:
@@ -111,6 +114,7 @@ class LanguageServerFeatures:
             or ReferencesAvailability.from_enabled(
                 ide_features.is_find_all_references_enabled()
             ),
+            status_updates=status_updates,
             type_coverage=type_coverage
             or (
                 TypeCoverageAvailability.EXPRESSION_LEVEL

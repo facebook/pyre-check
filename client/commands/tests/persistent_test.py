@@ -41,6 +41,7 @@ from ..language_server_features import (
     HoverAvailability,
     LanguageServerFeatures,
     ReferencesAvailability,
+    StatusUpdatesAvailability,
     TypeCoverageAvailability,
     TypeErrorsAvailability,
 )
@@ -564,7 +565,8 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         )
 
         client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
-        self.assertTrue(len(client_messages) >= 4)
+        print(client_messages)
+        self.assertTrue(len(client_messages) == 4)
         # Forward the rebuild status message
         self.assertIn("window/showStatus", client_messages[0])
         # Forward the recheck status message
