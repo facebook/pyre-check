@@ -7,11 +7,8 @@ sidebar_label: Configuration
 
 Pyre can be run without a configuration (see [Command Line Arguments](configuration.md#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting_started.md)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
 
-## Configuration Files
-Pyre has two types of configurations: a *global* configuration covering the full project, and *local* configurations that apply to subdirectories of the project. In most cases you will only need a global configuration but local configurations can be useful if you are dealing with a big repository containing heterogeneous projects.
-
-### The Global Configuration
-The global configuration is a `.pyre_configuration` file sitting at the root of your project. Running Pyre anywhere inside your project directory will use the settings in this global configuration. You can generate an initial configuration in your project directory with
+## The Pyre Configuration
+The Pyre configuration is a `.pyre_configuration` file sitting at the root of your project. Running Pyre anywhere inside your project directory will use the settings in this configuration. You can generate an initial configuration in your project directory with
 ```bash
 $ pyre init
 ```
@@ -61,8 +58,7 @@ to their relative path.
 
 - `ignore_all_errors`: A list of paths to omit from type-checking. This may be
 useful for generated files, virtualenv directories, etc.  These should be paths
-relative to the location of the configuration file (or the local configuration
-if applicable) and support globs. **Note**: Files
+relative to the location of the configuration file and support globs. **Note**: Files
 matching these paths will still be processed (i.e. type and module names in those files are still visible to Pyre). Please refer to the `exclude`
 configuration item if you have files that are intended to be hidden from Pyre.
 
@@ -109,9 +105,6 @@ These flags can be passed in before any of the positional arguments above. For e
 $ pyre --source-directory "." --noninteractive check
 $ pyre --source-directory "." restart
 ```
-
-- `--local-configuration LOCAL_CONFIGURATION`: Call Pyre specifying the path to a local
-configuration.
 
 - `--noninteractive`: Disable interactive logging, which by default overwrites intermediate
 logging output and adds colors for a more streamlined user experience.
