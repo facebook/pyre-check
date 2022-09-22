@@ -137,7 +137,9 @@ let handle_subscription_request
             ~state:old_server_state
             (Request.DisplayTypeError [])
           >>= fun (new_server_state, response) ->
-          Lwt.return (new_server_state, (new_connection_state, response)))
+          Lwt.return (new_server_state, (new_connection_state, response))
+      | Subscription.Request.SubscribeToStateChanges _ ->
+          Lwt.return (old_server_state, (new_connection_state, Response.Ok)))
 
 
 let handle_connection

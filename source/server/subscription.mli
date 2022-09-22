@@ -8,7 +8,10 @@
 module ServerResponse = Response
 
 module Request : sig
-  type t = SubscribeToTypeErrors of string [@@deriving sexp, compare, yojson]
+  type t =
+    | SubscribeToTypeErrors of string
+    | SubscribeToStateChanges of string
+  [@@deriving sexp, compare, yojson { strict = false }]
 end
 
 module Response : sig
@@ -24,6 +27,8 @@ type t
 val create : subscription_request:Request.t -> output_channel:Lwt_io.output_channel -> unit -> t
 
 val name_of : t -> string
+
+val wants_type_errors : t -> bool
 
 (** [send ~response subscription] sends a response to the given [subscription] channel.
 
