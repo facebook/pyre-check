@@ -29,5 +29,10 @@ module ReadOnlyness = struct
     | _ -> Mutable
 
 
-  let meet _left _right = failwith "TODO(T130377746)"
+  let meet left right =
+    match left, right with
+    | Mutable, _
+    | _, Mutable ->
+        Mutable
+    | _ -> ReadOnly
 end

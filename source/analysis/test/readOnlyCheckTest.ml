@@ -37,4 +37,21 @@ let test_join _ =
   ()
 
 
-let () = "readOnly" >::: ["less_or_equal" >:: test_less_or_equal; "join" >:: test_join] |> Test.run
+let test_meet _ =
+  let open ReadOnlyness in
+  let assert_meet ~expected left right =
+    let assert_equal = assert_equal ~cmp:[%compare.equal: t] ~printer:show in
+    assert_equal expected (meet left right);
+    assert_equal expected (meet right left)
+  in
+  assert_meet Mutable ReadOnly ~expected:Mutable;
+  assert_meet ReadOnly Mutable ~expected:Mutable;
+  assert_meet Mutable Mutable ~expected:Mutable;
+  assert_meet ReadOnly ReadOnly ~expected:ReadOnly;
+  ()
+
+
+let () =
+  "readOnly"
+  >::: ["less_or_equal" >:: test_less_or_equal; "join" >:: test_join; "meet" >:: test_meet]
+  |> Test.run
