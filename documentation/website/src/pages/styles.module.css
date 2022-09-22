@@ -88,6 +88,10 @@
   float: left;
 }
 
+.getStarted {
+  margin: 5px;
+}
+
 .runPysa {
   float: right;
 }
