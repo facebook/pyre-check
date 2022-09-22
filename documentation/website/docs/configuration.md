@@ -3,7 +3,7 @@ id: configuration
 title: Configuration
 sidebar_label: Configuration
 ---
-<!-- There is a separate page for internal config at ./fb/configuration.md -->
+<!-- There is a separate page for internal config at ./fb/configuration.md. When making changes, please keep common docs in sync. -->
 
 Pyre can be run without a configuration (see [Command Line Arguments](configuration.md#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting_started.md)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
 
@@ -30,7 +30,7 @@ specifies that the code Pyre checks is in the directory of the configuration and
 
 You specify additional information to configure Pyre. The following fields are supported:
 
-- `source_directories`: List of path to type check. Path can be a glob, for example, `"./foo*"`.
+- `source_directories`: List of paths to type check. Paths can be a glob, for example, `"./foo*"`.
 
  Note: Pyre assumes that all imports are relative to the given source directory. For example, if your source directory is `root/directory`, then an import statement `import module` will be looking to import `root.directory.module`. If you wish to set a different import root for your source directory, you can provide an object `{"import_root": "root", "source": "directory"}` instead of `"root/directory"`. In this case, `import module` will be looking to import `root.module`.
 
@@ -45,7 +45,9 @@ You specify additional information to configure Pyre. The following fields are s
 
   If not specified, Pyre will consult the current Python interpreter using `site.getusersitepackages()` and `site.getsitepackages()`, which should work in most cases. But if your codebase uses a different Python interpreter, you may want to specify this option manually so Pyre knows the correct location to look for site packages.
 
-- `search_path`: List of additional paths to Python modules to include as dependencies. `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence. Individual items in the list can take one of the following forms:
+- `search_path`: List of paths to Python modules to include in the typing
+environment. Relative paths are the best way to reference locations above the configuration directory. `search_path` elements take precendence over `source_directories`, and the order within the search path indicates precedence.
+Individual items in the list can take one of the following forms:
   + A plain string, representing a path to the directories from which Pyre will search for modules. The paths can be globs, for example, `"./foo*"`.
   + An object `{"import_root": "root", "source": "directory"}`, which can be used to control import root of the search path. See explaination for `source_directories`.
   + An object `{"site-package": "package_name"}`. It is equivalent to `{"import_root": "site_root", "source": "package_name"}`, where `site_root` is the first element in `site_roots` that has the site package named `package_name` installed. This can be useful when you want to manually specify which `pip` package you want the type checker to see as a dependency to your project (in which case it is recommended to set `site_package_search_strategy` to `"none"` to disable site package auto discovery).
