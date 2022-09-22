@@ -34,6 +34,32 @@ You specify additional information to configure Pyre. The following fields are s
 
  Note: Pyre assumes that all imports are relative to the given source directory. For example, if your source directory is `root/directory`, then an import statement `import module` will be looking to import `root.directory.module`. If you wish to set a different import root for your source directory, you can provide an object `{"import_root": "root", "source": "directory"}` instead of `"root/directory"`. In this case, `import module` will be looking to import `root.module`.
 
+- `search_path`: List of paths to Python modules to include in the typing
+environment. Relative paths are the best way to reference locations above the configuration directory. `search_path` elements take precendence over `source_directories`, and the order within the search path indicates precedence.
+Individual items in the list can take one of the following forms:
+  + A plain string, representing a path to the directories from which Pyre will search for modules. The paths can be globs, for example, `"./foo*"`.
+  + An object `{"import_root": "root", "source": "directory"}`, which can be used to control import root of the search path. See explaination for `source_directories`.
+  + An object `{"site-package": "package_name"}`. It is equivalent to `{"import_root": "site_root", "source": "package_name"}`, where `site_root` is the first element in `site_roots` that has the site package named `package_name` installed. This can be useful when you want to manually specify which `pip` package you want the type checker to see as a dependency to your project (in which case it is recommended to set `site_package_search_strategy` to `"none"` to disable site package auto discovery).
+  + An object `{"site-package": "package_name", "is_toplevel_module": true}`, to specify the name as a single-file module found in the site-root rather than as a package.
+
+- `binary`: Location of Pyre's native binary.
+
+- `exclude`: List of regular expressions such as `".*\/node_modules\/.*"` which
+specify files and directories that should be completely ignored by Pyre. The
+regular expression will be matched against the *full* path of files as opposed
+to their relative path.
+
+- `extensions`: Consider extensions in this list equivalent to `.py` for type checking.
+Empty string indicates extensionless files.
+
+- `ignore_all_errors`: A list of paths to omit from type-checking. This may be
+useful for generated files, virtualenv directories, etc.  These should be paths
+relative to the location of the configuration file and support globs. **Note**: Files
+matching these paths will still be processed (i.e. type and module names in those files are still visible to Pyre). Please refer to the `exclude`
+configuration item if you have files that are intended to be hidden from Pyre.
+
+- `logger`: Pyre will invoke this exectuable on every run, passing it statistics in JSON format.
+
 - `site_package_search_strategy`: Configure how Pyre looks for type checking dependencies installed (e.g. by `pip`) on the local Python environment. Dependent libraries will not be type-checked, but they are consulted to determine the existence of globals/functions/classes. The value of this option can take one of the following forms:
   + `"none"`. This indicates that Pyre should not attempt to search for any additional dependencies. Use this option if you know exactly what packages you depend on, and want to manually specify them with the `search_path` option.
   + `"all"`. Pyre will pull in the entire site package roots (as specified in the `site_roots` option) as dependencies. Any libraries installed as site packages, regardless of whether they are typed or not, will be examined. Use this option if you do not know exactly which packages your code depend on, but want to make sure that no dependencies are missing.
@@ -45,36 +71,10 @@ You specify additional information to configure Pyre. The following fields are s
 
   If not specified, Pyre will consult the current Python interpreter using `site.getusersitepackages()` and `site.getsitepackages()`, which should work in most cases. But if your codebase uses a different Python interpreter, you may want to specify this option manually so Pyre knows the correct location to look for site packages.
 
-- `search_path`: List of paths to Python modules to include in the typing
-environment. Relative paths are the best way to reference locations above the configuration directory. `search_path` elements take precendence over `source_directories`, and the order within the search path indicates precedence.
-Individual items in the list can take one of the following forms:
-  + A plain string, representing a path to the directories from which Pyre will search for modules. The paths can be globs, for example, `"./foo*"`.
-  + An object `{"import_root": "root", "source": "directory"}`, which can be used to control import root of the search path. See explaination for `source_directories`.
-  + An object `{"site-package": "package_name"}`. It is equivalent to `{"import_root": "site_root", "source": "package_name"}`, where `site_root` is the first element in `site_roots` that has the site package named `package_name` installed. This can be useful when you want to manually specify which `pip` package you want the type checker to see as a dependency to your project (in which case it is recommended to set `site_package_search_strategy` to `"none"` to disable site package auto discovery).
-  + An object `{"site-package": "package_name", "is_toplevel_module": true}`, to specify the name as a single-file module found in the site-root rather than as a package.
-
-- `exclude`: List of regular expressions such as `".*\/node_modules\/.*"` which
-specify files and directories that should be completely ignored by Pyre. The
-regular expression will be matched against the *full* path of files as opposed
-to their relative path.
-
-- `ignore_all_errors`: A list of paths to omit from type-checking. This may be
-useful for generated files, virtualenv directories, etc.  These should be paths
-relative to the location of the configuration file and support globs. **Note**: Files
-matching these paths will still be processed (i.e. type and module names in those files are still visible to Pyre). Please refer to the `exclude`
-configuration item if you have files that are intended to be hidden from Pyre.
-
-- `binary`: Location of Pyre's native binary.
-
-- `logger`: Pyre will invoke this exectuable on every run, passing it statistics in JSON format.
-
 - `typeshed`: Path to the [Typeshed](https://github.com/python/typeshed) standard library, which
 provides typed stubs for library functions.
 
 - `workers`: Number of workers to spawn for multiprocessing.
-
-- `extensions`: Consider extensions in this list equivalent to `.py` for type checking.
-Empty string indicates extensionless files.
 
 - `strict`: Setting this to `true` will make [strict mode](gradual_typing.md#strict-mode) the default in your project.
 
