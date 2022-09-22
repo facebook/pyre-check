@@ -8,15 +8,6 @@
 open Ast
 module Error = AnalysisError
 
-module ReadOnlyness : sig
-  type t =
-    | Mutable
-    | ReadOnly
-  [@@deriving compare, sexp]
-
-  include Abstract.SimpleDomain.ELEMENT with type t := t
-end
-
 module Resolution : sig
   type t
 
