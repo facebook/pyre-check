@@ -277,3 +277,10 @@ class AnalyzeArguments:
     taint_models_path: List[str] = field(default_factory=list)
     use_cache: bool = False
     check_invariants: bool = False
+
+
+@dataclass(frozen=True)
+class QueryArguments:
+    query: str
+    no_daemon: bool
+    no_validation_on_class_lookup_failure: bool

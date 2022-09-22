@@ -1096,7 +1096,12 @@ def query(
     )
     start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.query.run(
-        configuration, query, no_daemon, no_validation_on_class_lookup_failure
+        configuration,
+        command_arguments.QueryArguments(
+            query=query,
+            no_daemon=no_daemon,
+            no_validation_on_class_lookup_failure=no_validation_on_class_lookup_failure,
+        ),
     )
 
 

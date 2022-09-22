@@ -16,6 +16,8 @@ import dataclasses
 import subprocess
 from typing import Any, Dict, Iterator, Optional
 
+from tools.pyre.client.command_arguments import QueryArguments
+
 from .. import configuration as configuration_module
 from . import backend_arguments, frontend_configuration, query_response
 
@@ -43,8 +45,7 @@ class Arguments:
 # TODO:T131533391 - Factor this function out as it is duplicated.
 def _create_no_daemon_query_arguments(
     configuration: frontend_configuration.Base,
-    query: str,
-    no_validation_on_class_lookup_failure: bool,
+    query_arguments: QueryArguments,
 ) -> Arguments:
     """
     Translate client configurations to backend query configurations.
@@ -67,20 +68,17 @@ def _create_no_daemon_query_arguments(
             shared_memory=configuration.get_shared_memory(),
             search_paths=configuration.get_existent_search_paths(),
         ),
-        query=query,
-        no_validation_on_class_lookup_failure=no_validation_on_class_lookup_failure,
+        query=query_arguments.query,
+        no_validation_on_class_lookup_failure=query_arguments.no_validation_on_class_lookup_failure,
     )
 
 
 @contextlib.contextmanager
 def create_no_daemon_arguments_and_cleanup(
     configuration: frontend_configuration.Base,
-    query_str: str,
-    no_validation_on_class_lookup_failure: bool,
+    query_arguments: QueryArguments,
 ) -> Iterator[Arguments]:
-    arguments = _create_no_daemon_query_arguments(
-        configuration, query_str, no_validation_on_class_lookup_failure
-    )
+    arguments = _create_no_daemon_query_arguments(configuration, query_arguments)
     try:
         yield arguments
     finally:
@@ -90,9 +88,7 @@ def create_no_daemon_arguments_and_cleanup(
 
 
 def execute_query(
-    configuration: frontend_configuration.Base,
-    query_text: str,
-    no_validation_on_class_lookup_failure: bool,
+    configuration: frontend_configuration.Base, query_arguments: QueryArguments
 ) -> Optional[query_response.Response]:
 
     binary_location = configuration.get_binary_location(download_if_needed=True)
@@ -102,7 +98,7 @@ def execute_query(
         )
 
     with create_no_daemon_arguments_and_cleanup(
-        configuration, query_text, no_validation_on_class_lookup_failure
+        configuration, query_arguments
     ) as arguments, backend_arguments.temporary_argument_file(
         arguments
     ) as argument_file_path, backend_arguments.backend_log_file(
