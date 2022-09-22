@@ -128,9 +128,9 @@ module.exports = {
     },
     footer: {
       logo: {
-        alt: 'Facebook Open Source Logo',
-        src: 'https://docusaurus.io/img/oss_logo.png',
-        href: 'https://opensource.facebook.com/',
+        alt: 'Meta Open Source Logo',
+        src: 'img/meta_open_source_logo.png',
+        href: 'https://opensource.fb.com/',
       },
       links: [
         {
