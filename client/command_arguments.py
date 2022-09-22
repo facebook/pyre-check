@@ -284,4 +284,4 @@ class QueryArguments:
     query: str
     no_daemon: bool
     no_validation_on_class_lookup_failure: bool
-    sequential: bool = True
+    check_arguments: CheckArguments = field(default_factory=CheckArguments)

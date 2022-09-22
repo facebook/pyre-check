@@ -51,6 +51,19 @@ def _create_no_daemon_query_arguments(
     Translate client configurations to backend query configurations.
     """
     source_paths = backend_arguments.get_source_path_for_check(configuration)
+
+    log_directory = configuration.get_log_directory()
+    profiling_output = (
+        backend_arguments.get_profiling_log_path(log_directory)
+        if query_arguments.check_arguments.enable_profiling
+        else None
+    )
+    memory_profiling_output = (
+        backend_arguments.get_profiling_log_path(log_directory)
+        if query_arguments.check_arguments.enable_memory_profiling
+        else None
+    )
+
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
             log_path=str(configuration.get_log_directory()),
@@ -67,7 +80,10 @@ def _create_no_daemon_query_arguments(
             python_version=configuration.get_python_version(),
             shared_memory=configuration.get_shared_memory(),
             search_paths=configuration.get_existent_search_paths(),
-            parallel=not query_arguments.sequential,
+            parallel=not query_arguments.check_arguments.sequential,
+            profiling_output=profiling_output,
+            memory_profiling_output=memory_profiling_output,
+            debug=query_arguments.check_arguments.debug,
         ),
         query=query_arguments.query,
         no_validation_on_class_lookup_failure=query_arguments.no_validation_on_class_lookup_failure,
