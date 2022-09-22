@@ -15,7 +15,9 @@ module Subscriptions = struct
 
   let create () = String.Table.create ()
 
-  let add ~name ~subscription subscriptions = Hashtbl.set subscriptions ~key:name ~data:subscription
+  let add ~subscription subscriptions =
+    Hashtbl.set subscriptions ~key:(Subscription.name_of subscription) ~data:subscription
+
 
   let get ~name subscriptions = Hashtbl.find subscriptions name
 

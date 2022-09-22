@@ -10,7 +10,7 @@ module Subscriptions : sig
 
   val create : unit -> t
 
-  val add : name:string -> subscription:Subscription.t -> t -> unit
+  val add : subscription:Subscription.t -> t -> unit
 
   val get : name:string -> t -> Subscription.t option
 

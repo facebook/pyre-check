@@ -99,7 +99,7 @@ let handle_subscription ~state:{ ServerState.subscriptions; _ } ~output_channel 
   match request with
   | Subscription.Request.SubscribeToTypeErrors subscriber_name ->
       let subscription = Subscription.create ~name:subscriber_name ~output_channel () in
-      ServerState.Subscriptions.add subscriptions ~name:subscriber_name ~subscription;
+      ServerState.Subscriptions.add subscriptions ~subscription;
       subscription
 
 
