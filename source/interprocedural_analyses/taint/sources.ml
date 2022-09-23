@@ -42,6 +42,12 @@ end
 
 include T
 
+let make_transform ~local ~global ~base =
+  match local, global with
+  | [], [] -> base
+  | _ -> Transform { local; global; base }
+
+
 let ignore_kind_at_call = function
   | Attach -> true
   | _ -> false

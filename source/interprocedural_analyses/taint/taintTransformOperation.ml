@@ -455,11 +455,7 @@ module Source = Make (struct
     | Sources.Attach -> None
 
 
-  let make_transform ~local ~global ~base =
-    match local, global with
-    | [], [] -> base
-    | _ -> Sources.Transform { local; global; base }
-
+  let make_transform = Sources.make_transform
 
   let matching_sanitize_transforms
       ~taint_configuration:{ TaintConfiguration.Heap.source_sink_filter; _ }
@@ -468,7 +464,7 @@ module Source = Make (struct
     =
     let source_sink_filter = Option.value_exn source_sink_filter in
     let base = Sources.discard_subkind base in
-    make_transform ~local:[] ~global:named_transforms ~base
+    Sources.make_transform ~local:[] ~global:named_transforms ~base
     |> SourceSinkFilter.matching_sink_sanitize_transforms source_sink_filter
 end)
 
@@ -519,11 +515,7 @@ module Sink = Make (struct
         None
 
 
-  let make_transform ~local ~global ~base =
-    match local, global with
-    | [], [] -> base
-    | _ -> Sinks.Transform { local; global; base }
-
+  let make_transform = Sinks.make_transform
 
   let matching_sanitize_transforms
       ~taint_configuration:{ TaintConfiguration.Heap.source_sink_filter; _ }
@@ -532,6 +524,6 @@ module Sink = Make (struct
     =
     let source_sink_filter = Option.value_exn source_sink_filter in
     let base = Sinks.discard_subkind base in
-    make_transform ~local:[] ~global:named_transforms ~base
+    Sinks.make_transform ~local:[] ~global:named_transforms ~base
     |> SourceSinkFilter.matching_source_sanitize_transforms source_sink_filter
 end)

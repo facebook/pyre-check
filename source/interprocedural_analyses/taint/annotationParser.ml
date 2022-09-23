@@ -60,10 +60,8 @@ let parse_tito ~allowed_transforms ?subkind name =
       parse_transform ~allowed:allowed_transforms transform
       >>= fun transform ->
       Ok
-        (Sinks.Transform
-           {
-             local = TaintTransforms.of_named_transforms [transform];
-             global = TaintTransforms.empty;
-             base = Sinks.LocalReturn;
-           })
+        (Sinks.make_transform
+           ~local:[transform]
+           ~global:TaintTransforms.empty
+           ~base:Sinks.LocalReturn)
   | name, _ -> Error (Format.sprintf "Unsupported taint in taint out specification `%s`" name)

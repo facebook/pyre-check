@@ -144,24 +144,14 @@ let matching_kinds_from_rules ~rules =
           sources
         else
           List.map sources ~f:(fun base ->
-              Sources.Transform
-                {
-                  base;
-                  global = TaintTransforms.of_named_transforms source_transforms;
-                  local = TaintTransforms.empty;
-                })
+              Sources.make_transform ~local:TaintTransforms.empty ~global:source_transforms ~base)
       in
       let sinks =
         if List.is_empty sink_transforms then
           sinks
         else
           List.map sinks ~f:(fun base ->
-              Sinks.Transform
-                {
-                  base;
-                  global = TaintTransforms.of_named_transforms sink_transforms;
-                  local = TaintTransforms.empty;
-                })
+              Sinks.make_transform ~local:TaintTransforms.empty ~global:sink_transforms ~base)
       in
       add_sources_sinks sofar (sources, sinks)
     in
@@ -208,15 +198,10 @@ let should_keep_source { matching_sink_sanitize_transforms; _ } = function
   | Sources.Transform { local; global; base = ParametricSource { source_name = name; _ } } -> (
       let transforms = TaintTransforms.merge ~local ~global in
       let source =
-        match TaintTransforms.get_named_transforms transforms with
-        | [] -> Sources.NamedSource name
-        | named_transforms ->
-            Sources.Transform
-              {
-                local = TaintTransforms.empty;
-                global = TaintTransforms.of_named_transforms named_transforms;
-                base = Sources.NamedSource name;
-              }
+        Sources.make_transform
+          ~local:TaintTransforms.empty
+          ~global:(TaintTransforms.get_named_transforms transforms)
+          ~base:(Sources.NamedSource name)
       in
       match Sources.Map.find_opt source matching_sink_sanitize_transforms with
       | None -> false
@@ -237,15 +222,10 @@ let should_keep_sink { matching_source_sanitize_transforms; possible_tito_transf
   | Sinks.Transform { local; global; base = ParametricSink { sink_name = name; _ } } -> (
       let transforms = TaintTransforms.merge ~local ~global in
       let sink =
-        match TaintTransforms.get_named_transforms transforms with
-        | [] -> Sinks.NamedSink name
-        | named_transforms ->
-            Sinks.Transform
-              {
-                local = TaintTransforms.empty;
-                global = TaintTransforms.of_named_transforms named_transforms;
-                base = Sinks.NamedSink name;
-              }
+        Sinks.make_transform
+          ~local:TaintTransforms.empty
+          ~global:(TaintTransforms.get_named_transforms transforms)
+          ~base:(Sinks.NamedSink name)
       in
       match Sinks.Map.find_opt sink matching_source_sanitize_transforms with
       | None -> false
