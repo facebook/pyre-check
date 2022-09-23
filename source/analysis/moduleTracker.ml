@@ -5,7 +5,36 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ModuleTracker: layer of the environment stack
+ * - upstream: None, this is the lowest-level environment
+ * - downstream: AstEnvironment
+ *
+ * It is responsible for:
+ * - understanding the mapping between module names (which we call `qualifiers`)
+ *   and actual files, including the precedence of directories and of stubs.
+ * - actually loading code (the AstEnvironment calls down to ModuleTracker)
+ * - specifically in the Overlay case, knowing about in-memory code that should
+ *   take precedence over filesystem code to handle unsaved changes.
+ *
+ * Most of the complexity involves understanding the mapping between module
+ * names and files, both initially and in incremental updates. This is handled
+ * by the Layouts submodule, which independently tracks two notions of modules:
+ * - explicit modules, which actually have a python file
+ * - implicit modules, corresponding to directories that contain python files
+ *   but that lack an `__init__.py`
+ *
+ * In order to support different performance tradeoffs, there are two different
+ * implementations of the Layouts interface:
+ * - An eager tracker that crawls the filesystem at initialization
+ * - A lazy tracker that only reads directories when looking up a specific
+ *   module name; this skips the filesystem crawl but is more complex, and to
+ *   be performant it also requires maintaining a directory read cache.
+ *
+ * Importantly, the lazy tracker disables operations that require listing all
+ * modules (becasue that requires the directory crawl). As a result, many
+ * higher-level queries such as getting all type errors or the full class
+ * hierarchy may not be performed in an environment that uses lazy tracking.
+ *)
 
 open Core
 open Ast
