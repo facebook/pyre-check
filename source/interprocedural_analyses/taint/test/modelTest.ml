@@ -80,13 +80,12 @@ let set_up_environment
         filtered_sources;
         filtered_sinks;
         source_sink_filter =
-          Some
-            (SourceSinkFilter.create
-               ~rules
-               ~filtered_rule_codes:None
-               ~filtered_sources
-               ~filtered_sinks
-               ~filtered_transforms);
+          SourceSinkFilter.create
+            ~rules
+            ~filtered_rule_codes:None
+            ~filtered_sources
+            ~filtered_sinks
+            ~filtered_transforms;
       }
   in
   let source = Test.trim_extra_indentation model_source in
@@ -100,7 +99,7 @@ let set_up_environment
       ~resolution
       ~source
       ~taint_configuration
-      ~source_sink_filter:taint_configuration.source_sink_filter
+      ~source_sink_filter:(Some taint_configuration.source_sink_filter)
       ~callables:None
       ~stubs:(Target.HashSet.create ())
       ()

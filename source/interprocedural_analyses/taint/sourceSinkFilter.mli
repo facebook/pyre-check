@@ -7,6 +7,9 @@
 
 type t
 
+(* Filters everything. *)
+val all : t
+
 val create
   :  rules:Rule.t list ->
   filtered_rule_codes:Rule.CodeSet.t option ->

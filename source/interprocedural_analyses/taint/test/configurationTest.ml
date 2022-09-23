@@ -106,7 +106,7 @@ let test_simple _ =
     (Some 50);
   assert_equal
     (Sources.Map.of_alist_exn [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "D"]])
-    (SourceSinkFilter.matching_sinks (Option.value_exn configuration.source_sink_filter))
+    (SourceSinkFilter.matching_sinks configuration.source_sink_filter)
 
 
 let test_transform _ =
@@ -975,7 +975,7 @@ let test_matching_kinds _ =
       |> String.concat ~sep:", "
       |> Format.asprintf "{%s}"
     in
-    let source_sink_filter = Option.value_exn configuration.source_sink_filter in
+    let source_sink_filter = configuration.source_sink_filter in
     assert_equal
       ~printer:matching_sources_printer
       ~cmp:(Sources.Map.equal Sinks.Set.equal)

@@ -268,7 +268,7 @@ module Heap = struct
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;
     lineage_analysis: bool;
-    source_sink_filter: SourceSinkFilter.t option;
+    source_sink_filter: SourceSinkFilter.t;
   }
 
   let empty =
@@ -290,7 +290,7 @@ module Heap = struct
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
       lineage_analysis = false;
-      source_sink_filter = None;
+      source_sink_filter = SourceSinkFilter.all;
     }
 
 
@@ -445,13 +445,12 @@ module Heap = struct
       analysis_model_constraints = ModelConstraints.default;
       lineage_analysis = false;
       source_sink_filter =
-        Some
-          (SourceSinkFilter.create
-             ~rules
-             ~filtered_rule_codes:None
-             ~filtered_sources:None
-             ~filtered_sinks:None
-             ~filtered_transforms:None);
+        SourceSinkFilter.create
+          ~rules
+          ~filtered_rule_codes:None
+          ~filtered_sources:None
+          ~filtered_sinks:None
+          ~filtered_transforms:None;
     }
 end
 
@@ -1142,13 +1141,12 @@ let from_json_list source_json_list =
         ModelConstraints.default;
     lineage_analysis;
     source_sink_filter =
-      Some
-        (SourceSinkFilter.create
-           ~rules
-           ~filtered_rule_codes:None
-           ~filtered_sources:None
-           ~filtered_sinks:None
-           ~filtered_transforms:None);
+      SourceSinkFilter.create
+        ~rules
+        ~filtered_rule_codes:None
+        ~filtered_sources:None
+        ~filtered_sinks:None
+        ~filtered_transforms:None;
   }
 
 
@@ -1218,13 +1216,12 @@ let obscure_flows_configuration configuration =
     rules;
     find_missing_flows = Some Obscure;
     source_sink_filter =
-      Some
-        (SourceSinkFilter.create
-           ~rules
-           ~filtered_rule_codes:None
-           ~filtered_sources:configuration.filtered_sources
-           ~filtered_sinks:None
-           ~filtered_transforms:None);
+      SourceSinkFilter.create
+        ~rules
+        ~filtered_rule_codes:None
+        ~filtered_sources:configuration.filtered_sources
+        ~filtered_sinks:None
+        ~filtered_transforms:None;
   }
 
 
@@ -1249,13 +1246,12 @@ let missing_type_flows_configuration configuration =
     rules;
     find_missing_flows = Some Type;
     source_sink_filter =
-      Some
-        (SourceSinkFilter.create
-           ~rules
-           ~filtered_rule_codes:None
-           ~filtered_sources:configuration.filtered_sources
-           ~filtered_sinks:None
-           ~filtered_transforms:None);
+      SourceSinkFilter.create
+        ~rules
+        ~filtered_rule_codes:None
+        ~filtered_sources:configuration.filtered_sources
+        ~filtered_sinks:None
+        ~filtered_transforms:None;
   }
 
 
@@ -1410,7 +1406,7 @@ let with_command_line_options
     rules;
     implicit_sources;
     implicit_sinks;
-    source_sink_filter = Some source_sink_filter;
+    source_sink_filter;
   }
 
 

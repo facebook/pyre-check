@@ -62,6 +62,17 @@ type t = {
   matching_sink_sanitize_transforms: MatchingSanitizeTransforms.t Sources.Map.t;
 }
 
+(* Filters everything. *)
+let all =
+  {
+    matching_sources = Sinks.Map.empty;
+    matching_sinks = Sources.Map.empty;
+    possible_tito_transforms = TaintTransforms.Set.empty;
+    matching_source_sanitize_transforms = Sinks.Map.empty;
+    matching_sink_sanitize_transforms = Sources.Map.empty;
+  }
+
+
 let filter_rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms rules =
   let rules =
     match filtered_rule_codes with

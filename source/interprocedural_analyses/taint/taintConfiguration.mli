@@ -63,7 +63,7 @@ module Heap : sig
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;
     lineage_analysis: bool;
-    source_sink_filter: SourceSinkFilter.t option;
+    source_sink_filter: SourceSinkFilter.t;
   }
 
   val empty : t

@@ -160,7 +160,7 @@ let parse_models_and_queries_from_sources
           ~path
           ~source
           ~taint_configuration
-          ~source_sink_filter
+          ~source_sink_filter:(Some source_sink_filter)
           ~callables
           ~stubs
           ()
@@ -257,7 +257,7 @@ let initialize_models
             ~class_hierarchy_graph
             ~scheduler
             ~environment
-            ~source_sink_filter:taint_configuration.source_sink_filter
+            ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~callables
             ~stubs
             queries

@@ -530,7 +530,7 @@ let initialize
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~taint_configuration
-            ~source_sink_filter:taint_configuration.source_sink_filter
+            ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~callables:(Some (Target.HashSet.of_list callables))
             ~stubs:(Target.HashSet.of_list stubs)
             ()
@@ -550,7 +550,7 @@ let initialize
               (ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
             ~scheduler:(Test.mock_scheduler ())
             ~environment:type_environment
-            ~source_sink_filter:taint_configuration.source_sink_filter
+            ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~callables:(List.rev_append stubs callables)
             ~stubs:(Target.HashSet.of_list stubs)
             ~rules

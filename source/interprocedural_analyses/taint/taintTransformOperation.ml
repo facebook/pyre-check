@@ -72,7 +72,7 @@ module Make (Kind : KIND_ARG) = struct
       if Kind.is_tito base then
         TaintTransforms.Set.mem
           named_transforms
-          (SourceSinkFilter.possible_tito_transforms (Option.value_exn source_sink_filter))
+          (SourceSinkFilter.possible_tito_transforms source_sink_filter)
       else
         Kind.matching_sanitize_transforms ~taint_configuration ~named_transforms ~base
         |> Option.is_some
@@ -462,7 +462,6 @@ module Source = Make (struct
       ~named_transforms
       ~base
     =
-    let source_sink_filter = Option.value_exn source_sink_filter in
     let base = Sources.discard_subkind base in
     Sources.make_transform ~local:[] ~global:named_transforms ~base
     |> SourceSinkFilter.matching_sink_sanitize_transforms source_sink_filter
@@ -522,7 +521,6 @@ module Sink = Make (struct
       ~named_transforms
       ~base
     =
-    let source_sink_filter = Option.value_exn source_sink_filter in
     let base = Sinks.discard_subkind base in
     Sinks.make_transform ~local:[] ~global:named_transforms ~base
     |> SourceSinkFilter.matching_source_sanitize_transforms source_sink_filter
