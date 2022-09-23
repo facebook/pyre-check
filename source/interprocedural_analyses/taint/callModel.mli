@@ -42,6 +42,7 @@ end
 
 val taint_in_taint_out_mapping
   :  transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
+  taint_configuration:TaintConfiguration.Heap.t ->
   ignore_local_return:bool ->
   model:Model.t ->
   tito_matches:AccessPath.argument_match list ->

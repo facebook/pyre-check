@@ -373,15 +373,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match kind with
         | Sinks.Transform { local = transforms; global; _ } when TaintTransforms.is_empty global ->
             (* Apply tito transforms and source- and sink-specific sanitizers. *)
-            taint_to_propagate
-            |> BackwardState.Tree.apply_transforms
-                 transforms
-                 TaintTransformOperation.InsertLocation.Front
-                 TaintTransforms.Order.Backward
-            |> BackwardState.Tree.transform
-                 BackwardTaint.kind
-                 Filter
-                 ~f:(TaintConfiguration.sink_can_match_rule FunctionContext.taint_configuration)
+            BackwardState.Tree.apply_transforms
+              ~taint_configuration:FunctionContext.taint_configuration
+              transforms
+              TaintTransformOperation.InsertLocation.Front
+              TaintTransforms.Order.Backward
+              taint_to_propagate
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"
         | _ -> taint_to_propagate
       in
@@ -444,6 +441,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let taint_in_taint_out =
         CallModel.taint_in_taint_out_mapping
           ~transform_non_leaves
+          ~taint_configuration:FunctionContext.taint_configuration
           ~ignore_local_return:(BackwardState.Tree.is_bottom call_taint)
           ~model:taint_model
           ~tito_matches
@@ -865,13 +863,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
               in
               BackwardState.Tree.apply_sanitize_transforms
+                ~taint_configuration:FunctionContext.taint_configuration
                 sanitizers
                 TaintTransformOperation.InsertLocation.Front
                 taint
-              |> BackwardState.Tree.transform
-                   BackwardTaint.kind
-                   Filter
-                   ~f:(TaintConfiguration.sink_can_match_rule FunctionContext.taint_configuration)
             in
             taint
           in

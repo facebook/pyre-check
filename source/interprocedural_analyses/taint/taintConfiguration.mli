@@ -169,10 +169,6 @@ val exception_on_error : (Heap.t, Error.t list) Result.t -> Heap.t
 
 val apply_missing_flows : Heap.t -> Configuration.MissingFlowKind.t -> Heap.t
 
-val source_can_match_rule : Heap.t -> Sources.t -> bool
-
-val sink_can_match_rule : Heap.t -> Sinks.t -> bool
-
 val code_metadata : Heap.t -> Yojson.Safe.t
 
 val conditional_test_sinks : Heap.t -> Sinks.t list

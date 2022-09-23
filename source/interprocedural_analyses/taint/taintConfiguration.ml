@@ -1414,18 +1414,6 @@ let with_command_line_options
   }
 
 
-let source_can_match_rule { Heap.source_sink_filter; _ } source =
-  match source_sink_filter with
-  | Some source_sink_filter -> SourceSinkFilter.should_keep_source source_sink_filter source
-  | None -> true
-
-
-let sink_can_match_rule { Heap.source_sink_filter; _ } sink =
-  match source_sink_filter with
-  | Some source_sink_filter -> SourceSinkFilter.should_keep_sink source_sink_filter sink
-  | None -> true
-
-
 let code_metadata { Heap.rules; _ } =
   `Assoc (List.map rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
 

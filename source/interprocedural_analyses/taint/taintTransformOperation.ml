@@ -48,26 +48,54 @@ module type KIND_ARG = sig
   val base_as_sanitizer : t -> SanitizeTransform.t option
 
   val make_transform : local:TaintTransforms.t -> global:TaintTransforms.t -> base:t -> t
+
+  val matching_sanitize_transforms
+    :  taint_configuration:TaintConfiguration.Heap.t ->
+    named_transforms:TaintTransform.t list ->
+    base:t ->
+    SourceSinkFilter.MatchingSanitizeTransforms.t option
 end
 
 module Make (Kind : KIND_ARG) = struct
-  let prepend_name_transform ~base transforms named_transform =
-    let transforms =
-      if not (Kind.is_tito base) then
-        (* Previous sanitize transforms are invalidated,
-         * so we can remove them from the local part. *)
-        snd (TaintTransforms.split_sanitizers transforms)
+  let prepend_name_transform
+      ~taint_configuration:
+        ({ TaintConfiguration.Heap.source_sink_filter; _ } as taint_configuration)
+      ~base
+      ~named_transforms
+      transforms
+      named_transform
+    =
+    (* Check if the taint can ever match a rule. This is for performance as well
+     * as convergence, since we might have infinite chains T:T:T:T:... *)
+    let named_transforms = named_transform :: named_transforms in
+    let should_keep =
+      if Kind.is_tito base then
+        TaintTransforms.Set.mem
+          named_transforms
+          (SourceSinkFilter.possible_tito_transforms (Option.value_exn source_sink_filter))
       else
-        (* We cannot remove existing sanitizers from tito, since tito transforms
-         * are applied from left to right on sources and right to left on sinks.
-         *
-         * For instance, `NotSource[A]:Transform:NotSink[X]:LocalReturn` will
-         * sanitize both `Source[A]` and `Sink[X]`.
-         * We need to preserve all sanitizers.
-         *)
-        transforms
+        Kind.matching_sanitize_transforms ~taint_configuration ~named_transforms ~base
+        |> Option.is_some
     in
-    named_transform :: transforms
+    if not should_keep then
+      None
+    else
+      let transforms =
+        if not (Kind.is_tito base) then
+          (* Previous sanitize transforms are invalidated,
+           * so we can remove them from the local part. *)
+          snd (TaintTransforms.split_sanitizers transforms)
+        else
+          (* We cannot remove existing sanitizers from tito, since tito transforms
+           * are applied from left to right on sources and right to left on sinks.
+           *
+           * For instance, `NotSource[A]:Transform:NotSink[X]:LocalReturn` will
+           * sanitize both `Source[A]` and `Sink[X]`.
+           * We need to preserve all sanitizers.
+           *)
+          transforms
+      in
+      Some (named_transform :: transforms)
 
 
   let preserve_sanitizers ~base sanitizers =
@@ -87,32 +115,66 @@ module Make (Kind : KIND_ARG) = struct
 
 
   let prepend_sanitize_transforms
+      ~taint_configuration
       ~base
-      ~has_name_transform
+      ~named_transforms
       ~global_sanitizers
       transforms
       ({ SanitizeTransformSet.sources = sanitizer_sources; sinks = sanitizer_sinks } as sanitizers)
     =
+    (* Check if applying that sanitizer removes the taint. *)
     match Kind.base_as_sanitizer base with
     | _ when SanitizeTransform.SourceSet.is_all sanitizer_sources -> None
     | _ when SanitizeTransform.SinkSet.is_all sanitizer_sinks -> None
-    | Some base when (not has_name_transform) && SanitizeTransformSet.mem sanitizers base ->
-        (* Taint is sanitized and should be removed. *)
+    | Some base when List.is_empty named_transforms && SanitizeTransformSet.mem sanitizers base ->
         None
     | _ ->
         let sanitizers = preserve_sanitizers ~base sanitizers in
+        (* Check if this is a no-op because those sanitizers already exist in the global part. *)
         let sanitizers = SanitizeTransformSet.diff sanitizers global_sanitizers in
         if SanitizeTransformSet.is_empty sanitizers then
           Some transforms
         else
-          let existing_sanitizers, rest = TaintTransforms.split_sanitizers transforms in
-          let sanitizers = SanitizeTransformSet.join sanitizers existing_sanitizers in
-          Some (TaintTransform.Sanitize sanitizers :: rest)
+          let matching_kinds =
+            if not (Kind.is_tito base) then
+              Kind.matching_sanitize_transforms ~taint_configuration ~named_transforms ~base
+            else
+              None
+          in
+          (* Remove sanitizers that cannot affect this kind. *)
+          let sanitizers =
+            match matching_kinds with
+            | Some { transforms = matching_kinds; _ } ->
+                SanitizeTransformSet.meet matching_kinds sanitizers
+            | None -> sanitizers
+          in
+          if SanitizeTransformSet.is_empty sanitizers then
+            Some transforms
+          else (* Add sanitizers to the existing sanitizers in the local part. *)
+            let existing_sanitizers, rest = TaintTransforms.split_sanitizers transforms in
+            let sanitizers = SanitizeTransformSet.join sanitizers existing_sanitizers in
+            (* Check if the new taint can ever match a rule. *)
+            let should_keep =
+              match matching_kinds with
+              | _ when Kind.is_tito base -> true
+              | None -> false
+              | Some { sanitizable = false; _ } -> true
+              | Some { transforms = matching_transforms; sanitizable = true } ->
+                  not
+                    (SanitizeTransformSet.less_or_equal
+                       ~left:matching_transforms
+                       ~right:(SanitizeTransformSet.join sanitizers global_sanitizers))
+            in
+            if should_keep then
+              Some (TaintTransform.Sanitize sanitizers :: rest)
+            else
+              None
 
 
   let add_sanitize_transforms_internal
+      ~taint_configuration
       ~base
-      ~has_name_transform
+      ~named_transforms
       ~global_sanitizers
       ~insert_location
       transforms
@@ -121,8 +183,9 @@ module Make (Kind : KIND_ARG) = struct
     match insert_location with
     | InsertLocation.Front ->
         prepend_sanitize_transforms
+          ~taint_configuration
           ~base
-          ~has_name_transform
+          ~named_transforms
           ~global_sanitizers
           transforms
           sanitizers
@@ -130,8 +193,9 @@ module Make (Kind : KIND_ARG) = struct
         if SanitizeTransformSet.is_empty global_sanitizers then
           match
             prepend_sanitize_transforms
+              ~taint_configuration
               ~base
-              ~has_name_transform
+              ~named_transforms
               ~global_sanitizers
               (List.rev transforms)
               sanitizers
@@ -149,17 +213,18 @@ module Make (Kind : KIND_ARG) = struct
       fst (TaintTransforms.split_sanitizers global)
 
 
-  let has_name_transform ~local ~global =
-    List.exists local ~f:TaintTransform.is_named_transform
-    || List.exists global ~f:TaintTransform.is_named_transform
+  let get_named_transforms ~local ~global =
+    List.filter ~f:TaintTransform.is_named_transform local
+    @ List.filter ~f:TaintTransform.is_named_transform global
 
 
-  let add_sanitize_transforms ~base ~local ~global ~insert_location sanitizers =
+  let add_sanitize_transforms ~taint_configuration ~base ~local ~global ~insert_location sanitizers =
     let global_sanitizers = get_global_sanitizers ~local ~global in
-    let has_name_transform = has_name_transform ~local ~global in
+    let named_transforms = get_named_transforms ~local ~global in
     add_sanitize_transforms_internal
+      ~taint_configuration
       ~base
-      ~has_name_transform
+      ~named_transforms
       ~global_sanitizers
       ~insert_location
       local
@@ -169,33 +234,53 @@ module Make (Kind : KIND_ARG) = struct
   type add_transform_result = {
     (* None represents a sanitized taint. *)
     transforms: TaintTransform.t list option;
-    has_name_transform: bool;
+    named_transforms: TaintTransform.t list;
     global_sanitizers: SanitizeTransformSet.t;
   }
 
-  let add_transform ~base ~has_name_transform ~global_sanitizers ~insert_location transforms
+  let add_transform
+      ~taint_configuration
+      ~base
+      ~named_transforms
+      ~global_sanitizers
+      ~insert_location
+      transforms
     = function
     | TaintTransform.Named _ as named_transform ->
         {
-          transforms = Some (prepend_name_transform ~base transforms named_transform);
-          has_name_transform = true;
+          transforms =
+            prepend_name_transform
+              ~taint_configuration
+              ~base
+              ~named_transforms
+              transforms
+              named_transform;
+          named_transforms = named_transform :: named_transforms;
           global_sanitizers = SanitizeTransformSet.empty;
         }
     | TaintTransform.Sanitize sanitizers ->
         let transforms =
           add_sanitize_transforms_internal
+            ~taint_configuration
             ~base
-            ~has_name_transform
+            ~named_transforms
             ~global_sanitizers
             ~insert_location
             transforms
             sanitizers
         in
-        { transforms; has_name_transform; global_sanitizers }
+        { transforms; named_transforms; global_sanitizers }
 
 
-  let add_backward_into_forward_transforms ~base ~local ~global ~insert_location ~to_add =
-    let rec add ({ transforms; has_name_transform; global_sanitizers } as sofar) to_add =
+  let add_backward_into_forward_transforms
+      ~taint_configuration
+      ~base
+      ~local
+      ~global
+      ~insert_location
+      ~to_add
+    =
+    let rec add ({ transforms; named_transforms; global_sanitizers } as sofar) to_add =
       match transforms, to_add with
       | None, _
       | Some _, [] ->
@@ -203,8 +288,9 @@ module Make (Kind : KIND_ARG) = struct
       | Some transforms, head :: tail ->
           add
             (add_transform
+               ~taint_configuration
                ~base
-               ~has_name_transform
+               ~named_transforms
                ~global_sanitizers
                ~insert_location
                transforms
@@ -212,42 +298,71 @@ module Make (Kind : KIND_ARG) = struct
             tail
     in
     let global_sanitizers = get_global_sanitizers ~local ~global in
-    let has_name_transform = has_name_transform ~local ~global in
+    let named_transforms = get_named_transforms ~local ~global in
     let { transforms; _ } =
-      add { transforms = Some local; has_name_transform; global_sanitizers } to_add
+      add { transforms = Some local; named_transforms; global_sanitizers } to_add
     in
     transforms
 
 
-  let add_backward_into_backward_transforms ~base ~local ~global ~insert_location ~to_add =
+  let add_backward_into_backward_transforms
+      ~taint_configuration
+      ~base
+      ~local
+      ~global
+      ~insert_location
+      ~to_add
+    =
     let rec add sofar = function
       | [] -> sofar
       | head :: tail -> (
           match add sofar tail with
           | { transforms = None; _ } as sofar -> sofar
-          | { transforms = Some transforms; has_name_transform; global_sanitizers } ->
+          | { transforms = Some transforms; named_transforms; global_sanitizers } ->
               add_transform
+                ~taint_configuration
                 ~base
-                ~has_name_transform
+                ~named_transforms
                 ~global_sanitizers
                 ~insert_location
                 transforms
                 head)
     in
     let global_sanitizers = get_global_sanitizers ~local ~global in
-    let has_name_transform = has_name_transform ~local ~global in
+    let named_transforms = get_named_transforms ~local ~global in
     let { transforms; _ } =
-      add { transforms = Some local; has_name_transform; global_sanitizers } to_add
+      add { transforms = Some local; named_transforms; global_sanitizers } to_add
     in
     transforms
 
 
-  let add_transforms ~base ~local ~global ~order ~insert_location ~to_add ~to_add_order =
+  let add_transforms
+      ~taint_configuration
+      ~base
+      ~local
+      ~global
+      ~order
+      ~insert_location
+      ~to_add
+      ~to_add_order
+    =
     match order, to_add_order with
     | TaintTransforms.Order.Forward, TaintTransforms.Order.Backward ->
-        add_backward_into_forward_transforms ~base ~local ~global ~insert_location ~to_add
+        add_backward_into_forward_transforms
+          ~taint_configuration
+          ~base
+          ~local
+          ~global
+          ~insert_location
+          ~to_add
     | TaintTransforms.Order.Backward, TaintTransforms.Order.Backward ->
-        add_backward_into_backward_transforms ~base ~local ~global ~insert_location ~to_add
+        add_backward_into_backward_transforms
+          ~taint_configuration
+          ~base
+          ~local
+          ~global
+          ~insert_location
+          ~to_add
     | _ ->
         Format.asprintf
           "unsupported: add_transforms ~order:%a ~to_add_order:%a"
@@ -258,31 +373,39 @@ module Make (Kind : KIND_ARG) = struct
         |> failwith
 
 
-  let of_sanitize_transforms ~base sanitizers =
+  let of_sanitize_transforms ~taint_configuration ~base sanitizers =
     prepend_sanitize_transforms
+      ~taint_configuration
       ~base
-      ~has_name_transform:false
+      ~named_transforms:[]
       ~global_sanitizers:SanitizeTransformSet.empty
       []
       sanitizers
 
 
-  let apply_sanitize_transforms transforms insert_location kind =
+  let apply_sanitize_transforms ~taint_configuration transforms insert_location kind =
     match Kind.deconstruct kind with
     | NonTransformable kind -> Some kind
     | Base base ->
-        of_sanitize_transforms ~base transforms
+        of_sanitize_transforms ~taint_configuration ~base transforms
         >>| fun local -> Kind.make_transform ~local ~global:TaintTransforms.empty ~base
     | Transformed { local; global; base } ->
-        add_sanitize_transforms ~base ~local ~global ~insert_location transforms
+        add_sanitize_transforms
+          ~taint_configuration
+          ~base
+          ~local
+          ~global
+          ~insert_location
+          transforms
         >>| fun local -> Kind.make_transform ~local ~global ~base
 
 
-  let apply_transforms transforms insert_location order kind =
+  let apply_transforms ~taint_configuration transforms insert_location order kind =
     match Kind.deconstruct kind with
     | NonTransformable kind -> Some kind
     | Base base ->
         add_transforms
+          ~taint_configuration
           ~base
           ~local:TaintTransforms.empty
           ~global:TaintTransforms.empty
@@ -293,6 +416,7 @@ module Make (Kind : KIND_ARG) = struct
         >>| fun local -> Kind.make_transform ~local ~global:TaintTransforms.empty ~base
     | Transformed { local; global; base } ->
         add_transforms
+          ~taint_configuration
           ~base
           ~local
           ~global
@@ -335,6 +459,17 @@ module Source = Make (struct
     match local, global with
     | [], [] -> base
     | _ -> Sources.Transform { local; global; base }
+
+
+  let matching_sanitize_transforms
+      ~taint_configuration:{ TaintConfiguration.Heap.source_sink_filter; _ }
+      ~named_transforms
+      ~base
+    =
+    let source_sink_filter = Option.value_exn source_sink_filter in
+    let base = Sources.discard_subkind base in
+    make_transform ~local:[] ~global:named_transforms ~base
+    |> SourceSinkFilter.matching_sink_sanitize_transforms source_sink_filter
 end)
 
 module Sink = Make (struct
@@ -388,4 +523,15 @@ module Sink = Make (struct
     match local, global with
     | [], [] -> base
     | _ -> Sinks.Transform { local; global; base }
+
+
+  let matching_sanitize_transforms
+      ~taint_configuration:{ TaintConfiguration.Heap.source_sink_filter; _ }
+      ~named_transforms
+      ~base
+    =
+    let source_sink_filter = Option.value_exn source_sink_filter in
+    let base = Sinks.discard_subkind base in
+    make_transform ~local:[] ~global:named_transforms ~base
+    |> SourceSinkFilter.matching_source_sanitize_transforms source_sink_filter
 end)

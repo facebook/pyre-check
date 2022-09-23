@@ -33,5 +33,17 @@ val matching_sources : t -> Sources.Set.t Sinks.Map.t
 (* Exposed for testing purpose *)
 val matching_sinks : t -> Sinks.Set.t Sources.Map.t
 
-(* Exposed for testing purpose *)
 val possible_tito_transforms : t -> TaintTransforms.Set.t
+
+module MatchingSanitizeTransforms : sig
+  type t = {
+    transforms: SanitizeTransformSet.t;
+    (* False if the set of matching sources or sinks cannot be sanitized,
+     * for instance if it contains a transform, or a (triggered) partial sink. *)
+    sanitizable: bool;
+  }
+end
+
+val matching_source_sanitize_transforms : t -> Sinks.t -> MatchingSanitizeTransforms.t option
+
+val matching_sink_sanitize_transforms : t -> Sources.t -> MatchingSanitizeTransforms.t option

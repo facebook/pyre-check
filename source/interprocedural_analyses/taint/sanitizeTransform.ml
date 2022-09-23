@@ -127,7 +127,15 @@ module MakeSet (Kind : TAINT_KIND) = struct
         | Specific left, Specific right -> Specific (Set.union left right)
 
 
-    let meet a b = if less_or_equal ~left:b ~right:a then b else a
+    let meet left right =
+      if phys_equal left right then
+        left
+      else
+        match left, right with
+        | All, All -> All
+        | All, Specific _ -> right
+        | Specific _, All -> left
+        | Specific left, Specific right -> Specific (Set.inter left right)
   end)
 
   type t = set [@@deriving compare, eq, hash, sexp]

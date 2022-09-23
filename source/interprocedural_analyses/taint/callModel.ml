@@ -113,6 +113,7 @@ end
 
 let taint_in_taint_out_mapping
     ~transform_non_leaves
+    ~taint_configuration
     ~ignore_local_return
     ~model:({ Model.backward; modes; _ } as model)
     ~tito_matches
@@ -163,6 +164,7 @@ let taint_in_taint_out_mapping
         let tito_kind =
           Option.value_exn
             (TaintTransformOperation.Sink.apply_sanitize_transforms
+               ~taint_configuration
                obscure_sanitize
                TaintTransformOperation.InsertLocation.Front
                Sinks.LocalReturn)

@@ -346,15 +346,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match kind with
         | Sinks.Transform { local = transforms; global; _ } when TaintTransforms.is_empty global ->
             (* Apply source- and sink- specific tito sanitizers. *)
-            taint_to_propagate
-            |> ForwardState.Tree.apply_transforms
-                 transforms
-                 TaintTransformOperation.InsertLocation.Front
-                 TaintTransforms.Order.Backward
-            |> ForwardState.Tree.transform
-                 ForwardTaint.kind
-                 Filter
-                 ~f:(TaintConfiguration.source_can_match_rule FunctionContext.taint_configuration)
+            ForwardState.Tree.apply_transforms
+              ~taint_configuration:FunctionContext.taint_configuration
+              transforms
+              TaintTransformOperation.InsertLocation.Front
+              TaintTransforms.Order.Backward
+              taint_to_propagate
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"
         | _ -> taint_to_propagate
       in
@@ -382,6 +379,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let tito_effects =
         CallModel.taint_in_taint_out_mapping
           ~transform_non_leaves:(fun _ tito -> tito)
+          ~taint_configuration:FunctionContext.taint_configuration
           ~ignore_local_return:(not is_result_used)
           ~model:taint_model
           ~tito_matches
@@ -1864,13 +1862,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             let taint =
               ForwardState.Tree.apply_sanitize_transforms
+                ~taint_configuration:FunctionContext.taint_configuration
                 sanitizers
                 TaintTransformOperation.InsertLocation.Front
                 taint
-              |> ForwardState.Tree.transform
-                   ForwardTaint.kind
-                   Filter
-                   ~f:(TaintConfiguration.source_can_match_rule FunctionContext.taint_configuration)
             in
             taint
           in

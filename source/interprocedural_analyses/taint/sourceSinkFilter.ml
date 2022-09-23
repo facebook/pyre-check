@@ -11,7 +11,7 @@ module MatchingSanitizeTransforms = struct
   type t = {
     transforms: SanitizeTransformSet.t;
     (* False if the set of matching sources or sinks cannot be sanitized,
-     * for instance if it is a transform, or a (triggered) partial sink. *)
+     * for instance if it contains a transform, or a (triggered) partial sink. *)
     sanitizable: bool;
   }
 
@@ -223,10 +223,9 @@ let should_keep_source { matching_sink_sanitize_transforms; _ } = function
       | Some { sanitizable = false; _ } -> true
       | Some { transforms = matching_sinks; sanitizable = true } ->
           not
-            (SanitizeTransformSet.is_empty
-               (SanitizeTransformSet.diff
-                  matching_sinks
-                  (TaintTransforms.get_sanitize_transforms transforms))))
+            (SanitizeTransformSet.less_or_equal
+               ~left:matching_sinks
+               ~right:(TaintTransforms.get_sanitize_transforms transforms)))
   | Sources.NamedSource name
   | Sources.ParametricSource { source_name = name; _ } ->
       Sources.Map.mem (Sources.NamedSource name) matching_sink_sanitize_transforms
@@ -253,10 +252,9 @@ let should_keep_sink { matching_source_sanitize_transforms; possible_tito_transf
       | Some { sanitizable = false; _ } -> true
       | Some { transforms = matching_sources; sanitizable = true } ->
           not
-            (SanitizeTransformSet.is_empty
-               (SanitizeTransformSet.diff
-                  matching_sources
-                  (TaintTransforms.get_sanitize_transforms transforms))))
+            (SanitizeTransformSet.less_or_equal
+               ~left:matching_sources
+               ~right:(TaintTransforms.get_sanitize_transforms transforms)))
   | Sinks.Transform { local; global; base = LocalReturn }
   | Sinks.Transform { local; global; base = ParameterUpdate _ } ->
       let transforms =
@@ -274,3 +272,10 @@ let matching_sources { matching_sources; _ } = matching_sources
 let matching_sinks { matching_sinks; _ } = matching_sinks
 
 let possible_tito_transforms { possible_tito_transforms; _ } = possible_tito_transforms
+
+let matching_source_sanitize_transforms { matching_source_sanitize_transforms; _ } sink =
+  Sinks.Map.find_opt sink matching_source_sanitize_transforms
+
+
+let matching_sink_sanitize_transforms { matching_sink_sanitize_transforms; _ } source =
+  Sources.Map.find_opt source matching_sink_sanitize_transforms

@@ -14,13 +14,15 @@ end
 
 module Source : sig
   val apply_sanitize_transforms
-    :  SanitizeTransformSet.t ->
+    :  taint_configuration:TaintConfiguration.Heap.t ->
+    SanitizeTransformSet.t ->
     InsertLocation.t ->
     Sources.t ->
     Sources.t option
 
   val apply_transforms
-    :  TaintTransforms.t ->
+    :  taint_configuration:TaintConfiguration.Heap.t ->
+    TaintTransforms.t ->
     InsertLocation.t ->
     TaintTransforms.Order.t ->
     Sources.t ->
@@ -29,13 +31,15 @@ end
 
 module Sink : sig
   val apply_sanitize_transforms
-    :  SanitizeTransformSet.t ->
+    :  taint_configuration:TaintConfiguration.Heap.t ->
+    SanitizeTransformSet.t ->
     InsertLocation.t ->
     Sinks.t ->
     Sinks.t option
 
   val apply_transforms
-    :  TaintTransforms.t ->
+    :  taint_configuration:TaintConfiguration.Heap.t ->
+    TaintTransforms.t ->
     InsertLocation.t ->
     TaintTransforms.Order.t ->
     Sinks.t ->
