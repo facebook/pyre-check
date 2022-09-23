@@ -226,6 +226,9 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "model_query_parameters_where.py",
               "line": 14,

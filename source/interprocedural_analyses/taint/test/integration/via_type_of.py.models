@@ -233,6 +233,8 @@
               { "via-type": "str" },
               { "via-type": "int" },
               { "always-via": "obscure:model" },
+              { "type": "integer" },
+              { "type": "scalar" },
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 37, "start": 16, "end": 30 } ],
@@ -270,6 +272,8 @@
       { "via-type": "str" },
       { "via-type": "int" },
       { "always-via": "obscure:model" },
+      { "type": "integer" },
+      { "type": "scalar" },
       { "always-via": "tito" }
     ],
     "sink_handle": {

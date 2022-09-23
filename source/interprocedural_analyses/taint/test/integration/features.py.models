@@ -27,6 +27,9 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [
+              { "always-type": "bool" }, { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "features.py",

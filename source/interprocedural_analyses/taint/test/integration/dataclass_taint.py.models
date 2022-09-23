@@ -661,6 +661,9 @@
                 "kind": "UserControlled"
               }
             ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "dataclass_taint.py",
               "line": 50,

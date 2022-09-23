@@ -2088,7 +2088,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | ListComprehension comprehension ->
           analyze_comprehension ~resolution ~state ~is_result_used comprehension
       | Name (Name.Identifier identifier) ->
-          ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
+          let root = AccessPath.Root.Variable identifier in
+          let taint =
+            ForwardState.read ~root ~path:[] state.taint
+            |> ForwardState.Tree.add_local_type_breadcrumbs ~resolution ~expression
+          in
+          taint, state
       (* __dict__ reveals an object's underlying data structure, so we should analyze the base under
          the existing taint instead of adding the index to the taint. *)
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
@@ -2179,6 +2184,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       surrounding_taint
       state
     =
+    let taint = ForwardState.Tree.add_local_type_breadcrumbs ~resolution ~expression:target taint in
     match value with
     | Starred (Once target | Twice target) ->
         (* This is approximate. Unless we can get the tuple type on the right to tell how many total
@@ -2456,9 +2462,7 @@ let extract_source_model
   let return_type_breadcrumbs =
     return_annotation
     >>| GlobalResolution.parse_annotation resolution
-    >>| CallGraph.ReturnType.from_annotation ~resolution
-    |> Option.value ~default:CallGraph.ReturnType.none
-    |> Features.type_breadcrumbs
+    |> Features.type_breadcrumbs_from_annotation ~resolution
   in
 
   let simplify tree =

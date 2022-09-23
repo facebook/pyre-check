@@ -1236,6 +1236,23 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       transform Taint.Self Map ~f:(Taint.add_local_breadcrumbs breadcrumbs) taint_tree
 
 
+  let add_local_type_breadcrumbs ~resolution ~expression taint =
+    let open Ast in
+    match expression.Node.value with
+    | Expression.Expression.Name (Expression.Name.Identifier _) ->
+        (* Add scalar breadcrumbs only for variables, for performance reasons *)
+        let type_breadcrumbs =
+          let type_ =
+            Interprocedural.CallResolution.resolve_ignoring_untracked ~resolution expression
+          in
+          Features.type_breadcrumbs_from_annotation
+            ~resolution:(Analysis.Resolution.global_resolution resolution)
+            (Some type_)
+        in
+        add_local_breadcrumbs type_breadcrumbs taint
+    | _ -> taint
+
+
   let add_local_first_index index = transform Taint.Self Map ~f:(Taint.add_local_first_index index)
 
   let add_local_first_field attribute =

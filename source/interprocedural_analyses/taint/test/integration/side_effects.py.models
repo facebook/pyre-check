@@ -135,7 +135,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 17, "start": 16, "end": 30 } ],
             "root": {
               "filename": "side_effects.py",
@@ -165,7 +169,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 11, "start": 19, "end": 33 } ],
             "root": {
               "filename": "side_effects.py",

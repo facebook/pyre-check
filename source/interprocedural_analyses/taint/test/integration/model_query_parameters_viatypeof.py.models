@@ -156,6 +156,9 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 25,
@@ -189,7 +192,10 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" }, { "always-via-type": "int" }
+      { "always-via": "special_source" },
+      { "always-via-type": "int" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -438,6 +444,9 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 61,
@@ -473,7 +482,10 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" }, { "always-via-type": "int" }
+      { "always-via": "special_source" },
+      { "always-via-type": "int" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -583,6 +595,7 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-type": "scalar" } ],
             "root": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 71,
@@ -618,7 +631,9 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" }, { "always-via-type": "float" }
+      { "always-via": "special_source" },
+      { "always-via-type": "float" },
+      { "always-type": "scalar" }
     ],
     "sink_handle": {
       "kind": "Call",

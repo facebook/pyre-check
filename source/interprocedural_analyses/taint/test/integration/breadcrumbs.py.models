@@ -337,6 +337,18 @@
           }
         ]
       }
+    ],
+    "tito": [
+      {
+        "port": "formal(request)[id_float]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-type": "scalar" } ],
+            "decl": null
+          }
+        ]
+      }
     ]
   }
 }
@@ -367,12 +379,12 @@
               { "via": "broadening" }
             ],
             "tito": [
-              { "line": 68, "start": 23, "end": 57 },
-              { "line": 68, "start": 28, "end": 29 }
+              { "line": 72, "start": 23, "end": 57 },
+              { "line": 72, "start": 28, "end": 29 }
             ],
             "root": {
               "filename": "breadcrumbs.py",
-              "line": 61,
+              "line": 65,
               "start": 14,
               "end": 27
             }

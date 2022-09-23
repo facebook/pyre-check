@@ -52,17 +52,21 @@ def scalar_attribute_backward(request: TpmRequest):
         _test_sink(request.id_float)
     elif 1 > 1:
         _test_sink(request.ids_list)
-    else:
+    elif 1 > 1:
         # Read from a scalar variable
         _test_sink(" ".join(str(i) for i in request.ids_list))
+    else:
+        # Write into a scalar variable
+        id = request.id_float
+        return id
 
 
 def scalar_attribute_forward():
     request = tpm_request()
     if 1 > 1:
-        return request.id_float
+        return request.id_float  # No scalar
     elif 1 > 1:
-        return request.ids_list
+        return request.ids_list  # No scalar
     elif 1 > 1:
         # Read from a scalar variable
         return " ".join(str(i) for i in request.ids_list)

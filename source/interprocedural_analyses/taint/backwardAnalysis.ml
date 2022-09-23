@@ -1843,6 +1843,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> List.foldi ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
     | ListComprehension comprehension -> analyze_comprehension ~resolution taint comprehension state
     | Name (Name.Identifier identifier) ->
+        let taint = BackwardState.Tree.add_local_type_breadcrumbs ~resolution ~expression taint in
         store_taint ~weak:true ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
     | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
         analyze_expression ~resolution ~taint ~state ~expression:base
@@ -1959,7 +1960,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_assignment ?(weak = false) ~resolution ?(fields = []) ~target ~value state =
-    let taint = compute_assignment_taint ~resolution target state |> fst |> read_tree fields in
+    let taint =
+      compute_assignment_taint ~resolution target state
+      |> fst
+      |> read_tree fields
+      |> BackwardState.Tree.add_local_type_breadcrumbs ~resolution ~expression:target
+    in
     let state =
       let rec clear_taint state target =
         match Node.value target with
@@ -2130,9 +2136,7 @@ let extract_tito_and_sink_models
     let type_breadcrumbs =
       annotation
       >>| GlobalResolution.parse_annotation resolution
-      >>| CallGraph.ReturnType.from_annotation ~resolution
-      |> Option.value ~default:CallGraph.ReturnType.none
-      |> Features.type_breadcrumbs
+      |> Features.type_breadcrumbs_from_annotation ~resolution
     in
 
     let essential =

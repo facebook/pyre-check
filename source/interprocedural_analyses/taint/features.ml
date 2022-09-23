@@ -559,6 +559,14 @@ let type_breadcrumbs
   |> add_if is_enumeration type_enumeration
 
 
+let type_breadcrumbs_from_annotation ~resolution type_ =
+  let open Interprocedural.CallGraph in
+  type_
+  >>| ReturnType.from_annotation ~resolution
+  |> Option.value ~default:ReturnType.none
+  |> type_breadcrumbs
+
+
 let expand_via_features ~resolution ~callees ~arguments via_features =
   let expand_via_feature via_feature breadcrumbs =
     let match_all_arguments_to_parameter parameter =
