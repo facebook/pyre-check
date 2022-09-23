@@ -9,6 +9,6 @@ module type CONFIG = sig
   val common_integers : int array
 end
 
-module Make (Config : CONFIG) : sig
+module Make (_ : CONFIG) : sig
   include PatriciaTreeSet.SET with type element = int
 end

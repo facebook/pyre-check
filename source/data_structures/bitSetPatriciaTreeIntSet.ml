@@ -7,7 +7,7 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-open Core
+open Core_kernel
 
 module type CONFIG = sig
   val common_integers : int array
