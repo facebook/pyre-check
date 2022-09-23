@@ -23,8 +23,6 @@ module InsertLocation = struct
   [@@deriving show]
 end
 
-let add_named_transform transforms named_transform = named_transform :: transforms
-
 type 'a kind_transforms =
   | NonTransformable of 'a
   | Base of 'a
@@ -45,12 +43,33 @@ module type KIND_ARG = sig
 
   val preserve_sanitize_sinks : t -> bool
 
+  val is_tito : t -> bool
+
   val base_as_sanitizer : t -> SanitizeTransform.t option
 
   val make_transform : local:TaintTransforms.t -> global:TaintTransforms.t -> base:t -> t
 end
 
 module Make (Kind : KIND_ARG) = struct
+  let prepend_name_transform ~base transforms named_transform =
+    let transforms =
+      if not (Kind.is_tito base) then
+        (* Previous sanitize transforms are invalidated,
+         * so we can remove them from the local part. *)
+        snd (TaintTransforms.split_sanitizers transforms)
+      else
+        (* We cannot remove existing sanitizers from tito, since tito transforms
+         * are applied from left to right on sources and right to left on sinks.
+         *
+         * For instance, `NotSource[A]:Transform:NotSink[X]:LocalReturn` will
+         * sanitize both `Source[A]` and `Sink[X]`.
+         * We need to preserve all sanitizers.
+         *)
+        transforms
+    in
+    named_transform :: transforms
+
+
   let preserve_sanitizers ~base sanitizers =
     let sanitizers =
       if not (Kind.preserve_sanitize_sources base) then
@@ -158,7 +177,7 @@ module Make (Kind : KIND_ARG) = struct
     = function
     | TaintTransform.Named _ as named_transform ->
         {
-          transforms = Some (add_named_transform transforms named_transform);
+          transforms = Some (prepend_name_transform ~base transforms named_transform);
           has_name_transform = true;
           global_sanitizers = SanitizeTransformSet.empty;
         }
@@ -302,6 +321,8 @@ module Source = Make (struct
 
   let preserve_sanitize_sinks _ = true
 
+  let is_tito _ = false
+
   let rec base_as_sanitizer = function
     | Sources.NamedSource name
     | Sources.ParametricSource { source_name = name; _ } ->
@@ -338,14 +359,16 @@ module Sink = Make (struct
 
   let preserve_sanitize_sources _ = true
 
-  (* We should only apply sink sanitizers on tito. *)
-  let rec preserve_sanitize_sinks = function
+  let rec is_tito = function
     | Sinks.LocalReturn
     | Sinks.ParameterUpdate _ ->
         true
-    | Sinks.Transform { base; _ } -> preserve_sanitize_sinks base
+    | Sinks.Transform { base; _ } -> is_tito base
     | _ -> false
 
+
+  (* We should only apply sink sanitizers on tito. *)
+  let preserve_sanitize_sinks = is_tito
 
   let rec base_as_sanitizer = function
     | Sinks.NamedSink name

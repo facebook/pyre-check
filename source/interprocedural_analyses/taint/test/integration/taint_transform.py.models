@@ -164,7 +164,7 @@
                 "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "taint_transform.source_a" } ],
                 "length": 1,
-                "kind": "TransformX:NotSink[SinkB]:SourceA"
+                "kind": "TransformX:SourceA"
               }
             ],
             "call": {
@@ -231,7 +231,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
-                "kind": "TransformX:NotSink[SinkB]@SourceA"
+                "kind": "TransformX@SourceA"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -297,7 +297,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
-                "kind": "TransformX:NotSink[SinkB]@SourceA"
+                "kind": "TransformX@SourceA"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -381,7 +381,7 @@
                 "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "length": 1,
-                "kind": "TransformX:NotSource[SourceA]:SinkB"
+                "kind": "TransformX:SinkB"
               }
             ],
             "call": {
@@ -1932,7 +1932,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
-                "kind": "TransformX:NotSink[SinkB]@SourceA"
+                "kind": "TransformX@SourceA"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2567,7 +2567,7 @@
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
-                "kind": "TransformX:NotSource[SourceA]@SinkB"
+                "kind": "TransformX@SinkB"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
