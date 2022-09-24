@@ -1529,11 +1529,7 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
             Node.value =
               Expression.Name
                 (Name.Attribute
-                  {
-                    base = { Node.value = Name (Name.Identifier ("parent" | "cls")); _ };
-                    attribute;
-                    _;
-                  });
+                  { base = { Node.value = Name (Name.Identifier "cls"); _ }; attribute; _ });
             _;
           } as callee;
         arguments;
@@ -1735,11 +1731,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
               Node.value =
                 Expression.Name
                   (Name.Attribute
-                    {
-                      base = { Node.value = Name (Name.Identifier ("parent" | "cls")); _ };
-                      attribute;
-                      _;
-                    });
+                    { base = { Node.value = Name (Name.Identifier "cls"); _ }; attribute; _ });
               _;
             } as callee;
           arguments;
