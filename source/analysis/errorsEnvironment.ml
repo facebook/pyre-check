@@ -5,7 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ErrorsEnvironment: layer of the environment stack
+ * - upstream: TypeEnvironment
+ * - downstream: nothing, this is the top layer
+ *   - OverlaidEnvironment is built on top of ErrorsEnvironment, but it is
+ *     not a layer but rather an abstraction to deal with a root environment
+ *     and one or more overlays.
+ * - key: qualifier (as a Reference.t)
+ * - value: A list of errors for the module
+ *
+ * This layer is needed for two reasons:
+ * - we need to aggregate all of the per-define errors in the TypeEnvironment
+ *   so that we can report them out.
+ * - we also need a place to handle specific cases that the TypeEnvironment
+ *   cannot handle, for example:
+ *   - if the parser failed, there are no defines but we need a syntax error.
+ *   - we deal with error suppressions at this layer.
+ *
+ * The actual logic for construting per-module errors from TypeEnvironment
+ * errors lives in the Postprocessing module.
+ *)
 
 open Ast
 open Core
