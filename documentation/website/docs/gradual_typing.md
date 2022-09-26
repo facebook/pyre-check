@@ -10,7 +10,9 @@ Python's type system was specified in [PEP 484](https://www.python.org/dev/peps/
 
 <!-- TODO(T132521708) Link relevant talks. SEV prevention, privacy, security, dev speed and tooling, etc. -->
 
-<!-- TODO(T132521708) Basic syntax examples, and type system cheat sheet link. -->
+<!-- TODO(T132521708) Basic syntax examples -->
+
+<!-- TODO(T132521708) Type system cheat sheet link, ie. https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html  -->
 
 ## Gradual Typing
 Most Python code does not (yet) start out typed. PEP 484 specifies a [gradual type system](https://en.wikipedia.org/wiki/Gradual_typing), which is built to allow you to *gradually* add annotations over time. It does so by
