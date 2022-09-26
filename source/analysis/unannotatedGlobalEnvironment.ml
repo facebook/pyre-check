@@ -5,7 +5,49 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* UnannotatedGlobalEnvironment(UGE): layer of the environment stack
+ * - upstream: AstEnvironment
+ * - downstream: EmptyStubEnvironment
+ *
+ * It is responsible for taking preprocessed Ast data, breaking it
+ * into chunks, and storing it for use in later analysis stages.
+ * Almost all downstream logic depends only on data in the UGE, rather
+ * than on raw sources.
+ *
+ * It is also responsible for "resolving exports", which means dealing
+ * with name aliases introduced by imports, for example that here:
+ * ```
+ * # my_module.py
+ * from foo import bar as baz
+ *
+ * # other_module.py
+ * from my_module import baz
+ * ```
+ * the name `baz` in `my_module` actually refers to `foo.bar`.
+ *
+ * This name alias handling of unannotated globals is not the same as
+ * TypeAlias handling, which is what AliasEnvironment does.
+ *
+ * This is one of the most complicated layers of the environment stack
+ * from a data flow perspective because instead of being a single cache
+ * table it consists of several separate tables:
+ * - one for FunctionDefinitions, which are the preprocessed Asts of
+ *   function bodies (including module and class toplevels)
+ * - one for ClassSummaries, which are data structures that concisely
+ *   represent some simple facts about a class that come from skimming
+ *   the class body and constructor.
+ * - one for UnannotatedGlobals, which represent the various global
+ *   names (including global variables, functions, classes, and imports)
+ *   exposed by a model.
+ * - a set of KeyTrackers, which are needed because there's no API to
+ *   list all shared memory keys so we have to store a one-to-many
+ *   record of all the functions / classes / globals per module that
+ *   we rely on to, e.g., run type check over all functions.
+ *
+ * The tables all have to be managed together because all of them
+ * are populated from a single computation of a preprocessed Ast,
+ * which is an expensive operation we want to do just once per module.
+ *)
 
 open Core
 open Pyre
