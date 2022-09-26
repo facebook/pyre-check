@@ -5,7 +5,39 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* AttributeResolution: layer of the environment stack
+ * - upstream: ClassMetadataEnvironment
+ * - downstream: AnnotatedGlobalEnvironment
+ *
+ * Unlike most other layers, attribute resolution combines business
+ * logic and caching, and it actually internally has 4 different layers
+ * with their own cache tables. In upstream -> downstream order they are
+ * - ParseAnnotationCache
+ *   - key: Combination of an Expression.t and a validation enum
+ *   - value: Type.t, a type parsed from the Expression (which should be a valid
+ *     annotation)
+ * - MetaclassCache
+ *   - key: type name as a string
+ *   - value: Type.t option, the metaclass of a class (if any)
+ * - AttributeCache
+ *   - key: AttributeTableKey, a combination of a Type.t and
+ *     some flags that determine which attributes exist in different contexts
+ *   - value: UninstantiatedAttributeTable.t, a table mapping names (strings)
+ *     to UninstantiatedAnnotation.t AnnotatedAnnotation.t, which has
+ *     - information about annotations, visibility, and other factors that
+ *       determine how attributes may be used in typing as well
+ *     - possible problems detected while resolving the attribute, which
+ *       can later be turned into type errors
+ * - GlobalAnnotationCache
+ *   - key: name of a global, as a Reference.t
+ *   - value: Global.t option; this has type information needed in type
+ *     checking as well as possible problems resolving
+ *
+ * The implementation of all of this is implemented using object-oriented
+ * programming becasue this allows us to define the logic in ordinary functions
+ * and add caches via inheritance, following the idea described as "Open
+ * recursion" in RealWorldOcaml: https://dev.realworldocaml.org/objects.html.
+ *)
 
 open Core
 open Pyre
