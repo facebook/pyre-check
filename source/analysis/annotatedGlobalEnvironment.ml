@@ -5,7 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* AnnotatedGlobalEnvironment: layer of the environment stack
+ * - upstream: AttributeResolution
+ * - downstream: TypeEnvironment
+ *   - also used by GlobalResolution, which is not an environment
+ *     layer per se but is an interface in between type checking and
+ *     all lower layers.
+ * - key: name of a global, as a Reference.t
+ * - value: Location.WithModule.t option
+ *
+ * This layer of the environment handles location information for globals,
+ * which is needed in type checking. The lower-level layers all ignore location
+ * in their invalidation logic, which is why we need this layer (so that we
+ * know to re-compute errors that include locations after line number changes).
+ *
+ * Note: The name is not related to location information - that's because
+ * it is named mostly for how it is used: it's the last environment
+ * layer *prior* to type checking, that contains information we can
+ * compute with just simple processing of sources rather than expensive
+ * constraint solving.
+ *)
 
 open Core
 open Ast
