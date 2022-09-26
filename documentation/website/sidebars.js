@@ -45,6 +45,19 @@ module.exports = {
         'features',
       ],
     },
+    {
+      type: 'category',
+      label: 'Integrations',
+      link: {
+        type: 'generated-index',
+      },
+      collapsed: false,
+      items: [
+        'editor-integration',
+        ...fbInternalOnly(['fb/continuous-integration-user']),
+        ...fbInternalOnly(['fb/tooling-integration']),
+      ],
+    },
     ...fbContent({
       external: ['contributing'],
       internal: ['fb/contributing'],
