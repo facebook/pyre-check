@@ -5,7 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* AliasEnvironment: component of the environment stack
+ * - upstream: EmptyStubEnvironment
+ * - downstream: ClassHierarchyEnvironment
+ * - key: type name (as an Identifier.t)
+ * - value: a Type.alias option: either a type alias or typevar alias
+ *
+ * This layer is responsible for resolving type and type variable aliases -
+ * that is, statements of the form `Name = SomeType` where `SomeType` is an
+ * expression that is a valid type annotation or type variable.
+ *
+ * Note that general "aliases" (as in re-bindings of python globals to new
+ * names) are handled by `resolve_exports` in UnannotatedGlobalEnvironments.
+ * AliasEnvironment is only used to resolve TypeAliases.
+ *)
 
 open Core
 open Ast
