@@ -992,10 +992,6 @@ let apply_all_rules
           | _ -> `Trd rule)
         rules
     in
-    (* let attribute_rules, other_rules = List.partition_tf ~f:(fun { ModelQuery.rule_kind; _ } ->
-       match rule_kind with | ModelQuery.AttributeModel -> true | _ -> false) rules in let
-       global_rules, callable_rules = List.partition_tf ~f:(fun { ModelQuery.rule_kind; _ } -> match
-       rule_kind with | ModelQuery.GlobalModel -> true | _ -> false) other_rules in *)
     let apply_rules models_and_names target ~rules ~apply_query_rule ~model_from_annotation =
       let taint_to_model_and_names =
         rules
