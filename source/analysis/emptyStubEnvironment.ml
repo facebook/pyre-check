@@ -5,7 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* EmptyStubEnvironment: layer of the environment stack
+ * - upstream: UnannotatedGlobalEnvironment
+ * - downstream: AliasEnvironment
+ * - key: the name of a global, as a Reference.t
+ * - value: boolean... is the name part of an empty stub package?
+ *
+ * Pyre treats empty stub files as indicating that all names from
+ * modules in a package should be treated as having `Any` type; this
+ * is a shortcut useful for gradually typing large libraries because
+ * it lets stub authors fill out the API module-by-module.
+ *
+ * This environment is responsible for determining when the name of
+ * some global is in a package with an empty stub, so that we can
+ * treat it "as if" it were explicitly annotated as having Any type.
+ *)
 
 open Core
 open Ast
