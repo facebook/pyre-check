@@ -5,7 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* TypeEnvironment: layer of the environment stack
+ * - upstream: AnnotatedGlobalEnvironment
+ *   - all upstream logic is actually accessed, in typeCheck.ml code,
+ *     through GlobalResolution which provides an interface to lower
+ *     layers.
+ * - downstream: ErrorsEnvironment
+ * - key: name of a define, as a Reference.t
+ *   - module and class toplevels are included here!
+ * - value: TypeCheck.CheckResult.t, which has two optional fields:
+ *   - a list of type errors per define
+ *   - a map of local annotation information about variable types at each
+ *     point in the control flow graph
+ *)
 
 open Pyre
 open Ast
