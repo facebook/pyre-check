@@ -5,7 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* AstEnvironment: layer of the environment stack
+ * - upstream: ModuleTracker
+ * - downstream: UnannotatedGlobalEnvironment
+ * - lookup key: qualifier (module name as a Reference.t)
+ * - value: Ast data; depending on the lookup function either raw
+ *   or preprocessed.
+ *
+ * It is responsible for two things:
+ * - Parsing raw sources, and maintining a cache. Raw sources here mean
+ *   Ast data as they come directly from the parsing logic.
+ * - Producing (but *not* caching!) processed sources. Processed sources
+ *   here mean that raw Ast data has been transformed in two ways:
+ *   - wildcard import expansion (which can introduce dependencies on other
+ *     modules)
+ *   - Preprocessing logic, which includes various transforms such as
+ *     name-mangling private attributes, expending named tuples, etc.
+ *)
 
 open Ast
 open Core
