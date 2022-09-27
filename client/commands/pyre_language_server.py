@@ -72,7 +72,7 @@ async def _wait_for_exit(
 
 
 @dataclasses.dataclass(frozen=True)
-class PyreServer:
+class PyreLanguageServer:
     # I/O Channels
     input_channel: connections.AsyncTextReader
     output_channel: connections.AsyncTextWriter

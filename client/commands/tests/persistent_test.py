@@ -58,7 +58,7 @@ from ..persistent import (
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
 )
-from ..pyre_server import PyreServer, read_lsp_request
+from ..pyre_language_server import PyreLanguageServer, read_lsp_request
 from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 from ..request_handler import (
     AbstractRequestHandler,
@@ -229,11 +229,11 @@ async def _create_server_for_request_test(
     opened_documents: Set[Path],
     handler: MockRequestHandler,
     server_options: PyreServerOptions = mock_initial_server_options,
-) -> Tuple[PyreServer, MemoryBytesWriter]:
+) -> Tuple[PyreLanguageServer, MemoryBytesWriter]:
     # set up the system under test
     fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
     output_writer: MemoryBytesWriter = MemoryBytesWriter()
-    server = PyreServer(
+    server = PyreLanguageServer(
         input_channel=create_memory_text_reader(""),
         output_channel=AsyncTextWriter(output_writer),
         server_state=ServerState(
@@ -733,7 +733,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
         fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=mock_server_state,
@@ -759,7 +759,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_open_triggers_pyre_restart__limit_reached(self) -> None:
         fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
@@ -789,7 +789,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     async def test_save_triggers_pyre_restart(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
@@ -814,7 +814,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     async def test_save_triggers_pyre_restart__limit_reached(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
@@ -841,7 +841,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     async def test_save_adds_path_to_queue(self) -> None:
         test_path = Path("/root/test.py")
         fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
@@ -1114,7 +1114,7 @@ class PyreServerTest(testslide.TestCase):
                 json_rpc.Request(method="exit", parameters=None),
             ]
         )
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=input_channel,
             output_channel=create_memory_text_writer(),
             server_state=server_state,
@@ -1136,7 +1136,7 @@ class PyreServerTest(testslide.TestCase):
                 json_rpc.Request(method="exit", parameters=None),
             ]
         )
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=input_channel,
             output_channel=create_memory_text_writer(),
             server_state=server_state,
@@ -1156,7 +1156,7 @@ class PyreServerTest(testslide.TestCase):
                 json_rpc.Request(method="shutdown", parameters=None),
             ]
         )
-        server = PyreServer(
+        server = PyreLanguageServer(
             # Feed only a shutdown request to input channel
             input_channel=input_channel,
             # Always rasing in the output channel
@@ -1175,7 +1175,7 @@ class PyreServerTest(testslide.TestCase):
     async def test_exit_gracefully_on_channel_closure(self) -> None:
         server_state = mock_server_state
         noop_task_manager = background.TaskManager(NoOpBackgroundTask())
-        server = PyreServer(
+        server = PyreLanguageServer(
             # Feed nothing to input channel
             input_channel=create_memory_text_reader(""),
             # Always rasing in the output channel
@@ -1193,7 +1193,7 @@ class PyreServerTest(testslide.TestCase):
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = mock_server_state
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=server_state,
@@ -1248,7 +1248,7 @@ class PyreServerTest(testslide.TestCase):
                 default_message="pyre is on fire",
             )
         )
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=mock_server_state,
@@ -1281,7 +1281,7 @@ class PyreServerTest(testslide.TestCase):
         output_writer = MemoryBytesWriter()
         fake_pyre_manager = background.TaskManager(WaitForeverBackgroundTask())
         handler = MockRequestHandler(mock_type_coverage=None)
-        server = PyreServer(
+        server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=mock_server_state,

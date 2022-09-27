@@ -30,7 +30,7 @@ from . import (
     language_server_features as features,
     language_server_protocol as lsp,
     log_lsp_event,
-    pyre_server,
+    pyre_language_server,
     pyre_server_options,
     request_handler,
     server_event,
@@ -166,7 +166,7 @@ async def try_initialize(
         initialized_notification = await lsp.read_json_rpc(input_channel)
         if initialized_notification.method == "shutdown":
             try:
-                await pyre_server._wait_for_exit(input_channel, output_channel)
+                await pyre_language_server._wait_for_exit(input_channel, output_channel)
             except lsp.ReadChannelClosedError:
                 # This error can happen when the connection gets closed unilaterally
                 # from the language client, which causes issue when we try to access
@@ -911,7 +911,7 @@ async def run_persistent(
         client_capabilities=client_capabilities,
         server_options=initial_server_options,
     )
-    server = pyre_server.PyreServer(
+    server = pyre_language_server.PyreLanguageServer(
         input_channel=stdin,
         output_channel=stdout,
         server_state=server_state,
