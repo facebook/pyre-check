@@ -1953,6 +1953,25 @@ let test_attach_features context =
 let test_partial_sinks context =
   let assert_model = assert_model ~context in
   assert_model
+    ~rules:
+      [
+        {
+          Rule.sources = [Sources.NamedSource "TestTest"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "a" }];
+          transforms = [];
+          code = 4321;
+          message_format = "";
+          name = "test multiple sources rule";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "TestTest"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "b" }];
+          transforms = [];
+          code = 4321;
+          message_format = "";
+          name = "test multiple sources rule";
+        };
+      ]
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
     ~expect:
       [

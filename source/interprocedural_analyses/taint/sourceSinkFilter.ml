@@ -17,6 +17,8 @@ module MatchingSanitizeTransforms = struct
 
   let empty = { transforms = SanitizeTransformSet.empty; sanitizable = true }
 
+  let unsanitizable = { transforms = SanitizeTransformSet.empty; sanitizable = false }
+
   let add_source { transforms; sanitizable } = function
     | Sources.NamedSource name
     | Sources.ParametricSource { source_name = name; _ } ->
@@ -183,6 +185,21 @@ let possible_tito_transforms_from_rules ~rules =
   |> TaintTransforms.Set.of_list
 
 
+let add_matching_partial_sinks ~rules matching_sources =
+  let add_partial_sink matching_sources = function
+    | Sinks.TriggeredPartialSink partial_sink ->
+        Sinks.Map.add
+          (Sinks.PartialSink partial_sink)
+          MatchingSanitizeTransforms.unsanitizable
+          matching_sources
+    | _ -> matching_sources
+  in
+  let add_partial_sinks matching_sources { Rule.sinks; _ } =
+    List.fold sinks ~f:add_partial_sink ~init:matching_sources
+  in
+  List.fold rules ~f:add_partial_sinks ~init:matching_sources
+
+
 let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms =
   let rules =
     filter_rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms rules
@@ -191,6 +208,7 @@ let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filter
   let possible_tito_transforms = possible_tito_transforms_from_rules ~rules in
   let matching_source_sanitize_transforms =
     Sinks.Map.map MatchingSanitizeTransforms.from_sources matching_sources
+    |> add_matching_partial_sinks ~rules
   in
   let matching_sink_sanitize_transforms =
     Sources.Map.map MatchingSanitizeTransforms.from_sinks matching_sinks
@@ -250,6 +268,7 @@ let should_keep_sink ({ possible_tito_transforms; _ } as filter) sink =
       true
   | Sinks.NamedSink _
   | Sinks.ParametricSink _
+  | Sinks.PartialSink _
   | Sinks.TriggeredPartialSink _ ->
       matching_source_sanitize_transforms filter ~named_transforms:[] ~base:sink |> Option.is_some
   | Sinks.LocalReturn
@@ -261,9 +280,6 @@ let should_keep_sink ({ possible_tito_transforms; _ } as filter) sink =
         TaintTransforms.merge ~local ~global |> TaintTransforms.get_named_transforms
       in
       TaintTransforms.Set.mem transforms possible_tito_transforms
-  | Sinks.PartialSink _
-  | Sinks.Transform { base = PartialSink _; _ } ->
-      true (* TODO(T130469364): Properly handle partial sinks. *)
   | Sinks.Transform { local; global; base } -> (
       let transforms = TaintTransforms.merge ~local ~global in
       let named_transforms = TaintTransforms.get_named_transforms transforms in
