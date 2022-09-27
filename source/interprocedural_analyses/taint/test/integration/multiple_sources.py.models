@@ -389,66 +389,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources.no_issue_with_transform",
-    "callable_line": 113,
-    "code": 4322,
-    "line": 116,
-    "start": 34,
-    "end": 54,
-    "filename": "multiple_sources.py",
-    "message": "TestA or TestB and permissive context combine",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "multiple_sources.permissive_context" }
-                ],
-                "kind": "PermissiveContext"
-              }
-            ],
-            "root": {
-              "filename": "multiple_sources.py",
-              "line": 116,
-              "start": 34,
-              "end": 54
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
-            ],
-            "root": {
-              "filename": "multiple_sources.py",
-              "line": 116,
-              "start": 34,
-              "end": 54
-            }
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "multiple_sources.combines_tests_and_context",
-      "index": 0,
-      "parameter": "formal(vc)"
-    },
-    "master_handle": "multiple_sources.no_issue_with_transform:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):f155c56af8742360732b5e8b9677ad3c"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.__init__",

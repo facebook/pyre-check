@@ -254,7 +254,7 @@ let compute_triggered_sinks
   if not (Map.Poly.is_empty partial_sinks_to_taint) then
     let sources =
       ForwardState.Tree.fold ForwardTaint.kind ~f:List.cons ~init:[] source_tree
-      |> List.map ~f:Sources.discard_transforms
+      |> List.map ~f:Sources.discard_sanitize_transforms
     in
     let add_triggered_sinks (triggered, candidates) sink =
       let add_triggered_sinks_for_source source =
