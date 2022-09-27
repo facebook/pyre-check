@@ -348,7 +348,7 @@ class RequestHandler(AbstractRequestHandler):
         overlay_update_dict = {
             # TODO: T126924773 Include a language server identifier (e.g. PID of
             # the current process) in this overlay id.
-            "overlay_id": path,
+            "overlay_id": source_path,
             "source_path": source_path,
             "code_update": ["NewCode", code],
         }
