@@ -151,12 +151,10 @@ let discard_transforms = function
 
 let discard_sanitize_transforms = function
   | Transform { base; local; global } ->
-      let local = TaintTransforms.discard_sanitize_transforms local in
-      let global = TaintTransforms.discard_sanitize_transforms global in
-      if TaintTransforms.is_empty local && TaintTransforms.is_empty global then
-        base
-      else
-        Transform { base; local; global }
+      make_transform
+        ~local:(TaintTransforms.discard_sanitize_transforms local)
+        ~global:(TaintTransforms.discard_sanitize_transforms global)
+        ~base
   | sink -> sink
 
 
