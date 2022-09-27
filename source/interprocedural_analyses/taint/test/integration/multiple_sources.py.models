@@ -62,6 +62,66 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "multiple_sources.issue_with_sanitizer",
+    "callable_line": 124,
+    "code": 4322,
+    "line": 127,
+    "start": 34,
+    "end": 54,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.permissive_context" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 127,
+              "start": 34,
+              "end": 54
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+            ],
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 127,
+              "start": 34,
+              "end": 54
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.combines_tests_and_context",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_sanitizer:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):e409892815f29eff86f4a3539be16ff9"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "multiple_sources.issue_with_test_a_and_b",
     "callable_line": 84,
     "code": 4322,
@@ -329,6 +389,66 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.no_issue_with_transform",
+    "callable_line": 113,
+    "code": 4322,
+    "line": 116,
+    "start": 34,
+    "end": 54,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.permissive_context" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 116,
+              "start": 34,
+              "end": 54
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+            ],
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 116,
+              "start": 34,
+              "end": 54
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.combines_tests_and_context",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.no_issue_with_transform:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):f155c56af8742360732b5e8b9677ad3c"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.__init__",
@@ -406,6 +526,18 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.a_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+      }
+    ]
   }
 }
 {
@@ -531,6 +663,94 @@
         "port": "result",
         "taint": [
           { "kinds": [ { "kind": "PermissiveContext" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.sanitize_sink_a_tito",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "NotSink[TestA]@LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "sanitizers": [ { "port": "formal(arg)", "sinks": [ "TestA" ] } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.sanitize_source_a_tito",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "NotSource[TestA]@LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "sanitizers": [ { "port": "formal(arg)", "sources": [ "TestA" ] } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.sanitize_source_b_tito",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "NotSource[TestB]@LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "sanitizers": [ { "port": "formal(arg)", "sources": [ "TestB" ] } ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.transform_t",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "TransformT@LocalReturn" }
+            ],
+            "decl": null
+          }
         ]
       }
     ]

@@ -62,7 +62,7 @@ def wrapper(id, vc):
 def no_issue_with_wrapper_call():
     id = user_controlled_input()
     vc = permissive_context()
-    combine_tainted_user_and_dangerous_vc_as_params(id, vc)
+    wrapper(id, vc)
 
 
 def test_other_input():
@@ -84,3 +84,49 @@ def b_source():
 def issue_with_test_a_and_b():
     combines_tests_and_context(a_source(), permissive_context())
     combines_tests_and_context(b_source(), permissive_context())
+
+
+def a_sink(arg):
+    return
+
+
+def b_sink(arg):
+    return
+
+
+def transform_t(arg):
+    return
+
+
+def sanitize_source_a_tito(arg):
+    return arg
+
+
+def sanitize_source_b_tito(arg):
+    return arg
+
+
+def sanitize_sink_a_tito(arg):
+    return arg
+
+
+def no_issue_with_transform():
+    x = a_source()
+    y = transform_t(x)
+    combines_tests_and_context(y, permissive_context())
+
+
+def no_sink_with_transform(x):
+    y = transform_t(x)
+    combines_tests_and_context(a_source(), y)
+
+
+def issue_with_sanitizer():
+    x = a_source()
+    y = sanitize_sink_a_tito(x)
+    combines_tests_and_context(y, permissive_context())
+
+
+def no_sink_with_sanitizer(x):
+    y = sanitize_source_b_tito(sanitize_source_a_tito(x))
+    combines_tests_and_context(y, permissive_context())
