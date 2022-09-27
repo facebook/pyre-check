@@ -462,9 +462,7 @@ module Source = Make (struct
       ~named_transforms
       ~base
     =
-    let base = Sources.discard_subkind base in
-    Sources.make_transform ~local:[] ~global:named_transforms ~base
-    |> SourceSinkFilter.matching_sink_sanitize_transforms source_sink_filter
+    SourceSinkFilter.matching_sink_sanitize_transforms source_sink_filter ~named_transforms ~base
 end)
 
 module Sink = Make (struct
@@ -521,7 +519,5 @@ module Sink = Make (struct
       ~named_transforms
       ~base
     =
-    let base = Sinks.discard_subkind base in
-    Sinks.make_transform ~local:[] ~global:named_transforms ~base
-    |> SourceSinkFilter.matching_source_sanitize_transforms source_sink_filter
+    SourceSinkFilter.matching_source_sanitize_transforms source_sink_filter ~named_transforms ~base
 end)
