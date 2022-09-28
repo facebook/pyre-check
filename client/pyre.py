@@ -885,18 +885,6 @@ def kill(context: click.Context, with_fire: bool) -> int:
     hidden=True,
 )
 @click.option(
-    "--type-errors",
-    type=click.Choice(
-        [
-            kind.value
-            for kind in commands.language_server_features.TypeErrorsAvailability
-        ]
-    ),
-    default=commands.language_server_features.LanguageServerFeatures.type_errors.value,
-    help="Availability of the type errors langauge server feature",
-    hidden=True,
-)
-@click.option(
     "--type-coverage",
     type=click.Choice(
         [
@@ -906,6 +894,18 @@ def kill(context: click.Context, with_fire: bool) -> int:
     ),
     default=commands.language_server_features.LanguageServerFeatures.type_coverage.value,
     help="Availability of the type coverage langauge server feature",
+    hidden=True,
+)
+@click.option(
+    "--type-errors",
+    type=click.Choice(
+        [
+            kind.value
+            for kind in commands.language_server_features.TypeErrorsAvailability
+        ]
+    ),
+    default=commands.language_server_features.LanguageServerFeatures.type_errors.value,
+    help="Availability of the type errors langauge server feature",
     hidden=True,
 )
 @click.option(
@@ -931,8 +931,8 @@ def persistent(
     document_symbols: str,
     references: str,
     status_updates: str,
-    type_errors: str,
     type_coverage: str,
+    type_errors: str,
     unsaved_changes: str,
 ) -> int:
     """
