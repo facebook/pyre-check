@@ -4,7 +4,21 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module defines logic for loading `.pyre_configuration` json
+files into Python.
+
+The code is broken into two parts:
+- PartialConfiguration, which loads json directly
+- Configuration, which is built from PartialConfiguration
+
+This is because we allow developers (including ourselves) to
+extend Pyre with a notion of sub-projects, where configuration
+is split between a repository-wide .pyre_configuration and a
+project-specific .pyre_configuration.local.
+
+Out-of-the-box, open-source pyre only uses a single
+.pyre_configuration because this is simpler and works for most
+cases.
 """
 
 
