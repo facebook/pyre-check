@@ -55,14 +55,7 @@ class PyreServerOptions:
         start_command_argument: command_arguments.StartArguments,
         configuration: frontend_configuration.Base,
         enabled_telemetry_event: bool,
-        hover: Optional[features.HoverAvailability],
-        definition: Optional[features.DefinitionAvailability],
-        document_symbols: Optional[features.DocumentSymbolsAvailability],
-        references: Optional[features.ReferencesAvailability],
-        status_updates: features.StatusUpdatesAvailability,
-        type_errors: features.TypeErrorsAvailability,
-        type_coverage: Optional[features.TypeCoverageAvailability],
-        unsaved_changes: Optional[features.UnsavedChangesAvailability],
+        language_server_features: features.LanguageServerFeatures,
     ) -> PyreServerOptions:
         binary_location = configuration.get_binary_location(download_if_needed=True)
         if binary_location is None:
@@ -84,17 +77,7 @@ class PyreServerOptions:
             binary=str(binary_location),
             project_identifier=configuration.get_project_identifier(),
             start_arguments=start_arguments,
-            language_server_features=features.LanguageServerFeatures.create(
-                configuration=configuration,
-                hover=hover,
-                definition=definition,
-                document_symbols=document_symbols,
-                references=references,
-                status_updates=status_updates,
-                type_errors=type_errors,
-                type_coverage=type_coverage,
-                unsaved_changes=unsaved_changes,
-            ),
+            language_server_features=language_server_features,
             strict_default=configuration.is_strict(),
             excludes=configuration.get_excludes(),
             flavor=start_command_argument.flavor,
@@ -106,28 +89,14 @@ class PyreServerOptions:
         start_command_argument: command_arguments.StartArguments,
         read_frontend_configuration: FrontendConfigurationReader,
         enabled_telemetry_event: bool,
-        hover: Optional[features.HoverAvailability],
-        definition: Optional[features.DefinitionAvailability],
-        document_symbols: Optional[features.DocumentSymbolsAvailability],
-        references: Optional[features.ReferencesAvailability],
-        status_updates: features.StatusUpdatesAvailability,
-        type_errors: features.TypeErrorsAvailability,
-        type_coverage: Optional[features.TypeCoverageAvailability],
-        unsaved_changes: Optional[features.UnsavedChangesAvailability],
+        language_server_features: features.LanguageServerFeatures,
     ) -> PyreServerOptionsReader:
         def read() -> PyreServerOptions:
             return PyreServerOptions.create(
                 start_command_argument=start_command_argument,
                 configuration=read_frontend_configuration(),
                 enabled_telemetry_event=enabled_telemetry_event,
-                hover=hover,
-                definition=definition,
-                document_symbols=document_symbols,
-                references=references,
-                status_updates=status_updates,
-                type_errors=type_errors,
-                type_coverage=type_coverage,
-                unsaved_changes=unsaved_changes,
+                language_server_features=language_server_features,
             )
 
         return read

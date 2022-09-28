@@ -13,11 +13,7 @@ from __future__ import annotations
 import dataclasses
 import enum
 
-from typing import Dict, Optional
-
-from .. import configuration as configuration_module
-
-from . import frontend_configuration
+from typing import Dict
 
 
 class _Availability(enum.Enum):
@@ -83,30 +79,6 @@ class LanguageServerFeatures:
     type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
     type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
-
-    @staticmethod
-    def create(
-        configuration: frontend_configuration.Base,
-        hover: Optional[HoverAvailability],
-        definition: Optional[DefinitionAvailability],
-        document_symbols: Optional[DocumentSymbolsAvailability],
-        references: Optional[ReferencesAvailability],
-        type_coverage: Optional[TypeCoverageAvailability],
-        unsaved_changes: Optional[UnsavedChangesAvailability],
-        type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED,
-        status_updates: StatusUpdatesAvailability = StatusUpdatesAvailability.ENABLED,
-    ) -> LanguageServerFeatures:
-        return LanguageServerFeatures(
-            hover=hover or LanguageServerFeatures.hover,
-            definition=definition or LanguageServerFeatures.definition,
-            document_symbols=document_symbols
-            or LanguageServerFeatures.document_symbols,
-            references=references or LanguageServerFeatures.references,
-            status_updates=status_updates,
-            type_coverage=type_coverage or LanguageServerFeatures.type_coverage,
-            type_errors=type_errors,
-            unsaved_changes=unsaved_changes or LanguageServerFeatures.unsaved_changes,
-        )
 
     def capabilities(self) -> Dict[str, bool]:
         return {

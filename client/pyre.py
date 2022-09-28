@@ -832,6 +832,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
     type=click.Choice(
         [kind.value for kind in commands.language_server_features.HoverAvailability]
     ),
+    default=commands.language_server_features.LanguageServerFeatures.hover.value,
     help="Availability of the hover langauge server feature",
     hidden=True,
 )
@@ -843,6 +844,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
             for kind in commands.language_server_features.DefinitionAvailability
         ]
     ),
+    default=commands.language_server_features.LanguageServerFeatures.definition.value,
     help="Availability of the definition langauge server feature",
     hidden=True,
 )
@@ -854,6 +856,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
             for kind in commands.language_server_features.DocumentSymbolsAvailability
         ]
     ),
+    default=commands.language_server_features.LanguageServerFeatures.document_symbols.value,
     help="Availability of the document symbols langauge server feature",
     hidden=True,
 )
@@ -865,6 +868,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
             for kind in commands.language_server_features.DocumentSymbolsAvailability
         ]
     ),
+    default=commands.language_server_features.LanguageServerFeatures.references.value,
     help="Availability of the references langauge server feature",
     hidden=True,
 )
@@ -876,6 +880,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
             for kind in commands.language_server_features.StatusUpdatesAvailability
         ]
     ),
+    default=commands.language_server_features.LanguageServerFeatures.status_updates.value,
     help="Availability of the status updates language server feature",
     hidden=True,
 )
@@ -887,6 +892,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
             for kind in commands.language_server_features.TypeErrorsAvailability
         ]
     ),
+    default=commands.language_server_features.LanguageServerFeatures.type_errors.value,
     help="Availability of the type errors langauge server feature",
     hidden=True,
 )
@@ -898,6 +904,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
             for kind in commands.language_server_features.TypeCoverageAvailability
         ]
     ),
+    default=commands.language_server_features.LanguageServerFeatures.type_coverage.value,
     help="Availability of the type coverage langauge server feature",
     hidden=True,
 )
@@ -909,6 +916,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
             for kind in commands.language_server_features.DocumentSymbolsAvailability
         ]
     ),
+    default=commands.language_server_features.LanguageServerFeatures.unsaved_changes.value,
     help="Availability support for Pyre analyzing unsaved editor buffers",
     hidden=True,
 )
@@ -918,14 +926,14 @@ def persistent(
     flavor: Optional[str],
     skip_initial_type_check: bool,
     use_lazy_module_tracking: bool,
-    hover: Optional[str],
-    definition: Optional[str],
-    document_symbols: Optional[str],
-    references: Optional[str],
-    status_updates: Optional[str],
-    type_errors: Optional[str],
-    type_coverage: Optional[str],
-    unsaved_changes: Optional[str],
+    hover: str,
+    definition: str,
+    document_symbols: str,
+    references: str,
+    status_updates: str,
+    type_errors: str,
+    type_coverage: str,
+    unsaved_changes: str,
 ) -> int:
     """
     Entry point for IDE integration to Pyre. Communicates with a Pyre server using
@@ -956,37 +964,29 @@ def persistent(
                 )
             ),
             enabled_telemetry_event=False,
-            hover=None
-            if hover is None
-            else commands.language_server_features.HoverAvailability(hover),
-            definition=None
-            if definition is None
-            else commands.language_server_features.DefinitionAvailability(definition),
-            document_symbols=None
-            if document_symbols is None
-            else commands.language_server_features.DocumentSymbolsAvailability(
-                document_symbols
-            ),
-            references=None
-            if references is None
-            else commands.language_server_features.ReferencesAvailability(references),
-            status_updates=commands.language_server_features.StatusUpdatesAvailability.ENABLED
-            if status_updates is None
-            else commands.language_server_features.StatusUpdatesAvailability(
-                status_updates
-            ),
-            type_errors=commands.language_server_features.TypeErrorsAvailability.ENABLED
-            if type_errors is None
-            else commands.language_server_features.TypeErrorsAvailability(type_errors),
-            type_coverage=None
-            if type_coverage is None
-            else commands.language_server_features.TypeCoverageAvailability(
-                type_coverage
-            ),
-            unsaved_changes=None
-            if unsaved_changes is None
-            else commands.language_server_features.UnsavedChangesAvailability(
-                unsaved_changes
+            language_server_features=commands.language_server_features.LanguageServerFeatures(
+                hover=commands.language_server_features.HoverAvailability(hover),
+                definition=commands.language_server_features.DefinitionAvailability(
+                    definition
+                ),
+                document_symbols=commands.language_server_features.DocumentSymbolsAvailability(
+                    document_symbols,
+                ),
+                references=commands.language_server_features.ReferencesAvailability(
+                    references
+                ),
+                status_updates=commands.language_server_features.StatusUpdatesAvailability(
+                    status_updates
+                ),
+                type_coverage=commands.language_server_features.TypeCoverageAvailability(
+                    type_coverage
+                ),
+                type_errors=commands.language_server_features.TypeErrorsAvailability(
+                    type_errors
+                ),
+                unsaved_changes=commands.language_server_features.UnsavedChangesAvailability(
+                    unsaved_changes
+                ),
             ),
         ),
         remote_logging=commands.backend_arguments.RemoteLogging.create(
