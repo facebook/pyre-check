@@ -4,7 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Entry point for the `pyre` command in open-source Pyre.
+
+The interface is defined using click decorators. See
+https://click.palletsprojects.com/ for documentation, in
+particular the "Commands and Groups" subsection to understand
+how click works with subcommands.
 """
 
 
