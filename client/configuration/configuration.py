@@ -172,6 +172,7 @@ class PartialConfiguration:
     @staticmethod
     def _get_extra_keys() -> Set[str]:
         return {
+            "allow_shadow_language_server",
             "create_open_source_configuration",
             "saved_state",
             "stable_client",
