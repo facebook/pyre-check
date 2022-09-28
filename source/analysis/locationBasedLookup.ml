@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* LocationBasedLookup contains methods for finding the types of expressions and statements within a
+   given module. This lookup is currently used for both the hover query and expression level
+   coverage query. *)
 
 open Core
 open Pyre

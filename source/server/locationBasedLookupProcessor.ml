@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* locationBasedLookupProcessor is a wrapper around LocationBasedLookup.create_of_module that finds
+   the path and creates a lookup. It is used in both hover and expression-level coverage. *)
 
 open Core
 open Ast
