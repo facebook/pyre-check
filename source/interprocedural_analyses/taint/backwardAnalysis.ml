@@ -2289,8 +2289,17 @@ let run
     State.log "Backward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable
   in
   let entry_state =
-    TaintProfiler.track_duration ~profiler ~name:"Backward analysis - fixpoint" ~f:(fun () ->
-        Metrics.with_alarm callable (fun () -> Fixpoint.backward ~cfg ~initial |> Fixpoint.entry) ())
+    match define.value.signature.parameters with
+    | [] ->
+        (* Without parameters, the inferred model will always be empty. *)
+        let () = State.log "Skipping backward analysis since the callable has no parameters" in
+        None
+    | _ ->
+        TaintProfiler.track_duration ~profiler ~name:"Backward analysis - fixpoint" ~f:(fun () ->
+            Metrics.with_alarm
+              callable
+              (fun () -> Fixpoint.backward ~cfg ~initial |> Fixpoint.entry)
+              ())
   in
   let () =
     match entry_state with
