@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* TaintAnalysis: this is the entry point of the taint analysis. *)
 
 open Core
 open Pyre

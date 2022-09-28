@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* CallModel: implements utility functions used to perform the forward or backward
+ * taint analysis of a function or method call, which requires fetching the
+ * model of the callee.
+ *)
 
 open Core
 open Pyre
@@ -86,6 +89,8 @@ let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
   |> SanitizeTransformSet.join (to_tito_sanitize sanitizers.parameters)
 
 
+(* A mapping from a taint-in-taint-out kind (e.g, `Sinks.LocalReturn`, `Sinks.ParameterUpdate` or
+   `Sinks.AddFeatureToArgument`) to a tito taint (including features, return paths, depth). *)
 module TaintInTaintOutMap = struct
   type t = (Sinks.t, BackwardState.Tree.t) Map.Poly.t
 

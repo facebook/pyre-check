@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* SanitizeTransform: defines the representation of a sanitize transform.
+ * A transform is an operator that can be applied to a taint to change its
+ * semantic. A sanitize transform describes the information that the given
+ * taint was sanitized for a specific source or sink. That taint will still
+ * be propagated but cannot match with that source or sink.
+ *)
 
 open Core
 

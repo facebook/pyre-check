@@ -5,7 +5,34 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ForwardAnalysis: implements a forward taint analysis on a function body.
+ * This is used to infer the source part of a model, by propagating sources down
+ * through the statements of the body. It also checks for sources matching sinks,
+ * triggering issues.
+ *
+ * For instance, on the given function, we would infer the following taint
+ * states, starting from the arguments:
+ * ```
+ * def foo(prompt: bool, request: requests.Request):
+ *   # {}
+ *   if prompt:
+ *     # {}
+ *     a = input()
+ *     # {a -> UserControlled}
+ *   else:
+ *     a = request.header('username')
+ *     # {a -> Header}
+ *
+ *   # {a -> {UserControlled, Header}}
+ *   sink(a) # potential issue
+ *   # {a -> {UserControlled, Header}}
+ *   return a
+ *   # {a -> {UserControlled, Header}}
+ * ```
+ *
+ * We would find the potential issue and also infer that `foo` can return a
+ * `UserControlled` source or `Header` source.
+ *)
 
 open Core
 open Analysis

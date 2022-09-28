@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* TaintTransforms: defines a list of taint transforms, as well as basic
+ * operations on them. See transform operations in `TaintTransformOperation`
+ * for the actual logic that applies transforms on taint. *)
 
 open Core
 

@@ -5,7 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Fixpoint: implements the global taint analysis fixpoint.
+ *
+ * Given a set of initial user models, this performs iterations to propagate
+ * sources and sinks, until reaching a fixpoint (i.e, nothing else can be
+ * propagated).
+ *
+ * Each iteration performs a forward and backward analysis on the set of
+ * callables that might have new sources or sinks.
+ *)
 
 open Core
 open Pyre

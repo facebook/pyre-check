@@ -5,7 +5,35 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Domains: implements the taint representation as an abstract domain.
+ * This is the data structure used to represent taint during the forward and
+ * backward analysis, as well as within models.
+ *
+ * Most of the data structure uses generic abstract domains such as the map
+ * domain, the domain product and the set domain.
+ *
+ * Here is a high level representation of the taint representation for `ForwardState`:
+ * ForwardState: Map[
+ *   key: AccessPath.Root = Variable|NamedParameter|...,
+ *   value: Tree[
+ *     edges: Abstract.TreeDomain.Label.path = Index of string|Field of string|...,
+ *     nodes: ForwardTaint: Map[
+ *       key: CallInfo = Declaration|Origin of location|CallSite of {port; path; callees},
+ *       value: LocalTaint: Tuple[
+ *         BreadcrumbSet,
+ *         FirstIndexSet,
+ *         FirstFieldSet,
+ *         TitoPositionSet,
+ *         ...,
+ *         KindTaint: Map[
+ *           key: Sources.t,
+ *           value: Frame: Tuple[BreadcrumbSet, ViaFeatureSet, TraceLength, LeafNameSet, ...]
+ *         ]
+ *       ]
+ *     ]
+ *   ]
+ * ]
+ *)
 
 open Core
 open Ast

@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Sinks: defines a sink kind in our taint representation.
+ *
+ * For instance, `TaintSink[SQL]` is represented as `Sinks.NamedSink "SQL"`.
+ *)
 
 open Core
 

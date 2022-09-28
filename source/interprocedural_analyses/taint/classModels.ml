@@ -5,7 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ClassModels: infers a set of models for methods of a given class.
+ *
+ * For instance, this defines the behavior of `NamedTuple` and dataclasses,
+ * rather than trying to infer the behavior from the actual implementation,
+ * which is highly dynamic and not well suited for static analysis (e.g,
+ * `NamedTuple` uses `exec`:
+ * https://hg.python.org/cpython/file/b14308524cff/Lib/collections/__init__.py#l368).
+ *)
 
 open Core
 open Pyre

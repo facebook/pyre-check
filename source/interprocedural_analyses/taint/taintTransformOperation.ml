@@ -6,7 +6,7 @@
  *)
 
 (* This module implements common operations on taint transforms.
- * Most importantly, it implements  adding transforms on a source or sink.
+ * Most importantly, it implements adding transforms on a source or sink.
  *
  * This is intentionally in a separate file to have access to both `Sources` and
  * `Sinks`, even though they use `TaintTransforms.t`. This avoids a cyclic

@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* TaintReporting: implements the logic that writes the result of the taint
+ * analysis to a directory. *)
 
 open Core
 open Pyre

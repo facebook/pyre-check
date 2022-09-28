@@ -5,7 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* TaintConfiguration: stores all configuration options related to the taint
+ * analysis. This is parsed from taint configuration files (`.config`) in JSON.
+ * Command line options can also alter the configuration. Among others, it
+ * stores the set of sources, sinks and rules.
+ *
+ * This can be used as a traditional ocaml value using the `Heap` module, and
+ * stored in shared memory using the `SharedMemory` module.
+ *)
 
 open Core
 open Pyre
@@ -249,6 +256,7 @@ let filter_implicit_sinks ~source_sink_filter { conditional_test; literal_string
   }
 
 
+(** Taint configuration, stored in the ocaml heap. *)
 module Heap = struct
   type t = {
     sources: AnnotationParser.source_or_sink list;
@@ -454,6 +462,7 @@ module Heap = struct
     }
 end
 
+(** Taint configuration, stored in shared memory. *)
 module SharedMemory = struct
   module T =
     Memory.WithCache.Make
@@ -673,6 +682,7 @@ module PartialSinkConverter = struct
     | _ -> None
 end
 
+(** Parse json files to create a taint configuration. *)
 let from_json_list source_json_list =
   let open Result in
   let json_exception_to_error ~path ?section f =
@@ -1150,6 +1160,7 @@ let from_json_list source_json_list =
   }
 
 
+(** Perform additional checks on the taint configuration. *)
 let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration) =
   let ensure_list_unique ~get_name ~get_error elements =
     let seen = String.Hash_set.create () in
@@ -1260,6 +1271,7 @@ let apply_missing_flows configuration = function
   | Configuration.MissingFlowKind.Type -> missing_type_flows_configuration configuration
 
 
+(** Create a taint configuration by finding `.config` files in the given directories. *)
 let from_taint_model_paths taint_model_paths =
   let open Result in
   let file_paths =
@@ -1286,6 +1298,7 @@ let from_taint_model_paths taint_model_paths =
   | Ok configurations -> from_json_list configurations >>= validate
 
 
+(** Update a taint configuration with the given command line options. *)
 let with_command_line_options
     configuration
     ~rule_filter

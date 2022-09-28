@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* TaintTransform: defines taint transforms.
+ *
+ * A taint transform is an operator that can be applied on a taint to change its
+ * semantic.
+ *)
 
 open Core
 

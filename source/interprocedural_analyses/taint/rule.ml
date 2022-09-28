@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* Rule: defines rules, which describe flows that the analysis should consider
+ * as valid issues. Each rule contains a set of sources matching a set of sinks.
+ *)
+
 open Core
 
 type t = {

@@ -5,7 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* AccessPath:
+ *
+ * Defines an access path, which is a subset of python expressions.
+ *
+ * Access paths are used to represent the model of a callable, which describes
+ * the set of sources produced by the callable, and the set of sinks reachable
+ * from the parameters of the callable.
+ *
+ * This also implements the logic to match actual parameters at call sites to
+ * the formal parameters of a callable.
+ *)
 
 open Core
 open Ast
@@ -110,6 +120,7 @@ type argument_position =
   | `Approximate of int
   ]
 
+(* Will preserve the order in which the arguments were matched to formals. *)
 let match_actuals_to_formals arguments roots =
   let open Root in
   let increment = function

@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Features: implements features, which are bits of informations carried on a
+ * taint. Those are essential to help users triage issues.
+ * These features are used to build the taint representation in `Domains`.
+ *)
 
 open Core
 open Ast

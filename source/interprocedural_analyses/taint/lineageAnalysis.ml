@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* LineageAnalysis: This implements small variants of the forward and backward
+ * analysis specifically for the lineage analysis. This is mostly unused right
+ * now.
+ *)
 
 open Core
 open Analysis

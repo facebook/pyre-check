@@ -5,18 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* MissingFlow: implements an analysis to find missing flows due to unresolved
+ * functions called (usually because of missing type information). This works by
+ * adding a hardcoded sink on all calls that cannot be resolved.
+ *)
 
 open Core
 open Pyre
 open Domains
 open Interprocedural
 
+(* Returns true if the given target is a symbolic target that represents an unknown callee. *)
 let is_unknown_callee = function
   | Target.Object name when String_utils.string_starts_with name "unknown-callee:" -> true
   | _ -> false
 
 
+(* Model for an unknown callee, with sinks on all parameters, in order to find missing flows. *)
 let unknown_callee_model _ =
   (* Add a model with sinks on *args and **kwargs. *)
   let sink_leaf =
@@ -58,6 +63,7 @@ let unknown_callee_model _ =
   }
 
 
+(* Return the initial set of models, updated for the missing-flows=obscure analysis. *)
 let add_obscure_models
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~environment
@@ -92,6 +98,7 @@ let add_obscure_models
   | None -> initial_models
 
 
+(* Return the initial set of models, updated for the missing-flows=type analysis. *)
 let add_unknown_callee_models
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~call_graph

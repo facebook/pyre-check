@@ -5,7 +5,28 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* BackwardAnalysis: implements a backward taint analysis on a function body.
+ * This is used to infer the sink and taint-in-taint-out part of a model, by
+ * propagating sinks up through the statements of the body.
+ *
+ * For instance, on the given function, we would infer the following taint
+ * states, starting from the return statement:
+ * ```
+ * def foo(a, b):
+ *   # {x -> SQL, a -> SQL, y -> LocalReturn, b -> LocalReturn }
+ *   x = str(a)
+ *   # {x -> SQL, y -> LocalReturn, b -> LocalReturn}
+ *   sql(x)
+ *   # {y -> LocalReturn, b -> LocalReturn}
+ *   y = int(b)
+ *   # {y -> LocalReturn}
+ *   return y
+ * ```
+ *
+ * We would infer that `a` leads to the sink `SQL`, and that calling `foo` with
+ * a tainted `b` leads to the return value being tainted (which we call
+ * taint-in-taint-out, tito for short).
+ *)
 
 open Core
 open Analysis

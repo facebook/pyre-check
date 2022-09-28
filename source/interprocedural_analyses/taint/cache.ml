@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Cache: implements caching capabilities for the taint analysis. This is what
+ * powers the `--use-cache` command line option. This is basically implemented
+ * by writing the shared memory into a file and restoring it later.
+ *)
 
 open Core
 open Pyre

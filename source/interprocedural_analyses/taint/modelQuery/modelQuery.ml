@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ModelQuery: implements the logic that applies model queries to generate models.
+ *
+ * A model query defines a taint to attach to a set of targets. Targets are defined
+ * by a set of constraints (e.g, "find all functions starting with foo").
+ *)
 
 open Core
 open Pyre

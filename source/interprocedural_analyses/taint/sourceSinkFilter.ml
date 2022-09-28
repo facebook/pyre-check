@@ -7,6 +7,11 @@
 
 open Core
 
+(* SourceSinkFilter: implements logic that dictates whether a source or sink
+ * should be propagated or removed. This is used to implement the
+ * `--source`/`--sink`/`--rule` command line options.
+ *)
+
 module MatchingSanitizeTransforms = struct
   type t = {
     transforms: SanitizeTransformSet.t;

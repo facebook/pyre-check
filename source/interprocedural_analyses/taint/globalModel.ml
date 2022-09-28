@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* GlobalModel: implements utility functions used to perform a forward or backward
+ * taint analysis of a global variable or attribute, by fetching user-declared
+ * models for it.
+ *)
 
 open Core
 open Ast

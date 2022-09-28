@@ -5,7 +5,29 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Model: represents the model of a given callable.
+ *
+ * A model contains all the information the global fixpoint needs about a given
+ * callable, which is:
+ * - The set of sources returned by the callable;
+ * - The set of sinks reached by the parameters of the callable;
+ * - Whether a parameter propagates its taint to the return value, which we call
+ * taint-in-taint-out (tito).
+ *
+ * For instance, for the following callable `foo`:
+ * ```
+ * def foo(x, y, cond):
+ *   if cond:
+ *     x = user_controlled()
+ *   sql(str(y))
+ *   return x
+ * ```
+ *
+ * The model of `foo` would be:
+ * - sources returned: UserControlled
+ * - sinks: y -> SQL
+ * - tito: x -> LocalReturn
+ *)
 
 open Core
 open Pyre
@@ -611,6 +633,7 @@ let join_every_frame_with_attach
   { forward = { source_taint }; backward = { taint_in_taint_out; sink_taint }; sanitizers; modes }
 
 
+(* A special case of join, only used for user-provided models. *)
 let join_user_models ({ modes = left_modes; _ } as left) ({ modes = right_modes; _ } as right) =
   let update_obscure_mode ({ modes; _ } as model) =
     (* If one model has @SkipObscure and the other does not, we expect the joined model to also have

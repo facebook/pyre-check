@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Issue: implements the logic that matches sources against sinks, using the
+ * current set of rules, and convert them into issues.
+ * It also defines a handle that uniquely represents issues.
+ *)
 
 open Core
 open Ast
