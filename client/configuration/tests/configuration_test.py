@@ -32,7 +32,6 @@ from ..configuration import (
 )
 from ..exceptions import InvalidConfiguration
 from ..extension import Element as ExtensionElement
-from ..ide_features import IdeFeatures
 from ..platform_aware import PlatformAware
 from ..python_version import PythonVersion
 from ..search_path import (
@@ -91,50 +90,6 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.site_roots, None)
         self.assertEqual(configuration.number_of_workers, 43)
         self.assertEqual(configuration.use_buck2, True)
-
-    def test_create_from_command_arguments__ide_features(self) -> None:
-        configuration = PartialConfiguration.from_command_arguments(
-            command_arguments.CommandArguments(
-                enable_hover=True,
-                enable_go_to_definition=True,
-                enable_find_symbols=True,
-                enable_find_all_references=True,
-                enable_expression_level_coverage=True,
-                enable_consume_unsaved_changes=True,
-            )
-        )
-        assert configuration.ide_features is not None
-        self.assertTrue(configuration.ide_features.is_hover_enabled())
-        self.assertTrue(configuration.ide_features.is_go_to_definition_enabled())
-        self.assertTrue(configuration.ide_features.is_find_symbols_enabled())
-        self.assertTrue(configuration.ide_features.is_find_all_references_enabled())
-        self.assertTrue(
-            configuration.ide_features.is_expression_level_coverage_enabled()
-        )
-        self.assertTrue(configuration.ide_features.is_consume_unsaved_changes_enabled())
-
-        configuration = PartialConfiguration.from_command_arguments(
-            command_arguments.CommandArguments(
-                enable_hover=False,
-                enable_go_to_definition=False,
-                enable_expression_level_coverage=False,
-            )
-        )
-        assert configuration.ide_features is not None
-        self.assertFalse(configuration.ide_features.is_hover_enabled())
-        self.assertFalse(configuration.ide_features.is_go_to_definition_enabled())
-        self.assertFalse(configuration.ide_features.is_find_all_references_enabled())
-        self.assertFalse(
-            configuration.ide_features.is_expression_level_coverage_enabled()
-        )
-        self.assertFalse(
-            configuration.ide_features.is_consume_unsaved_changes_enabled()
-        )
-
-        configuration = PartialConfiguration.from_command_arguments(
-            command_arguments.CommandArguments()
-        )
-        self.assertEqual(configuration.ide_features, None)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
@@ -605,14 +560,6 @@ class ConfigurationTest(testslide.TestCase):
                 dot_pyre_directory=None,
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
-                ide_features=IdeFeatures(
-                    hover_enabled=True,
-                    go_to_definition_enabled=True,
-                    find_symbols_enabled=True,
-                    find_all_references_enabled=True,
-                    expression_level_coverage_enabled=True,
-                    consume_unsaved_changes_enabled=True,
-                ),
                 ignore_all_errors=["bar"],
                 logger="logger",
                 number_of_workers=3,
@@ -642,17 +589,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
-        self.assertEqual(
-            configuration.ide_features,
-            IdeFeatures(
-                hover_enabled=True,
-                go_to_definition_enabled=True,
-                find_symbols_enabled=True,
-                find_all_references_enabled=True,
-                expression_level_coverage_enabled=True,
-                consume_unsaved_changes_enabled=True,
-            ),
-        )
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
         self.assertEqual(configuration.logger, "logger")
         self.assertEqual(configuration.number_of_workers, 3)
@@ -1020,96 +956,6 @@ class ConfigurationTest(testslide.TestCase):
                 ],
             ).get_valid_extension_suffixes(),
             [".bar"],
-        )
-
-    def test_is_hover_enabled(self) -> None:
-        self.assertFalse(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-            ).is_hover_enabled(),
-        )
-        self.assertTrue(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                ide_features=IdeFeatures(hover_enabled=True),
-            ).is_hover_enabled(),
-        )
-
-    def test_is_go_to_definition_enabled(self) -> None:
-        self.assertFalse(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-            ).is_go_to_definition_enabled(),
-        )
-        self.assertTrue(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                ide_features=IdeFeatures(go_to_definition_enabled=True),
-            ).is_go_to_definition_enabled(),
-        )
-
-    def test_is_find_symbols_enabled(self) -> None:
-        self.assertFalse(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-            ).is_find_symbols_enabled(),
-        )
-        self.assertTrue(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                ide_features=IdeFeatures(find_symbols_enabled=True),
-            ).is_find_symbols_enabled(),
-        )
-
-    def test_is_find_all_references_enabled(self) -> None:
-        self.assertFalse(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-            ).is_find_all_references_enabled(),
-        )
-        self.assertTrue(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                ide_features=IdeFeatures(find_all_references_enabled=True),
-            ).is_find_all_references_enabled(),
-        )
-
-    def test_is_expression_level_coverage_enabled(self) -> None:
-        self.assertFalse(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-            ).is_expression_level_coverage_enabled(),
-        )
-        self.assertTrue(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                ide_features=IdeFeatures(expression_level_coverage_enabled=True),
-            ).is_expression_level_coverage_enabled(),
-        )
-
-    def test_is_consume_unsaved_changes_enabled(self) -> None:
-        self.assertFalse(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-            ).is_consume_unsaved_changes_enabled(),
-        )
-        self.assertTrue(
-            Configuration(
-                project_root="irrelevant",
-                dot_pyre_directory=Path(".pyre"),
-                ide_features=IdeFeatures(consume_unsaved_changes_enabled=True),
-            ).is_consume_unsaved_changes_enabled(),
         )
 
     def test_create_from_command_arguments_only(self) -> None:

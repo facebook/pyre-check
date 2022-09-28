@@ -61,7 +61,6 @@ from ..find_directories import (
 from . import (
     exceptions,
     extension,
-    ide_features as ide_features_module,
     platform_aware,
     python_version as python_version_module,
     search_path as search_path_module,
@@ -123,10 +122,6 @@ class PartialConfiguration:
     extensions: Sequence[extension.Element] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
-    )
-    ide_features: Optional[ide_features_module.IdeFeatures] = field(
-        default=None,
-        metadata={"merge_policy": ide_features_module.IdeFeatures.merge_optional},
     )
     ignore_all_errors: Sequence[str] = field(
         default_factory=list,
@@ -193,23 +188,6 @@ class PartialConfiguration:
             arguments.targets if len(arguments.targets) > 0 else None
         )
         python_version_string = arguments.python_version
-        ide_features = (
-            ide_features_module.IdeFeatures(
-                hover_enabled=arguments.enable_hover,
-                go_to_definition_enabled=arguments.enable_go_to_definition,
-                find_symbols_enabled=arguments.enable_find_symbols,
-                find_all_references_enabled=arguments.enable_find_all_references,
-                expression_level_coverage_enabled=arguments.enable_expression_level_coverage,
-                consume_unsaved_changes_enabled=arguments.enable_consume_unsaved_changes,
-            )
-            if arguments.enable_hover is not None
-            or arguments.enable_go_to_definition is not None
-            or arguments.enable_find_symbols is not None
-            or arguments.enable_find_all_references is not None
-            or arguments.enable_expression_level_coverage is not None
-            or arguments.enable_consume_unsaved_changes is not None
-            else None
-        )
         return PartialConfiguration(
             binary=arguments.binary,
             buck_mode=platform_aware.PlatformAware.from_json(
@@ -219,7 +197,6 @@ class PartialConfiguration:
             dot_pyre_directory=arguments.dot_pyre_directory,
             excludes=arguments.exclude,
             extensions=[],
-            ide_features=ide_features,
             ignore_all_errors=[],
             isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
@@ -402,16 +379,6 @@ class PartialConfiguration:
                         f"{[str(x) for x in site_packages.SearchStrategy]}."
                     )
 
-            ide_features_json = ensure_option_type(
-                configuration_json, "ide_features", dict
-            )
-            if ide_features_json is None:
-                ide_features = None
-            else:
-                ide_features = ide_features_module.IdeFeatures.create_from_json(
-                    ide_features_json
-                )
-
             unwatched_dependency_json = ensure_option_type(
                 configuration_json, "unwatched_dependency", dict
             )
@@ -443,7 +410,6 @@ class PartialConfiguration:
                     extension.Element.from_json(json)
                     for json in ensure_list(configuration_json, "extensions")
                 ],
-                ide_features=ide_features,
                 ignore_all_errors=ensure_string_list(
                     configuration_json, "ignore_all_errors"
                 ),
@@ -532,7 +498,6 @@ class PartialConfiguration:
             dot_pyre_directory=self.dot_pyre_directory,
             excludes=self.excludes,
             extensions=self.extensions,
-            ide_features=self.ide_features,
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
@@ -582,7 +547,6 @@ class Configuration:
     only_check_paths: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[extension.Element] = field(default_factory=list)
-    ide_features: Optional[ide_features_module.IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
@@ -632,7 +596,6 @@ class Configuration:
             ],
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
-            ide_features=partial_configuration.ide_features,
             ignore_all_errors=_expand_all_globs(
                 expand_global_root(path, global_root=str(project_root))
                 for path in ignore_all_errors
@@ -910,40 +873,6 @@ class Configuration:
                 "of parallel workers is not greater than 1."
             )
         return default_number_of_workers
-
-    def is_hover_enabled(self) -> bool:
-        if self.ide_features is None:
-            return ide_features_module.IdeFeatures.DEFAULT_HOVER_ENABLED
-        return self.ide_features.is_hover_enabled()
-
-    def is_go_to_definition_enabled(self) -> bool:
-        if self.ide_features is None:
-            return ide_features_module.IdeFeatures.DEFAULT_GO_TO_DEFINITION_ENABLED
-        return self.ide_features.is_go_to_definition_enabled()
-
-    def is_find_symbols_enabled(self) -> bool:
-        if self.ide_features is None:
-            return ide_features_module.IdeFeatures.DEFAULT_FIND_SYMBOLS_ENABLED
-        return self.ide_features.is_find_symbols_enabled()
-
-    def is_find_all_references_enabled(self) -> bool:
-        if self.ide_features is None:
-            return ide_features_module.IdeFeatures.DEFAULT_FIND_ALL_REFERENCES_ENABLED
-        return self.ide_features.is_find_all_references_enabled()
-
-    def is_expression_level_coverage_enabled(self) -> bool:
-        if self.ide_features is None:
-            return (
-                ide_features_module.IdeFeatures.DEFAULT_EXPRESSION_LEVEL_COVERAGE_ENABLED
-            )
-        return self.ide_features.is_expression_level_coverage_enabled()
-
-    def is_consume_unsaved_changes_enabled(self) -> bool:
-        if self.ide_features is None:
-            return (
-                ide_features_module.IdeFeatures.DEFAULT_CONSUME_UNSAVED_CHANGES_ENABLED
-            )
-        return self.ide_features.is_consume_unsaved_changes_enabled()
 
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []

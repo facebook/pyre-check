@@ -96,36 +96,16 @@ class LanguageServerFeatures:
         type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED,
         status_updates: StatusUpdatesAvailability = StatusUpdatesAvailability.ENABLED,
     ) -> LanguageServerFeatures:
-        ide_features = configuration.get_ide_features()
-        if ide_features is None:
-            ide_features = configuration_module.IdeFeatures()
         return LanguageServerFeatures(
-            hover=hover
-            or HoverAvailability.from_enabled(ide_features.is_hover_enabled()),
-            definition=definition
-            or DefinitionAvailability.from_enabled(
-                ide_features.is_go_to_definition_enabled()
-            ),
+            hover=hover or LanguageServerFeatures.hover,
+            definition=definition or LanguageServerFeatures.definition,
             document_symbols=document_symbols
-            or DocumentSymbolsAvailability.from_enabled(
-                ide_features.is_find_symbols_enabled()
-            ),
-            references=references
-            or ReferencesAvailability.from_enabled(
-                ide_features.is_find_all_references_enabled()
-            ),
+            or LanguageServerFeatures.document_symbols,
+            references=references or LanguageServerFeatures.references,
             status_updates=status_updates,
-            type_coverage=type_coverage
-            or (
-                TypeCoverageAvailability.EXPRESSION_LEVEL
-                if ide_features.is_expression_level_coverage_enabled()
-                else TypeCoverageAvailability.FUNCTION_LEVEL
-            ),
+            type_coverage=type_coverage or LanguageServerFeatures.type_coverage,
             type_errors=type_errors,
-            unsaved_changes=unsaved_changes
-            or UnsavedChangesAvailability.from_enabled(
-                ide_features.is_consume_unsaved_changes_enabled()
-            ),
+            unsaved_changes=unsaved_changes or LanguageServerFeatures.unsaved_changes,
         )
 
     def capabilities(self) -> Dict[str, bool]:

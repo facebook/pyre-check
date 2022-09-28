@@ -15,7 +15,6 @@ from .configuration import (  # noqa: F401
     create_configuration,
 )
 from .exceptions import InvalidConfiguration, InvalidPythonVersion  # noqa: F401
-from .ide_features import IdeFeatures  # noqa: F401
 from .platform_aware import PlatformAware  # noqa: F401
 from .python_version import PythonVersion  # noqa: F401
 from .shared_memory import SharedMemory  # noqa: F401

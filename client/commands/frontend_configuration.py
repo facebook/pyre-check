@@ -133,10 +133,6 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_ide_features(self) -> Optional[configuration_module.IdeFeatures]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     def get_project_identifier(self) -> str:
         raise NotImplementedError()
 
@@ -245,9 +241,6 @@ class OpenSource(Base):
 
     def get_taint_models_path(self) -> List[str]:
         return list(self.configuration.taint_models_path)
-
-    def get_ide_features(self) -> Optional[configuration_module.IdeFeatures]:
-        return self.configuration.ide_features
 
     def get_project_identifier(self) -> str:
         return self.configuration.project_identifier
