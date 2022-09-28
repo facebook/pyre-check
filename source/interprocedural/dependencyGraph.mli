@@ -5,10 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Represents a dependency graph, i.e a mapping from a callee to its callers.
-
-    This is used in the fixpoint to infer which targets to re-analyze when we discovered a new
-    source or sink. *)
+(** Represents a dependency graph, i.e a mapping from a callee to its callers. *)
 type t
 
 val empty : t

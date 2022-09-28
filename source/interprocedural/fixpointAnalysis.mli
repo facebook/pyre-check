@@ -103,7 +103,7 @@ module type ANALYSIS = sig
 
   (** Analyze a function or method definition.
 
-      `get_callee_model` can be used to get the model of a callee, as long as it was registered in
+      `get_callee_model` can be used to get the model of a callee, as long as it is registered in
       the call graph. *)
   val analyze_define
     :  context:context ->

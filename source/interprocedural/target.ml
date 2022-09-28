@@ -5,7 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Target: represents a global symbol that might have information attached to it.
+ *
+ * This is mostly used to represent callables in the interprocedural framework,
+ * using `Function` or `Method`.
+ * `Override f` represents the set of methods overriding the method `f`.
+ * `Object` represents global variables or class attributes.
+ *)
 
 open Core
 open Ast
@@ -191,6 +197,8 @@ let override_to_method = function
   | Object name -> Object name
 
 
+(** Return the define name of a target. Note that multiple targets can match to the same define name
+    (e.g, property getters and setters). Hence, use this at your own risk. *)
 let define_name = function
   | Function { name; _ } -> Reference.create name
   | Method { class_name; method_name; _ }
@@ -213,6 +221,8 @@ type definitions_result = {
   has_multiple_definitions: bool;
 }
 
+(** This is the source of truth for the mapping of callables to definitions. All parts of the
+    analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
 let get_definitions ~resolution define_name =
   GlobalResolution.function_definition resolution define_name
   >>| fun ({ FunctionDefinition.qualifier; _ } as definitions) ->

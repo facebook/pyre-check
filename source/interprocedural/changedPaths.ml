@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ChangedPaths: implements logic that checks whether a given set of files have
+ * changed between two runs. This is mostly used to implement caching in the
+ * taint analysis.
+ *)
 
 open Core
 open Ast
@@ -69,6 +72,8 @@ module IndexedRelativePath = struct
   include Hashable.Make (T)
 end
 
+(* Return the list of paths to files that have changed between now and the previous call to
+   `save_current_paths`. *)
 let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker ~new_module_tracker =
   let timer = Timer.start () in
   let changed_paths changed new_module_paths =

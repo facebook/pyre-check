@@ -5,7 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* FixpointAnalysis: implements a generic global fixpoint analysis, which infers
+ * a set of invariants across a source code.
+ *
+ * This is mainly used by the taint analysis, but could be used for any
+ * interprocedural analysis (e.g, type inference, correctness analysis, etc..).
+ *
+ * A model describes the invariants of a function or method, and must have an
+ * abstract domain structure (join, widening, less or equal, etc..).
+ *
+ * Given a set of initial models, this performs iterations to propagate invariants
+ * across functions, until reaching a fixpoint (i.e, invariants are stables).
+ *)
 
 open Core
 open Ast
@@ -14,8 +25,10 @@ open Statement
 module TypeEnvironment = Analysis.TypeEnvironment
 module Kind = AnalysisKind
 
-(* See `.mli` for documentation of modules and functions. *)
-
+(** Represents the set of information that must be propagated from callees to callers during an
+    interprocedural analysis, within the global fixpoint. Each iteration should produce a model for
+    each callable (function, method). This must have an abstract domain structure (e.g, join, widen,
+    less_or_equal, etc.) *)
 module type MODEL = sig
   type t [@@deriving show]
 
@@ -25,9 +38,15 @@ module type MODEL = sig
 
   val less_or_equal : callable:Target.t -> left:t -> right:t -> bool
 
+  (** Remove aspects from the model that are not needed at call sites. Just for optimization. *)
   val strip_for_callsite : t -> t
 end
 
+(** Represents the result of the analysis.
+
+    Each iteration should produce results for each callable (function, method). Results from the
+    previous iterations are discarded. This is usually used for a set of errors. In the taint
+    analysis, this represents valid issues. *)
 module type RESULT = sig
   type t
 
@@ -47,12 +66,14 @@ module type LOGGER = sig
     callables_to_analyze:Target.t list ->
     exn
 
+  (** This is called at the beginning of each iteration. *)
   val iteration_start
     :  iteration:int ->
     callables_to_analyze:Target.t list ->
     number_of_callables:int ->
     unit
 
+  (** This is called at the end of each iteration. *)
   val iteration_end
     :  iteration:int ->
     expensive_callables:expensive_callable list ->
@@ -60,6 +81,7 @@ module type LOGGER = sig
     timer:Timer.t ->
     unit
 
+  (** This is called after a worker makes progress on an iteration. *)
   val iteration_progress
     :  iteration:int ->
     callables_processed:int ->
@@ -68,6 +90,7 @@ module type LOGGER = sig
 
   val is_expensive_callable : callable:Target.t -> timer:Timer.t -> bool
 
+  (** This is called after analyzing an override target (i.e, joining models of overriding methods). *)
   val override_analysis_end : callable:Target.t -> timer:Timer.t -> unit
 
   val on_analyze_define_exception : iteration:int -> callable:Target.t -> exn:exn -> unit
@@ -75,7 +98,10 @@ module type LOGGER = sig
   val on_global_fixpoint_exception : exn:exn -> unit
 end
 
+(** Must be implemented to compute a global fixpoint. *)
 module type ANALYSIS = sig
+  (** Passed down from the top level call to the `analyze_define` function. This should be cheap to
+      marshal, since it will be sent to multiple workers. *)
   type context
 
   module Model : MODEL
@@ -88,8 +114,13 @@ module type ANALYSIS = sig
 
   val empty_model : Model.t
 
+  (** Model for obscure callables (usually, stubs) *)
   val obscure_model : Model.t
 
+  (** Analyze a function or method definition.
+
+      `get_callee_model` can be used to get the model of a callee, as long as it is registered in
+      the call graph. *)
   val analyze_define
     :  context:context ->
     qualifier:Reference.t ->
@@ -105,6 +136,7 @@ module Make (Analysis : ANALYSIS) = struct
   module Result = Analysis.Result
   module Logger = Analysis.Logger
 
+  (** Represents a mapping from target to models, living in the ocaml heap. *)
   module Registry = struct
     type t = Model.t Target.Map.t
 
@@ -301,6 +333,8 @@ module Make (Analysis : ANALYSIS) = struct
       SharedTargets.add Memory.SingletonKey.key targets
 
 
+    (** Remove the fixpoint state from the shared memory. This must be called before computing
+        another fixpoint. *)
     let cleanup () =
       let targets =
         SharedTargets.get Memory.SingletonKey.key |> Option.value ~default:KeySet.empty

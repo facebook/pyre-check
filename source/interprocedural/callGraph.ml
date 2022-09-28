@@ -5,7 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* CallGraph: defines the call graph of a callable (function or method), which
+ * stores the set of calles for each call site.
+ *
+ * This also implements the logic to statically compute the call graph, given a
+ * function definition.
+ *
+ * Note that the call graph is highly tuned for the taint analysis and might be
+ * unsound for other analyses.
+ *)
 
 open Core
 open Analysis
@@ -14,6 +22,7 @@ open Statement
 open Expression
 open Pyre
 
+(** Represents type information about the return type of a call. *)
 module ReturnType = struct
   type t = {
     is_boolean: bool;
@@ -112,14 +121,22 @@ module ReturnType = struct
     from_annotation ~resolution:(Resolution.global_resolution resolution) annotation
 end
 
+(** A specific target of a given call, with extra information. *)
 module CallTarget = struct
   type t = {
     target: Target.t;
+    (* True if the call has an implicit receiver.
+     * For instance, `x.foo()` should be treated as `C.foo(x)`. *)
     implicit_self: bool;
+    (* True if this is an implicit call to the `__call__` method. *)
     implicit_dunder_call: bool;
+    (* True if we should collapse the taint from arguments, cf. the taint analysis. *)
     collapse_tito: bool;
+    (* The textual order index of the call in the function. *)
     index: int;
+    (* The return type of the call expression, or `None` for object targets. *)
     return_type: ReturnType.t option;
+    (* The type of the receiver object at this call site, if any. *)
     receiver_type: Type.t option;
   }
   [@@deriving compare, eq, show { with_path = false }]
@@ -181,6 +198,7 @@ module CallTarget = struct
     && index_left == index_right
 end
 
+(** Information about an argument being a callable. *)
 module HigherOrderParameter = struct
   type t = {
     index: int;
@@ -210,12 +228,19 @@ module HigherOrderParameter = struct
     && List.equal CallTarget.equal_ignoring_types call_targets_left call_targets_right
 end
 
+(** An aggregate of all possible callees at a call site. *)
 module CallCallees = struct
   type t = {
+    (* Normal call targets. *)
     call_targets: CallTarget.t list;
+    (* Call targets for calls to the `__new__` class method. *)
     new_targets: CallTarget.t list;
+    (* Call targets for calls to the `__init__` instance method. *)
     init_targets: CallTarget.t list;
+    (* Information about an argument being a callable, and possibly called. *)
     higher_order_parameter: HigherOrderParameter.t option;
+    (* True if at least one callee could not be resolved.
+     * Usually indicates missing type information at the call site. *)
     unresolved: bool;
   }
   [@@deriving eq, show { with_path = false }]
@@ -327,10 +352,13 @@ module CallCallees = struct
     && unresolved_left == unresolved_right
 end
 
+(** An aggregrate of all possible callees for a given attribute access. *)
 module AttributeAccessCallees = struct
   type t = {
     property_targets: CallTarget.t list;
     global_targets: CallTarget.t list;
+    (* True if the attribute access should also be considered a regular attribute.
+     * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;
   }
   [@@deriving eq, show { with_path = false }]
@@ -388,6 +416,7 @@ module AttributeAccessCallees = struct
   let is_empty attribute_access_callees = equal attribute_access_callees empty
 end
 
+(** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
 module IdentifierCallees = struct
   type t = { global_targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
 
@@ -400,6 +429,7 @@ module IdentifierCallees = struct
   let all_targets { global_targets } = List.map ~f:CallTarget.target global_targets
 end
 
+(** An aggregate of all implicit callees for any expression used in a f-string. *)
 module FormatStringCallees = struct
   type t = { call_targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
 
@@ -414,6 +444,7 @@ module FormatStringCallees = struct
   let all_targets { call_targets } = List.map ~f:CallTarget.target call_targets
 end
 
+(** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees = struct
   type t = {
     call: CallCallees.t option;
@@ -532,6 +563,9 @@ module ExpressionCallees = struct
     && Option.equal FormatStringCallees.equal format_string_left format_string_right
 end
 
+(** An aggregate of all possible callees for an arbitrary location.
+
+    Note that multiple expressions might have the same location. *)
 module LocationCallees = struct
   type t =
     | Singleton of ExpressionCallees.t
@@ -591,6 +625,7 @@ let expression_identifier = function
   | _ -> (* not a valid call site. *) None
 
 
+(** The call graph of a function or method definition. *)
 module DefineCallGraph = struct
   type t = LocationCallees.t Location.Map.t [@@deriving eq]
 
@@ -646,6 +681,7 @@ module DefineCallGraph = struct
     Location.Map.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
 
 
+  (** Return all callees of the call graph, as a sorted list. *)
   let all_targets call_graph =
     Location.Map.data call_graph
     |> List.concat_map ~f:LocationCallees.all_targets
@@ -2140,6 +2176,8 @@ let call_graph_of_callable
         ~define:(Node.value define)
 
 
+(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
+    `DefineCallGraph.t`. *)
 module DefineCallGraphSharedMemory = struct
   include
     Memory.WithCache.Make
@@ -2159,6 +2197,8 @@ module DefineCallGraphSharedMemory = struct
   let get Handle ~callable = get callable >>| Location.Map.of_tree
 end
 
+(** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
+    callees. *)
 module WholeProgramCallGraph = struct
   type t = Target.t list Target.Map.t
 
@@ -2192,6 +2232,11 @@ type call_graphs = {
   define_call_graphs: DefineCallGraphSharedMemory.t;
 }
 
+(** Build the whole call graph of the program.
+
+    The overrides must be computed first because we depend on a global shared memory graph to
+    include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
+    fixpoint. *)
 let build_whole_program_call_graph
     ~scheduler
     ~static_analysis_configuration

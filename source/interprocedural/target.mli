@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* A generalization of what can be a call target during the analysis. `callable_t` refers to an
-   actual definition. `override_t` is a set of target represented by an override tree. `object_t`
-   represents some non-callable object through which taint might flow. *)
-
 open Ast
 open Statement
 

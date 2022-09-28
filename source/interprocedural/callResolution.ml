@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* CallResolution: utility functions to resolve types, ignoring untracked types
+ * (i.e, when annotation refer to undefined symbols).
+ *)
 
 open Core
 open Ast
@@ -13,6 +15,7 @@ open Analysis
 open Expression
 open Pyre
 
+(* Evaluates to the representation of literal strings, integers and enums. *)
 let extract_constant_name { Node.value = expression; _ } =
   match expression with
   | Expression.Constant (Constant.String literal) -> Some literal.value
@@ -31,6 +34,7 @@ let extract_constant_name { Node.value = expression; _ } =
   | _ -> None
 
 
+(* Check whether `successor` extends `predecessor`. Returns false on untracked types. *)
 let is_transitive_successor_ignoring_untracked global_resolution ~predecessor ~successor =
   try GlobalResolution.is_transitive_successor global_resolution ~predecessor ~successor with
   | Analysis.ClassHierarchy.Untracked untracked_type ->
@@ -43,6 +47,7 @@ let is_transitive_successor_ignoring_untracked global_resolution ~predecessor ~s
       false
 
 
+(* Evaluates to whether the provided expression is a superclass of define. *)
 let is_super ~resolution ~define expression =
   match expression.Node.value with
   | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
@@ -69,6 +74,7 @@ let is_super ~resolution ~define expression =
         false
 
 
+(* Resolve an expression into a type. Untracked types are resolved into `Any`. *)
 let resolve_ignoring_untracked ~resolution expression =
   try Resolution.resolve_expression_to_type resolution expression with
   | Analysis.ClassHierarchy.Untracked untracked_type ->
@@ -81,6 +87,7 @@ let resolve_ignoring_untracked ~resolution expression =
       Type.Any
 
 
+(* Resolve an attribute access into a type. Untracked types are resolved into `Any`. *)
 let resolve_attribute_access_ignoring_untracked ~resolution ~base_type ~attribute =
   try Resolution.resolve_attribute_access resolution ~base_type ~attribute with
   | Analysis.ClassHierarchy.Untracked untracked_type ->
@@ -116,6 +123,7 @@ let defining_attribute ~resolution parent_type attribute =
     Resolution.fallback_attribute ~resolution ~name:attribute class_name
 
 
+(* Resolve an expression into a type, ignoring errors related to accessing `None`. *)
 let rec resolve_ignoring_optional ~resolution expression =
   let resolve_expression_to_type expression =
     match resolve_ignoring_untracked ~resolution expression, Node.value expression with

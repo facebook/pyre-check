@@ -5,7 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* DependencyGraph: represents a dependency graph, i.e a mapping from a callee
+ * to its callers.
+ *
+ * This is used in the interprocedural fixpoint to infer which targets need to
+ * be re-analyzed when a model grows (e.g., when new sources or sinks are
+ * discovered in the taint analysis).
+ *)
 
 open Core
 open Pyre
@@ -20,6 +26,7 @@ let dependencies dependency_graph target =
 
 let to_target_graph = Fn.id
 
+(** Represents a reversed dependency graph, i.e a mapping from callers to callees. *)
 module Reversed = struct
   type nonrec dependency_graph = t
 
@@ -31,6 +38,7 @@ module Reversed = struct
     Map.merge_skewed ~combine left right
 
 
+  (** Create a reverse dependency graph from a call graph. *)
   let from_call_graph callgraph =
     let add ~target ~callees result =
       let callees =
@@ -45,6 +53,7 @@ module Reversed = struct
     CallGraph.WholeProgramCallGraph.fold callgraph ~f:add ~init:Target.Map.empty
 
 
+  (** Create a reverse dependency graph from an override graph. *)
   let from_overrides overrides =
     let override_map, all_overrides =
       let add ~member:method_name ~subtypes (override_map, all_overrides) =
@@ -146,6 +155,10 @@ type whole_program_dependency_graph = {
   callables_to_analyze: Target.t list;
 }
 
+(** Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
+    the callables we are actually analyzing. Then reverse the graph, which maps dependers to
+    dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
+    maps dependees to dependers. *)
 let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~overrides =
   let reverse_dependency_graph = Reversed.from_overrides overrides in
   let override_targets = Target.Map.keys reverse_dependency_graph in
