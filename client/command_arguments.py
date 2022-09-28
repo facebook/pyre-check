@@ -4,7 +4,20 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides a series of dataclasses and enums
+that describe command-line arguments for invoking Pyre.
+
+The `CommandArguments` dataclass represents top-level
+arguments, whereas the other classes describe arguments
+specific to subcommands.
+
+For example, in the invocation
+```
+pyre --noninteractive start --terminal
+```
+the `--noninteractive` flag will determine the
+`CommandArguments.noninteractive` field, whereas the `--terminal` flag will
+determine the `StartArguments.terminal` field.
 """
 
 
