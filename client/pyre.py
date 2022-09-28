@@ -276,41 +276,6 @@ def _check_open_source_version(
     help="Power of the hash table in shared memory.",
     hidden=True,
 )
-@click.option(
-    "--enable-hover/--no-enable-hover",
-    is_flag=True,
-    help="Whether Pyre should show types on hover in the IDE.",
-    default=None,
-    hidden=True,
-)
-@click.option(
-    "--enable-go-to-definition/--no-enable-go-to-definition",
-    is_flag=True,
-    help="Whether Pyre should support go-to-definition in the IDE.",
-    default=None,
-    hidden=True,
-)
-@click.option(
-    "--enable-find-symbols/--no-enable-find-symbols",
-    is_flag=True,
-    help="Whether Pyre should support document-symbols in the IDE.",
-    default=None,
-    hidden=True,
-)
-@click.option(
-    "--enable-find-all-references/--no-enable-all-references",
-    is_flag=True,
-    help="Whether Pyre should support find-all-references in the IDE.",
-    default=None,
-    hidden=True,
-)
-@click.option(
-    "--enable-consume-unsaved-changes/--no-enable-consume-unsaved-changes",
-    is_flag=True,
-    help="Whether Pyre should run on unsaved changes in the IDE.",
-    default=None,
-    hidden=True,
-)
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
@@ -339,11 +304,6 @@ def pyre(
     shared_memory_dependency_table_power: Optional[int],
     shared_memory_hash_table_power: Optional[int],
     number_of_workers: Optional[int],
-    enable_hover: Optional[bool],
-    enable_go_to_definition: Optional[bool],
-    enable_find_symbols: Optional[bool],
-    enable_find_all_references: Optional[bool],
-    enable_consume_unsaved_changes: Optional[bool],
 ) -> None:
     arguments = command_arguments.CommandArguments(
         local_configuration=None,
@@ -381,12 +341,7 @@ def pyre(
         shared_memory_dependency_table_power=shared_memory_dependency_table_power,
         shared_memory_hash_table_power=shared_memory_hash_table_power,
         number_of_workers=number_of_workers,
-        enable_hover=enable_hover,
         use_buck2=None,
-        enable_go_to_definition=enable_go_to_definition,
-        enable_find_symbols=enable_find_symbols,
-        enable_find_all_references=enable_find_all_references,
-        enable_consume_unsaved_changes=enable_consume_unsaved_changes,
     )
     context.ensure_object(dict)
     context.obj["arguments"] = arguments
