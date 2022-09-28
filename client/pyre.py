@@ -34,6 +34,7 @@ from . import (
     identifiers,
     log,
 )
+from .commands import language_server_features
 from .version import __version__
 
 
@@ -830,93 +831,72 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @click.option(
     "--hover",
     type=click.Choice(
-        [kind.value for kind in commands.language_server_features.HoverAvailability]
+        [kind.value for kind in language_server_features.HoverAvailability]
     ),
-    default=commands.language_server_features.LanguageServerFeatures.hover.value,
+    default=language_server_features.LanguageServerFeatures.hover.value,
     help="Availability of the hover langauge server feature",
     hidden=True,
 )
 @click.option(
     "--definition",
     type=click.Choice(
-        [
-            kind.value
-            for kind in commands.language_server_features.DefinitionAvailability
-        ]
+        [kind.value for kind in language_server_features.DefinitionAvailability]
     ),
-    default=commands.language_server_features.LanguageServerFeatures.definition.value,
+    default=language_server_features.LanguageServerFeatures.definition.value,
     help="Availability of the definition langauge server feature",
     hidden=True,
 )
 @click.option(
     "--document-symbols",
     type=click.Choice(
-        [
-            kind.value
-            for kind in commands.language_server_features.DocumentSymbolsAvailability
-        ]
+        [kind.value for kind in language_server_features.DocumentSymbolsAvailability]
     ),
-    default=commands.language_server_features.LanguageServerFeatures.document_symbols.value,
+    default=language_server_features.LanguageServerFeatures.document_symbols.value,
     help="Availability of the document symbols langauge server feature",
     hidden=True,
 )
 @click.option(
     "--references",
     type=click.Choice(
-        [
-            kind.value
-            for kind in commands.language_server_features.DocumentSymbolsAvailability
-        ]
+        [kind.value for kind in language_server_features.DocumentSymbolsAvailability]
     ),
-    default=commands.language_server_features.LanguageServerFeatures.references.value,
+    default=language_server_features.LanguageServerFeatures.references.value,
     help="Availability of the references langauge server feature",
     hidden=True,
 )
 @click.option(
     "--status-updates",
     type=click.Choice(
-        [
-            kind.value
-            for kind in commands.language_server_features.StatusUpdatesAvailability
-        ]
+        [kind.value for kind in language_server_features.StatusUpdatesAvailability]
     ),
-    default=commands.language_server_features.LanguageServerFeatures.status_updates.value,
+    default=language_server_features.LanguageServerFeatures.status_updates.value,
     help="Availability of the status updates language server feature",
     hidden=True,
 )
 @click.option(
     "--type-coverage",
     type=click.Choice(
-        [
-            kind.value
-            for kind in commands.language_server_features.TypeCoverageAvailability
-        ]
+        [kind.value for kind in language_server_features.TypeCoverageAvailability]
     ),
-    default=commands.language_server_features.LanguageServerFeatures.type_coverage.value,
+    default=language_server_features.LanguageServerFeatures.type_coverage.value,
     help="Availability of the type coverage langauge server feature",
     hidden=True,
 )
 @click.option(
     "--type-errors",
     type=click.Choice(
-        [
-            kind.value
-            for kind in commands.language_server_features.TypeErrorsAvailability
-        ]
+        [kind.value for kind in language_server_features.TypeErrorsAvailability]
     ),
-    default=commands.language_server_features.LanguageServerFeatures.type_errors.value,
+    default=language_server_features.LanguageServerFeatures.type_errors.value,
     help="Availability of the type errors langauge server feature",
     hidden=True,
 )
 @click.option(
     "--unsaved-changes",
     type=click.Choice(
-        [
-            kind.value
-            for kind in commands.language_server_features.DocumentSymbolsAvailability
-        ]
+        [kind.value for kind in language_server_features.DocumentSymbolsAvailability]
     ),
-    default=commands.language_server_features.LanguageServerFeatures.unsaved_changes.value,
+    default=language_server_features.LanguageServerFeatures.unsaved_changes.value,
     help="Availability support for Pyre analyzing unsaved editor buffers",
     hidden=True,
 )
@@ -964,27 +944,23 @@ def persistent(
                 )
             ),
             enabled_telemetry_event=False,
-            language_server_features=commands.language_server_features.LanguageServerFeatures(
-                hover=commands.language_server_features.HoverAvailability(hover),
-                definition=commands.language_server_features.DefinitionAvailability(
-                    definition
-                ),
-                document_symbols=commands.language_server_features.DocumentSymbolsAvailability(
+            language_server_features=language_server_features.LanguageServerFeatures(
+                hover=language_server_features.HoverAvailability(hover),
+                definition=language_server_features.DefinitionAvailability(definition),
+                document_symbols=language_server_features.DocumentSymbolsAvailability(
                     document_symbols,
                 ),
-                references=commands.language_server_features.ReferencesAvailability(
-                    references
-                ),
-                status_updates=commands.language_server_features.StatusUpdatesAvailability(
+                references=language_server_features.ReferencesAvailability(references),
+                status_updates=language_server_features.StatusUpdatesAvailability(
                     status_updates
                 ),
-                type_coverage=commands.language_server_features.TypeCoverageAvailability(
+                type_coverage=language_server_features.TypeCoverageAvailability(
                     type_coverage
                 ),
-                type_errors=commands.language_server_features.TypeErrorsAvailability(
+                type_errors=language_server_features.TypeErrorsAvailability(
                     type_errors
                 ),
-                unsaved_changes=commands.language_server_features.UnsavedChangesAvailability(
+                unsaved_changes=language_server_features.UnsavedChangesAvailability(
                     unsaved_changes
                 ),
             ),
