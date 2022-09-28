@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Typecheck is the main file used for typechecking within Pyre. It contains methods for resolving
+   the entire fixpoint including type refinement. In Pyre, we mainly resolve forward, meaning we
+   recompute types in a resolution as we move forward in the control flow graph. In every reachable
+   node, we will save type errors for displaying at the end. *)
 
 open Core
 open Pyre
@@ -786,6 +789,7 @@ module State (Context : Context) = struct
     | { typed_dictionary_errors; _ } -> emit_typed_dictionary_errors ~errors typed_dictionary_errors
 
 
+  (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
   and forward_expression ~resolution { Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
     let forward_entry ~resolution ~errors ~entry:{ Dictionary.Entry.key; value } =
@@ -3087,6 +3091,9 @@ module State (Context : Context) = struct
         }
 
 
+  (* Since the control flow graph has already preprocessed assert statements (see
+     [this](https://www.internalfb.com/intern/graphviz/?paste=65053708) for an example), type
+     refinment happens here based on these asserts. *)
   and refine_resolution_for_assert ~resolution test =
     let global_resolution = Resolution.global_resolution resolution in
     let annotation_less_or_equal =

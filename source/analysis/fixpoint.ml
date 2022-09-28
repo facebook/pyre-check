@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This is the implementation of a monotonically increasing chaotic fixpoint iteration sequence with
+   widening over a control-flow graph (CFG) using the recursive iteration strategy induced by a weak
+   topological ordering of the nodes in the control-flow graph. The recursive iteration strategy is
+   described in Bourdoncle's paper on weak topological orderings: F. Bourdoncle. Efficient chaotic
+   iteration strategies with widenings. In Formal Methods in Programming and Their Applications, pp
+   128-141. *)
 
 open Core
 open Ast
@@ -79,16 +84,6 @@ module Make (State : State) = struct
   let exit { postconditions; _ } = Hashtbl.find postconditions Cfg.exit_index
 
   let compute_fixpoint cfg ~initial_index ~initial ~predecessors ~successors ~transition =
-    (*
-     * This is the implementation of a monotonically increasing chaotic fixpoint
-     * iteration sequence with widening over a control-flow graph (CFG) using the
-     * recursive iteration strategy induced by a weak topological ordering of the
-     * nodes in the control-flow graph. The recursive iteration strategy is
-     * described in Bourdoncle's paper on weak topological orderings:
-     *
-     *   F. Bourdoncle. Efficient chaotic iteration strategies with widenings.
-     *   In Formal Methods in Programming and Their Applications, pp 128-141.
-     *)
     let components = WeakTopologicalOrder.create ~cfg ~entry_index:initial_index ~successors in
 
     let preconditions = Int.Table.create () in

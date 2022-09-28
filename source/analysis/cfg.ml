@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Implementation of a control-flow graph (https://en.wikipedia.org/wiki/Control-flow_graph) with
+   references to both successors and predecessors. *)
 
 open Core
 open Ast
