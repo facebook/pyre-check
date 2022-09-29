@@ -33,4 +33,31 @@ let test_forward_expression _ =
   ()
 
 
-let () = "readOnly" >::: ["forward_expression" >:: test_forward_expression] |> Test.run
+let assert_readonly_errors ~context =
+  let check ~environment:_ ~source =
+    source
+    |> Preprocessing.defines ~include_toplevels:true
+    |> List.concat_map ~f:ReadOnlyCheck.readonly_errors_for_define
+  in
+  assert_errors ~context ~check
+
+
+let test_assignment context =
+  let assert_readonly_errors = assert_readonly_errors ~context in
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main() -> None:
+        y: ReadOnly[int] = 42
+        z: int = y
+    |}
+    (* TODO(T130377746): Emit an error for the second statement. *)
+    [];
+  ()
+
+
+let () =
+  "readOnly"
+  >::: ["forward_expression" >:: test_forward_expression; "assignment" >:: test_assignment]
+  |> Test.run

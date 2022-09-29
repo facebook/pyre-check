@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
 open Ast
 open Expression
 module Error = AnalysisError
@@ -32,6 +33,10 @@ module Resolved = struct
 end
 
 module State = struct
+  include Resolution
+
+  let widen ~previous ~next ~iteration = widen ~prev:previous ~next ~iteration
+
   let forward_expression ~resolution { Node.value; _ } =
     let open ReadOnlyness in
     match value with
@@ -46,4 +51,29 @@ module State = struct
             |> Option.value ~default:Mutable;
         }
     | _ -> failwith "TODO(T130377746)"
+
+
+  let forward_statement ~state ~statement:_ = state, []
+
+  let initial = Resolution.of_list []
+
+  let forward ~statement_key:_ state ~statement =
+    let new_state, _ = forward_statement ~state ~statement in
+    new_state
+
+
+  let backward ~statement_key:_ _state ~statement:_ =
+    failwith "Not implementing this for readonly analysis"
 end
+
+let populate_error_map define =
+  let module Fixpoint = Fixpoint.Make (State) in
+  let cfg = Node.value define |> Cfg.create in
+  let _state = Fixpoint.forward ~cfg ~initial:State.initial |> Fixpoint.exit in
+  ()
+
+
+let readonly_errors_for_define define =
+  let () = populate_error_map define in
+  (* TODO(T130377746): Read errors from the error map. *)
+  []

@@ -6,6 +6,7 @@
  *)
 
 open Ast
+open Statement
 module Error = AnalysisError
 
 module Resolution : sig
@@ -28,3 +29,5 @@ end
 module State : sig
   val forward_expression : resolution:Resolution.t -> Expression.t -> Resolved.t
 end
+
+val readonly_errors_for_define : Define.t Node.t -> Error.t list
