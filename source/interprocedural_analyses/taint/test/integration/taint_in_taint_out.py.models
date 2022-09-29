@@ -1026,6 +1026,33 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.into_dict_then_tito_collapse",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 233, "start": 24, "end": 25 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.product_data",
     "tito": [
       {
@@ -1431,6 +1458,33 @@
               "start": 32,
               "end": 46
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.tito_collapse_then_into_dict",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 237, "start": 21, "end": 22 } ],
+            "decl": null
           }
         ]
       }

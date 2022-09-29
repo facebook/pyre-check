@@ -222,3 +222,29 @@ class ComplexEvaluator:
 
 def test_complex_evaluator(evaluator: ComplexEvaluator):
     _test_sink(evaluator.evaluate_lazy_payload(_test_source()))
+
+
+def obscure_tito(x):
+    ...
+
+
+def into_dict_then_tito_collapse(x):
+    d = {"a": x}
+    return obscure_tito(d)
+
+
+def tito_collapse_then_into_dict(x):
+    y = obscure_tito(x)
+    return {"a": y}
+
+
+def issue_with_into_dict_then_tito_collapse():
+    x = _test_source()
+    y = into_dict_then_tito_collapse(x)
+    _test_sink(y["b"])  # This should be an issue, currently a false negative.
+
+
+def non_issue_with_tito_collapse_then_into_dict():
+    x = _test_source()
+    y = tito_collapse_then_into_dict(x)
+    _test_sink(y["b"])  # Not an issue.
