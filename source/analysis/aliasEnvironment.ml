@@ -334,11 +334,7 @@ let produce_alias empty_stub_environment global_name ~dependency =
       >>= resolve_after_resolving_dependencies
       >>= maybe_convert_to_recursive_alias current
   in
-  if Reference.equal global_name (Reference.create "typing.NoReturn") then
-    (* TODO(T76821797): We should fix upstream `typeshed` instead of doing special-case like this. *)
-    None
-  else
-    get_aliased_type_for global_name ~visited:Reference.Set.empty
+  get_aliased_type_for global_name ~visited:Reference.Set.empty
 
 
 module Aliases = Environment.EnvironmentTable.NoCache (struct

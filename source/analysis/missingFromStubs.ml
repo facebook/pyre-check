@@ -205,6 +205,7 @@ let missing_typing_classes =
   [
     make "typing.Optional" ~bases:single_unary_generic;
     make "typing.NoReturn";
+    make "typing.Never";
     make "typing.Annotated" ~bases:catch_all_generic;
     make "typing.Protocol" ~bases:catch_all_generic;
     make "typing.Callable" ~bases:catch_all_generic ~body:callable_body;

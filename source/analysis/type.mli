@@ -700,7 +700,7 @@ val is_meta : t -> bool
 
 val is_none : t -> bool
 
-val is_noreturn : t -> bool
+val is_noreturn_or_never : t -> bool
 
 val is_object : t -> bool
 

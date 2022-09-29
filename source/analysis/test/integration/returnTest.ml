@@ -563,6 +563,16 @@ let test_check_noreturn context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from typing import NoReturn
+      def no_return() -> NoReturn:
+        while True:
+          pass
+
+      no_return()
+    |}
+    [];
+  assert_type_errors
+    {|
       import typing
       def no_return() -> typing.NoReturn:
         return 0
@@ -614,7 +624,174 @@ let test_check_noreturn context =
         else:
           sys.exit(0)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      from typing import NoReturn
+      def noreturn1(a: bool) -> NoReturn:
+        if a:
+          return 1
+        else:
+          while True:
+            pass
+
+      def noreturn2(a: bool) -> NoReturn:
+        if a:
+          while True:
+            pass
+        else:
+          return 1
+
+      def noreturn3() -> NoReturn:
+        return
+    |}
+    [
+      "Incompatible return type [7]: Expected `NoReturn` but got `int`.";
+      "Incompatible return type [7]: Expected `NoReturn` but got `int`.";
+    ];
+  assert_type_errors
+    {|
+    from typing import NoReturn
+
+    def bar() -> NoReturn: ...
+    def foo() -> NoReturn:
+      return bar()
+    |}
+    [];
+  assert_type_errors
+    {|
+    from typing import NoReturn, Never
+
+    def bar() -> Never: ...
+    def foo() -> NoReturn:
+      return bar()
+    |}
+    ["Incompatible return type [7]: Expected `NoReturn` but got `Never`."];
+  ()
+
+
+let test_check_never context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      import typing
+      def never() -> typing.Never:
+        while True:
+          pass
+
+      never()
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      def never() -> typing.Never:
+        return 0
+    |}
+    ["Incompatible return type [7]: Expected `Never` but got `int`."];
+  assert_type_errors
+    {|
+      import typing
+      def never() -> typing.Never:
+        return None
+
+      x: typing.Never = never()
+      print(x)
+      y: None = never()
+      print(y)
+    |}
+    [
+      "Incompatible variable type [9]: y is declared to have type `None` but is used as type \
+       `Never`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Never
+
+      def never() -> Never:
+        while True:
+          pass
+
+      never()
+      print("this should never be reached!")
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Never
+
+      def never() -> Never:
+        while True:
+          pass
+
+      def not_never() -> None:
+        return None
+
+      if input():
+        never()
+      else:
+        not_never()
+      print("we *could* reach here")
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Never
+
+      def never() -> Never:
+        while True:
+          pass
+
+      if input():
+        never()
+      else:
+        never()
+      print("we should not be able to reach here")
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Never
+      def never1(a: bool) -> Never:
+        if a:
+          return 1
+        else:
+          while True:
+            pass
+
+      def never2(a: bool) -> Never:
+        if a:
+          while True:
+            pass
+        else:
+          return 1
+
+      def never3() -> Never:
+        return
+    |}
+    [
+      "Incompatible return type [7]: Expected `Never` but got `int`.";
+      "Incompatible return type [7]: Expected `Never` but got `int`.";
+    ];
+  assert_type_errors
+    {|
+    from typing import Never
+
+    def bar() -> Never: ...
+    def foo() -> Never:
+      return bar()
+    |}
+    [];
+  assert_type_errors
+    {|
+    from typing import NoReturn, Never
+
+    def bar() -> NoReturn: ...
+    def foo() -> Never:
+      return bar()
+    |}
+    ["Incompatible return type [7]: Expected `Never` but got `NoReturn`."];
+  ()
 
 
 let test_check_return_unimplemented context =
@@ -678,6 +855,7 @@ let () =
          "check_collections" >:: test_check_collections;
          "check_meta_annotations" >:: test_check_meta_annotations;
          "check_noreturn" >:: test_check_noreturn;
+         "check_never" >:: test_check_never;
          "check_return_unimplemented" >:: test_check_return_unimplemented;
        ]
   |> Test.run

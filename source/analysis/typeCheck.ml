@@ -721,7 +721,7 @@ module State (Context : Context) = struct
         && (not (Define.is_abstract_method define))
         && (not (Define.is_overloaded_function define))
         && (not (Type.is_none actual && async && generator))
-        && not (Type.is_none actual && Type.is_noreturn return_annotation)
+        && not (Type.is_none actual && Type.is_noreturn_or_never return_annotation)
       then
         let rec check_unimplemented = function
           | [
@@ -4850,7 +4850,7 @@ module State (Context : Context) = struct
         let { Resolved.resolution; resolved; errors; _ } =
           forward_expression ~resolution expression
         in
-        if Type.is_noreturn resolved then
+        if Type.is_noreturn_or_never resolved then
           Unreachable, errors
         else
           Value resolution, errors

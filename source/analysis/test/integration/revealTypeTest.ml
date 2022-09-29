@@ -247,6 +247,15 @@ let test_reveal_type context =
       "Revealed type [-1]: Revealed type for `x` is `MyInt`.";
       "Revealed type [-1]: Revealed type for `y` is `int`.";
     ];
+  assert_type_errors
+    {|
+     from typing import Never
+
+     x: Never
+
+     reveal_type(x)
+   |}
+    ["Revealed type [-1]: Revealed type for `x` is `Never`."];
   ()
 
 

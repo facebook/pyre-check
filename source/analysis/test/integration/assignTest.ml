@@ -500,6 +500,27 @@ let test_check_assign context =
       reveal_type(x)
   |}
     ["Revealed type [-1]: Revealed type for `x` is `List[int]`."];
+  assert_type_errors
+    {|
+      from typing import Never
+
+      good: Never  # Note: local of type never can not be assigned to
+
+      w: Never
+      w = None
+
+      x: Never = None
+
+      y: Never = 1
+    |}
+    [
+      "Incompatible variable type [9]: w is declared to have type `Never` but is used as type \
+       `None`.";
+      "Incompatible variable type [9]: x is declared to have type `Never` but is used as type \
+       `None`.";
+      "Incompatible variable type [9]: y is declared to have type `Never` but is used as type \
+       `int`.";
+    ];
   ()
 
 

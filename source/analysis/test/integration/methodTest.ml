@@ -982,6 +982,36 @@ let test_check_method_parameters context =
       "4: Incompatible parameter type [6]: In call `foo`, for 3rd positional only parameter \
        expected `str` but got `int`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Never
+
+      def never() -> Never:
+        while True:
+          pass
+
+      def never_input(value: Never) -> str:
+        return "hello!"
+
+      never_input(never())
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Never
+
+      def never_input(value: Never) -> int:
+        return 1
+
+      never_input(None)
+      never_input(1)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `never_input`, for 1st positional only parameter \
+       expected `Never` but got `None`.";
+      "Incompatible parameter type [6]: In call `never_input`, for 1st positional only parameter \
+       expected `Never` but got `int`.";
+    ];
   ()
 
 

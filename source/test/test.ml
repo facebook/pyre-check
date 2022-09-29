@@ -492,7 +492,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     let builtin_stubs =
       {|
         from typing import (
-          TypeVar, Iterator, Iterable, NoReturn, overload, Container,
+          TypeVar, Iterator, Iterable, NoReturn, Never, overload, Container,
           Sequence, MutableSequence, Mapping, MutableMapping, Tuple, List, Any,
           Dict, Callable, Generic, Set, AbstractSet, FrozenSet, MutableSet, Sized,
           Reversible, SupportsInt, SupportsFloat, SupportsAbs,
@@ -1021,8 +1021,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Tuple: _SpecialForm = ...
         Generic: _SpecialForm = ...
         ClassVar: _SpecialForm = ...
-        # TODO(T76821797): This is wrong. But it's what typeshed says
-        NoReturn = Union[None]
+        NoReturn = _SpecialForm = ...
+        Never = _SpecialForm = ...
         TypeGuard: _SpecialForm = ...
 
         if sys.version_info < (3, 7):
