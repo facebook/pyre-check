@@ -34,3 +34,9 @@ let meet left right =
   | _, Mutable ->
       Mutable
   | _ -> ReadOnly
+
+
+let of_type = function
+  (* TODO(T130377746): Handle readonlyness for non-primitive types, such as `List`. *)
+  | Type.ReadOnly _ -> ReadOnly
+  | _ -> Mutable

@@ -48,7 +48,22 @@ let test_meet _ =
   ()
 
 
+let test_of_type _ =
+  let assert_of_type type_ expected =
+    let assert_equal = assert_equal ~cmp:[%compare.equal: t] ~printer:show in
+    assert_equal expected (of_type type_)
+  in
+  assert_of_type Type.integer Mutable;
+  assert_of_type (Type.ReadOnly.create Type.integer) ReadOnly;
+  ()
+
+
 let () =
   "readOnly"
-  >::: ["less_or_equal" >:: test_less_or_equal; "join" >:: test_join; "meet" >:: test_meet]
+  >::: [
+         "less_or_equal" >:: test_less_or_equal;
+         "join" >:: test_join;
+         "meet" >:: test_meet;
+         "of_type" >:: test_of_type;
+       ]
   |> Test.run

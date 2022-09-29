@@ -15,3 +15,5 @@ type t =
 val pp : Format.formatter -> t -> unit
 
 include Abstract.SimpleDomain.ELEMENT with type t := t
+
+val of_type : Type.t -> t
