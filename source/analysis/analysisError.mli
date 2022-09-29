@@ -491,13 +491,7 @@ val weaken_literals : kind -> kind
 
 val due_to_analysis_limitations : t -> bool
 
-val less_or_equal : resolution:GlobalResolution.t -> t -> t -> bool
-
 val join : resolution:GlobalResolution.t -> t -> t -> t
-
-val meet : resolution:GlobalResolution.t -> t -> t -> t
-
-val widen : resolution:GlobalResolution.t -> previous:t -> next:t -> iteration:int -> t
 
 val join_at_define : resolution:GlobalResolution.t -> t list -> t list
 

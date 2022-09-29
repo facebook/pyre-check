@@ -613,64 +613,6 @@ let test_join context =
        (revealed_type "a" (Annotation.create_mutable Type.float)))
 
 
-let test_less_or_equal context =
-  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
-  assert_true
-    (Error.less_or_equal
-       ~resolution
-       (error
-          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer }))
-       (error
-          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
-  assert_true
-    (Error.less_or_equal
-       ~resolution
-       (error
-          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer }))
-       (error
-          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.float })));
-  assert_false
-    (Error.less_or_equal
-       ~resolution
-       (error
-          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.float }))
-       (error
-          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
-  assert_false
-    (Error.less_or_equal
-       ~resolution
-       (error
-          (Error.Unpack { expected_count = 3; unpack_problem = Error.UnacceptableType Type.integer }))
-       (error
-          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
-  assert_true
-    (Error.less_or_equal
-       ~resolution
-       (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 2 }))
-       (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 2 })));
-  assert_false
-    (Error.less_or_equal
-       ~resolution
-       (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 2 }))
-       (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 })));
-  assert_false
-    (Error.less_or_equal
-       ~resolution
-       (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 2 }))
-       (error
-          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
-  assert_true
-    (Error.less_or_equal
-       ~resolution
-       (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
-       (error (revealed_type "a" (Annotation.create_immutable Type.integer))));
-  assert_false
-    (Error.less_or_equal
-       ~resolution
-       (error (revealed_type "a" (Annotation.create_immutable Type.float)))
-       (error (revealed_type "a" (Annotation.create_immutable Type.integer))))
-
-
 let test_filter context =
   let open Error in
   let resolution =
@@ -1141,7 +1083,6 @@ let () =
   >::: [
          "due_to_analysis_limitations" >:: test_due_to_analysis_limitations;
          "join" >:: test_join;
-         "less_or_equal" >:: test_less_or_equal;
          "filter" >:: test_filter;
          "suppress" >:: test_suppress;
          "namespace_insensitive_set" >:: test_namespace_insensitive_set;
