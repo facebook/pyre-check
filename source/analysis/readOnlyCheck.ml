@@ -73,8 +73,6 @@ module State (Context : Context) = struct
     | _ -> failwith "TODO(T130377746)"
 
 
-  let forward_statement ~state ~statement:_ = state, []
-
   let initial = Resolution.of_list []
 
   let forward_statement ~state ~statement:_ = state, []
