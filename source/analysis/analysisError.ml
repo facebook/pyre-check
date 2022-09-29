@@ -258,6 +258,27 @@ and tuple_concatenation_problem =
   | UnpackingNonIterable of { annotation: Type.t }
 [@@deriving compare, sexp, show, hash]
 
+module ReadOnly = struct
+  type mismatch = {
+    actual: ReadOnlyness.t;
+    expected: ReadOnlyness.t;
+  }
+  [@@deriving compare, sexp, show, hash]
+
+  type incompatible_type = {
+    name: Reference.t;
+    mismatch: mismatch;
+  }
+  [@@deriving compare, sexp, show, hash]
+
+  type readonlyness_mismatch =
+    | IncompatibleVariableType of {
+        incompatible_type: incompatible_type;
+        declare_location: Location.WithPath.t;
+      }
+  [@@deriving compare, sexp, show, hash]
+end
+
 type invalid_decoration =
   | CouldNotResolve of Expression.t
   | CouldNotResolveArgument of {
@@ -380,6 +401,7 @@ and kind =
       annotation_kind: annotation_kind;
       missing_annotation: missing_annotation;
     }
+  | ReadOnlynessMismatch of ReadOnly.readonlyness_mismatch
   | RedefinedClass of {
       current_class: Reference.t;
       shadowed_class: Reference.t;
@@ -530,6 +552,8 @@ let code_of_kind = function
   | DeadStore _ -> 1003
   (* Errors from type operators *)
   | BroadcastError _ -> 2001
+  (* Privacy-related errors. *)
+  | ReadOnlynessMismatch _ -> 3001
 
 
 let name_of_kind = function
@@ -573,6 +597,7 @@ let name_of_kind = function
   | NotCallable _ -> "Call error"
   | PrivateProtocolProperty _ -> "Private protocol property"
   | ProhibitedAny _ -> "Prohibited any"
+  | ReadOnlynessMismatch _ -> "ReadOnly violation"
   | RedefinedClass _ -> "Redefined class"
   | RedundantCast _ -> "Redundant cast"
   | RevealedLocals _ -> "Revealed locals"
@@ -2057,6 +2082,30 @@ let rec messages ~concise ~signature location kind =
           [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
       | TypeAlias, _ ->
           [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name])
+  | ReadOnlynessMismatch
+      (IncompatibleVariableType
+        { incompatible_type = { name; mismatch = { actual; expected }; _ }; _ }) ->
+      let message =
+        if concise then
+          Format.asprintf
+            "%a has readonlyness `%a`; used as `%a`."
+            pp_reference
+            name
+            ReadOnlyness.pp
+            expected
+            ReadOnlyness.pp
+            actual
+        else
+          Format.asprintf
+            "%a is declared to have readonlyness `%a` but is used as readonlyness `%a`."
+            pp_reference
+            name
+            ReadOnlyness.pp
+            expected
+            ReadOnlyness.pp
+            actual
+      in
+      [message]
   | RedefinedClass { shadowed_class; _ } when concise ->
       [Format.asprintf "Class `%a` redefined" pp_reference shadowed_class]
   | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported } ->
@@ -2712,6 +2761,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TypedDictionaryKeyNotFound _
   | TypedDictionaryInitializationError _
   | Unpack _
+  | ReadOnlynessMismatch _
   | RedefinedClass _
   | RevealedLocals _
   | RevealedType _
@@ -2845,6 +2895,43 @@ let join ~resolution left right =
             annotation_kind = annotation_kind_left;
             missing_annotation = join_missing_annotation left right;
           }
+    | ( ReadOnlynessMismatch
+          (IncompatibleVariableType
+            ({
+               incompatible_type =
+                 {
+                   name = left_name;
+                   mismatch = { actual = left_actual; expected = left_expected };
+                   _;
+                 } as left_incompatible_type;
+               _;
+             } as left)),
+        ReadOnlynessMismatch
+          (IncompatibleVariableType
+            {
+              incompatible_type =
+                {
+                  name = right_name;
+                  mismatch = { actual = right_actual; expected = right_expected };
+                  _;
+                };
+              _;
+            }) )
+      when Reference.equal left_name right_name ->
+        ReadOnlynessMismatch
+          (IncompatibleVariableType
+             {
+               left with
+               incompatible_type =
+                 {
+                   left_incompatible_type with
+                   mismatch =
+                     {
+                       actual = ReadOnlyness.join left_actual right_actual;
+                       expected = ReadOnlyness.join left_expected right_expected;
+                     };
+                 };
+             })
     | RedundantCast left, RedundantCast right ->
         RedundantCast (GlobalResolution.join resolution left right)
     | RevealedLocals left, RevealedLocals right
@@ -3177,6 +3264,7 @@ let join ~resolution left right =
     | NotCallable _, _
     | PrivateProtocolProperty _, _
     | ProhibitedAny _, _
+    | ReadOnlynessMismatch _, _
     | RedefinedClass _, _
     | RedundantCast _, _
     | RevealedLocals _, _
@@ -3754,6 +3842,7 @@ let dequalify
           }
     | InvalidDecoration expression -> InvalidDecoration expression
     | TupleConcatenationError expressions -> TupleConcatenationError expressions
+    | ReadOnlynessMismatch _ -> kind
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->

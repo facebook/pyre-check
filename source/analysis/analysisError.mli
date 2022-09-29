@@ -247,6 +247,27 @@ and tuple_concatenation_problem =
   | UnpackingNonIterable of { annotation: Type.t }
 [@@deriving compare, sexp, show, hash]
 
+module ReadOnly : sig
+  type mismatch = {
+    actual: ReadOnlyness.t;
+    expected: ReadOnlyness.t;
+  }
+  [@@deriving compare, sexp, show, hash]
+
+  type incompatible_type = {
+    name: Reference.t;
+    mismatch: mismatch;
+  }
+  [@@deriving compare, sexp, show, hash]
+
+  type readonlyness_mismatch =
+    | IncompatibleVariableType of {
+        incompatible_type: incompatible_type;
+        declare_location: Location.WithPath.t;
+      }
+  [@@deriving compare, sexp, show, hash]
+end
+
 type invalid_decoration =
   | CouldNotResolve of Expression.t
   | CouldNotResolveArgument of {
@@ -369,6 +390,7 @@ and kind =
       annotation_kind: annotation_kind;
       missing_annotation: missing_annotation;
     }
+  | ReadOnlynessMismatch of ReadOnly.readonlyness_mismatch
   | RedefinedClass of {
       current_class: Reference.t;
       shadowed_class: Reference.t;

@@ -8,7 +8,7 @@
 type t =
   | Mutable
   | ReadOnly
-[@@deriving compare, sexp, show]
+[@@deriving compare, sexp, show, hash]
 
 let name = "ReadOnlyness"
 
