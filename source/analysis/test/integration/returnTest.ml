@@ -577,7 +577,7 @@ let test_check_noreturn context =
       def no_return() -> typing.NoReturn:
         return 0
     |}
-    ["Incompatible return type [7]: Expected `NoReturn` but got `int`."];
+    ["Incompatible return type [7]: Function declared non-returnable, but got `int`."];
   assert_type_errors
     {|
       import typing
@@ -585,7 +585,7 @@ let test_check_noreturn context =
         # We implicitly return None, so have to accept this.
         return None
     |}
-    [];
+    ["Incompatible return type [7]: Function declared non-returnable, but got `None`."];
   assert_type_errors
     {|
       import sys
@@ -646,8 +646,11 @@ let test_check_noreturn context =
         return
     |}
     [
-      "Incompatible return type [7]: Expected `NoReturn` but got `int`.";
-      "Incompatible return type [7]: Expected `NoReturn` but got `int`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `int`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `int`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
     ];
   assert_type_errors
     {|
@@ -666,7 +669,7 @@ let test_check_noreturn context =
     def foo() -> NoReturn:
       return bar()
     |}
-    ["Incompatible return type [7]: Expected `NoReturn` but got `Never`."];
+    [];
   ()
 
 
@@ -688,7 +691,23 @@ let test_check_never context =
       def never() -> typing.Never:
         return 0
     |}
-    ["Incompatible return type [7]: Expected `Never` but got `int`."];
+    ["Incompatible return type [7]: Function declared non-returnable, but got `int`."];
+  assert_type_errors
+    {|
+      import typing
+      def never_explicit_return() -> typing.Never:
+        return None
+
+      def never_implicit_return() -> typing.Never:
+        return
+
+      never_explicit_return()
+      never_implicit_return()
+    |}
+    [
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -701,6 +720,7 @@ let test_check_never context =
       print(y)
     |}
     [
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
       "Incompatible variable type [9]: y is declared to have type `None` but is used as type \
        `Never`.";
     ];
@@ -770,8 +790,11 @@ let test_check_never context =
         return
     |}
     [
-      "Incompatible return type [7]: Expected `Never` but got `int`.";
-      "Incompatible return type [7]: Expected `Never` but got `int`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `int`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `int`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
+      "Incompatible return type [7]: Function declared non-returnable, but got `None`.";
     ];
   assert_type_errors
     {|
@@ -790,7 +813,7 @@ let test_check_never context =
     def foo() -> Never:
       return bar()
     |}
-    ["Incompatible return type [7]: Expected `Never` but got `NoReturn`."];
+    [];
   ()
 
 

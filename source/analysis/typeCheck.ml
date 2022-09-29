@@ -721,7 +721,7 @@ module State (Context : Context) = struct
         && (not (Define.is_abstract_method define))
         && (not (Define.is_overloaded_function define))
         && (not (Type.is_none actual && async && generator))
-        && not (Type.is_none actual && Type.is_noreturn_or_never return_annotation)
+        && not (Type.is_noreturn_or_never actual && Type.is_noreturn_or_never return_annotation)
       then
         let rec check_unimplemented = function
           | [

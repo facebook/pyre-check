@@ -1047,22 +1047,37 @@ let rec messages ~concise ~signature location kind =
       ]
   | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance; _ }; is_implicit; _ }
     ->
-      let trace =
-        Format.asprintf
-          "Type `%a` expected on line %d, specified on line %d.%s"
-          pp_type
-          expected
-          stop_line
-          define_location.Location.start.Location.line
-          (if due_to_invariance then " " ^ invariance_message else "")
-      in
-      let message =
-        if is_implicit then
-          Format.asprintf "Expected `%a` but got implicit return value of `None`." pp_type expected
-        else
-          Format.asprintf "Expected `%a` but got `%a`." pp_type expected pp_type actual
-      in
-      [message; trace]
+      if Type.is_noreturn_or_never expected then
+        let trace =
+          Format.asprintf
+            "Non-returnable function expected on line %d, specified on line %d."
+            stop_line
+            define_location.Location.start.Location.line
+        in
+        let message =
+          Format.asprintf "Function declared non-returnable, but got `%a`." pp_type actual
+        in
+        [message; trace]
+      else
+        let trace =
+          Format.asprintf
+            "Type `%a` expected on line %d, specified on line %d.%s"
+            pp_type
+            expected
+            stop_line
+            define_location.Location.start.Location.line
+            (if due_to_invariance then " " ^ invariance_message else "")
+        in
+        let message =
+          if is_implicit then
+            Format.asprintf
+              "Expected `%a` but got implicit return value of `None`."
+              pp_type
+              expected
+          else
+            Format.asprintf "Expected `%a` but got `%a`." pp_type expected pp_type actual
+        in
+        [message; trace]
   | IncompatibleAttributeType
       {
         parent;
