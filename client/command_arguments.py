@@ -266,6 +266,7 @@ class AnalyzeArguments:
     maximum_tree_depth_after_widening: Optional[int] = None
     maximum_return_access_path_width: Optional[int] = None
     maximum_return_access_path_depth_after_widening: Optional[int] = None
+    maximum_tito_collapse_depth: Optional[int] = None
     maximum_tito_positions: Optional[int] = None
     maximum_overrides_to_analyze: Optional[int] = None
     maximum_tito_depth: Optional[int] = None

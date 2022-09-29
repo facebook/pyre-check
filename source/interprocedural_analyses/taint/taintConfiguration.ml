@@ -133,6 +133,33 @@ module ModelConstraints = struct
      * to just `a.b`.
      *)
     maximum_return_access_path_depth_after_widening: int;
+    (* This limits the depth of the taint tree after applying taint-in-taint-out,
+     * i.e the length of paths for taint propagated from a parameter to the return
+     * value.
+     *
+     * For instance:
+     * ```
+     * def identity(arg): return arg
+     *
+     * def foo():
+     *   input = {'a': {'b': {'c': source()}}}
+     *   output = identity(input)
+     * ```
+     *
+     * The taint tree for `input` has a depth of 3 (i.e, `a` -> `b` -> `c`).
+     * When the taint is propagated to the return value of `identity`, we limit
+     * the resulting taint tree to the given depth. For instance, if that threshold
+     * is 1, we would consider that `output['a']` is tainted.
+     *
+     * This is also applied for sinks in the backward analysis:
+     * ```
+     * def foo(arg):
+     *   output = identity(arg)
+     *   sink(output['a']['b']['c'])
+     * ```
+     * With a threshold of 1, we would consider that `output['a']` leads to a sink.
+     *)
+    maximum_tito_collapse_depth: int;
     (* This limits the number of positions to keep track of when propagating taint.
      *
      * When taint is propagated through a function and returned (i.e,
@@ -173,6 +200,7 @@ module ModelConstraints = struct
       maximum_tree_depth_after_widening = 4;
       maximum_return_access_path_width = 10;
       maximum_return_access_path_depth_after_widening = 4;
+      maximum_tito_collapse_depth = 4;
       maximum_tito_positions = 50;
       (* DOCUMENTATION_CONFIGURATION_END *)
       maximum_overrides_to_analyze = None;
@@ -188,6 +216,7 @@ module ModelConstraints = struct
       ~maximum_tree_depth_after_widening
       ~maximum_return_access_path_width
       ~maximum_return_access_path_depth_after_widening
+      ~maximum_tito_collapse_depth
       ~maximum_tito_positions
       ~maximum_overrides_to_analyze
       ~maximum_trace_length
@@ -219,6 +248,8 @@ module ModelConstraints = struct
         Option.value
           maximum_return_access_path_depth_after_widening
           ~default:constraints.maximum_return_access_path_depth_after_widening;
+      maximum_tito_collapse_depth =
+        Option.value maximum_tito_collapse_depth ~default:constraints.maximum_tito_collapse_depth;
       maximum_tito_positions =
         Option.value maximum_tito_positions ~default:constraints.maximum_tito_positions;
       maximum_overrides_to_analyze =
@@ -1095,6 +1126,8 @@ let from_json_list source_json_list =
   >>= fun maximum_return_access_path_width ->
   parse_integer_option "maximum_return_access_path_depth_after_widening"
   >>= fun maximum_return_access_path_depth_after_widening ->
+  parse_integer_option "maximum_tito_collapse_depth"
+  >>= fun maximum_tito_collapse_depth ->
   parse_integer_option "maximum_tito_positions"
   >>= fun maximum_tito_positions ->
   parse_integer_option "maximum_overrides_to_analyze"
@@ -1144,6 +1177,7 @@ let from_json_list source_json_list =
         ~maximum_tree_depth_after_widening
         ~maximum_return_access_path_width
         ~maximum_return_access_path_depth_after_widening
+        ~maximum_tito_collapse_depth
         ~maximum_tito_positions
         ~maximum_overrides_to_analyze
         ~maximum_trace_length
@@ -1313,6 +1347,7 @@ let with_command_line_options
     ~maximum_tree_depth_after_widening
     ~maximum_return_access_path_width
     ~maximum_return_access_path_depth_after_widening
+    ~maximum_tito_collapse_depth
     ~maximum_tito_positions
     ~maximum_overrides_to_analyze
     ~maximum_trace_length
@@ -1380,6 +1415,7 @@ let with_command_line_options
       ~maximum_tree_depth_after_widening
       ~maximum_return_access_path_width
       ~maximum_return_access_path_depth_after_widening
+      ~maximum_tito_collapse_depth
       ~maximum_tito_positions
       ~maximum_overrides_to_analyze
       ~maximum_trace_length

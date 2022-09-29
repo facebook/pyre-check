@@ -36,6 +36,7 @@ module AnalyzeConfiguration = struct
     maximum_tree_depth_after_widening: int option;
     maximum_return_access_path_width: int option;
     maximum_return_access_path_depth_after_widening: int option;
+    maximum_tito_collapse_depth: int option;
     maximum_tito_positions: int option;
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
@@ -92,6 +93,9 @@ module AnalyzeConfiguration = struct
           let maximum_return_access_path_depth_after_widening =
             optional_int_member "maximum_return_access_path_depth_after_widening" json
           in
+          let maximum_tito_collapse_depth =
+            optional_int_member "maximum_tito_collapse_depth" json
+          in
           let maximum_tito_positions = optional_int_member "maximum_tito_positions" json in
           let maximum_overrides_to_analyze =
             optional_int_member "maximum_overrides_to_analyze" json
@@ -127,6 +131,7 @@ module AnalyzeConfiguration = struct
               maximum_tree_depth_after_widening;
               maximum_return_access_path_width;
               maximum_return_access_path_depth_after_widening;
+              maximum_tito_collapse_depth;
               maximum_tito_positions;
               maximum_overrides_to_analyze;
               maximum_trace_length;
@@ -185,6 +190,7 @@ module AnalyzeConfiguration = struct
         maximum_tree_depth_after_widening;
         maximum_return_access_path_width;
         maximum_return_access_path_depth_after_widening;
+        maximum_tito_collapse_depth;
         maximum_tito_positions;
         maximum_overrides_to_analyze;
         maximum_trace_length;
@@ -256,6 +262,7 @@ module AnalyzeConfiguration = struct
       maximum_tree_depth_after_widening;
       maximum_return_access_path_width;
       maximum_return_access_path_depth_after_widening;
+      maximum_tito_collapse_depth;
       maximum_tito_positions;
       maximum_overrides_to_analyze;
       maximum_trace_length;

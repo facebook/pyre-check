@@ -469,6 +469,11 @@ def pyre(
     help="Limits the depth of the return access path tree within loops.",
 )
 @click.option(
+    "--maximum-tito-collapse-depth",
+    type=int,
+    help="Limits the depth of taint trees after applying taint-in-taitn-out.",
+)
+@click.option(
     "--maximum-tito-positions",
     type=int,
     help="Limits the number of tito positions.",
@@ -520,6 +525,7 @@ def analyze(
     maximum_tree_depth_after_widening: Optional[int],
     maximum_return_access_path_width: Optional[int],
     maximum_return_access_path_depth_after_widening: Optional[int],
+    maximum_tito_collapse_depth: Optional[int],
     maximum_tito_positions: Optional[int],
     maximum_overrides_to_analyze: Optional[int],
     maximum_trace_length: Optional[int],
@@ -558,6 +564,7 @@ def analyze(
             maximum_tree_depth_after_widening=maximum_tree_depth_after_widening,
             maximum_return_access_path_width=maximum_return_access_path_width,
             maximum_return_access_path_depth_after_widening=maximum_return_access_path_depth_after_widening,
+            maximum_tito_collapse_depth=maximum_tito_collapse_depth,
             maximum_tito_positions=maximum_tito_positions,
             maximum_overrides_to_analyze=maximum_overrides_to_analyze,
             maximum_tito_depth=maximum_tito_depth,

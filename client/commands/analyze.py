@@ -53,6 +53,7 @@ class Arguments:
     maximum_tree_depth_after_widening: Optional[int] = None
     maximum_return_access_path_width: Optional[int] = None
     maximum_return_access_path_depth_after_widening: Optional[int] = None
+    maximum_tito_collapse_depth: Optional[int] = None
     maximum_tito_positions: Optional[int] = None
     maximum_overrides_to_analyze: Optional[int] = None
     maximum_tito_depth: Optional[int] = None
@@ -83,6 +84,7 @@ class Arguments:
         maximum_return_access_path_depth_after_widening = (
             self.maximum_return_access_path_depth_after_widening
         )
+        maximum_tito_collapse_depth = self.maximum_tito_collapse_depth
         maximum_tito_positions = self.maximum_tito_positions
         maximum_overrides_to_analyze = self.maximum_overrides_to_analyze
         maximum_tito_depth = self.maximum_tito_depth
@@ -145,6 +147,11 @@ class Arguments:
                 else {
                     "maximum_return_access_path_depth_after_widening": maximum_return_access_path_depth_after_widening
                 }
+            ),
+            **(
+                {}
+                if maximum_tito_collapse_depth is None
+                else {"maximum_tito_collapse_depth": maximum_tito_collapse_depth}
             ),
             **(
                 {}
@@ -266,6 +273,7 @@ def create_analyze_arguments(
         maximum_tree_depth_after_widening=analyze_arguments.maximum_tree_depth_after_widening,
         maximum_return_access_path_width=analyze_arguments.maximum_return_access_path_width,
         maximum_return_access_path_depth_after_widening=analyze_arguments.maximum_return_access_path_depth_after_widening,
+        maximum_tito_collapse_depth=analyze_arguments.maximum_tito_collapse_depth,
         maximum_tito_positions=analyze_arguments.maximum_tito_positions,
         maximum_overrides_to_analyze=analyze_arguments.maximum_overrides_to_analyze,
         maximum_tito_depth=analyze_arguments.maximum_tito_depth,

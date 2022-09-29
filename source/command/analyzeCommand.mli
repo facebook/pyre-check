@@ -29,6 +29,7 @@ module AnalyzeConfiguration : sig
     maximum_tree_depth_after_widening: int option;
     maximum_return_access_path_width: int option;
     maximum_return_access_path_depth_after_widening: int option;
+    maximum_tito_collapse_depth: int option;
     maximum_tito_positions: int option;
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;

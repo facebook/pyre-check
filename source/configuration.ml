@@ -511,6 +511,7 @@ module StaticAnalysis = struct
     maximum_tree_depth_after_widening: int option;
     maximum_return_access_path_width: int option;
     maximum_return_access_path_depth_after_widening: int option;
+    maximum_tito_collapse_depth: int option;
     maximum_tito_positions: int option;
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
@@ -540,6 +541,7 @@ module StaticAnalysis = struct
       ?maximum_tree_depth_after_widening
       ?maximum_return_access_path_width
       ?maximum_return_access_path_depth_after_widening
+      ?maximum_tito_collapse_depth
       ?maximum_tito_positions
       ?maximum_overrides_to_analyze
       ?maximum_trace_length
@@ -569,6 +571,7 @@ module StaticAnalysis = struct
       maximum_tree_depth_after_widening;
       maximum_return_access_path_width;
       maximum_return_access_path_depth_after_widening;
+      maximum_tito_collapse_depth;
       maximum_tito_positions;
       maximum_overrides_to_analyze;
       maximum_trace_length;

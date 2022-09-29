@@ -37,6 +37,7 @@ let test_json_parsing context =
       maximum_tree_depth_after_widening = None;
       maximum_return_access_path_width = None;
       maximum_return_access_path_depth_after_widening = None;
+      maximum_tito_collapse_depth = None;
       maximum_tito_positions = None;
       maximum_overrides_to_analyze = None;
       maximum_trace_length = None;
@@ -110,6 +111,9 @@ let test_json_parsing context =
        :: BaseConfigurationTest.dummy_base_json))
     ~expected:
       { dummy_analyze_configuration with maximum_return_access_path_depth_after_widening = Some 5 };
+  assert_parsed
+    (`Assoc (("maximum_tito_collapse_depth", `Int 6) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with maximum_tito_collapse_depth = Some 6 };
   assert_parsed
     (`Assoc (("maximum_tito_positions", `Int 50) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with maximum_tito_positions = Some 50 };

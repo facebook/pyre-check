@@ -30,6 +30,7 @@ let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configurati
           ~maximum_tree_depth_after_widening:None
           ~maximum_return_access_path_width:None
           ~maximum_return_access_path_depth_after_widening:None
+          ~maximum_tito_collapse_depth:None
           ~maximum_tito_positions:None
           ~maximum_overrides_to_analyze:None
           ~maximum_trace_length:None
