@@ -6,6 +6,7 @@
  *)
 
 open Ast
+open Core
 open Statement
 module Error = AnalysisError
 
@@ -26,7 +27,23 @@ module Resolved : sig
   [@@deriving show]
 end
 
-module State : sig
+module LocalErrorMap : sig
+  type t = Error.t list Int.Table.t
+
+  val empty : unit -> t
+
+  val set : statement_key:int -> errors:Error.t list -> t -> unit
+
+  val append : statement_key:int -> error:Error.t -> t -> unit
+
+  val all_errors : t -> Error.t list
+end
+
+module type Context = sig
+  val error_map : LocalErrorMap.t option
+end
+
+module State (Context : Context) : sig
   val forward_expression : resolution:Resolution.t -> Expression.t -> Resolved.t
 end
 

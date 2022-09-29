@@ -13,6 +13,11 @@ open ReadOnlyCheck
 open ReadOnlyness
 
 let test_forward_expression _ =
+  let module Context = struct
+    let error_map = Some (LocalErrorMap.empty ())
+  end
+  in
+  let module State = State (Context) in
   let assert_resolved ?(resolution = Resolution.of_list []) expression expected_type =
     let { Resolved.resolved; _ } =
       parse_single_expression expression |> State.forward_expression ~resolution

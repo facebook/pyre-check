@@ -7,6 +7,7 @@
 
 open Core
 open Ast
+open Pyre
 open Expression
 module Error = AnalysisError
 
@@ -32,7 +33,26 @@ module Resolved = struct
   [@@deriving show]
 end
 
-module State = struct
+module LocalErrorMap = struct
+  type t = Error.t list Int.Table.t
+
+  let empty () = Int.Table.create ()
+
+  let set ~statement_key ~errors error_map = Int.Table.set error_map ~key:statement_key ~data:errors
+
+  let append ~statement_key ~error error_map =
+    Int.Table.add_multi error_map ~key:statement_key ~data:error
+
+
+  let all_errors error_map = Int.Table.data error_map |> List.concat
+end
+
+module type Context = sig
+  (* Where to store errors found during the fixpoint. `None` discards them. *)
+  val error_map : LocalErrorMap.t option
+end
+
+module State (Context : Context) = struct
   include Resolution
 
   let widen ~previous ~next ~iteration = widen ~prev:previous ~next ~iteration
@@ -57,8 +77,14 @@ module State = struct
 
   let initial = Resolution.of_list []
 
-  let forward ~statement_key:_ state ~statement =
-    let new_state, _ = forward_statement ~state ~statement in
+  let forward_statement ~state ~statement:_ = state, []
+
+  let forward ~statement_key state ~statement =
+    let new_state, errors = forward_statement ~state ~statement in
+    let () =
+      let _ = Context.error_map >>| LocalErrorMap.set ~statement_key ~errors in
+      ()
+    in
     new_state
 
 
@@ -66,14 +92,15 @@ module State = struct
     failwith "Not implementing this for readonly analysis"
 end
 
-let populate_error_map define =
+let readonly_errors_for_define define =
+  let module Context = struct
+    let error_map = Some (LocalErrorMap.empty ())
+  end
+  in
+  let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let cfg = Node.value define |> Cfg.create in
   let _state = Fixpoint.forward ~cfg ~initial:State.initial |> Fixpoint.exit in
-  ()
-
-
-let readonly_errors_for_define define =
-  let () = populate_error_map define in
-  (* TODO(T130377746): Read errors from the error map. *)
-  []
+  Option.value_exn
+    ~message:"no error map found in the analysis context"
+    (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
