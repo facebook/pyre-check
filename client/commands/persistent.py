@@ -590,20 +590,15 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             if subscription_name == subscription_response.name:
                 await self._handle_subscription_body(subscription_response.body)
 
-    async def _subscribe(
+    async def _subscribe_to_type_errors(
         self,
         server_input_channel: connections.AsyncTextReader,
         server_output_channel: connections.AsyncTextWriter,
     ) -> None:
         subscription_name = f"persistent_{os.getpid()}"
-        if self.get_type_errors_availability().is_enabled():
-            await server_output_channel.write(
-                f'["SubscribeToTypeErrors", "{subscription_name}"]\n'
-            )
-        else:
-            await server_output_channel.write(
-                f'["SubscribeToStateChanges", "{subscription_name}"]\n'
-            )
+        await server_output_channel.write(
+            f'["SubscribeToTypeErrors", "{subscription_name}"]\n'
+        )
         first_response = await _read_server_response(server_input_channel)
         initial_type_errors = incremental.parse_type_error_response(first_response)
         self.client_type_error_handler.update_type_errors(initial_type_errors)
@@ -613,6 +608,42 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             server_input_channel,
             server_output_channel,
         )
+
+    async def _subscribe_to_state_changes(
+        self,
+        server_input_channel: connections.AsyncTextReader,
+        server_output_channel: connections.AsyncTextWriter,
+    ) -> None:
+        subscription_name = f"persistent_{os.getpid()}"
+        await server_output_channel.write(
+            f'["SubscribeToStateChanges", "{subscription_name}"]\n'
+        )
+        first_response = await _read_server_response(server_input_channel)
+        if json.loads(first_response) != ["Ok"]:
+            raise ValueError(
+                f"Unexpected server response to SubscribeToStateChanges: {first_response!r}"
+            )
+        await self._run_subscription_loop(
+            subscription_name,
+            server_input_channel,
+            server_output_channel,
+        )
+
+    async def _subscribe(
+        self,
+        server_input_channel: connections.AsyncTextReader,
+        server_output_channel: connections.AsyncTextWriter,
+    ) -> None:
+        if self.get_type_errors_availability().is_enabled():
+            await self._subscribe_to_type_errors(
+                server_input_channel,
+                server_output_channel,
+            )
+        else:
+            await self._subscribe_to_state_changes(
+                server_input_channel,
+                server_output_channel,
+            )
 
     async def subscribe(
         self,
