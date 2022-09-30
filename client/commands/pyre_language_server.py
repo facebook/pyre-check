@@ -13,6 +13,7 @@ because it illustrates that this is the intermediary between the Language server
 
 import dataclasses
 import logging
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -51,6 +52,13 @@ async def read_lsp_request(
                     message=str(json_rpc_error),
                 ),
             )
+
+
+def duration_ms(
+    start_time: float,
+    end_time: float,
+) -> int:
+    return int(1000 * (end_time - start_time))
 
 
 async def _wait_for_exit(
@@ -256,6 +264,7 @@ class PyreLanguageServer:
                 ),
             )
         else:
+            start_time = time.time()
             result = await self.handler.get_hover(
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
@@ -271,6 +280,7 @@ class PyreLanguageServer:
                     result=raw_result,
                 ),
             )
+            end_time = time.time()
             await self.write_telemetry(
                 {
                     "type": "LSP",
@@ -278,6 +288,7 @@ class PyreLanguageServer:
                     "filePath": str(document_path),
                     "nonEmpty": len(result.contents) > 0,
                     "response": raw_result,
+                    "duration_ms": duration_ms(start_time, end_time),
                 },
                 activity_key,
             )
@@ -323,6 +334,7 @@ class PyreLanguageServer:
                 ),
             )
         else:
+            start_time = time.time()
             shadow_mode = self.get_language_server_features().definition.is_shadow()
             if not shadow_mode:
                 raw_result = await self._get_definition_result(
@@ -352,6 +364,7 @@ class PyreLanguageServer:
                     document_path=document_path,
                     position=parameters.position,
                 )
+            end_time = time.time()
             await self.write_telemetry(
                 {
                     "type": "LSP",
@@ -359,6 +372,7 @@ class PyreLanguageServer:
                     "filePath": str(document_path),
                     "count": len(raw_result),
                     "response": raw_result,
+                    "duration_ms": duration_ms(start_time, end_time),
                 },
                 activity_key,
             )
