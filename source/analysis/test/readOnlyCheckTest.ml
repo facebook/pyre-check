@@ -7,14 +7,29 @@
 
 open Core
 open OUnit2
+open Ast
 open Analysis
 open Test
 open ReadOnlyCheck
 open ReadOnlyness
 
-let test_forward_expression _ =
+let test_forward_expression context =
+  let global_resolution =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+  in
   let module Context = struct
+    let qualifier = !&"test"
+
+    let define =
+      parse_single_define {|
+      def foo() -> None: ...
+    |}
+      |> Node.create_with_default_location
+
+
     let error_map = Some (LocalErrorMap.empty ())
+
+    let global_resolution = global_resolution
   end
   in
   let module State = State (Context) in
@@ -39,10 +54,14 @@ let test_forward_expression _ =
 
 
 let assert_readonly_errors ~context =
-  let check ~environment:_ ~source =
+  let check ~environment ~source =
     source
     |> Preprocessing.defines ~include_toplevels:true
-    |> List.concat_map ~f:ReadOnlyCheck.readonly_errors_for_define
+    |> List.concat_map
+         ~f:
+           (ReadOnlyCheck.readonly_errors_for_define
+              ~type_environment:(TypeEnvironment.read_only environment)
+              ~qualifier:!&"test")
   in
   assert_errors ~context ~check
 
@@ -54,10 +73,23 @@ let test_assignment context =
       from pyre_extensions import ReadOnly
 
       def main() -> None:
-        y: ReadOnly[int] = 42
+        x: ReadOnly[int] = 42
+        y = x
         z: int = y
     |}
-    (* TODO(T130377746): Emit an error for the second statement. *)
+    [
+      "ReadOnly violation [3001]: z is declared to have readonlyness `ReadOnlyness.Mutable` but is \
+       used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main() -> None:
+        x = 42
+        y = x
+        z: ReadOnly[int] = y
+    |}
     [];
   ()
 

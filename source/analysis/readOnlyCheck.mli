@@ -40,6 +40,12 @@ module LocalErrorMap : sig
 end
 
 module type Context = sig
+  val qualifier : Reference.t
+
+  val define : Define.t Node.t
+
+  val global_resolution : GlobalResolution.t
+
   val error_map : LocalErrorMap.t option
 end
 
@@ -47,4 +53,8 @@ module State (Context : Context) : sig
   val forward_expression : resolution:Resolution.t -> Expression.t -> Resolved.t
 end
 
-val readonly_errors_for_define : Define.t Node.t -> Error.t list
+val readonly_errors_for_define
+  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  qualifier:Reference.t ->
+  Define.t Node.t ->
+  Error.t list
