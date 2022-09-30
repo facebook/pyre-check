@@ -574,6 +574,22 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         elif isinstance(subscription_body, subscription.Error):
             await self.handle_error_subscription(subscription_body)
 
+    async def _run_subscription_loop(
+        self,
+        subscription_name: str,
+        server_input_channel: connections.AsyncTextReader,
+        server_output_channel: connections.AsyncTextWriter,
+    ) -> None:
+        while True:
+            raw_subscription_response = await _read_server_response(
+                server_input_channel
+            )
+            subscription_response = subscription.Response.parse(
+                raw_subscription_response
+            )
+            if subscription_name == subscription_response.name:
+                await self._handle_subscription_body(subscription_response.body)
+
     async def _subscribe(
         self,
         server_input_channel: connections.AsyncTextReader,
@@ -588,21 +604,15 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             await server_output_channel.write(
                 f'["SubscribeToStateChanges", "{subscription_name}"]\n'
             )
-
         first_response = await _read_server_response(server_input_channel)
         initial_type_errors = incremental.parse_type_error_response(first_response)
         self.client_type_error_handler.update_type_errors(initial_type_errors)
         await self.client_type_error_handler.show_type_errors_to_client()
-
-        while True:
-            raw_subscription_response = await _read_server_response(
-                server_input_channel
-            )
-            subscription_response = subscription.Response.parse(
-                raw_subscription_response
-            )
-            if subscription_name == subscription_response.name:
-                await self._handle_subscription_body(subscription_response.body)
+        await self._run_subscription_loop(
+            subscription_name,
+            server_input_channel,
+            server_output_channel,
+        )
 
     async def subscribe(
         self,
