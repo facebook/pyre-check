@@ -179,7 +179,12 @@ let assert_queries_with_local_root
         |> fun { ServerProperties.configuration = { Configuration.Analysis.local_root; _ }; _ } ->
         build_expected_response local_root
       in
-      assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
+      assert_equal
+        ~ctxt:context
+        ~cmp:String.equal
+        ~printer:(fun x -> Yojson.Safe.pretty_to_string (Yojson.Safe.from_string x))
+        expected_response
+        actual_response;
       Lwt.return_unit
     in
     Lwt_list.iter_s handle_one_query queries_and_responses
