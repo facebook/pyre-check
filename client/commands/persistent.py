@@ -950,6 +950,7 @@ def run(
         )
     except Exception:
         error_message = traceback.format_exc()
+        LOG.exception("Uncaught error in persistent.run")
         return 1
     finally:
         log_lsp_event._log_lsp_event(
