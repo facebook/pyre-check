@@ -108,6 +108,15 @@ class LSPInputOutputTest(testslide.TestCase):
         await assert_not_parsed(
             'Content-Length: 4\r\n\r\n{"jsonrpc": "2.0", "id": 0, "method": "foo"}'
         )
+        await assert_not_parsed(
+            'Content-Length: 27\r\n\r\n{"jsonrpc": "2.0", "id": 0}',
+            exception_type=json_rpc.InvalidRequestError,
+        )
+        await assert_not_parsed(
+            'Content-Length: 27\r\n\r\n{"jsonrpc": "2.0", "id": 0}'
+            'Content-Length: 44\r\n\r\n{"jsonrpc": "2.0", "id": 0, "method": "foo"}',
+            exception_type=json_rpc.InvalidRequestError,
+        )
         await assert_parses(
             'Content-Length: 44\r\n\r\n{"jsonrpc": "2.0", "id": 0, "method": "foo"}',
             expected=json_rpc.Request(id=0, method="foo"),
