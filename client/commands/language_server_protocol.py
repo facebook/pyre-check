@@ -80,18 +80,21 @@ def _get_content_length(headers: Iterable[str]) -> int:
         ) from error
 
 
-async def read_json_rpc(
+async def _try_read_json_rpc(
     input_channel: connections.AsyncTextReader,
 ) -> json_rpc.Request:
     """
     Asynchronously read a JSON-RPC request from the given input channel.
+
     May raise `json_rpc.ParseError`, `json_rpc.InvalidRequestError`,
     `json_prc.InvalidParameterError`, and `ReadChannelClosedError`.
+
+    This is expected to throw errors if the editor sends empty requests,
+    most callsites should use `read_nonempty_json_rpc_request`
     """
     try:
         headers = await _read_headers(input_channel)
         content_length = _get_content_length(headers)
-
         payload = await input_channel.read_exactly(content_length)
         return json_rpc.Request.from_string(payload)
     except asyncio.IncompleteReadError as error:
@@ -101,6 +104,24 @@ async def read_json_rpc(
             ) from None
         else:
             raise json_rpc.ParseError(str(error)) from None
+
+
+async def read_json_rpc(
+    input_channel: connections.AsyncTextReader,
+) -> json_rpc.Request:
+    """
+    Read a JSON-RPC request from the given input channel. Ignores
+    any requests that are missing the "method" field, which is needed
+    because VSCode often sends empty requests.
+
+    May raise `json_rpc.ParseError`, `json_rpc.InvalidRequestError`,
+    `json_prc.InvalidParameterError`, and `ReadChannelClosedError`.
+    """
+    while True:
+        try:
+            return await _try_read_json_rpc(input_channel)
+        except json_rpc.MissingMethodFieldInRequestError:
+            continue
 
 
 def json_rpc_payload(message: json_rpc.JSONRPC) -> str:

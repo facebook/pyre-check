@@ -56,6 +56,19 @@ class InvalidRequestError(JSONRPCException):
         return -32600
 
 
+class MissingMethodFieldInRequestError(InvalidRequestError):
+    """
+    Special case of InvalidRequestError, used when the "method" field
+    is missing in a request.
+
+    This error type is needed because VSCode sends us many empty requests
+    that have no method and we need a specific exception that makes it easy
+    to ignore these messages.
+    """
+
+    pass
+
+
 class MethodNotFoundError(JSONRPCException):
     """
     The method does not exist / is not available.
@@ -176,7 +189,7 @@ class Request(JSONRPC):
 
         method = request_json.get("method")
         if method is None:
-            raise InvalidRequestError(
+            raise MissingMethodFieldInRequestError(
                 f"Required field `method` is missing: {request_json}"
             )
         if not isinstance(method, str):
@@ -206,8 +219,9 @@ class Request(JSONRPC):
     def from_string(request_string: str) -> "Request":
         """
         Parse a given string into a JSON-RPC request.
-        Raises `ParseError` if the parsing fails. Raises `InvalidRequestError`
-        and `InvalidParameterError` if the JSON body is malformed.
+        - Raises `ParseError` if json parsing fails.
+        - Raises `InvalidRequestError` and `InvalidParameterError` if the
+          JSON body is malformed (in any way other than a missing `method`)
         """
         try:
             request_json = json.loads(request_string)
