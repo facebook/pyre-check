@@ -18,7 +18,6 @@ class Baz:
     ...
 
 
-# TODO (T129149026): global in the same module is not tainted correctly
 def g():
     foo.append(1)
 

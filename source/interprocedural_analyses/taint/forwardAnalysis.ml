@@ -2115,12 +2115,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | ListComprehension comprehension ->
           analyze_comprehension ~resolution ~state ~is_result_used comprehension
       | Name (Name.Identifier identifier) ->
-          let root = AccessPath.Root.Variable identifier in
-          let taint =
+          let global_taint =
+            GlobalModel.from_expression
+              ~resolution
+              ~call_graph:FunctionContext.call_graph_of_define
+              ~get_callee_model:FunctionContext.get_callee_model
+              ~qualifier:FunctionContext.qualifier
+              ~expression
+              ~interval:FunctionContext.caller_class_interval
+            |> GlobalModel.get_source
+          in
+          let local_taint =
+            let root = AccessPath.Root.Variable identifier in
             ForwardState.read ~root ~path:[] state.taint
             |> ForwardState.Tree.add_local_type_breadcrumbs ~resolution ~expression
           in
-          taint, state
+          ForwardState.Tree.join local_taint global_taint, state
       (* __dict__ reveals an object's underlying data structure, so we should analyze the base under
          the existing taint instead of adding the index to the taint. *)
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->

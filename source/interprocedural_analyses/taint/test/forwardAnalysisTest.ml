@@ -155,6 +155,40 @@ let test_global_taint context =
     ]
 
 
+let test_global_var_taint context =
+  assert_taint
+    ~context
+    ~models:{|
+       qualifier.foo: TaintSource[UserControlled] = ...
+    |}
+    {|
+      foo = []
+      def inferred_source():
+        return foo
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.NamedSource "UserControlled"]
+        "qualifier.inferred_source";
+    ]
+
+
+let test_global_var_shadowed_no_taint context =
+  assert_taint
+    ~context
+    ~models:{|
+       qualifier.foo: TaintSource[UserControlled] = ...
+    |}
+    {|
+      foo = []
+      def inferred_source():
+        foo = []
+        return foo
+    |}
+    []
+
+
 let test_hardcoded_source context =
   assert_taint
     ~context
@@ -1272,6 +1306,8 @@ let () =
          "copy" >:: test_local_copy;
          "dictionary" >:: test_dictionary;
          "global_taint" >:: test_global_taint;
+         "global_var_taint" >:: test_global_var_taint;
+         "global_var_shadowed_no_taint" >:: test_global_var_shadowed_no_taint;
          "hardcoded" >:: test_hardcoded_source;
          "lambda" >:: test_lambda;
          "list" >:: test_list;

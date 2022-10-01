@@ -55,6 +55,66 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_global_variable.g",
+    "callable_line": 21,
+    "code": 1001,
+    "line": 22,
+    "start": 4,
+    "end": 7,
+    "filename": "model_query_global_variable.py",
+    "message": "[Test1] to [Test1]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{model_query_global_variable.foo}" }
+                ],
+                "kind": "Test1"
+              }
+            ],
+            "root": {
+              "filename": "model_query_global_variable.py",
+              "line": 22,
+              "start": 4,
+              "end": 7
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "list.append" } ], "kind": "Test1" }
+            ],
+            "root": {
+              "filename": "model_query_global_variable.py",
+              "line": 22,
+              "start": 4,
+              "end": 7
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "list.append",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "model_query_global_variable.g:1001:0:Call|list.append|0|formal(self):11419e849345f9de673d477dcedef3a2"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{model_query_global_variable.foo}",
