@@ -117,7 +117,7 @@ def run(
         + get_all_files(root=Path.cwd() / "stubs/lxml", extension_glob="*.pyi")
         + get_all_files(root=Path.cwd() / "pysa_filters", extension_glob="*.json")
         + find_taint_stubs(),
-        python_requires=">=3.6",
+        python_requires=">=3.7",
         install_requires=runtime_dependencies,
         entry_points=dict(  # noqa we need to do this to make this .format-able
             console_scripts=[
