@@ -13,7 +13,7 @@ open CodeNavigationServer
 module Request = CodeNavigationServer.Testing.Request
 module Response = CodeNavigationServer.Testing.Response
 
-module Client = struct
+module ClientConnection = struct
   type t = {
     context: test_ctxt;
     configuration: Configuration.Analysis.t;
@@ -158,6 +158,6 @@ let test_server_with ~f { context; start_options } =
     ~on_started:(fun { Server.ServerProperties.socket_path; configuration; _ } server_state ->
       let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
       let test_client (input_channel, output_channel) =
-        f { Client.context; configuration; server_state; input_channel; output_channel }
+        f { ClientConnection.context; configuration; server_state; input_channel; output_channel }
       in
       Lwt_io.with_connection socket_address test_client)

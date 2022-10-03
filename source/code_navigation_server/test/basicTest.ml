@@ -18,14 +18,14 @@ let range start_line start_column stop_line stop_column =
 
 let assert_type_error_count ?overlay_id ~client ~expected module_name =
   let%lwt raw_response =
-    ScratchProject.Client.send_request
+    ScratchProject.ClientConnection.send_request
       client
       Request.(GetTypeErrors { module_ = Module.OfName module_name; overlay_id })
   in
   match Yojson.Safe.from_string raw_response with
   | `List [`String "TypeErrors"; `List errors] ->
       assert_equal
-        ~ctxt:(ScratchProject.Client.get_context client)
+        ~ctxt:(ScratchProject.ClientConnection.get_context client)
         ~cmp:Int.equal
         ~printer:Int.to_string
         expected
@@ -45,7 +45,7 @@ let test_no_op_server context =
 
 let test_invalid_request context =
   let test_invalid_request client =
-    let%lwt raw_response = ScratchProject.Client.send_raw_request client "derp" in
+    let%lwt raw_response = ScratchProject.ClientConnection.send_raw_request client "derp" in
     match Yojson.Safe.from_string raw_response with
     | `List [`String "Error"; `List (`String "InvalidRequest" :: _)] -> Lwt.return_unit
     | _ as json ->
@@ -60,7 +60,7 @@ let test_invalid_request context =
 
 let test_stop_request context =
   let test_stop_request client =
-    let%lwt _ = ScratchProject.Client.send_request client Request.Stop in
+    let%lwt _ = ScratchProject.ClientConnection.send_request client Request.Stop in
     (* Consuming the stop request would make the server terminate itself immeidately, bypassing this
        eternal-wait. *)
     let wait_forever, _ = Lwt.wait () in
@@ -72,7 +72,7 @@ let test_stop_request context =
 
 let test_get_type_errors_request context =
   let test_get_type_errors_request client =
-    let root = ScratchProject.Client.get_source_root client in
+    let root = ScratchProject.ClientConnection.get_source_root client in
     let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
     let expected_error =
       Analysis.AnalysisError.Instantiated.of_yojson
@@ -99,13 +99,13 @@ let test_get_type_errors_request context =
       |> Result.ok_or_failwith
     in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:Request.(GetTypeErrors { overlay_id = None; module_ = Module.OfName "test" })
         ~expected:(Response.TypeErrors [expected_error])
     in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -114,21 +114,21 @@ let test_get_type_errors_request context =
         ~expected:(Response.TypeErrors [expected_error])
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(GetTypeErrors { overlay_id = None; module_ = Module.OfName "doesnotexist" })
         ~kind:"ModuleNotTracked"
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(GetTypeErrors { overlay_id = None; module_ = Module.OfPath "/doesnotexist.py" })
         ~kind:"ModuleNotTracked"
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -145,7 +145,7 @@ let test_local_update_request context =
   let test_local_update_request client =
     let%lwt () = assert_type_error_count "test" ~client ~expected:1 in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -159,7 +159,7 @@ let test_local_update_request context =
     in
     let%lwt () = assert_type_error_count "test" ~client ~overlay_id:"foo" ~expected:2 in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -167,7 +167,7 @@ let test_local_update_request context =
         ~kind:"ModuleNotTracked"
     in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -190,7 +190,7 @@ let test_local_update_request context =
 
 let test_file_update_request context =
   let test_file_update_request client =
-    let root = ScratchProject.Client.get_source_root client in
+    let root = ScratchProject.ClientConnection.get_source_root client in
     let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
     let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
 
@@ -198,7 +198,7 @@ let test_file_update_request context =
 
     PyrePath.remove test_path;
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -206,7 +206,7 @@ let test_file_update_request context =
         ~expected:Response.Ok
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -217,7 +217,7 @@ let test_file_update_request context =
 
     File.create test2_path ~content:"reveal_type(43)\nreveal_type(44)" |> File.write;
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -231,7 +231,7 @@ let test_file_update_request context =
 
     File.create test2_path ~content:"reveal_type(43)" |> File.write;
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -250,12 +250,12 @@ let test_file_update_request context =
 
 let test_file_and_local_update context =
   let test_file_and_local_update client =
-    let root = ScratchProject.Client.get_source_root client in
+    let root = ScratchProject.ClientConnection.get_source_root client in
     let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
 
     let%lwt () = assert_type_error_count "test" ~client ~expected:2 in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -271,7 +271,7 @@ let test_file_and_local_update context =
 
     File.create test2_path ~content:"x: int = 42" |> File.write;
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -294,10 +294,10 @@ let test_file_and_local_update context =
 
 let test_hover_request context =
   let test_hover_request client =
-    let root = ScratchProject.Client.get_source_root client in
+    let root = ScratchProject.ClientConnection.get_source_root client in
     let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -306,7 +306,7 @@ let test_hover_request context =
         ~expected:Response.(Hover { contents = [] })
     in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -316,7 +316,7 @@ let test_hover_request context =
             Hover { contents = HoverContent.[{ kind = Kind.PlainText; value = "`float`" }] })
     in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -331,7 +331,7 @@ let test_hover_request context =
             Hover { contents = HoverContent.[{ kind = Kind.PlainText; value = "`float`" }] })
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -340,7 +340,7 @@ let test_hover_request context =
         ~kind:"ModuleNotTracked"
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -353,7 +353,7 @@ let test_hover_request context =
         ~kind:"ModuleNotTracked"
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -373,11 +373,11 @@ let test_hover_request context =
 
 let test_location_of_definition_request context =
   let test_location_of_definition_request client =
-    let root = ScratchProject.Client.get_source_root client in
+    let root = ScratchProject.ClientConnection.get_source_root client in
     let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
     let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -387,7 +387,7 @@ let test_location_of_definition_request context =
         ~expected:Response.(LocationOfDefinition [])
     in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -400,7 +400,7 @@ let test_location_of_definition_request context =
               [{ DefinitionLocation.path = PyrePath.absolute test_path; range = range 1 0 1 1 }])
     in
     let%lwt () =
-      ScratchProject.Client.assert_response
+      ScratchProject.ClientConnection.assert_response
         client
         ~request:
           Request.(
@@ -416,7 +416,7 @@ let test_location_of_definition_request context =
               [{ DefinitionLocation.path = PyrePath.absolute test_path; range = range 1 0 1 1 }])
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -425,7 +425,7 @@ let test_location_of_definition_request context =
         ~kind:"ModuleNotTracked"
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -438,7 +438,7 @@ let test_location_of_definition_request context =
         ~kind:"ModuleNotTracked"
     in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
@@ -493,7 +493,7 @@ let test_watchman_integration context =
   let watchman_mailbox = Lwt_mvar.create_empty () in
   let mock_watchman = create_mock_watchman watchman_mailbox in
   let test_watchman_integration client =
-    let root = ScratchProject.Client.get_source_root client in
+    let root = ScratchProject.ClientConnection.get_source_root client in
     let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
     let watchman_update_response file_names =
       `Assoc
@@ -516,7 +516,7 @@ let test_watchman_integration context =
     PyrePath.remove test_path;
     let%lwt () = Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]) in
     let%lwt () =
-      ScratchProject.Client.assert_error_response
+      ScratchProject.ClientConnection.assert_error_response
         client
         ~request:
           Request.(
