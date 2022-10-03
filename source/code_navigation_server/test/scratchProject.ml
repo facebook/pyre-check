@@ -24,12 +24,6 @@ module ClientConnection = struct
 
   let get_context { context; _ } = context
 
-  let get_source_root { configuration = { Configuration.Analysis.project_root; _ }; _ } =
-    project_root
-
-
-  let get_server_state { server_state; _ } = server_state
-
   let send_raw_request { input_channel; output_channel; _ } raw_request =
     let%lwt () = Lwt_io.write_line output_channel raw_request in
     Lwt_io.read_line input_channel
@@ -148,7 +142,12 @@ let configuration_of project =
   Analysis.EnvironmentControls.configuration environment_controls
 
 
-let test_server_with ~f { context; start_options } =
+let source_root_of project =
+  let { Configuration.Analysis.project_root; _ } = configuration_of project in
+  project_root
+
+
+let test_server_with ~clients { context; start_options } =
   Memory.reset_shared_memory ();
   Start.start_server
     start_options
@@ -157,7 +156,14 @@ let test_server_with ~f { context; start_options } =
       | exn -> raise exn)
     ~on_started:(fun { Server.ServerProperties.socket_path; configuration; _ } server_state ->
       let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
-      let test_client (input_channel, output_channel) =
-        f { ClientConnection.context; configuration; server_state; input_channel; output_channel }
+      let test_client client =
+        let run_on_connection (input_channel, output_channel) =
+          client
+            { ClientConnection.context; configuration; server_state; input_channel; output_channel }
+        in
+        Lwt_io.with_connection socket_address run_on_connection
       in
-      Lwt_io.with_connection socket_address test_client)
+      Lwt_list.iter_s test_client clients)
+
+
+let test_server_with_one_connection ~f = test_server_with ~clients:[f]

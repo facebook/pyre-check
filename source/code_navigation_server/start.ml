@@ -11,30 +11,31 @@ open Core
 
 let handle_connection ~server _client_address (input_channel, output_channel) =
   Log.info "Connection established";
-  let rec handle_line () =
+  let handle_line () =
     match%lwt Lwt_io.read_line_opt input_channel with
-    | None ->
-        Log.info "Connection closed";
-        Lwt.return_unit
+    | None -> Lwt.return_unit
     | Some raw_request ->
         Log.info "Processing request `%s`" raw_request;
         let%lwt response = RequestHandler.handle_raw_request ~server raw_request in
         let raw_response = Response.to_string response in
         Log.info "Request processed. Response: `%s`" raw_response;
+        let write_and_flush () =
+          let%lwt () = Lwt_io.write_line output_channel raw_response in
+          Lwt_io.flush output_channel
+        in
         let on_io_exception exn =
           Log.warning "Exception occurred while sending responses: %s" (Exn.to_string exn);
           Lwt.return_unit
         in
-        let%lwt () =
-          Lwt.catch (fun () -> Lwt_io.write_line output_channel raw_response) on_io_exception
-        in
-        handle_line ()
+        Lwt.catch write_and_flush on_io_exception
   in
   let on_uncaught_exception exn =
     Log.warning "Uncaught exception: %s" (Exn.to_string exn);
     Lwt.return_unit
   in
-  Lwt.catch handle_line on_uncaught_exception
+  let%lwt () = Lwt.catch handle_line on_uncaught_exception in
+  Log.info "Connection closed";
+  Lwt.return_unit
 
 
 let on_watchman_update ~server paths =
