@@ -149,21 +149,27 @@ let source_root_of project =
 
 let test_server_with ~clients { context; start_options } =
   Memory.reset_shared_memory ();
-  Start.start_server
-    start_options
-    ~on_exception:(function
-      | Server.Start.ServerStopped -> Lwt.return_unit
-      | exn -> raise exn)
-    ~on_started:(fun { Server.ServerProperties.socket_path; configuration; _ } server_state ->
-      let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
-      let test_client client =
-        let run_on_connection (input_channel, output_channel) =
-          client
-            { ClientConnection.context; configuration; server_state; input_channel; output_channel }
+  try%lwt
+    Start.start_server
+      start_options
+      ~on_started:(fun { Server.ServerProperties.socket_path; configuration; _ } server_state ->
+        let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
+        let test_client client =
+          let run_on_connection (input_channel, output_channel) =
+            client
+              {
+                ClientConnection.context;
+                configuration;
+                server_state;
+                input_channel;
+                output_channel;
+              }
+          in
+          Lwt_io.with_connection socket_address run_on_connection
         in
-        Lwt_io.with_connection socket_address run_on_connection
-      in
-      Lwt_list.iter_s test_client clients)
+        Lwt_list.iter_s test_client clients)
+  with
+  | Server.Start.ServerStopped -> Lwt.return_unit
 
 
 let test_server_with_one_connection ~f = test_server_with ~clients:[f]

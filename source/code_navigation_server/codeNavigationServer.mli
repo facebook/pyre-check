@@ -50,16 +50,12 @@ module Start : sig
       will be invoked and waited. Once the promise returned by [on_started] gets resolved or
       rejected, the server will be automatically shutdown.
 
-      If the server fails to start, or if an exception is raised from [on_started], [on_exception]
-      will be invoked on the raised exception.
-
       Other than [on_started], the started server will also monitor signals received by the process.
       When an [SIGINT] is received, a {!Server.Start.ServerStopped} exception will be raised. Other
       fatal signals like [SIGTERM], [SIGSEGV], etc. will result in a
       {!Server.Start.ServerInterrupted} exception instead.*)
   val start_server
     :  on_started:(Server.ServerProperties.t -> State.t Server.ExclusiveLock.t -> 'a Lwt.t) ->
-    on_exception:(exn -> 'a Lwt.t) ->
     StartOptions.t ->
     'a Lwt.t
 end

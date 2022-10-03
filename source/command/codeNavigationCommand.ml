@@ -136,12 +136,12 @@ let start_server_and_wait code_navigation_configuration =
   let open Lwt.Infix in
   CodeNavigationConfiguration.start_options_of code_navigation_configuration
   >>= fun start_options ->
-  CodeNavigationServer.Start.start_server
-    start_options
-    ~on_started:(fun _ _ ->
-      let wait_forever, _ = Lwt.wait () in
-      wait_forever)
-    ~on_exception:(function
+  Lwt.catch
+    (fun () ->
+      CodeNavigationServer.Start.start_server start_options ~on_started:(fun _ _ ->
+          let wait_forever, _ = Lwt.wait () in
+          wait_forever))
+    (function
       | Server.Start.ServerStopped -> Lwt.return ServerCommand.ExitStatus.Ok
       | exn ->
           let kind, message = ServerCommand.error_kind_and_message_from_exception exn in

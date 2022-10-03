@@ -68,7 +68,7 @@ let initialize_server_state environment_controls =
   { State.environment }
 
 
-let with_server
+let start_server
     ~on_started
     { StartOptions.environment_controls; socket_path; source_paths; watchman; critical_files; _ }
   =
@@ -123,7 +123,3 @@ let with_server
        ~handle_connection:
          (handle_connection ~server:{ RequestHandler.ServerInternal.properties; state })
        ~f:(fun () -> Lwt.finalize after_server_starts after_server_stops)
-
-
-let start_server ~on_started ~on_exception start_options =
-  Lwt.catch (fun () -> with_server ~on_started start_options) on_exception
