@@ -91,7 +91,7 @@ module CallInfo = struct
         location: Location.WithModule.t;
         callees: Target.t list;
       }
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let declaration = Declaration { leaf_name_provided = false }
 
@@ -1508,6 +1508,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   let extract_features_to_attach ~root ~attach_to_kind taint =
     let taint =
       read ~root ~path:[] taint
+      |> Tree.transform Taint.call_info Filter ~f:(CallInfo.equal CallInfo.declaration)
       |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
       |> Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
     in
