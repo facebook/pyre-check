@@ -10,6 +10,10 @@ def add_feature_to_first(first, second):
     pass
 
 
+def add_feature_to_second(first, second):
+    pass
+
+
 def adds_and_taints():
     x = _test_source()
     add_feature_to_first(x, 0)
@@ -49,4 +53,16 @@ def test_add_feature_in_comprehension():
 
 def test_add_feature_to_sink_in_comprehension(parameter):
     x = [s for s in [1, 2, 3] if add_feature_to_first(parameter, 0)]
+    _test_sink(parameter)
+
+
+def propagate_multiple_add_feature(parameter):
+    if 1 > 2:
+        add_feature_to_first(parameter.foo, 0)
+    else:
+        add_feature_to_second(0, parameter.bar)
+
+
+def test_add_multiple_feature(parameter):
+    propagate_multiple_add_feature(parameter)
     _test_sink(parameter)

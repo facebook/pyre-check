@@ -495,7 +495,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
-              |> BackwardTaint.accumulated_breadcrumbs
+              |> BackwardTaint.joined_breadcrumbs
             in
             if Features.BreadcrumbSet.is_bottom breadcrumbs_to_add then
               state
@@ -892,7 +892,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let add_tito_features taint =
             let attribute_breadcrumbs =
-              global_model |> GlobalModel.get_tito |> BackwardState.Tree.accumulated_breadcrumbs
+              global_model |> GlobalModel.get_tito |> BackwardState.Tree.joined_breadcrumbs
             in
             BackwardState.Tree.add_local_breadcrumbs attribute_breadcrumbs taint
           in

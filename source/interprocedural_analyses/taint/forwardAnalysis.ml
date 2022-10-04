@@ -455,7 +455,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~f:(fun sofar { Issue.SinkTreeWithHandle.sink_tree; _ } ->
                   sink_tree
                   |> BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument
-                  |> BackwardTaint.accumulated_breadcrumbs
+                  |> BackwardTaint.joined_breadcrumbs
                   |> Features.BreadcrumbSet.add_set ~to_add:sofar)
                 ~init:Features.BreadcrumbSet.bottom
             in
@@ -1878,7 +1878,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let attribute_taint = GlobalModel.get_source global_model in
           let add_tito_features taint =
             let attribute_breadcrumbs =
-              global_model |> GlobalModel.get_tito |> BackwardState.Tree.accumulated_breadcrumbs
+              global_model |> GlobalModel.get_tito |> BackwardState.Tree.joined_breadcrumbs
             in
             ForwardState.Tree.add_local_breadcrumbs attribute_breadcrumbs taint
           in

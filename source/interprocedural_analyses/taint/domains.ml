@@ -1512,7 +1512,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
       |> Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
     in
-    Taint.accumulated_breadcrumbs taint, Taint.via_features taint
+    Taint.joined_breadcrumbs taint, Taint.via_features taint
 
 
   let sanitize_taint_kinds sanitized_kinds taint =
