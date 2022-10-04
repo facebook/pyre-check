@@ -159,7 +159,7 @@ let taint_in_taint_out_mapping
         mapping
       else if SanitizeTransformSet.is_empty obscure_sanitize then
         let return_tito =
-          Domains.local_return_frame
+          Domains.local_return_frame ~collapse_depth:0
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
           |> BackwardTaint.singleton CallInfo.declaration Sinks.LocalReturn
           |> BackwardState.Tree.create_leaf
@@ -175,9 +175,9 @@ let taint_in_taint_out_mapping
                Sinks.LocalReturn)
         in
         let return_tito =
-          Domains.local_return_frame
+          Domains.local_return_frame ~collapse_depth:0
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
-          |> BackwardTaint.singleton local_return_call_info tito_kind
+          |> BackwardTaint.singleton CallInfo.local_return tito_kind
           |> BackwardState.Tree.create_leaf
         in
         TaintInTaintOutMap.set mapping ~kind:tito_kind ~tito_tree:return_tito
@@ -187,15 +187,11 @@ let taint_in_taint_out_mapping
   mapping
 
 
-let return_paths ~kind ~tito_taint =
+let return_paths_and_collapse_depths ~kind ~tito_taint =
   match Sinks.discard_transforms kind with
   | Sinks.LocalReturn ->
       let paths =
-        BackwardTaint.fold
-          Features.ReturnAccessPathTree.Path
-          tito_taint
-          ~f:(fun (path, _collapse_depth) sofar -> path :: sofar)
-          ~init:[]
+        BackwardTaint.fold Features.ReturnAccessPathTree.Path tito_taint ~f:List.cons ~init:[]
       in
       let () =
         if List.is_empty paths then
@@ -204,7 +200,8 @@ let return_paths ~kind ~tito_taint =
       paths
   | _ ->
       (* No special handling of paths for side effects *)
-      [[]]
+      (* TODO(T118287187): Handle tito collapse depth for ParameterUpdate *)
+      [[], 0]
 
 
 let sink_trees_of_argument

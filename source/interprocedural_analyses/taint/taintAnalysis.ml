@@ -211,7 +211,8 @@ let parse_models_and_queries_from_configuration
          ~stubs
   in
   ModelVerificationError.verify_models_and_dsl errors verify_models;
-  let class_models = ClassModels.infer ~environment ~user_models in
+  let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
+  let class_models = ClassModels.infer ~environment ~taint_configuration ~user_models in
   {
     ModelParser.models = Registry.merge ~join:Model.join_user_models user_models class_models;
     queries;

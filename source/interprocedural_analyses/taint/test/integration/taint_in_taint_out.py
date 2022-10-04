@@ -224,6 +224,9 @@ def test_complex_evaluator(evaluator: ComplexEvaluator):
     _test_sink(evaluator.evaluate_lazy_payload(_test_source()))
 
 
+# Test tito collapse depth.
+
+
 def obscure_tito(x):
     ...
 
@@ -241,10 +244,203 @@ def tito_collapse_then_into_dict(x):
 def issue_with_into_dict_then_tito_collapse():
     x = _test_source()
     y = into_dict_then_tito_collapse(x)
-    _test_sink(y["b"])  # This should be an issue, currently a false negative.
+    _test_sink(y["b"])  # This is an issue.
 
 
-def non_issue_with_tito_collapse_then_into_dict():
+def no_issue_with_tito_collapse_then_into_dict():
     x = _test_source()
     y = tito_collapse_then_into_dict(x)
     _test_sink(y["b"])  # Not an issue.
+
+
+def perfect_tito(x):
+    return x
+
+
+def into_dict_then_perfect_tito(x):
+    d = {"a": x}
+    return perfect_tito(d)
+
+
+def perfect_tito_then_into_dict(x):
+    y = perfect_tito(x)
+    return {"a": y}
+
+
+def no_issue_with_into_dict_then_perfect_tito():
+    x = _test_source()
+    y = into_dict_then_perfect_tito(x)
+    _test_sink(y["b"])  # Not an issue.
+
+
+def no_issue_with_perfect_tito_then_into_dict():
+    x = _test_source()
+    y = perfect_tito_then_into_dict(x)
+    _test_sink(y["b"])  # Not an issue.
+
+
+def issue_approximate_return_access_paths():
+    x = object()
+    x.a = _test_source()
+    y = approximate_return_access_paths(x)
+    _test_sink(y["a"])  # This is an issue.
+
+
+def issue_approximate_return_access_paths_common_prefix():
+    x = object()
+    x.y.a = _test_source()
+    y = approximate_return_access_paths(x)
+    _test_sink(y["a"])  # This is an issue.
+
+
+def non_issue_approximate_return_access_paths_common_prefix():
+    x = object()
+    x.a = _test_source()
+    y = approximate_return_access_paths(x)
+    # This is not an issue, but triggers a false positive, which is expected behavior.
+    _test_sink(y["a"])
+
+
+def perfect_tito_with_tree_manipulation(x):
+    d = {"a": x}
+    return d["a"]
+
+
+def tito_collapse_one_append_a_b_c(x):
+    return {"a": {"b": {"c": x}}}
+
+
+def tito_collapse_one(x):
+    y = tito_collapse_one_append_a_b_c(x)
+    return y["a"]["b"]["c"]
+
+
+def tito_collapse_two_append_a_b(x):
+    return {"a": {"b": x}}
+
+
+def tito_collapse_two(x):
+    y = tito_collapse_two_append_a_b(x)
+    return y["a"]["b"]
+
+
+def tito_collapse_three_append_a(x):
+    return {"a": x}
+
+
+def tito_collapse_three(x):
+    y = tito_collapse_three_append_a(x)
+    return y["a"]
+
+
+def into_dict_then_collapse_two(x):
+    d = {"a": x}
+    return tito_collapse_two(d)
+
+
+def collapse_two_then_into_dict(x):
+    y = tito_collapse_two(x)
+    return {"a": y}
+
+
+def perfect_tito_then_into_deep_dict(x):
+    y = perfect_tito(x)
+    return {"a": {"b": {"c": {"d": {"e": y}}}}}
+
+
+def collapse_two_then_into_deep_dict(x):
+    y = tito_collapse_two(x)
+    return {"a": {"b": {"c": {"d": {"e": y}}}}}
+
+
+def combine_collapse_one(arg):
+    x = {"a": arg}
+    y = tito_collapse_one(x)
+    z = {"a": y}
+    t = tito_collapse_one(z)
+    return t
+
+
+def combine_collapse_two(arg):
+    x = {"a": arg}
+    y = tito_collapse_two(x)
+    z = {"a": y}
+    t = tito_collapse_two(z)
+    return t
+
+
+def combine_collapse_three(arg):
+    x = {"a": arg}
+    y = tito_collapse_three(x)
+    z = {"a": y}
+    t = tito_collapse_three(z)
+    return t
+
+
+def combine_collapse_two_and_one(arg):
+    x = {"a": arg}
+    y = tito_collapse_two(x)
+    z = {"a": y}
+    t = tito_collapse_one(z)
+    return t
+
+
+def combine_collapse_one_and_two(arg):
+    x = {"a": arg}
+    y = tito_collapse_one(x)
+    z = {"a": y}
+    t = tito_collapse_two(z)
+    return t
+
+
+def loop_perfect_tito(x):
+    for _ in range(100):
+        x = {"a": x}
+        x = perfect_tito(x)
+    return x
+
+
+def loop_tito_collapse_one(x):
+    for _ in range(100):
+        x = {"a": x}
+        x = tito_collapse_one(x)
+    return x
+
+
+def loop_tito_collapse_two(x):
+    for _ in range(100):
+        x = {"a": x}
+        x = tito_collapse_two(x)
+    return x
+
+
+def join_tito_collapse_test_1(x):
+    result = object()
+    if 1 > 2:
+        result.a = tito_collapse_two(x)
+    else:
+        result.a.b = tito_collapse_one(x)
+    return result
+
+
+def join_tito_collapse_test_2(x):
+    result = object()
+    if 1 > 2:
+        result.a = tito_collapse_two(x)
+    else:
+        result.a.b = tito_collapse_three(x)
+    return result
+
+
+def tito_collapse_one_with_input_path(x):
+    return tito_collapse_one(x["a"]["b"])
+
+
+def tito_collapse_one_with_input_path_with_hop(x):
+    return tito_collapse_one_with_input_path(x)
+
+
+def no_issue_tito_collapse_two_with_input_path():
+    x = {"a": {"b": {"c": _test_source(), "d": 0}}}
+    y = tito_collapse_one_with_input_path(x)
+    _test_sink(y["d"])

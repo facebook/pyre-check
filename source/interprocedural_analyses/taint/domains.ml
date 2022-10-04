@@ -93,6 +93,8 @@ module CallInfo = struct
 
   let declaration = Declaration { leaf_name_provided = false }
 
+  let local_return = Declaration { leaf_name_provided = false }
+
   let pp formatter = function
     | Declaration _ -> Format.fprintf formatter "Declaration"
     | Origin location -> Format.fprintf formatter "Origin(%a)" Location.WithModule.pp location
@@ -476,6 +478,16 @@ module type TAINT_DOMAIN = sig
   (* Within every local taint, join every frame with the frame in the same local taint that has the
      specified kind. *)
   val join_every_frame_with : frame_kind:kind -> t -> t
+
+  (* Apply a transform operation for all parts under the given call info.
+   * This is an optimization to avoid iterating over the whole taint. *)
+  val transform_call_info
+    :  CallInfo.t ->
+    'a Abstract.Domain.part ->
+    ([ `Transform ], 'a, 'f, 'b) Abstract.Domain.operation ->
+    f:'f ->
+    t ->
+    t
 end
 
 module type KIND_ARG = sig
@@ -618,14 +630,6 @@ module MakeTaint (Kind : KIND_ARG) : sig
   val kinds : t -> kind list
 
   val singleton : CallInfo.t -> Kind.t -> Frame.t -> t
-
-  val transform_call_info
-    :  CallInfo.t ->
-    'a Abstract.Domain.part ->
-    ([ `Transform ], 'a, 'f, 'b) Abstract.Domain.operation ->
-    f:'f ->
-    t ->
-    t
 end = struct
   type kind = Kind.t [@@deriving compare, eq]
 
@@ -886,17 +890,37 @@ end = struct
       taint
 
 
+  let transform_call_info
+      : type a b f.
+        CallInfo.t ->
+        a Abstract.Domain.part ->
+        ([ `Transform ], a, f, b) Abstract.Domain.operation ->
+        f:f ->
+        t ->
+        t
+    =
+   fun call_info part op ~f taint ->
+    Map.update taint call_info ~f:(function
+        | None -> LocalTaintDomain.bottom
+        | Some local_taint -> LocalTaintDomain.transform part op ~f local_taint)
+
+
   let transform_on_widening_collapse taint =
-    (* using an always-feature here would break the widening invariant: a <= a widen b *)
-    let open Features in
     let broadening =
-      BreadcrumbSet.of_approximation
+      Features.BreadcrumbSet.of_approximation
         [
+          (* using an always-feature here would break the widening invariant: a <= a widen b *)
           { element = Features.broadening (); in_under = false };
           { element = Features.issue_broadening (); in_under = false };
         ]
     in
-    add_local_breadcrumbs broadening taint
+    taint
+    |> add_local_breadcrumbs broadening
+    |> transform_call_info
+         CallInfo.local_return
+         Features.CollapseDepth.Self
+         Map
+         ~f:Features.CollapseDepth.approximate
 
 
   let prune_maximum_length maximum_length =
@@ -1151,22 +1175,6 @@ end = struct
       call_info, local_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
-
-
-  (* Apply a transform operation for all parts under the given call info. *)
-  let transform_call_info
-      : type a b f.
-        CallInfo.t ->
-        a Abstract.Domain.part ->
-        ([ `Transform ], a, f, b) Abstract.Domain.operation ->
-        f:f ->
-        t ->
-        t
-    =
-   fun call_info part op ~f taint ->
-    Map.update taint call_info ~f:(function
-        | None -> LocalTaintDomain.bottom
-        | Some local_taint -> LocalTaintDomain.transform part op ~f local_taint)
 end
 
 module ForwardTaint = MakeTaint (struct
@@ -1180,7 +1188,7 @@ module BackwardTaint = MakeTaint (struct
 end)
 
 module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
-  include
+  module T =
     Abstract.TreeDomain.Make
       (struct
         let max_tree_depth_after_widening =
@@ -1197,6 +1205,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       end)
       (Taint)
       ()
+
+  include T
 
   let apply_call
       ~resolution
@@ -1343,6 +1353,58 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
         Map
         ~f:(Taint.apply_transforms ~taint_configuration transforms order insert_location)
         taint
+
+
+  let collapse ~breadcrumbs taint =
+    let transform taint =
+      taint
+      |> Taint.add_local_breadcrumbs breadcrumbs
+      |> Taint.transform_call_info
+           CallInfo.local_return
+           Features.CollapseDepth.Self
+           Map
+           ~f:Features.CollapseDepth.approximate
+    in
+    T.collapse ~transform taint
+
+
+  let collapse_to ~breadcrumbs ~depth taint =
+    let transform taint =
+      taint
+      |> Taint.add_local_breadcrumbs breadcrumbs
+      |> Taint.transform_call_info
+           CallInfo.local_return
+           Features.CollapseDepth.Self
+           Map
+           ~f:Features.CollapseDepth.approximate
+    in
+    T.collapse_to ~transform ~depth taint
+
+
+  let limit_to ~breadcrumbs ~width taint =
+    let transform taint =
+      taint
+      |> Taint.add_local_breadcrumbs breadcrumbs
+      |> Taint.transform_call_info
+           CallInfo.local_return
+           Features.CollapseDepth.Self
+           Map
+           ~f:Features.CollapseDepth.approximate
+    in
+    T.limit_to ~transform ~width taint
+
+
+  let transform_call_info
+      : type a b f.
+        CallInfo.t ->
+        a Abstract.Domain.part ->
+        ([ `Transform ], a, f, b) Abstract.Domain.operation ->
+        f:f ->
+        t ->
+        t
+    =
+   fun call_info part op ~f taint ->
+    transform Taint.Self Map ~f:(Taint.transform_call_info call_info part op ~f) taint
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
@@ -1443,7 +1505,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
     let taint =
       read ~root ~path:[] taint
       |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
-      |> Tree.collapse ~transform:Fn.id
+      |> Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
     in
     Taint.accumulated_breadcrumbs taint, Taint.via_features taint
 
@@ -1520,17 +1582,18 @@ module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
     using the special LocalReturn sink. *)
 module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 
-let local_return_frame =
+let local_return_frame ~collapse_depth =
   Frame.create
     [
       Part (TraceLength.Self, 0);
-      Part (Features.ReturnAccessPathTree.Path, ([], 0));
+      Part (Features.ReturnAccessPathTree.Path, ([], collapse_depth));
       Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty);
     ]
 
 
-let local_return_call_info = CallInfo.Declaration { leaf_name_provided = false }
-
 (* Special sink as it needs the return access path *)
-let local_return_taint =
-  BackwardTaint.singleton local_return_call_info Sinks.LocalReturn local_return_frame
+let local_return_taint ~collapse_depth =
+  BackwardTaint.singleton
+    CallInfo.local_return
+    Sinks.LocalReturn
+    (local_return_frame ~collapse_depth)

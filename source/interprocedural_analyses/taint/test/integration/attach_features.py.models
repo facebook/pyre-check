@@ -568,7 +568,7 @@
                 "features": [ { "always-via": "string_concat_lhs" } ],
                 "kind": "Attach"
               },
-              { "return_paths": { "": 0 }, "kind": "LocalReturn" }
+              { "return_paths": { "": 4 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "via": "string_concat_lhs" } ],
             "decl": null
@@ -624,7 +624,7 @@
                 "features": [ { "always-via": "string_concat_lhs" } ],
                 "kind": "Attach"
               },
-              { "return_paths": { "": 0 }, "kind": "LocalReturn" }
+              { "return_paths": { "": 4 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "via": "string_concat_lhs" } ],
             "decl": null
@@ -645,7 +645,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 0 },
+                "return_paths": { "": 4 },
                 "length": 1,
                 "kind": "LocalReturn"
               }

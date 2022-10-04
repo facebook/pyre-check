@@ -5,4 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val infer : environment:Analysis.TypeEnvironment.ReadOnly.t -> user_models:Registry.t -> Registry.t
+val infer
+  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  taint_configuration:TaintConfiguration.Heap.t ->
+  user_models:Registry.t ->
+  Registry.t

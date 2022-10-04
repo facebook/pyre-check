@@ -21,21 +21,26 @@ open Analysis
 open Interprocedural
 open Domains
 
-let infer ~environment ~user_models =
+let infer
+    ~environment
+    ~taint_configuration:
+      { TaintConfiguration.Heap.analysis_model_constraints = { maximum_tito_collapse_depth; _ }; _ }
+    ~user_models
+  =
   Log.info "Computing inferred models...";
   let timer = Timer.start () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let add_parameter_tito position existing_state attribute =
     let leaf =
-      BackwardTaint.singleton local_return_call_info Sinks.LocalReturn Frame.initial
+      BackwardTaint.singleton CallInfo.local_return Sinks.LocalReturn Frame.initial
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.transform Features.ReturnAccessPathTree.Self Map ~f:(fun _ ->
-             (* TODO(T118287187): Use the maximum collapse depth here. *)
              Features.ReturnAccessPathTree.create
                [
                  Part
                    ( Features.ReturnAccessPathTree.Path,
-                     ([Abstract.TreeDomain.Label.create_name_index attribute], 0) );
+                     ( [Abstract.TreeDomain.Label.create_name_index attribute],
+                       max 0 (maximum_tito_collapse_depth - 1) ) );
                ])
     in
     BackwardState.assign

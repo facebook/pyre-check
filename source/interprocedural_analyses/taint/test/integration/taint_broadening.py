@@ -8,7 +8,7 @@ from typing import Dict, Optional, Union
 
 
 def tito(x):
-    return x
+    ...  # Type stubs are treated as taint-in-taint-out with collapse depth 0.
 
 
 def sink_a(d):

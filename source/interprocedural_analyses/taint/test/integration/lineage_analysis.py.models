@@ -18,18 +18,10 @@
             "kinds": [
               {
                 "leaves": [ { "name": "lineage_analysis.source" } ],
-                "kind": "SourceA[KindA]"
-              },
-              {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
                 "kind": "SourceA[KindB]"
               }
             ],
-            "local_features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 66, "start": 4, "end": 6 } ],
             "root": {
               "filename": "lineage_analysis.py",
@@ -60,11 +52,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "lineage_analysis.sink",
@@ -93,18 +81,10 @@
             "kinds": [
               {
                 "leaves": [ { "name": "lineage_analysis.source" } ],
-                "kind": "SourceA[KindA]"
-              },
-              {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
                 "kind": "SourceA[KindB]"
               }
             ],
-            "local_features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 66, "start": 4, "end": 6 } ],
             "root": {
               "filename": "lineage_analysis.py",
@@ -135,11 +115,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "lineage_analysis.sink",
@@ -480,11 +456,7 @@
                 "kind": "SourceA[KindB]"
               }
             ],
-            "local_features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 93, "start": 4, "end": 6 } ],
             "root": {
               "filename": "lineage_analysis.py",
@@ -515,11 +487,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "lineage_analysis.sink",
@@ -549,17 +517,9 @@
               {
                 "leaves": [ { "name": "lineage_analysis.source" } ],
                 "kind": "SourceA[KindA]"
-              },
-              {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
-                "kind": "SourceA[KindB]"
               }
             ],
-            "local_features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 93, "start": 4, "end": 6 } ],
             "root": {
               "filename": "lineage_analysis.py",
@@ -590,11 +550,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "lineage_analysis.sink",
@@ -869,7 +825,7 @@
         "port": "formal(self)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -886,7 +842,7 @@
         "port": "formal(self)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -903,7 +859,7 @@
         "port": "formal(self)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]

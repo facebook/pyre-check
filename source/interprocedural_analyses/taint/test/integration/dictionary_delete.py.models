@@ -185,7 +185,7 @@
         "port": "formal(my_dict)[key]",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "decl": null
           }
         ]

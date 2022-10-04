@@ -427,7 +427,9 @@ module CollapseDepth = struct
     let name = "collapse depth"
   end)
 
-  let transform_on_widening_collapse = Fn.id
+  let approximate _ = 0
+
+  let transform_on_widening_collapse _ = 0
 end
 
 module ReturnAccessPath = struct
@@ -437,25 +439,15 @@ module ReturnAccessPath = struct
 end
 
 module ReturnAccessPathTree = struct
-  module Tree =
-    Abstract.TreeDomain.Make
-      (struct
-        let max_tree_depth_after_widening =
-          let cache_first_call =
-            lazy
-              (TaintConfiguration.SharedMemory.get_global ()
-              |> Option.value ~default:TaintConfiguration.Heap.default
-              |> TaintConfiguration.maximum_return_access_path_depth_after_widening)
-          in
-          fun () -> Lazy.force cache_first_call
+  let maximum_depth =
+    let cache_first_call =
+      lazy
+        (TaintConfiguration.SharedMemory.get_global ()
+        |> Option.value ~default:TaintConfiguration.Heap.default
+        |> TaintConfiguration.maximum_return_access_path_depth_after_widening)
+    in
+    fun () -> Lazy.force cache_first_call
 
-
-        let check_invariants = TaintConfiguration.runtime_check_invariants ()
-      end)
-      (CollapseDepth)
-      ()
-
-  include Tree
 
   let maximum_width =
     let cache_first_call =
@@ -467,16 +459,27 @@ module ReturnAccessPathTree = struct
     fun () -> Lazy.force cache_first_call
 
 
-  let join left right =
-    if left == right || Tree.is_bottom right then
-      left
-    else
-      Tree.join left right |> Tree.limit_to ~width:(maximum_width ())
+  module Tree =
+    Abstract.TreeDomain.Make
+      (struct
+        let max_tree_depth_after_widening = maximum_depth
+
+        let check_invariants = TaintConfiguration.runtime_check_invariants ()
+      end)
+      (CollapseDepth)
+      ()
+
+  include Tree
+
+  let limit_width tree =
+    Tree.limit_to ~width:(maximum_width ()) ~transform:CollapseDepth.approximate tree
 
 
-  let widen ~iteration ~prev ~next =
-    Tree.widen ~iteration ~prev ~next |> Tree.limit_to ~width:(maximum_width ())
+  let limit_depth tree =
+    Tree.collapse_to ~depth:(maximum_depth ()) ~transform:CollapseDepth.approximate tree
 
+
+  let widen ~iteration ~prev ~next = Tree.widen ~iteration ~prev ~next |> limit_width
 
   let to_json tree =
     let path_to_json (path, collapse_depth) json_list =

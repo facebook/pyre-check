@@ -41,7 +41,7 @@ let unknown_callee_model _ =
   in
   (* Add taint-in-taint-out for all parameters. *)
   let local_return =
-    BackwardTaint.singleton local_return_call_info Sinks.LocalReturn Frame.initial
+    BackwardTaint.singleton CallInfo.local_return Sinks.LocalReturn Frame.initial
     |> BackwardState.Tree.create_leaf
   in
   let taint_in_taint_out =

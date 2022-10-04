@@ -245,7 +245,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[1]": 0 }, "kind": "LocalReturn" }
+              { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
             ],
             "decl": null
           }

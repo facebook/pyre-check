@@ -354,20 +354,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         BackwardTaint.joined_breadcrumbs tito_taint |> Features.BreadcrumbSet.add (Features.tito ())
       in
       let taint_to_propagate =
-        if collapse_tito then
-          ForwardState.Tree.read path argument_taint
-          |> ForwardState.Tree.collapse
-               ~transform:(ForwardTaint.add_local_breadcrumbs (Features.tito_broadening_set ()))
-          |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
-          |> ForwardTaint.add_local_breadcrumbs breadcrumbs
-          |> ForwardState.Tree.create_leaf
-        else
-          ForwardState.Tree.read path argument_taint
-          |> ForwardState.Tree.transform
-               Features.TitoPositionSet.Element
-               Add
-               ~f:argument.Node.location
-          |> ForwardState.Tree.add_local_breadcrumbs breadcrumbs
+        ForwardState.Tree.read path argument_taint
+        |> ForwardState.Tree.transform
+             Features.TitoPositionSet.Element
+             Add
+             ~f:argument.Node.location
+        |> ForwardState.Tree.add_local_breadcrumbs breadcrumbs
       in
       let taint_to_propagate =
         match kind with
@@ -382,11 +374,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"
         | _ -> taint_to_propagate
       in
-      let create_tito_return_paths tito return_path =
-        ForwardState.Tree.prepend return_path taint_to_propagate |> ForwardState.Tree.join tito
-      in
-      CallModel.return_paths ~kind ~tito_taint
-      |> List.fold ~f:create_tito_return_paths ~init:accumulated_tito
+      CallModel.return_paths_and_collapse_depths ~kind ~tito_taint
+      |> List.fold
+           ~f:(fun taint (return_path, collapse_depth) ->
+             let taint_to_propagate =
+               if collapse_tito then
+                 ForwardState.Tree.collapse_to
+                   ~breadcrumbs:(Features.tito_broadening_set ())
+                   ~depth:collapse_depth
+                   taint_to_propagate
+               else (* TODO(T118287187): Remove the `collapse_tito` flag from the call graph. *)
+                 taint_to_propagate
+             in
+             ForwardState.Tree.prepend return_path taint_to_propagate
+             |> ForwardState.Tree.join taint)
+           ~init:accumulated_tito
     in
     let convert_tito_tree_to_taint ~argument ~argument_taint ~kind ~tito_tree tito_effects =
       let tito_tree =
@@ -509,9 +511,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            | None -> roots_and_sinks
          in
          BackwardTaint.kinds
-           (BackwardState.Tree.collapse
-              ~transform:(BackwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
-              taint)
+           (BackwardState.Tree.collapse ~breadcrumbs:(Features.issue_broadening_set ()) taint)
          |> List.fold ~f:add ~init:roots_and_sinks
        in
        let triggered_sinks =
@@ -2516,7 +2516,7 @@ let extract_source_model
       ~mold:essential
     |> ForwardState.Tree.add_local_breadcrumbs return_type_breadcrumbs
     |> ForwardState.Tree.limit_to
-         ~transform:(ForwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
+         ~breadcrumbs:(Features.widen_broadening_set ())
          ~width:maximum_model_source_tree_width
   in
   let return_taint =

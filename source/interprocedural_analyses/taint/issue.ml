@@ -223,8 +223,7 @@ let generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree 
   let make_source_sink_matches (path, sink_taint) matches =
     let source_taint =
       ForwardState.Tree.read path source_tree
-      |> ForwardState.Tree.collapse
-           ~transform:(ForwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
+      |> ForwardState.Tree.collapse ~breadcrumbs:(Features.issue_broadening_set ())
     in
     if ForwardTaint.is_bottom source_taint then
       matches
@@ -249,9 +248,7 @@ let compute_triggered_sinks
     ~sink_tree
   =
   let partial_sinks_to_taint =
-    BackwardState.Tree.collapse
-      ~transform:(BackwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
-      sink_tree
+    BackwardState.Tree.collapse ~breadcrumbs:(Features.issue_broadening_set ()) sink_tree
     |> BackwardTaint.partition BackwardTaint.kind ByFilter ~f:Sinks.extract_partial_sink
   in
   if not (Map.Poly.is_empty partial_sinks_to_taint) then

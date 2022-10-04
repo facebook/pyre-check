@@ -53,7 +53,8 @@ let store_taint_option ?(weak = false) access_path taint state =
 
 let analyze_dataFrame_getitem base_taint argument =
   let collapsed_taint =
-    ForwardState.Tree.collapse ~transform:Fn.id base_taint |> ForwardState.Tree.create_leaf
+    ForwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty base_taint
+    |> ForwardState.Tree.create_leaf
   in
   match argument.Node.value with
   | Expression.Constant (Constant.String _) ->
@@ -91,7 +92,8 @@ let analyze_dataFrame_setitem base taint index state =
 
 let analyze_dataFrame_apply analyze_expression_with_state base_taint func_argument axis_argument =
   let collapsed_taint =
-    ForwardState.Tree.collapse ~transform:Fn.id base_taint |> ForwardState.Tree.create_leaf
+    ForwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty base_taint
+    |> ForwardState.Tree.create_leaf
   in
   (* in the body of a "lambda x"
    * - using x returns a collapsed taint of 'df'
@@ -125,7 +127,9 @@ let analyze_dataFrame_apply analyze_expression_with_state base_taint func_argume
     | expression when is_lambda_parameter expression.Node.value -> collapsed_taint
     | expression ->
         let taint, _ = analyze_expression_with_state expression in
-        taint |> ForwardState.Tree.collapse ~transform:Fn.id |> ForwardState.Tree.create_leaf
+        taint
+        |> ForwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
+        |> ForwardState.Tree.create_leaf
   in
   match func_argument, axis_argument with
   (* only support case: `df.apply(lambda x: fun(x,x["a"], ab), axis=1)` *)
@@ -181,7 +185,9 @@ let analyze_dataFrame analyze_expression resolution callee arguments taint state
           in
           taint, state
       | _ ->
-          ForwardState.Tree.collapse ~transform:Fn.id taint |> ForwardState.Tree.create_leaf, state)
+          ( ForwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty taint
+            |> ForwardState.Tree.create_leaf,
+            state ))
   | _ -> taint, state
 
 

@@ -1088,10 +1088,10 @@ let introduce_taint_in_taint_out
     | Sinks.LocalReturn
     | Sinks.Transform _ ->
         let return_taint =
-          Domains.local_return_frame
+          Domains.local_return_frame ~collapse_depth:0
           |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-          |> BackwardTaint.singleton local_return_call_info taint_sink_kind
+          |> BackwardTaint.singleton CallInfo.local_return taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
@@ -1106,7 +1106,7 @@ let introduce_taint_in_taint_out
           Frame.initial
           |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-          |> BackwardTaint.singleton local_return_call_info taint_sink_kind
+          |> BackwardTaint.singleton CallInfo.local_return taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in

@@ -6,7 +6,6 @@ taint_broadening.simplify_collapse_source (fun) -> [_test_source (fun) dict::__s
 taint_broadening.$toplevel (fun) -> []
 taint_broadening.issue_collapse (fun) -> [_test_sink (fun) _test_source (fun)]
 taint_broadening.sink_a (fun) -> [_test_sink (fun)]
-taint_broadening.tito (fun) -> []
 taint_broadening.tito_collapse_issue (fun) -> [_test_sink (fun) _test_source (fun) taint_broadening.tito (fun)]
 taint_broadening.tito_collapse_sink (fun) -> [_test_sink (fun) taint_broadening.tito (fun)]
 taint_broadening.tito_collapse_source (fun) -> [_test_source (fun) taint_broadening.tito (fun)]

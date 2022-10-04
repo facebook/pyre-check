@@ -189,6 +189,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
      paths for more precise tito. *)
   let initial_taint =
+    let {
+      TaintConfiguration.Heap.analysis_model_constraints = { maximum_tito_collapse_depth; _ };
+      _;
+    }
+      =
+      FunctionContext.taint_configuration
+    in
+    let local_return_leaf =
+      BackwardState.Tree.create_leaf
+        (Domains.local_return_taint ~collapse_depth:maximum_tito_collapse_depth)
+    in
     (* We handle constructors, __setitem__ methods, and property setters specially and track
        effects. *)
     if
@@ -197,18 +208,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       || Statement.Define.is_property_setter (Node.value FunctionContext.definition)
     then
       match first_parameter () with
-      | Some root ->
-          BackwardState.assign
-            ~root
-            ~path:[]
-            (BackwardState.Tree.create_leaf Domains.local_return_taint)
-            BackwardState.bottom
+      | Some root -> BackwardState.assign ~root ~path:[] local_return_leaf BackwardState.bottom
       | _ -> BackwardState.bottom
     else
       BackwardState.assign
         ~root:AccessPath.Root.LocalResult
         ~path:[]
-        (BackwardState.Tree.create_leaf Domains.local_return_taint)
+        local_return_leaf
         BackwardState.bottom
 
 
@@ -219,14 +225,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let open Features.ReturnAccessPathTree in
           fold
             Path
-            ~f:(fun (current_path, _collapse_depth) paths ->
-              create_leaf 0 |> prepend new_path |> prepend current_path |> join paths)
+            ~f:(fun (current_path, collapse_depth) paths ->
+              let to_take = min collapse_depth (List.length new_path) in
+              let new_path = List.take new_path to_take in
+              let new_collapse_depth = collapse_depth - to_take in
+              create_leaf new_collapse_depth
+              |> prepend new_path
+              |> prepend current_path
+              |> join paths)
             ~init:bottom
             paths
+          |> limit_depth
       | _ -> paths
     in
     BackwardTaint.transform_call_info
-      local_return_call_info
+      CallInfo.local_return
       Features.ReturnAccessPathTree.Self
       (Context (BackwardTaint.kind, Map))
       ~f:infer_output_path
@@ -403,23 +416,28 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"
         | _ -> taint_to_propagate
       in
-      let compute_tito_depth kind depth =
+      let transform_existing_tito ~callee_collapse_depth kind frame =
         match Sinks.discard_transforms kind with
-        | Sinks.LocalReturn -> max depth (1 + tito_depth)
-        | _ -> depth
+        | Sinks.LocalReturn ->
+            frame
+            |> Frame.transform TraceLength.Self Map ~f:(fun depth -> max depth (1 + tito_depth))
+            |> Frame.transform Features.CollapseDepth.Self Map ~f:(fun collapse_depth ->
+                   min collapse_depth callee_collapse_depth)
+        | _ -> frame
       in
-      CallModel.return_paths ~kind ~tito_taint
+      CallModel.return_paths_and_collapse_depths ~kind ~tito_taint
       |> List.fold
-           ~f:(fun taint return_path ->
+           ~f:(fun taint (return_path, collapse_depth) ->
              read_tree return_path taint_to_propagate
-             |> BackwardState.Tree.collapse
-                  ~transform:(BackwardTaint.add_local_breadcrumbs (Features.tito_broadening_set ()))
-             |> BackwardTaint.add_local_breadcrumbs breadcrumbs
-             |> BackwardTaint.transform
-                  TraceLength.Self
+             |> BackwardState.Tree.collapse_to
+                  ~breadcrumbs:(Features.tito_broadening_set ())
+                  ~depth:collapse_depth
+             |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs
+             |> BackwardState.Tree.transform_call_info
+                  CallInfo.local_return
+                  Frame.Self
                   (Context (BackwardTaint.kind, Map))
-                  ~f:compute_tito_depth
-             |> BackwardState.Tree.create_leaf
+                  ~f:(transform_existing_tito ~callee_collapse_depth:collapse_depth)
              |> BackwardState.Tree.prepend tito_path
              |> BackwardState.Tree.join taint)
            ~init:argument_taint
@@ -520,9 +538,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       Ast.Expression.pp_expression_argument_list
       arguments;
     let obscure_taint =
-      BackwardState.Tree.collapse
-        ~transform:(BackwardTaint.add_local_breadcrumbs (Features.tito_broadening_set ()))
-        call_taint
+      BackwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ()) call_taint
       |> BackwardTaint.add_local_breadcrumb (Features.obscure_unknown_callee ())
       |> BackwardState.Tree.create_leaf
     in
@@ -700,7 +716,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             | _ -> call_targets, unresolved
           in
           let call_taint =
-            BackwardState.Tree.create_leaf Domains.local_return_taint
+            BackwardState.Tree.create_leaf
+              (Domains.local_return_taint
+                 ~collapse_depth:
+                   FunctionContext.taint_configuration.analysis_model_constraints
+                     .maximum_tito_collapse_depth)
             |> BackwardState.Tree.join call_taint
           in
           call_targets, unresolved, call_taint
@@ -2172,8 +2192,13 @@ let extract_tito_and_sink_models
       ~mold:essential
     |> BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs
     |> BackwardState.Tree.limit_to
-         ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
+         ~breadcrumbs:(Features.widen_broadening_set ())
          ~width:maximum_model_sink_tree_width
+    |> BackwardState.Tree.transform_call_info
+         CallInfo.local_return
+         Features.ReturnAccessPathTree.Self
+         Map
+         ~f:Features.ReturnAccessPathTree.limit_width
   in
 
   let split_and_simplify model (parameter, name, original) =
@@ -2206,7 +2231,7 @@ let extract_tito_and_sink_models
         |> BackwardState.Tree.add_via_features via_features_to_attach
       in
       BackwardState.Tree.limit_to
-        ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
+        ~breadcrumbs:(Features.widen_broadening_set ())
         ~width:maximum_model_tito_tree_width
         candidate_tree
     in

@@ -49,7 +49,10 @@ val taint_in_taint_out_mapping
   sanitize_matches:AccessPath.argument_match list ->
   TaintInTaintOutMap.t
 
-val return_paths : kind:Sinks.t -> tito_taint:BackwardTaint.t -> Abstract.TreeDomain.Label.path list
+val return_paths_and_collapse_depths
+  :  kind:Sinks.t ->
+  tito_taint:BackwardTaint.t ->
+  (Abstract.TreeDomain.Label.path * Features.CollapseDepth.t) list
 
 val sink_trees_of_argument
   :  resolution:Resolution.t ->

@@ -1652,7 +1652,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 0 },
+                "return_paths": { "": 4 },
                 "kind": "NotSink[SinkB]@LocalReturn"
               }
             ],
@@ -1675,7 +1675,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 0 },
+                "return_paths": { "": 4 },
                 "kind": "NotSink[SinkD]@LocalReturn"
               }
             ],
@@ -1698,7 +1698,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 0 },
+                "return_paths": { "": 4 },
                 "kind": "NotSource[SourceA]@LocalReturn"
               }
             ],
@@ -1721,7 +1721,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 0 },
+                "return_paths": { "": 4 },
                 "kind": "NotSource[SourceC]@LocalReturn"
               }
             ],

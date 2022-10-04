@@ -97,6 +97,7 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "b" },
+              { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
               { "always-via": "broadening" }
@@ -137,6 +138,7 @@
       { "first-index": "b" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
       { "always-via": "broadening" }
@@ -1144,23 +1146,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "taint_broadening.tito",
-    "tito": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "taint_broadening.tito_collapse_sink",
     "sinks": [
       {
@@ -1177,6 +1162,7 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "b" },
+              { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
               { "always-via": "broadening" }
@@ -1211,6 +1197,7 @@
               }
             ],
             "local_features": [
+              { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
               { "always-via": "broadening" }

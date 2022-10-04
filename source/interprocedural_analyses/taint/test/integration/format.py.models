@@ -426,7 +426,7 @@
         "port": "formal(arg2)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
@@ -439,7 +439,7 @@
         "port": "formal(arg1)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],

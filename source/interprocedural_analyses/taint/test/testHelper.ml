@@ -117,7 +117,7 @@ let check_expectation
     match AccessPath.Root.parameter_name root with
     | Some name ->
         let sinks =
-          Domains.BackwardState.Tree.collapse ~transform:Fn.id sink_tree
+          Domains.BackwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty sink_tree
           |> Domains.BackwardTaint.kinds
         in
         let sinks =
@@ -133,7 +133,7 @@ let check_expectation
     match AccessPath.Root.parameter_name root with
     | Some name ->
         let sinks =
-          Domains.ForwardState.Tree.collapse ~transform:Fn.id source_tree
+          Domains.ForwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty source_tree
           |> Domains.ForwardTaint.kinds
         in
         let sinks =
@@ -262,7 +262,7 @@ let check_expectation
   (* Check sources. *)
   let returned_sources =
     Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
-    |> Domains.ForwardState.Tree.collapse ~transform:Fn.id
+    |> Domains.ForwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
     |> Domains.ForwardTaint.kinds
     |> List.map ~f:Sources.show
     |> String.Set.of_list
@@ -586,7 +586,9 @@ let initialize
 
         models, skip_overrides
   in
-  let inferred_models = ClassModels.infer ~environment:type_environment ~user_models in
+  let inferred_models =
+    ClassModels.infer ~environment:type_environment ~taint_configuration ~user_models
+  in
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let override_graph_heap =
