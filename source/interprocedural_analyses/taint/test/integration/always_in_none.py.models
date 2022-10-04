@@ -67,7 +67,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }

@@ -543,7 +543,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -558,7 +558,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -579,7 +579,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 10, "start": 11, "end": 17 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -600,7 +600,7 @@
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 14, "start": 17, "end": 23 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -685,7 +685,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 59, "start": 25, "end": 26 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

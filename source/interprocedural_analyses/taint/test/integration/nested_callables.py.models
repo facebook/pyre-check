@@ -262,7 +262,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -271,7 +271,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -310,7 +310,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -355,7 +355,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -370,7 +370,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -425,7 +425,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 69, "start": 19, "end": 20 } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -444,7 +444,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 69, "start": 15, "end": 16 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -471,7 +471,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 71, "start": 26, "end": 27 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -643,7 +643,7 @@
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito": [ { "line": 51, "start": 28, "end": 29 } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -653,7 +653,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

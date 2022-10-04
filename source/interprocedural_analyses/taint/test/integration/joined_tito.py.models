@@ -120,7 +120,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -129,7 +129,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -168,7 +168,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -213,7 +213,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -228,7 +228,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -247,7 +247,7 @@
             "kinds": [
               { "return_paths": { "[x]": 3 }, "kind": "LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -258,7 +258,7 @@
             "kinds": [
               { "return_paths": { "[y]": 3 }, "kind": "LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -267,7 +267,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -286,7 +286,7 @@
             "kinds": [
               { "return_paths": { "[b]": 3 }, "kind": "LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -297,7 +297,7 @@
             "kinds": [
               { "return_paths": { "[a]": 3 }, "kind": "LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -306,7 +306,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

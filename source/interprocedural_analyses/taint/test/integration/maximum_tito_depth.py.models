@@ -104,7 +104,7 @@
               { "line": 28, "start": 17, "end": 18 },
               { "line": 29, "start": 17, "end": 18 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -132,7 +132,7 @@
               { "line": 35, "start": 25, "end": 26 },
               { "line": 37, "start": 24, "end": 25 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -162,7 +162,7 @@
               { "line": 46, "start": 21, "end": 22 },
               { "line": 47, "start": 22, "end": 23 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -189,7 +189,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 59, "start": 18, "end": 19 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -214,7 +214,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 15, "start": 21, "end": 22 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -239,7 +239,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 23, "start": 20, "end": 21 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -264,7 +264,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 19, "start": 20, "end": 21 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -281,7 +281,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

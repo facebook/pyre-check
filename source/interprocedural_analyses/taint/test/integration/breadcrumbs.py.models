@@ -57,7 +57,7 @@
             "kinds": [
               { "return_paths": { "[ids_list]": 3 }, "kind": "LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -69,7 +69,7 @@
               { "return_paths": { "[id_float]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "always-type": "scalar" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -78,7 +78,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -345,7 +345,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-type": "scalar" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

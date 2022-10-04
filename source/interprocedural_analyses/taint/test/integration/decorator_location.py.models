@@ -814,7 +814,7 @@
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito": [ { "line": 83, "start": 24, "end": 32 } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -825,7 +825,7 @@
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito": [ { "line": 83, "start": 17, "end": 22 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

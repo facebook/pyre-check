@@ -239,7 +239,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> paths
     in
     BackwardTaint.transform_call_info
-      CallInfo.local_return
+      CallInfo.Tito
       Features.ReturnAccessPathTree.Self
       (Context (BackwardTaint.kind, Map))
       ~f:infer_output_path
@@ -434,7 +434,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~depth:collapse_depth
              |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs
              |> BackwardState.Tree.transform_call_info
-                  CallInfo.local_return
+                  CallInfo.Tito
                   Frame.Self
                   (Context (BackwardTaint.kind, Map))
                   ~f:(transform_existing_tito ~callee_collapse_depth:collapse_depth)
@@ -2195,7 +2195,7 @@ let extract_tito_and_sink_models
          ~breadcrumbs:(Features.widen_broadening_set ())
          ~width:maximum_model_sink_tree_width
     |> BackwardState.Tree.transform_call_info
-         CallInfo.local_return
+         CallInfo.Tito
          Features.ReturnAccessPathTree.Self
          Map
          ~f:Features.ReturnAccessPathTree.limit_width

@@ -1676,7 +1676,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -1685,7 +1685,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1707,7 +1707,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -1716,7 +1716,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1738,7 +1738,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -1747,7 +1747,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1769,7 +1769,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -1778,7 +1778,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1843,7 +1843,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -1852,7 +1852,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1874,7 +1874,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -1883,7 +1883,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1905,7 +1905,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -1914,7 +1914,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1936,7 +1936,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -1945,7 +1945,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2062,7 +2062,7 @@
               { "line": 246, "start": 31, "end": 32 },
               { "line": 247, "start": 29, "end": 30 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2556,7 +2556,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 199, "start": 34, "end": 35 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2615,7 +2615,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 669, "start": 42, "end": 43 } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -2632,7 +2632,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 669, "start": 45, "end": 46 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2746,7 +2746,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 633, "start": 54, "end": 55 } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -2763,7 +2763,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 633, "start": 57, "end": 58 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2849,7 +2849,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 710, "start": 34, "end": 35 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3127,7 +3127,7 @@
                 "kind": "NotSink[TestA]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3150,7 +3150,7 @@
                 "kind": "NotSource[TestA]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3194,7 +3194,7 @@
                 "kind": "NotSource[TestA]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3355,7 +3355,7 @@
                 "kind": "NotSource[Cookies]:NotSink[SQL]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3396,7 +3396,7 @@
                 "kind": "NotSink[RemoteCodeExecution]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3440,7 +3440,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3463,7 +3463,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3507,7 +3507,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3530,7 +3530,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3559,7 +3559,7 @@
                 "kind": "NotSink[Test]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3664,7 +3664,7 @@
                 "kind": "NotSink[TestB]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3687,7 +3687,7 @@
                 "kind": "NotSource[TestB]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3780,7 +3780,7 @@
               { "line": 561, "start": 33, "end": 52 },
               { "line": 561, "start": 50, "end": 51 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3896,7 +3896,7 @@
               { "line": 567, "start": 33, "end": 52 },
               { "line": 567, "start": 50, "end": 51 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3937,7 +3937,7 @@
                 "kind": "NotSink[RemoteCodeExecution]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -3983,7 +3983,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4001,7 +4001,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -4015,7 +4015,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4073,7 +4073,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -4087,7 +4087,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4107,7 +4107,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -4121,7 +4121,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4249,7 +4249,7 @@
                 "kind": "NotSink[SQL]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4290,7 +4290,7 @@
                 "kind": "NotSource[UserControlled]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4330,7 +4330,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -4344,7 +4344,7 @@
                 "kind": "NotSink[Test]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4393,7 +4393,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 113, "start": 28, "end": 29 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4437,7 +4437,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 108, "start": 28, "end": 29 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4520,7 +4520,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 375, "start": 29, "end": 30 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4570,7 +4570,7 @@
                 "kind": "NotSource[Test]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -4864,7 +4864,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

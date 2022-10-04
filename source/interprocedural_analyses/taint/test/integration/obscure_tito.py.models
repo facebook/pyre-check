@@ -20,7 +20,12 @@
       {
         "port": "formal(parameter)",
         "taint": [
-          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+            ],
+            "tito": null
+          }
         ]
       }
     ],
@@ -94,7 +99,12 @@
       {
         "port": "formal(parameter)",
         "taint": [
-          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+            ],
+            "tito": null
+          }
         ]
       }
     ],

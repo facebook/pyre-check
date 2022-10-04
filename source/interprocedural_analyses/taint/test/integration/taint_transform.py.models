@@ -1459,7 +1459,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 152, "start": 34, "end": 37 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1549,7 +1549,7 @@
               { "line": 262, "start": 35, "end": 38 },
               { "line": 263, "start": 23, "end": 28 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1578,7 +1578,7 @@
               { "line": 269, "start": 34, "end": 39 },
               { "line": 270, "start": 24, "end": 28 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1606,7 +1606,7 @@
               { "line": 343, "start": 35, "end": 38 },
               { "line": 344, "start": 23, "end": 28 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1634,7 +1634,7 @@
               { "line": 439, "start": 33, "end": 36 },
               { "line": 440, "start": 23, "end": 28 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1656,7 +1656,7 @@
                 "kind": "NotSink[SinkB]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1679,7 +1679,7 @@
                 "kind": "NotSink[SinkD]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1702,7 +1702,7 @@
                 "kind": "NotSource[SourceA]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1725,7 +1725,7 @@
                 "kind": "NotSource[SourceC]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2230,7 +2230,7 @@
               { "line": 550, "start": 40, "end": 43 },
               { "line": 551, "start": 32, "end": 37 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2258,7 +2258,7 @@
               { "line": 556, "start": 33, "end": 36 },
               { "line": 557, "start": 39, "end": 44 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2286,7 +2286,7 @@
               { "line": 562, "start": 40, "end": 43 },
               { "line": 563, "start": 32, "end": 37 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2314,7 +2314,7 @@
               { "line": 568, "start": 33, "end": 36 },
               { "line": 569, "start": 39, "end": 44 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2342,7 +2342,7 @@
               { "line": 526, "start": 40, "end": 43 },
               { "line": 527, "start": 34, "end": 39 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2370,7 +2370,7 @@
               { "line": 532, "start": 35, "end": 38 },
               { "line": 533, "start": 39, "end": 44 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2398,7 +2398,7 @@
               { "line": 538, "start": 40, "end": 43 },
               { "line": 539, "start": 34, "end": 39 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2426,7 +2426,7 @@
               { "line": 544, "start": 35, "end": 38 },
               { "line": 545, "start": 39, "end": 44 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2456,7 +2456,7 @@
               { "line": 582, "start": 33, "end": 37 },
               { "line": 583, "start": 40, "end": 45 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2481,7 +2481,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 141, "start": 24, "end": 27 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2509,7 +2509,7 @@
               { "line": 146, "start": 24, "end": 27 },
               { "line": 147, "start": 23, "end": 28 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2528,7 +2528,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2547,7 +2547,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2608,7 +2608,7 @@
               { "line": 294, "start": 24, "end": 27 },
               { "line": 295, "start": 34, "end": 39 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2636,7 +2636,7 @@
               { "line": 397, "start": 24, "end": 27 },
               { "line": 398, "start": 32, "end": 37 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2655,7 +2655,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2680,7 +2680,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 503, "start": 23, "end": 24 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2706,7 +2706,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 483, "start": 23, "end": 24 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2734,7 +2734,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 493, "start": 23, "end": 24 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2766,7 +2766,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformY@LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2794,7 +2794,7 @@
               { "line": 574, "start": 24, "end": 27 },
               { "line": 575, "start": 32, "end": 37 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -2813,7 +2813,7 @@
             "kinds": [
               { "return_paths": { "": 0 }, "kind": "TransformZ@LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }

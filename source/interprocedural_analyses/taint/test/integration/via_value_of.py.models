@@ -527,7 +527,7 @@
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 68, "start": 16, "end": 25 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1331,7 +1331,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }

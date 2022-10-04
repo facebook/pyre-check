@@ -80,6 +80,8 @@ module CallInfo = struct
         (* If not provided, the leaf name set is set as the callee when taint is propagated. *)
         leaf_name_provided: bool;
       }
+    (* Special key to store taint-in-taint-out info (e.g, Sinks.LocalReturn) *)
+    | Tito
     (* Leaf taint at the callsite of a tainted model, i.e the start or end of the trace. *)
     | Origin of Location.WithModule.t
     (* Taint propagated from a call. *)
@@ -93,10 +95,9 @@ module CallInfo = struct
 
   let declaration = Declaration { leaf_name_provided = false }
 
-  let local_return = Declaration { leaf_name_provided = false }
-
   let pp formatter = function
     | Declaration _ -> Format.fprintf formatter "Declaration"
+    | Tito -> Format.fprintf formatter "Tito"
     | Origin location -> Format.fprintf formatter "Origin(%a)" Location.WithModule.pp location
     | CallSite { location; callees; port; path } ->
         let port = AccessPath.create port path |> AccessPath.show in
@@ -127,6 +128,7 @@ module CallInfo = struct
   let to_json ~filename_lookup trace : string * Yojson.Safe.t =
     match trace with
     | Declaration _ -> "decl", `Null
+    | Tito -> "tito", `Null
     | Origin location ->
         let location_json = location_with_module_to_json ~filename_lookup location in
         "root", location_json
@@ -167,6 +169,7 @@ module CallInfo = struct
     | CallSite { port; path; location = _; callees } ->
         CallSite { port; path; location = Location.WithModule.any; callees }
     | Declaration _ -> Declaration { leaf_name_provided = false }
+    | Tito -> Tito
 end
 
 module TraceLength = Features.MakeScalarDomain (struct
@@ -917,7 +920,7 @@ end = struct
     taint
     |> add_local_breadcrumbs broadening
     |> transform_call_info
-         CallInfo.local_return
+         CallInfo.Tito
          Features.CollapseDepth.Self
          Map
          ~f:Features.CollapseDepth.approximate
@@ -1125,6 +1128,7 @@ end = struct
             LocalTaintDomain.transform Features.LeafNameSet.Self Add ~f:new_leaf_names local_taint
           in
           call_info, local_taint
+      | CallInfo.Tito -> failwith "cannot apply call on tito taint"
     in
     Map.transform Map.KeyValue Map ~f:apply taint
 
@@ -1360,7 +1364,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       taint
       |> Taint.add_local_breadcrumbs breadcrumbs
       |> Taint.transform_call_info
-           CallInfo.local_return
+           CallInfo.Tito
            Features.CollapseDepth.Self
            Map
            ~f:Features.CollapseDepth.approximate
@@ -1373,7 +1377,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       taint
       |> Taint.add_local_breadcrumbs breadcrumbs
       |> Taint.transform_call_info
-           CallInfo.local_return
+           CallInfo.Tito
            Features.CollapseDepth.Self
            Map
            ~f:Features.CollapseDepth.approximate
@@ -1386,7 +1390,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       taint
       |> Taint.add_local_breadcrumbs breadcrumbs
       |> Taint.transform_call_info
-           CallInfo.local_return
+           CallInfo.Tito
            Features.CollapseDepth.Self
            Map
            ~f:Features.CollapseDepth.approximate
@@ -1593,7 +1597,4 @@ let local_return_frame ~collapse_depth =
 
 (* Special sink as it needs the return access path *)
 let local_return_taint ~collapse_depth =
-  BackwardTaint.singleton
-    CallInfo.local_return
-    Sinks.LocalReturn
-    (local_return_frame ~collapse_depth)
+  BackwardTaint.singleton CallInfo.Tito Sinks.LocalReturn (local_return_frame ~collapse_depth)

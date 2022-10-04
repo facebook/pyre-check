@@ -1086,12 +1086,13 @@ let introduce_taint_in_taint_out
     let via_features = Features.ViaFeatureSet.of_list via_features in
     match taint_sink_kind with
     | Sinks.LocalReturn
-    | Sinks.Transform _ ->
+    | Sinks.Transform _
+    | Sinks.ParameterUpdate _ ->
         let return_taint =
           Domains.local_return_frame ~collapse_depth:0
           |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-          |> BackwardTaint.singleton CallInfo.local_return taint_sink_kind
+          |> BackwardTaint.singleton CallInfo.Tito taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
@@ -1100,13 +1101,12 @@ let introduce_taint_in_taint_out
       when Features.BreadcrumbSet.is_empty breadcrumbs
            && Features.ViaFeatureSet.is_bottom via_features ->
         Error "`Attach` must be accompanied by a list of features to attach."
-    | Sinks.ParameterUpdate _
     | Sinks.Attach ->
         let update_taint =
           Frame.initial
           |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-          |> BackwardTaint.singleton CallInfo.local_return taint_sink_kind
+          |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in

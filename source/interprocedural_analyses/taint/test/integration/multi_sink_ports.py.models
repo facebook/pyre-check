@@ -261,7 +261,7 @@
             "kinds": [
               { "return_paths": { "[_params]": 3 }, "kind": "LocalReturn" }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -270,7 +270,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -346,7 +346,7 @@
               { "via": "split" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 58, "start": 28, "end": 32 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -611,7 +611,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -685,7 +685,7 @@
               { "via": "split" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 46, "start": 17, "end": 18 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

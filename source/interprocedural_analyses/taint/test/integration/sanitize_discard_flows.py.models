@@ -53,7 +53,7 @@
                 "kind": "NotSink[TestA]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -76,7 +76,7 @@
                 "kind": "NotSource[TestA]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -99,7 +99,7 @@
                 "kind": "NotSink[TestB]@LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }

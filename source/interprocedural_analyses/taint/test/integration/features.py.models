@@ -522,7 +522,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -531,7 +531,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -557,7 +557,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -634,7 +634,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -659,7 +659,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -676,7 +676,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -693,7 +693,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -718,7 +718,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -862,7 +862,7 @@
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 46, "start": 15, "end": 16 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -891,7 +891,7 @@
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 23, "start": 15, "end": 16 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -920,7 +920,7 @@
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 27, "start": 15, "end": 16 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -941,7 +941,7 @@
               { "type": "integer" }, { "type": "scalar" }, { "via": "tito" }
             ],
             "tito": [ { "line": 40, "start": 19, "end": 20 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -966,7 +966,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 31, "start": 18, "end": 19 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -995,7 +995,7 @@
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 35, "start": 33, "end": 34 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -1024,7 +1024,7 @@
               { "line": 84, "start": 19, "end": 20 },
               { "line": 84, "start": 34, "end": 35 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }

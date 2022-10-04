@@ -32,7 +32,7 @@ let infer
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let add_parameter_tito position existing_state attribute =
     let leaf =
-      BackwardTaint.singleton CallInfo.local_return Sinks.LocalReturn Frame.initial
+      BackwardTaint.singleton CallInfo.Tito Sinks.LocalReturn Frame.initial
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.transform Features.ReturnAccessPathTree.Self Map ~f:(fun _ ->
              Features.ReturnAccessPathTree.create

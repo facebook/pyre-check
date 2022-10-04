@@ -146,7 +146,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -343,7 +343,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 10, "start": 15, "end": 17 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -474,7 +474,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 33, "start": 27, "end": 28 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }

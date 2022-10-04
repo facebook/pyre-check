@@ -120,7 +120,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -129,7 +129,7 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -168,7 +168,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -213,7 +213,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -228,7 +228,7 @@
                 "kind": "LocalReturn"
               }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -397,7 +397,7 @@
               { "line": 49, "start": 41, "end": 86 },
               { "line": 49, "start": 59, "end": 71 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -414,7 +414,7 @@
               { "line": 49, "start": 41, "end": 86 },
               { "line": 49, "start": 56, "end": 57 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -477,7 +477,7 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito": [ { "line": 34, "start": 30, "end": 42 } ],
-            "decl": null
+            "tito": null
           }
         ]
       },
@@ -496,7 +496,7 @@
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 34, "start": 25, "end": 28 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -557,7 +557,7 @@
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 75, "start": 18, "end": 21 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
@@ -613,7 +613,7 @@
               { "line": 79, "start": 11, "end": 20 },
               { "line": 79, "start": 16, "end": 19 }
             ],
-            "decl": null
+            "tito": null
           }
         ]
       }

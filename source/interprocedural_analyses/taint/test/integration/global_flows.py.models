@@ -482,7 +482,12 @@
       {
         "port": "formal(item)",
         "taint": [
-          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+            ],
+            "tito": null
+          }
         ]
       }
     ],
@@ -584,7 +589,12 @@
       {
         "port": "formal(arg2)",
         "taint": [
-          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+            ],
+            "tito": null
+          }
         ]
       }
     ],
@@ -599,7 +609,12 @@
       {
         "port": "formal(arg1)",
         "taint": [
-          { "kinds": [ { "kind": "ParameterUpdate1" } ], "decl": null }
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "ParameterUpdate1" }
+            ],
+            "tito": null
+          }
         ]
       }
     ],

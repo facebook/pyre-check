@@ -567,11 +567,14 @@
               {
                 "features": [ { "always-via": "string_concat_lhs" } ],
                 "kind": "Attach"
-              },
-              { "return_paths": { "": 4 }, "kind": "LocalReturn" }
+              }
             ],
-            "local_features": [ { "via": "string_concat_lhs" } ],
             "decl": null
+          },
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "tito": null
           }
         ]
       }
@@ -623,11 +626,14 @@
               {
                 "features": [ { "always-via": "string_concat_lhs" } ],
                 "kind": "Attach"
-              },
-              { "return_paths": { "": 4 }, "kind": "LocalReturn" }
+              }
             ],
-            "local_features": [ { "via": "string_concat_lhs" } ],
             "decl": null
+          },
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "tito": null
           }
         ]
       }
@@ -651,10 +657,10 @@
               }
             ],
             "local_features": [
-              { "via": "string_concat_lhs" }, { "always-via": "tito" }
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 42, "start": 30, "end": 33 } ],
-            "decl": null
+            "tito": null
           }
         ]
       }
