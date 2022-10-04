@@ -151,7 +151,7 @@ let test_lookup_pick_narrowest context =
       "2:14-2:18/typing.Type[bool]";
       "2:20-2:26/typing.Optional[bool]";
       "2:28-2:49/typing.Type[typing.Optional[bool]]";
-      "2:54-2:58/None";
+      "2:54-2:58/typing.Type[None]";
       "3:7-3:11/bool";
       (* TODO (T68817342): Should be `bool` *)
       "3:7-3:27/typing.Optional[bool]";
@@ -1713,7 +1713,7 @@ let test_lookup_attributes context =
     ~lookup
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:7-5:15/bool";
       "8:6-8:7/typing.Type[test.A]";
       "9:4-9:5/int";
@@ -1868,7 +1868,7 @@ let test_lookup_comprehensions context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:2-3:3/typing.List[float]";
       "3:6-3:24/typing.List[float]";
       "3:7-3:8/float";
@@ -1896,7 +1896,7 @@ let test_lookup_comprehensions context =
       "3:24-3:27/typing.Type[int]";
       "3:32-3:36/None";
       "6:4-6:7/typing.Callable(test.foo)[[], None]";
-      "6:13-6:17/None";
+      "6:13-6:17/typing.Type[None]";
       "7:2-7:3/typing.List[test.Foo]";
       "7:6-7:27/typing.List[test.Foo]";
       "7:7-7:10/typing.Type[test.Foo]";
@@ -1915,7 +1915,7 @@ let test_lookup_comprehensions context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:2-3:3/typing_extensions.Literal[1]";
       "3:6-3:7/typing_extensions.Literal[1]";
       "4:2-4:3/typing.List[float]";
@@ -1933,7 +1933,7 @@ let test_lookup_comprehensions context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:2-3:3/typing.List[float]";
       "3:6-3:35/typing.List[float]";
       "3:7-3:8/float";
@@ -1953,7 +1953,7 @@ let test_lookup_comprehensions context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:2-3:3/typing.List[typing.Tuple[float, int]]";
       "3:6-3:50/typing.List[typing.Tuple[float, int]]";
       "3:7-3:13/typing.Tuple[float, int]";
@@ -1975,7 +1975,7 @@ let test_lookup_comprehensions context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:2-3:3/typing_extensions.Literal[1]";
       "3:6-3:7/typing_extensions.Literal[1]";
       "4:2-4:3/typing.Set[float]";
@@ -1997,7 +1997,7 @@ let test_lookup_comprehensions context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:2-3:3/typing_extensions.Literal[1]";
       "3:6-3:7/typing_extensions.Literal[1]";
       "4:2-4:3/typing_extensions.Literal[1]";
@@ -2022,7 +2022,7 @@ let test_lookup_comprehensions context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:2-3:3/typing_extensions.Literal[1]";
       "3:6-3:7/typing_extensions.Literal[1]";
       "4:2-4:3/typing_extensions.Literal[1]";
@@ -2064,7 +2064,7 @@ let test_lookup_if_statements context =
       "2:14-2:18/typing.Type[bool]";
       "2:20-2:24/typing.List[int]";
       "2:26-2:42/typing.Type[typing.List[int]]";
-      "2:47-2:51/None";
+      "2:47-2:51/typing.Type[None]";
       "3:7-3:11/bool";
       "5:7-5:15/bool";
       "5:11-5:15/bool";
@@ -2128,7 +2128,7 @@ let test_lookup_string_annotations context =
       "3:6-3:11/typing.Type[int]";
       "4:3-4:4/str";
       "4:6-4:11/typing.Type[str]";
-      "5:5-5:9/None";
+      "5:5-5:9/typing.Type[None]";
     ];
   assert_annotation ~position:{ Location.line = 3; column = 3 } ~annotation:(Some "3:3-3:4/int");
   assert_annotation
@@ -2172,7 +2172,7 @@ let test_lookup_unbound context =
       "2:4-2:7/typing.Callable(test.foo)[[Named(list, typing.List[Variable[_T]])], None]";
       "2:8-2:12/typing.List[Variable[_T]]";
       "2:14-2:29/typing.Type[typing.List[Variable[_T]]]";
-      "2:34-2:38/None";
+      "2:34-2:38/typing.Type[None]";
       "3:2-3:3/typing.List[typing.Any]";
       "3:6-3:21/typing.List[typing.Any]";
       "3:7-3:8/typing.Any";
@@ -2252,6 +2252,28 @@ let test_lookup_union_type_resolution context =
     ~annotation:(Some "19:11-19:12/typing.Union[test.A, test.B, test.C]")
 
 
+let test_lookup_def context =
+  let source =
+    {|
+      from typing import List, Iterable
+      def foo(x: List[Iterable[str]]) -> List[Iterable[str]]:
+          pass
+    |}
+  in
+  let lookup = generate_lookup ~context source in
+  assert_annotation_list
+    ~lookup
+    [
+      "2:19-2:23/typing.Type[list]";
+      "2:25-2:33/typing.Type[typing.Iterable]";
+      "3:4-3:7/typing.Callable(test.foo)[[Named(x, typing.List[typing.Iterable[str]])], \
+       typing.List[typing.Iterable[str]]]";
+      "3:8-3:9/typing.List[typing.Iterable[str]]";
+      "3:11-3:30/typing.Type[typing.List[typing.Iterable[str]]]";
+      "3:35-3:54/typing.Type[typing.List[typing.Iterable[str]]]";
+    ]
+
+
 let test_lookup_unknown_accesses context =
   let source = {|
       def foo() -> None:
@@ -2263,7 +2285,7 @@ let test_lookup_unknown_accesses context =
     ~lookup
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/None";
+      "2:13-2:17/typing.Type[None]";
       "3:4-3:28/typing.Any";
       "3:14-3:19/typing_extensions.Literal['key']";
     ];
@@ -2515,6 +2537,7 @@ let test_lookup_expression context =
       def foo(x) -> None:
         print(x + 1) |}
     [
+      None, Type.meta NoneType;
       ( Some
           (Expression.Name
              (Name.Attribute
@@ -2542,7 +2565,6 @@ let test_lookup_expression context =
           } );
       ( Some (Expression.Name (Name.Identifier "$parameter$x") |> Node.create_with_default_location),
         Type.Any );
-      Some (Expression.Constant Constant.NoneLiteral |> Node.create_with_default_location), NoneType;
       ( Some (Expression.Name (Name.Identifier "print") |> Node.create_with_default_location),
         Type.Callable
           {
@@ -2871,6 +2893,109 @@ let test_coverage_gaps_in_module context =
                 };
           };
         reason = ContainerParameterIsAny;
+      };
+    ];
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:
+      {|
+      from typing import Iterable
+      def foo() -> Iterable[str]:
+        return []
+
+      a = foo()
+    |}
+    [];
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:
+      {|
+      from typing import Iterable, Callable, Any
+      def foo() -> Callable[[], Any]:
+        return a
+      x = foo
+      y = x()
+      |}
+    [
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name (Name.Identifier "$local_test$y")
+                |> Node.create
+                     ~location:{ start = { line = 6; column = 0 }; stop = { line = 6; column = 1 } }
+                );
+            type_ =
+              Type.Callable
+                {
+                  kind = Type.Callable.Anonymous;
+                  implementation = { annotation = Type.Any; parameters = Defined [] };
+                  overloads = [];
+                };
+          };
+        reason = CallableReturnIsAny;
+      };
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Call
+                   {
+                     callee =
+                       Expression.Name (Name.Identifier "$local_test$x")
+                       |> Node.create
+                            ~location:
+                              { start = { line = 6; column = 4 }; stop = { line = 6; column = 5 } };
+                     arguments = [];
+                   }
+                |> Node.create
+                     ~location:{ start = { line = 6; column = 4 }; stop = { line = 6; column = 7 } }
+                );
+            type_ =
+              Type.Callable
+                {
+                  kind = Type.Callable.Anonymous;
+                  implementation = { annotation = Type.Any; parameters = Defined [] };
+                  overloads = [];
+                };
+          };
+        reason = CallableReturnIsAny;
+      };
+    ];
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:{|
+    from typing import Iterable, Any
+    def foo() -> Any:
+      return 5
+    |}
+    [
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name
+                   (Name.Attribute
+                      {
+                        base =
+                          Expression.Name (Name.Identifier "test")
+                          |> Node.create_with_default_location;
+                        attribute = "foo";
+                        special = false;
+                      })
+                |> Node.create_with_default_location);
+            type_ =
+              Type.Callable
+                {
+                  kind = Type.Callable.Named (Reference.create "test.foo");
+                  implementation = { annotation = Type.Any; parameters = Defined [] };
+                  overloads = [];
+                };
+          };
+        reason = CallableReturnIsAny;
       };
     ];
   ()
@@ -3325,6 +3450,7 @@ let () =
          "lookup_string_annotations" >:: test_lookup_string_annotations;
          "lookup_unbound" >:: test_lookup_unbound;
          "lookup_union_type_resolution" >:: test_lookup_union_type_resolution;
+         "lookup_def" >:: test_lookup_def;
          "lookup_unknown_accesses" >:: test_lookup_unknown_accesses;
          "classify_coverage_data" >:: test_classify_coverage_data;
          "lookup_expression" >:: test_lookup_expression;
