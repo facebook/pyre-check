@@ -177,6 +177,21 @@ class PyreLanguageServer:
         if document_path not in self.server_state.opened_documents:
             return
 
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "didChange",
+                "filePath": str(document_path),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "server_state_start_status": str(
+                    self.server_state.server_last_status.value
+                ),
+            },
+            activity_key,
+        )
+
         process_unsaved_changes = (
             self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
