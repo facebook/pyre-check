@@ -181,42 +181,42 @@ let test_get_parameter_argument_mapping _ =
           ];
       reasons = { arity = []; annotation = [] };
     };
-  (* TODO(T107236583): Handle `foo(x, *args)` correctly. *)
   assert_parameter_argument_mapping
     ~callable:
       "typing.Callable[[PositionalOnly(int), Named(some_argument, str), Variable(bool)], None]"
     ~self_argument:None
     [
       {
-        Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
-        kind = SingleStar;
-        expression = None;
-        position = 2;
-      };
-      {
         Argument.WithPosition.resolved = Type.integer;
         kind = Positional;
         expression = parse_single_expression "42" |> Option.some;
         position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
+        kind = SingleStar;
+        expression = None;
+        position = 2;
       };
     ]
     {
       parameter_argument_mapping =
         Parameter.Map.of_alist_exn
           [
-            ( Named { name = "some_argument"; annotation = Type.string; default = false },
-              [
-                make_matched_argument
-                  {
-                    Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
-                    kind = SingleStar;
-                    expression = None;
-                    position = 2;
-                  };
-              ] );
             ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
               [
                 make_matched_argument
+                  {
+                    Argument.WithPosition.resolved = Type.integer;
+                    kind = Positional;
+                    expression = parse_single_expression "42" |> Option.some;
+                    position = 1;
+                  };
+              ] );
+            ( Named { name = "some_argument"; annotation = Type.string; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:0
                   {
                     Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
                     kind = SingleStar;
@@ -227,13 +227,7 @@ let test_get_parameter_argument_mapping _ =
             ( Variable (Concrete Type.bool),
               [
                 make_matched_argument
-                  {
-                    Argument.WithPosition.resolved = Type.integer;
-                    kind = Positional;
-                    expression = parse_single_expression "42" |> Option.some;
-                    position = 1;
-                  };
-                make_matched_argument
+                  ~index_into_starred_tuple:1
                   {
                     Argument.WithPosition.resolved = Type.tuple [Type.string; Type.bool; Type.bool];
                     kind = SingleStar;
@@ -459,6 +453,7 @@ let test_get_parameter_argument_mapping _ =
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
+                  ~index_into_starred_tuple:0
                   {
                     Argument.WithPosition.resolved =
                       Type.tuple [Type.integer; Type.string; Type.bool];
@@ -495,6 +490,7 @@ let test_get_parameter_argument_mapping _ =
             ( Named { name = "x"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
+                  ~index_into_starred_tuple:0
                   {
                     Argument.WithPosition.resolved =
                       Type.tuple [Type.integer; Type.string; Type.bool];
@@ -506,6 +502,7 @@ let test_get_parameter_argument_mapping _ =
             ( Named { name = "y"; annotation = Type.integer; default = false },
               [
                 make_matched_argument
+                  ~index_into_starred_tuple:1
                   {
                     Argument.WithPosition.resolved =
                       Type.tuple [Type.integer; Type.string; Type.bool];
@@ -520,6 +517,114 @@ let test_get_parameter_argument_mapping _ =
           arity = [SignatureSelectionTypes.TooManyArguments { expected = 2; provided = 3 }];
           annotation = [];
         };
+    };
+  let tuple_str_unbounded_int =
+    Type.OrderedTypes.Concatenation.create_from_unbounded_element ~prefix:[Type.string] Type.integer
+  in
+  (* We slice the `*xs` argument to assign it across `x: str` and `*args: *Tuple[<...>]`. *)
+  assert_parameter_argument_mapping
+    ~callable:
+      "typing.Callable[[Named(x, str), Variable(str, pyre_extensions.Unpack[typing.Tuple[int, \
+       ...]])], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved =
+          Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "x"; annotation = Type.string; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:0
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+            ( Variable (Concatenation tuple_str_unbounded_int),
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:1
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+          ];
+      reasons = { arity = []; annotation = [] };
+    };
+  (* TODO(T107236583): Need to handle the case where there are multiple `*xs` that get used up by
+     positional parameters. *)
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[Named(x, str), Named(y, str), Named(z, int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.string];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.string; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 2;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "x"; annotation = Type.string; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:0
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.string];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+            ( Named { name = "y"; annotation = Type.string; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:1
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.string];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+            ( Named { name = "z"; annotation = Type.integer; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:2
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.string];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+          ];
+      reasons = { arity = []; annotation = [] };
     };
   ()
 

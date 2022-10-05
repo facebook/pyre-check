@@ -1155,16 +1155,24 @@ module SignatureSelection = struct
       to them.
 
       Other parameters such as named parameters (`x: int`), positional-only, or keyword-only
-      parameters will have zero or one argument mapped to them. *)
+      parameters will have zero or one argument mapped to them.
+
+      If a starred argument, such as `*xs`, is being distributed across multiple parameters, each
+      parameter will receive `*xs` with its index into the starred tuple. That way, later stages of
+      the signature selection pipeline can find the precise type of the tuple element that will be
+      assigned to each parameter. *)
   let get_parameter_argument_mapping ~all_parameters ~parameters ~self_argument arguments =
     let open Type.Callable in
     let all_arguments = arguments in
     let rec consume
         ({ ParameterArgumentMapping.parameter_argument_mapping; reasons = { arity; _ } as reasons }
         as parameter_argument_mapping_with_reasons)
+        ?index_into_starred_tuple
         ~arguments
         ~parameters
       =
+      let consume_with_new_index ?index_into_starred_tuple = consume ?index_into_starred_tuple in
+      let consume = consume ?index_into_starred_tuple in
       let update_mapping parameter argument =
         Map.add_multi parameter_argument_mapping ~key:parameter ~data:argument
       in
@@ -1277,14 +1285,23 @@ module SignatureSelection = struct
             ~parameters:remaining_parameters
             { parameter_argument_mapping_with_reasons with parameter_argument_mapping; reasons }
       | ( ({ kind = DoubleStar; _ } as argument) :: arguments_tail,
-          (Parameter.Keywords _ as parameter) :: _ )
-      | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
-          (Parameter.Variable _ as parameter) :: _ ) ->
-          (* (Double) starred argument, (double) starred parameter *)
+          (Parameter.Keywords _ as parameter) :: _ ) ->
           let parameter_argument_mapping =
             update_mapping parameter (make_matched_argument argument)
           in
           consume
+            ~arguments:arguments_tail
+            ~parameters
+            { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
+      | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
+          (Parameter.Variable _ as parameter) :: _ ) ->
+          let parameter_argument_mapping =
+            update_mapping parameter (make_matched_argument ?index_into_starred_tuple argument)
+          in
+          (* We don't need to slice any further `*xs` arguments since they are consumed fully by the
+             expected `Variable` parameter. *)
+          consume_with_new_index
+            ?index_into_starred_tuple:None
             ~arguments:arguments_tail
             ~parameters
             { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
@@ -1322,10 +1339,12 @@ module SignatureSelection = struct
       | ({ kind = DoubleStar; _ } as argument) :: _, parameter :: parameters_tail
       | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
           (* Double starred or starred argument, parameter *)
+          let index_into_starred_tuple = Option.value index_into_starred_tuple ~default:0 in
           let parameter_argument_mapping =
-            update_mapping parameter (make_matched_argument argument)
+            update_mapping parameter (make_matched_argument ~index_into_starred_tuple argument)
           in
-          consume
+          consume_with_new_index
+            ~index_into_starred_tuple:(index_into_starred_tuple + 1)
             ~arguments
             ~parameters:parameters_tail
             { parameter_argument_mapping_with_reasons with parameter_argument_mapping }
@@ -1349,7 +1368,7 @@ module SignatureSelection = struct
       ParameterArgumentMapping.parameter_argument_mapping = Parameter.Map.empty;
       reasons = empty_reasons;
     }
-    |> consume ~arguments ~parameters
+    |> consume ?index_into_starred_tuple:None ~arguments ~parameters
 
 
   (** Check all arguments against the respective parameter types. Return a signature match

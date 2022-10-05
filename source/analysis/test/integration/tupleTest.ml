@@ -826,6 +826,35 @@ let test_star_args context =
     [
       "Invalid argument [32]: Unpacked argument `x` must have an unpackable type but has type `int`.";
     ];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import Tuple
+
+      def foo( *args: Unpack[Tuple[str, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def main( *args: Unpack[Tuple[str, Unpack[Tuple[int, ...]]]]) -> None:
+        foo( *args)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import Tuple
+
+      def foo(x: str, y: int, *args: Unpack[Tuple[int, ...]]) -> None: ...
+
+      def main( *args: Unpack[Tuple[str, int, Unpack[Tuple[int, ...]]]]) -> None:
+        foo( *args)
+        foo("hello", 1, 2, 3)
+
+        wrong: Tuple[int, ...]
+        foo( *wrong)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `str` but got `int`.";
+    ];
   ()
 
 
