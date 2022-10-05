@@ -59,3 +59,7 @@ def issue_with_member():
     x = only_applies_to_a_member()
     _test_sink(x.a)
     _test_sink(x.b)
+
+
+def tito(x):
+    return

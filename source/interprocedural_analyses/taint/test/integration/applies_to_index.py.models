@@ -469,3 +469,20 @@
     ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "applies_to_index.tito",
+    "tito": [
+      {
+        "port": "formal(x)[a]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}

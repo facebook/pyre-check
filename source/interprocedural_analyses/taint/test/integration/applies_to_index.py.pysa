@@ -11,3 +11,6 @@ def applies_to_index.only_applies_to_a_key() -> AppliesTo["a", TaintSource[Test]
 
 # Tainting members is uniform with dictionary keys.
 def applies_to_index.only_applies_to_a_member() -> AppliesTo["a", TaintSource[Test]]: ...
+
+# AppliesTo on tito
+def applies_to_index.tito(x: AppliesTo["a", TaintInTaintOut]): ...
