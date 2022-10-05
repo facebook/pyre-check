@@ -226,6 +226,21 @@ class PyreLanguageServer:
         if document_path not in self.server_state.opened_documents:
             return
 
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "didSave",
+                "filePath": str(document_path),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "server_state_start_status": str(
+                    self.server_state.server_last_status.value
+                ),
+            },
+            activity_key,
+        )
+
         # Attempt to trigger a background Pyre server start on each file save
         if not self.pyre_manager.is_task_running():
             await self._try_restart_pyre_server()
