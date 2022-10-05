@@ -82,7 +82,7 @@ let test_prepare_arguments_for_signature_selection _ =
         Argument.WithPosition.resolved = Type.string;
         kind = Named (Node.create_with_default_location "some_argument");
         expression = parse_single_expression "'hello'" |> Option.some;
-        position = 5;
+        position = 3;
       };
       {
         Argument.WithPosition.resolved = Type.integer;
@@ -91,22 +91,10 @@ let test_prepare_arguments_for_signature_selection _ =
         position = 1;
       };
       {
-        Argument.WithPosition.resolved = Type.integer;
-        kind = Positional;
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.string; Type.bool];
+        kind = SingleStar;
         expression = None;
         position = 2;
-      };
-      {
-        Argument.WithPosition.resolved = Type.string;
-        kind = Positional;
-        expression = None;
-        position = 3;
-      };
-      {
-        Argument.WithPosition.resolved = Type.bool;
-        kind = Positional;
-        expression = None;
-        position = 4;
       };
     ];
   ()
@@ -626,6 +614,57 @@ let test_get_parameter_argument_mapping _ =
           ];
       reasons = { arity = []; annotation = [] };
     };
+  assert_parameter_argument_mapping
+    ~callable:"typing.Callable[[Named(x, int), Named(y, int), Named(z, int)], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "x"; annotation = Type.integer; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:0
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+            ( Named { name = "y"; annotation = Type.integer; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:1
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+            ( Named { name = "z"; annotation = Type.integer; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:2
+                  {
+                    Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+          ];
+      reasons = { arity = []; annotation = [] };
+    };
   ()
 
 
@@ -1111,6 +1150,124 @@ let test_check_arguments_against_parameters context =
                 ] );
             ];
         reasons = empty_reasons;
+      }
+    [TypeConstraints.empty];
+  (* TODO(T133552317): We currently emit an error about a type mismatch for `z`. However, it really
+     has no matching argument, since the tuple[int, int]` has just two elements. So, emit an error
+     about the missing argument for `z`. *)
+  assert_arguments_against_parameters
+    ~callable:"typing.Callable[[Named(x, int), Named(y, int), Named(z, str)], None]"
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Named { name = "x"; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "y"; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "z"; annotation = Type.string; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:2
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = { arity = []; annotation = [] };
+      }
+    ~expected_reasons:
+      {
+        arity = [];
+        annotation =
+          [
+            SignatureSelectionTypes.Mismatches
+              [
+                Mismatch
+                  ({
+                     SignatureSelectionTypes.actual = Type.integer;
+                     expected = Type.string;
+                     name = None;
+                     position = 1;
+                   }
+                  |> Node.create_with_default_location);
+              ];
+          ];
+      }
+    [TypeConstraints.empty];
+  (* TODO(T133552317): We currently emit an error for the first parameter, even though the error is
+     on the second parameter. *)
+  assert_arguments_against_parameters
+    ~callable:"typing.Callable[[Named(x, int), Named(y, str)], None]"
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Named { name = "x"; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "y"; annotation = Type.string; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = { arity = []; annotation = [] };
+      }
+    ~expected_reasons:
+      {
+        arity = [];
+        annotation =
+          [
+            SignatureSelectionTypes.Mismatches
+              [
+                Mismatch
+                  ({
+                     SignatureSelectionTypes.actual = Type.integer;
+                     expected = Type.string;
+                     name = None;
+                     position = 1;
+                   }
+                  |> Node.create_with_default_location);
+              ];
+          ];
       }
     [TypeConstraints.empty];
   ()

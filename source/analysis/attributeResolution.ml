@@ -2252,20 +2252,6 @@ module SignatureSelection = struct
       in
       List.mapi ~f:add_index arguments
     in
-    let unpack_starred_arguments arguments =
-      let unpack sofar argument =
-        match argument with
-        | { Argument.resolved = Tuple (Concrete tuple_parameters); kind = SingleStar; expression }
-          ->
-            let unpacked_arguments =
-              List.map tuple_parameters ~f:(fun resolved ->
-                  { Argument.expression; kind = Positional; resolved })
-            in
-            List.concat [List.rev unpacked_arguments; sofar]
-        | _ -> argument :: sofar
-      in
-      List.fold ~f:unpack ~init:[] arguments |> List.rev
-    in
     let separate_labeled_unlabeled_arguments arguments =
       let is_labeled = function
         | { Argument.WithPosition.kind = Named _; _ } -> true
@@ -2280,7 +2266,7 @@ module SignatureSelection = struct
       in
       self_argument @ labeled_arguments @ unlabeled_arguments
     in
-    arguments |> unpack_starred_arguments |> add_positions |> separate_labeled_unlabeled_arguments
+    arguments |> add_positions |> separate_labeled_unlabeled_arguments
 end
 
 class base class_metadata_environment dependency =
