@@ -1249,7 +1249,6 @@ let test_check_arguments_against_parameters context =
   let ordered_type_int_variadic =
     Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] variadic
   in
-  (* TODO(T133552317): Fix the position number in the mismatches. *)
   assert_arguments_against_parameters
     ~callable:
       "typing.Callable[[PositionalOnly(int), PositionalOnly(str), PositionalOnly(bool)], None]"
@@ -1309,7 +1308,7 @@ let test_check_arguments_against_parameters context =
                      SignatureSelectionTypes.actual = Type.object_primitive;
                      expected = Type.bool;
                      name = None;
-                     position = 1;
+                     position = 3;
                    }
                   |> Node.create_with_default_location);
               ];
@@ -1320,7 +1319,7 @@ let test_check_arguments_against_parameters context =
                      SignatureSelectionTypes.actual = Type.object_primitive;
                      expected = Type.string;
                      name = None;
-                     position = 1;
+                     position = 2;
                    }
                   |> Node.create_with_default_location);
               ];

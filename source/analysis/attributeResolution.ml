@@ -1721,7 +1721,12 @@ module SignatureSelection = struct
                     reasons = { reasons with annotation = error :: annotation };
                   }
                 in
-                let update_signature_match_for_iterable ~create_error ~resolved iterable_item_type =
+                let update_signature_match_for_iterable
+                    ~position
+                    ~create_error
+                    ~resolved
+                    iterable_item_type
+                  =
                   let argument_location =
                     expression >>| Node.location |> Option.value ~default:Location.any
                   in
@@ -1754,7 +1759,7 @@ module SignatureSelection = struct
                         [Single Type.string; Single (Type.Variable synthetic_variable)]
                     in
                     extract_iterable_item_type ~synthetic_variable ~generic_iterable_type resolved
-                    |> update_signature_match_for_iterable ~create_error ~resolved
+                    |> update_signature_match_for_iterable ~position ~create_error ~resolved
                 | SingleStar -> (
                     let signature_match_for_single_element =
                       match parameter, index_into_starred_tuple, resolved with
@@ -1808,7 +1813,10 @@ module SignatureSelection = struct
                           ~synthetic_variable
                           ~generic_iterable_type
                           resolved
-                        |> update_signature_match_for_iterable ~create_error ~resolved)
+                        |> update_signature_match_for_iterable
+                             ~position:(position + Option.value ~default:0 index_into_starred_tuple)
+                             ~create_error
+                             ~resolved)
                 | Named _
                 | Positional -> (
                     let argument_annotation, weakening_error =

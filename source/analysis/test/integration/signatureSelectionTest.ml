@@ -862,6 +862,8 @@ let test_check_variable_arguments context =
     [
       "Incompatible parameter type [6]: In call `f`, for 1st positional only parameter expected \
        `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `f`, for 2nd positional only parameter expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -914,6 +916,8 @@ let test_check_variable_arguments context =
     |}
     [
       "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
        `int` but got `str`.";
     ];
   assert_type_errors
