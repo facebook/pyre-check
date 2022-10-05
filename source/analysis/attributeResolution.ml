@@ -1703,7 +1703,7 @@ module SignatureSelection = struct
                   | Named name -> Some name
                   | _ -> None
                 in
-                let check_argument argument_annotation =
+                let check_argument ~position argument_annotation =
                   check_argument_and_set_constraints_and_reasons
                     ~position
                     ~argument_location
@@ -1764,7 +1764,7 @@ module SignatureSelection = struct
                           Type.OrderedTypes.index
                             ~python_index:index_into_starred_tuple
                             ordered_type
-                          >>| check_argument
+                          >>| check_argument ~position:(position + index_into_starred_tuple)
                           >>| check ~arguments:tail
                       | _ -> None
                     in
@@ -1804,7 +1804,8 @@ module SignatureSelection = struct
                     in
                     match weakening_error with
                     | Some weakening_error -> add_annotation_error signature_match weakening_error
-                    | None -> argument_annotation |> check_argument |> check ~arguments:tail))
+                    | None ->
+                        argument_annotation |> check_argument ~position |> check ~arguments:tail))
           in
           match is_generic_lambda parameter arguments with
           | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)

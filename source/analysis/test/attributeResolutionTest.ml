@@ -1217,8 +1217,6 @@ let test_check_arguments_against_parameters context =
           ];
       }
     [TypeConstraints.empty];
-  (* TODO(T133552317): We currently emit an error for the first parameter, even though the error is
-     on the second parameter. *)
   assert_arguments_against_parameters
     ~callable:"typing.Callable[[Named(x, int), Named(y, str)], None]"
     ~parameter_argument_mapping_with_reasons:
@@ -1263,7 +1261,7 @@ let test_check_arguments_against_parameters context =
                      SignatureSelectionTypes.actual = Type.integer;
                      expected = Type.string;
                      name = None;
-                     position = 1;
+                     position = 2;
                    }
                   |> Node.create_with_default_location);
               ];

@@ -979,7 +979,7 @@ let test_check_method_parameters context =
       foo( *xs )
     |}
     [
-      "4: Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter \
+      "4: Incompatible parameter type [6]: In call `foo`, for 3rd positional only parameter \
        expected `str` but got `int`.";
     ];
   assert_type_errors

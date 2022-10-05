@@ -493,7 +493,6 @@ let test_tuple_literal_access context =
       func(1, *c)
     |}
     [];
-  (* TODO(T133552317): The second error should refer to the 3rd positional only parameter. *)
   assert_type_errors
     {|
       def func(a: int, b: bool, c: str) -> None:
@@ -503,9 +502,9 @@ let test_tuple_literal_access context =
     |}
     [
       "Incompatible parameter type [6]: In call `func`, for 2nd positional only parameter expected \
-       `str` but got `bool`.";
-      "Incompatible parameter type [6]: In call `func`, for 2nd positional only parameter expected \
        `bool` but got `str`.";
+      "Incompatible parameter type [6]: In call `func`, for 3rd positional only parameter expected \
+       `str` but got `bool`.";
     ];
   (* TODO(T133552317): The error should be about the missing argument for `c`. *)
   assert_type_errors
