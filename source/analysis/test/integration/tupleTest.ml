@@ -506,7 +506,6 @@ let test_tuple_literal_access context =
       "Incompatible parameter type [6]: In call `func`, for 3rd positional only parameter expected \
        `str` but got `bool`.";
     ];
-  (* TODO(T133552317): The error should be about the missing argument for `c`. *)
   assert_type_errors
     {|
       def func(a: int, b: str, c: bool) -> None:
@@ -514,10 +513,7 @@ let test_tuple_literal_access context =
       c = ("bla", )
       func(1, *c)
     |}
-    [
-      "Incompatible parameter type [6]: In call `func`, for 2nd positional only parameter expected \
-       `bool` but got `str`.";
-    ];
+    ["Missing argument [20]: Call `func` expects argument `c`."];
   (* TODO(T133552317): Handle function calls with multiple unpacked tuples. *)
   assert_type_errors
     {|
@@ -527,12 +523,7 @@ let test_tuple_literal_access context =
       d = (1, "abc")
       func(1, *c, *d)
     |}
-    [
-      "Incompatible parameter type [6]: In call `func`, for 2nd positional only parameter expected \
-       `int` but got `Union[bool, str]`.";
-      "Incompatible parameter type [6]: In call `func`, for 2nd positional only parameter expected \
-       `str` but got `Union[bool, str]`.";
-    ];
+    ["Missing argument [20]: Call `func` expects argument `d`."];
   ()
 
 

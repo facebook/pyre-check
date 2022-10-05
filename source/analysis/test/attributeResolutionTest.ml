@@ -1152,9 +1152,6 @@ let test_check_arguments_against_parameters context =
         reasons = empty_reasons;
       }
     [TypeConstraints.empty];
-  (* TODO(T133552317): We currently emit an error about a type mismatch for `z`. However, it really
-     has no matching argument, since the tuple[int, int]` has just two elements. So, emit an error
-     about the missing argument for `z`. *)
   assert_arguments_against_parameters
     ~callable:"typing.Callable[[Named(x, int), Named(y, int), Named(z, str)], None]"
     ~parameter_argument_mapping_with_reasons:
@@ -1199,6 +1196,108 @@ let test_check_arguments_against_parameters context =
         reasons = { arity = []; annotation = [] };
       }
     ~expected_reasons:
+      { arity = [SignatureSelectionTypes.MissingArgument (Named "z")]; annotation = [] }
+    [TypeConstraints.empty];
+  assert_arguments_against_parameters
+    ~callable:
+      "typing.Callable[[PositionalOnly(int), PositionalOnly(str), PositionalOnly(bool)], None]"
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( PositionalOnly { index = 1; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( PositionalOnly { index = 2; annotation = Type.bool; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:2
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [Type.integer; Type.integer];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = { arity = []; annotation = [] };
+      }
+    ~expected_reasons:
+      { arity = [SignatureSelectionTypes.MissingArgument (PositionalOnly 2)]; annotation = [] }
+    [TypeConstraints.empty];
+  let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
+  let ordered_type_int_variadic =
+    Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] variadic
+  in
+  (* TODO(T133552317): Fix the position number in the mismatches. *)
+  assert_arguments_against_parameters
+    ~callable:
+      "typing.Callable[[PositionalOnly(int), PositionalOnly(str), PositionalOnly(bool)], None]"
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( PositionalOnly { index = 0; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.Tuple (Concatenation ordered_type_int_variadic);
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( PositionalOnly { index = 1; annotation = Type.string; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.Tuple (Concatenation ordered_type_int_variadic);
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( PositionalOnly { index = 2; annotation = Type.bool; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:2
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.Tuple (Concatenation ordered_type_int_variadic);
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = { arity = []; annotation = [] };
+      }
+    ~expected_reasons:
       {
         arity = [];
         annotation =
@@ -1207,7 +1306,18 @@ let test_check_arguments_against_parameters context =
               [
                 Mismatch
                   ({
-                     SignatureSelectionTypes.actual = Type.integer;
+                     SignatureSelectionTypes.actual = Type.object_primitive;
+                     expected = Type.bool;
+                     name = None;
+                     position = 1;
+                   }
+                  |> Node.create_with_default_location);
+              ];
+            SignatureSelectionTypes.Mismatches
+              [
+                Mismatch
+                  ({
+                     SignatureSelectionTypes.actual = Type.object_primitive;
                      expected = Type.string;
                      name = None;
                      position = 1;

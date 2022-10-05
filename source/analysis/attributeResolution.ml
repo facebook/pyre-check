@@ -1760,12 +1760,40 @@ module SignatureSelection = struct
                       match parameter, index_into_starred_tuple, resolved with
                       | ( (PositionalOnly _ | Named _),
                           Some index_into_starred_tuple,
-                          Type.Tuple ordered_type ) ->
-                          Type.OrderedTypes.index
-                            ~python_index:index_into_starred_tuple
-                            ordered_type
-                          >>| check_argument ~position:(position + index_into_starred_tuple)
-                          >>| check ~arguments:tail
+                          Type.Tuple ordered_type ) -> (
+                          match
+                            Type.OrderedTypes.index
+                              ~python_index:index_into_starred_tuple
+                              ordered_type
+                          with
+                          | Some type_ ->
+                              check_argument ~position:(position + index_into_starred_tuple) type_
+                              |> check ~arguments:tail
+                              |> Option.some
+                          | None ->
+                              (* We could not index into the tuple type to find the element for the
+                                 current parameter.
+
+                                 If it is a concrete tuple, this means we have run out of arguments,
+                                 so emit an error about missing arguments.
+
+                                 If it is a variadic tuple, then this will be handled later in the
+                                 function, so return None. *)
+                              let missing_argument =
+                                match ordered_type, parameter with
+                                | Concrete _, Named { name; _ } ->
+                                    SignatureSelectionTypes.Named name |> Option.some
+                                | Concrete _, PositionalOnly { index; _ } ->
+                                    PositionalOnly index |> Option.some
+                                | _ -> None
+                              in
+                              missing_argument
+                              >>| fun missing_argument ->
+                              {
+                                signature_match with
+                                reasons =
+                                  { reasons with arity = MissingArgument missing_argument :: arity };
+                              })
                       | _ -> None
                     in
                     match signature_match_for_single_element with
