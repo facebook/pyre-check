@@ -1672,6 +1672,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.join_tito_collapse_test_3",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 1 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [
+              { "line": 451, "start": 33, "end": 34 },
+              { "line": 453, "start": 41, "end": 42 }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.loop_perfect_tito",
     "tito": [
       {

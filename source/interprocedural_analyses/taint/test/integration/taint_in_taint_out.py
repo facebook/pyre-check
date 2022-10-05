@@ -444,3 +444,17 @@ def no_issue_tito_collapse_two_with_input_path():
     x = {"a": {"b": {"c": _test_source(), "d": 0}}}
     y = tito_collapse_one_with_input_path(x)
     _test_sink(y["d"])
+
+
+def join_tito_collapse_test_3(x):
+    if 1 > 2:
+        return tito_collapse_one(x)
+    else:
+        return {"foo": tito_collapse_two(x)}
+
+
+def issue_join_tito_collapse_test_3():
+    x = {"a": _test_source()}
+    y = join_tito_collapse_test_3(x)
+    # TODO(T118287187): This should be an issue, it is currently a false negative.
+    _test_sink(y["foo"]["a"])
