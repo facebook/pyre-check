@@ -24,6 +24,12 @@ module ModelParser = struct
   include ModelParser
 end
 
+type variable_metadata = {
+  name: Ast.Reference.t;
+  type_annotation: Ast.Expression.Expression.t option;
+}
+[@@deriving show, compare]
+
 module ModelQueryRegistryMap = struct
   type t = Registry.t String.Map.t
 
@@ -777,8 +783,7 @@ let rec attribute_matches_constraint
     query_constraint
     ~resolution
     ~class_hierarchy_graph
-    ~name
-    ~annotation
+    ~variable_metadata:({ name; type_annotation = annotation } as variable_metadata)
   =
   let attribute_class_name = Reference.prefix name >>| Reference.show in
   match query_constraint with
@@ -791,18 +796,17 @@ let rec attribute_matches_constraint
   | ModelQuery.AnyOf constraints ->
       List.exists
         constraints
-        ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~name ~annotation)
+        ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~variable_metadata)
   | ModelQuery.AllOf constraints ->
       List.for_all
         constraints
-        ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~name ~annotation)
+        ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~variable_metadata)
   | ModelQuery.Not query_constraint ->
       not
         (attribute_matches_constraint
            ~resolution
            ~class_hierarchy_graph
-           ~name
-           ~annotation
+           ~variable_metadata
            query_constraint)
   | ModelQuery.ClassConstraint (NameSatisfies name_constraint) ->
       attribute_class_name
@@ -844,8 +848,7 @@ let apply_attribute_query_rule
     ~resolution
     ~class_hierarchy_graph
     ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
-    ~name
-    ~annotation
+    ~variable_metadata:({ name; _ } as variable_metadata)
   =
   let kind_matches =
     match rule_kind with
@@ -856,7 +859,7 @@ let apply_attribute_query_rule
   if
     kind_matches
     && List.for_all
-         ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~name ~annotation)
+         ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~variable_metadata)
          query
   then begin
     if verbose then
@@ -895,7 +898,10 @@ let get_class_attributes ~global_resolution ~class_name =
            };
          _;
         } ->
-            (Reference.create ~prefix:class_name_reference attribute_name, annotation)
+            {
+              name = Reference.create ~prefix:class_name_reference attribute_name;
+              type_annotation = annotation;
+            }
             :: accumulator
         | _ -> accumulator
       in
@@ -922,18 +928,23 @@ module GlobalVariableQueries = struct
     in
     UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
     |> List.filter ~f:is_global
+    |> List.map ~f:(fun global_reference -> { name = global_reference; type_annotation = None })
 
 
-  let rec global_matches_constraint query_constraint ~resolution ~name =
+  let rec global_matches_constraint
+      query_constraint
+      ~resolution
+      ~variable_metadata:({ name; _ } as variable_metadata)
+    =
     match query_constraint with
     | ModelQuery.NameConstraint name_constraint ->
         matches_name_constraint ~name_constraint (Reference.show name)
     | ModelQuery.AnyOf constraints ->
-        List.exists constraints ~f:(global_matches_constraint ~resolution ~name)
+        List.exists constraints ~f:(global_matches_constraint ~resolution ~variable_metadata)
     | ModelQuery.AllOf constraints ->
-        List.for_all constraints ~f:(global_matches_constraint ~resolution ~name)
+        List.for_all constraints ~f:(global_matches_constraint ~resolution ~variable_metadata)
     | ModelQuery.Not query_constraint ->
-        not (global_matches_constraint ~resolution ~name query_constraint)
+        not (global_matches_constraint ~resolution ~variable_metadata query_constraint)
     | _ -> false
 
 
@@ -953,14 +964,17 @@ module GlobalVariableQueries = struct
       ~verbose
       ~resolution
       ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
-      ~name
+      ~variable_metadata:({ name; _ } as variable_metadata)
     =
     let kind_matches =
       match rule_kind with
       | ModelQuery.GlobalModel -> true
       | _ -> false
     in
-    if kind_matches && List.for_all ~f:(global_matches_constraint ~resolution ~name) query then begin
+    if
+      kind_matches
+      && List.for_all ~f:(global_matches_constraint ~resolution ~variable_metadata) query
+    then begin
       if verbose then
         Log.info
           "Global `%s` matches all constraints for the model query rule %s."
@@ -1065,7 +1079,7 @@ let apply_all_rules
         ()
     in
     (* Generate models for attributes. *)
-    let apply_rules_for_attribute models_and_names (name, annotation) =
+    let apply_rules_for_attribute models_and_names ({ name; _ } as variable_metadata) =
       let attribute_model_from_annotation ~taint_to_model =
         ModelParser.create_attribute_model_from_annotations
           ~resolution
@@ -1082,8 +1096,7 @@ let apply_all_rules
             ~resolution:global_resolution
             ~class_hierarchy_graph
             ~rule
-            ~name
-            ~annotation)
+            ~variable_metadata)
         ~model_from_annotation:attribute_model_from_annotation
         models_and_names
         attribute
@@ -1116,7 +1129,7 @@ let apply_all_rules
         ModelQueryRegistryMap.empty
     in
     (* Generate models for globals. *)
-    let apply_rules_for_globals models_and_names name =
+    let apply_rules_for_globals models_and_names ({ name; _ } as variable_metadata) =
       let global_model_from_annotation ~taint_to_model =
         ModelParser.create_attribute_model_from_annotations
           ~resolution
@@ -1132,7 +1145,7 @@ let apply_all_rules
             ~verbose
             ~resolution:global_resolution
             ~rule
-            ~name)
+            ~variable_metadata)
         ~model_from_annotation:global_model_from_annotation
         models_and_names
         global

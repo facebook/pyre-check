@@ -26,10 +26,15 @@ let test_find_globals context =
       TaintModelQuery.ModelQuery.GlobalVariableQueries.get_globals_and_annotations
         ~environment:type_environment
     in
-    let expected = List.map ~f:Reference.create expected in
+    let expected =
+      List.map
+        ~f:(fun reference ->
+          { TaintModelQuery.ModelQuery.name = Reference.create reference; type_annotation = None })
+        expected
+    in
     assert_equal
-      ~cmp:(List.equal Reference.equal)
-      ~printer:(List.to_string ~f:Reference.show)
+      ~cmp:[%compare.equal: TaintModelQuery.ModelQuery.variable_metadata list]
+      ~printer:[%show: TaintModelQuery.ModelQuery.variable_metadata list]
       expected
       actual
   in

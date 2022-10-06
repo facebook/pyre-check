@@ -96,8 +96,8 @@ let test_apply_rule context =
         ~resolution
         ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
         ~rule
-        ~name:(Ast.Reference.create name)
-        ~annotation:annotation_expression
+        ~variable_metadata:
+          { name = Ast.Reference.create name; type_annotation = annotation_expression }
       |> String.Map.data
       |> List.concat
     in
@@ -117,7 +117,7 @@ let test_apply_rule context =
         ~verbose:false
         ~resolution
         ~rule
-        ~name:(Ast.Reference.create name)
+        ~variable_metadata:{ name = Ast.Reference.create name; type_annotation = None }
       |> String.Map.data
       |> List.concat
     in
