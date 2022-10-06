@@ -903,19 +903,17 @@ let get_class_attributes ~global_resolution ~class_name =
 
 
 module GlobalVariableQueries = struct
-  open Analysis
-
   let get_globals_and_annotations ~environment =
     let unannotated_global_environment =
       environment
       |> TypeEnvironment.ReadOnly.global_resolution
       |> GlobalResolution.unannotated_global_environment
     in
-    let filter_globals global_ref =
+    let is_global global_reference =
       match
         UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
           unannotated_global_environment
-          global_ref
+          global_reference
       with
       | Some (SimpleAssign _)
       | Some (TupleAssign _) ->
@@ -923,7 +921,7 @@ module GlobalVariableQueries = struct
       | _ -> false
     in
     UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
-    |> List.filter ~f:filter_globals
+    |> List.filter ~f:is_global
 
 
   let rec global_matches_constraint query_constraint ~resolution ~name =
