@@ -910,10 +910,9 @@ let get_class_attributes ~global_resolution ~class_name =
 
 module GlobalVariableQueries = struct
   let get_globals_and_annotations ~environment =
+    let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
     let unannotated_global_environment =
-      environment
-      |> TypeEnvironment.ReadOnly.global_resolution
-      |> GlobalResolution.unannotated_global_environment
+      GlobalResolution.unannotated_global_environment global_resolution
     in
     let is_global global_reference =
       match
@@ -926,9 +925,18 @@ module GlobalVariableQueries = struct
           true
       | _ -> false
     in
+    let global_annotation_expression global_reference =
+      GlobalResolution.global global_resolution global_reference
+      >>| (fun { AttributeResolution.Global.annotation; _ } -> annotation |> Annotation.annotation)
+      >>| Type.expression
+    in
     UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
     |> List.filter ~f:is_global
-    |> List.map ~f:(fun global_reference -> { name = global_reference; type_annotation = None })
+    |> List.map ~f:(fun global_reference ->
+           {
+             name = global_reference;
+             type_annotation = global_annotation_expression global_reference;
+           })
 
 
   let rec global_matches_constraint
