@@ -1377,6 +1377,89 @@ let test_check_arguments_against_parameters context =
           ];
       }
     [TypeConstraints.empty];
+  assert_arguments_against_parameters
+    ~callable:
+      "typing.Callable[[Named(x, int), Named(y, str), Named(z, bool), Named(a, int, default)], \
+       None]"
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( Named { name = "x"; annotation = Type.integer; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.tuple [Type.integer; Type.string; Type.bool];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "y"; annotation = Type.string; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:1
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.tuple [Type.integer; Type.string; Type.bool];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "z"; annotation = Type.bool; default = false },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:2
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.tuple [Type.integer; Type.string; Type.bool];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+              ( Named { name = "a"; annotation = Type.bool; default = true },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:3
+                    {
+                      Argument.WithPosition.resolved =
+                        Type.tuple [Type.integer; Type.string; Type.bool];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = { arity = []; annotation = [] };
+      }
+    [TypeConstraints.empty];
+  assert_arguments_against_parameters
+    ~callable:"typing.Callable[[PositionalOnly(int, default)], None]"
+    ~parameter_argument_mapping_with_reasons:
+      {
+        parameter_argument_mapping =
+          Parameter.Map.of_alist_exn
+            [
+              ( PositionalOnly { index = 0; annotation = Type.integer; default = true },
+                [
+                  make_matched_argument
+                    ~index_into_starred_tuple:0
+                    {
+                      Argument.WithPosition.resolved = Type.tuple [];
+                      kind = SingleStar;
+                      expression = None;
+                      position = 1;
+                    };
+                ] );
+            ];
+        reasons = { arity = []; annotation = [] };
+      }
+    [TypeConstraints.empty];
   ()
 
 

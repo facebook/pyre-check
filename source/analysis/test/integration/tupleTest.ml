@@ -856,6 +856,21 @@ let test_star_args context =
       "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
        `str` but got `int`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      def foo(
+          x: int,
+          y: Optional[int],
+          z: str,
+          a: Optional[int] = None,
+      ) -> None: ...
+
+      def main(xs: tuple[int, Optional[int], str]) -> None:
+        foo( *xs)
+    |}
+    [];
   ()
 
 
