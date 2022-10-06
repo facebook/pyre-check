@@ -157,6 +157,10 @@ let process_incremental_update_request
       in
       List.filter subscriptions ~f:Subscription.wants_type_errors
       |> Subscription.batch_send ~response:create_type_errors_response
+      >>= fun () ->
+      List.filter subscriptions ~f:(fun x -> not (Subscription.wants_type_errors x))
+      |> Subscription.batch_send
+           ~response:(create_status_update_response Response.ServerStatus.Ready)
       >>= fun () -> Lwt.return state
 
 

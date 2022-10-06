@@ -13,6 +13,13 @@ module ServerStatus = struct
   type t =
     | Rebuilding
     | Rechecking
+    (* We were previously using the existence of a Response.TypeErrors response to indicate that the
+       server is done processing an incremental request.
+
+       However, there are cases in which a TypeErrors response cannot be handled by the client (i.e.
+       shadow mode), which requires us to invent a new type called Ready to indicate the server is
+       done processing an incremental request, and is ready to handle new requests.. *)
+    | Ready
   [@@deriving sexp, compare, to_yojson]
 end
 

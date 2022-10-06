@@ -475,6 +475,11 @@ let test_subscription_responses_no_type_errors client =
     client
     ~expected:
       { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Rechecking) }
+  >>= fun () ->
+  Client.assert_subscription_response
+    client
+    ~expected:
+      { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Ready) }
   (* Send a second update (this is the easiest way to verify that there is no type errors response *)
   >>= fun () ->
   Lwt_io.with_connection socket_address send_incremental_update
@@ -488,6 +493,11 @@ let test_subscription_responses_no_type_errors client =
     client
     ~expected:
       { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Rechecking) }
+  >>= fun () ->
+  Client.assert_subscription_response
+    client
+    ~expected:
+      { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Ready) }
 
 
 let test_subscription_responses context =
