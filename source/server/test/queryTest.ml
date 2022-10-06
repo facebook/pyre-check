@@ -1840,6 +1840,107 @@ let test_handle_references_used_by_file_query context =
             'no_validation_on_class_lookup_failure' flag is false, and it is expected to be set to \
             true for all 'references_used_by_file queries'. Please set the value of \
             'no_validation_on_class_lookup_failure' to true."))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:
+      {|
+        from other_module import subscription
+        class Bar:
+            def foo(
+                self, subscription_body: subscription.Body
+            ) -> None:
+                if isinstance(subscription_body, int):
+                    y(self)
+    |}
+    ~no_validation_on_class_lookup_failure:true
+    ~query:"references_used_by_file(path='test.py')"
+    (fun _ ->
+      Single
+        (Base.ReferenceTypesInPath
+           {
+             Base.path = "test.py";
+             types =
+               [
+                 3, 6, 3, 9, Type.meta (Type.Primitive "test.Bar");
+                 ( 4,
+                   8,
+                   4,
+                   11,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"test.Bar.foo";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.none;
+                           parameters =
+                             Type.Callable.Defined
+                               [
+                                 Named
+                                   {
+                                     name = "self";
+                                     annotation = Type.Primitive "test.Bar";
+                                     default = false;
+                                   };
+                                 Named
+                                   {
+                                     name = "subscription_body";
+                                     annotation = Type.Primitive "other_module.subscription.Body";
+                                     default = false;
+                                   };
+                               ];
+                         };
+                       overloads = [];
+                     } );
+                 5, 8, 5, 12, Type.Primitive "test.Bar";
+                 5, 14, 5, 31, Type.Primitive "other_module.subscription.Body";
+                 5, 33, 5, 50, Type.meta (Type.Primitive "other_module.subscription.Body");
+                 6, 9, 6, 13, Type.NoneType;
+                 ( 7,
+                   11,
+                   7,
+                   21,
+                   Type.Callable
+                     {
+                       Type.Callable.kind = Type.Callable.Named !&"isinstance";
+                       implementation =
+                         {
+                           Type.Callable.annotation = Type.bool;
+                           parameters =
+                             Type.Callable.Defined
+                               [
+                                 Named
+                                   {
+                                     name = "a";
+                                     annotation = Type.object_primitive;
+                                     default = false;
+                                   };
+                                 Named
+                                   {
+                                     name = "b";
+                                     annotation =
+                                       Type.Union
+                                         [
+                                           Type.Primitive "type";
+                                           Type.tuple
+                                             [
+                                               Type.Union
+                                                 [Type.Primitive "tuple"; Type.Primitive "type"];
+                                               Type.Primitive "...";
+                                             ];
+                                         ];
+                                     default = false;
+                                   };
+                               ];
+                         };
+                       overloads = [];
+                     } );
+                 7, 11, 7, 45, Type.bool;
+                 7, 22, 7, 39, Type.Primitive "other_module.subscription.Body";
+                 7, 41, 7, 44, Type.meta Type.integer;
+                 8, 12, 8, 19, Type.Any;
+               ]
+               |> QueryTestTypes.create_types_at_locations;
+           }))
 
 
 let test_handle_query_with_build_system context =
