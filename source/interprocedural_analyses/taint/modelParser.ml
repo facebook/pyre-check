@@ -2052,24 +2052,25 @@ let parse_model_clause
           Call.callee = { Node.value = Name (Name.Identifier "Parameters"); _ } as callee;
           arguments;
         } -> (
-        match is_callable_clause_kind find_clause, arguments with
-        | false, _ -> Error (invalid_model_query_model_clause ~path ~location callee)
-        | _, [{ Call.Argument.value = taint; _ }] ->
-            parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { where = []; taint }
-        | ( _,
-            [
-              { Call.Argument.value = taint; _ };
-              { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-            ] ) ->
-            parse_parameter_where_clause ~path where_clause
-            >>= fun where ->
-            parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { where; taint }
-        | _ ->
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (InvalidModelQueryClauseArguments { callee; arguments })))
+        if not (is_callable_clause_kind find_clause) then
+          Error (invalid_model_query_model_clause ~path ~location callee)
+        else
+          match arguments with
+          | [{ Call.Argument.value = taint; _ }] ->
+              parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { where = []; taint }
+          | [
+           { Call.Argument.value = taint; _ };
+           { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+          ] ->
+              parse_parameter_where_clause ~path where_clause
+              >>= fun where ->
+              parse_taint taint >>| fun taint -> ModelQuery.ParameterTaint { where; taint }
+          | _ ->
+              Error
+                (model_verification_error
+                   ~path
+                   ~location
+                   (InvalidModelQueryClauseArguments { callee; arguments })))
     | _ ->
         Error
           (model_verification_error ~path ~location (UnexpectedModelExpression model_expression))
