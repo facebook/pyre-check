@@ -673,6 +673,37 @@ The return access path tree for `foo` and parameter `arg` has a depth  of 3
 threshold. For instance, if that threshold is 2, we would cut the output path
 to just `a.b`.
 
+### Maximum tito collapse depth
+
+* Command line option: `--maximum-tito-collapse-depth`
+* taint.config option: `maximum_tito_collapse_depth`
+
+This limits the depth of the taint tree after applying taint-in-taint-out,
+i.e the length of paths for taint propagated from a parameter to the return
+value.
+
+For instance:
+```python
+def identity(arg): return arg
+
+def foo():
+  input = {'a': {'b': {'c': source()}}}
+  output = identity(input)
+```
+
+The taint tree for `input` has a depth of 3 (i.e, `a` -> `b` -> `c`).
+When the taint is propagated to the return value of `identity`, we limit
+the resulting taint tree to the given depth. For instance, if that threshold
+is 1, we would consider that `output['a']` is tainted.
+
+This is also applied for sinks in the backward analysis:
+```python
+def foo(arg):
+  output = identity(arg)
+  sink(output['a']['b']['c'])
+```
+With a threshold of 1, we would consider that `output['a']` leads to a sink.
+
 ### Maximum tito positions
 
 * Command line option: `--maximum-tito-positions`

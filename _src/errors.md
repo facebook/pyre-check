@@ -1,7 +1,7 @@
 ---
 id: errors
-title: Errors
-sidebar_label: Errors
+title: Type Errors
+sidebar_label: Type Errors
 ---
 
 import Internal from './fb/errors.md';
@@ -1980,3 +1980,7 @@ Furthermore Pyre supports suppressing all errors in an individual file if you ad
 def foo(x: int) -> str:
     return x  # pyre will not error here
 ```
+
+## Debugging
+
+<!-- TODO(T132521708) Info on how to debug your own Pyre errors if it's unexpected: tools like `i pyre/sandbox` and how to use `reveal_type` to find out what the type checker is thinking -->
