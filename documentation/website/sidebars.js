@@ -62,7 +62,7 @@ module.exports = {
       external: ['contributing'],
       internal: ['fb/contributing'],
     }),
-    'faq',
+    'pyre-faq',
   ],
   pysa: [
     ...fbContent({
