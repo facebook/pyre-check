@@ -345,15 +345,18 @@ class RequestHandler(AbstractRequestHandler):
         code: str,
     ) -> None:
         source_path = f"{path}"
-        overlay_update_dict = {
-            # TODO: T126924773 Include a language server identifier (e.g. PID of
-            # the current process) in this overlay id.
-            "overlay_id": source_path,
-            "source_path": source_path,
-            "code_update": ["NewCode", code],
-        }
+        overlay_update_json = [
+            "OverlayUpdate",
+            {
+                # TODO: T126924773 Include a language server identifier (e.g. PID of
+                # the current process) in this overlay id.
+                "overlay_id": source_path,
+                "source_path": source_path,
+                "code_update": ["NewCode", code],
+            },
+        ]
         # Drop the response (the daemon code will log it for us)
         await daemon_connection.attempt_send_async_raw_request(
             socket_path=self.socket_path,
-            request=json.dumps(overlay_update_dict),
+            request=json.dumps(overlay_update_json),
         )
