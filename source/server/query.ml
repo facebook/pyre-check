@@ -1352,15 +1352,20 @@ let rec process_request ~environment ~build_system request =
 
 
 let parse_and_process_request ~environment ~build_system request overlay_id =
-  let opt_environment =
+  let environment =
     match overlay_id with
-    | Some overlay_id ->
-        OverlaidEnvironment.overlay environment overlay_id
-        >>| ErrorsEnvironment.ReadOnly.type_environment
-    | None ->
-        Some (OverlaidEnvironment.root environment |> ErrorsEnvironment.ReadOnly.type_environment)
+    | Some overlay_id -> (
+        let overlay_environment = OverlaidEnvironment.overlay environment overlay_id in
+        match overlay_environment with
+        | Some env -> ErrorsEnvironment.ReadOnly.type_environment env
+        | None ->
+            Log.info
+              "No valid overlay found for overlay_id: %s. Using the base environment to serve the \
+               request instead."
+              overlay_id;
+            ErrorsEnvironment.ReadOnly.type_environment (OverlaidEnvironment.root environment))
+    | None -> OverlaidEnvironment.root environment |> ErrorsEnvironment.ReadOnly.type_environment
   in
-  match parse_request request, opt_environment with
-  | _, None -> Response.Error "No valid overlay found for overlay_id"
-  | Result.Error reason, _ -> Response.Error reason
-  | Result.Ok request, Some environment -> process_request ~environment ~build_system request
+  match parse_request request with
+  | Result.Error reason -> Response.Error reason
+  | Result.Ok request -> process_request ~environment ~build_system request
