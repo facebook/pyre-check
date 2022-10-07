@@ -10,6 +10,7 @@ open Core
 open Ast
 open Test
 open Analysis
+open Pyre
 
 let test_find_globals context =
   let assert_found_globals ~source ~expected =
@@ -57,12 +58,11 @@ let test_find_globals context =
       |> List.filter ~f:is_uninteresting_global
     in
     let expected =
-      let map_annotation annotation = Option.map ~f:Type.expression annotation in
       List.map
         ~f:(fun (reference, annotation) ->
           {
             TaintModelQuery.ModelQuery.name = reference;
-            type_annotation = map_annotation annotation;
+            type_annotation = annotation >>| Type.expression;
           })
         expected
     in
