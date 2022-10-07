@@ -9,7 +9,6 @@ TODO(T132414938) Add a module-level docstring
 
 
 import dataclasses
-
 import enum
 from pathlib import Path
 from typing import Dict, List, Set
@@ -24,6 +23,8 @@ class ServerStatus(enum.Enum):
     DISCONNECTED = "DISCONNECTED"
     NOT_CONNECTED = "NOT_CONNECTED"
     SUSPENDED = "SUSPENDED"
+    BUCK_BUILDING = "BUCK_BUILDING"
+    INCREMENTAL_CHECK = "INCREMENTAL_CHECK"
 
 
 @dataclasses.dataclass
