@@ -309,7 +309,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          CallGraph.CallTarget.target;
          implicit_self;
          implicit_dunder_call;
-         collapse_tito = _;
          index = _;
          return_type;
          receiver_type;

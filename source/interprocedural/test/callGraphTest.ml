@@ -1097,7 +1097,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~collapse_tito:false
                         ~receiver_type:(Type.Primitive "test.Builder")
                         (Target.Method
                            {
@@ -1115,7 +1114,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~collapse_tito:false
                         ~receiver_type:(Type.Primitive "test.Builder")
                         (Target.Method
                            { class_name = "test.Builder"; method_name = "set_saved"; kind = Normal });
@@ -1308,7 +1306,6 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~collapse_tito:true
                               ~return_type:(Some ReturnType.integer)
                               ~receiver_type:
                                 (Type.parametric "contextlib.ContextManager" [Single Type.integer])
@@ -1772,7 +1769,6 @@ let test_call_graph_of_define context =
                          [
                            CallTarget.create
                              ~implicit_self:true
-                             ~collapse_tito:false
                              ~receiver_type:Type.string
                              (Target.Method
                                 { class_name = "str"; method_name = "__str__"; kind = Normal });
@@ -2923,7 +2919,6 @@ let test_call_graph_of_define context =
                    [
                      CallTarget.create
                        ~implicit_self:true
-                       ~collapse_tito:false
                        ~receiver_type:Type.string
                        (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
                    ];
@@ -3899,7 +3894,6 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~collapse_tito:false
                               ~receiver_type:
                                 (Type.parametric
                                    "typing.AsyncIterator"
@@ -3972,7 +3966,6 @@ let test_call_graph_of_define context =
                               ~implicit_self:true
                               ~receiver_type:
                                 (Type.parametric "typing.AsyncIterator" [Single Type.integer])
-                              ~collapse_tito:false
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterator";
@@ -4469,7 +4462,6 @@ let test_call_graph_of_define context =
                                 (Type.parametric
                                    "typing.AsyncIterator"
                                    [Single (Type.Primitive "test.A")])
-                              ~collapse_tito:false
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterator";

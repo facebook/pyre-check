@@ -40,8 +40,6 @@ module CallTarget : sig
     implicit_self: bool;
     (* True if this is an implicit call to the `__call__` method. *)
     implicit_dunder_call: bool;
-    (* True if we should collapse the taint from arguments, cf. the taint analysis. *)
-    collapse_tito: bool;
     (* The textual order index of the call in the function. *)
     index: int;
     (* The return type of the call expression, or `None` for object targets. *)
@@ -56,7 +54,6 @@ module CallTarget : sig
   val create
     :  ?implicit_self:bool ->
     ?implicit_dunder_call:bool ->
-    ?collapse_tito:bool ->
     ?index:int ->
     ?return_type:ReturnType.t option ->
     ?receiver_type:Type.t ->

@@ -302,7 +302,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          CallGraph.CallTarget.target;
          implicit_self;
          implicit_dunder_call;
-         collapse_tito;
          index = _;
          return_type;
          receiver_type;
@@ -377,16 +376,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       CallModel.return_paths_and_collapse_depths ~kind ~tito_taint
       |> List.fold
            ~f:(fun taint (return_path, collapse_depth) ->
-             let taint_to_propagate =
-               if collapse_tito then
-                 ForwardState.Tree.collapse_to
-                   ~breadcrumbs:(Features.tito_broadening_set ())
-                   ~depth:collapse_depth
-                   taint_to_propagate
-               else (* TODO(T118287187): Remove the `collapse_tito` flag from the call graph. *)
-                 taint_to_propagate
-             in
-             ForwardState.Tree.prepend return_path taint_to_propagate
+             ForwardState.Tree.collapse_to
+               ~breadcrumbs:(Features.tito_broadening_set ())
+               ~depth:collapse_depth
+               taint_to_propagate
+             |> ForwardState.Tree.prepend return_path
              |> ForwardState.Tree.join taint)
            ~init:accumulated_tito
     in

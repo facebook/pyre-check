@@ -130,8 +130,6 @@ module CallTarget = struct
     implicit_self: bool;
     (* True if this is an implicit call to the `__call__` method. *)
     implicit_dunder_call: bool;
-    (* True if we should collapse the taint from arguments, cf. the taint analysis. *)
-    collapse_tito: bool;
     (* The textual order index of the call in the function. *)
     index: int;
     (* The return type of the call expression, or `None` for object targets. *)
@@ -154,21 +152,12 @@ module CallTarget = struct
   let create
       ?(implicit_self = false)
       ?(implicit_dunder_call = false)
-      ?(collapse_tito = true)
       ?(index = 0)
       ?(return_type = Some ReturnType.any)
       ?receiver_type
       target
     =
-    {
-      target;
-      implicit_self;
-      implicit_dunder_call;
-      collapse_tito;
-      index;
-      return_type;
-      receiver_type;
-    }
+    { target; implicit_self; implicit_dunder_call; index; return_type; receiver_type }
 
 
   let equal_ignoring_types
@@ -176,7 +165,6 @@ module CallTarget = struct
         target = target_left;
         implicit_self = implicit_self_left;
         implicit_dunder_call = implicit_dunder_call_left;
-        collapse_tito = collapse_tito_left;
         index = index_left;
         return_type = _;
         receiver_type = _;
@@ -185,7 +173,6 @@ module CallTarget = struct
         target = target_right;
         implicit_self = implicit_self_right;
         implicit_dunder_call = implicit_dunder_call_right;
-        collapse_tito = collapse_tito_right;
         index = index_right;
         return_type = _;
         receiver_type = _;
@@ -194,7 +181,6 @@ module CallTarget = struct
     Target.equal target_left target_right
     && implicit_self_left == implicit_self_right
     && implicit_dunder_call_left == implicit_dunder_call_right
-    && collapse_tito_left == collapse_tito_right
     && index_left == index_right
 end
 
@@ -719,7 +705,6 @@ module CallTargetIndexer = struct
       indexer
       ~implicit_self
       ~implicit_dunder_call
-      ~collapse_tito
       ~return_type
       ?receiver_type
       original_target
@@ -731,7 +716,6 @@ module CallTargetIndexer = struct
       CallTarget.target = original_target;
       implicit_self;
       implicit_dunder_call;
-      collapse_tito;
       index;
       return_type;
       receiver_type;
@@ -871,38 +855,6 @@ let compute_indirect_targets ~resolution ~override_graph ~receiver_type implemen
         implementation_target :: override_targets
 
 
-let collapse_tito ~resolution ~callee ~callable_type =
-  (* For most cases, it is simply incorrect to not collapse tito, as it will lead to incorrect
-   * mapping from input to output taint. However, the collapsing of tito adversely affects our
-   * analysis in the case of the builder pattern, i.e.
-   *
-   * class C:
-   *  def set_field(self, field) -> "C":
-   *    self.field = field
-   *    return self
-   *
-   * In this case, collapsing tito leads to field
-   * tainting the entire `self` for chained call. To prevent this problem, we special case
-   * builders to preserve the tito structure. *)
-  match callable_type with
-  | Type.Parametric { name = "BoundMethod"; parameters = [_; Type.Parameter.Single implicit] } ->
-      let return_annotation =
-        (* To properly substitute type variables, we simulate `callee.__call__` for the bound
-           method. *)
-        let to_simulate =
-          Node.create_with_default_location
-            (Expression.Name
-               (Name.Attribute { base = callee; attribute = "__call__"; special = true }))
-        in
-        match CallResolution.resolve_ignoring_untracked ~resolution to_simulate with
-        | Type.Callable { Type.Callable.implementation; _ } ->
-            Type.Callable.Overload.return_annotation implementation
-        | _ -> Type.Top
-      in
-      not (Type.equal implicit return_annotation)
-  | _ -> true
-
-
 let rec resolve_callees_from_type
     ~resolution
     ~override_graph
@@ -911,7 +863,6 @@ let rec resolve_callees_from_type
     ?receiver_type
     ~return_type
     ~callee_kind
-    ~collapse_tito
     callable_type
   =
   let resolve_callees_from_type ?(dunder_call = dunder_call) =
@@ -941,7 +892,6 @@ let rec resolve_callees_from_type
                   call_indexer
                   ~implicit_self:true
                   ~implicit_dunder_call:dunder_call
-                  ~collapse_tito
                   ~return_type:(Some return_type)
                   ~receiver_type
                   target)
@@ -961,7 +911,6 @@ let rec resolve_callees_from_type
                   call_indexer
                   ~implicit_self:false
                   ~implicit_dunder_call:dunder_call
-                  ~collapse_tito
                   ~return_type:(Some return_type)
                   ?receiver_type
                   target;
@@ -977,7 +926,6 @@ let rec resolve_callees_from_type
         ~receiver_type
         ~return_type
         ~callee_kind
-        ~collapse_tito
         callable
   | Type.Union (element :: elements) ->
       let first_targets =
@@ -988,7 +936,6 @@ let rec resolve_callees_from_type
           ~callee_kind
           ?receiver_type
           ~return_type
-          ~collapse_tito
           element
       in
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
@@ -999,7 +946,6 @@ let rec resolve_callees_from_type
             ?receiver_type
             ~return_type
             ~callee_kind
-            ~collapse_tito
             new_target
           |> CallCallees.join combined_targets)
   | Type.Parametric { name = "type"; parameters = [Single class_type] } ->
@@ -1042,7 +988,6 @@ let rec resolve_callees_from_type
                         call_indexer
                         ~implicit_self:true
                         ~implicit_dunder_call:true
-                        ~collapse_tito
                         ~return_type:(Some return_type)
                         ?receiver_type
                         target;
@@ -1058,7 +1003,6 @@ let rec resolve_callees_from_type
               ~return_type
               ~dunder_call:true
               ~callee_kind
-              ~collapse_tito
               annotation
           else
             CallCallees.unresolved)
@@ -1090,7 +1034,6 @@ and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_t
           ~receiver_type:meta_type
           ~return_type:(lazy class_type)
           ~callee_kind:(Method { is_direct_call = true })
-          ~collapse_tito:true
           new_callable_type
       in
       let init_callees =
@@ -1101,7 +1044,6 @@ and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_t
           ~receiver_type:meta_type
           ~return_type:(lazy Type.none)
           ~callee_kind:(Method { is_direct_call = true })
-          ~collapse_tito:true
           init_callable_type
       in
       (* Technically, `object.__new__` returns `object` and `C.__init__` returns None.
@@ -1144,7 +1086,6 @@ let resolve_callee_from_defining_expression
         ~call_indexer
         ~return_type
         ~callee_kind:Function
-        ~collapse_tito:true
         (Type.Callable undecorated_signature)
   | _ -> (
       let implementing_class_name =
@@ -1195,7 +1136,6 @@ let resolve_callee_from_defining_expression
                ~return_type
                ~receiver_type:implementing_class
                ~callee_kind:(Method { is_direct_call = false })
-               ~collapse_tito:true
                callable_type)
       | _ -> None)
 
@@ -1291,7 +1231,6 @@ let resolve_recognized_callees
       Ast.Expression.name_to_reference name
       >>| Reference.show
       >>| fun name ->
-      let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
       let return_type =
         ReturnType.from_annotation
           ~resolution:(Resolution.global_resolution resolution)
@@ -1304,7 +1243,6 @@ let resolve_recognized_callees
               call_indexer
               ~implicit_self:false
               ~implicit_dunder_call:false
-              ~collapse_tito
               ~return_type:(Some return_type)
               (Target.Function { name; kind = Normal });
           ]
@@ -1312,7 +1250,7 @@ let resolve_recognized_callees
   | _ -> None
 
 
-let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito ~return_type callee =
+let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type callee =
   let global_resolution = Resolution.global_resolution resolution in
   let open UnannotatedGlobalEnvironment in
   let return_type () =
@@ -1335,7 +1273,6 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                ~implicit_self:false
                ~implicit_dunder_call:false
                ~return_type:(Some (return_type ()))
-               ~collapse_tito
                (Target.Function { name = Reference.show name; kind = Normal }))
       | Some
           (ResolvedReference.ModuleAttribute
@@ -1359,7 +1296,6 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                    call_indexer
                    ~implicit_self:(not static)
                    ~implicit_dunder_call:false
-                   ~collapse_tito
                    ~return_type:(Some (return_type ()))
                    (Target.Method { Target.class_name; method_name = attribute; kind = Normal }))
           | _ -> None)
@@ -1392,7 +1328,6 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                    ~implicit_self:true
                    ~implicit_dunder_call:false
                    ~return_type:(Some (return_type ()))
-                   ~collapse_tito
                    (Target.Method
                       { Target.class_name = base_class; method_name = attribute; kind = Normal }))
           | None -> None)
@@ -1416,7 +1351,6 @@ let resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_ty
     recognized_callees
   else
     let callee_kind = callee_kind ~resolution callee callee_type in
-    let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
     let calleees_from_type =
       resolve_callees_from_type
         ~resolution
@@ -1424,18 +1358,12 @@ let resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_ty
         ~call_indexer
         ~return_type
         ~callee_kind
-        ~collapse_tito
         callee_type
     in
     if CallCallees.is_partially_resolved calleees_from_type then
       calleees_from_type
     else
-      resolve_callee_ignoring_decorators
-        ~resolution
-        ~call_indexer
-        ~return_type
-        ~collapse_tito
-        callee
+      resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type callee
       >>| (fun target -> CallCallees.create ~call_targets:[target] ())
       |> Option.value ~default:CallCallees.unresolved
 
@@ -1531,7 +1459,6 @@ let resolve_attribute_access_properties
            call_indexer
            ~implicit_self:true
            ~implicit_dunder_call:false
-           ~collapse_tito:true
            ~return_type:(Some return_type))
       property_targets
   in
@@ -1652,8 +1579,7 @@ let resolve_attribute_access
               call_indexer
               ~implicit_self:false
               ~implicit_dunder_call:false
-              ~return_type:None
-              ~collapse_tito:true)
+              ~return_type:None)
   in
 
   { AttributeAccessCallees.property_targets; global_targets; is_attribute }
@@ -1674,7 +1600,6 @@ let resolve_identifier ~resolution ~call_indexer ~attribute_targets ~identifier 
           ~implicit_self:false
           ~implicit_dunder_call:false
           ~return_type:None
-          ~collapse_tito:true
           global;
       ];
   }
@@ -1745,7 +1670,6 @@ struct
           CallTarget.target = Target.Object target;
           implicit_self = false;
           implicit_dunder_call = false;
-          collapse_tito = true;
           index = 0;
           return_type = Some ReturnType.any;
           receiver_type = None;
