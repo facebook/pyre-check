@@ -597,6 +597,33 @@
 {
   "kind": "model",
   "data": {
+    "callable": "multiple_sources.no_sink_with_transform",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "multiple_sources.transform_t" } ],
+                "kind": "TransformT:ExtraTraceSink"
+              }
+            ],
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 120,
+              "start": 20,
+              "end": 21
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "multiple_sources.permissive_context",
     "sources": [
       {
@@ -681,6 +708,17 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.transform_t",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformT@ExtraTraceSink" } ],
+            "decl": null
+          }
+        ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(arg)",

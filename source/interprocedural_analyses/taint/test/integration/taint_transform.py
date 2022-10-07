@@ -127,6 +127,8 @@ def sink_taint_with_transform_x(arg):
 
 
 def no_sink_taint_with_transform_y(arg):
+    # TODO(T133358142): Do not output ExtraTraceSink when
+    # there is no tito in the model
     alpha = transform_y(arg)
     sink_b(alpha)
 
@@ -590,3 +592,13 @@ def tito_propagation_source_sink_sanitizers_mixed_2(arg):
     gamma = sanitize_a_transform_x_tito(beta)
     delta = sanitize_sink_d_tito(gamma)
     return delta
+
+
+def sanitize_all(arg):
+    ...
+
+
+def transform_x_sanitize_all(arg):
+    arg = sanitize_all(arg)
+    arg = transform_x(arg)
+    return arg

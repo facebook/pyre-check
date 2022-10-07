@@ -1,0 +1,16 @@
+@generated
+Call dependencies
+extra_trace.$toplevel (fun) -> []
+extra_trace.branch_tito_backward (fun) -> [_test_sink (fun) extra_trace.nested_transform_x (fun) extra_trace.transform_y (fun) int::__eq__ (method) int::__ne__ (method)]
+extra_trace.branch_tito_forward (fun) -> [_test_source (fun) extra_trace.nested_transform_x (fun) extra_trace.transform_y (fun) int::__eq__ (method) int::__ne__ (method)]
+extra_trace.double_nested_transform_x (fun) -> [extra_trace.nested_transform_x (fun)]
+extra_trace.loop_tito_backward (fun) -> [_test_sink (fun) extra_trace.transform_x (fun)]
+extra_trace.loop_tito_forward (fun) -> [_test_source (fun) extra_trace.transform_x (fun)]
+extra_trace.nested_transform_x (fun) -> [extra_trace.transform_x (fun)]
+extra_trace.sequential_tito_backward (fun) -> [_test_sink (fun) extra_trace.nested_transform_x (fun) extra_trace.tito (fun) extra_trace.transform_yz (fun)]
+extra_trace.sequential_tito_forward (fun) -> [_test_source (fun) extra_trace.nested_transform_x (fun) extra_trace.tito (fun) extra_trace.transform_yz (fun)]
+extra_trace.tito (fun) -> []
+extra_trace.transform_x (fun) -> []
+extra_trace.transform_y (fun) -> []
+extra_trace.transform_yz (fun) -> [extra_trace.tito (fun) extra_trace.transform_y (fun) extra_trace.transform_z (fun)]
+extra_trace.transform_z (fun) -> []

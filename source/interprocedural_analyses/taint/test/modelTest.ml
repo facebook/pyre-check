@@ -1795,6 +1795,22 @@ let test_taint_in_taint_out_transform context =
                   ];
               };
             ]
+          ~sink_parameters:
+            [
+              {
+                name = "parameter";
+                sinks =
+                  [
+                    Sinks.Transform
+                      {
+                        local =
+                          TaintTransforms.of_named_transforms [TaintTransform.Named "TestTransform"];
+                        global = TaintTransforms.empty;
+                        base = Sinks.ExtraTraceSink;
+                      };
+                  ];
+              };
+            ]
           "test.tito";
       ]
     ()

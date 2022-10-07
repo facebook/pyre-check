@@ -476,6 +476,7 @@ module Sink = Make (struct
     | Sinks.PartialSink _
     | Sinks.TriggeredPartialSink _
     | Sinks.LocalReturn
+    | Sinks.ExtraTraceSink
     | Sinks.NamedSink _
     | Sinks.ParametricSink _
     | Sinks.ParameterUpdate _ ->
@@ -508,7 +509,8 @@ module Sink = Make (struct
     | Sinks.PartialSink _
     | Sinks.TriggeredPartialSink _
     | Sinks.LocalReturn
-    | Sinks.ParameterUpdate _ ->
+    | Sinks.ParameterUpdate _
+    | Sinks.ExtraTraceSink ->
         None
 
 

@@ -23,6 +23,7 @@ type t =
     }
   | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
   | AddFeatureToArgument
+  | ExtraTraceSink (* Special marker to show traces that end with this sink *)
   | Transform of {
       (* Invariant: concatenation of local @ global is non-empty. *)
       local: TaintTransforms.t;

@@ -34,6 +34,7 @@ module T = struct
     | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
     | AddFeatureToArgument
     (* Special marker to designate modifying the state the parameter passed in. *)
+    | ExtraTraceSink (* Special marker to show subtraces that end with this sink *)
     | Transform of {
         (* Invariant: concatenation of local @ global is non-empty. *)
         local: TaintTransforms.t;
@@ -55,6 +56,7 @@ module T = struct
     | AddFeatureToArgument -> Format.fprintf formatter "AddFeatureToArgument"
     | Transform { local; global; base } ->
         TaintTransforms.pp_kind ~formatter ~pp_base:pp ~local ~global ~base
+    | ExtraTraceSink -> Format.fprintf formatter "ExtraTraceSink"
 
 
   let equal = [%compare.equal: t]

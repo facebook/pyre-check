@@ -50,7 +50,8 @@ module MatchingSanitizeTransforms = struct
     | Sinks.LocalReturn
     | Sinks.ParameterUpdate _
     | Sinks.Attach
-    | Sinks.AddFeatureToArgument ->
+    | Sinks.AddFeatureToArgument
+    | Sinks.ExtraTraceSink ->
         failwith "unexpected sink in `matching_sinks`"
 
 
@@ -205,6 +206,14 @@ let add_matching_partial_sinks ~rules matching_sources =
   List.fold rules ~f:add_partial_sinks ~init:matching_sources
 
 
+let add_extra_trace_sinks possible_tito_transforms matching_source_sanitize_transforms =
+  let add_sink tito_transform so_far =
+    let sink = Sinks.make_transform ~local:[] ~global:tito_transform ~base:Sinks.ExtraTraceSink in
+    Sinks.Map.add sink MatchingSanitizeTransforms.unsanitizable so_far
+  in
+  TaintTransforms.Set.fold add_sink possible_tito_transforms matching_source_sanitize_transforms
+
+
 let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms =
   let rules =
     filter_rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms rules
@@ -214,6 +223,9 @@ let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filter
   let matching_source_sanitize_transforms =
     Sinks.Map.map MatchingSanitizeTransforms.from_sources matching_sources
     |> add_matching_partial_sinks ~rules
+    (* To prevent the special sink `ExtraTraceSink` from being removed, it should have a record in
+       the map. *)
+    |> add_extra_trace_sinks possible_tito_transforms
   in
   let matching_sink_sanitize_transforms =
     Sources.Map.map MatchingSanitizeTransforms.from_sinks matching_sinks
@@ -274,7 +286,8 @@ let should_keep_sink ({ possible_tito_transforms; _ } as filter) sink =
   | Sinks.NamedSink _
   | Sinks.ParametricSink _
   | Sinks.PartialSink _
-  | Sinks.TriggeredPartialSink _ ->
+  | Sinks.TriggeredPartialSink _
+  | Sinks.ExtraTraceSink ->
       matching_source_sanitize_transforms filter ~named_transforms:[] ~base:sink |> Option.is_some
   | Sinks.LocalReturn
   | Sinks.ParameterUpdate _ ->

@@ -57,6 +57,7 @@ taint_transform.tito_propagation_source_sink_sanitizers_mixed_1 (fun) -> [taint_
 taint_transform.tito_propagation_source_sink_sanitizers_mixed_2 (fun) -> [taint_transform.sanitize_a_transform_x_tito (fun) taint_transform.sanitize_sink_d_tito (fun) taint_transform.sanitize_source_c_tito (fun) taint_transform.transform_y_sanitize_b_tito (fun)]
 taint_transform.transform_x_sanitize_a_sink_b_taint (fun) -> [taint_transform.sanitize_source_a_tito (fun) taint_transform.sink_b (fun) taint_transform.transform_x (fun)]
 taint_transform.transform_x_sanitize_a_tito (fun) -> [taint_transform.sanitize_source_a_tito (fun) taint_transform.transform_x (fun)]
+taint_transform.transform_x_sanitize_all (fun) -> [taint_transform.sanitize_all (fun) taint_transform.transform_x (fun)]
 taint_transform.transform_x_sanitize_b_tito (fun) -> [taint_transform.sanitize_sink_b_tito (fun) taint_transform.transform_x (fun)]
 taint_transform.transform_x_tito_global_sanitize_b (fun) -> [taint_transform.transform_x (fun)]
 taint_transform.transform_x_tito_sanitize_b (fun) -> [taint_transform.transform_x (fun)]

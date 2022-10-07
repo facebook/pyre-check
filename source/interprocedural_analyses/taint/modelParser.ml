@@ -1072,31 +1072,40 @@ let introduce_sink_taint
 let introduce_taint_in_taint_out
     ~root
     ~path
-    ({ Model.backward = { taint_in_taint_out; _ }; _ } as taint)
+    ({ Model.backward = { taint_in_taint_out; sink_taint }; _ } as taint)
     taint_sink_kind
     via_features
     breadcrumbs
   =
   let open Core.Result in
+  let assign_backward_taint environment taint =
+    BackwardState.assign ~weak:true ~root ~path taint environment
+  in
+  let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
+  let via_features = Features.ViaFeatureSet.of_list via_features in
+  let tito_result_taint =
+    Domains.local_return_frame ~collapse_depth:0
+    |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+    |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+    |> BackwardTaint.singleton CallInfo.Tito taint_sink_kind
+    |> BackwardState.Tree.create_leaf
+  in
   let backward =
-    let assign_backward_taint environment taint =
-      BackwardState.assign ~weak:true ~root ~path taint environment
-    in
-    let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
-    let via_features = Features.ViaFeatureSet.of_list via_features in
     match taint_sink_kind with
     | Sinks.LocalReturn
-    | Sinks.Transform _
     | Sinks.ParameterUpdate _ ->
-        let return_taint =
-          Domains.local_return_frame ~collapse_depth:0
-          |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
-          |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-          |> BackwardTaint.singleton CallInfo.Tito taint_sink_kind
+        let taint_in_taint_out = assign_backward_taint taint_in_taint_out tito_result_taint in
+        Ok { taint.backward with taint_in_taint_out }
+    | Sinks.Transform { local; global; _ } ->
+        let taint_in_taint_out = assign_backward_taint taint_in_taint_out tito_result_taint in
+        let extra_trace_sink = Sinks.make_transform ~local ~global ~base:Sinks.ExtraTraceSink in
+        let extra_sink_taint =
+          Frame.initial
+          |> BackwardTaint.singleton CallInfo.declaration extra_trace_sink
           |> BackwardState.Tree.create_leaf
         in
-        let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
-        Ok { taint.backward with taint_in_taint_out }
+        let sink_taint = assign_backward_taint sink_taint extra_sink_taint in
+        Ok { Model.Backward.taint_in_taint_out; sink_taint }
     | Sinks.Attach
       when Features.BreadcrumbSet.is_empty breadcrumbs
            && Features.ViaFeatureSet.is_bottom via_features ->
