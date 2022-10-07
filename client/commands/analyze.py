@@ -369,9 +369,7 @@ def _run_analyze_command(
                 )
                 return commands.ExitCode.MODEL_VERIFICATION_ERROR
             else:
-                LOG.error(
-                    f"Check command exited with non-zero return code: {return_code}."
-                )
+                LOG.error(f"Pyre exited with non-zero return code: {return_code}.")
                 return commands.ExitCode.FAILURE
 
 
