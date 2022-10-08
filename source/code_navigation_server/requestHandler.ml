@@ -13,6 +13,10 @@ open Analysis
 module ServerInternal = struct
   type t = {
     properties: Server.ServerProperties.t;
+    (* Subscriptions is stored outside of [state]. The reason is that [state] needs to be
+       Lwt-locked, to prevent it from getting concurrently modified during buck rebuild.
+       Subscriptions need no such protection. *)
+    subscriptions: Subscriptions.t;
     state: State.t Server.ExclusiveLock.t;
   }
 end
@@ -72,7 +76,7 @@ let get_type_errors_in_overlay ~overlay module_ =
             ~module_tracker)
 
 
-let handle_get_type_errors ~module_ ~overlay_id { State.environment } =
+let handle_get_type_errors ~module_ ~overlay_id { State.environment; _ } =
   let open Result in
   get_overlay ~environment overlay_id
   >>= fun overlay ->
@@ -92,7 +96,7 @@ let get_hover_in_overlay ~overlay ~position module_ =
   >>| List.filter_map ~f:(get_hover_content_for_module ~overlay ~position)
 
 
-let handle_hover ~module_ ~position ~overlay_id { State.environment } =
+let handle_hover ~module_ ~position ~overlay_id { State.environment; _ } =
   let open Result in
   get_overlay ~environment overlay_id
   >>= fun overlay ->
@@ -119,7 +123,7 @@ let get_location_of_definition_in_overlay ~overlay ~position module_ =
   >>| List.filter_map ~f:(get_location_of_definition_for_module ~overlay ~position)
 
 
-let handle_location_of_definition ~module_ ~position ~overlay_id { State.environment } =
+let handle_location_of_definition ~module_ ~position ~overlay_id { State.environment; _ } =
   let open Result in
   get_overlay ~environment overlay_id
   >>= fun overlay ->
@@ -127,7 +131,7 @@ let handle_location_of_definition ~module_ ~position ~overlay_id { State.environ
   >>| fun definitions -> Response.(LocationOfDefinition definitions)
 
 
-let handle_local_update ~module_ ~content ~overlay_id { State.environment } =
+let handle_local_update ~module_ ~content ~overlay_id { State.environment; _ } =
   let open Result in
   let module_tracker =
     OverlaidEnvironment.root environment |> ErrorsEnvironment.ReadOnly.module_tracker
@@ -156,7 +160,7 @@ let get_artifact_path_event { Request.FileUpdateEvent.kind; path } =
   PyrePath.create_absolute path |> ArtifactPath.create |> ArtifactPath.Event.create ~kind
 
 
-let handle_file_update ~events { State.environment } =
+let handle_file_update ~events { State.environment; _ } =
   let artifact_path_events =
     (* TODO: Add support for Buck path translation. *)
     List.map events ~f:get_artifact_path_event
@@ -178,7 +182,7 @@ let response_from_result = function
   | Result.Error kind -> Response.Error kind
 
 
-let handle_request ~server:{ ServerInternal.properties = _; state } = function
+let handle_request ~server:{ ServerInternal.state; _ } = function
   | Request.Stop -> Server.Stop.stop_waiting_server ()
   | Request.GetTypeErrors { module_; overlay_id } ->
       let f state =

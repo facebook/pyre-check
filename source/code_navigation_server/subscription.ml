@@ -18,4 +18,6 @@ module Response = struct
     | BusyChecking of { overlay_id: string option }
     | Stop of { message: string }
   [@@deriving sexp, compare, yojson { strict = false }]
+
+  let to_string response = to_yojson response |> Yojson.Safe.to_string
 end

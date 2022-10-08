@@ -22,6 +22,41 @@ let handle_invalid_request ~output_channel message =
   LwtInputOutput.write_line_ignoring_errors ~output_channel (Response.to_string response)
 
 
+let handle_subscription
+    ~server:{ RequestHandler.ServerInternal.subscriptions; _ }
+    ~input_channel
+    ~output_channel
+    _
+  =
+  Log.info "Processing subscription request";
+  let identifier = Subscriptions.register ~output_channel subscriptions in
+
+  (* Initial response acknowledge the subscription *)
+  Log.info "Subscription established";
+  let%lwt () =
+    LwtInputOutput.write_line_ignoring_errors
+      ~output_channel
+      (Subscription.Response.to_string Subscription.Response.Ok)
+  in
+
+  (* Block on reading the input channel so we could dispose the subscription immediately when it's
+     closed.
+
+     NOTE(grievejia): Another option is to close [input_channel] immediately, and clean up
+     subscription later when we try to send something to a given channel and run into an error
+     (usually indicating that the corresponding output channel is closed). Slightly prefer this way
+     as it feels more explicit. *)
+  let rec block_until_disconnect () =
+    match%lwt Lwt_io.read_line_opt input_channel with
+    | None ->
+        Subscriptions.unregister ~identifier subscriptions;
+        Log.info "Subscription removed";
+        Lwt.return_unit
+    | Some _ -> block_until_disconnect ()
+  in
+  block_until_disconnect ()
+
+
 let handle_request ~server ~output_channel request =
   Log.info "Processing request `%a`" Sexp.pp (Request.sexp_of_t request);
   let%lwt response = RequestHandler.handle_request ~server request in
@@ -40,9 +75,14 @@ let handle_connection ~server _client_address (input_channel, output_channel) =
         match parse_json message with
         | Result.Error message -> handle_invalid_request ~output_channel message
         | Result.Ok json -> (
-            match Request.of_yojson json with
-            | Result.Error _ -> handle_invalid_request ~output_channel "Unrecognized request JSON"
-            | Result.Ok request -> handle_request ~server ~output_channel request))
+            match Subscription.Request.of_yojson json with
+            | Result.Ok request ->
+                handle_subscription ~server ~input_channel ~output_channel request
+            | Result.Error _ -> (
+                match Request.of_yojson json with
+                | Result.Error _ ->
+                    handle_invalid_request ~output_channel "Unrecognized request JSON"
+                | Result.Ok request -> handle_request ~server ~output_channel request)))
   in
   let on_uncaught_exception exn =
     Log.warning "Uncaught exception: %s" (Exn.to_string exn);
@@ -97,16 +137,14 @@ let start_server
   in
   let properties = Server.ServerProperties.create ~socket_path ~critical_files ~configuration () in
   let state = Server.ExclusiveLock.create (initialize_server_state environment_controls) in
+  let subscriptions = Subscriptions.create () in
+  let server = { RequestHandler.ServerInternal.properties; state; subscriptions } in
   let after_server_starts () =
     Log.info "Code navigation server has started listening on socket `%a`" PyrePath.pp socket_path;
     let waiters =
       let server_waiter () = on_started properties state in
       let watchman_waiter subscriber =
-        let%lwt () =
-          Server.Watchman.Subscriber.listen
-            ~f:(on_watchman_update ~server:{ RequestHandler.ServerInternal.properties; state })
-            subscriber
-        in
+        let%lwt () = Server.Watchman.Subscriber.listen ~f:(on_watchman_update ~server) subscriber in
         Lwt.fail (Server.Watchman.SubscriptionError "Lost subscription connection to watchman")
       in
       let signal_waiters =
@@ -134,7 +172,5 @@ let start_server
     Lwt.return_unit
   in
   LwtSocketServer.SocketAddress.create_from_path socket_path
-  |> LwtSocketServer.with_server
-       ~handle_connection:
-         (handle_connection ~server:{ RequestHandler.ServerInternal.properties; state })
-       ~f:(fun () -> Lwt.finalize after_server_starts after_server_stops)
+  |> LwtSocketServer.with_server ~handle_connection:(handle_connection ~server) ~f:(fun () ->
+         Lwt.finalize after_server_starts after_server_stops)

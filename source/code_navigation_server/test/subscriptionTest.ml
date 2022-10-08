@@ -7,6 +7,7 @@
 
 open Core
 open OUnit2
+module Subscription = CodeNavigationServer.Testing.Subscription
 module Subscriptions = CodeNavigationServer.Testing.Subscriptions
 
 let assert_int ~context ~expected actual =
@@ -68,7 +69,27 @@ let test_subscription_registration context =
   Lwt.return_unit
 
 
+let test_server_subscription_establish context =
+  let f connection =
+    let%lwt response =
+      ScratchProject.ClientConnection.send_subscription_request
+        connection
+        Subscription.Request.Subscribe
+    in
+    ScratchProject.ClientConnection.assert_subscription_response_equal
+      connection
+      ~expected:Subscription.Response.Ok
+      ~actual:response;
+    Lwt.return_unit
+  in
+  ScratchProject.setup ~context ~include_typeshed_stubs:false []
+  |> ScratchProject.test_server_with_one_connection ~f
+
+
 let () =
   "subscription_test"
-  >::: ["subscription_registration" >:: OUnitLwt.lwt_wrapper test_subscription_registration]
+  >::: [
+         "subscription_registration" >:: OUnitLwt.lwt_wrapper test_subscription_registration;
+         "server_subscription_establish" >:: OUnitLwt.lwt_wrapper test_server_subscription_establish;
+       ]
   |> Test.run
