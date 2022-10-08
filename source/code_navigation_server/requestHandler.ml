@@ -131,23 +131,50 @@ let handle_location_of_definition ~module_ ~position ~overlay_id { State.environ
   >>| fun definitions -> Response.(LocationOfDefinition definitions)
 
 
-let handle_local_update ~module_ ~content ~overlay_id { State.environment; _ } =
-  let open Result in
+let with_broadcast_busy_checking ~subscriptions ~overlay_id f =
+  let%lwt () =
+    Subscriptions.broadcast
+      subscriptions
+      ~response:(lazy (Subscription.Response.BusyChecking { overlay_id }))
+  in
+  let result = f () in
+  let%lwt () = Subscriptions.broadcast subscriptions ~response:(lazy Subscription.Response.Idle) in
+  Lwt.return result
+
+
+let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.environment }
+    : Response.t Lwt.t
+  =
   let module_tracker =
     OverlaidEnvironment.root environment |> ErrorsEnvironment.ReadOnly.module_tracker
   in
-  get_modules ~module_tracker module_
-  >>| fun modules ->
-  let code_updates =
-    let code_update = ModuleTracker.Overlay.CodeUpdate.NewCode content in
-    let to_update module_name =
-      ModuleTracker.ReadOnly.lookup_full_path module_tracker module_name
-      |> Option.map ~f:(fun artifact_path -> artifact_path, code_update)
-    in
-    List.filter_map modules ~f:to_update
-  in
-  let _ = OverlaidEnvironment.update_overlay_with_code environment ~code_updates overlay_id in
-  Response.Ok
+  match get_modules ~module_tracker module_ with
+  | Result.Error kind -> Lwt.return (Response.Error kind)
+  | Result.Ok modules ->
+      let code_updates =
+        let code_update = ModuleTracker.Overlay.CodeUpdate.NewCode content in
+        let to_update module_name =
+          ModuleTracker.ReadOnly.lookup_full_path module_tracker module_name
+          |> Option.map ~f:(fun artifact_path -> artifact_path, code_update)
+        in
+        List.filter_map modules ~f:to_update
+      in
+      let%lwt () =
+        match code_updates with
+        | [] -> Lwt.return_unit
+        | _ ->
+            let run_local_update () =
+              OverlaidEnvironment.update_overlay_with_code environment ~code_updates overlay_id
+            in
+            let%lwt _ =
+              with_broadcast_busy_checking
+                ~subscriptions
+                ~overlay_id:(Some overlay_id)
+                run_local_update
+            in
+            Lwt.return_unit
+      in
+      Lwt.return Response.Ok
 
 
 let get_artifact_path_event_kind = function
@@ -160,21 +187,24 @@ let get_artifact_path_event { Request.FileUpdateEvent.kind; path } =
   PyrePath.create_absolute path |> ArtifactPath.create |> ArtifactPath.Event.create ~kind
 
 
-let handle_file_update ~events { State.environment; _ } =
+let handle_file_update ~events ~subscriptions { State.environment } =
   let artifact_path_events =
     (* TODO: Add support for Buck path translation. *)
     List.map events ~f:get_artifact_path_event
   in
-  let () =
-    let configuration =
-      OverlaidEnvironment.root environment
-      |> ErrorsEnvironment.ReadOnly.controls
-      |> EnvironmentControls.configuration
-    in
-    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-        OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
-  in
-  Lwt.return_unit
+  match artifact_path_events with
+  | [] -> Lwt.return_unit
+  | _ ->
+      let run_file_update () =
+        let configuration =
+          OverlaidEnvironment.root environment
+          |> ErrorsEnvironment.ReadOnly.controls
+          |> EnvironmentControls.configuration
+        in
+        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+            OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
+      in
+      with_broadcast_busy_checking ~subscriptions ~overlay_id:None run_file_update
 
 
 let response_from_result = function
@@ -182,7 +212,7 @@ let response_from_result = function
   | Result.Error kind -> Response.Error kind
 
 
-let handle_request ~server:{ ServerInternal.state; _ } = function
+let handle_request ~server:{ ServerInternal.state; subscriptions; _ } = function
   | Request.Stop -> Server.Stop.stop_waiting_server ()
   | Request.GetTypeErrors { module_; overlay_id } ->
       let f state =
@@ -202,15 +232,11 @@ let handle_request ~server:{ ServerInternal.state; _ } = function
       in
       Server.ExclusiveLock.read state ~f
   | Request.LocalUpdate { module_; content; overlay_id } ->
-      let f state =
-        handle_local_update ~module_ ~content ~overlay_id state
-        |> response_from_result
-        |> Lwt.return
-      in
+      let f state = handle_local_update ~module_ ~content ~overlay_id ~subscriptions state in
       Server.ExclusiveLock.read state ~f
   | Request.FileUpdate events ->
       let f state =
-        let%lwt () = handle_file_update ~events state in
+        let%lwt () = handle_file_update ~events ~subscriptions state in
         Lwt.return Response.Ok
       in
       Server.ExclusiveLock.read state ~f

@@ -54,6 +54,12 @@ module ClientConnection = struct
     assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected actual
 
 
+  let assert_subscription_response ~expected ({ input_channel; _ } as client) =
+    let%lwt actual = Lwt_io.read_line input_channel in
+    assert_subscription_response_equal client ~expected ~actual;
+    Lwt.return_unit
+
+
   let assert_response ~request ~expected client =
     let%lwt actual = send_request client request in
     assert_response_equal client ~expected ~actual;

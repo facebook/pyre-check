@@ -7,6 +7,7 @@
 
 open Core
 open OUnit2
+module Request = CodeNavigationServer.Testing.Request
 module Subscription = CodeNavigationServer.Testing.Subscription
 module Subscriptions = CodeNavigationServer.Testing.Subscriptions
 
@@ -86,10 +87,96 @@ let test_server_subscription_establish context =
   |> ScratchProject.test_server_with_one_connection ~f
 
 
+let test_server_subscription_busy_file_update context =
+  let project = ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", ""] in
+  let root = ScratchProject.source_root_of project in
+  let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+
+  (* This is used to synchronize between subscriber and mutator *)
+  let mailbox = Lwt_mvar.create_empty () in
+  let subscriber connection =
+    let%lwt _ =
+      ScratchProject.ClientConnection.send_subscription_request
+        connection
+        Subscription.Request.Subscribe
+    in
+    let%lwt () = Lwt_mvar.put mailbox "subscribed" in
+    let%lwt () =
+      ScratchProject.ClientConnection.assert_subscription_response
+        ~expected:(Subscription.Response.BusyChecking { overlay_id = None })
+        connection
+    in
+    let%lwt () =
+      ScratchProject.ClientConnection.assert_subscription_response
+        ~expected:Subscription.Response.Idle
+        connection
+    in
+    Lwt.return_unit
+  in
+  let mutator connection =
+    let%lwt _ = Lwt_mvar.take mailbox in
+    let%lwt _ =
+      ScratchProject.ClientConnection.send_request
+        connection
+        Request.(
+          FileUpdate
+            [FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = PyrePath.absolute test_path }])
+    in
+    Lwt.return_unit
+  in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Concurrent
+    ~clients:[subscriber; mutator]
+
+
+let test_server_subscription_busy_local_update context =
+  (* This is used to ensure mutator always run after subscription is established *)
+  let mailbox = Lwt_mvar.create_empty () in
+  let subscriber connection =
+    let%lwt _ =
+      ScratchProject.ClientConnection.send_subscription_request
+        connection
+        Subscription.Request.Subscribe
+    in
+    let%lwt () = Lwt_mvar.put mailbox "subscribed" in
+    let%lwt () =
+      ScratchProject.ClientConnection.assert_subscription_response
+        ~expected:(Subscription.Response.BusyChecking { overlay_id = Some "foo" })
+        connection
+    in
+    let%lwt () =
+      ScratchProject.ClientConnection.assert_subscription_response
+        ~expected:Subscription.Response.Idle
+        connection
+    in
+    Lwt.return_unit
+  in
+  let mutator connection =
+    let%lwt _ = Lwt_mvar.take mailbox in
+    let%lwt _ =
+      ScratchProject.ClientConnection.send_request
+        connection
+        Request.(
+          LocalUpdate
+            { module_ = Module.OfName "test"; content = "reveal_type(42)"; overlay_id = "foo" })
+    in
+    Lwt.return_unit
+  in
+  ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", ""]
+  |> ScratchProject.test_server_with
+       ~style:ScratchProject.ClientConnection.Style.Concurrent
+       ~clients:[subscriber; mutator]
+
+
 let () =
   "subscription_test"
   >::: [
          "subscription_registration" >:: OUnitLwt.lwt_wrapper test_subscription_registration;
          "server_subscription_establish" >:: OUnitLwt.lwt_wrapper test_server_subscription_establish;
+         "server_subscription_busy_file_update"
+         >:: OUnitLwt.lwt_wrapper test_server_subscription_busy_file_update;
+         "server_subscription_busy_local_update"
+         >:: OUnitLwt.lwt_wrapper test_server_subscription_busy_local_update;
        ]
   |> Test.run
