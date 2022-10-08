@@ -96,7 +96,7 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
-    (** A type representing requests sent from the clients to the server.
+    (** A type representing ordinary requests sent from the clients to the server.
 
         The code navigation server supports a primitive form of isolation between different clients.
         Many kinds of requests that query server state can optionally specify an [overlay_id], and
@@ -211,7 +211,11 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
-    (** A type representing responses sent from the server to its clients *)
+    (** A type representing ordinary responses sent from the server to its clients.
+
+        If a client establishes a connection with the code navigation server and sends a
+        {!Request.t}, the server will process the request, send back a {!Response.t}, and close the
+        connection immediately. *)
     type t =
       | Ok  (** This response will be used for acknowledging successful processing of a request. *)
       | Error of ErrorKind.t
@@ -228,5 +232,45 @@ module Testing : sig
               may map the same file to multiple modules, or because the same name may get redefined
               multiple times.*)
     [@@deriving sexp, compare, yojson { strict = false }]
+  end
+
+  (** Subscription is a mechanism with which the client can estabilsh a persistent connection to the
+      code navigation server. The mechanism is useful when the client wants to continuously keep
+      track of certain internal status change (liveness, availability, etc.). *)
+  module Subscription : sig
+    module Request : sig
+      (** A type representing subscription requests sent from the clients to the server.
+
+          Unlike ordinary {!Request.t}, the code navigation server will not proactively close the
+          underlying socket connection when receiving a {!Subscription.Request.t}. Instead, it will
+          send back a {!Subscription.Response.Ok} to acknowledge the subscription first, then leave
+          the connection open, and unilaterally push interesting internal status changes to the
+          client via that connection. Only when the client terminates the connection on its side
+          will the server stop sending the updates. *)
+      type t = Subscribe [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
+    module Response : sig
+      (** A type representing subscription responses sent from the server to its clients. *)
+      type t =
+        | Ok
+            (** This response will be send after the server receives an initial {!Request.Subscribe}
+                message. It acknowledges the successful creation of a subscription. *)
+        | Idle
+            (** This response is sent when the code navigation server is done processing a
+                outstanding incremental update request in the background. *)
+        | BusyChecking of { overlay_id: string option }
+            (** This response is sent when the code navigation server is about to start performing
+                an incremental update request.
+
+                [overlay_id] will be [None] if the incremental update is on the whole project (i.e.
+                the server is handling a {!Testing.Request.FileUpdateEvent}), and will bet set if
+                the incremental update is on a given overlay (i.e. the server is handling a
+                {!Testing.Request.LocalUpdate}). *)
+        | Stop of { message: string }
+            (** This response is sent when the code navigation server is about to terminate itself.
+                [message] field will contain message that explains why the server wants to go down. *)
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
   end
 end
