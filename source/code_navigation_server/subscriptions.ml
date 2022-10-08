@@ -31,24 +31,10 @@ let register ~output_channel { next_identifier; registered } =
 
 let unregister ~identifier { registered; _ } = Hashtbl.remove registered identifier
 
-let send_ignoring_errors ~output_channel message =
-  let send () =
-    let%lwt () = Lwt_io.write_line output_channel message in
-    Lwt_io.flush output_channel
-  in
-  let on_io_exception exn =
-    Log.log
-      ~section:`Server
-      "Exception occurred while sending subscription message: %s"
-      (Exn.to_string exn);
-    Lwt.return_unit
-  in
-  Lwt.catch send on_io_exception
-
-
 let broadcast_raw ~message { registered; _ } =
   Hashtbl.data registered
-  |> List.map ~f:(fun output_channel -> send_ignoring_errors ~output_channel (Lazy.force message))
+  |> List.map ~f:(fun output_channel ->
+         LwtInputOutput.write_line_ignoring_errors ~output_channel (Lazy.force message))
   |> Lwt.join
 
 

@@ -9,25 +9,40 @@
 
 open Core
 
+let parse_json message =
+  try Result.Ok (Yojson.Safe.from_string message) with
+  | Yojson.Json_error message ->
+      let message = Format.sprintf "Cannot parse JSON. %s" message in
+      Result.Error message
+
+
+let handle_invalid_request ~output_channel message =
+  Log.info "Invalid request: %s" message;
+  let response = Response.Error (Response.ErrorKind.InvalidRequest message) in
+  LwtInputOutput.write_line_ignoring_errors ~output_channel (Response.to_string response)
+
+
+let handle_request ~server ~output_channel request =
+  Log.info "Processing request `%a`" Sexp.pp (Request.sexp_of_t request);
+  let%lwt response = RequestHandler.handle_request ~server request in
+  let raw_response = Response.to_string response in
+  Log.info "Request processed. Response: `%s`" raw_response;
+  LwtInputOutput.write_line_ignoring_errors ~output_channel raw_response
+
+
 let handle_connection ~server _client_address (input_channel, output_channel) =
   Log.info "Connection established";
   let handle_line () =
     match%lwt Lwt_io.read_line_opt input_channel with
     | None -> Lwt.return_unit
-    | Some raw_request ->
-        Log.info "Processing request `%s`" raw_request;
-        let%lwt response = RequestHandler.handle_raw_request ~server raw_request in
-        let raw_response = Response.to_string response in
-        Log.info "Request processed. Response: `%s`" raw_response;
-        let write_and_flush () =
-          let%lwt () = Lwt_io.write_line output_channel raw_response in
-          Lwt_io.flush output_channel
-        in
-        let on_io_exception exn =
-          Log.warning "Exception occurred while sending responses: %s" (Exn.to_string exn);
-          Lwt.return_unit
-        in
-        Lwt.catch write_and_flush on_io_exception
+    | Some message -> (
+        Log.info "Processing message `%s`" message;
+        match parse_json message with
+        | Result.Error message -> handle_invalid_request ~output_channel message
+        | Result.Ok json -> (
+            match Request.of_yojson json with
+            | Result.Error _ -> handle_invalid_request ~output_channel "Unrecognized request JSON"
+            | Result.Ok request -> handle_request ~server ~output_channel request))
   in
   let on_uncaught_exception exn =
     Log.warning "Uncaught exception: %s" (Exn.to_string exn);

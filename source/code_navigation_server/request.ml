@@ -57,13 +57,3 @@ type t =
     }
   | FileUpdate of FileUpdateEvent.t list
 [@@deriving sexp, compare, yojson { strict = false }]
-
-let of_string message =
-  try
-    Yojson.Safe.from_string message
-    |> of_yojson
-    |> Result.map_error ~f:(fun _ -> "Unrecognized request JSON")
-  with
-  | Yojson.Json_error message ->
-      let message = Format.sprintf "Cannot parse JSON. %s" message in
-      Result.Error message

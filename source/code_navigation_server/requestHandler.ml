@@ -210,9 +210,3 @@ let handle_request ~server:{ ServerInternal.properties = _; state } = function
         Lwt.return Response.Ok
       in
       Server.ExclusiveLock.read state ~f
-
-
-let handle_raw_request ~server raw_request =
-  match Request.of_string raw_request with
-  | Result.Error message -> Lwt.return (Response.Error (Response.ErrorKind.InvalidRequest message))
-  | Result.Ok request -> handle_request ~server request
