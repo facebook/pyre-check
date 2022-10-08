@@ -273,4 +273,57 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
   end
+
+  (** A utility module that helps the code navigation to keep track of established subscriptions in
+      its internal state. *)
+  module Subscriptions : sig
+    module Identifier : sig
+      (** An opaque type used to differentiate one subscription from another.
+
+          Identifiers are expected to be created and maintained exclusively by {!Subscriptions.t}. *)
+      type t [@@deriving sexp, equal]
+    end
+
+    (** A type representing a collection of subscriptions. *)
+    type t
+
+    (** Create an empty collection of subscriptions. *)
+    val create : unit -> t
+
+    (** Return how many subscriptions are currently registered in the collection. *)
+    val count : t -> int
+
+    (** [register ~output_channel subscriptions] add a new subscription [output_channel] to the
+        collection [subscriptions].
+
+        The collection itself does not perform any checks for duplicate subscriptions. Each call to
+        the [register] function is treated as setting up a different subscription, regardless of
+        whether we pass the same [output_channel] to the function or not.
+
+        When a subscription is registered, the [register] function will hand back an {!Identifier.t}
+        to its caller. The returned identifier is guaranteed to be unique from all
+        previously-registered subscriptions in the collection, and can be used to unregister a
+        subscription later. *)
+    val register : output_channel:Lwt_io.output_channel -> t -> Identifier.t
+
+    (** [unregister ~identifier subscriptions] removes a subscription with the given [identifier]
+        from the collection [subscriptions]. *)
+    val unregister : identifier:Identifier.t -> t -> unit
+
+    (** [broadcast_raw ~message subscriptions] sends a [message] string (a terminating '\n'
+        character will be appended as a message separator) to every subscription channel in
+        [subscriptions].
+
+        The message being sent is constructed by forcing [message]. The message is constructed
+        lazily to avoid the cost of the construction when [subscriptions] is empty *)
+    val broadcast_raw : message:string Lazy.t -> t -> unit Lwt.t
+
+    (** [broadcast ~response subscriptions] sends a [response] to every subscription channel in
+        [subscriptions]. It is a convenient wrapper around serlializing [response] and then invoking
+        [broadcast_raw].
+
+        The message being sent is constructed by forcing [message]. The message is constructed
+        lazily to avoid the cost of the construction when [subscriptions] is empty *)
+    val broadcast : response:Subscription.Response.t Lazy.t -> t -> unit Lwt.t
+  end
 end
