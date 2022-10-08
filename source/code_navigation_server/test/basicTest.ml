@@ -108,6 +108,7 @@ let test_get_type_errors_request context =
   in
   ScratchProject.test_server_with
     project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
         assert_type_errors_for_module ~module_:(Request.Module.OfName "test");
@@ -132,6 +133,7 @@ let test_get_type_errors_request context =
 let test_local_update_request context =
   ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
   |> ScratchProject.test_server_with
+       ~style:ScratchProject.ClientConnection.Style.Sequential
        ~clients:
          [
            assert_type_error_count ~module_name:"test" ~expected:1;
@@ -177,6 +179,7 @@ let test_file_update_request context =
   let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
   ScratchProject.test_server_with
     project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
         assert_type_error_count ~module_name:"test" ~expected:1;
@@ -222,6 +225,7 @@ let test_file_and_local_update context =
   let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
   ScratchProject.test_server_with
     project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
         assert_type_error_count ~module_name:"test" ~expected:2;
@@ -260,6 +264,7 @@ let test_hover_request context =
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
   ScratchProject.test_server_with
     project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
         ScratchProject.ClientConnection.assert_response
@@ -332,6 +337,7 @@ let test_location_of_definition_request context =
   let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
   ScratchProject.test_server_with
     project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
         ScratchProject.ClientConnection.assert_response
@@ -452,6 +458,7 @@ let test_watchman_integration context =
   in
   ScratchProject.test_server_with
     project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
         assert_type_error_count ~module_name:"test" ~expected:0;

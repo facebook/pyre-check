@@ -14,6 +14,12 @@ module Request = CodeNavigationServer.Testing.Request
 module Response = CodeNavigationServer.Testing.Response
 
 module ClientConnection = struct
+  module Style = struct
+    type t =
+      | Sequential
+      | Concurrent
+  end
+
   type t = {
     context: test_ctxt;
     configuration: Configuration.Analysis.t;
@@ -147,7 +153,7 @@ let source_root_of project =
   project_root
 
 
-let test_server_with ~clients { context; start_options } =
+let test_server_with ~style ~clients { context; start_options } =
   Memory.reset_shared_memory ();
   try%lwt
     Start.start_server
@@ -167,9 +173,15 @@ let test_server_with ~clients { context; start_options } =
           in
           Lwt_io.with_connection socket_address run_on_connection
         in
-        Lwt_list.iter_s test_client clients)
+        let iterate_list =
+          match style with
+          | ClientConnection.Style.Sequential -> Lwt_list.iter_s
+          | ClientConnection.Style.Concurrent -> Lwt_list.iter_p
+        in
+        iterate_list test_client clients)
   with
   | Server.Start.ServerStopped -> Lwt.return_unit
 
 
-let test_server_with_one_connection ~f = test_server_with ~clients:[f]
+let test_server_with_one_connection ~f =
+  test_server_with ~style:ClientConnection.Style.Sequential ~clients:[f]
