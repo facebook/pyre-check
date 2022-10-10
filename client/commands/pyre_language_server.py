@@ -409,6 +409,12 @@ class PyreLanguageServer:
                     "count": len(raw_result),
                     "response": raw_result,
                     "duration_ms": duration_ms(start_time, end_time),
+                    "server_state_open_documents_count": len(
+                        self.server_state.opened_documents
+                    ),
+                    "server_state_start_status": str(
+                        self.server_state.server_last_status.value
+                    ),
                 },
                 activity_key,
             )
