@@ -169,6 +169,51 @@ let test_server_subscription_busy_local_update context =
        ~clients:[subscriber; mutator]
 
 
+let test_server_subscription_stop context =
+  let project = ScratchProject.setup ~context ~include_typeshed_stubs:false [] in
+  let socket_address = ScratchProject.socket_address_of project in
+  (* This is used to make sure both subscriber and stopper run after server has started. *)
+  let subscriber_mailbox = Lwt_mvar.create_empty () in
+  let stopper_mailbox = Lwt_mvar.create_empty () in
+  let subscriber (input_channel, output_channel) =
+    let%lwt () =
+      Subscription.Request.Subscribe
+      |> Subscription.Request.to_yojson
+      |> Yojson.Safe.to_string
+      |> Lwt_io.write_line output_channel
+    in
+    (* This should be the initial `Ok` response *)
+    let%lwt _ = Lwt_io.read_line input_channel in
+    (* This should be the `Stop` status update *)
+    let%lwt stop_message = Lwt_io.read_line input_channel in
+    match Yojson.Safe.from_string stop_message with
+    | `List [`String "Stop"; _] -> Lwt.return_unit
+    | _ -> Format.sprintf "Expected a stop message but got: %s" stop_message |> assert_failure
+  in
+  let stopper (_, output_channel) =
+    let%lwt () =
+      Request.Stop |> Request.to_yojson |> Yojson.Safe.to_string |> Lwt_io.write_line output_channel
+    in
+    Lwt.return_unit
+  in
+  Lwt.join
+    [
+      (* We can't use the [test_server_with ~style:Concurrent ~clients] API in this test: that API
+         implicitly assumes the lifetime of all clients must not go beyond the lifetime of the
+         server. That assumption is not true in this test, as we are trying to observe server
+         behavior AFTER it gets stopped and goes down. *)
+      ScratchProject.test_server_with_one_connection project ~f:(fun _ ->
+          let%lwt () = Lwt_mvar.put subscriber_mailbox "initialized" in
+          let%lwt () = Lwt_mvar.put stopper_mailbox "initialized" in
+          let wait_forever, _ = Lwt.wait () in
+          wait_forever);
+      (let%lwt _ = Lwt_mvar.take subscriber_mailbox in
+       Lwt_io.with_connection socket_address subscriber);
+      (let%lwt _ = Lwt_mvar.take stopper_mailbox in
+       Lwt_io.with_connection socket_address stopper);
+    ]
+
+
 let () =
   "subscription_test"
   >::: [
@@ -178,5 +223,6 @@ let () =
          >:: OUnitLwt.lwt_wrapper test_server_subscription_busy_file_update;
          "server_subscription_busy_local_update"
          >:: OUnitLwt.lwt_wrapper test_server_subscription_busy_local_update;
+         "server_subscription_stop" >:: OUnitLwt.lwt_wrapper test_server_subscription_stop;
        ]
   |> Test.run

@@ -123,6 +123,13 @@ let initialize_server_state environment_controls =
   { State.environment }
 
 
+let broadcast_server_stop_and_fail ~subscriptions ~message exn =
+  let%lwt () =
+    Subscriptions.broadcast subscriptions ~response:(lazy (Subscription.Response.Stop { message }))
+  in
+  Lwt.fail exn
+
+
 let start_server
     ~on_started
     { StartOptions.environment_controls; socket_path; source_paths; watchman; critical_files; _ }
@@ -145,18 +152,36 @@ let start_server
       let server_waiter () = on_started properties state in
       let watchman_waiter subscriber =
         let%lwt () = Server.Watchman.Subscriber.listen ~f:(on_watchman_update ~server) subscriber in
-        Lwt.fail (Server.Watchman.SubscriptionError "Lost subscription connection to watchman")
+        let message = "Lost subscription connection to watchman" in
+        broadcast_server_stop_and_fail
+          ~subscriptions
+          ~message
+          (Server.Watchman.SubscriptionError message)
       in
       let signal_waiters =
         [
           (* We rely on SIGINT for normal server shutdown. *)
           Server.Start.wait_for_signal [Signal.int] ~on_caught:(fun _ ->
               let stop_reason = Server.Stop.get_last_server_stop_reason () in
-              Lwt.fail (Server.Start.ServerStopped stop_reason));
+              broadcast_server_stop_and_fail
+                ~subscriptions
+                ~message:
+                  (Option.value_map
+                     stop_reason
+                     ~f:Server.Stop.Reason.message_of
+                     ~default:"Code navigation server stopped for unknown reason")
+                (Server.Start.ServerStopped stop_reason));
           (* Getting these signals usually indicates something serious went wrong. *)
           Server.Start.wait_for_signal
             [Signal.abrt; Signal.term; Signal.quit; Signal.segv]
-            ~on_caught:(fun signal -> Lwt.fail (Server.Start.ServerInterrupted signal));
+            ~on_caught:(fun signal ->
+              broadcast_server_stop_and_fail
+                ~subscriptions
+                ~message:
+                  (Format.sprintf
+                     "Code navigation server interrupted by signal `%s`"
+                     (Signal.to_string signal))
+                (Server.Start.ServerInterrupted signal));
         ]
       in
       List.concat_no_order

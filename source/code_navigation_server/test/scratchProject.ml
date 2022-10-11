@@ -164,6 +164,11 @@ let configuration_of project =
   Analysis.EnvironmentControls.configuration environment_controls
 
 
+let socket_address_of project =
+  let { StartOptions.socket_path; _ } = start_options_of project in
+  Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path)
+
+
 let source_root_of project =
   let { Configuration.Analysis.project_root; _ } = configuration_of project in
   project_root
