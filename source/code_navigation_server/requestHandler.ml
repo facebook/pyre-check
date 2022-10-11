@@ -177,6 +177,8 @@ let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.env
       Lwt.return Response.Ok
 
 
+let get_raw_path { Request.FileUpdateEvent.path; _ } = PyrePath.create_absolute path
+
 let get_artifact_path_event_kind = function
   | Request.FileUpdateEvent.Kind.CreatedOrChanged -> ArtifactPath.Event.Kind.CreatedOrChanged
   | Request.FileUpdateEvent.Kind.Deleted -> ArtifactPath.Event.Kind.Deleted
@@ -187,24 +189,35 @@ let get_artifact_path_event { Request.FileUpdateEvent.kind; path } =
   PyrePath.create_absolute path |> ArtifactPath.create |> ArtifactPath.Event.create ~kind
 
 
-let handle_file_update ~events ~subscriptions { State.environment } =
-  let artifact_path_events =
-    (* TODO: Add support for Buck path translation. *)
-    List.map events ~f:get_artifact_path_event
-  in
-  match artifact_path_events with
-  | [] -> Lwt.return_unit
-  | _ ->
-      let run_file_update () =
-        let configuration =
-          OverlaidEnvironment.root environment
-          |> ErrorsEnvironment.ReadOnly.controls
-          |> EnvironmentControls.configuration
-        in
-        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-            OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
+let handle_file_update
+    ~events
+    ~subscriptions
+    ~properties:{ Server.ServerProperties.critical_files; _ }
+    { State.environment }
+  =
+  match Server.CriticalFile.find critical_files ~within:(List.map events ~f:get_raw_path) with
+  | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)
+  | None ->
+      let artifact_path_events =
+        (* TODO: Add support for Buck path translation. *)
+        List.map events ~f:get_artifact_path_event
       in
-      with_broadcast_busy_checking ~subscriptions ~overlay_id:None run_file_update
+      let%lwt () =
+        match artifact_path_events with
+        | [] -> Lwt.return_unit
+        | _ ->
+            let run_file_update () =
+              let configuration =
+                OverlaidEnvironment.root environment
+                |> ErrorsEnvironment.ReadOnly.controls
+                |> EnvironmentControls.configuration
+              in
+              Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+                  OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
+            in
+            with_broadcast_busy_checking ~subscriptions ~overlay_id:None run_file_update
+      in
+      Lwt.return_ok Response.Ok
 
 
 let response_from_result = function
@@ -212,7 +225,7 @@ let response_from_result = function
   | Result.Error kind -> Response.Error kind
 
 
-let handle_request ~server:{ ServerInternal.state; subscriptions; _ } = function
+let handle_request ~server:{ ServerInternal.state; subscriptions; properties } = function
   | Request.Stop -> Lwt.return_error Server.Stop.Reason.ExplicitRequest
   | Request.GetTypeErrors { module_; overlay_id } ->
       let f state =
@@ -241,8 +254,4 @@ let handle_request ~server:{ ServerInternal.state; subscriptions; _ } = function
       in
       Server.ExclusiveLock.read state ~f
   | Request.FileUpdate events ->
-      let f state =
-        let%lwt () = handle_file_update ~events ~subscriptions state in
-        Lwt.return_ok Response.Ok
-      in
-      Server.ExclusiveLock.read state ~f
+      Server.ExclusiveLock.read state ~f:(handle_file_update ~events ~subscriptions ~properties)

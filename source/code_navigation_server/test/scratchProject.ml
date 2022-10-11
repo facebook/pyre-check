@@ -87,7 +87,7 @@ type t = {
   start_options: StartOptions.t;
 }
 
-let setup ~context ?(include_typeshed_stubs = true) ?watchman sources =
+let setup ~context ?(include_typeshed_stubs = true) ?(critical_files = []) ?watchman sources =
   (* MacOS tends to use very long directory name as the default `temp_dir`. This unfortunately would
      make the filename of temporary socket files exceed the default Unix limit. Hard-coding temp dir
      to `/tmp` to avoid the issue for now. *)
@@ -151,7 +151,7 @@ let setup ~context ?(include_typeshed_stubs = true) ?watchman sources =
           ~root:(PyrePath.create_absolute (bracket_tmpdir context))
           ~relative:"pyre_server_hash.sock";
       watchman;
-      critical_files = [];
+      critical_files;
     }
   in
   { context; start_options }
