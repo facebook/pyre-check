@@ -3791,19 +3791,16 @@ Unexpected statement: `food(y)`
     ~expect:
       "`AttributeModel` is not a valid model for model queries with find clause of kind `globals`."
     ();
-  assert_invalid_model
+  assert_valid_model
     ~model_source:
       {|
       ModelQuery(
         name = "invalid_model",
         find = "globals",
         where = type_annotation.is_annotated_type(),
-        model = GlobalModel(TaintSource[X])
+        model = GlobalModel(TaintSource[A])
       )
     |}
-    ~expect:
-      "`type_annotation.is_annotated_type` is not a valid constraint for model queries with find \
-       clause of kind `globals`."
     ();
   assert_invalid_model
     ~model_source:

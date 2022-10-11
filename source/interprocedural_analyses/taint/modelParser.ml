@@ -1647,7 +1647,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             } as callee;
           _;
         } ->
-        if not (is_attribute_clause_kind find_clause) then
+        if not (is_attribute_clause_kind find_clause || is_global_clause_kind find_clause) then
           Error (invalid_model_query_where_clause ~path ~location callee)
         else
           parse_annotation_constraint ~path ~location constraint_expression

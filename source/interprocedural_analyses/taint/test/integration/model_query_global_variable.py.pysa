@@ -27,3 +27,12 @@ ModelQuery(
     GlobalModel(TaintSource[Test]),
   ]
 )
+
+ModelQuery(
+  name = "get_foo_by_type",
+  find = "globals",
+  where = [type_annotation.equals("typing.List[typing.Any]")],
+  model = [
+    GlobalModel(TaintSource[Test]),
+  ]
+)
