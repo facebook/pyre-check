@@ -95,8 +95,8 @@ let test_assignment context =
         z: int = y
     |}
     [
-      "ReadOnly violation [3001]: z is declared to have readonlyness `ReadOnlyness.Mutable` but is \
-       used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
     ];
   assert_readonly_errors
     {|

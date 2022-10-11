@@ -627,7 +627,7 @@ let code_of_kind = function
   (* Errors from type operators *)
   | BroadcastError _ -> 2001
   (* Privacy-related errors. *)
-  | ReadOnlynessMismatch _ -> 3001
+  | ReadOnlynessMismatch (IncompatibleVariableType _) -> 3001
 
 
 let name_of_kind = function
@@ -671,7 +671,9 @@ let name_of_kind = function
   | NotCallable _ -> "Call error"
   | PrivateProtocolProperty _ -> "Private protocol property"
   | ProhibitedAny _ -> "Prohibited any"
-  | ReadOnlynessMismatch _ -> "ReadOnly violation"
+  | ReadOnlynessMismatch kind -> (
+      match kind with
+      | IncompatibleVariableType _ -> "ReadOnly violation - Incompatible variable type")
   | RedefinedClass _ -> "Redefined class"
   | RedundantCast _ -> "Redundant cast"
   | RevealedLocals _ -> "Revealed locals"
