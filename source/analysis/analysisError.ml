@@ -27,6 +27,20 @@ let pp_reference ~concise format reference =
     Reference.pp_sanitized format reference
 
 
+let ordinal number =
+  let suffix =
+    if number % 10 = 1 && number % 100 <> 11 then
+      "st"
+    else if number % 10 = 2 && number % 100 <> 12 then
+      "nd"
+    else if number % 10 = 3 && number % 100 <> 13 then
+      "rd"
+    else
+      "th"
+  in
+  string_of_int number ^ suffix
+
+
 (* The `name` field conflicts with that defined in incompatible_type. *)
 type missing_annotation = {
   name: Reference.t;
@@ -285,16 +299,24 @@ module ReadOnly = struct
         incompatible_type: incompatible_type;
         declare_location: Location.WithPath.t;
       }
+    | IncompatibleParameterType of {
+        name: Identifier.t option;
+        position: int;
+        callee: Reference.t option;
+        mismatch: mismatch;
+      }
   [@@deriving compare, sexp, show, hash]
 
-  let error_messages ~concise = function
+  let error_messages ~concise kind =
+    let pp_reference = pp_reference ~concise in
+    match kind with
     | IncompatibleVariableType
         { incompatible_type = { name; mismatch = { actual; expected }; _ }; _ } ->
         let message =
           if concise then
             Format.asprintf
               "%a has readonlyness `%a`; used as `%a`."
-              (pp_reference ~concise)
+              pp_reference
               name
               ReadOnlyness.pp
               expected
@@ -303,7 +325,7 @@ module ReadOnly = struct
           else
             Format.asprintf
               "%a is declared to have readonlyness `%a` but is used as readonlyness `%a`."
-              (pp_reference ~concise)
+              pp_reference
               name
               ReadOnlyness.pp
               expected
@@ -311,9 +333,44 @@ module ReadOnly = struct
               actual
         in
         [message]
+    | IncompatibleParameterType { name; position; callee; mismatch = { actual; expected } } ->
+        let target =
+          let parameter =
+            match name with
+            | Some name -> Format.asprintf "parameter `%a`" Identifier.pp_sanitized name
+            | _ -> "positional only parameter"
+          in
+          let callee =
+            match callee with
+            | Some callee -> Format.asprintf "call `%a`" pp_reference callee
+            | _ -> "anonymous call"
+          in
+          if concise then
+            Format.asprintf "For %s param" (ordinal position)
+          else
+            Format.asprintf "In %s, for %s %s" callee (ordinal position) parameter
+        in
+        [
+          Format.asprintf
+            "%s expected `%a` but got `%a`."
+            target
+            ReadOnlyness.pp
+            expected
+            ReadOnlyness.pp
+            actual;
+        ]
 
 
   let join left right =
+    let join_mismatch
+        { expected = left_expected; actual = left_actual }
+        { expected = right_expected; actual = right_actual }
+      =
+      {
+        expected = ReadOnlyness.join left_expected right_expected;
+        actual = ReadOnlyness.join left_actual right_actual;
+      }
+    in
     match left, right with
     | ( IncompatibleVariableType
           ({
@@ -350,15 +407,36 @@ module ReadOnly = struct
               };
           }
         |> Option.some
+    | ( IncompatibleParameterType
+          ({
+             name = left_name;
+             position = left_position;
+             mismatch = left_mismatch;
+             callee = left_callee;
+           } as left),
+        IncompatibleParameterType
+          {
+            name = right_name;
+            position = right_position;
+            mismatch = right_mismatch;
+            callee = right_callee;
+          } )
+      when Option.equal Identifier.equal_sanitized left_name right_name
+           && left_position = right_position
+           && Option.equal Reference.equal_sanitized left_callee right_callee ->
+        let mismatch = join_mismatch left_mismatch right_mismatch in
+        IncompatibleParameterType { left with mismatch } |> Option.some
     | _ -> None
 
 
   let code_of_kind = function
     | IncompatibleVariableType _ -> 3001
+    | IncompatibleParameterType _ -> 3002
 
 
   let name_of_kind = function
     | IncompatibleVariableType _ -> "ReadOnly violation - Incompatible variable type"
+    | IncompatibleParameterType _ -> "ReadOnly violation - Incompatible parameter type"
 end
 
 type invalid_decoration =
@@ -932,19 +1010,6 @@ let rec messages ~concise ~signature location kind =
   in
   let show_sanitized_optional_expression expression =
     expression >>| show_sanitized_expression >>| Format.sprintf " `%s`" |> Option.value ~default:""
-  in
-  let ordinal number =
-    let suffix =
-      if number % 10 = 1 && number % 100 <> 11 then
-        "st"
-      else if number % 10 = 2 && number % 100 <> 12 then
-        "nd"
-      else if number % 10 = 3 && number % 100 <> 13 then
-        "rd"
-      else
-        "th"
-    in
-    string_of_int number ^ suffix
   in
   let invariance_message =
     "See https://pyre-check.org/docs/errors#covariance-and-contravariance"

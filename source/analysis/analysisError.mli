@@ -265,6 +265,12 @@ module ReadOnly : sig
         incompatible_type: incompatible_type;
         declare_location: Location.WithPath.t;
       }
+    | IncompatibleParameterType of {
+        name: Identifier.t option;
+        position: int;
+        callee: Reference.t option;
+        mismatch: mismatch;
+      }
   [@@deriving compare, sexp, show, hash]
 end
 

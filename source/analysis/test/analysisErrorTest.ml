@@ -950,6 +950,30 @@ let test_description _ =
              };
        })
     "Undefined attribute [16]: Callable `named` has no attribute `at`.";
+  assert_messages
+    (ReadOnlynessMismatch
+       (IncompatibleParameterType
+          {
+            name = Some "my_name";
+            position = 1;
+            callee = Some !&"my_callee";
+            mismatch =
+              { Error.ReadOnly.actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
+          }))
+    "ReadOnly violation - Incompatible parameter type [3002]: In call `my_callee`, for 1st \
+     parameter `my_name` expected `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+  assert_messages
+    (ReadOnlynessMismatch
+       (IncompatibleParameterType
+          {
+            name = None;
+            position = 1;
+            callee = None;
+            mismatch =
+              { Error.ReadOnly.actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
+          }))
+    "ReadOnly violation - Incompatible parameter type [3002]: In anonymous call, for 1st \
+     positional only parameter expected `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
   ()
 
 
