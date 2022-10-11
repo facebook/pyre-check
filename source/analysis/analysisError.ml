@@ -311,6 +311,46 @@ module ReadOnly = struct
               actual
         in
         [message]
+
+
+  let join left right =
+    match left, right with
+    | ( IncompatibleVariableType
+          ({
+             incompatible_type =
+               {
+                 name = left_name;
+                 mismatch = { actual = left_actual; expected = left_expected };
+                 _;
+               } as left_incompatible_type;
+             _;
+           } as left),
+        IncompatibleVariableType
+          {
+            incompatible_type =
+              {
+                name = right_name;
+                mismatch = { actual = right_actual; expected = right_expected };
+                _;
+              };
+            _;
+          } )
+      when Reference.equal left_name right_name ->
+        IncompatibleVariableType
+          {
+            left with
+            incompatible_type =
+              {
+                left_incompatible_type with
+                mismatch =
+                  {
+                    actual = ReadOnlyness.join left_actual right_actual;
+                    expected = ReadOnlyness.join left_expected right_expected;
+                  };
+              };
+          }
+        |> Option.some
+    | _ -> None
 end
 
 type invalid_decoration =
@@ -2824,6 +2864,18 @@ let join ~resolution left right =
       thrown_at_source = left.thrown_at_source || right.thrown_at_source;
     }
   in
+  let default_error_output () =
+    let { location; _ } = left in
+    Log.debug
+      "Incompatible type in error join at %a: %a %a"
+      Location.WithModule.pp
+      location
+      pp_kind
+      left.kind
+      pp_kind
+      right.kind;
+    Top
+  in
   let kind =
     match left.kind, right.kind with
     | AnalysisFailure left, AnalysisFailure right when [%compare.equal: analysis_failure] left right
@@ -2916,43 +2968,10 @@ let join ~resolution left right =
             annotation_kind = annotation_kind_left;
             missing_annotation = join_missing_annotation left right;
           }
-    | ( ReadOnlynessMismatch
-          (IncompatibleVariableType
-            ({
-               incompatible_type =
-                 {
-                   name = left_name;
-                   mismatch = { actual = left_actual; expected = left_expected };
-                   _;
-                 } as left_incompatible_type;
-               _;
-             } as left)),
-        ReadOnlynessMismatch
-          (IncompatibleVariableType
-            {
-              incompatible_type =
-                {
-                  name = right_name;
-                  mismatch = { actual = right_actual; expected = right_expected };
-                  _;
-                };
-              _;
-            }) )
-      when Reference.equal left_name right_name ->
-        ReadOnlynessMismatch
-          (IncompatibleVariableType
-             {
-               left with
-               incompatible_type =
-                 {
-                   left_incompatible_type with
-                   mismatch =
-                     {
-                       actual = ReadOnlyness.join left_actual right_actual;
-                       expected = ReadOnlyness.join left_expected right_expected;
-                     };
-                 };
-             })
+    | ReadOnlynessMismatch left, ReadOnlynessMismatch right -> (
+        match ReadOnly.join left right with
+        | Some joined -> ReadOnlynessMismatch joined
+        | None -> default_error_output ())
     | RedundantCast left, RedundantCast right ->
         RedundantCast (GlobalResolution.join resolution left right)
     | RevealedLocals left, RevealedLocals right
@@ -3310,16 +3329,7 @@ let join ~resolution left right =
     | UnsupportedOperand _, _
     | UnusedIgnore _, _
     | UnusedLocalMode _, _ ->
-        let { location; _ } = left in
-        Log.debug
-          "Incompatible type in error join at %a: %a %a"
-          Location.WithModule.pp
-          location
-          pp_kind
-          left.kind
-          pp_kind
-          right.kind;
-        Top
+        default_error_output ()
   in
   let location =
     if Location.WithModule.compare left.location right.location <= 0 then
