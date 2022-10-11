@@ -153,13 +153,26 @@ let location_insensitive_compare_reasons
 let empty_reasons = { arity = []; annotation = [] }
 
 module ParameterArgumentMapping = struct
-  type t = {
-    parameter_argument_mapping: Type.t matched_argument list Type.Callable.Parameter.Map.t;
+  type 'argument_type t = {
+    parameter_argument_mapping: 'argument_type matched_argument list Type.Callable.Parameter.Map.t;
     reasons: reasons;
   }
-  [@@deriving compare]
 
-  let pp format { parameter_argument_mapping; reasons } =
+  let empty =
+    { parameter_argument_mapping = Type.Callable.Parameter.Map.empty; reasons = empty_reasons }
+
+
+  let equal_mapping_with_resolved_type
+      ({ parameter_argument_mapping = left_mapping; reasons = left_reasons } : Type.t t)
+      { parameter_argument_mapping = right_mapping; reasons = right_reasons }
+    =
+    [%compare.equal: Type.t matched_argument list Type.Callable.Parameter.Map.t]
+      left_mapping
+      right_mapping
+    && [%compare.equal: reasons] left_reasons right_reasons
+
+
+  let pp_with_resolved_type format { parameter_argument_mapping; reasons } =
     Format.fprintf
       format
       "ParameterArgumentMapping { parameter_argument_mapping: %s; reasons: %a }"

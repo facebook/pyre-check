@@ -117,9 +117,9 @@ let test_get_parameter_argument_mapping _ =
         arguments
     in
     assert_equal
-      ~pp_diff:(diff ~print:ParameterArgumentMapping.pp)
-      ~printer:[%show: ParameterArgumentMapping.t]
-      ~cmp:[%compare.equal: ParameterArgumentMapping.t]
+      ~pp_diff:(diff ~print:ParameterArgumentMapping.pp_with_resolved_type)
+      ~printer:(Format.asprintf "%a" ParameterArgumentMapping.pp_with_resolved_type)
+      ~cmp:ParameterArgumentMapping.equal_mapping_with_resolved_type
       expected
       actual
   in

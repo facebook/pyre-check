@@ -88,13 +88,16 @@ val empty_reasons : reasons
 val location_insensitive_compare_reasons : reasons -> reasons -> int
 
 module ParameterArgumentMapping : sig
-  type t = {
-    parameter_argument_mapping: Type.t matched_argument list Type.Callable.Parameter.Map.t;
+  type 'argument_type t = {
+    parameter_argument_mapping: 'argument_type matched_argument list Type.Callable.Parameter.Map.t;
     reasons: reasons;
   }
-  [@@deriving compare]
 
-  val pp : Format.formatter -> t -> unit
+  val empty : Type.t t
+
+  val equal_mapping_with_resolved_type : Type.t t -> Type.t t -> bool
+
+  val pp_with_resolved_type : Format.formatter -> Type.t t -> unit
 end
 
 type ranks = {
@@ -121,9 +124,9 @@ module SignatureSelection : sig
   val get_parameter_argument_mapping
     :  all_parameters:Type.t Type.Callable.record_parameters ->
     parameters:Type.t Type.Callable.RecordParameter.t list ->
-    self_argument:Type.t option ->
-    Type.t Argument.WithPosition.t list ->
-    ParameterArgumentMapping.t
+    self_argument:'argument_type option ->
+    'argument_type Argument.WithPosition.t list ->
+    'argument_type ParameterArgumentMapping.t
 
   val check_arguments_against_parameters
     :  order:ConstraintsSet.order ->
@@ -135,7 +138,7 @@ module SignatureSelection : sig
       WeakenMutableLiterals.weakened_type) ->
     resolve_with_locals:(locals:(Reference.t * Annotation.t) list -> Expression.t -> Type.t) ->
     callable:Type.Callable.t ->
-    ParameterArgumentMapping.t ->
+    Type.t ParameterArgumentMapping.t ->
     signature_match
 
   val find_closest_signature : signature_match list -> signature_match option
