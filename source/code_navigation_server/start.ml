@@ -57,9 +57,15 @@ let handle_subscription
   block_until_disconnect ()
 
 
+let handle_request_and_stop_if_necessary ~server request =
+  match%lwt RequestHandler.handle_request ~server request with
+  | Result.Error reason -> Server.Stop.stop_waiting_server reason
+  | Result.Ok response -> Lwt.return response
+
+
 let handle_request ~server ~output_channel request =
   Log.info "Processing request `%a`" Sexp.pp (Request.sexp_of_t request);
-  let%lwt response = RequestHandler.handle_request ~server request in
+  let%lwt response = handle_request_and_stop_if_necessary ~server request in
   let raw_response = Response.to_string response in
   Log.info "Request processed. Response: `%s`" raw_response;
   LwtInputOutput.write_line_ignoring_errors ~output_channel raw_response
@@ -104,8 +110,8 @@ let on_watchman_update ~server paths =
     { Request.FileUpdateEvent.kind; path = PyrePath.absolute path }
   in
   let update_request = Request.FileUpdate (List.map paths ~f:create_file_update_event) in
-  let%lwt _ = RequestHandler.handle_request ~server update_request in
   (* File watcher does not care about the content of the the response. *)
+  let%lwt _ = handle_request_and_stop_if_necessary ~server update_request in
   Lwt.return_unit
 
 

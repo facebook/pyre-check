@@ -213,30 +213,36 @@ let response_from_result = function
 
 
 let handle_request ~server:{ ServerInternal.state; subscriptions; _ } = function
-  | Request.Stop -> Server.Stop.stop_waiting_server Server.Stop.Reason.ExplicitRequest
+  | Request.Stop -> Lwt.return_error Server.Stop.Reason.ExplicitRequest
   | Request.GetTypeErrors { module_; overlay_id } ->
       let f state =
-        handle_get_type_errors ~module_ ~overlay_id state |> response_from_result |> Lwt.return
+        let response = handle_get_type_errors ~module_ ~overlay_id state |> response_from_result in
+        Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f
   | Request.Hover { module_; position; overlay_id } ->
       let f state =
-        handle_hover ~module_ ~position ~overlay_id state |> response_from_result |> Lwt.return
+        let response = handle_hover ~module_ ~position ~overlay_id state |> response_from_result in
+        Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f
   | Request.LocationOfDefinition { module_; position; overlay_id } ->
       let f state =
-        handle_location_of_definition ~module_ ~position ~overlay_id state
-        |> response_from_result
-        |> Lwt.return
+        let response =
+          handle_location_of_definition ~module_ ~position ~overlay_id state |> response_from_result
+        in
+        Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f
   | Request.LocalUpdate { module_; content; overlay_id } ->
-      let f state = handle_local_update ~module_ ~content ~overlay_id ~subscriptions state in
+      let f state =
+        let%lwt response = handle_local_update ~module_ ~content ~overlay_id ~subscriptions state in
+        Lwt.return_ok response
+      in
       Server.ExclusiveLock.read state ~f
   | Request.FileUpdate events ->
       let f state =
         let%lwt () = handle_file_update ~events ~subscriptions state in
-        Lwt.return Response.Ok
+        Lwt.return_ok Response.Ok
       in
       Server.ExclusiveLock.read state ~f
