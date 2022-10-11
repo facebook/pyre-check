@@ -18,6 +18,15 @@ module Type = struct
   let compare = Type.namespace_insensitive_compare
 end
 
+let pp_type ~concise = if concise then Type.pp_concise else Type.pp
+
+let pp_reference ~concise format reference =
+  if concise then
+    Reference.last reference |> Reference.create |> Reference.pp_sanitized format
+  else
+    Reference.pp_sanitized format reference
+
+
 (* The `name` field conflicts with that defined in incompatible_type. *)
 type missing_annotation = {
   name: Reference.t;
@@ -277,6 +286,31 @@ module ReadOnly = struct
         declare_location: Location.WithPath.t;
       }
   [@@deriving compare, sexp, show, hash]
+
+  let error_messages ~concise = function
+    | IncompatibleVariableType
+        { incompatible_type = { name; mismatch = { actual; expected }; _ }; _ } ->
+        let message =
+          if concise then
+            Format.asprintf
+              "%a has readonlyness `%a`; used as `%a`."
+              (pp_reference ~concise)
+              name
+              ReadOnlyness.pp
+              expected
+              ReadOnlyness.pp
+              actual
+          else
+            Format.asprintf
+              "%a is declared to have readonlyness `%a` but is used as readonlyness `%a`."
+              (pp_reference ~concise)
+              name
+              ReadOnlyness.pp
+              expected
+              ReadOnlyness.pp
+              actual
+        in
+        [message]
 end
 
 type invalid_decoration =
@@ -868,13 +902,8 @@ let rec messages ~concise ~signature location kind =
     "See https://pyre-check.org/docs/errors#covariance-and-contravariance"
     ^ " for mutable container errors."
   in
-  let pp_type = if concise then Type.pp_concise else Type.pp in
-  let pp_reference format reference =
-    if concise then
-      Reference.last reference |> Reference.create |> Reference.pp_sanitized format
-    else
-      Reference.pp_sanitized format reference
-  in
+  let pp_type = pp_type ~concise in
+  let pp_reference = pp_reference ~concise in
   let pp_identifier = Identifier.pp_sanitized in
   let kind = weaken_literals kind in
   let kind = simplify_kind kind in
@@ -2097,30 +2126,7 @@ let rec messages ~concise ~signature location kind =
           [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
       | TypeAlias, _ ->
           [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name])
-  | ReadOnlynessMismatch
-      (IncompatibleVariableType
-        { incompatible_type = { name; mismatch = { actual; expected }; _ }; _ }) ->
-      let message =
-        if concise then
-          Format.asprintf
-            "%a has readonlyness `%a`; used as `%a`."
-            pp_reference
-            name
-            ReadOnlyness.pp
-            expected
-            ReadOnlyness.pp
-            actual
-        else
-          Format.asprintf
-            "%a is declared to have readonlyness `%a` but is used as readonlyness `%a`."
-            pp_reference
-            name
-            ReadOnlyness.pp
-            expected
-            ReadOnlyness.pp
-            actual
-      in
-      [message]
+  | ReadOnlynessMismatch kind -> ReadOnly.error_messages ~concise kind
   | RedefinedClass { shadowed_class; _ } when concise ->
       [Format.asprintf "Class `%a` redefined" pp_reference shadowed_class]
   | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported } ->
