@@ -15,7 +15,7 @@ module TypeOperation : sig
   module Compose : sig
     val compose_list
       :  signature_select:
-           (arguments:AttributeResolution.Argument.t list ->
+           (arguments:Type.t AttributeResolution.Argument.t list ->
            callable:Type.Callable.t ->
            self_argument:Type.t option ->
            SignatureSelectionTypes.instantiated_return_annotation) ->

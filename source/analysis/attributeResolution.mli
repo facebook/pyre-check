@@ -47,26 +47,26 @@ type type_parameters_mismatch = {
 [@@deriving compare, sexp, show, hash]
 
 module Argument : sig
-  type t = {
+  type 'argument_type t = {
     expression: Expression.t option;
     kind: Ast.Expression.Call.Argument.kind;
-    resolved: Type.t;
+    resolved: 'argument_type;
   }
 
   module WithPosition : sig
-    type t = {
+    type 'argument_type t = {
       position: int;
       expression: Expression.t option;
       kind: Ast.Expression.Call.Argument.kind;
-      resolved: Type.t;
+      resolved: 'argument_type;
     }
     [@@deriving compare, show]
   end
 end
 
-type matched_argument =
+type 'argument_type matched_argument =
   | MatchedArgument of {
-      argument: Argument.WithPosition.t;
+      argument: 'argument_type Argument.WithPosition.t;
       index_into_starred_tuple: int option;
     }
   | Default
@@ -74,8 +74,8 @@ type matched_argument =
 
 val make_matched_argument
   :  ?index_into_starred_tuple:int ->
-  Argument.WithPosition.t ->
-  matched_argument
+  'argument_type Argument.WithPosition.t ->
+  'argument_type matched_argument
 
 type reasons = {
   arity: SignatureSelectionTypes.reason list;
@@ -89,7 +89,7 @@ val location_insensitive_compare_reasons : reasons -> reasons -> int
 
 module ParameterArgumentMapping : sig
   type t = {
-    parameter_argument_mapping: matched_argument list Type.Callable.Parameter.Map.t;
+    parameter_argument_mapping: Type.t matched_argument list Type.Callable.Parameter.Map.t;
     reasons: reasons;
   }
   [@@deriving compare]
@@ -105,7 +105,7 @@ type ranks = {
 
 type signature_match = {
   callable: Type.Callable.t;
-  parameter_argument_mapping: matched_argument list Type.Callable.Parameter.Map.t;
+  parameter_argument_mapping: Type.t matched_argument list Type.Callable.Parameter.Map.t;
   constraints_set: TypeConstraints.t list;
   ranks: ranks;
   reasons: reasons;
@@ -114,15 +114,15 @@ type signature_match = {
 
 module SignatureSelection : sig
   val prepare_arguments_for_signature_selection
-    :  self_argument:Type.t option ->
-    Argument.t list ->
-    Argument.WithPosition.t list
+    :  self_argument:'argument_type option ->
+    'argument_type Argument.t list ->
+    'argument_type Argument.WithPosition.t list
 
   val get_parameter_argument_mapping
     :  all_parameters:Type.t Type.Callable.record_parameters ->
     parameters:Type.t Type.Callable.RecordParameter.t list ->
     self_argument:Type.t option ->
-    Argument.WithPosition.t list ->
+    Type.t Argument.WithPosition.t list ->
     ParameterArgumentMapping.t
 
   val check_arguments_against_parameters
@@ -240,7 +240,7 @@ module AttributeReadOnly : sig
     ?dependency:DependencyKey.registered ->
     resolve_with_locals:
       (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
-    arguments:Argument.t list ->
+    arguments:Type.t Argument.t list ->
     callable:Type.Callable.t ->
     self_argument:Type.t option ->
     SignatureSelectionTypes.instantiated_return_annotation

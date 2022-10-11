@@ -226,7 +226,7 @@ val signature_select
   :  global_resolution:t ->
   resolve_with_locals:
     (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
-  arguments:AttributeResolution.Argument.t list ->
+  arguments:Type.t AttributeResolution.Argument.t list ->
   callable:Type.Callable.t ->
   self_argument:Type.t option ->
   SignatureSelectionTypes.instantiated_return_annotation

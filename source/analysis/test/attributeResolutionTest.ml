@@ -18,8 +18,8 @@ let test_prepare_arguments_for_signature_selection _ =
       SignatureSelection.prepare_arguments_for_signature_selection ~self_argument arguments
     in
     assert_equal
-      ~printer:[%show: Argument.WithPosition.t list]
-      ~cmp:[%compare.equal: Argument.WithPosition.t list]
+      ~printer:[%show: Type.t Argument.WithPosition.t list]
+      ~cmp:[%compare.equal: Type.t Argument.WithPosition.t list]
       expected
       actual
   in

@@ -57,7 +57,7 @@ end
 
 val unpack_callable_and_self_argument
   :  signature_select:
-       (arguments:AttributeResolution.Argument.t list ->
+       (arguments:Type.t AttributeResolution.Argument.t list ->
        callable:Type.Callable.t ->
        self_argument:Type.t option ->
        SignatureSelectionTypes.instantiated_return_annotation) ->
