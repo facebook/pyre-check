@@ -66,8 +66,16 @@ let test_find_globals context =
           })
         expected
     in
+    let variable_metadata_location_insensitive_equal left right =
+      Reference.equal left.TaintModelQuery.ModelQuery.name right.TaintModelQuery.ModelQuery.name
+      && Option.compare
+           Expression.Expression.location_insensitive_compare
+           left.TaintModelQuery.ModelQuery.type_annotation
+           right.TaintModelQuery.ModelQuery.type_annotation
+         = 0
+    in
     assert_equal
-      ~cmp:[%compare.equal: TaintModelQuery.ModelQuery.variable_metadata list]
+      ~cmp:(List.equal variable_metadata_location_insensitive_equal)
       ~printer:[%show: TaintModelQuery.ModelQuery.variable_metadata list]
       expected
       actual
@@ -75,22 +83,29 @@ let test_find_globals context =
   assert_found_globals
     ~source:{|
       foo = []
+      bar: typing.List[typing.Any] = []
     |}
-    ~expected:[!&"test.foo", Some (Type.list Type.Any)];
+    ~expected:[!&"test.foo", None; !&"test.bar", Some (Type.list Type.Any)];
   (* Note that functions are not selected *)
   assert_found_globals ~source:{|
       def foo():
         pass
     |} ~expected:[];
   assert_found_globals
-    ~source:{|
+    ~source:
+      {|
       foo = []
       bar = {}
+
+      baz: typing.List[typing.Any] = []
+      abc: typing.Dict[typing.Any, typing.Any] = {}
     |}
     ~expected:
       [
-        !&"test.foo", Some (Type.list Type.Any);
-        !&"test.bar", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
+        !&"test.foo", None;
+        !&"test.bar", None;
+        !&"test.baz", Some (Type.list Type.Any);
+        !&"test.abc", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
       ];
   (* TODO(T132423781): Classes are not recognized as globals *)
   assert_found_globals
@@ -102,21 +117,32 @@ let test_find_globals context =
     |}
     ~expected:[];
   assert_found_globals
-    ~source:{|
+    ~source:
+      {|
       class C:
         def f():
           pass
       c = C()
+      annotated_c: C = C()
     |}
-    ~expected:[!&"test.c", Some (Type.Primitive "test.C")];
+    ~expected:[!&"test.c", None; !&"test.annotated_c", Some (Type.Primitive "test.C")];
   assert_found_globals
-    ~source:{|
+    ~source:
+      {|
       x, y = [], {}
+
+      annotated_x: typing.List[typing.Any]
+      annotated_y: typing.Dict[typing.Any, typing.Any]
+      annotated_x, annotated_y = [], {}
     |}
     ~expected:
       [
-        !&"test.x", Some (Type.list Type.Any);
-        !&"test.y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
+        !&"test.x", None;
+        !&"test.y", None;
+        !&"test.annotated_x", Some (Type.list Type.Any);
+        !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
+        !&"test.annotated_x", Some (Type.list Type.Any);
+        !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
       ];
   assert_found_globals
     ~source:
@@ -130,7 +156,7 @@ let test_find_globals context =
     ~expected:
       [
         !&"test.global_1", Some (Type.dictionary ~key:Type.string ~value:Type.integer);
-        !&"test.global_2", Some Type.Any;
+        !&"test.global_2", None;
       ];
   assert_found_globals
     ~source:
@@ -157,34 +183,27 @@ let test_find_globals context =
 
       y = fun
 
-      z = fun(1, "2")
-      a: int = fun(1, "2")
+      a = fun(1, "2")
+      b: int = fun(1, "2")
       |}
-    ~expected:
-      [
-        !&"test.x", Some Type.Any;
-        ( !&"test.y",
-          Some
-            (Type.Callable.create
-               ~name:!&"test.fun"
-               ~parameters:
-                 (Type.Record.Callable.Defined
-                    (Type.Callable.Parameter.create
-                       [
-                         { name = "$parameter$x"; annotation = Type.integer; default = false };
-                         { name = "$parameter$y"; annotation = Type.string; default = false };
-                       ]))
-               ~annotation:Type.integer
-               ()) );
-        !&"test.z", Some Type.Any;
-        !&"test.a", Some Type.integer;
-      ];
+    ~expected:[!&"test.x", None; !&"test.y", None; !&"test.a", None; !&"test.b", Some Type.integer];
   assert_found_globals
     ~source:{|
     x = 1
     x = "abc"
+
+    y: int = 1
+    y = "abc"
+    y: str = "abc"
     |}
-    ~expected:[!&"test.x", Some Type.integer; !&"test.x", Some Type.integer];
+    ~expected:
+      [
+        !&"test.x", None;
+        !&"test.x", None;
+        !&"test.y", Some Type.integer;
+        !&"test.y", Some Type.integer;
+        !&"test.y", Some Type.integer;
+      ];
   ()
 
 
