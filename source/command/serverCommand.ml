@@ -202,21 +202,11 @@ module ServerConfiguration = struct
       }
 end
 
-module ErrorKind = struct
-  type t =
-    | Watchman
-    | BuckInternal
-    | BuckUser
-    | Pyre
-    | Unknown
-  [@@deriving sexp, compare, hash, to_yojson]
-end
-
 module ServerEvent = struct
   type t =
     | SocketCreated of PyrePath.t
     | ServerInitialized
-    | Exception of string * ErrorKind.t
+    | Exception of string * Server.ServerError.Kind.t
   [@@deriving sexp, compare, hash, to_yojson]
 
   let serialize event = to_yojson event |> Yojson.Safe.to_string
@@ -225,64 +215,6 @@ module ServerEvent = struct
     let open Lwt.Infix in
     serialize event |> Lwt_io.fprintl output_channel >>= fun () -> Lwt_io.flush output_channel
 end
-
-let error_kind_and_message_from_exception = function
-  | Buck.Raw.BuckError { buck_command; arguments; description; exit_code; additional_logs } ->
-      (* Buck exit code >=10 are considered internal: https://buck.build/command/exit_codes.html *)
-      let kind =
-        match exit_code with
-        | Some exit_code when exit_code < 10 -> ErrorKind.BuckUser
-        | _ -> ErrorKind.BuckInternal
-      in
-      let reproduce_message =
-        if Buck.Raw.ArgumentList.length arguments <= 20 then
-          [
-            Format.sprintf
-              "To reproduce this error, run `%s`."
-              (Buck.Raw.ArgumentList.to_buck_command ~buck_command arguments);
-          ]
-        else
-          []
-      in
-      let additional_messages =
-        if List.is_empty additional_logs then
-          []
-        else
-          "Here are the last few lines of Buck log:"
-          :: "  ..." :: List.map additional_logs ~f:(String.( ^ ) " ")
-      in
-      ( kind,
-        Format.sprintf
-          "Cannot build the project: %s.\n%s"
-          description
-          (String.concat ~sep:"\n" (List.append reproduce_message additional_messages)) )
-  | Buck.Interface.JsonError message ->
-      ( ErrorKind.Pyre,
-        Format.sprintf "Cannot build the project because Buck returns malformed JSON: %s" message )
-  | Buck.Builder.LinkTreeConstructionError message ->
-      ( ErrorKind.Pyre,
-        Format.sprintf
-          "Cannot build the project because Pyre encounters a fatal error while constructing a \
-           link tree: %s"
-          message )
-  | ChecksumMap.LoadError message ->
-      ( ErrorKind.Pyre,
-        Format.sprintf
-          "Cannot build the project because Pyre encounters a fatal error while loading external \
-           wheel: %s"
-          message )
-  | Watchman.ConnectionError message ->
-      ErrorKind.Watchman, Format.sprintf "Watchman connection error: %s" message
-  | Watchman.SubscriptionError message ->
-      ErrorKind.Watchman, Format.sprintf "Watchman subscription error: %s" message
-  | Watchman.QueryError message ->
-      ErrorKind.Watchman, Format.sprintf "Watchman query error: %s" message
-  | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
-      ( ErrorKind.Pyre,
-        "A Pyre server is already running for the current project. Use `pyre stop` to stop it \
-         before starting another one." )
-  | _ -> ErrorKind.Unknown, Printexc.get_backtrace ()
-
 
 let start_server_and_wait ~event_channel server_configuration =
   let open Lwt.Infix in
@@ -324,9 +256,9 @@ let start_server_and_wait ~event_channel server_configuration =
           let message =
             Format.sprintf "Server process get interrputed with signal %s" (Signal.to_string signal)
           in
-          handle_error ~kind:ErrorKind.Pyre ~message ()
+          handle_error ~kind:Server.ServerError.Kind.Pyre ~message ()
       | exn ->
-          let kind, message = error_kind_and_message_from_exception exn in
+          let kind, message = Server.ServerError.kind_and_message_from_exception exn in
           handle_error ~kind ~message ())
 
 

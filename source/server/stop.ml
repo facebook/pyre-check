@@ -21,16 +21,16 @@ module Reason = struct
     | UncaughtException _ -> "uncaught exception"
 
 
-  let origin_of_exception = function
-    | Buck.Raw.BuckError _
-    | Buck.Interface.JsonError _
-    | Buck.Builder.LinkTreeConstructionError _ ->
+  let origin_of_exception exn =
+    let kind, _ = ServerError.kind_and_message_from_exception exn in
+    match kind with
+    | ServerError.Kind.Watchman -> "watchman"
+    | ServerError.Kind.BuckInternal
+    | ServerError.Kind.BuckUser ->
         "buck"
-    | Watchman.ConnectionError _
-    | Watchman.SubscriptionError _
-    | Watchman.QueryError _ ->
-        "watchman"
-    | _ -> "server"
+    | ServerError.Kind.Pyre
+    | ServerError.Kind.Unknown ->
+        "server"
 
 
   let message_of = function
