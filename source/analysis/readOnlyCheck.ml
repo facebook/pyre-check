@@ -11,6 +11,7 @@ open Pyre
 open Expression
 open Statement
 module Error = AnalysisError
+module TypeResolution = Resolution
 
 module Resolution = struct
   include
@@ -57,6 +58,8 @@ module type Context = sig
 
   (* Where to store errors found during the fixpoint. `None` discards them. *)
   val error_map : LocalErrorMap.t option
+
+  val local_annotations : LocalAnnotationMap.ReadOnly.t option
 end
 
 module State (Context : Context) = struct
@@ -81,7 +84,7 @@ module State (Context : Context) = struct
 
   let widen ~previous ~next ~iteration = widen ~prev:previous ~next ~iteration
 
-  let forward_expression ~resolution { Node.value; _ } =
+  let forward_expression ~type_resolution:_ ~resolution { Node.value; _ } =
     let open ReadOnlyness in
     match value with
     | Expression.Constant _ ->
@@ -98,6 +101,7 @@ module State (Context : Context) = struct
 
 
   let forward_assignment
+      ~type_resolution
       ~resolution
       ~location
       ~target:{ Node.value = target; location = target_location }
@@ -110,7 +114,7 @@ module State (Context : Context) = struct
         match name_to_reference target with
         | Some name ->
             let { Resolved.resolved = actual_readonlyness; errors; resolution } =
-              forward_expression ~resolution value
+              forward_expression ~type_resolution ~resolution value
             in
             let expected_readonlyness =
               annotation
@@ -158,18 +162,30 @@ module State (Context : Context) = struct
     | _ -> resolution, []
 
 
-  let forward_statement ~state ~statement:{ Node.value; location } =
+  let forward_statement ~type_resolution ~state ~statement:{ Node.value; location } =
     let resolution = state in
     match value with
     | Statement.Assign { Assign.target; annotation; value } ->
-        forward_assignment ~resolution ~location ~target ~annotation ~value
+        forward_assignment ~type_resolution ~resolution ~location ~target ~annotation ~value
     | _ -> state, []
 
 
   let initial = Resolution.of_list []
 
   let forward ~statement_key state ~statement =
-    let new_state, errors = forward_statement ~state ~statement in
+    let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
+      Context.define
+    in
+    let type_resolution =
+      TypeCheck.resolution_with_key
+        ~global_resolution:Context.global_resolution
+        ~local_annotations:Context.local_annotations
+        ~parent
+        ~statement_key
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
+    in
+    let new_state, errors = forward_statement ~type_resolution ~state ~statement in
     let () =
       let _ = Context.error_map >>| LocalErrorMap.set ~statement_key ~errors in
       ()
@@ -190,6 +206,11 @@ let readonly_errors_for_define ~type_environment ~qualifier define =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment
 
     let error_map = Some (LocalErrorMap.empty ())
+
+    let local_annotations =
+      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
+        type_environment
+        (Node.value define |> Define.name)
   end
   in
   let module State = State (Context) in

@@ -9,13 +9,25 @@ open Core
 open OUnit2
 open Ast
 open Analysis
+open Statement
 open Test
 open ReadOnlyCheck
 open ReadOnlyness
 
 let test_forward_expression context =
-  let global_resolution =
-    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+  let global_resolution, type_environment =
+    let project = ScratchProject.setup ~context [] in
+    ScratchProject.build_global_resolution project, ScratchProject.type_environment project
+  in
+  let dummy_statement_key = 0 in
+  let type_resolution =
+    TypeCheck.resolution_with_key
+      ~global_resolution
+      ~local_annotations:None
+      ~parent:None
+      ~statement_key:dummy_statement_key
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
   in
   let module Context = struct
     let qualifier = !&"test"
@@ -30,12 +42,17 @@ let test_forward_expression context =
     let error_map = Some (LocalErrorMap.empty ())
 
     let global_resolution = global_resolution
+
+    let local_annotations =
+      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
+        type_environment
+        (Node.value define |> Define.name)
   end
   in
   let module State = State (Context) in
   let assert_resolved ?(resolution = Resolution.of_list []) expression expected_type =
     let { Resolved.resolved; _ } =
-      parse_single_expression expression |> State.forward_expression ~resolution
+      parse_single_expression expression |> State.forward_expression ~type_resolution ~resolution
     in
     assert_equal ~cmp:[%compare.equal: t] ~printer:show expected_type resolved
   in

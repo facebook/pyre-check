@@ -9,6 +9,7 @@ open Ast
 open Core
 open Statement
 module Error = AnalysisError
+module TypeResolution = Resolution
 
 module Resolution : sig
   type t
@@ -47,10 +48,16 @@ module type Context = sig
   val global_resolution : GlobalResolution.t
 
   val error_map : LocalErrorMap.t option
+
+  val local_annotations : LocalAnnotationMap.ReadOnly.t option
 end
 
 module State (Context : Context) : sig
-  val forward_expression : resolution:Resolution.t -> Expression.t -> Resolved.t
+  val forward_expression
+    :  type_resolution:TypeResolution.t ->
+    resolution:Resolution.t ->
+    Expression.t ->
+    Resolved.t
 end
 
 val readonly_errors_for_define
