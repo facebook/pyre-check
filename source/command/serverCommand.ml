@@ -313,7 +313,7 @@ let start_server_and_wait ~event_channel server_configuration =
       let wait_forever, _ = Lwt.wait () in
       wait_forever)
     ~on_exception:(function
-      | Server.Start.ServerStopped -> Lwt.return ExitStatus.Ok
+      | Server.Start.ServerStopped _ -> Lwt.return ExitStatus.Ok
       | exn ->
           let kind, message = error_kind_and_message_from_exception exn in
           Log.info "%s" message;

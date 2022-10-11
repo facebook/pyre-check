@@ -151,7 +151,8 @@ let start_server
         [
           (* We rely on SIGINT for normal server shutdown. *)
           Server.Start.wait_for_signal [Signal.int] ~on_caught:(fun _ ->
-              Lwt.fail Server.Start.ServerStopped);
+              let stop_reason = Server.Stop.get_last_server_stop_reason () in
+              Lwt.fail (Server.Start.ServerStopped stop_reason));
           (* Getting these signals usually indicates something serious went wrong. *)
           Server.Start.wait_for_signal
             [Signal.abrt; Signal.term; Signal.quit; Signal.segv]

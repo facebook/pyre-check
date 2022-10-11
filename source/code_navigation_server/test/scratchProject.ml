@@ -196,7 +196,7 @@ let test_server_with ~style ~clients { context; start_options } =
         in
         iterate_list test_client clients)
   with
-  | Server.Start.ServerStopped -> Lwt.return_unit
+  | Server.Start.ServerStopped _ -> Lwt.return_unit
 
 
 let test_server_with_one_connection ~f =

@@ -213,7 +213,7 @@ let response_from_result = function
 
 
 let handle_request ~server:{ ServerInternal.state; subscriptions; _ } = function
-  | Request.Stop -> Server.Stop.stop_waiting_server ()
+  | Request.Stop -> Server.Stop.stop_waiting_server Server.Stop.Reason.ExplicitRequest
   | Request.GetTypeErrors { module_; overlay_id } ->
       let f state =
         handle_get_type_errors ~module_ ~overlay_id state |> response_from_result |> Lwt.return

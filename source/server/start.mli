@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-exception ServerStopped
+exception ServerStopped of Stop.Reason.t option
 
 exception ServerInterrupted of Core.Signal.t
 

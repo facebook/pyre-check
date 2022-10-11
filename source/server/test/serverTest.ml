@@ -187,7 +187,7 @@ module ScratchProject = struct
         | OUnitTest.OUnit_failure _ as exn ->
             (* We need to re-raise OUnit test failures since OUnit relies on it for error reporting. *)
             raise exn
-        | Start.ServerStopped ->
+        | Start.ServerStopped _ ->
             if expect_server_error then
               assert_failure "Test server unexpectedly stopped without error";
             Lwt.return_unit

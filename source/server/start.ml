@@ -9,7 +9,7 @@
 
 open Core
 
-exception ServerStopped
+exception ServerStopped of Stop.Reason.t option
 
 exception ServerInterrupted of Core.Signal.t
 
@@ -59,28 +59,16 @@ let handle_request ~properties ~state request =
         ~log_path:configuration.log_directory
         "Restarting Pyre server due to unexpected crash"
     in
-    let origin =
-      match exn with
-      | Buck.Raw.BuckError _
-      | Buck.Interface.JsonError _
-      | Buck.Builder.LinkTreeConstructionError _ ->
-          "buck"
-      | Watchman.ConnectionError _
-      | Watchman.SubscriptionError _
-      | Watchman.QueryError _ ->
-          "watchman"
-      | _ -> "server"
-    in
-    Statistics.log_exception exn ~fatal:true ~origin;
+    let reason = Stop.Reason.UncaughtException exn in
+    Statistics.log_exception exn ~fatal:true ~origin:(Stop.Reason.origin_of_exception exn);
     let subscriptions =
       let { ServerState.subscriptions; _ } = state in
       ServerState.Subscriptions.all subscriptions
     in
-    let message =
-      Format.sprintf "Pyre server stopped due to uncaught exception (origin: %s)" origin
-    in
-    Subscription.batch_send subscriptions ~response:(lazy (Response.Error message))
-    >>= fun () -> Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~properties ()
+    Subscription.batch_send
+      subscriptions
+      ~response:(lazy (Response.Error (Stop.Reason.message_of reason)))
+    >>= fun () -> Stop.log_and_stop_waiting_server ~reason ~properties ()
   in
   Lwt.catch
     (fun () ->
@@ -167,6 +155,7 @@ let handle_connection
               let response = RequestHandler.create_info_response server_properties in
               Lwt.return (connection_state, response)
           | ClientRequest.StopServer ->
+              let reason = Stop.Reason.ExplicitRequest in
               let subscriptions =
                 (* HACK(grievejia): Bypass the lock here because we do not want to block stop
                    request on other kinds of requests. It's ok in this case because we are only
@@ -181,15 +170,9 @@ let handle_connection
               in
               Subscription.batch_send
                 subscriptions
-                ~response:
-                  (lazy
-                    (Response.Error
-                       "Pyre server stopped because one client explicitly sent a `stop` request"))
+                ~response:(lazy (Response.Error (Stop.Reason.message_of reason)))
               >>= fun () ->
-              Stop.log_and_stop_waiting_server
-                ~reason:"explicit request"
-                ~properties:server_properties
-                ()
+              Stop.log_and_stop_waiting_server ~reason ~properties:server_properties ()
           | ClientRequest.Request request ->
               ExclusiveLock.Lazy.write server_state ~f:(fun state ->
                   handle_request ~properties:server_properties ~state request
@@ -550,7 +533,9 @@ let with_server
       let signal_waiters =
         [
           (* We rely on SIGINT for normal server shutdown. *)
-          wait_for_signal [Signal.int] ~on_caught:(fun _ -> Lwt.fail ServerStopped);
+          wait_for_signal [Signal.int] ~on_caught:(fun _ ->
+              let stop_reason = Stop.get_last_server_stop_reason () in
+              Lwt.fail (ServerStopped stop_reason));
           (* Getting these signals usually indicates something serious went wrong. *)
           wait_for_signal
             [Signal.abrt; Signal.term; Signal.quit; Signal.segv]

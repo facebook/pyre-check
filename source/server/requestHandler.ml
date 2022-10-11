@@ -111,15 +111,11 @@ let process_incremental_update_request
   let errors_environment = OverlaidEnvironment.root overlaid_environment in
   match CriticalFile.find critical_files ~within:paths with
   | Some path ->
-      let message =
-        Format.asprintf
-          "Pyre server needs to restart as it is notified on potential changes in `%a`"
-          PyrePath.pp
-          path
-      in
+      let reason = Stop.Reason.CriticalFileUpdate path in
+      let message = Stop.Reason.message_of reason in
       StartupNotification.produce ~log_path:configuration.log_directory message;
       Subscription.batch_send subscriptions ~response:(lazy (Response.Error message))
-      >>= fun () -> Stop.log_and_stop_waiting_server ~reason:"critical file update" ~properties ()
+      >>= fun () -> Stop.log_and_stop_waiting_server ~reason ~properties ()
   | None ->
       let source_path_events = List.map paths ~f:create_source_path_event in
       let create_status_update_response status = lazy (Response.StatusUpdate status) in

@@ -142,7 +142,7 @@ let start_server_and_wait code_navigation_configuration =
           let wait_forever, _ = Lwt.wait () in
           wait_forever))
     (function
-      | Server.Start.ServerStopped -> Lwt.return ServerCommand.ExitStatus.Ok
+      | Server.Start.ServerStopped _ -> Lwt.return ServerCommand.ExitStatus.Ok
       | exn ->
           let kind, message = ServerCommand.error_kind_and_message_from_exception exn in
           Log.error "%a %s" Sexp.pp_hum (ServerCommand.ErrorKind.sexp_of_t kind) message;
