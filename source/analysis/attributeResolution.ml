@@ -1148,6 +1148,30 @@ let callable_call_special_cases
 
 
 module SignatureSelection = struct
+  let prepare_arguments_for_signature_selection ~self_argument arguments =
+    let add_positions arguments =
+      let add_index index { Argument.expression; kind; resolved } =
+        { Argument.WithPosition.position = index + 1; expression; kind; resolved }
+      in
+      List.mapi ~f:add_index arguments
+    in
+    let separate_labeled_unlabeled_arguments arguments =
+      let is_labeled = function
+        | { Argument.WithPosition.kind = Named _; _ } -> true
+        | _ -> false
+      in
+      let labeled_arguments, unlabeled_arguments = arguments |> List.partition_tf ~f:is_labeled in
+      let self_argument =
+        self_argument
+        >>| (fun resolved ->
+              { Argument.WithPosition.position = 0; expression = None; kind = Positional; resolved })
+        |> Option.to_list
+      in
+      self_argument @ labeled_arguments @ unlabeled_arguments
+    in
+    arguments |> add_positions |> separate_labeled_unlabeled_arguments
+
+
   (** Return a mapping from each parameter to the arguments that may be assigned to it. Also include
       any error reasons when there are too many or too few arguments.
 
@@ -2292,30 +2316,6 @@ module SignatureSelection = struct
        in order to prefer the first defined overload *)
     |> List.rev
     |> List.hd
-
-
-  let prepare_arguments_for_signature_selection ~self_argument arguments =
-    let add_positions arguments =
-      let add_index index { Argument.expression; kind; resolved } =
-        { Argument.WithPosition.position = index + 1; expression; kind; resolved }
-      in
-      List.mapi ~f:add_index arguments
-    in
-    let separate_labeled_unlabeled_arguments arguments =
-      let is_labeled = function
-        | { Argument.WithPosition.kind = Named _; _ } -> true
-        | _ -> false
-      in
-      let labeled_arguments, unlabeled_arguments = arguments |> List.partition_tf ~f:is_labeled in
-      let self_argument =
-        self_argument
-        >>| (fun resolved ->
-              { Argument.WithPosition.position = 0; expression = None; kind = Positional; resolved })
-        |> Option.to_list
-      in
-      self_argument @ labeled_arguments @ unlabeled_arguments
-    in
-    arguments |> add_positions |> separate_labeled_unlabeled_arguments
 end
 
 class base class_metadata_environment dependency =

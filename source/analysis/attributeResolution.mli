@@ -113,6 +113,11 @@ type signature_match = {
 [@@deriving compare, show]
 
 module SignatureSelection : sig
+  val prepare_arguments_for_signature_selection
+    :  self_argument:Type.t option ->
+    Argument.t list ->
+    Argument.WithPosition.t list
+
   val get_parameter_argument_mapping
     :  all_parameters:Type.t Type.Callable.record_parameters ->
     parameters:Type.t Type.Callable.RecordParameter.t list ->
@@ -132,11 +137,6 @@ module SignatureSelection : sig
     callable:Type.Callable.t ->
     ParameterArgumentMapping.t ->
     signature_match
-
-  val prepare_arguments_for_signature_selection
-    :  self_argument:Type.t option ->
-    Argument.t list ->
-    Argument.WithPosition.t list
 
   val find_closest_signature : signature_match list -> signature_match option
 
