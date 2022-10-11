@@ -2,10 +2,65 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "model_query_global_variable.f",
-    "callable_line": 12,
+    "callable": "model_query_global_variable.$toplevel",
+    "callable_line": 1,
     "code": 1000,
-    "line": 13,
+    "line": 34,
+    "start": 11,
+    "end": 25,
+    "filename": "model_query_global_variable.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
+            ],
+            "root": {
+              "filename": "model_query_global_variable.py",
+              "line": 34,
+              "start": 11,
+              "end": 25
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+            ],
+            "root": {
+              "filename": "model_query_global_variable.py",
+              "line": 34,
+              "start": 11,
+              "end": 25
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_global_variable.$toplevel:1000:0:Call|_test_sink|0|formal(arg):4ea5c963c790b24efd9a07551eeb0aef"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_global_variable.f",
+    "callable_line": 13,
+    "code": 1000,
+    "line": 14,
     "start": 15,
     "end": 22,
     "filename": "model_query_global_variable.py",
@@ -20,7 +75,7 @@
             ],
             "root": {
               "filename": "model_query_global_variable.py",
-              "line": 13,
+              "line": 14,
               "start": 15,
               "end": 22
             }
@@ -36,7 +91,7 @@
             ],
             "root": {
               "filename": "model_query_global_variable.py",
-              "line": 13,
+              "line": 14,
               "start": 15,
               "end": 22
             }
@@ -58,9 +113,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_global_variable.g",
-    "callable_line": 21,
+    "callable_line": 26,
     "code": 1001,
-    "line": 22,
+    "line": 27,
     "start": 4,
     "end": 7,
     "filename": "model_query_global_variable.py",
@@ -80,7 +135,7 @@
             ],
             "root": {
               "filename": "model_query_global_variable.py",
-              "line": 22,
+              "line": 27,
               "start": 4,
               "end": 7
             }
@@ -96,7 +151,7 @@
             ],
             "root": {
               "filename": "model_query_global_variable.py",
-              "line": 22,
+              "line": 27,
               "start": 4,
               "end": 7
             }
@@ -129,6 +184,74 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{model_query_global_variable.typed_callable_assignment}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectIntAndStr" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.typed_global_callable}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectCallable" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.typed_global_dict}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "SelectDict" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.typed_global_lambda}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectCallable" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.world}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectIntAndStr" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Obj{os.environ}",
     "sources": [
       {
@@ -154,6 +277,19 @@
 {
   "kind": "model",
   "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "list.append",
     "sinks": [
       {
@@ -162,5 +298,72 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_global_variable.fun",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito": [
+              { "line": 49, "start": 15, "end": 21 },
+              { "line": 49, "start": 19, "end": 20 }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 49, "start": 11, "end": 12 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_global_variable.returns_any",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "SelectAny" } ], "decl": null } ]
+      }
+    ]
   }
 }

@@ -934,11 +934,15 @@ module GlobalVariableQueries = struct
   let rec global_matches_constraint
       query_constraint
       ~resolution
-      ~variable_metadata:({ name; _ } as variable_metadata)
+      ~variable_metadata:({ name; type_annotation = annotation } as variable_metadata)
     =
     match query_constraint with
     | ModelQuery.NameConstraint name_constraint ->
         matches_name_constraint ~name_constraint (Reference.show name)
+    | ModelQuery.AnnotationConstraint annotation_constraint ->
+        annotation
+        >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
+        |> Option.value ~default:false
     | ModelQuery.AnyOf constraints ->
         List.exists constraints ~f:(global_matches_constraint ~resolution ~variable_metadata)
     | ModelQuery.AllOf constraints ->

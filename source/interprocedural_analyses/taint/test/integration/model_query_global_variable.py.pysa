@@ -1,5 +1,6 @@
 def _test_sink(arg: TaintSink[Test]): ...
 def list.append(self: TaintSink[Test1]): ...
+def _test_source() -> TaintSource[Test]: ...
 
 ModelQuery(
   name = "get_environ",
@@ -29,10 +30,60 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_foo_by_type",
+  name = "get_hello_world",
   find = "globals",
-  where = [type_annotation.equals("typing.List[typing.Any]")],
+  where = [
+    AnyOf(
+      type_annotation.equals("str"),
+      type_annotation.equals("int"),
+    ),
+    name.matches("model_query_global_variable.*")
+  ],
   model = [
-    GlobalModel(TaintSource[Test]),
+    GlobalModel(TaintSource[SelectIntAndStr]),
+  ]
+)
+
+ModelQuery(
+  name = "get_typed_dict",
+  find = "globals",
+  where = [type_annotation.equals("typing.Dict[(str, model_query_global_variable.Baz)]")],
+  model = [
+    GlobalModel(TaintSource[SelectDict]),
+  ]
+)
+
+ModelQuery(
+  name = "get_any_globals",
+  find = "globals",
+  where = [
+    type_annotation.equals("typing.Any"),
+    name.matches("model_query_global_variable.*")
+  ],
+  model = [
+    GlobalModel(TaintSource[SelectAny]),
+  ]
+)
+
+ModelQuery(
+  name = "get_any_functions",
+  find = "functions",
+  where = [
+    return_annotation.matches("typing.Any"),
+    name.matches("model_query_global_variable.*")
+  ],
+  model = [
+    Returns(TaintSource[SelectAny])
+  ]
+)
+
+ModelQuery(
+  name = "get_callables",
+  find = "globals",
+  where = [
+    type_annotation.equals("typing.Callable[([int, str], int)]"),
+  ],
+  model = [
+    GlobalModel(TaintSource[SelectCallable])
   ]
 )

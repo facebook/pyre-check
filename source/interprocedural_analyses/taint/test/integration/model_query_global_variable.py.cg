@@ -1,6 +1,8 @@
 @generated
 Call dependencies
-model_query_global_variable.$toplevel (fun) -> [model_query_global_variable.foo (object)]
+model_query_global_variable.$toplevel (fun) -> [_test_sink (fun) _test_source (fun) int::__init__ (method) model_query_global_variable.foo (object) model_query_global_variable.fun (fun) model_query_global_variable.returns_any (fun) model_query_global_variable.typed_callable_assignment (object) model_query_global_variable.typed_global_callable (object) model_query_global_variable.typed_global_dict (object) model_query_global_variable.typed_global_lambda (object) model_query_global_variable.world (object) object::__new__ (method)]
 model_query_global_variable.f (fun) -> [_test_sink (fun) os.environ (object)]
+model_query_global_variable.fun (fun) -> [int::__add__ (method) int::__init__ (method) object::__new__ (method)]
 model_query_global_variable.g (fun) -> [list::append (method) model_query_global_variable.foo (object)]
 model_query_global_variable.h (fun) -> [_test_sink (fun)]
+model_query_global_variable.returns_any (fun) -> [object::__init__ (method) object::__new__ (method)]
