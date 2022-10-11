@@ -63,7 +63,7 @@ The `name` clause describes what the query is meant to find.  Normally it follow
 
 ## Find clauses
 
-The `find` clause specifies what entities to model, and currently supports `"functions"`, `"methods"` and `"attributes"`. `"functions"` indicates that you're querying for free functions, `"methods"` indicates that you're only querying class methods, and `"attributes"` indicates that you're querying for attributes on classes.
+The `find` clause specifies what entities to model, and currently supports `"functions"`, `"methods"`, `"attributes"`, and `"globals"`. `"functions"` indicates that you're querying for free functions, `"methods"` indicates that you're only querying class methods, `"attributes"` indicates that you're querying for attributes on classes, and `"globals"` indicates that you're querying for names available in the global scope.
 
 Note that `"attributes"` also includes constructor-initialized attributes, such as `C.y` in the following case:
 ```python
@@ -72,6 +72,15 @@ class C:
 
   def __init__(self):
     self.y = ...
+```
+
+Note that `"globals"` currently don't infer the type annotation of their value, so querying is more effective when they're properly annotated.
+```python
+def fun(x: int, y: str) -> int:
+    return x + int(y)
+
+a = fun(1, "2") # -> typing.Any
+b: int = fun(1, "2") # -> int
 ```
 
 ## Where clauses
@@ -166,6 +175,73 @@ ModelQuery(
     return_annotation.is_annotated_type(),
   ],
   model = Returns(TaintSource[SQL])
+)
+```
+
+This query would match on functions like the one shown above.
+
+### `type_annotation` clauses
+
+Model queries allow for querying based on the type annotation of a `global`. Note that this is similar to the [`return_annotation`](#return_annotation-clauses) clauses shown previously. See also: `Parameters` model [`type_annotation`](#type_annotation-clause) clauses.
+
+#### `type_annotation.equals`
+
+The clause will match when the fully-qualified name of the global's explicitly annotated type matches the specified value exactly.
+
+```python
+ModelQuery(
+  name = "get_string_dicts",
+  find = "globals",
+  where = [
+    type_annotation.equals("typing.Dict[(str, str)]"),
+  ],
+  model = GlobalModel(TaintSource[SelectDict])
+)
+```
+
+For example, the above query when run on the following code:
+
+```python
+unannotated_dict = {"hello": "world", "abc": "123"}
+annotated_dict: Dict[str, str] = {"hello": "world", "abc": "123"}
+```
+
+will result in a model for `annotated_dict: TaintSource[SelectDict]`.
+
+#### `type_annotation.matches`
+
+This is similar to the previous clause, but will match when the fully-qualified name of the global's explicit type annotation matches the specified pattern.
+
+```python
+ModelQuery(
+  name = "get_anys",
+  find = "globals",
+  where = [
+    return_annotation.matches(".*typing.Any.*"),
+  ],
+  model = GlobalModel(TaintSource[SelectAny])
+)
+```
+
+#### `type_annotation.is_annotated_type`
+
+This will match when a global's type is annotated with [`typing.Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated). This is a type used to decorate existing types with context-specific metadata, e.g.
+```python
+from typing import Annotated
+
+result: Annotated[str, "SQL"] = ...
+```
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_return_annotated_sources",
+  find = globals,
+  where = [
+    return_annotation.is_annotated_type(),
+  ],
+  model = GlobalModel(TaintSource[SQL])
 )
 ```
 
@@ -853,6 +929,23 @@ ModelQuery(
   where = ...,
   model = [
     AttributeModel(TaintSource[Test], TaintSink[Test])
+  ]
+)
+```
+
+### Models for globals
+
+Taint for global models requires a `GlobalModel` model clause, which can only be used when the find clause specifies globals.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_global_sources",
+  find = "globals",
+  where = ...,
+  model = [
+    GlobalModel(TaintSource[Test])
   ]
 )
 ```
