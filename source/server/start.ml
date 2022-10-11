@@ -68,7 +68,7 @@ let handle_request ~properties ~state request =
     Subscription.batch_send
       subscriptions
       ~response:(lazy (Response.Error (Stop.Reason.message_of reason)))
-    >>= fun () -> Stop.log_and_stop_waiting_server ~reason ~properties ()
+    >>= fun () -> Stop.stop_waiting_server reason
   in
   Lwt.catch
     (fun () ->
@@ -171,8 +171,7 @@ let handle_connection
               Subscription.batch_send
                 subscriptions
                 ~response:(lazy (Response.Error (Stop.Reason.message_of reason)))
-              >>= fun () ->
-              Stop.log_and_stop_waiting_server ~reason ~properties:server_properties ()
+              >>= fun () -> Stop.stop_waiting_server reason
           | ClientRequest.Request request ->
               ExclusiveLock.Lazy.write server_state ~f:(fun state ->
                   handle_request ~properties:server_properties ~state request
@@ -539,10 +538,7 @@ let with_server
           (* Getting these signals usually indicates something serious went wrong. *)
           wait_for_signal
             [Signal.abrt; Signal.term; Signal.quit; Signal.segv]
-            ~on_caught:(fun signal ->
-              let { ServerProperties.start_time; _ } = server_properties in
-              Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
-              Lwt.fail (ServerInterrupted signal));
+            ~on_caught:(fun signal -> Lwt.fail (ServerInterrupted signal));
         ]
       in
       let watchman_waiter =

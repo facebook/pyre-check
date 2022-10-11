@@ -68,8 +68,3 @@ let log_stopped_server ~reason ~start_time () =
     ~normals:["reason", reason; "server_version", Version.version ()]
     ~integers:["up_time", Timer.stop_in_ms start_time]
     ()
-
-
-let log_and_stop_waiting_server ~reason ~properties:{ ServerProperties.start_time; _ } () =
-  log_stopped_server ~reason:(Reason.name_of reason) ~start_time ();
-  stop_waiting_server reason

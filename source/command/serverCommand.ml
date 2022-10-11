@@ -271,9 +271,6 @@ let error_kind_and_message_from_exception = function
           "Cannot build the project because Pyre encounters a fatal error while loading external \
            wheel: %s"
           message )
-  | Server.Start.ServerInterrupted signal ->
-      ( ErrorKind.Pyre,
-        Format.sprintf "Server process get interrputed with signal %s" (Signal.to_string signal) )
   | Watchman.ConnectionError message ->
       ErrorKind.Watchman, Format.sprintf "Watchman connection error: %s" message
   | Watchman.SubscriptionError message ->
@@ -300,6 +297,11 @@ let start_server_and_wait ~event_channel server_configuration =
   in
   ServerConfiguration.start_options_of server_configuration
   >>= fun start_options ->
+  let start_time = Timer.start () in
+  let handle_error ~kind ~message () =
+    Log.info "%s" message;
+    write_event (ServerEvent.Exception (message, kind)) >>= fun () -> Lwt.return ExitStatus.Error
+  in
   Start.start_server
     start_options
     ~on_server_socket_ready:(fun socket_path ->
@@ -313,12 +315,19 @@ let start_server_and_wait ~event_channel server_configuration =
       let wait_forever, _ = Lwt.wait () in
       wait_forever)
     ~on_exception:(function
-      | Server.Start.ServerStopped _ -> Lwt.return ExitStatus.Ok
+      | Start.ServerStopped reason ->
+          let reason = Option.value_map reason ~f:Stop.Reason.name_of ~default:"unknown" in
+          Stop.log_stopped_server ~reason ~start_time ();
+          Lwt.return ExitStatus.Ok
+      | Start.ServerInterrupted signal ->
+          Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
+          let message =
+            Format.sprintf "Server process get interrputed with signal %s" (Signal.to_string signal)
+          in
+          handle_error ~kind:ErrorKind.Pyre ~message ()
       | exn ->
           let kind, message = error_kind_and_message_from_exception exn in
-          Log.info "%s" message;
-          write_event (ServerEvent.Exception (message, kind))
-          >>= fun () -> Lwt.return ExitStatus.Error)
+          handle_error ~kind ~message ())
 
 
 let run_server configuration_file =

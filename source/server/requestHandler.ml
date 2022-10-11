@@ -101,7 +101,7 @@ let create_artifact_path_event ~build_system { SourcePath.Event.kind; path } =
 
 
 let process_incremental_update_request
-    ~properties:({ ServerProperties.configuration; critical_files; _ } as properties)
+    ~properties:{ ServerProperties.configuration; critical_files; _ }
     ~state:({ ServerState.overlaid_environment; subscriptions; build_system; _ } as state)
     paths
   =
@@ -115,7 +115,7 @@ let process_incremental_update_request
       let message = Stop.Reason.message_of reason in
       StartupNotification.produce ~log_path:configuration.log_directory message;
       Subscription.batch_send subscriptions ~response:(lazy (Response.Error message))
-      >>= fun () -> Stop.log_and_stop_waiting_server ~reason ~properties ()
+      >>= fun () -> Stop.stop_waiting_server reason
   | None ->
       let source_path_events = List.map paths ~f:create_source_path_event in
       let create_status_update_response status = lazy (Response.StatusUpdate status) in

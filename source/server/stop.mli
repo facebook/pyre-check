@@ -37,10 +37,3 @@ val stop_waiting_server : Reason.t -> 'a Lwt.t
 
 (* Perform logging for a server stop event *)
 val log_stopped_server : reason:string -> start_time:Timer.t -> unit -> unit
-
-(* Convenient wrapper around `log_stopped_server` followed by `stop_waiting_server`. *)
-val log_and_stop_waiting_server
-  :  reason:Reason.t ->
-  properties:ServerProperties.t ->
-  unit ->
-  'a Lwt.t

@@ -143,6 +143,9 @@ let start_server_and_wait code_navigation_configuration =
           wait_forever))
     (function
       | Server.Start.ServerStopped _ -> Lwt.return ServerCommand.ExitStatus.Ok
+      | Server.Start.ServerInterrupted signal ->
+          Log.error "Server process get interrputed with signal %s" (Signal.to_string signal);
+          Lwt.return ServerCommand.ExitStatus.Error
       | exn ->
           let kind, message = ServerCommand.error_kind_and_message_from_exception exn in
           Log.error "%a %s" Sexp.pp_hum (ServerCommand.ErrorKind.sexp_of_t kind) message;
