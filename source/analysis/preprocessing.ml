@@ -1213,6 +1213,8 @@ module Qualify (Context : QualifyContext) = struct
     { Call.Argument.name; value = qualify_expression ~qualify_strings ~scope value }
 end
 
+(* Qualification is a way to differentiate names between files/functions/etc. It currently renames the names making them unique.
+ * TODO(T47589601) Rewrite qualification more correctly using scope. *)
 let qualify
     ({ Source.module_path = { ModulePath.raw = { relative; _ }; qualifier; _ }; statements; _ } as
     source)
