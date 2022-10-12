@@ -1894,7 +1894,7 @@ let test_handle_references_used_by_file_query context =
                  5, 8, 5, 12, Type.Primitive "test.Bar";
                  5, 14, 5, 31, Type.Primitive "other_module.subscription.Body";
                  5, 33, 5, 50, Type.meta (Type.Primitive "other_module.subscription.Body");
-                 6, 9, 6, 13, Type.NoneType;
+                 6, 9, 6, 13, Type.meta Type.NoneType;
                  ( 7,
                    11,
                    7,

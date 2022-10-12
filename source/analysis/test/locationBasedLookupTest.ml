@@ -1661,7 +1661,7 @@ let test_lookup_attributes context =
       "4:17-4:21/test.A";
       "4:23-4:24/int";
       "4:26-4:29/typing.Type[int]";
-      "4:34-4:38/None";
+      "4:34-4:38/typing.Type[None]";
       "5:8-5:12/test.A";
       "5:8-5:14/int";
       "5:17-5:18/int";
@@ -1859,6 +1859,36 @@ let test_lookup_class_attributes context =
   assert_annotation ~position:{ Location.line = 3; column = 5 } ~annotation:None
 
 
+let test_lookup_class_attributes_nested context =
+  let source =
+    {|
+      from typing import List, Iterable
+      class Foo:
+        x: int = 5
+        def baz(self) -> None:
+          class FooTwo:
+            def foo_function(self, x: List[Iterable[str]]) -> List[Iterable[str]]:
+              return x
+    |}
+  in
+  let lookup = generate_lookup ~context source in
+  assert_annotation_list
+    ~lookup
+    [
+      "2:19-2:23/typing.Type[list]";
+      "2:25-2:33/typing.Type[typing.Iterable]";
+      "3:6-3:9/typing.Type[test.Foo]";
+      "4:2-4:3/int";
+      "4:5-4:8/typing.Type[int]";
+      "4:11-4:12/typing_extensions.Literal[5]";
+      "5:6-5:9/typing.Callable(test.Foo.baz)[[Named(self, test.Foo)], None]";
+      "5:10-5:14/test.Foo";
+      "5:19-5:23/typing.Type[None]";
+      "6:10-6:16/typing.Type[test.Foo.baz.FooTwo]";
+    ];
+  ()
+
+
 let test_lookup_comprehensions context =
   let source = {|
        def foo() -> None:
@@ -1894,7 +1924,7 @@ let test_lookup_comprehensions context =
       "3:15-3:19/test.Foo";
       "3:21-3:22/int";
       "3:24-3:27/typing.Type[int]";
-      "3:32-3:36/None";
+      "3:32-3:36/typing.Type[None]";
       "6:4-6:7/typing.Callable(test.foo)[[], None]";
       "6:13-6:17/typing.Type[None]";
       "7:2-7:3/typing.List[test.Foo]";
@@ -2257,7 +2287,7 @@ let test_lookup_def context =
     {|
       from typing import List, Iterable
       def foo(x: List[Iterable[str]]) -> List[Iterable[str]]:
-          pass
+          return x
     |}
   in
   let lookup = generate_lookup ~context source in
@@ -2271,6 +2301,7 @@ let test_lookup_def context =
       "3:8-3:9/typing.List[typing.Iterable[str]]";
       "3:11-3:30/typing.Type[typing.List[typing.Iterable[str]]]";
       "3:35-3:54/typing.Type[typing.List[typing.Iterable[str]]]";
+      "4:11-4:12/typing.List[typing.Iterable[str]]";
     ]
 
 
@@ -3444,6 +3475,7 @@ let () =
          "lookup_assign" >:: test_lookup_assign;
          "lookup_call_arguments" >:: test_lookup_call_arguments;
          "lookup_class_attributes" >:: test_lookup_class_attributes;
+         "lookup_class_attributes_nested" >:: test_lookup_class_attributes_nested;
          "lookup_comprehensions" >:: test_lookup_comprehensions;
          "lookup_if_statements" >:: test_lookup_if_statements;
          "lookup_imports" >:: test_lookup_imports;

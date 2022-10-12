@@ -190,7 +190,11 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
 
   let node_postcondition = node_base ~postcondition:true
 
-  let visit_statement_children _ _ = true
+  let visit_statement_children _ statement =
+    match Node.value statement with
+    | Statement.Class _ -> false
+    | _ -> true
+
 
   let visit_expression_children _ _ = true
 
@@ -205,7 +209,7 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
 
   let visit state source =
     let state = ref state in
-    let visit_statement_override ~state statement =
+    let rec visit_statement_override ~state statement =
       (* Special-casing for statements that require lookup using the postcondition. *)
       let precondition_visit =
         visit_expression ~state ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node
@@ -280,6 +284,15 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
             precondition_visit (create_qualified_expression ~location:import_location)
           in
           List.iter imports ~f:visit_import
+      | Class ({ Class.name; body; _ } as class_) ->
+          Node.create
+            ~location:(Class.name_location ~body_location:(Node.location statement) class_)
+            name
+          |> visit_reference
+               ~state
+               ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node;
+          List.iter body ~f:(visit_statement_override ~state)
+          (* TODO(T134537804) support base_arguments in class definition *)
       | _ -> visit_statement ~state statement
     in
     List.iter ~f:(visit_statement_override ~state) source.Source.statements;
