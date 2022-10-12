@@ -92,7 +92,7 @@ let handle_connection ~server _client_address (input_channel, output_channel) =
   in
   let on_uncaught_exception exn =
     Log.warning "Uncaught exception: %s" (Exn.to_string exn);
-    Lwt.return_unit
+    Server.Stop.(stop_waiting_server (Reason.UncaughtException exn))
   in
   let%lwt () = Lwt.catch handle_line on_uncaught_exception in
   Log.info "Connection closed";
