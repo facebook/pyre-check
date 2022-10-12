@@ -237,10 +237,12 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
           |> ignore
       in
       match Node.value statement with
-      | Statement.Assign { Assign.target; annotation; value; _ } ->
+      | Statement.Assign { Assign.target; annotation; value; _ } -> (
           postcondition_visit target;
           annotation >>| store_type_annotation |> ignore;
-          precondition_visit value
+          match Node.value value with
+          | Constant Ellipsis -> ()
+          | _ -> precondition_visit value)
       | Define
           ({ Define.signature = { name; parameters; decorators; return_annotation; _ }; _ } as
           define) ->

@@ -1848,12 +1848,7 @@ let test_lookup_class_attributes context =
   let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
-    [
-      "2:6-2:9/typing.Type[test.Foo]";
-      "3:4-3:5/bool";
-      "3:7-3:11/typing.Type[bool]";
-      "3:11-3:11/typing.Any";
-    ];
+    ["2:6-2:9/typing.Type[test.Foo]"; "3:4-3:5/bool"; "3:7-3:11/typing.Type[bool]"];
   assert_annotation ~position:{ Location.line = 3; column = 3 } ~annotation:None;
   assert_annotation ~position:{ Location.line = 3; column = 4 } ~annotation:(Some "3:4-3:5/bool");
   assert_annotation ~position:{ Location.line = 3; column = 5 } ~annotation:None
@@ -1885,6 +1880,28 @@ let test_lookup_class_attributes_nested context =
       "5:10-5:14/test.Foo";
       "5:19-5:23/typing.Type[None]";
       "6:10-6:16/typing.Type[test.Foo.baz.FooTwo]";
+    ];
+  ()
+
+
+let test_lookup_dataclass_attributes context =
+  let source =
+    {|
+      from dataclasses import dataclass
+      @dataclass
+      class Foo:
+        x: int
+    |}
+  in
+  let lookup = generate_lookup ~context source in
+  assert_annotation_list
+    ~lookup
+    [
+      "2:24-2:33/typing.Callable(dataclasses.dataclass)[[Named(_cls, \
+       typing.Type[Variable[dataclasses._T]])], typing.Type[Variable[dataclasses._T]]]";
+      "4:6-4:9/typing.Type[test.Foo]";
+      "5:2-5:3/int";
+      "5:5-5:8/typing.Type[int]";
     ];
   ()
 
@@ -2841,15 +2858,6 @@ let test_coverage_gaps_in_module context =
         LocationBasedLookup.coverage_data =
           {
             expression =
-              Some (Expression.Constant Constant.Ellipsis |> Node.create_with_default_location);
-            type_ = Type.Any;
-          };
-        reason = TypeIsAny OtherExpressionIsAny;
-      };
-      {
-        LocationBasedLookup.coverage_data =
-          {
-            expression =
               Some
                 (Expression.Name (Name.Identifier "$local_test$y")
                 |> Node.create_with_default_location);
@@ -3476,6 +3484,7 @@ let () =
          "lookup_call_arguments" >:: test_lookup_call_arguments;
          "lookup_class_attributes" >:: test_lookup_class_attributes;
          "lookup_class_attributes_nested" >:: test_lookup_class_attributes_nested;
+         "lookup_dataclass_attributes" >:: test_lookup_dataclass_attributes;
          "lookup_comprehensions" >:: test_lookup_comprehensions;
          "lookup_if_statements" >:: test_lookup_if_statements;
          "lookup_imports" >:: test_lookup_imports;

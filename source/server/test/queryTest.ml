@@ -1117,8 +1117,6 @@ let test_handle_types_query context =
                  [
                    5, 0, 5, 6, Type.Any;
                    5, 8, 5, 11, Type.meta Type.Top;
-                   (* TODO:T131449054 *)
-                   5, 11, 5, 11, Type.Any;
                    ( 7,
                      4,
                      7,
@@ -1165,7 +1163,6 @@ let test_handle_types_query context =
                    5, 6, 5, 9, Type.meta (Type.Primitive "test.Foo");
                    6, 4, 6, 17, Type.Any;
                    6, 19, 6, 22, Type.meta Type.Top;
-                   6, 22, 6, 22, Type.Any;
                    8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
                    8, 4, 8, 9, Type.Primitive "test.Foo";
                  ]
@@ -1675,7 +1672,6 @@ let test_handle_references_used_by_file_query context =
                [
                  5, 0, 5, 6, Type.Primitive "other_module.Bar";
                  5, 8, 5, 11, Type.meta (Type.Primitive "other_module.Bar");
-                 5, 11, 5, 11, Type.Any;
                  ( 7,
                    4,
                    7,
@@ -1731,7 +1727,6 @@ let test_handle_references_used_by_file_query context =
                  5, 6, 5, 9, Type.meta (Type.Primitive "test.Foo");
                  6, 4, 6, 17, Type.Primitive "other_module.Bar";
                  6, 19, 6, 22, Type.meta (Type.Primitive "other_module.Bar");
-                 6, 22, 6, 22, Type.Any;
                  8, 0, 8, 1, Type.Primitive "other_module.Bar";
                  8, 4, 8, 7, Type.meta (Type.Primitive "test.Foo");
                  8, 4, 8, 9, Type.Primitive "test.Foo";
