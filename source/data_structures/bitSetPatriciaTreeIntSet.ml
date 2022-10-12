@@ -56,7 +56,7 @@ module Make (Config : CONFIG) = struct
 
   let empty = { bitset = 0; tree = PatriciaTreeIntSet.empty }
 
-  let is_empty { bitset; tree } = bitset == 0 && PatriciaTreeIntSet.is_empty tree
+  let is_empty { bitset; tree } = Int.equal bitset 0 && PatriciaTreeIntSet.is_empty tree
 
   let get_integer_bit integer = IntHashTable.find integer_to_bit integer
 
@@ -70,7 +70,7 @@ module Make (Config : CONFIG) = struct
     match get_integer_bit element with
     | Some bit ->
         let pattern = Int.shift_left 1 bit in
-        bitset land pattern == pattern
+        Int.equal (bitset land pattern) pattern
     | None -> PatriciaTreeIntSet.mem element tree
 
 
@@ -98,20 +98,23 @@ module Make (Config : CONFIG) = struct
 
 
   let equal { bitset = bitset_left; tree = tree_left } { bitset = bitset_right; tree = tree_right } =
-    bitset_left == bitset_right && PatriciaTreeIntSet.equal tree_left tree_right
+    Int.equal bitset_left bitset_right && PatriciaTreeIntSet.equal tree_left tree_right
 
 
   let subset { bitset = bitset_left; tree = tree_left } { bitset = bitset_right; tree = tree_right }
     =
-    bitset_left land bitset_right == bitset_left && PatriciaTreeIntSet.subset tree_left tree_right
+    Int.equal (bitset_left land bitset_right) bitset_left
+    && PatriciaTreeIntSet.subset tree_left tree_right
 
 
   let fold_bitset f bitset init =
     let rec fold bitset index accumulator =
-      if bitset == 0 then
+      if Int.equal bitset 0 then
         accumulator
       else
-        let accumulator = if bitset land 1 == 1 then f ~index ~accumulator else accumulator in
+        let accumulator =
+          if Int.equal (bitset land 1) 1 then f ~index ~accumulator else accumulator
+        in
         fold (Int.shift_right_logical bitset 1) (index + 1) accumulator
     in
     fold bitset 0 init
