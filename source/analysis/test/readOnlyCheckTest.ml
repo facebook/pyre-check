@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Pyre
 open OUnit2
 open Ast
 open Analysis
@@ -163,6 +164,51 @@ let test_check_arguments_against_parameters context =
   ()
 
 
+let test_callable_data_list_for_callee context =
+  let open AttributeResolution in
+  let source =
+    {|
+    def foo(x: int) -> None: ...
+    def bar(y: str) -> bool: ...
+
+    my_union = foo if 1 + 1 == 2 else bar
+  |}
+  in
+  let global_resolution =
+    ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_resolution
+  in
+  let assert_callable_data_list ~callee expected_callable_data_list =
+    let callee_type =
+      Option.value_exn
+        ~message:"Expected a valid global"
+        (GlobalResolution.global global_resolution callee
+        >>| fun { Global.annotation; _ } -> Annotation.annotation annotation)
+    in
+    assert_equal
+      ~printer:[%show: callable_data_for_function_call list]
+      ~cmp:[%compare.equal: callable_data_for_function_call list]
+      expected_callable_data_list
+      (callable_data_list_for_callee callee_type)
+  in
+  assert_callable_data_list
+    ~callee:!&"test.foo"
+    [
+      {
+        selected_signature =
+          {
+            annotation = Type.none;
+            parameters =
+              Defined [Named { name = "$parameter$x"; annotation = Type.integer; default = false }];
+          };
+        instantiated_return_type = Type.none;
+        function_name = Some !&"test.foo";
+      };
+    ];
+  (* TODO(T130377746): Support union types. *)
+  assert_callable_data_list ~callee:!&"test.my_union" [];
+  ()
+
+
 let assert_readonly_errors ~context =
   let check ~environment ~source =
     source
@@ -209,6 +255,7 @@ let () =
   >::: [
          "forward_expression" >:: test_forward_expression;
          "check_arguments_against_parameters" >:: test_check_arguments_against_parameters;
+         "callable_data_list_for_callee" >:: test_callable_data_list_for_callee;
          "assignment" >:: test_assignment;
        ]
   |> Test.run

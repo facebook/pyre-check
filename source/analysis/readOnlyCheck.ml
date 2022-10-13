@@ -62,6 +62,40 @@ module type Context = sig
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
 end
 
+type callable_data_for_function_call = {
+  (* The signature for the function call, after selecting among any overloads. *)
+  selected_signature: Type.t Type.Callable.overload;
+  (* The return type for the function call, after selecting among any overloads and instantiating
+     any type variables. *)
+  instantiated_return_type: Type.t;
+  function_name: Reference.t option;
+}
+[@@deriving compare, show, sexp]
+
+(* Return information about callables that `callee_type` could resolve to in a function call.
+
+   For example, if it is a union of callables, then return the individual callables.
+
+   TODO(T130377746): Use the type checking analysis to get the signature that will be selected by
+   the function call arguments. This is determined by the type checking analysis, since
+   overload-selection depends on the argument types, not their readonlyness. *)
+let callable_data_list_for_callee callee_type =
+  match callee_type with
+  | Type.Callable
+      ({ implementation = { annotation; _ } as selected_signature; overloads = []; _ } as callable)
+    ->
+      [
+        {
+          selected_signature;
+          instantiated_return_type = annotation;
+          function_name = Type.Callable.name callable;
+        };
+      ]
+  | _ ->
+      (* TODO(T130377746): Extract other types of callables, such as for methods and unions. *)
+      []
+
+
 module State (Context : Context) = struct
   include Resolution
 
