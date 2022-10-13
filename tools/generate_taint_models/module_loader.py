@@ -29,6 +29,9 @@ def load_module(module_path: str) -> Optional[ast.Module]:
 
 def find_all_paths(root: str) -> Iterator[str]:
     for path in glob.glob(root + "/**/*.py", recursive=True):
+        if os.path.isdir(path):
+            continue
+
         # Stubs take precedence if both module.py and module.pyi exist.
         stub_path = f"{path}i"
         if os.path.exists(stub_path):
