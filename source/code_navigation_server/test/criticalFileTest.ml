@@ -31,8 +31,11 @@ let test_critical_file_update_request context =
       ScratchProject.ClientConnection.send_request
         client
         Request.(
-          FileUpdate
-            [FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = PyrePath.absolute test_path }])
+          Command
+            (Command.FileUpdate
+               [
+                 FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = PyrePath.absolute test_path };
+               ]))
     in
     (* Consuming the update request would make the server terminate itself immeidately, bypassing
        this eternal-wait. *)

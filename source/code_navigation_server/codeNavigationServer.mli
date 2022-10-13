@@ -96,81 +96,102 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
-    (** A type representing ordinary requests sent from the clients to the server.
+    module Command : sig
+      (** A type representing actionable commands sent from the clients to the server. Processing
+          these commands may alter the internal state of the code navigation server.
 
-        The code navigation server supports a primitive form of isolation between different clients.
-        Many kinds of requests that query server state can optionally specify an [overlay_id], and
-        the server will attempt to guarantee that type checking states for different [overlay_id]s
-        will not interfere with each other. Overlays are implicitly created the first time a
-        [LocalUpdate] request is sent to the server. *)
+          The server will send back a response (usually {!Response.Ok} or {!Response.Error}) and
+          close its connection with the client once the command gets processed. *)
+      type t =
+        | Stop
+            (** A command that asks the server to stop. The server will shut itself down immediately
+                when this request gets processed. No response will be sent back to the client. *)
+        | LocalUpdate of {
+            module_: Module.t;
+            content: string option;
+            overlay_id: string;
+          }
+            (** A command that asks the server to update a given module locally for an overlay.
+                [content] specifies the content of the source file corresponds to the module.
+                [content] being [None] indicates that contents of the source file should match what
+                was stored on the filesystem.
+
+                The server will send back a {!Response.Ok} response when the update succeeds. If the
+                overlay with the given ID does not exist yet, a new overlay with that ID will be
+                created.
+
+                If the provided module is not covered by the code navigation server, the server will
+                respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
+        | FileUpdate of FileUpdateEvent.t list
+            (** A command that notify the server that a file has changed on disk, so the server
+                needs to incrementally adjust its internal state accordingly. Events will get
+                processed in-order. An on-disk change may potentially affect existing overlays when
+                those overlays have dependency to the file being updated.
+
+                The server will send back a {!Response.Ok} response when the sever is done updating
+                its internal state. In particular, no errors will be returned if any of the provided
+                modules is not covered by the code navigation server. *)
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
+    module Query : sig
+      (** A type representing queries sent from the clients to the server.
+
+          The code navigation server supports a primitive form of isolation between different
+          clients. Many kinds of requests that query server state can optionally specify an
+          [overlay_id], and the server will attempt to guarantee that type checking states for
+          different [overlay_id]s will not interfere with each other. Overlays are implicitly
+          created the first time a {!Command.LocalUpdate} command is sent to the server.
+
+          The server will send back a query response and close its connection with the client once
+          the query gets processed. *)
+      type t =
+        | GetTypeErrors of {
+            module_: Module.t;
+            overlay_id: string option;
+          }
+            (** A query that asks the server to type check a given module. The server will send back
+                a {!Response.TypeErrors} response when the type checking completes.
+
+                If the provided module is not covered by the code navigation server, the server will
+                respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot
+                find the overlay with the given ID, it will respond with a
+                {!Response.ErrorKind.OverlayNotFound} error. *)
+        | Hover of {
+            module_: Module.t;
+            position: Ast.Location.position;
+            overlay_id: string option;
+          }
+            (** A query that asks the server to return hover information at a given location in a
+                given module. The server will send back a {!Response.Hover} response as result. The
+                response will contain an empty list if the server do not have any hover text to show
+                at the location.
+
+                If the provided module is not covered by the code navigation server, the server will
+                respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot
+                find the overlay with the given ID, it will respond with a
+                {!Response.ErrorKind.OverlayNotFound} error. *)
+        | LocationOfDefinition of {
+            module_: Module.t;
+            position: Ast.Location.position;
+            overlay_id: string option;
+          }
+            (** A query that asks the server to return the location of definitions for a given
+                cursor point in a given module. The server will send back a
+                {!Response.LocationOfDefinition} response as result. The response will contain an
+                empty list if a definition cannot be found.
+
+                If the provided module is not covered by the code navigation server, the server will
+                respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot
+                find the overlay with the given ID, it will respond with a
+                {!Response.ErrorKind.OverlayNotFound} error. *)
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
+    (** A type representing requests sent from the clients to the server. *)
     type t =
-      | Stop
-          (** A request that asks the server to stop. The server will shut itself down immediately
-              when this request gets processed. No response will be sent back to the client. *)
-      | GetTypeErrors of {
-          module_: Module.t;
-          overlay_id: string option;
-        }
-          (** A request that asks the server to type check a given module. The server will send back
-              a {!Response.TypeErrors} response when the type checking completes.
-
-              If the provided module is not covered by the code navigation server, the server will
-              respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
-              the overlay with the given ID, it will respond with a
-              {!Response.ErrorKind.OverlayNotFound} error. *)
-      | Hover of {
-          module_: Module.t;
-          position: Ast.Location.position;
-          overlay_id: string option;
-        }
-          (** A request that asks the server to return hover information at a given location in a
-              given module. The server will send back a {!Response.Hover} response as result. The
-              response will contain an empty list if the server do not have any hover text to show
-              at the location.
-
-              If the provided module is not covered by the code navigation server, the server will
-              respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
-              the overlay with the given ID, it will respond with a
-              {!Response.ErrorKind.OverlayNotFound} error. *)
-      | LocationOfDefinition of {
-          module_: Module.t;
-          position: Ast.Location.position;
-          overlay_id: string option;
-        }
-          (** A request that asks the server to return the location of definitions for a given
-              cursor point in a given module. The server will send back a
-              {!Response.LocationOfDefinition} response as result. The response will contain an
-              empty list if a definition cannot be found.
-
-              If the provided module is not covered by the code navigation server, the server will
-              respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot find
-              the overlay with the given ID, it will respond with a
-              {!Response.ErrorKind.OverlayNotFound} error. *)
-      | LocalUpdate of {
-          module_: Module.t;
-          content: string option;
-          overlay_id: string;
-        }
-          (** A request that asks the server to update a given module locally for an overlay.
-              [content] specifies the content of the source file corresponds to the module.
-              [content] being [None] indicates that contents of the source file should match what
-              was stored on the filesystem.
-
-              The server will send back a {!Response.Ok} response when the update succeeds. If the
-              overlay with the given ID does not exist yet, a new overlay with that ID will be
-              created.
-
-              If the provided module is not covered by the code navigation server, the server will
-              respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
-      | FileUpdate of FileUpdateEvent.t list
-          (** A request that notify the server that a file has changed on disk, so the server needs
-              to incrementally adjust its internal state accordingly. Events will get processed
-              in-order. An on-disk change may potentially affect existing overlays when those
-              overlays have dependency to the file being updated.
-
-              The server will send back a {!Response.Ok} response when the sever is done updating
-              its internal state. In particular, no errors will be returned if any of the provided
-              modules is not covered by the code navigation server. *)
+      | Query of Query.t
+      | Command of Command.t
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 

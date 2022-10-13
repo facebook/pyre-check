@@ -119,8 +119,11 @@ let test_server_subscription_busy_file_update context =
       ScratchProject.ClientConnection.send_request
         connection
         Request.(
-          FileUpdate
-            [FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = PyrePath.absolute test_path }])
+          Command
+            (Command.FileUpdate
+               [
+                 FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = PyrePath.absolute test_path };
+               ]))
     in
     Lwt.return_unit
   in
@@ -158,8 +161,13 @@ let test_server_subscription_busy_local_update context =
       ScratchProject.ClientConnection.send_request
         connection
         Request.(
-          LocalUpdate
-            { module_ = Module.OfName "test"; content = Some "reveal_type(42)"; overlay_id = "foo" })
+          Command
+            (Command.LocalUpdate
+               {
+                 module_ = Module.OfName "test";
+                 content = Some "reveal_type(42)";
+                 overlay_id = "foo";
+               }))
     in
     Lwt.return_unit
   in
@@ -192,7 +200,10 @@ let test_server_subscription_stop context =
   in
   let stopper (_, output_channel) =
     let%lwt () =
-      Request.Stop |> Request.to_yojson |> Yojson.Safe.to_string |> Lwt_io.write_line output_channel
+      Request.Command Request.Command.Stop
+      |> Request.to_yojson
+      |> Yojson.Safe.to_string
+      |> Lwt_io.write_line output_channel
     in
     Lwt.return_unit
   in

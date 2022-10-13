@@ -57,17 +57,25 @@ let handle_subscription
   block_until_disconnect ()
 
 
-let handle_request_and_stop_if_necessary ~server request =
-  match%lwt RequestHandler.handle_request ~server request with
+let handle_command_and_stop_if_necessary ~server command =
+  match%lwt RequestHandler.handle_command ~server command with
   | Result.Error reason -> Server.Stop.stop_waiting_server reason
   | Result.Ok response -> Lwt.return response
 
 
-let handle_request ~server ~output_channel request =
-  Log.info "Processing request `%a`" Sexp.pp (Request.sexp_of_t request);
-  let%lwt response = handle_request_and_stop_if_necessary ~server request in
+let handle_query ~server ~output_channel query =
+  Log.info "Processing query `%a`" Sexp.pp (Request.Query.sexp_of_t query);
+  let%lwt response = RequestHandler.handle_query ~server query in
   let raw_response = Response.to_string response in
-  Log.info "Request processed. Response: `%s`" raw_response;
+  Log.info "Query processed. Response: `%s`" raw_response;
+  LwtInputOutput.write_line_ignoring_errors ~output_channel raw_response
+
+
+let handle_command ~server ~output_channel command =
+  Log.info "Processing command `%a`" Sexp.pp (Request.Command.sexp_of_t command);
+  let%lwt response = handle_command_and_stop_if_necessary ~server command in
+  let raw_response = Response.to_string response in
+  Log.info "Command processed. Response: `%s`" raw_response;
   LwtInputOutput.write_line_ignoring_errors ~output_channel raw_response
 
 
@@ -88,7 +96,9 @@ let handle_connection ~server _client_address (input_channel, output_channel) =
                 match Request.of_yojson json with
                 | Result.Error _ ->
                     handle_invalid_request ~output_channel "Unrecognized request JSON"
-                | Result.Ok request -> handle_request ~server ~output_channel request)))
+                | Result.Ok (Request.Query query) -> handle_query ~server ~output_channel query
+                | Result.Ok (Request.Command command) ->
+                    handle_command ~server ~output_channel command)))
   in
   let on_uncaught_exception exn =
     Log.warning "Uncaught exception: %s" (Exn.to_string exn);
@@ -109,9 +119,9 @@ let on_watchman_update ~server paths =
     in
     { Request.FileUpdateEvent.kind; path = PyrePath.absolute path }
   in
-  let update_request = Request.FileUpdate (List.map paths ~f:create_file_update_event) in
+  let update_command = Request.Command.FileUpdate (List.map paths ~f:create_file_update_event) in
   (* File watcher does not care about the content of the the response. *)
-  let%lwt _ = handle_request_and_stop_if_necessary ~server update_request in
+  let%lwt _ = handle_command_and_stop_if_necessary ~server update_command in
   Lwt.return_unit
 
 

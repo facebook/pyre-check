@@ -229,33 +229,36 @@ let response_from_result = function
   | Result.Error kind -> Response.Error kind
 
 
-let handle_request ~server:{ ServerInternal.state; subscriptions; properties } = function
-  | Request.Stop -> Lwt.return_error Server.Stop.Reason.ExplicitRequest
-  | Request.GetTypeErrors { module_; overlay_id } ->
+let handle_query ~server:{ ServerInternal.state; _ } = function
+  | Request.Query.GetTypeErrors { module_; overlay_id } ->
       let f state =
         let response = handle_get_type_errors ~module_ ~overlay_id state |> response_from_result in
-        Lwt.return_ok response
+        Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.Hover { module_; position; overlay_id } ->
+  | Request.Query.Hover { module_; position; overlay_id } ->
       let f state =
         let response = handle_hover ~module_ ~position ~overlay_id state |> response_from_result in
-        Lwt.return_ok response
+        Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.LocationOfDefinition { module_; position; overlay_id } ->
+  | Request.Query.LocationOfDefinition { module_; position; overlay_id } ->
       let f state =
         let response =
           handle_location_of_definition ~module_ ~position ~overlay_id state |> response_from_result
         in
-        Lwt.return_ok response
+        Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.LocalUpdate { module_; content; overlay_id } ->
+
+
+let handle_command ~server:{ ServerInternal.state; subscriptions; properties } = function
+  | Request.Command.Stop -> Lwt.return_error Server.Stop.Reason.ExplicitRequest
+  | Request.Command.LocalUpdate { module_; content; overlay_id } ->
       let f state =
         let%lwt response = handle_local_update ~module_ ~content ~overlay_id ~subscriptions state in
         Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.FileUpdate events ->
+  | Request.Command.FileUpdate events ->
       Server.ExclusiveLock.read state ~f:(handle_file_update ~events ~subscriptions ~properties)

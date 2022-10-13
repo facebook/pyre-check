@@ -36,12 +36,12 @@ module ClientConnection = struct
     Lwt_io.read_line input_channel
 
 
-  let send_subscription_request client request =
-    Subscription.Request.to_yojson request |> Yojson.Safe.to_string |> send_raw_request client
-
-
   let send_request client request =
     Request.to_yojson request |> Yojson.Safe.to_string |> send_raw_request client
+
+
+  let send_subscription_request client request =
+    Subscription.Request.to_yojson request |> Yojson.Safe.to_string |> send_raw_request client
 
 
   let assert_response_equal ~expected ~actual { context; _ } =

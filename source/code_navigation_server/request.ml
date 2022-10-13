@@ -34,26 +34,38 @@ module FileUpdateEvent = struct
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 
+module Command = struct
+  type t =
+    | Stop
+    | LocalUpdate of {
+        module_: Module.t; [@key "module"]
+        content: string option;
+        overlay_id: string;
+      }
+    | FileUpdate of FileUpdateEvent.t list
+  [@@deriving sexp, compare, yojson { strict = false }]
+end
+
+module Query = struct
+  type t =
+    | GetTypeErrors of {
+        module_: Module.t; [@key "module"]
+        overlay_id: string option;
+      }
+    | Hover of {
+        module_: Module.t; [@key "module"]
+        position: Ast.Location.position;
+        overlay_id: string option;
+      }
+    | LocationOfDefinition of {
+        module_: Module.t; [@key "module"]
+        position: Ast.Location.position;
+        overlay_id: string option;
+      }
+  [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 type t =
-  | Stop
-  | GetTypeErrors of {
-      module_: Module.t; [@key "module"]
-      overlay_id: string option;
-    }
-  | Hover of {
-      module_: Module.t; [@key "module"]
-      position: Ast.Location.position;
-      overlay_id: string option;
-    }
-  | LocationOfDefinition of {
-      module_: Module.t; [@key "module"]
-      position: Ast.Location.position;
-      overlay_id: string option;
-    }
-  | LocalUpdate of {
-      module_: Module.t; [@key "module"]
-      content: string option;
-      overlay_id: string;
-    }
-  | FileUpdate of FileUpdateEvent.t list
+  | Query of Query.t
+  | Command of Command.t
 [@@deriving sexp, compare, yojson { strict = false }]
