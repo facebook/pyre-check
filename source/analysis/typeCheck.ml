@@ -2822,23 +2822,27 @@ module State (Context : Context) = struct
          *    not but `pandas.core.DataFrame` does, and
          * - `resolve_exports`, which does a principled syntax-based lookup
          *    to see if a name makes sense as a module top-level name
-         *
-         * TODO(T125828725) Use the resolved name coming from
-         * resolve_exports, rather than throwing away that name and falling
-         * back to legacy_resolve_exports.  This requires either using better
-         * qualification architecture or refactors of existing python code
-         * that relies on the legacy behaviror in the presence of ambiguous
-         * fully-qualified names.
          *)
-        match
-          Ast.Expression.name_to_reference name
-          >>= GlobalResolution.resolve_exports global_resolution
+        let is_toplevel_module_reference name =
+          name
+          |> GlobalResolution.resolve_exports global_resolution
           >>= UnannotatedGlobalEnvironment.ResolvedReference.as_module_toplevel_reference
-          >>= fun _ ->
-          Ast.Expression.name_to_reference name
-          >>| fun reference -> GlobalResolution.legacy_resolve_exports global_resolution ~reference
-        with
-        | Some name_reference -> forward_reference ~resolution ~errors:[] name_reference
+          |> Option.is_some
+        in
+        let module_name reference =
+          if is_toplevel_module_reference reference then
+            (* TODO(T125828725) Use the resolved name coming from resolve_exports, rather than
+               throwing away that name and falling back to legacy_resolve_exports.
+
+               This requires either using better qualification architecture or refactors of existing
+               python code that relies on the legacy behaviror in the presence of ambiguous
+               fully-qualified names. *)
+            Some (GlobalResolution.legacy_resolve_exports global_resolution ~reference)
+          else
+            None
+        in
+        match name_to_reference name >>= module_name with
+        | Some module_reference -> forward_reference ~resolution ~errors:[] module_reference
         | None ->
             let ({ Resolved.errors; resolved = resolved_base; _ } as base_resolved) =
               forward_expression ~resolution base
