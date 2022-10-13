@@ -96,6 +96,23 @@ let callable_data_list_for_callee callee_type =
       []
 
 
+(* Return a mapping of each parameter to the arguments that will be assigned to it in the function
+   call `callable(self_argument, arguments)`. *)
+let get_parameter_argument_mapping ~self_argument ~arguments callable =
+  let open AttributeResolution in
+  match callable with
+  | { Type.Callable.parameters = Defined parameters as all_parameters; _ } ->
+      SignatureSelection.prepare_arguments_for_signature_selection ~self_argument arguments
+      |> SignatureSelection.get_parameter_argument_mapping
+           ~parameters
+           ~all_parameters
+           ~self_argument
+      |> Option.some
+  | _ ->
+      (* TODO(T130377746): Handle non-Defined callables. *)
+      None
+
+
 module State (Context : Context) = struct
   include Resolution
 
@@ -172,7 +189,50 @@ module State (Context : Context) = struct
       parameter_argument_mapping
 
 
-  let forward_expression ~type_resolution:_ ~resolution { Node.value; _ } =
+  let rec forward_call ~type_resolution ~resolution ~callee arguments =
+    let forward_arguments_in_order ~resolution arguments =
+      let forward_argument (resolution, errors, reversed_arguments) argument =
+        let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+        forward_expression ~type_resolution ~resolution expression
+        |> fun { Resolved.resolution; errors = new_errors; resolved } ->
+        ( resolution,
+          List.append new_errors errors,
+          { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+          :: reversed_arguments )
+      in
+      List.fold arguments ~f:forward_argument ~init:(resolution, [], [])
+      |> fun (resolution, errors, reversed_arguments) ->
+      resolution, errors, List.rev reversed_arguments
+    in
+    let errors_for_callable ~arguments { selected_signature; function_name; _ } =
+      (* TODO(T130377746): Handle methods, where the `self_argument` will be non-None. *)
+      get_parameter_argument_mapping ~self_argument:None ~arguments selected_signature
+      >>| (fun { AttributeResolution.ParameterArgumentMapping.parameter_argument_mapping; _ } ->
+            parameter_argument_mapping)
+      >>| check_arguments_against_parameters ~function_name
+      |> Option.value ~default:[]
+    in
+    let resolution, errors, arguments = forward_arguments_in_order ~resolution arguments in
+    let callable_data_list =
+      TypeResolution.resolve_expression_to_type type_resolution callee
+      |> callable_data_list_for_callee
+    in
+    let return_type =
+      List.fold
+        callable_data_list
+        ~init:ReadOnlyness.bottom
+        ~f:(fun sofar { instantiated_return_type; _ } ->
+          ReadOnlyness.of_type instantiated_return_type |> ReadOnlyness.join sofar)
+    in
+    {
+      Resolved.errors =
+        List.concat_map callable_data_list ~f:(errors_for_callable ~arguments) @ errors;
+      resolution;
+      resolved = return_type;
+    }
+
+
+  and forward_expression ~type_resolution ~resolution { Node.value; _ } =
     let open ReadOnlyness in
     match value with
     | Expression.Constant _ ->
@@ -185,6 +245,7 @@ module State (Context : Context) = struct
             Resolution.get_opt (Reference.create identifier) resolution
             |> Option.value ~default:Mutable;
         }
+    | Call { callee; arguments } -> forward_call ~type_resolution ~resolution ~callee arguments
     | _ -> failwith "TODO(T130377746)"
 
 

@@ -247,6 +247,38 @@ let test_assignment context =
         z: ReadOnly[int] = y
     |}
     [];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_mutable_and_readonly(x: int, y: ReadOnly[int]) -> ReadOnly[int]: ...
+
+      def main() -> None:
+        x: ReadOnly[int] = 42
+        y: int = expect_mutable_and_readonly(x, x)
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible parameter type [3002]: In call \
+       `test.expect_mutable_and_readonly`, for 1st positional only parameter expected \
+       `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def foo(x: int) -> ReadOnly[int]: ...
+
+      def main(x: int) -> None:
+        y: int = foo(foo(x))
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.foo`, for 1st \
+       positional only parameter expected `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+    ];
   ()
 
 
