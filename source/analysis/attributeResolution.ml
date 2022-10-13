@@ -2329,6 +2329,37 @@ module SignatureSelection = struct
        in order to prefer the first defined overload *)
     |> List.rev
     |> List.hd
+
+
+  (** Select the closest overload for [callable] when it is called with [self_argument] and
+      [arguments]. If there are no overloads, just return results for the base implementation.
+
+      Return a [signature_match] containing the selected signature along with errors and constraints
+      for any type variables. *)
+  let select_closest_signature_for_function_call
+      ~order
+      ~resolve_with_locals
+      ~resolve_mutable_literals
+      ~arguments
+      ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
+      ~self_argument
+    =
+    let get_match signatures =
+      let check_arguments_against_signature =
+        check_arguments_against_signature
+          ~order
+          ~resolve_with_locals
+          ~resolve_mutable_literals
+          ~callable
+          ~self_argument
+          ~arguments:(prepare_arguments_for_signature_selection ~self_argument arguments)
+      in
+      signatures |> List.concat_map ~f:check_arguments_against_signature |> find_closest_signature
+    in
+    if List.is_empty overloads then
+      get_match [implementation]
+    else
+      get_match overloads
 end
 
 class base class_metadata_environment dependency =
@@ -4571,33 +4602,19 @@ class base class_metadata_environment dependency =
         ~assumptions
         ~resolve_with_locals
         ~arguments
-        ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
+        ~callable
         ~self_argument
         ~skip_marking_escapees =
       let order = self#full_order ~assumptions in
-      let get_match signatures =
-        let check_arguments_against_signature =
-          SignatureSelection.check_arguments_against_signature
-            ~order
-            ~resolve_mutable_literals:(self#resolve_mutable_literals ~assumptions)
-            ~resolve_with_locals
-            ~callable
-            ~self_argument
-            ~arguments:
-              (SignatureSelection.prepare_arguments_for_signature_selection
-                 ~self_argument
-                 arguments)
-        in
-        signatures
-        |> List.concat_map ~f:check_arguments_against_signature
-        |> SignatureSelection.find_closest_signature
-        >>| SignatureSelection.instantiate_return_annotation ~skip_marking_escapees ~order
-        |> Option.value ~default:(SignatureSelection.default_signature callable)
-      in
-      if List.is_empty overloads then
-        get_match [implementation]
-      else
-        get_match overloads
+      SignatureSelection.select_closest_signature_for_function_call
+        ~order
+        ~resolve_with_locals
+        ~resolve_mutable_literals:(self#resolve_mutable_literals ~assumptions)
+        ~arguments
+        ~callable
+        ~self_argument
+      >>| SignatureSelection.instantiate_return_annotation ~skip_marking_escapees ~order
+      |> Option.value ~default:(SignatureSelection.default_signature callable)
 
     method resolve_mutable_literals ~assumptions ~resolve =
       WeakenMutableLiterals.weaken_mutable_literals

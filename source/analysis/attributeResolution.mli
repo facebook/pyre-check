@@ -150,6 +150,21 @@ module SignatureSelection : sig
     order:ConstraintsSet.order ->
     signature_match ->
     SignatureSelectionTypes.instantiated_return_annotation
+
+  val select_closest_signature_for_function_call
+    :  order:ConstraintsSet.order ->
+    resolve_with_locals:
+      (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
+    resolve_mutable_literals:
+      (resolve:(Expression.t -> Type.t) ->
+      expression:Expression.t option ->
+      resolved:Type.t ->
+      expected:Type.t ->
+      WeakenMutableLiterals.weakened_type) ->
+    arguments:Type.t Argument.t list ->
+    callable:Type.Callable.t ->
+    self_argument:Type.t option ->
+    signature_match option
 end
 
 type uninstantiated
