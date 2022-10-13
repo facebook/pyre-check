@@ -617,6 +617,8 @@ module Callable : sig
     :  resolve_aliases:(type_t -> type_t) ->
     Expression.expression ->
     Expression.expression
+
+  val name : t -> Reference.t option
 end
 
 type alias =

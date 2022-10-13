@@ -92,7 +92,7 @@ let error_and_location_from_typed_dictionary_mismatch
 
 
 let errors_from_not_found
-    ~callable:({ Type.Callable.kind; _ } as callable)
+    ~callable
     ~self_argument
     ~reason
     ~global_resolution
@@ -101,11 +101,7 @@ let errors_from_not_found
     ~arguments
     ()
   =
-  let callee =
-    match kind with
-    | Type.Callable.Named callable -> Some callable
-    | _ -> None
-  in
+  let callee = Type.Callable.name callable in
   match reason with
   | SignatureSelectionTypes.AbstractClassInstantiation { class_name; abstract_methods } ->
       [

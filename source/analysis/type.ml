@@ -3180,6 +3180,11 @@ module Callable = struct
     | Call ({ callee = { Node.value = callee; location }; _ } as call) ->
         Call { call with callee = { Node.value = resolve_getitem_callee callee; location } }
     | _ -> callee
+
+
+  let name = function
+    | { kind = Named name; _ } -> Some name
+    | _ -> None
 end
 
 let lambda ~parameters ~return_annotation =
