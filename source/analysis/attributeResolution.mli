@@ -143,7 +143,9 @@ module SignatureSelection : sig
 
   val find_closest_signature : signature_match list -> signature_match option
 
-  val default_signature : Type.Callable.t -> SignatureSelectionTypes.instantiated_return_annotation
+  val default_instantiated_return_annotation
+    :  Type.Callable.t ->
+    SignatureSelectionTypes.instantiated_return_annotation
 
   val instantiate_return_annotation
     :  ?skip_marking_escapees:bool ->

@@ -2264,7 +2264,7 @@ module SignatureSelection = struct
         NotFound { closest_return_annotation = instantiated_return_annotation; reason }
 
 
-  let default_signature
+  let default_instantiated_return_annotation
       { Type.Callable.implementation = { annotation = default_return_annotation; _ }; _ }
     =
     let open SignatureSelectionTypes in
@@ -4614,7 +4614,7 @@ class base class_metadata_environment dependency =
         ~callable
         ~self_argument
       >>| SignatureSelection.instantiate_return_annotation ~skip_marking_escapees ~order
-      |> Option.value ~default:(SignatureSelection.default_signature callable)
+      |> Option.value ~default:(SignatureSelection.default_instantiated_return_annotation callable)
 
     method resolve_mutable_literals ~assumptions ~resolve =
       WeakenMutableLiterals.weaken_mutable_literals
