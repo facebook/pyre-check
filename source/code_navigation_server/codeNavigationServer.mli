@@ -148,11 +148,15 @@ module Testing : sig
               {!Response.ErrorKind.OverlayNotFound} error. *)
       | LocalUpdate of {
           module_: Module.t;
-          content: string;
+          content: string option;
           overlay_id: string;
         }
-          (** A request that asks the server to update a given module locally for an overlay. The
-              server will send back a {!Response.Ok} response when the update succeeds. If the
+          (** A request that asks the server to update a given module locally for an overlay.
+              [content] specifies the content of the source file corresponds to the module.
+              [content] being [None] indicates that contents of the source file should match what
+              was stored on the filesystem.
+
+              The server will send back a {!Response.Ok} response when the update succeeds. If the
               overlay with the given ID does not exist yet, a new overlay with that ID will be
               created.
 

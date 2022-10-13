@@ -159,7 +159,7 @@ let test_server_subscription_busy_local_update context =
         connection
         Request.(
           LocalUpdate
-            { module_ = Module.OfName "test"; content = "reveal_type(42)"; overlay_id = "foo" })
+            { module_ = Module.OfName "test"; content = Some "reveal_type(42)"; overlay_id = "foo" })
     in
     Lwt.return_unit
   in

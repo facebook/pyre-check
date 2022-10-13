@@ -152,7 +152,11 @@ let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.env
   | Result.Error kind -> Lwt.return (Response.Error kind)
   | Result.Ok modules ->
       let code_updates =
-        let code_update = ModuleTracker.Overlay.CodeUpdate.NewCode content in
+        let code_update =
+          match content with
+          | Some content -> ModuleTracker.Overlay.CodeUpdate.NewCode content
+          | None -> ModuleTracker.Overlay.CodeUpdate.ResetCode
+        in
         let to_update module_name =
           ModuleTracker.ReadOnly.lookup_full_path module_tracker module_name
           |> Option.map ~f:(fun artifact_path -> artifact_path, code_update)

@@ -143,7 +143,7 @@ let test_local_update_request context =
                  LocalUpdate
                    {
                      module_ = Module.OfName "test";
-                     content = "reveal_type(43)\nreveal_type(44)";
+                     content = Some "reveal_type(43)\nreveal_type(44)";
                      overlay_id = "foo";
                    })
              ~expected:Response.Ok;
@@ -152,7 +152,7 @@ let test_local_update_request context =
              ~request:
                Request.(
                  LocalUpdate
-                   { module_ = Module.OfName "doesnotexist"; content = ""; overlay_id = "foo" })
+                   { module_ = Module.OfName "doesnotexist"; content = Some ""; overlay_id = "foo" })
              ~kind:"ModuleNotTracked";
            ScratchProject.ClientConnection.assert_response
              ~request:
@@ -160,13 +160,19 @@ let test_local_update_request context =
                  LocalUpdate
                    {
                      module_ = Module.OfName "test";
-                     content = "reveal_type(43)\nreveal_type(44)\nreveal_type(45)";
+                     content = Some "reveal_type(43)\nreveal_type(44)\nreveal_type(45)";
                      overlay_id = "bar";
                    })
              ~expected:Response.Ok;
            assert_type_error_count ~module_name:"test" ~overlay_id:"bar" ~expected:3;
            assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
            assert_type_error_count ~module_name:"test" ~expected:1;
+           ScratchProject.ClientConnection.assert_response
+             ~request:
+               Request.(
+                 LocalUpdate { module_ = Module.OfName "test"; content = None; overlay_id = "foo" })
+             ~expected:Response.Ok;
+           assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:1;
          ]
 
 
@@ -235,7 +241,7 @@ let test_file_and_local_update context =
               LocalUpdate
                 {
                   module_ = Module.OfName "test";
-                  content = "from test2 import x";
+                  content = Some "from test2 import x";
                   overlay_id = "foo";
                 })
           ~expected:Response.Ok;

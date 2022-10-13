@@ -52,7 +52,7 @@ type t =
     }
   | LocalUpdate of {
       module_: Module.t; [@key "module"]
-      content: string;
+      content: string option;
       overlay_id: string;
     }
   | FileUpdate of FileUpdateEvent.t list
