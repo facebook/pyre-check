@@ -65,7 +65,12 @@ module Query = struct
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 
+module Subscription = struct
+  type t = Subscribe [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 type t =
   | Query of Query.t
   | Command of Command.t
+  | Subscription of Subscription.t
 [@@deriving sexp, compare, yojson { strict = false }]

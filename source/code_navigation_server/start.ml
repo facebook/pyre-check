@@ -89,16 +89,12 @@ let handle_connection ~server _client_address (input_channel, output_channel) =
         match parse_json message with
         | Result.Error message -> handle_invalid_request ~output_channel message
         | Result.Ok json -> (
-            match Subscription.Request.of_yojson json with
-            | Result.Ok request ->
-                handle_subscription ~server ~input_channel ~output_channel request
-            | Result.Error _ -> (
-                match Request.of_yojson json with
-                | Result.Error _ ->
-                    handle_invalid_request ~output_channel "Unrecognized request JSON"
-                | Result.Ok (Request.Query query) -> handle_query ~server ~output_channel query
-                | Result.Ok (Request.Command command) ->
-                    handle_command ~server ~output_channel command)))
+            match Request.of_yojson json with
+            | Result.Error _ -> handle_invalid_request ~output_channel "Unrecognized request JSON"
+            | Result.Ok (Request.Query query) -> handle_query ~server ~output_channel query
+            | Result.Ok (Request.Command command) -> handle_command ~server ~output_channel command
+            | Result.Ok (Request.Subscription subscription) ->
+                handle_subscription ~server ~input_channel ~output_channel subscription))
   in
   let on_uncaught_exception exn =
     Log.warning "Uncaught exception: %s" (Exn.to_string exn);

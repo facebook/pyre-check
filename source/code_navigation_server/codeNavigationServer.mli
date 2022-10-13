@@ -188,10 +188,23 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
+    module Subscription : sig
+      (** A type representing subscription requests sent from the clients to the server.
+
+          Unlike {!Command.t} and {!Query.t}, the code navigation server will not proactively close
+          the underlying socket connection when receiving a {!Subscription.t}. Instead, it will send
+          back a {!Subscription.Response.Ok} to acknowledge the subscription first, then leave the
+          connection open, and unilaterally push interesting internal status changes to the client
+          via that connection. Only when the client terminates the connection on its side will the
+          server stop sending the updates. *)
+      type t = Subscribe [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
     (** A type representing requests sent from the clients to the server. *)
     type t =
-      | Query of Query.t
-      | Command of Command.t
+      | Query of Query.t  (** Ephemeral connection. Read-only access to server state. *)
+      | Command of Command.t  (** Ephemeral connection. Read-write access to server state. *)
+      | Subscription of Subscription.t  (** Persistent connection. *)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 
@@ -263,18 +276,6 @@ module Testing : sig
       code navigation server. The mechanism is useful when the client wants to continuously keep
       track of certain internal status change (liveness, availability, etc.). *)
   module Subscription : sig
-    module Request : sig
-      (** A type representing subscription requests sent from the clients to the server.
-
-          Unlike ordinary {!Request.t}, the code navigation server will not proactively close the
-          underlying socket connection when receiving a {!Subscription.Request.t}. Instead, it will
-          send back a {!Subscription.Response.Ok} to acknowledge the subscription first, then leave
-          the connection open, and unilaterally push interesting internal status changes to the
-          client via that connection. Only when the client terminates the connection on its side
-          will the server stop sending the updates. *)
-      type t = Subscribe [@@deriving sexp, compare, yojson { strict = false }]
-    end
-
     module Response : sig
       (** A type representing subscription responses sent from the server to its clients. *)
       type t =

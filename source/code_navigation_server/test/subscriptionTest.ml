@@ -73,9 +73,9 @@ let test_subscription_registration context =
 let test_server_subscription_establish context =
   let f connection =
     let%lwt response =
-      ScratchProject.ClientConnection.send_subscription_request
+      ScratchProject.ClientConnection.send_request
         connection
-        Subscription.Request.Subscribe
+        Request.(Subscription Subscription.Subscribe)
     in
     ScratchProject.ClientConnection.assert_subscription_response_equal
       connection
@@ -96,9 +96,9 @@ let test_server_subscription_busy_file_update context =
   let mailbox = Lwt_mvar.create_empty () in
   let subscriber connection =
     let%lwt _ =
-      ScratchProject.ClientConnection.send_subscription_request
+      ScratchProject.ClientConnection.send_request
         connection
-        Subscription.Request.Subscribe
+        Request.(Subscription Subscription.Subscribe)
     in
     let%lwt () = Lwt_mvar.put mailbox "subscribed" in
     let%lwt () =
@@ -138,9 +138,9 @@ let test_server_subscription_busy_local_update context =
   let mailbox = Lwt_mvar.create_empty () in
   let subscriber connection =
     let%lwt _ =
-      ScratchProject.ClientConnection.send_subscription_request
+      ScratchProject.ClientConnection.send_request
         connection
-        Subscription.Request.Subscribe
+        Request.(Subscription Subscription.Subscribe)
     in
     let%lwt () = Lwt_mvar.put mailbox "subscribed" in
     let%lwt () =
@@ -185,8 +185,8 @@ let test_server_subscription_stop context =
   let stopper_mailbox = Lwt_mvar.create_empty () in
   let subscriber (input_channel, output_channel) =
     let%lwt () =
-      Subscription.Request.Subscribe
-      |> Subscription.Request.to_yojson
+      Request.(Subscription Subscription.Subscribe)
+      |> Request.to_yojson
       |> Yojson.Safe.to_string
       |> Lwt_io.write_line output_channel
     in

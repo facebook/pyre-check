@@ -7,10 +7,6 @@
 
 open Base
 
-module Request = struct
-  type t = Subscribe [@@deriving sexp, compare, yojson { strict = false }]
-end
-
 module Response = struct
   type t =
     | Ok
