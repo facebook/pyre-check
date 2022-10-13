@@ -256,6 +256,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        start_time = time.time()
         response = await self.handler.get_type_coverage(path=document_path)
         if response is not None:
             await lsp.write_json_rpc(
@@ -266,6 +267,22 @@ class PyreLanguageServer:
                     result=response.to_dict(),
                 ),
             )
+        end_time = time.time()
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "typeCoverage",
+                "filePath": str(document_path),
+                "duration_ms": duration_ms(start_time, end_time),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "server_state_start_status": str(
+                    self.server_state.server_last_status.value
+                ),
+            },
+            activity_key,
+        )
 
     async def process_hover_request(
         self,
