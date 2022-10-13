@@ -57,14 +57,14 @@ let test_forward_expression context =
     in
     assert_equal ~cmp:[%compare.equal: t] ~printer:show expected_type resolved
   in
-  assert_resolved "..." ReadOnly;
-  assert_resolved "False" ReadOnly;
-  assert_resolved "True" ReadOnly;
-  assert_resolved "1.2" ReadOnly;
-  assert_resolved "42" ReadOnly;
-  assert_resolved "'hello'" ReadOnly;
-  assert_resolved "b'hello'" ReadOnly;
-  assert_resolved "None" ReadOnly;
+  assert_resolved "..." Mutable;
+  assert_resolved "False" Mutable;
+  assert_resolved "True" Mutable;
+  assert_resolved "1.2" Mutable;
+  assert_resolved "42" Mutable;
+  assert_resolved "'hello'" Mutable;
+  assert_resolved "b'hello'" Mutable;
+  assert_resolved "None" Mutable;
   assert_resolved ~resolution:(Resolution.of_list [!&"x", ReadOnly]) "x" ReadOnly;
   assert_resolved ~resolution:(Resolution.of_list [!&"x", Mutable]) "x" Mutable;
   assert_resolved ~resolution:(Resolution.of_list []) "x" Mutable;
@@ -245,6 +245,19 @@ let test_assignment context =
         x = 42
         y = x
         z: ReadOnly[int] = y
+    |}
+    [];
+  (* Treat constants, such as `42` or `...`, as assignable to mutable types. *)
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        # This is treated as `some_attribute: int = ...`.
+        some_attribute: int
+
+      def main() -> None:
+        x: int = 42
     |}
     [];
   assert_readonly_errors

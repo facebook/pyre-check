@@ -236,7 +236,9 @@ module State (Context : Context) = struct
     let open ReadOnlyness in
     match value with
     | Expression.Constant _ ->
-        { Resolved.resolution; errors = []; resolved = ReadOnlyness.ReadOnly }
+        (* Even though constants are technically readonly, marking them as readonly would emit
+           spurious errors when assigning them to mutable variables. So, mark them as mutable. *)
+        { Resolved.resolution; errors = []; resolved = Mutable }
     | Expression.Name (Name.Identifier identifier) ->
         {
           Resolved.resolution;
