@@ -135,10 +135,12 @@ let with_broadcast_busy_checking ~subscriptions ~overlay_id f =
   let%lwt () =
     Subscriptions.broadcast
       subscriptions
-      ~response:(lazy (Subscription.Response.BusyChecking { overlay_id }))
+      ~response:(lazy Response.(ServerStatus (Status.BusyChecking { overlay_id })))
   in
   let result = f () in
-  let%lwt () = Subscriptions.broadcast subscriptions ~response:(lazy Subscription.Response.Idle) in
+  let%lwt () =
+    Subscriptions.broadcast subscriptions ~response:(lazy Response.(ServerStatus Status.Idle))
+  in
   Lwt.return result
 
 

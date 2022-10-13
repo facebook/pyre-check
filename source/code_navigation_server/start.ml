@@ -34,9 +34,7 @@ let handle_subscription
   (* Initial response acknowledge the subscription *)
   Log.info "Subscription established";
   let%lwt () =
-    LwtInputOutput.write_line_ignoring_errors
-      ~output_channel
-      (Subscription.Response.to_string Subscription.Response.Ok)
+    LwtInputOutput.write_line_ignoring_errors ~output_channel (Response.to_string Response.Ok)
   in
 
   (* Block on reading the input channel so we could dispose the subscription immediately when it's
@@ -137,7 +135,9 @@ let initialize_server_state environment_controls =
 
 let broadcast_server_stop_and_fail ~subscriptions ~message exn =
   let%lwt () =
-    Subscriptions.broadcast subscriptions ~response:(lazy (Subscription.Response.Stop { message }))
+    Subscriptions.broadcast
+      subscriptions
+      ~response:(lazy Response.(ServerStatus (Status.Stop { message })))
   in
   Lwt.fail exn
 

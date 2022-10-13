@@ -12,7 +12,6 @@ open OUnit2
 open CodeNavigationServer
 module Request = CodeNavigationServer.Testing.Request
 module Response = CodeNavigationServer.Testing.Response
-module Subscription = CodeNavigationServer.Testing.Subscription
 
 module ClientConnection = struct
   module Style = struct
@@ -45,14 +44,9 @@ module ClientConnection = struct
     assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected actual
 
 
-  let assert_subscription_response_equal ~expected ~actual { context; _ } =
-    let expected = Subscription.Response.to_yojson expected |> Yojson.Safe.to_string in
-    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected actual
-
-
   let assert_subscription_response ~expected ({ input_channel; _ } as client) =
     let%lwt actual = Lwt_io.read_line input_channel in
-    assert_subscription_response_equal client ~expected ~actual;
+    assert_response_equal client ~expected ~actual;
     Lwt.return_unit
 
 

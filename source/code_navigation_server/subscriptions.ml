@@ -39,7 +39,5 @@ let broadcast_raw ~message { registered; _ } =
 
 
 let broadcast ~response subscriptions =
-  let message =
-    lazy (Lazy.force response |> Subscription.Response.to_yojson |> Yojson.Safe.to_string)
-  in
+  let message = lazy (Lazy.force response |> Response.to_yojson |> Yojson.Safe.to_string) in
   broadcast_raw subscriptions ~message

@@ -8,7 +8,7 @@
 open Core
 open OUnit2
 module Request = CodeNavigationServer.Testing.Request
-module Subscription = CodeNavigationServer.Testing.Subscription
+module Response = CodeNavigationServer.Testing.Response
 module Subscriptions = CodeNavigationServer.Testing.Subscriptions
 
 let assert_int ~context ~expected actual =
@@ -77,9 +77,9 @@ let test_server_subscription_establish context =
         connection
         Request.(Subscription Subscription.Subscribe)
     in
-    ScratchProject.ClientConnection.assert_subscription_response_equal
+    ScratchProject.ClientConnection.assert_response_equal
       connection
-      ~expected:Subscription.Response.Ok
+      ~expected:Response.Ok
       ~actual:response;
     Lwt.return_unit
   in
@@ -103,12 +103,12 @@ let test_server_subscription_busy_file_update context =
     let%lwt () = Lwt_mvar.put mailbox "subscribed" in
     let%lwt () =
       ScratchProject.ClientConnection.assert_subscription_response
-        ~expected:(Subscription.Response.BusyChecking { overlay_id = None })
+        ~expected:Response.(ServerStatus (Status.BusyChecking { overlay_id = None }))
         connection
     in
     let%lwt () =
       ScratchProject.ClientConnection.assert_subscription_response
-        ~expected:Subscription.Response.Idle
+        ~expected:Response.(ServerStatus Status.Idle)
         connection
     in
     Lwt.return_unit
@@ -145,12 +145,12 @@ let test_server_subscription_busy_local_update context =
     let%lwt () = Lwt_mvar.put mailbox "subscribed" in
     let%lwt () =
       ScratchProject.ClientConnection.assert_subscription_response
-        ~expected:(Subscription.Response.BusyChecking { overlay_id = Some "foo" })
+        ~expected:Response.(ServerStatus (Status.BusyChecking { overlay_id = Some "foo" }))
         connection
     in
     let%lwt () =
       ScratchProject.ClientConnection.assert_subscription_response
-        ~expected:Subscription.Response.Idle
+        ~expected:Response.(ServerStatus Status.Idle)
         connection
     in
     Lwt.return_unit
@@ -195,7 +195,7 @@ let test_server_subscription_stop context =
     (* This should be the `Stop` status update *)
     let%lwt stop_message = Lwt_io.read_line input_channel in
     match Yojson.Safe.from_string stop_message with
-    | `List [`String "Stop"; _] -> Lwt.return_unit
+    | `List [`String "ServerStatus"; `List [`String "Stop"; _]] -> Lwt.return_unit
     | _ -> Format.sprintf "Expected a stop message but got: %s" stop_message |> assert_failure
   in
   let stopper (_, output_channel) =

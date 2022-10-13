@@ -37,12 +37,21 @@ module DefinitionLocation = struct
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 
+module Status = struct
+  type t =
+    | Idle
+    | BusyChecking of { overlay_id: string option }
+    | Stop of { message: string }
+  [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 type t =
   | Ok
   | Error of ErrorKind.t
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Hover of { contents: HoverContent.t list }
   | LocationOfDefinition of DefinitionLocation.t list
+  | ServerStatus of Status.t
 [@@deriving sexp, compare, yojson { strict = false }]
 
 let to_string response = to_yojson response |> Yojson.Safe.to_string
