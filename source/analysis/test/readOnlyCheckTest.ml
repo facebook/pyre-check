@@ -70,6 +70,99 @@ let test_forward_expression context =
   ()
 
 
+let test_check_arguments_against_parameters context =
+  let open AttributeResolution in
+  let open Type.Callable in
+  let global_resolution, type_environment =
+    let project = ScratchProject.setup ~context [] in
+    ScratchProject.build_global_resolution project, ScratchProject.type_environment project
+  in
+  let module Context = struct
+    let qualifier = !&"test"
+
+    let define =
+      parse_single_define {|
+      def foo() -> None: ...
+    |}
+      |> Node.create_with_default_location
+
+
+    let error_map = Some (LocalErrorMap.empty ())
+
+    let global_resolution = global_resolution
+
+    let local_annotations =
+      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
+        type_environment
+        (Node.value define |> Define.name)
+  end
+  in
+  let module State = State (Context) in
+  let assert_arguments_against_parameters ~parameter_argument_mapping expected_error_kinds =
+    let actual_error_kinds =
+      State.check_arguments_against_parameters ~function_name:None parameter_argument_mapping
+      |> List.map ~f:(function
+             | { Error.kind = Error.ReadOnlynessMismatch mismatch; _ } -> mismatch
+             | _ -> failwith "Expected ReadOnlyness mismatch")
+    in
+    assert_equal
+      ~printer:[%show: Error.ReadOnly.readonlyness_mismatch list]
+      ~cmp:[%compare.equal: Error.ReadOnly.readonlyness_mismatch list]
+      expected_error_kinds
+      actual_error_kinds
+  in
+  assert_arguments_against_parameters
+    ~parameter_argument_mapping:
+      (Parameter.Map.of_alist_exn
+         [
+           ( Named { name = "x"; annotation = Type.string; default = false },
+             [
+               make_matched_argument
+                 {
+                   Argument.WithPosition.resolved = ReadOnlyness.ReadOnly;
+                   kind = Positional;
+                   expression = None;
+                   position = 1;
+                 };
+             ] );
+           Named { name = "y"; annotation = Type.integer; default = false }, [Default];
+         ])
+    [
+      IncompatibleParameterType
+        {
+          name = None;
+          position = 1;
+          callee = None;
+          mismatch = { actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
+        };
+    ];
+  assert_arguments_against_parameters
+    ~parameter_argument_mapping:
+      (Parameter.Map.of_alist_exn
+         [
+           ( Named { name = "y"; annotation = Type.integer; default = false },
+             [
+               make_matched_argument
+                 {
+                   Argument.WithPosition.resolved = ReadOnlyness.ReadOnly;
+                   kind = Named (Node.create_with_default_location "y");
+                   expression = None;
+                   position = 1;
+                 };
+             ] );
+         ])
+    [
+      IncompatibleParameterType
+        {
+          name = Some "y";
+          position = 1;
+          callee = None;
+          mismatch = { actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
+        };
+    ];
+  ()
+
+
 let assert_readonly_errors ~context =
   let check ~environment ~source =
     source
@@ -113,5 +206,9 @@ let test_assignment context =
 
 let () =
   "readOnly"
-  >::: ["forward_expression" >:: test_forward_expression; "assignment" >:: test_assignment]
+  >::: [
+         "forward_expression" >:: test_forward_expression;
+         "check_arguments_against_parameters" >:: test_check_arguments_against_parameters;
+         "assignment" >:: test_assignment;
+       ]
   |> Test.run

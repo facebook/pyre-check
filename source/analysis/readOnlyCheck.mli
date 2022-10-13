@@ -53,6 +53,13 @@ module type Context = sig
 end
 
 module State (Context : Context) : sig
+  open AttributeResolution
+
+  val check_arguments_against_parameters
+    :  function_name:Reference.t option ->
+    ReadOnlyness.t matched_argument list Type.Callable.Parameter.Map.t ->
+    Error.t list
+
   val forward_expression
     :  type_resolution:TypeResolution.t ->
     resolution:Resolution.t ->

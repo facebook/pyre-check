@@ -65,13 +65,14 @@ end
 module State (Context : Context) = struct
   include Resolution
 
-  let add_error ~location ~kind errors =
+  let create_error ~location kind =
     Error.create
       ~location:(Location.with_module ~module_reference:Context.qualifier location)
       ~kind
       ~define:Context.define
-    :: errors
 
+
+  let add_error ~location ~kind errors = create_error ~location kind :: errors
 
   let instantiate_path ~global_resolution location =
     let lookup =
@@ -83,6 +84,59 @@ module State (Context : Context) = struct
 
 
   let widen ~previous ~next ~iteration = widen ~prev:previous ~next ~iteration
+
+  (* Emit errors for arguments that are not compatible with their assigned parameters. *)
+  let check_arguments_against_parameters ~function_name parameter_argument_mapping =
+    let open Type.Callable in
+    let open AttributeResolution in
+    let open ReadOnlyness in
+    let check_non_variadic_parameter ~parameter_annotation = function
+      | Default ->
+          (* Assume that any errors about the default parameter value not matching the parameter
+             type are emitted when initially checking the define. So, no need to emit an error at
+             the function call site. *)
+          None
+      | MatchedArgument
+          { argument = { resolved = actual_readonlyness; position; kind; expression }; _ } ->
+          let expected_readonlyness = ReadOnlyness.of_type parameter_annotation in
+          if not (less_or_equal ~left:actual_readonlyness ~right:expected_readonlyness) then
+            let name =
+              match kind with
+              | Named name -> Some name
+              | _ -> None
+            in
+            let argument_location =
+              expression >>| Node.location |> Option.value ~default:Location.any
+            in
+            create_error
+              ~location:(name >>| Node.location |> Option.value ~default:argument_location)
+              (Error.ReadOnlynessMismatch
+                 (IncompatibleParameterType
+                    {
+                      name = name >>| Node.value;
+                      position;
+                      callee = function_name;
+                      mismatch = { actual = actual_readonlyness; expected = expected_readonlyness };
+                    }))
+            |> Option.some
+          else
+            None
+    in
+    let check_arguments_and_update_signature_match ~parameter ~arguments errors_so_far =
+      match parameter, arguments with
+      | Parameter.Named { annotation = parameter_annotation; _ }, arguments ->
+          List.filter_map arguments ~f:(check_non_variadic_parameter ~parameter_annotation)
+          @ errors_so_far
+      | _ ->
+          (* TODO(T130377746): Handle other kinds of parameters. *)
+          errors_so_far
+    in
+    Map.fold
+      ~init:[]
+      ~f:(fun ~key ~data ->
+        check_arguments_and_update_signature_match ~parameter:key ~arguments:data)
+      parameter_argument_mapping
+
 
   let forward_expression ~type_resolution:_ ~resolution { Node.value; _ } =
     let open ReadOnlyness in
