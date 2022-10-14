@@ -68,6 +68,9 @@ let test_forward_expression context =
   assert_resolved ~resolution:(Resolution.of_list [!&"x", ReadOnly]) "x" ReadOnly;
   assert_resolved ~resolution:(Resolution.of_list [!&"x", Mutable]) "x" Mutable;
   assert_resolved ~resolution:(Resolution.of_list []) "x" Mutable;
+  assert_resolved ~resolution:(Resolution.of_list [!&"x", Mutable]) "x.y" Mutable;
+  assert_resolved ~resolution:(Resolution.of_list [!&"x", ReadOnly]) "x.y" ReadOnly;
+  assert_resolved ~resolution:(Resolution.of_list [!&"x", ReadOnly]) "x.y.z" ReadOnly;
   ()
 
 
@@ -291,6 +294,45 @@ let test_assignment context =
        `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.foo`, for 1st \
        positional only parameter expected `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        mutable_attribute: int
+
+      def main() -> None:
+        readonly_foo: ReadOnly[Foo]
+        mutable_foo: Foo
+
+        x1: int = readonly_foo.mutable_attribute
+        x2: int = mutable_foo.mutable_attribute
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Bar:
+        bar_attribute: int
+
+      class Foo:
+        foo_attribute: Bar
+
+      def main() -> None:
+        readonly_foo: ReadOnly[Foo]
+        mutable_foo: Foo
+
+        x1: int = readonly_foo.foo_attribute.bar_attribute
+        x2: int = mutable_foo.foo_attribute.bar_attribute
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
     ];
   ()
 

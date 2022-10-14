@@ -247,6 +247,12 @@ module State (Context : Context) = struct
             Resolution.get_opt (Reference.create identifier) resolution
             |> Option.value ~default:Mutable;
         }
+    | Name (Name.Attribute { base; _ }) ->
+        let { Resolved.errors; resolved = resolved_base; resolution } =
+          forward_expression ~type_resolution ~resolution base
+        in
+        (* Preserve readonlyness on attribute lookups. *)
+        { Resolved.resolved = resolved_base; errors; resolution }
     | Call { callee; arguments } -> forward_call ~type_resolution ~resolution ~callee arguments
     | _ -> failwith "TODO(T130377746)"
 
