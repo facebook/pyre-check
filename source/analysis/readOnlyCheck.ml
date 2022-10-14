@@ -69,6 +69,7 @@ type callable_data_for_function_call = {
      any type variables. *)
   instantiated_return_type: Type.t;
   function_name: Reference.t option;
+  self_readonlyness: ReadOnlyness.t option;
 }
 [@@deriving compare, show, sexp]
 
@@ -79,7 +80,7 @@ type callable_data_for_function_call = {
    TODO(T130377746): Use the type checking analysis to get the signature that will be selected by
    the function call arguments. This is determined by the type checking analysis, since
    overload-selection depends on the argument types, not their readonlyness. *)
-let callable_data_list_for_callee callee_type =
+let callable_data_list_for_callee ?self_readonlyness callee_type =
   match callee_type with
   | Type.Callable
       ({ implementation = { annotation; _ } as selected_signature; overloads = []; _ } as callable)
@@ -89,10 +90,31 @@ let callable_data_list_for_callee callee_type =
           selected_signature;
           instantiated_return_type = annotation;
           function_name = Type.Callable.name callable;
+          self_readonlyness;
+        };
+      ]
+  | Parametric
+      {
+        name = "BoundMethod";
+        parameters =
+          [
+            Single
+              (Type.Callable
+                ({ implementation = { annotation; _ } as selected_signature; overloads = []; _ } as
+                callable));
+            Single _self_type;
+          ];
+      } ->
+      [
+        {
+          selected_signature;
+          instantiated_return_type = annotation;
+          function_name = Type.Callable.name callable;
+          self_readonlyness;
         };
       ]
   | _ ->
-      (* TODO(T130377746): Extract other types of callables, such as for methods and unions. *)
+      (* TODO(T130377746): Extract other types of callables, such as unions. *)
       []
 
 
@@ -204,19 +226,27 @@ module State (Context : Context) = struct
       |> fun (resolution, errors, reversed_arguments) ->
       resolution, errors, List.rev reversed_arguments
     in
-    let errors_for_callable ~arguments { selected_signature; function_name; _ } =
-      (* TODO(T130377746): Handle methods, where the `self_argument` will be non-None. *)
-      get_parameter_argument_mapping ~self_argument:None ~arguments selected_signature
+    let errors_for_callable ~arguments { selected_signature; function_name; self_readonlyness; _ } =
+      get_parameter_argument_mapping ~self_argument:self_readonlyness ~arguments selected_signature
       >>| (fun { AttributeResolution.ParameterArgumentMapping.parameter_argument_mapping; _ } ->
             parameter_argument_mapping)
       >>| check_arguments_against_parameters ~function_name
       |> Option.value ~default:[]
     in
-    let resolution, errors, arguments = forward_arguments_in_order ~resolution arguments in
-    let callable_data_list =
-      TypeResolution.resolve_expression_to_type type_resolution callee
-      |> callable_data_list_for_callee
+    let resolution, base_errors, callable_data_list =
+      (* TODO(T130377746): Handle first-class callables, since they would not be of the form
+         `x.my_method()`. *)
+      match TypeResolution.resolve_expression_to_type type_resolution callee, callee with
+      | ( (Parametric { name = "BoundMethod"; parameters = [Single (Type.Callable _); Single _] } as
+          callee_type),
+          { Node.value = Expression.Name (Name.Attribute { base; _ }); _ } ) ->
+          let { Resolved.resolved; resolution; errors } =
+            forward_expression ~type_resolution ~resolution base
+          in
+          resolution, errors, callable_data_list_for_callee ~self_readonlyness:resolved callee_type
+      | callee_type, _ -> resolution, [], callable_data_list_for_callee callee_type
     in
+    let resolution, argument_errors, arguments = forward_arguments_in_order ~resolution arguments in
     let return_type =
       List.fold
         callable_data_list
@@ -226,7 +256,9 @@ module State (Context : Context) = struct
     in
     {
       Resolved.errors =
-        List.concat_map callable_data_list ~f:(errors_for_callable ~arguments) @ errors;
+        List.concat_map callable_data_list ~f:(errors_for_callable ~arguments)
+        @ base_errors
+        @ argument_errors;
       resolution;
       resolved = return_type;
     }

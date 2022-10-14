@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 open OUnit2
 open Ast
 open Analysis
@@ -190,33 +189,33 @@ let test_check_arguments_against_parameters context =
 
 
 let test_callable_data_list_for_callee context =
-  let open AttributeResolution in
   let source =
     {|
+    from pyre_extensions import ReadOnly
+
     def foo(x: int) -> None: ...
     def bar(y: str) -> bool: ...
 
     my_union = foo if 1 + 1 == 2 else bar
+
+    class Foo:
+      def return_readonly(self, x: int) -> ReadOnly[int]: ...
   |}
   in
-  let global_resolution =
-    ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_resolution
+  let resolution =
+    ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
   in
-  let assert_callable_data_list ~callee expected_callable_data_list =
-    let callee_type =
-      Option.value_exn
-        ~message:"Expected a valid global"
-        (GlobalResolution.global global_resolution callee
-        >>| fun { Global.annotation; _ } -> Annotation.annotation annotation)
-    in
-    assert_equal
-      ~printer:[%show: callable_data_for_function_call list]
-      ~cmp:[%compare.equal: callable_data_for_function_call list]
-      expected_callable_data_list
-      (callable_data_list_for_callee callee_type)
+  let assert_callable_data_list ?self_readonlyness ~callee expected_callable_data_list =
+    parse_single_expression callee
+    |> TypeResolution.resolve_expression_to_type resolution
+    |> callable_data_list_for_callee ?self_readonlyness
+    |> assert_equal
+         ~printer:[%show: callable_data_for_function_call list]
+         ~cmp:[%compare.equal: callable_data_for_function_call list]
+         expected_callable_data_list
   in
   assert_callable_data_list
-    ~callee:!&"test.foo"
+    ~callee:"test.foo"
     [
       {
         selected_signature =
@@ -227,10 +226,36 @@ let test_callable_data_list_for_callee context =
           };
         instantiated_return_type = Type.none;
         function_name = Some !&"test.foo";
+        self_readonlyness = None;
       };
     ];
   (* TODO(T130377746): Support union types. *)
-  assert_callable_data_list ~callee:!&"test.my_union" [];
+  assert_callable_data_list ~callee:"test.my_union" [];
+  assert_callable_data_list
+    ~callee:"test.Foo().return_readonly"
+    ~self_readonlyness:Mutable
+    [
+      {
+        selected_signature =
+          {
+            annotation = Type.ReadOnly.create Type.integer;
+            parameters =
+              Defined
+                [
+                  Named
+                    {
+                      name = "$parameter$self";
+                      annotation = Type.Primitive "test.Foo";
+                      default = false;
+                    };
+                  Named { name = "$parameter$x"; annotation = Type.integer; default = false };
+                ];
+          };
+        instantiated_return_type = Type.ReadOnly.create Type.integer;
+        function_name = Some !&"test.Foo.return_readonly";
+        self_readonlyness = Some Mutable;
+      };
+    ];
   ()
 
 
@@ -380,6 +405,82 @@ let test_function_call context =
        `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.foo`, for 1st \
        positional only parameter expected `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def return_readonly(self, x: int) -> ReadOnly[int]: ...
+
+      def main() -> None:
+        foo: Foo
+        x: ReadOnly[int]
+        y: int = foo.return_readonly(x)
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call \
+       `test.Foo.return_readonly`, for 1st positional only parameter expected \
+       `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def return_readonly(self, x: int) -> ReadOnly[int]: ...
+
+      def return_foo(x: int) -> Foo: ...
+
+      def main() -> None:
+        foo: Foo
+        x: ReadOnly[int]
+        y: int = return_foo(x).return_readonly(x)
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call \
+       `test.Foo.return_readonly`, for 1st positional only parameter expected \
+       `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.return_foo`, for 1st \
+       positional only parameter expected `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def expect_readonly_self(self: ReadOnly[Foo], x: int) -> None: ...
+
+      def main() -> None:
+        readonly_foo: ReadOnly[Foo]
+        mutable_foo: Foo
+        x: int
+        readonly_foo.expect_readonly_self(x)
+        mutable_foo.expect_readonly_self(x)
+    |}
+    [];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def expect_mutable_self(self, x: int) -> None: ...
+
+      def main() -> None:
+        readonly_foo: ReadOnly[Foo]
+        mutable_foo: Foo
+        x: int
+        readonly_foo.expect_mutable_self(x)
+        mutable_foo.expect_mutable_self(x)
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call \
+       `test.Foo.expect_mutable_self`, for 0th positional only parameter expected \
+       `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
     ];
   ()
 

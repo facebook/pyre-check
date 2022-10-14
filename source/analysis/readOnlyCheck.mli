@@ -59,10 +59,14 @@ type callable_data_for_function_call = {
      any type variables. *)
   instantiated_return_type: Type.t;
   function_name: Reference.t option;
+  self_readonlyness: ReadOnlyness.t option;
 }
 [@@deriving compare, show, sexp]
 
-val callable_data_list_for_callee : Type.t -> callable_data_for_function_call list
+val callable_data_list_for_callee
+  :  ?self_readonlyness:ReadOnlyness.t ->
+  Type.t ->
+  callable_data_for_function_call list
 
 module State (Context : Context) : sig
   open AttributeResolution
