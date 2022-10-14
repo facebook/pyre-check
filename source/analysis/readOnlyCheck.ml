@@ -232,7 +232,7 @@ module State (Context : Context) = struct
     }
 
 
-  and forward_expression ~type_resolution ~resolution { Node.value; _ } =
+  and forward_expression ~type_resolution ~resolution ({ Node.value; _ } as expression) =
     let open ReadOnlyness in
     match value with
     | Expression.Constant _ ->
@@ -251,8 +251,16 @@ module State (Context : Context) = struct
         let { Resolved.errors; resolved = resolved_base; resolution } =
           forward_expression ~type_resolution ~resolution base
         in
-        (* Preserve readonlyness on attribute lookups. *)
-        { Resolved.resolved = resolved_base; errors; resolution }
+        let resolved =
+          match resolved_base with
+          | ReadOnly ->
+              (* If the base expression is readonly, the attribute is automatically readonly. *)
+              ReadOnly
+          | Mutable ->
+              TypeResolution.resolve_expression_to_type type_resolution expression
+              |> ReadOnlyness.of_type
+        in
+        { Resolved.resolved; errors; resolution }
     | Call { callee; arguments } -> forward_call ~type_resolution ~resolution ~callee arguments
     | _ -> failwith "TODO(T130377746)"
 

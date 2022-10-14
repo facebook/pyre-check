@@ -17,7 +17,15 @@ open ReadOnlyness
 
 let test_forward_expression context =
   let global_resolution, type_environment =
-    let project = ScratchProject.setup ~context [] in
+    let source =
+      {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        readonly_attribute: ReadOnly[int]
+    |}
+    in
+    let project = ScratchProject.setup ~context ["test.py", source] in
     ScratchProject.build_global_resolution project, ScratchProject.type_environment project
   in
   let dummy_statement_key = 0 in
@@ -51,7 +59,12 @@ let test_forward_expression context =
   end
   in
   let module State = State (Context) in
-  let assert_resolved ?(resolution = Resolution.of_list []) expression expected_type =
+  let assert_resolved
+      ?(type_resolution = type_resolution)
+      ?(resolution = Resolution.of_list [])
+      expression
+      expected_type
+    =
     let { Resolved.resolved; _ } =
       parse_single_expression expression |> State.forward_expression ~type_resolution ~resolution
     in
@@ -71,6 +84,15 @@ let test_forward_expression context =
   assert_resolved ~resolution:(Resolution.of_list [!&"x", Mutable]) "x.y" Mutable;
   assert_resolved ~resolution:(Resolution.of_list [!&"x", ReadOnly]) "x.y" ReadOnly;
   assert_resolved ~resolution:(Resolution.of_list [!&"x", ReadOnly]) "x.y.z" ReadOnly;
+  assert_resolved
+    ~resolution:(Resolution.of_list [!&"x", Mutable])
+    ~type_resolution:
+      (TypeResolution.new_local
+         type_resolution
+         ~reference:!&"x"
+         ~annotation:(Annotation.create_mutable (Type.Primitive "test.Foo")))
+    "x.readonly_attribute"
+    ReadOnly;
   ()
 
 
@@ -331,6 +353,26 @@ let test_assignment context =
         x2: int = mutable_foo.foo_attribute.bar_attribute
     |}
     [
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        readonly_attribute: ReadOnly[int]
+
+      def main() -> None:
+        readonly_foo: ReadOnly[Foo]
+        mutable_foo: Foo
+
+        x1: int = readonly_foo.readonly_attribute
+        x2: int = mutable_foo.readonly_attribute
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: x2 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
       "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
        `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
     ];
