@@ -1,0 +1,4 @@
+@generated
+Overrides
+access_path.SpecialDict::__init__ (override) -> [access_path.SpecialDict::__init__ (method)]
+object::__init__ (override) -> [access_path.SpecialDict::__init__ (override) object::__init__ (method)]
