@@ -120,7 +120,7 @@ class PyreLanguageServer:
         await _wait_for_exit(self.input_channel, self.output_channel)
         return commands.ExitCode.SUCCESS
 
-    async def _try_restart_pyre_server(self) -> None:
+    async def _try_restart_pyre_daemon(self) -> None:
         if (
             self.server_state.consecutive_start_failure
             < CONSECUTIVE_START_ATTEMPT_THRESHOLD
@@ -147,7 +147,7 @@ class PyreLanguageServer:
 
         # Attempt to trigger a background Pyre server start on each file open
         if not self.daemon_manager.is_task_running():
-            await self._try_restart_pyre_server()
+            await self._try_restart_pyre_daemon()
 
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
@@ -210,7 +210,7 @@ class PyreLanguageServer:
             )
         # Attempt to trigger a background Pyre server start on each file change
         if not self.daemon_manager.is_task_running():
-            await self._try_restart_pyre_server()
+            await self._try_restart_pyre_daemon()
 
     async def process_did_save_request(
         self,
@@ -243,7 +243,7 @@ class PyreLanguageServer:
 
         # Attempt to trigger a background Pyre server start on each file save
         if not self.daemon_manager.is_task_running():
-            await self._try_restart_pyre_server()
+            await self._try_restart_pyre_daemon()
 
     async def process_type_coverage_request(
         self,
