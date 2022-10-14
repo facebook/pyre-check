@@ -410,6 +410,21 @@ let test_function_call context =
     {|
       from pyre_extensions import ReadOnly
 
+      def expect_mutable(x: int) -> ReadOnly[int]: ...
+
+      def main() -> None:
+        x: ReadOnly[int] = 42
+        expect_mutable(x)
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
+       1st positional only parameter expected `ReadOnlyness.Mutable` but got \
+       `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
       class Foo:
         def return_readonly(self, x: int) -> ReadOnly[int]: ...
 

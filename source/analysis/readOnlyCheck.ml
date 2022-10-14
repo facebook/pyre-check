@@ -364,6 +364,11 @@ module State (Context : Context) = struct
     match value with
     | Statement.Assign { Assign.target; annotation; value } ->
         forward_assignment ~type_resolution ~resolution ~location ~target ~annotation ~value
+    | Expression expression ->
+        let { Resolved.errors; resolution; _ } =
+          forward_expression ~type_resolution ~resolution expression
+        in
+        resolution, errors
     | _ -> state, []
 
 
