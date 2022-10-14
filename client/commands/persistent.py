@@ -980,7 +980,7 @@ async def run_persistent(
         input_channel=stdin,
         output_channel=stdout,
         server_state=server_state,
-        pyre_manager=background.TaskManager(
+        daemon_manager=background.TaskManager(
             PyreDaemonLaunchAndSubscribeHandler(
                 server_options_reader=server_options_reader,
                 remote_logging=remote_logging,

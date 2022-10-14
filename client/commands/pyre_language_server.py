@@ -89,8 +89,8 @@ class PyreLanguageServer:
     output_channel: connections.AsyncTextWriter
 
     # inside this task manager is a PyreDaemonLaunchAndSubscribeHandler
-    pyre_manager: background.TaskManager
-    # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
+    daemon_manager: background.TaskManager
+    # NOTE: The fields inside `server_state` are mutable and can be changed by `daemon_manager`
     server_state: state.ServerState
 
     handler: request_handler.AbstractRequestHandler
@@ -125,7 +125,7 @@ class PyreLanguageServer:
             self.server_state.consecutive_start_failure
             < CONSECUTIVE_START_ATTEMPT_THRESHOLD
         ):
-            await self.pyre_manager.ensure_task_running()
+            await self.daemon_manager.ensure_task_running()
         else:
             LOG.info(
                 "Not restarting Pyre since failed consecutive start attempt limit"
@@ -146,7 +146,7 @@ class PyreLanguageServer:
         LOG.info(f"File opened: {document_path}")
 
         # Attempt to trigger a background Pyre server start on each file open
-        if not self.pyre_manager.is_task_running():
+        if not self.daemon_manager.is_task_running():
             await self._try_restart_pyre_server()
 
     async def process_close_request(
@@ -209,7 +209,7 @@ class PyreLanguageServer:
                 ),
             )
         # Attempt to trigger a background Pyre server start on each file change
-        if not self.pyre_manager.is_task_running():
+        if not self.daemon_manager.is_task_running():
             await self._try_restart_pyre_server()
 
     async def process_did_save_request(
@@ -242,7 +242,7 @@ class PyreLanguageServer:
         )
 
         # Attempt to trigger a background Pyre server start on each file save
-        if not self.pyre_manager.is_task_running():
+        if not self.daemon_manager.is_task_running():
             await self._try_restart_pyre_server()
 
     async def process_type_coverage_request(
@@ -629,7 +629,7 @@ class PyreLanguageServer:
         language server itself.
         """
         try:
-            await self.pyre_manager.ensure_task_running()
+            await self.daemon_manager.ensure_task_running()
             return await self.serve_requests()
         except lsp.ReadChannelClosedError:
             # This error can happen when the connection gets closed unilaterally
@@ -639,4 +639,4 @@ class PyreLanguageServer:
             LOG.info("Connection closed by LSP client.")
             return commands.ExitCode.SUCCESS
         finally:
-            await self.pyre_manager.ensure_task_stop()
+            await self.daemon_manager.ensure_task_stop()

@@ -240,7 +240,7 @@ async def _create_server_for_request_test(
             server_options=server_options,
             opened_documents=opened_documents,
         ),
-        pyre_manager=fake_task_manager,
+        daemon_manager=fake_task_manager,
         handler=handler,
     )
     await fake_task_manager.ensure_task_running()
@@ -737,7 +737,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=mock_server_state,
-            pyre_manager=fake_task_manager,
+            daemon_manager=fake_task_manager,
             handler=MockRequestHandler(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
@@ -766,7 +766,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 server_options=mock_initial_server_options,
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
-            pyre_manager=fake_task_manager,
+            daemon_manager=fake_task_manager,
             handler=MockRequestHandler(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
@@ -795,7 +795,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             server_state=ServerState(
                 server_options=mock_initial_server_options, opened_documents={test_path}
             ),
-            pyre_manager=fake_task_manager,
+            daemon_manager=fake_task_manager,
             handler=MockRequestHandler(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
@@ -822,7 +822,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 opened_documents={test_path},
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
-            pyre_manager=fake_task_manager,
+            daemon_manager=fake_task_manager,
             handler=MockRequestHandler(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
@@ -847,7 +847,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             server_state=ServerState(
                 server_options=mock_initial_server_options, opened_documents={test_path}
             ),
-            pyre_manager=fake_task_manager,
+            daemon_manager=fake_task_manager,
             handler=MockRequestHandler(),
         )
 
@@ -1118,7 +1118,7 @@ class PyreServerTest(testslide.TestCase):
             input_channel=input_channel,
             output_channel=create_memory_text_writer(),
             server_state=server_state,
-            pyre_manager=noop_task_manager,
+            daemon_manager=noop_task_manager,
             handler=MockRequestHandler(),
         )
 
@@ -1140,7 +1140,7 @@ class PyreServerTest(testslide.TestCase):
             input_channel=input_channel,
             output_channel=create_memory_text_writer(),
             server_state=server_state,
-            pyre_manager=noop_task_manager,
+            daemon_manager=noop_task_manager,
             handler=MockRequestHandler(),
         )
 
@@ -1164,7 +1164,7 @@ class PyreServerTest(testslide.TestCase):
                 ExceptionRaisingBytesWriter(ConnectionResetError())
             ),
             server_state=server_state,
-            pyre_manager=noop_task_manager,
+            daemon_manager=noop_task_manager,
             handler=MockRequestHandler(),
         )
 
@@ -1183,7 +1183,7 @@ class PyreServerTest(testslide.TestCase):
                 ExceptionRaisingBytesWriter(ConnectionResetError())
             ),
             server_state=server_state,
-            pyre_manager=noop_task_manager,
+            daemon_manager=noop_task_manager,
             handler=MockRequestHandler(),
         )
 
@@ -1197,7 +1197,7 @@ class PyreServerTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=server_state,
-            pyre_manager=background.TaskManager(NoOpBackgroundTask()),
+            daemon_manager=background.TaskManager(NoOpBackgroundTask()),
             handler=MockRequestHandler(),
         )
         test_path0 = Path("/foo/bar")
@@ -1240,7 +1240,7 @@ class PyreServerTest(testslide.TestCase):
     async def test_type_coverage_request(self) -> None:
         test_path = Path("/foo")
         output_writer = MemoryBytesWriter()
-        fake_pyre_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_daemon_manager = background.TaskManager(WaitForeverBackgroundTask())
         handler = MockRequestHandler(
             mock_type_coverage=lsp.TypeCoverageResponse(
                 covered_percent=42.42,
@@ -1252,7 +1252,7 @@ class PyreServerTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=mock_server_state,
-            pyre_manager=fake_pyre_manager,
+            daemon_manager=fake_daemon_manager,
             handler=handler,
         )
         await server.process_type_coverage_request(
@@ -1279,13 +1279,13 @@ class PyreServerTest(testslide.TestCase):
     async def test_type_coverage_request__None_response(self) -> None:
         test_path = Path("/foo")
         output_writer = MemoryBytesWriter()
-        fake_pyre_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_daemon_manager = background.TaskManager(WaitForeverBackgroundTask())
         handler = MockRequestHandler(mock_type_coverage=None)
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=mock_server_state,
-            pyre_manager=fake_pyre_manager,
+            daemon_manager=fake_daemon_manager,
             handler=handler,
         )
         await server.process_type_coverage_request(
