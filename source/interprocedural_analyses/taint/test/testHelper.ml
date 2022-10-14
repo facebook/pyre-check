@@ -586,9 +586,7 @@ let initialize
 
         models, skip_overrides
   in
-  let inferred_models =
-    ClassModels.infer ~environment:type_environment ~taint_configuration ~user_models
-  in
+  let inferred_models = ClassModels.infer ~environment:type_environment ~user_models in
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let override_graph_heap =

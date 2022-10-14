@@ -21,12 +21,7 @@ open Analysis
 open Interprocedural
 open Domains
 
-let infer
-    ~environment
-    ~taint_configuration:
-      { TaintConfiguration.Heap.analysis_model_constraints = { maximum_tito_collapse_depth; _ }; _ }
-    ~user_models
-  =
+let infer ~environment ~user_models =
   Log.info "Computing inferred models...";
   let timer = Timer.start () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
@@ -40,7 +35,7 @@ let infer
                  Part
                    ( Features.ReturnAccessPathTree.Path,
                      ( [Abstract.TreeDomain.Label.create_name_index attribute],
-                       max 0 (maximum_tito_collapse_depth - 1) ) );
+                       Features.CollapseDepth.no_collapse ) );
                ])
     in
     BackwardState.assign

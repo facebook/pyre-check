@@ -384,7 +384,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[benign]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[benign]": 999999 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }
@@ -395,7 +398,60 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[bad]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[bad]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.DataClassSwapArguments.__init__",
+    "tito": [
+      {
+        "port": "formal(bar)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[foo]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(foo)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 999999, "[bar]": 3 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(bar)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[bar]": 999999 }, "kind": "LocalReturn" }
             ],
             "tito": null
           }
@@ -413,7 +469,7 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -464,7 +520,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[bad]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[bad]": 999999 }, "kind": "LocalReturn" }
             ],
             "tito": null
           }
@@ -489,7 +545,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[benign]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[benign]": 999999 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }
@@ -500,7 +559,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[bad]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[bad]": 999999 }, "kind": "LocalReturn" }
             ],
             "tito": null
           }
@@ -537,7 +596,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[benign]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[benign]": 999999 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }
@@ -548,7 +610,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[bad]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[bad]": 999999 }, "kind": "LocalReturn" }
             ],
             "tito": null
           }
@@ -567,7 +629,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[tainted]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[tainted]": 999999 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }
@@ -579,7 +644,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "[not_tainted]": 3 },
+                "return_paths": { "[not_tainted]": 999999 },
                 "kind": "LocalReturn"
               }
             ],
@@ -600,7 +665,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[tainted]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[tainted]": 999999 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }
@@ -612,7 +680,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "[not_tainted]": 3 },
+                "return_paths": { "[not_tainted]": 999999 },
                 "kind": "LocalReturn"
               }
             ],
@@ -648,7 +716,7 @@
         "port": "result[bad]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -679,7 +747,7 @@
         "port": "formal(another)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -726,7 +794,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[bad_sink]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[bad_sink]": 999999 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }
@@ -760,7 +831,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[bad]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[bad]": 999999 }, "kind": "LocalReturn" }
             ],
             "tito": null
           }
@@ -898,6 +969,52 @@
               "start": 28,
               "end": 42
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.test_constructor_tito",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[benign]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 126, "start": 35, "end": 36 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bad]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 126, "start": 25, "end": 26 } ],
+            "tito": null
           }
         ]
       }

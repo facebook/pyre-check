@@ -120,3 +120,17 @@ def test_class_attr_model_tainted_in_constructor() -> None:
         bad=1, benign="1"
     )
     data_object_issue.bad = _test_source()
+
+
+def test_constructor_tito(x: int, y: str) -> DataClass:
+    return DataClass(bad=x, benign=y)
+
+
+@dataclass
+class DataClassSwapArguments:
+    foo: str
+    bar: str
+
+    def __init__(self, foo: str, bar: str) -> None:
+        self.foo = bar
+        self.bar = foo

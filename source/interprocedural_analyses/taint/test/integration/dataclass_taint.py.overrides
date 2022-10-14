@@ -1,5 +1,6 @@
 @generated
 Overrides
+dataclass_taint.DataClassSwapArguments::__init__ (override) -> [dataclass_taint.DataClassSwapArguments::__init__ (method)]
 dataclass_taint.DataClassWIthInit::__init__ (override) -> [dataclass_taint.DataClassWIthInit::__init__ (method)]
 dataclass_taint.WeirdDataClass::__init__ (override) -> [dataclass_taint.WeirdDataClass::__init__ (method)]
-object::__init__ (override) -> [dataclass_taint.DataClassWIthInit::__init__ (override) dataclass_taint.WeirdDataClass::__init__ (override) object::__init__ (method)]
+object::__init__ (override) -> [dataclass_taint.DataClassSwapArguments::__init__ (override) dataclass_taint.DataClassWIthInit::__init__ (override) dataclass_taint.WeirdDataClass::__init__ (override) object::__init__ (method)]

@@ -427,10 +427,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       CallModel.return_paths_and_collapse_depths ~kind ~tito_taint
       |> List.fold
            ~f:(fun taint (return_path, collapse_depth) ->
-             read_tree return_path taint_to_propagate
-             |> BackwardState.Tree.collapse_to
+             let taint_to_propagate = read_tree return_path taint_to_propagate in
+             (if Features.CollapseDepth.should_collapse collapse_depth then
+                BackwardState.Tree.collapse_to
                   ~breadcrumbs:(Features.tito_broadening_set ())
                   ~depth:collapse_depth
+                  taint_to_propagate
+             else
+               taint_to_propagate)
              |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs
              |> BackwardState.Tree.transform_call_info
                   CallInfo.Tito

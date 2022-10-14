@@ -427,6 +427,11 @@ module CollapseDepth = struct
     let name = "collapse depth"
   end)
 
+  (* A special value that disables collapsing, which is also the maximum depth. *)
+  let no_collapse = 999999
+
+  let should_collapse depth = depth < no_collapse
+
   let approximate _ = 0
 
   let transform_on_widening_collapse _ = 0
