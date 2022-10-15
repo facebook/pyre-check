@@ -57,7 +57,7 @@ module Internal : sig
         sink: Sinks.t;
         breadcrumbs: breadcrumbs;
         via_features: via_features;
-        path: Abstract.TreeDomain.Label.path;
+        applies_to: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
         trace_length: int option;
@@ -66,7 +66,7 @@ module Internal : sig
         source: Sources.t;
         breadcrumbs: breadcrumbs;
         via_features: via_features;
-        path: Abstract.TreeDomain.Label.path;
+        applies_to: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
         trace_length: int option;
@@ -75,12 +75,12 @@ module Internal : sig
         tito: Sinks.t;
         breadcrumbs: breadcrumbs;
         via_features: via_features;
-        path: Abstract.TreeDomain.Label.path;
+        applies_to: Abstract.TreeDomain.Label.path;
       }
     | AddFeatureToArgument of {
         breadcrumbs: breadcrumbs;
         via_features: via_features;
-        path: Abstract.TreeDomain.Label.path;
+        applies_to: Abstract.TreeDomain.Label.path;
       }
     | Sanitize of sanitize_annotation list
   [@@deriving show, equal]

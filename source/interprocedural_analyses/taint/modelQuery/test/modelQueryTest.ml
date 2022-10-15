@@ -34,7 +34,7 @@ let test_apply_rule context =
         source;
         breadcrumbs = [];
         via_features = [];
-        path = [];
+        applies_to = [];
         leaf_names = [];
         leaf_name_provided = false;
         trace_length = None;
@@ -47,7 +47,7 @@ let test_apply_rule context =
         sink;
         breadcrumbs = [];
         via_features = [];
-        path = [];
+        applies_to = [];
         leaf_names = [];
         leaf_name_provided = false;
         trace_length = None;
@@ -1155,7 +1155,7 @@ let test_apply_rule context =
               sink = Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" };
               breadcrumbs = [];
               via_features = [];
-              path = [];
+              applies_to = [];
               leaf_names = [];
               leaf_name_provided = false;
               trace_length = None;
