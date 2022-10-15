@@ -281,7 +281,7 @@
             ],
             "root": {
               "filename": "list.py",
-              "line": 18,
+              "line": 23,
               "start": 9,
               "end": 23
             }
@@ -301,7 +301,7 @@
             ],
             "root": {
               "filename": "list.py",
-              "line": 19,
+              "line": 24,
               "start": 9,
               "end": 23
             }
@@ -321,7 +321,7 @@
             ],
             "root": {
               "filename": "list.py",
-              "line": 20,
+              "line": 25,
               "start": 9,
               "end": 23
             }
@@ -349,9 +349,46 @@
             ],
             "root": {
               "filename": "list.py",
-              "line": 29,
+              "line": 34,
               "start": 19,
               "end": 20
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "list.zipped_source_access_path",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito": [ { "line": 20, "start": 16, "end": 25 } ],
+            "root": {
+              "filename": "list.py",
+              "line": 18,
+              "start": 9,
+              "end": 23
             }
           }
         ]
