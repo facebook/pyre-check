@@ -17,11 +17,10 @@ module Error = AnalysisError
    by one, and remove the used codes from the map of unused ignores. Since the hash tables are
    initialized with only the sources we're considering, this is sufficient to determine all ignored
    errors and unused ignores. *)
-let handle_ignores_and_fixmes
-    ~qualifier
-    { Source.typecheck_flags = { Source.TypecheckFlags.ignore_lines; _ }; _ }
-    errors
-  =
+let handle_ignores_and_fixmes ~qualifier source errors =
+  let { Source.typecheck_flags = { Source.TypecheckFlags.ignore_lines; _ }; _ } =
+    Preprocessing.preprocess_phase1 source
+  in
   let unused_ignores, ignore_lookup =
     let unused_ignores = Location.Table.create () in
     let ignore_lookup = Int.Table.create () in

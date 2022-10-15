@@ -4377,7 +4377,13 @@ module SelfType = struct
     |> Node.create_with_default_location
 
 
-  let expand_self_type ({ Source.module_path = { qualifier; _ }; _ } as source) =
+  let expand_self_type
+      ({
+         Source.module_path = { qualifier; _ };
+         typecheck_flags = { ignore_lines; _ } as typecheck_flags;
+         _;
+       } as source)
+    =
     let module Transform = Transform.MakeStatementTransformer (struct
       type classes_with_self = Reference.Set.t
 
@@ -4402,7 +4408,24 @@ module SelfType = struct
     let type_variable_definitions =
       Set.to_list classes_with_self |> List.map ~f:(make_type_variable_definition ~qualifier)
     in
-    { source with statements = type_variable_definitions @ Source.statements source }
+    let type_variable_ignore_lines =
+      match type_variable_definitions with
+      | first :: _ ->
+          [
+            Ignore.create
+              ~ignored_line:(Location.line first.location)
+              ~codes:[24]
+              ~location:first.location
+              ~kind:TypeIgnore;
+          ]
+      | [] -> []
+    in
+    {
+      source with
+      statements = type_variable_definitions @ Source.statements source;
+      typecheck_flags =
+        { typecheck_flags with ignore_lines = type_variable_ignore_lines @ ignore_lines };
+    }
 end
 
 let preprocess_phase0 source =
