@@ -46,6 +46,7 @@ from ..connections import (
     MemoryBytesReader,
     MemoryBytesWriter,
 )
+from ..daemon_connection import DaemonConnectionFailure
 from ..daemon_query import DaemonQueryFailure
 from ..language_server_features import (
     DefinitionAvailability,
@@ -232,8 +233,10 @@ class MockRequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         code: str,
-    ) -> None:
+    ) -> Union[DaemonConnectionFailure, str]:
         self.requests.append({"path": path, "code": code})
+        # dummy result here- response not processed.
+        return code
 
 
 async def _create_server_for_request_test(

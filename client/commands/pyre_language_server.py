@@ -30,6 +30,8 @@ from . import (
     server_state as state,
 )
 
+from .daemon_connection import DaemonConnectionFailure
+
 from .daemon_query import DaemonQueryFailure
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -183,6 +185,27 @@ class PyreLanguageServer:
         if document_path not in self.server_state.opened_documents:
             return
 
+        process_unsaved_changes = (
+            self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
+        )
+        if process_unsaved_changes:
+            result = await self.handler.update_overlay(
+                path=document_path.resolve(),
+                code=str(
+                    "".join(
+                        [
+                            content_change.text
+                            for content_change in parameters.content_changes
+                        ]
+                    )
+                ),
+            )
+            if isinstance(result, DaemonConnectionFailure):
+                LOG.info(
+                    daemon_failure_string(
+                        "didChange", str(type(result)), result.failure_text
+                    )
+                )
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -198,22 +221,6 @@ class PyreLanguageServer:
             activity_key,
         )
 
-        process_unsaved_changes = (
-            self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
-        )
-
-        if process_unsaved_changes:
-            await self.handler.update_overlay(
-                path=document_path.resolve(),
-                code=str(
-                    "".join(
-                        [
-                            content_change.text
-                            for content_change in parameters.content_changes
-                        ]
-                    )
-                ),
-            )
         # Attempt to trigger a background Pyre server start on each file change
         if not self.daemon_manager.is_task_running():
             await self._try_restart_pyre_daemon()

@@ -189,7 +189,7 @@ class AbstractRequestHandler(abc.ABC):
         self,
         path: Path,
         code: str,
-    ) -> None:
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         raise NotImplementedError()
 
 
@@ -340,7 +340,7 @@ class RequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         code: str,
-    ) -> None:
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         source_path = f"{path}"
         overlay_update_json = [
             "OverlayUpdate",
@@ -352,8 +352,9 @@ class RequestHandler(AbstractRequestHandler):
                 "code_update": ["NewCode", code],
             },
         ]
-        # Drop the response (the daemon code will log it for us)
-        await daemon_connection.attempt_send_async_raw_request(
+        # Response is only used in the event that it is a DaemonConnectionFailure
+        daemon_response = await daemon_connection.attempt_send_async_raw_request(
             socket_path=self.socket_path,
             request=json.dumps(overlay_update_json),
         )
+        return daemon_response
