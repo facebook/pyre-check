@@ -10,7 +10,17 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Iterable, Iterator, List, Optional, Sequence, Set, Tuple
+from typing import (
+    Callable,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -36,6 +46,7 @@ from ..connections import (
     MemoryBytesReader,
     MemoryBytesWriter,
 )
+from ..daemon_query import DaemonQueryFailure
 from ..language_server_features import (
     DefinitionAvailability,
     HoverAvailability,
@@ -180,7 +191,7 @@ class MockRequestHandler(AbstractRequestHandler):
     async def get_type_coverage(
         self,
         path: Path,
-    ) -> Optional[lsp.TypeCoverageResponse]:
+    ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
         self.requests.append({"path": path})
         return self.mock_type_coverage
 
@@ -188,7 +199,7 @@ class MockRequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> lsp.LspHoverResponse:
+    ) -> Union[DaemonQueryFailure, lsp.LspHoverResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_hover_response is None:
             raise ValueError("You need to set hover response in the mock handler")
@@ -199,7 +210,7 @@ class MockRequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> List[lsp.LspLocation]:
+    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_definition_response is None:
             raise ValueError("You need to set hover response in the mock handler")
@@ -210,7 +221,7 @@ class MockRequestHandler(AbstractRequestHandler):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> List[lsp.LspLocation]:
+    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_references_response is None:
             raise ValueError("You need to set hover response in the mock handler")
@@ -1799,6 +1810,7 @@ class RequestHandlerTest(testslide.TestCase):
                 )
             )
             self.assertTrue(result is not None)
+            self.assertTrue(not isinstance(result, DaemonQueryFailure))
             self.assertEqual(len(result.uncovered_ranges), 1)
             self.assertTrue(result.covered_percent < 100.0)
 
@@ -1813,7 +1825,7 @@ class RequestHandlerTest(testslide.TestCase):
             result = await pyre_query_manager.get_type_coverage(
                 path=Path("test.py"),
             )
-        self.assertTrue(result is None)
+            self.assertTrue(result is None)
 
     @setup.async_test
     async def test_get_type_coverage__strict(self) -> None:
@@ -1831,6 +1843,7 @@ class RequestHandlerTest(testslide.TestCase):
             with patch_connect_async(input_channel, output_channel):
                 result = await pyre_query_manager.get_type_coverage(path=test_path)
             self.assertTrue(result is not None)
+            self.assertTrue(not isinstance(result, DaemonQueryFailure))
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertEqual(result.covered_percent, 100.0)
 
@@ -1844,6 +1857,7 @@ class RequestHandlerTest(testslide.TestCase):
         with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager.get_type_coverage(path=Path("test.py"))
         self.assertTrue(result is not None)
+        self.assertTrue(not isinstance(result, DaemonQueryFailure))
         self.assertEqual(result.covered_percent, 0.0)
         self.assertEqual(len(result.uncovered_ranges), 1)
         self.assertEqual(
@@ -1878,6 +1892,7 @@ class RequestHandlerTest(testslide.TestCase):
                 )
             )
             self.assertTrue(result is not None)
+            self.assertTrue(not isinstance(result, DaemonQueryFailure))
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertTrue(result.covered_percent == 100.0)
 
@@ -1911,6 +1926,7 @@ class RequestHandlerTest(testslide.TestCase):
                 )
             )
             self.assertTrue(result is not None)
+            self.assertTrue(not isinstance(result, DaemonQueryFailure))
             self.assertEqual(len(result.uncovered_ranges), 1)
             self.assertTrue(result.covered_percent == 75.0)
 
@@ -1932,7 +1948,7 @@ class RequestHandlerTest(testslide.TestCase):
             result = await pyre_query_manager.get_type_coverage(
                 path=Path("test.py"),
             )
-        self.assertTrue(result is None)
+            self.assertTrue(result is None)
 
     @setup.async_test
     async def test_get_type_coverage__expression_level__strict(self) -> None:
@@ -1957,6 +1973,7 @@ class RequestHandlerTest(testslide.TestCase):
                     path=test_path,
                 )
             self.assertTrue(result is not None)
+            self.assertTrue(not isinstance(result, DaemonQueryFailure))
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertEqual(result.covered_percent, 100.0)
 
@@ -2010,11 +2027,7 @@ class RequestHandlerTest(testslide.TestCase):
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=42, character=10),
             )
-
-        self.assertEqual(
-            result,
-            lsp.LspHoverResponse.empty(),
-        )
+            self.assertTrue(isinstance(result, DaemonQueryFailure))
 
     @setup.async_test
     async def test_query_definition_location(self) -> None:
@@ -2089,15 +2102,11 @@ class RequestHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            response = await pyre_query_manager.get_definition_locations(
+            result = await pyre_query_manager.get_definition_locations(
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=42, character=10),
             )
-
-        self.assertEqual(
-            response,
-            [],
-        )
+            self.assertTrue(isinstance(result, DaemonQueryFailure))
 
     @setup.async_test
     async def test_query_references(self) -> None:
@@ -2195,5 +2204,4 @@ class RequestHandlerTest(testslide.TestCase):
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=42, character=10),
             )
-
-        self.assertEqual(result, [])
+            self.assertTrue(isinstance(result, DaemonQueryFailure))

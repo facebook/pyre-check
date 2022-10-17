@@ -10,11 +10,13 @@ TODO(T132414938) Add a module-level docstring
 
 from __future__ import annotations
 
+import dataclasses
+
 import json
 import logging
 from pathlib import Path
 
-from typing import Optional, Type, TypeVar
+from typing import Optional, Type, TypeVar, Union
 
 import dataclasses_json
 
@@ -31,6 +33,11 @@ QueryResponseType = TypeVar(
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+@dataclasses.dataclass(frozen=True)
+class DaemonQueryFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
+    failure_text: str
+
+
 def execute_query(socket_path: Path, query_text: str) -> Response:
     raw_request = json.dumps(["Query", query_text])
     raw_response = daemon_connection.send_raw_request(socket_path, raw_request)
@@ -41,7 +48,7 @@ async def attempt_async_query(
     socket_path: Path,
     query_text: str,
     overlay_id: Optional[str] = None,
-) -> Optional[Response]:
+) -> Union[Response, DaemonQueryFailure]:
     response_text = await daemon_connection.attempt_send_async_raw_request(
         socket_path=socket_path,
         request=json.dumps(
@@ -52,11 +59,16 @@ async def attempt_async_query(
             ]
         ),
     )
+    if isinstance(response_text, daemon_connection.DaemonConnectionFailure):
+        return DaemonQueryFailure(
+            f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.failure_text})"
+        )
     try:
-        return Response.parse(response_text) if response_text else None
+        return Response.parse(response_text)
     except InvalidQueryResponse as exception:
-        LOG.info(f"Failed to parse json {response_text} due to exception: {exception}")
-        return None
+        return DaemonQueryFailure(
+            f"In attempt async query with response_text, got InvalidQueryResponse exception: ({exception})"
+        )
 
 
 async def attempt_typed_async_query(
@@ -64,15 +76,15 @@ async def attempt_typed_async_query(
     socket_path: Path,
     query_text: str,
     overlay_id: Optional[str] = None,
-) -> Optional[QueryResponseType]:
+) -> Union[QueryResponseType | DaemonQueryFailure]:
     try:
         response = await attempt_async_query(
             socket_path,
             query_text,
             overlay_id,
         )
-        if response is None:
-            return None
+        if isinstance(response, DaemonQueryFailure):
+            return response
         else:
             if not isinstance(response.payload, dict):
                 raise ValueError(
@@ -84,8 +96,6 @@ async def attempt_typed_async_query(
         ValueError,
         dataclasses_json.mm.ValidationError,
     ) as exception:
-        LOG.info(
-            f"When interpretting {response.payload} as {response_type.__name__} "
-            f"got: {type(exception).__name__}({exception})"
+        return DaemonQueryFailure(
+            f"When interpretting response type: {response_type.__name__} got: {type(exception).__name__}({exception})"
         )
-        return None

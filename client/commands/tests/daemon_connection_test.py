@@ -13,7 +13,7 @@ import testslide
 from ...tests import setup
 
 from .. import connections
-from ..daemon_connection import attempt_send_async_raw_request
+from ..daemon_connection import attempt_send_async_raw_request, DaemonConnectionFailure
 
 T = TypeVar("T")
 
@@ -85,9 +85,8 @@ class SendTest(testslide.TestCase):
                 )
             )
         )
-        self.assertIsNone(
-            await attempt_send_async_raw_request(Path("dummy"), "dummy_request")
-        )
+        result = await attempt_send_async_raw_request(Path("dummy"), "dummy_request")
+        self.assertTrue(isinstance(result, DaemonConnectionFailure))
 
     @setup.async_test
     async def test_attempt_send_async_raw_request_failure1(self) -> None:
@@ -105,9 +104,8 @@ class SendTest(testslide.TestCase):
                 )
             )
         )
-        self.assertIsNone(
-            await attempt_send_async_raw_request(Path("dummy"), "dummy_request")
-        )
+        result = await attempt_send_async_raw_request(Path("dummy"), "dummy_request")
+        self.assertTrue(isinstance(result, DaemonConnectionFailure))
 
     @setup.async_test
     async def test_attempt_send_async_raw_request_failure2(self) -> None:
@@ -125,6 +123,5 @@ class SendTest(testslide.TestCase):
                 )
             )
         )
-        self.assertIsNone(
-            await attempt_send_async_raw_request(Path("dummy"), "dummy_request")
-        )
+        result = await attempt_send_async_raw_request(Path("dummy"), "dummy_request")
+        self.assertTrue(isinstance(result, DaemonConnectionFailure))

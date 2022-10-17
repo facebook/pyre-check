@@ -30,6 +30,8 @@ from . import (
     server_state as state,
 )
 
+from .daemon_query import DaemonQueryFailure
+
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
 
@@ -80,6 +82,10 @@ async def _wait_for_exit(
             continue
         # Got an exit request. Stop the wait.
         return
+
+
+def daemon_failure_string(operation: str, type_string: str, failure_text: str) -> str:
+    return f"For {operation} request, encountered failure response of type: {type_string}, failure_text: {failure_text}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -316,6 +322,13 @@ class PyreLanguageServer:
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
             )
+            if isinstance(result, DaemonQueryFailure):
+                LOG.info(
+                    daemon_failure_string(
+                        "hover", str(type(result)), result.failure_text
+                    )
+                )
+                result = lsp.LspHoverResponse.empty()
             raw_result = lsp.LspHoverResponse.cached_schema().dump(
                 result,
             )
@@ -348,7 +361,7 @@ class PyreLanguageServer:
 
     async def _get_definition_result(
         self, document_path: Path, position: lsp.LspPosition
-    ) -> List[Dict[str, object]]:
+    ) -> Union[DaemonQueryFailure, List[Dict[str, object]]]:
         """
         Helper function to call the handler. Exists only to reduce code duplication
         due to shadow mode, please don't make more of these - we already have enough
@@ -358,10 +371,13 @@ class PyreLanguageServer:
             path=document_path,
             position=position.to_pyre_position(),
         )
-        return lsp.LspLocation.cached_schema().dump(
-            definitions,
-            many=True,
-        )
+        if isinstance(definitions, DaemonQueryFailure):
+            return definitions
+        else:
+            return lsp.LspLocation.cached_schema().dump(
+                definitions,
+                many=True,
+            )
 
     async def process_definition_request(
         self,
@@ -394,6 +410,11 @@ class PyreLanguageServer:
                     document_path=document_path,
                     position=parameters.position,
                 )
+                if isinstance(raw_result, DaemonQueryFailure):
+                    LOG.info(
+                        f"Non-shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.failure_text)}"
+                    )
+                    raw_result = []
                 await lsp.write_json_rpc(
                     self.output_channel,
                     json_rpc.SuccessResponse(
@@ -417,6 +438,11 @@ class PyreLanguageServer:
                     document_path=document_path,
                     position=parameters.position,
                 )
+                if isinstance(raw_result, DaemonQueryFailure):
+                    LOG.info(
+                        f"Shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.failure_text)}"
+                    )
+                    raw_result = []
             end_time = time.time()
             await self.write_telemetry(
                 {
