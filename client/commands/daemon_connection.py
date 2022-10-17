@@ -17,8 +17,7 @@ import logging
 from pathlib import Path
 from typing import AsyncIterator, Union
 
-from tools.pyre.client import dataclasses_json_extensions as json_mixins
-
+from .. import dataclasses_json_extensions as json_mixins
 from .. import log
 from . import connections
 
