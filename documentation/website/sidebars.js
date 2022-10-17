@@ -209,7 +209,10 @@ module.exports = {
       {
         'Pysa Roadmaps': [
           'fb/pysa_roadmaps/pysa-h2-2022',
-          'fb/pysa_roadmaps/pysa-h1-2022'
+          'fb/pysa_roadmaps/pysa-h1-2022',
+          'fb/pysa_roadmaps/pysa-h2-2020',
+          'fb/pysa_roadmaps/pysa-h1-2020',
+          'fb/pysa_roadmaps/pysa-h2-2019',
         ],
       },
     ]),
