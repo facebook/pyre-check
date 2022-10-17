@@ -188,6 +188,7 @@ class PyreLanguageServer:
         process_unsaved_changes = (
             self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
+        exception_string = None
         if process_unsaved_changes:
             result = await self.handler.update_overlay(
                 path=document_path.resolve(),
@@ -206,6 +207,7 @@ class PyreLanguageServer:
                         "didChange", str(type(result)), result.failure_text
                     )
                 )
+                exception_string = result.failure_text
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -217,6 +219,7 @@ class PyreLanguageServer:
                 "server_state_start_status": str(
                     self.server_state.server_last_status.value
                 ),
+                "exception_string": str(exception_string),
             },
             activity_key,
         )
@@ -329,12 +332,14 @@ class PyreLanguageServer:
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
             )
+            exception_string = None
             if isinstance(result, DaemonQueryFailure):
                 LOG.info(
                     daemon_failure_string(
                         "hover", str(type(result)), result.failure_text
                     )
                 )
+                exception_string = result.failure_text
                 result = lsp.LspHoverResponse.empty()
             raw_result = lsp.LspHoverResponse.cached_schema().dump(
                 result,
@@ -362,6 +367,7 @@ class PyreLanguageServer:
                     "server_state_start_status": str(
                         self.server_state.server_last_status.value
                     ),
+                    "exception_string": str(exception_string),
                 },
                 activity_key,
             )
@@ -417,10 +423,12 @@ class PyreLanguageServer:
                     document_path=document_path,
                     position=parameters.position,
                 )
+                exception_string = None
                 if isinstance(raw_result, DaemonQueryFailure):
                     LOG.info(
                         f"Non-shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.failure_text)}"
                     )
+                    exception_string = raw_result.failure_text
                     raw_result = []
                 await lsp.write_json_rpc(
                     self.output_channel,
@@ -445,10 +453,12 @@ class PyreLanguageServer:
                     document_path=document_path,
                     position=parameters.position,
                 )
+                exception_string = None
                 if isinstance(raw_result, DaemonQueryFailure):
                     LOG.info(
                         f"Shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.failure_text)}"
                     )
+                    exception_string = raw_result.failure_text
                     raw_result = []
             end_time = time.time()
             await self.write_telemetry(
@@ -465,6 +475,7 @@ class PyreLanguageServer:
                     "server_state_start_status": str(
                         self.server_state.server_last_status.value
                     ),
+                    "exception_string": str(exception_string),
                 },
                 activity_key,
             )
