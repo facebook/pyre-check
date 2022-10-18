@@ -13,11 +13,13 @@ def create_zipped_source():
     y = [2, 3]
     return zip(x, y)
 
+
 def zipped_source_access_path():
     # TODO(T134884591): False positive
     x = [_test_source(), 1]
     y = [2, 3]
     return list(zip(x, y))[1][0]
+
 
 def create_zipped_source_with_all_tainted():
     x = [_test_source()]
@@ -46,14 +48,15 @@ class Woot:
     def taint_self(self, item):
         ...
 
+
 def push_pop_no_taint():
     x = []
     x.append(_test_source())
     x.pop()
     return x
 
+
 def push_pop_taint():
-    # TODO(T134884746): False negative
     x = []
     x.append(_test_source())
     x.append(1)
