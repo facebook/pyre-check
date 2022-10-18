@@ -335,7 +335,7 @@ $ pyre query "type([1 + 2, ''])"
 
 ### Types in file
 
-The command `types` returns all the types for a file that Pyre has been able to resolve. It can be called on multiple files at once with
+The command `types` returns all the types for a file that Pyre has been able to resolve. Paths must be relative paths *relative to the `pyre_configuration` for this file*. It can be called on multiple files at once with
 `types('path1', 'path2', ...)`.
 
 ```python
