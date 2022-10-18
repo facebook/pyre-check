@@ -46,7 +46,7 @@ module GlobalVariableQueries : sig
     resolution:Analysis.GlobalResolution.t ->
     rule:Taint.ModelParser.Internal.ModelQuery.rule ->
     variable_metadata:variable_metadata ->
-    Taint.ModelParser.Internal.taint_annotation list Core.String.Map.t
+    Taint.ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
 end
 
 module DumpModelQueryResults : sig
@@ -66,7 +66,7 @@ val apply_callable_query_rule
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   rule:Taint.ModelParser.Internal.ModelQuery.rule ->
   callable:Interprocedural.Target.t ->
-  (Taint.ModelParser.Internal.annotation_kind * Taint.ModelParser.Internal.taint_annotation) list
+  (Taint.ModelParser.Internal.AnnotationKind.t * Taint.ModelParser.Internal.TaintAnnotation.t) list
   Core.String.Map.t
 
 val apply_attribute_query_rule
@@ -75,7 +75,7 @@ val apply_attribute_query_rule
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   rule:Taint.ModelParser.Internal.ModelQuery.rule ->
   variable_metadata:variable_metadata ->
-  Taint.ModelParser.Internal.taint_annotation list Core.String.Map.t
+  Taint.ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
 
 val apply_all_rules
   :  resolution:Analysis.Resolution.t ->

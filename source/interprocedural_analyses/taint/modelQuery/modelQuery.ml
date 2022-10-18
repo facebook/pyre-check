@@ -606,28 +606,28 @@ let apply_callable_productions ~resolution ~productions ~callable =
         in
         let update_placeholder_via_features taint_annotation =
           match parameter, taint_annotation with
-          | Some actual_parameter, ModelParser.Source source ->
+          | Some actual_parameter, ModelParser.TaintAnnotation.Source source ->
               let via_features =
                 List.map ~f:(update_placeholder_via_feature ~actual_parameter) source.via_features
               in
-              ModelParser.Source { source with via_features }
-          | Some actual_parameter, ModelParser.Sink sink ->
+              ModelParser.TaintAnnotation.Source { source with via_features }
+          | Some actual_parameter, ModelParser.TaintAnnotation.Sink sink ->
               let via_features =
                 List.map ~f:(update_placeholder_via_feature ~actual_parameter) sink.via_features
               in
-              ModelParser.Sink { sink with via_features }
-          | Some actual_parameter, ModelParser.Tito tito ->
+              ModelParser.TaintAnnotation.Sink { sink with via_features }
+          | Some actual_parameter, ModelParser.TaintAnnotation.Tito tito ->
               let via_features =
                 List.map ~f:(update_placeholder_via_feature ~actual_parameter) tito.via_features
               in
-              ModelParser.Tito { tito with via_features }
-          | Some actual_parameter, ModelParser.AddFeatureToArgument annotation ->
+              ModelParser.TaintAnnotation.Tito { tito with via_features }
+          | Some actual_parameter, ModelParser.TaintAnnotation.AddFeatureToArgument annotation ->
               let via_features =
                 List.map
                   ~f:(update_placeholder_via_feature ~actual_parameter)
                   annotation.via_features
               in
-              ModelParser.AddFeatureToArgument { annotation with via_features }
+              ModelParser.TaintAnnotation.AddFeatureToArgument { annotation with via_features }
           | _ -> taint_annotation
         in
         match production with
@@ -636,7 +636,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
         | ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind } ->
             get_subkind_from_annotation ~pattern:source_pattern annotation
             >>| fun subkind ->
-            ModelParser.Source
+            ModelParser.TaintAnnotation.Source
               {
                 source = Sources.ParametricSource { source_name = kind; subkind };
                 breadcrumbs = [];
@@ -649,7 +649,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
         | ModelQuery.ParametricSinkFromAnnotation { sink_pattern; kind } ->
             get_subkind_from_annotation ~pattern:sink_pattern annotation
             >>| fun subkind ->
-            ModelParser.Sink
+            ModelParser.TaintAnnotation.Sink
               {
                 sink = Sinks.ParametricSink { sink_name = kind; subkind };
                 breadcrumbs = [];
@@ -665,7 +665,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
         | ModelQuery.ReturnTaint productions ->
             List.filter_map productions ~f:(fun production ->
                 production_to_taint return_annotation ~production
-                >>| fun taint -> ModelParser.ReturnAnnotation, taint)
+                >>| fun taint -> ModelParser.AnnotationKind.ReturnAnnotation, taint)
         | ModelQuery.NamedParameterTaint { name; taint = productions } -> (
             let parameter =
               List.find_map
@@ -684,7 +684,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             | Some (parameter, annotation) ->
                 List.filter_map productions ~f:(fun production ->
                     production_to_taint annotation ~production
-                    >>| fun taint -> ModelParser.ParameterAnnotation parameter, taint)
+                    >>| fun taint -> ModelParser.AnnotationKind.ParameterAnnotation parameter, taint)
             | None -> [])
         | ModelQuery.PositionalParameterTaint { index; taint = productions } -> (
             let parameter =
@@ -700,7 +700,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             | Some (parameter, annotation) ->
                 List.filter_map productions ~f:(fun production ->
                     production_to_taint annotation ~production
-                    >>| fun taint -> ModelParser.ParameterAnnotation parameter, taint)
+                    >>| fun taint -> ModelParser.AnnotationKind.ParameterAnnotation parameter, taint)
             | None -> [])
         | ModelQuery.AllParametersTaint { excludes; taint } ->
             let apply_parameter_production
@@ -714,7 +714,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 None
               else
                 production_to_taint annotation ~production
-                >>| fun taint -> ModelParser.ParameterAnnotation root, taint
+                >>| fun taint -> ModelParser.AnnotationKind.ParameterAnnotation root, taint
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
@@ -731,7 +731,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
               then
                 let parameter, _, _ = parameter in
                 production_to_taint annotation ~production ~parameter:(Some parameter)
-                >>| fun taint -> ModelParser.ParameterAnnotation root, taint
+                >>| fun taint -> ModelParser.AnnotationKind.ParameterAnnotation root, taint
               else
                 None
             in
