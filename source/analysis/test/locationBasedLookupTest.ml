@@ -2322,6 +2322,23 @@ let test_lookup_def context =
     ]
 
 
+let test_lookup_async_def context =
+  let source = {|
+      async def foo(x: int) -> None:
+          pass
+    |} in
+  let lookup = generate_lookup ~context source in
+  assert_annotation_list
+    ~lookup
+    [
+      "2:10-2:13/typing.Callable(test.foo)[[Named(x, int)], typing.Coroutine[typing.Any, \
+       typing.Any, None]]";
+      "2:14-2:15/int";
+      "2:17-2:20/typing.Type[int]";
+      "2:25-2:29/typing.Type[None]";
+    ]
+
+
 let test_lookup_unknown_accesses context =
   let source = {|
       def foo() -> None:
@@ -3492,6 +3509,7 @@ let () =
          "lookup_unbound" >:: test_lookup_unbound;
          "lookup_union_type_resolution" >:: test_lookup_union_type_resolution;
          "lookup_def" >:: test_lookup_def;
+         "lookup_async_def" >:: test_lookup_async_def;
          "lookup_unknown_accesses" >:: test_lookup_unknown_accesses;
          "classify_coverage_data" >:: test_classify_coverage_data;
          "lookup_expression" >:: test_lookup_expression;

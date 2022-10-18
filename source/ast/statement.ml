@@ -819,7 +819,11 @@ end = struct
          are handled by reading class bodies. *)
       Location.any
     else
-      let def_and_space_offset = 4 in
+      let def_and_space_offset =
+        match define with
+        | { signature = { async = true; _ }; _ } -> 10
+        | _ -> 4
+      in
       define
       |> unqualified_name
       |> name_location ~offset_columns:def_and_space_offset ~body_location
