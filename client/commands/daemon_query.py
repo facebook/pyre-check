@@ -4,7 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+The daemon query module contains APIs for sending requests to the Pyre daemon.
+The responsibility of this layer is to serialize queries and send them over the connection,
+but this module is not responsible for constructing the query/parsing the response
+(which is left to the higher layers). It is also not responsible for the low-level details
+of how the message is sent over the connection.
+
+Note that this module does not handle requests of every format (such as overlay updates
+nor incremental updates), it only handles queries.
 """
 
 
