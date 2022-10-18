@@ -80,7 +80,7 @@ module Internal = struct
         sink: Sinks.t;
         breadcrumbs: breadcrumbs;
         via_features: via_features;
-        applies_to: Abstract.TreeDomain.Label.path;
+        path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
         trace_length: int option;
@@ -89,7 +89,7 @@ module Internal = struct
         source: Sources.t;
         breadcrumbs: breadcrumbs;
         via_features: via_features;
-        applies_to: Abstract.TreeDomain.Label.path;
+        path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
         trace_length: int option;
@@ -98,12 +98,12 @@ module Internal = struct
         tito: Sinks.t;
         breadcrumbs: breadcrumbs;
         via_features: via_features;
-        applies_to: Abstract.TreeDomain.Label.path;
+        path: Abstract.TreeDomain.Label.path;
       }
     | AddFeatureToArgument of {
         breadcrumbs: breadcrumbs;
         via_features: via_features;
-        applies_to: Abstract.TreeDomain.Label.path;
+        path: Abstract.TreeDomain.Label.path;
       }
     | Sanitize of sanitize_annotation list
   [@@deriving show, equal]
@@ -565,7 +565,7 @@ let rec parse_annotations
             source;
             breadcrumbs;
             via_features;
-            applies_to = [];
+            path = [];
             leaf_names = [];
             leaf_name_provided = false;
             trace_length = None;
@@ -585,7 +585,7 @@ let rec parse_annotations
             sink;
             breadcrumbs;
             via_features;
-            applies_to = [];
+            path = [];
             leaf_names = [];
             leaf_name_provided = false;
             trace_length = None;
@@ -598,14 +598,14 @@ let rec parse_annotations
     extract_leafs expression
     >>= fun (kinds, breadcrumbs, via_features) ->
     match kinds with
-    | [] -> Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs; via_features; applies_to = [] }]
+    | [] -> Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs; via_features; path = [] }]
     | _ ->
         List.map kinds ~f:(fun (kind, subkind) ->
             AnnotationParser.parse_tito
               ~allowed_transforms:taint_configuration.transforms
               ?subkind
               kind
-            >>| fun tito -> Tito { tito; breadcrumbs; via_features; applies_to = [] })
+            >>| fun tito -> Tito { tito; breadcrumbs; via_features; path = [] })
         |> all
         |> map_error ~f:annotation_error
   in
@@ -659,16 +659,11 @@ let rec parse_annotations
                    "Expected either integer or string as index in AppliesTo annotation.")
         in
         let extend_path field = function
-          | Sink ({ applies_to; _ } as sink) ->
-              Ok (Sink { sink with applies_to = field :: applies_to })
-          | Source ({ applies_to; _ } as source) ->
-              Ok (Source { source with applies_to = field :: applies_to })
-          | Tito ({ applies_to; _ } as tito) ->
-              Ok (Tito { tito with applies_to = field :: applies_to })
-          | AddFeatureToArgument ({ applies_to; _ } as add_feature_to_argument) ->
-              Ok
-                (AddFeatureToArgument
-                   { add_feature_to_argument with applies_to = field :: applies_to })
+          | Sink ({ path; _ } as sink) -> Ok (Sink { sink with path = field :: path })
+          | Source ({ path; _ } as source) -> Ok (Source { source with path = field :: path })
+          | Tito ({ path; _ } as tito) -> Ok (Tito { tito with path = field :: path })
+          | AddFeatureToArgument ({ path; _ } as add_feature_to_argument) ->
+              Ok (AddFeatureToArgument { add_feature_to_argument with path = field :: path })
           | Sanitize _ -> Error (annotation_error "`AppliesTo[Sanitize[...]]` is not supported.")
         in
         field
@@ -842,7 +837,7 @@ let rec parse_annotations
         | Some "AddFeatureToArgument" ->
             extract_leafs expression
             >>| fun (_, breadcrumbs, via_features) ->
-            [AddFeatureToArgument { breadcrumbs; via_features; applies_to = [] }]
+            [AddFeatureToArgument { breadcrumbs; via_features; path = [] }]
         | Some "AttachToSink" ->
             extract_attach_features ~name:"AttachToSink" expression
             >>| fun (breadcrumbs, via_features) ->
@@ -852,7 +847,7 @@ let rec parse_annotations
                   sink = Sinks.Attach;
                   breadcrumbs;
                   via_features;
-                  applies_to = [];
+                  path = [];
                   leaf_names = [];
                   leaf_name_provided = false;
                   trace_length = None;
@@ -861,7 +856,7 @@ let rec parse_annotations
         | Some "AttachToTito" ->
             extract_attach_features ~name:"AttachToTito" expression
             >>| fun (breadcrumbs, via_features) ->
-            [Tito { tito = Sinks.Attach; breadcrumbs; via_features; applies_to = [] }]
+            [Tito { tito = Sinks.Attach; breadcrumbs; via_features; path = [] }]
         | Some "AttachToSource" ->
             extract_attach_features ~name:"AttachToSource" expression
             >>| fun (breadcrumbs, via_features) ->
@@ -871,7 +866,7 @@ let rec parse_annotations
                   source = Sources.Attach;
                   breadcrumbs;
                   via_features;
-                  applies_to = [];
+                  path = [];
                   leaf_names = [];
                   leaf_name_provided = false;
                   trace_length = None;
@@ -926,7 +921,7 @@ let rec parse_annotations
                   sink = partial_sink;
                   breadcrumbs = [];
                   via_features = [];
-                  applies_to = [];
+                  path = [];
                   leaf_names = [];
                   leaf_name_provided = false;
                   trace_length = None;
@@ -934,7 +929,7 @@ let rec parse_annotations
             ]
         | _ -> invalid_annotation_error ())
     | Name (Name.Identifier "TaintInTaintOut") ->
-        Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features = []; applies_to = [] }]
+        Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features = []; path = [] }]
     | Name (Name.Identifier "ViaTypeOf") ->
         if is_object_target then
           (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
@@ -950,7 +945,7 @@ let rec parse_annotations
                 };
             ]
           in
-          Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features; applies_to = [] }]
+          Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; via_features; path = [] }]
         else
           Error
             (annotation_error
@@ -987,7 +982,7 @@ let rec parse_annotations
                 leaf_names = [];
                 leaf_name_provided = false;
                 trace_length = None;
-                applies_to = [];
+                path = [];
               } ->
               Ok (source :: sources, sinks)
           | Sink
@@ -998,7 +993,7 @@ let rec parse_annotations
                 leaf_names = [];
                 leaf_name_provided = false;
                 trace_length = None;
-                applies_to = [];
+                path = [];
               } ->
               Ok (sources, sink :: sinks)
           | taint_annotation ->
@@ -1033,7 +1028,7 @@ let rec parse_annotations
                 leaf_names = [];
                 leaf_name_provided = false;
                 trace_length = None;
-                applies_to = [];
+                path = [];
               } ->
               Ok (SpecificSource (Sources.to_sanitized_source_exn source))
           | Sink
@@ -1044,7 +1039,7 @@ let rec parse_annotations
                 leaf_names = [];
                 leaf_name_provided = false;
                 trace_length = None;
-                applies_to = [];
+                path = [];
               } ->
               Ok (SpecificSink (Sinks.to_sanitized_sink_exn sink))
           | taint_annotation ->
@@ -2255,23 +2250,15 @@ let add_taint_annotation_to_model
   | ReturnAnnotation -> (
       let root = AccessPath.Root.LocalResult in
       match annotation with
-      | Sink
-          {
-            sink;
-            breadcrumbs;
-            via_features;
-            applies_to;
-            leaf_names;
-            leaf_name_provided;
-            trace_length;
-          } ->
+      | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
+        ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_sink_taint
                ~root
-               ~path:applies_to
+               ~path
                ~leaf_names
                ~leaf_name_provided
                ~trace_length
@@ -2281,22 +2268,15 @@ let add_taint_annotation_to_model
                via_features
           |> map_error ~f:invalid_model_for_taint
       | Source
-          {
-            source;
-            breadcrumbs;
-            via_features;
-            applies_to;
-            leaf_names;
-            leaf_name_provided;
-            trace_length;
-          } ->
+          { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
+        ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_source_taint
                ~root
-               ~path:applies_to
+               ~path
                ~leaf_names
                ~leaf_name_provided
                ~trace_length
@@ -2320,23 +2300,15 @@ let add_taint_annotation_to_model
       | Sanitize annotations -> Ok (introduce_sanitize ~source_sink_filter ~root model annotations))
   | ParameterAnnotation root -> (
       match annotation with
-      | Sink
-          {
-            sink;
-            breadcrumbs;
-            via_features;
-            applies_to;
-            leaf_names;
-            leaf_name_provided;
-            trace_length;
-          } ->
+      | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
+        ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_sink_taint
                ~root
-               ~path:applies_to
+               ~path
                ~leaf_names
                ~leaf_name_provided
                ~trace_length
@@ -2346,22 +2318,15 @@ let add_taint_annotation_to_model
                via_features
           |> map_error ~f:invalid_model_for_taint
       | Source
-          {
-            source;
-            breadcrumbs;
-            via_features;
-            applies_to;
-            leaf_names;
-            leaf_name_provided;
-            trace_length;
-          } ->
+          { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
+        ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_source_taint
                ~root
-               ~path:applies_to
+               ~path
                ~leaf_names
                ~leaf_name_provided
                ~trace_length
@@ -2370,7 +2335,7 @@ let add_taint_annotation_to_model
                source
                via_features
           |> map_error ~f:invalid_model_for_taint
-      | Tito { tito; breadcrumbs; via_features; applies_to } ->
+      | Tito { tito; breadcrumbs; via_features; path } ->
           (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
@@ -2380,16 +2345,16 @@ let add_taint_annotation_to_model
                ~resolution
                AccessPath.Root.LocalResult
                ~callable_annotation
-          |> introduce_taint_in_taint_out ~root ~path:applies_to model tito via_features
+          |> introduce_taint_in_taint_out ~root ~path model tito via_features
           |> map_error ~f:invalid_model_for_taint
-      | AddFeatureToArgument { breadcrumbs; via_features; applies_to } ->
+      | AddFeatureToArgument { breadcrumbs; via_features; path } ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
           |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
           |> introduce_sink_taint
                ~root
-               ~path:applies_to
+               ~path
                ~leaf_names:[]
                ~leaf_name_provided:false
                ~trace_length:None
