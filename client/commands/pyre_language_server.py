@@ -86,8 +86,8 @@ async def _wait_for_exit(
         return
 
 
-def daemon_failure_string(operation: str, type_string: str, failure_text: str) -> str:
-    return f"For {operation} request, encountered failure response of type: {type_string}, failure_text: {failure_text}"
+def daemon_failure_string(operation: str, type_string: str, error_message: str) -> str:
+    return f"For {operation} request, encountered failure response of type: {type_string}, error_message: {error_message}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -188,7 +188,7 @@ class PyreLanguageServer:
         process_unsaved_changes = (
             self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
-        exception_string = None
+        error_message = None
         if process_unsaved_changes:
             result = await self.handler.update_overlay(
                 path=document_path.resolve(),
@@ -204,10 +204,10 @@ class PyreLanguageServer:
             if isinstance(result, DaemonConnectionFailure):
                 LOG.info(
                     daemon_failure_string(
-                        "didChange", str(type(result)), result.failure_text
+                        "didChange", str(type(result)), result.error_message
                     )
                 )
-                exception_string = result.failure_text
+                error_message = result.error_message
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -219,7 +219,7 @@ class PyreLanguageServer:
                 "server_state_start_status": str(
                     self.server_state.server_last_status.value
                 ),
-                "exception_string": str(exception_string),
+                "error_message": str(error_message),
             },
             activity_key,
         )
@@ -332,14 +332,14 @@ class PyreLanguageServer:
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
             )
-            exception_string = None
+            error_message = None
             if isinstance(result, DaemonQueryFailure):
                 LOG.info(
                     daemon_failure_string(
-                        "hover", str(type(result)), result.failure_text
+                        "hover", str(type(result)), result.error_message
                     )
                 )
-                exception_string = result.failure_text
+                error_message = result.error_message
                 result = lsp.LspHoverResponse.empty()
             raw_result = lsp.LspHoverResponse.cached_schema().dump(
                 result,
@@ -367,7 +367,7 @@ class PyreLanguageServer:
                     "server_state_start_status": str(
                         self.server_state.server_last_status.value
                     ),
-                    "exception_string": str(exception_string),
+                    "error_message": str(error_message),
                 },
                 activity_key,
             )
@@ -423,12 +423,12 @@ class PyreLanguageServer:
                     document_path=document_path,
                     position=parameters.position,
                 )
-                exception_string = None
+                error_message = None
                 if isinstance(raw_result, DaemonQueryFailure):
                     LOG.info(
-                        f"Non-shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.failure_text)}"
+                        f"Non-shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.error_message)}"
                     )
-                    exception_string = raw_result.failure_text
+                    error_message = raw_result.error_message
                     raw_result = []
                 await lsp.write_json_rpc(
                     self.output_channel,
@@ -453,12 +453,12 @@ class PyreLanguageServer:
                     document_path=document_path,
                     position=parameters.position,
                 )
-                exception_string = None
+                error_message = None
                 if isinstance(raw_result, DaemonQueryFailure):
                     LOG.info(
-                        f"Shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.failure_text)}"
+                        f"Shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.error_message)}"
                     )
-                    exception_string = raw_result.failure_text
+                    error_message = raw_result.error_message
                     raw_result = []
             end_time = time.time()
             await self.write_telemetry(
@@ -475,7 +475,7 @@ class PyreLanguageServer:
                     "server_state_start_status": str(
                         self.server_state.server_last_status.value
                     ),
-                    "exception_string": str(exception_string),
+                    "error_message": str(error_message),
                 },
                 activity_key,
             )

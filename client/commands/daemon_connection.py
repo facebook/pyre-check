@@ -26,7 +26,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass(frozen=True)
 class DaemonConnectionFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
-    failure_text: str
+    error_message: str
 
 
 def send_raw_request(socket_path: Path, raw_request: str) -> str:
