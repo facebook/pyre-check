@@ -7,7 +7,10 @@
  * @format
  */
 
-const {fbContent, fbInternalOnly} = require('docusaurus-plugin-internaldocs-fb/internal');
+const {
+  fbContent,
+  fbInternalOnly,
+} = require('docusaurus-plugin-internaldocs-fb/internal');
 
 module.exports = {
   pyre: [
@@ -201,7 +204,7 @@ module.exports = {
           'fb/review-tma-system-coverage',
           'fb/pysa-tasks-backlog',
           'fb/pysa-debugging-tricks',
-          'fb/pysa-github-sync'
+          'fb/pysa-github-sync',
         ],
       },
     ]),
@@ -210,6 +213,8 @@ module.exports = {
         'Pysa Roadmaps': [
           'fb/pysa_roadmaps/pysa-h2-2022',
           'fb/pysa_roadmaps/pysa-h1-2022',
+          'fb/pysa_roadmaps/pysa-h2-2021',
+          'fb/pysa_roadmaps/pysa-h1-2021',
           'fb/pysa_roadmaps/pysa-h2-2020',
           'fb/pysa_roadmaps/pysa-h1-2020',
           'fb/pysa_roadmaps/pysa-h2-2019',
