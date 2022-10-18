@@ -77,6 +77,10 @@ type kind =
       taint_annotation: Expression.t;
       reason: string;
     }
+  | InvalidAccessPath of {
+      access_path: Expression.t;
+      reason: string;
+    }
   | MissingAttribute of {
       class_name: string;
       attribute_name: string;
@@ -261,6 +265,8 @@ let description error =
         "`%s` is an invalid taint annotation: %s"
         (Expression.show taint_annotation)
         reason
+  | InvalidAccessPath { access_path; reason } ->
+      Format.asprintf "`%s` is an invalid access path: %s" (Expression.show access_path) reason
   | UnexpectedDecorators { name; unexpected_decorators } ->
       let decorators = List.map unexpected_decorators ~f:Expression.show in
       let property_decorator_message =
@@ -428,6 +434,7 @@ let code { kind; _ } =
   | ModelQueryInExpectedModelsClause _ -> 44
   | InvalidExpectedModelsClause _ -> 45
   | InvalidAnyChildClause _ -> 46
+  | InvalidAccessPath _ -> 47
 
 
 let display { kind = error; path; location } =

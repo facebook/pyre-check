@@ -5772,6 +5772,75 @@ let test_query_parsing context =
   ()
 
 
+let test_access_path _ =
+  let module Label = Abstract.TreeDomain.Label in
+  let parse_access_path source =
+    PyreParser.Parser.parse_exn [source]
+    |> (function
+         | [{ Ast.Node.value = Ast.Statement.Statement.Expression expression; _ }] -> expression
+         | _ -> failwith "unexpected statement for acces path")
+    |> ModelParser.parse_access_path ~path:None ~location:Ast.Location.any
+  in
+  let assert_valid_path ~source ~expected =
+    match parse_access_path source with
+    | Error error ->
+        assert_bool
+          (Format.asprintf "Unexpected access path error: %a" ModelVerificationError.pp error)
+          false
+    | Ok path -> assert_equal ~printer:Label.show_path ~cmp:Label.equal_path expected path
+  in
+  let assert_invalid_path ~source ~expected =
+    match parse_access_path source with
+    | Error error -> assert_equal ~printer:ident expected (ModelVerificationError.display error)
+    | Ok _ -> assert_bool (Format.sprintf "Unexpected valid access path for: %s" source) false
+  in
+  assert_valid_path ~source:"_" ~expected:[];
+  assert_valid_path ~source:"_.foo" ~expected:[Label.Field "foo"];
+  assert_valid_path ~source:"_.foo.bar" ~expected:[Label.Field "foo"; Label.Field "bar"];
+  assert_valid_path ~source:"_['foo']" ~expected:[Label.Index "foo"];
+  assert_valid_path ~source:"_[\"foo\"]" ~expected:[Label.Index "foo"];
+  assert_valid_path ~source:"_[0]" ~expected:[Label.Index "0"];
+  assert_valid_path ~source:"_['foo']['bar']" ~expected:[Label.Index "foo"; Label.Index "bar"];
+  assert_valid_path ~source:"_['foo'].bar" ~expected:[Label.Index "foo"; Label.Field "bar"];
+  assert_valid_path ~source:"_.foo['bar']" ~expected:[Label.Field "foo"; Label.Index "bar"];
+  assert_valid_path ~source:"_.foo[0]" ~expected:[Label.Field "foo"; Label.Index "0"];
+  assert_valid_path ~source:"_.keys()" ~expected:[AccessPath.dictionary_keys];
+  assert_valid_path ~source:"_.all()" ~expected:[Label.AnyIndex];
+  assert_valid_path
+    ~source:"_[0].keys().foo.all()"
+    ~expected:[Label.Index "0"; AccessPath.dictionary_keys; Label.Field "foo"; Label.AnyIndex];
+  assert_valid_path
+    ~source:"_.all()['a'].bar"
+    ~expected:[Label.AnyIndex; Label.Index "a"; Label.Field "bar"];
+  assert_invalid_path
+    ~source:"foo"
+    ~expected:"`foo` is an invalid access path: access path must start with `_`";
+  assert_invalid_path
+    ~source:"foo.bar"
+    ~expected:"`foo` is an invalid access path: access path must start with `_`";
+  assert_invalid_path
+    ~source:"_.a-b"
+    ~expected:
+      "`_.a.__sub__(b)` is an invalid access path: unexpected method call `__sub__` (allowed: \
+       `__getitem__`, `keys`, `all`)";
+  assert_invalid_path
+    ~source:"_[a]"
+    ~expected:
+      "`_[a]` is an invalid access path: expected int or string literal argument for __getitem__, \
+       got `a`";
+  assert_invalid_path
+    ~source:"_[_.foo]"
+    ~expected:
+      "`_[_.foo]` is an invalid access path: expected int or string literal argument for \
+       __getitem__, got `_.foo`";
+  assert_invalid_path
+    ~source:"_.keys().something()"
+    ~expected:
+      "`_.keys().something()` is an invalid access path: unexpected method call `something` \
+       (allowed: `__getitem__`, `keys`, `all`)";
+  ()
+
+
 let () =
   "taint_model"
   >::: [
@@ -5803,5 +5872,6 @@ let () =
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;
          "taint_union_models" >:: test_union_models;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
+         "access_path" >:: test_access_path;
        ]
   |> Test.run

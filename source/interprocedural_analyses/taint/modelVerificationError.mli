@@ -73,6 +73,10 @@ type kind =
       taint_annotation: Expression.t;
       reason: string;
     }
+  | InvalidAccessPath of {
+      access_path: Expression.t;
+      reason: string;
+    }
   | MissingAttribute of {
       class_name: string;
       attribute_name: string;

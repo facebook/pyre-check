@@ -233,6 +233,12 @@ val parse
 
 val verify_model_syntax : path:PyrePath.t -> source:string -> unit
 
+val parse_access_path
+  :  path:PyrePath.t option ->
+  location:Ast.Location.t ->
+  Ast.Expression.t ->
+  (Abstract.TreeDomain.Label.path, ModelVerificationError.t) result
+
 (* Exposed for model queries. *)
 val create_callable_model_from_annotations
   :  resolution:Analysis.Resolution.t ->

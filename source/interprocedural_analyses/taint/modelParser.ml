@@ -292,6 +292,62 @@ let base_name expression =
   | _ -> None
 
 
+let rec parse_access_path ~path ~location expression =
+  let module Label = Abstract.TreeDomain.Label in
+  let open Core.Result in
+  let annotation_error reason =
+    model_verification_error
+      ~path
+      ~location
+      (InvalidAccessPath { access_path = expression; reason })
+  in
+  match Node.value expression with
+  | Expression.Name (Name.Identifier "_") -> Ok []
+  | Expression.Name (Name.Identifier _) ->
+      Error (annotation_error "access path must start with `_`")
+  | Expression.Name (Name.Attribute { base; attribute; _ }) ->
+      parse_access_path ~path ~location base >>| fun base -> base @ [Label.Field attribute]
+  | Expression.Call
+      {
+        callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+        arguments = [{ Call.Argument.value = argument; _ }];
+      } -> (
+      parse_access_path ~path ~location base
+      >>= fun base ->
+      match Node.value argument with
+      | Expression.Constant (Constant.Integer index) -> Ok (base @ [Label.create_int_index index])
+      | Expression.Constant (Constant.String { StringLiteral.value = key; _ }) ->
+          Ok (base @ [Label.create_name_index key])
+      | _ ->
+          Error
+            (annotation_error
+               (Format.sprintf
+                  "expected int or string literal argument for __getitem__, got `%s`"
+                  (Expression.show argument))))
+  | Expression.Call
+      {
+        callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
+        arguments = [];
+      } ->
+      parse_access_path ~path ~location base >>| fun base -> base @ [AccessPath.dictionary_keys]
+  | Expression.Call
+      {
+        callee = { Node.value = Name (Name.Attribute { base; attribute = "all"; _ }); _ };
+        arguments = [];
+      } ->
+      parse_access_path ~path ~location base >>| fun base -> base @ [Label.AnyIndex]
+  | Expression.Call { callee = { Node.value = Name (Name.Attribute { base; attribute; _ }); _ }; _ }
+    ->
+      parse_access_path ~path ~location base
+      >>= fun _ ->
+      Error
+        (annotation_error
+           (Format.sprintf
+              "unexpected method call `%s` (allowed: `__getitem__`, `keys`, `all`)"
+              attribute))
+  | _ -> Error (annotation_error "unexpected expression")
+
+
 let rec parse_annotations
     ~path
     ~location
