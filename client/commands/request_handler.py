@@ -4,7 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+The request handler provides an interface and implementation for LSP related
+queries (such as hover & definition). The current implementation of the request
+handler involves a synchronous query to the Pyre server via a daemon connection,
+but since the request handler also provides an interface (AbstractRequestHandler),
+the request handler implementation can be mocked.
 """
 
 
