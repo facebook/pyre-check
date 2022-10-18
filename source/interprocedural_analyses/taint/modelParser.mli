@@ -27,17 +27,13 @@ end
 
 (* Exposed for model queries. *)
 module Internal : sig
-  type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, equal]
-
-  type via_features = Features.ViaFeature.t list [@@deriving show, equal]
-
   type leaf_kind =
     | Leaf of {
         name: string;
         subkind: string option;
       }
-    | Breadcrumbs of breadcrumbs
-    | ViaFeatures of via_features
+    | Breadcrumbs of Features.Breadcrumb.t list
+    | ViaFeatures of Features.ViaFeature.t list
   [@@deriving show, equal]
 
   type sanitize_annotation =
@@ -55,8 +51,8 @@ module Internal : sig
   type taint_annotation =
     | Sink of {
         sink: Sinks.t;
-        breadcrumbs: breadcrumbs;
-        via_features: via_features;
+        breadcrumbs: Features.Breadcrumb.t list;
+        via_features: Features.ViaFeature.t list;
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
@@ -64,8 +60,8 @@ module Internal : sig
       }
     | Source of {
         source: Sources.t;
-        breadcrumbs: breadcrumbs;
-        via_features: via_features;
+        breadcrumbs: Features.Breadcrumb.t list;
+        via_features: Features.ViaFeature.t list;
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
@@ -73,13 +69,13 @@ module Internal : sig
       }
     | Tito of {
         tito: Sinks.t;
-        breadcrumbs: breadcrumbs;
-        via_features: via_features;
+        breadcrumbs: Features.Breadcrumb.t list;
+        via_features: Features.ViaFeature.t list;
         path: Abstract.TreeDomain.Label.path;
       }
     | AddFeatureToArgument of {
-        breadcrumbs: breadcrumbs;
-        via_features: via_features;
+        breadcrumbs: Features.Breadcrumb.t list;
+        via_features: Features.ViaFeature.t list;
         path: Abstract.TreeDomain.Label.path;
       }
     | Sanitize of sanitize_annotation list
