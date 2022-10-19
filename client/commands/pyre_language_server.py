@@ -479,6 +479,8 @@ class PyreLanguageServer:
                 },
                 activity_key,
             )
+        if not self.daemon_manager.is_task_running():
+            await self._try_restart_pyre_daemon()
 
     async def process_document_symbols_request(
         self,
