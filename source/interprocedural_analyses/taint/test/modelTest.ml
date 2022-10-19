@@ -3118,8 +3118,10 @@ let test_invalid_models context =
     |}
     ~expect:
       {|`Sanitize(TaintSource[(A, Via[featureA])])` is an invalid taint annotation: `ModelParser.Internal.TaintAnnotation.Source {source = A;
-   breadcrumbs = [SimpleVia[featureA]]; via_features = []; path = ;
-   leaf_names = []; leaf_name_provided = false; trace_length = None}` is not supported within `Sanitize[...]`|}
+   features =
+   { ModelParser.Internal.TaintFeatures.breadcrumbs = [SimpleVia[featureA]];
+     via_features = []; path = None; leaf_names = [];
+     leaf_name_provided = false; trace_length = None }}` is not supported within `Sanitize[...]`|}
     ();
   assert_invalid_model
     ~model_source:
@@ -4244,16 +4246,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4284,16 +4277,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4328,16 +4312,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4368,27 +4343,8 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
-                  TaintAnnotation
-                    (ModelParser.TaintAnnotation.Sink
-                       {
-                         sink = Sinks.NamedSink "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -4419,27 +4375,8 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
-                  TaintAnnotation
-                    (ModelParser.TaintAnnotation.Sink
-                       {
-                         sink = Sinks.NamedSink "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -4470,27 +4407,8 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
-                  TaintAnnotation
-                    (ModelParser.TaintAnnotation.Sink
-                       {
-                         sink = Sinks.NamedSink "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -4521,16 +4439,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4561,16 +4470,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4611,16 +4511,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4661,16 +4552,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4705,16 +4587,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.Source
-                           {
-                             source = Sources.NamedSource "Test";
-                             breadcrumbs = [];
-                             via_features = [];
-                             path = [];
-                             leaf_names = [];
-                             leaf_name_provided = false;
-                             trace_length = None;
-                           });
+                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -4749,16 +4622,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.Source
-                           {
-                             source = Sources.NamedSource "Test";
-                             breadcrumbs = [];
-                             via_features = [];
-                             path = [];
-                             leaf_names = [];
-                             leaf_name_provided = false;
-                             trace_length = None;
-                           });
+                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -4793,16 +4657,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.Source
-                           {
-                             source = Sources.NamedSource "Test";
-                             breadcrumbs = [];
-                             via_features = [];
-                             path = [];
-                             leaf_names = [];
-                             leaf_name_provided = false;
-                             trace_length = None;
-                           });
+                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -4911,27 +4766,8 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
-                  TaintAnnotation
-                    (ModelParser.TaintAnnotation.Sink
-                       {
-                         sink = Sinks.NamedSink "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -4962,27 +4798,8 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
-                  TaintAnnotation
-                    (ModelParser.TaintAnnotation.Sink
-                       {
-                         sink = Sinks.NamedSink "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -5013,16 +4830,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5053,16 +4861,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5093,27 +4892,8 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
-                  TaintAnnotation
-                    (ModelParser.TaintAnnotation.Sink
-                       {
-                         sink = Sinks.NamedSink "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -5152,27 +4932,8 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
-                  TaintAnnotation
-                    (ModelParser.TaintAnnotation.Sink
-                       {
-                         sink = Sinks.NamedSink "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -5208,16 +4969,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5284,16 +5036,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.Sink
-                           {
-                             sink = Sinks.NamedSink "Test";
-                             breadcrumbs = [];
-                             via_features = [];
-                             path = [];
-                             leaf_names = [];
-                             leaf_name_provided = false;
-                             trace_length = None;
-                           });
+                        (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                     ];
                 };
             ];
@@ -5342,16 +5085,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models =
@@ -5393,16 +5127,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5448,16 +5173,7 @@ let test_query_parsing context =
               ReturnTaint
                 [
                   TaintAnnotation
-                    (Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models =
@@ -5568,16 +5284,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.Source
-                           {
-                             source = Sources.NamedSource "Test";
-                             breadcrumbs = [];
-                             via_features = [];
-                             path = [];
-                             leaf_names = [];
-                             leaf_name_provided = false;
-                             trace_length = None;
-                           });
+                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -5671,16 +5378,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.Source
-                           {
-                             source = Sources.NamedSource "Test";
-                             breadcrumbs = [];
-                             via_features = [];
-                             path = [];
-                             leaf_names = [];
-                             leaf_name_provided = false;
-                             trace_length = None;
-                           });
+                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -5712,16 +5410,7 @@ let test_query_parsing context =
               GlobalTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5752,16 +5441,7 @@ let test_query_parsing context =
               GlobalTaint
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.Source
-                       {
-                         source = Sources.NamedSource "Test";
-                         breadcrumbs = [];
-                         via_features = [];
-                         path = [];
-                         leaf_names = [];
-                         leaf_name_provided = false;
-                         trace_length = None;
-                       });
+                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];

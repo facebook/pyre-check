@@ -29,29 +29,11 @@ let test_apply_rule context =
       | None -> Sources.NamedSource name
       | Some subkind -> Sources.ParametricSource { source_name = name; subkind }
     in
-    ModelParser.TaintAnnotation.Source
-      {
-        source;
-        breadcrumbs = [];
-        via_features = [];
-        path = [];
-        leaf_names = [];
-        leaf_name_provided = false;
-        trace_length = None;
-      }
+    ModelParser.TaintAnnotation.from_source source
   in
   let sink name =
     let sink = Sinks.NamedSink name in
-    ModelParser.TaintAnnotation.Sink
-      {
-        sink;
-        breadcrumbs = [];
-        via_features = [];
-        path = [];
-        leaf_names = [];
-        leaf_name_provided = false;
-        trace_length = None;
-      }
+    ModelParser.TaintAnnotation.from_sink sink
   in
   let assert_applied_rules ~source ~rule ~callable ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -1150,16 +1132,8 @@ let test_apply_rule context =
         ( ModelParser.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "b"; positional_only = false }),
-          ModelParser.TaintAnnotation.Sink
-            {
-              sink = Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" };
-              breadcrumbs = [];
-              via_features = [];
-              path = [];
-              leaf_names = [];
-              leaf_name_provided = false;
-              trace_length = None;
-            } );
+          ModelParser.TaintAnnotation.from_sink
+            (Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" }) );
       ];
   (* Type annotation constraint for callables *)
   assert_applied_rules

@@ -27,15 +27,27 @@ end
 
 (* Exposed for model queries. *)
 module Internal : sig
-  module LeafKind : sig
-    type t =
-      | Leaf of {
-          name: string;
-          subkind: string option;
-        }
-      | Breadcrumbs of Features.Breadcrumb.t list
-      | ViaFeatures of Features.ViaFeature.t list
+  (* Represents a source or sink kind (e.g, UserControlled) *)
+  module Kind : sig
+    type t = {
+      name: string;
+      subkind: string option;
+    }
     [@@deriving show, equal]
+  end
+
+  module TaintFeatures : sig
+    type t = {
+      breadcrumbs: Features.Breadcrumb.t list;
+      via_features: Features.ViaFeature.t list;
+      path: Abstract.TreeDomain.Label.path option;
+      leaf_names: Features.LeafName.t list;
+      leaf_name_provided: bool;
+      trace_length: int option;
+    }
+    [@@deriving show, equal]
+
+    val empty : t
   end
 
   module SanitizeAnnotation : sig
@@ -56,35 +68,25 @@ module Internal : sig
     type t =
       | Sink of {
           sink: Sinks.t;
-          breadcrumbs: Features.Breadcrumb.t list;
-          via_features: Features.ViaFeature.t list;
-          path: Abstract.TreeDomain.Label.path;
-          leaf_names: Features.LeafName.t list;
-          leaf_name_provided: bool;
-          trace_length: int option;
+          features: TaintFeatures.t;
         }
       | Source of {
           source: Sources.t;
-          breadcrumbs: Features.Breadcrumb.t list;
-          via_features: Features.ViaFeature.t list;
-          path: Abstract.TreeDomain.Label.path;
-          leaf_names: Features.LeafName.t list;
-          leaf_name_provided: bool;
-          trace_length: int option;
+          features: TaintFeatures.t;
         }
       | Tito of {
           tito: Sinks.t;
-          breadcrumbs: Features.Breadcrumb.t list;
-          via_features: Features.ViaFeature.t list;
-          path: Abstract.TreeDomain.Label.path;
+          features: TaintFeatures.t;
         }
-      | AddFeatureToArgument of {
-          breadcrumbs: Features.Breadcrumb.t list;
-          via_features: Features.ViaFeature.t list;
-          path: Abstract.TreeDomain.Label.path;
-        }
+      | AddFeatureToArgument of { features: TaintFeatures.t }
       | Sanitize of SanitizeAnnotation.t list
     [@@deriving show, equal]
+
+    val from_source : Sources.t -> t
+
+    val from_sink : Sinks.t -> t
+
+    val from_tito : Sinks.t -> t
   end
 
   module AnnotationKind : sig

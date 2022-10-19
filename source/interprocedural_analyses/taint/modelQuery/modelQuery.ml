@@ -606,28 +606,28 @@ let apply_callable_productions ~resolution ~productions ~callable =
         in
         let update_placeholder_via_features taint_annotation =
           match parameter, taint_annotation with
-          | Some actual_parameter, ModelParser.TaintAnnotation.Source source ->
+          | Some actual_parameter, ModelParser.TaintAnnotation.Source { source; features } ->
               let via_features =
-                List.map ~f:(update_placeholder_via_feature ~actual_parameter) source.via_features
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
               in
-              ModelParser.TaintAnnotation.Source { source with via_features }
-          | Some actual_parameter, ModelParser.TaintAnnotation.Sink sink ->
+              ModelParser.TaintAnnotation.Source
+                { source; features = { features with via_features } }
+          | Some actual_parameter, ModelParser.TaintAnnotation.Sink { sink; features } ->
               let via_features =
-                List.map ~f:(update_placeholder_via_feature ~actual_parameter) sink.via_features
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
               in
-              ModelParser.TaintAnnotation.Sink { sink with via_features }
-          | Some actual_parameter, ModelParser.TaintAnnotation.Tito tito ->
+              ModelParser.TaintAnnotation.Sink { sink; features = { features with via_features } }
+          | Some actual_parameter, ModelParser.TaintAnnotation.Tito { tito; features } ->
               let via_features =
-                List.map ~f:(update_placeholder_via_feature ~actual_parameter) tito.via_features
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
               in
-              ModelParser.TaintAnnotation.Tito { tito with via_features }
-          | Some actual_parameter, ModelParser.TaintAnnotation.AddFeatureToArgument annotation ->
+              ModelParser.TaintAnnotation.Tito { tito; features = { features with via_features } }
+          | Some actual_parameter, ModelParser.TaintAnnotation.AddFeatureToArgument { features } ->
               let via_features =
-                List.map
-                  ~f:(update_placeholder_via_feature ~actual_parameter)
-                  annotation.via_features
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
               in
-              ModelParser.TaintAnnotation.AddFeatureToArgument { annotation with via_features }
+              ModelParser.TaintAnnotation.AddFeatureToArgument
+                { features = { features with via_features } }
           | _ -> taint_annotation
         in
         match production with
@@ -639,12 +639,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             ModelParser.TaintAnnotation.Source
               {
                 source = Sources.ParametricSource { source_name = kind; subkind };
-                breadcrumbs = [];
-                via_features = [];
-                path = [];
-                leaf_names = [];
-                leaf_name_provided = false;
-                trace_length = None;
+                features = ModelParser.TaintFeatures.empty;
               }
         | ModelQuery.ParametricSinkFromAnnotation { sink_pattern; kind } ->
             get_subkind_from_annotation ~pattern:sink_pattern annotation
@@ -652,12 +647,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             ModelParser.TaintAnnotation.Sink
               {
                 sink = Sinks.ParametricSink { sink_name = kind; subkind };
-                breadcrumbs = [];
-                via_features = [];
-                path = [];
-                leaf_names = [];
-                leaf_name_provided = false;
-                trace_length = None;
+                features = ModelParser.TaintFeatures.empty;
               }
       in
       let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
