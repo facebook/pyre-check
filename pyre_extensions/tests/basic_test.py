@@ -155,6 +155,17 @@ class BasicTestCase(unittest.TestCase):
         test_json({"test": "dict"})
         test_json(["test_list"])
 
+    def test_readonly(self) -> None:
+        try:
+            from .. import ReadOnly
+
+            def expect_mutable(x: int) -> ReadOnly[int]:
+                y: ReadOnly[int] = x
+                return y
+
+        except Exception:
+            self.fail("ReadOnly type is missing or broken")
+
 
 if __name__ == "__main__":
     unittest.main()

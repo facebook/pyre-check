@@ -23,6 +23,7 @@ __all__ = [
     "none_throws",
     "override",
     "ParameterSpecification",
+    "ReadOnly",
     "safe_cast",
     "safe_json",
     "tests",
@@ -140,4 +141,8 @@ class BroadcastError(Generic[_T1, _T2]):
 
 
 class Compose(Generic[_Ts]):
+    pass
+
+
+class ReadOnly(Generic[_T]):
     pass
