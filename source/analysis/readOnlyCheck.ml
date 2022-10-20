@@ -301,7 +301,7 @@ module State (Context : Context) = struct
       ~type_resolution
       ~resolution
       ~location
-      ~target:{ Node.value = target; location = target_location }
+      ~target:({ Node.value = target; location = target_location } as target_expression)
       ~annotation
       ~value
     =
@@ -354,7 +354,23 @@ module State (Context : Context) = struct
                     errors
               | _ -> errors
             in
-            resolution, errors
+            let assignment_errors, resolution =
+              let { Resolved.resolved = target_readonlyness; errors = target_errors; resolution } =
+                forward_expression ~type_resolution ~resolution target_expression
+              in
+              match target, target_readonlyness with
+              | Name.Attribute { attribute; _ }, ReadOnly
+                when not (Define.is_class_toplevel (Node.value Context.define)) ->
+                  ( add_error
+                      ~location:target_location
+                      ~kind:
+                        (Error.ReadOnlynessMismatch
+                           (AssigningToReadOnlyAttribute { attribute_name = attribute }))
+                      target_errors,
+                    resolution )
+              | _ -> target_errors, resolution
+            in
+            resolution, assignment_errors @ errors
         | None -> resolution, [])
     | _ -> resolution, []
 
