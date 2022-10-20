@@ -305,6 +305,7 @@ module ReadOnly = struct
         callee: Reference.t option;
         mismatch: mismatch;
       }
+    | AssigningToReadOnlyAttribute of { attribute_name: Identifier.t }
   [@@deriving compare, sexp, show, hash]
 
   let error_messages ~concise kind =
@@ -359,6 +360,8 @@ module ReadOnly = struct
             ReadOnlyness.pp
             actual;
         ]
+    | AssigningToReadOnlyAttribute { attribute_name } ->
+        [Format.asprintf "Cannot assign to attribute `%s` since it is readonly" attribute_name]
 
 
   let join left right =
@@ -426,17 +429,23 @@ module ReadOnly = struct
            && Option.equal Reference.equal_sanitized left_callee right_callee ->
         let mismatch = join_mismatch left_mismatch right_mismatch in
         IncompatibleParameterType { left with mismatch } |> Option.some
+    | ( AssigningToReadOnlyAttribute { attribute_name = left_attribute_name },
+        AssigningToReadOnlyAttribute { attribute_name = right_attribute_name } )
+      when Identifier.equal left_attribute_name right_attribute_name ->
+        Some left
     | _ -> None
 
 
   let code_of_kind = function
     | IncompatibleVariableType _ -> 3001
     | IncompatibleParameterType _ -> 3002
+    | AssigningToReadOnlyAttribute _ -> 3003
 
 
   let name_of_kind = function
     | IncompatibleVariableType _ -> "ReadOnly violation - Incompatible variable type"
     | IncompatibleParameterType _ -> "ReadOnly violation - Incompatible parameter type"
+    | AssigningToReadOnlyAttribute _ -> "ReadOnly violation - Assigning to readonly attribute"
 end
 
 type invalid_decoration =

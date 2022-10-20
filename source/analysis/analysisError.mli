@@ -271,6 +271,7 @@ module ReadOnly : sig
         callee: Reference.t option;
         mismatch: mismatch;
       }
+    | AssigningToReadOnlyAttribute of { attribute_name: Identifier.t }
   [@@deriving compare, sexp, show, hash]
 end
 
