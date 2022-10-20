@@ -63,6 +63,18 @@ let callable_body =
         annotation = Some (Type.expression Type.object_primitive);
         value = Node.create_with_default_location (Expression.Constant Constant.NoneLiteral);
       };
+    Statement.Assign
+      {
+        target =
+          Node.create_with_default_location
+            (Expression.Name
+               (Ast.Expression.create_name ~location:Location.any "typing.Callable.__qualname__"));
+        annotation = Some (Type.expression Type.string);
+        value =
+          Node.create_with_default_location
+            (Expression.Constant
+               (Constant.String { StringLiteral.kind = StringLiteral.String; value = "" }));
+      };
   ]
   |> List.map ~f:Node.create_with_default_location
 

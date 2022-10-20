@@ -167,6 +167,41 @@ let test_callable_attribute_access context =
         foo.nonsense = 1
     |}
     ["Undefined attribute [16]: Callable `foo` has no attribute `nonsense`."];
+  (* `__qualname__` is supported for all functions, including lambdas, as per PEP 3155. *)
+  assert_type_errors
+    ~context
+    {|
+     def foo() -> None:
+         pass
+     def bar() -> str:
+         return foo.__qualname__
+     |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+     def foo() -> str:
+         f = lambda x: 0
+         return f.__qualname__
+     |}
+    [];
+  (* Pyre unsoundly assumes that all callables have qualnames, even though objects with `__call__`
+   * don't necessarily have one. *)
+  assert_type_errors
+    ~context
+    {|
+     from typing import Callable
+     class C:
+         def __call__(self) -> int:
+             return 0
+     def foo(f: Callable[[], int]) -> str:
+         return f.__qualname__
+
+     # This fails in the runtime, but type checks.
+     foo(C())
+     |}
+    [];
+
   ()
 
 
