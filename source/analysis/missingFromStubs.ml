@@ -5,7 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* MissingTypeStubs:
+ *
+ * This module is mostly a data module that fills in the gaps from missing typeshed stubs.
+ * It adds type lattice and attribute information form for values annotated as
+ * `x: _SpecialForm = ...` in typeshed, and is used by the UnannotatedGlobalEnvironment.
+ * Implementers need to write raw qualified ASTs.
+ *)
 
 open Core
 open Ast
