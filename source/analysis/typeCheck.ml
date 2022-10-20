@@ -3918,13 +3918,6 @@ module State (Context : Context) = struct
           in
           match target_value with
           | Expression.Name name -> (
-              let resolved_base =
-                match name with
-                | Name.Identifier identifier -> `Identifier identifier
-                | Name.Attribute attribute ->
-                    let resolved = resolve_expression_type ~resolution attribute.base in
-                    `Attribute (attribute, resolved)
-              in
               let inner_assignment resolution errors resolved_base =
                 let reference, attribute, target_annotation =
                   match resolved_base with
@@ -4625,6 +4618,13 @@ module State (Context : Context) = struct
                       ~errors:(emit_typed_dictionary_errors ~errors typed_dictionary_errors)
                       ~is_valid_annotation:false
                       ~resolved_value_weakened:Type.Top
+              in
+              let resolved_base =
+                match name with
+                | Name.Identifier identifier -> `Identifier identifier
+                | Name.Attribute attribute ->
+                    let resolved = resolve_expression_type ~resolution attribute.base in
+                    `Attribute (attribute, resolved)
               in
               match resolved_base with
               | `Attribute (attribute, Type.Union types) ->
