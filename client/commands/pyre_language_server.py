@@ -475,6 +475,7 @@ class PyreLanguageServer:
                     "server_state_start_status": str(
                         self.server_state.server_last_status.value
                     ),
+                    "overlays_enabled_for_user": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                     "error_message": str(error_message),
                 },
                 activity_key,
