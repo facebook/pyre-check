@@ -56,7 +56,7 @@ module Internal = struct
       name: string;
       subkind: string option;
     }
-    [@@deriving show, equal]
+    [@@deriving equal]
 
     let from_name name = { name; subkind = None }
   end
@@ -70,7 +70,7 @@ module Internal = struct
       leaf_name_provided: bool;
       trace_length: int option;
     }
-    [@@deriving show, equal]
+    [@@deriving equal]
 
     let empty =
       {
@@ -112,6 +112,32 @@ module Internal = struct
       match features.path with
       | None -> { features with path = Some [element] }
       | Some path -> { features with path = Some (element :: path) }
+
+
+    let show_as_list
+        { breadcrumbs; via_features; path; leaf_names; leaf_name_provided = _; trace_length }
+      =
+      let show_breadcrumb = function
+        | Features.Breadcrumb.SimpleVia name -> Format.sprintf "Via[%s]" name
+        | breadcrumb -> Format.asprintf "Via[%a]" Features.Breadcrumb.pp breadcrumb
+      in
+      let features =
+        List.map ~f:show_breadcrumb breadcrumbs
+        @ List.map ~f:Features.ViaFeature.show via_features
+        @ List.map ~f:Features.LeafName.show leaf_names
+      in
+      let features =
+        match path with
+        | Some path ->
+            features @ [Format.asprintf "Path[%a]" Abstract.TreeDomain.Label.pp_path path]
+        | None -> features
+      in
+      let features =
+        match trace_length with
+        | Some trace_length -> features @ [Format.sprintf "TraceLength[%d]" trace_length]
+        | None -> features
+      in
+      features
   end
 
   module TaintKindsWithFeatures = struct
@@ -161,7 +187,22 @@ module Internal = struct
           sources: SanitizeTransform.Source.t list;
           sinks: SanitizeTransform.Sink.t list;
         }
-    [@@deriving show, equal]
+    [@@deriving equal]
+
+    let show_as_list = function
+      | AllSources -> ["TaintSource"]
+      | SpecificSource (SanitizeTransform.Source.Named name) ->
+          [Format.sprintf "TaintSource[%s]" name]
+      | AllSinks -> ["TaintSink"]
+      | SpecificSink (SanitizeTransform.Sink.Named name) -> [Format.sprintf "TaintSink[%s]" name]
+      | AllTito -> ["TaintInTaintOut"]
+      | SpecificTito { sources; sinks } ->
+          List.map
+            ~f:(fun (SanitizeTransform.Source.Named name) -> Format.sprintf "TaintSource[%s]" name)
+            sources
+          @ List.map
+              ~f:(fun (SanitizeTransform.Sink.Named name) -> Format.sprintf "TaintSink[%s]" name)
+              sinks
   end
 
   module TaintAnnotation = struct
@@ -180,13 +221,45 @@ module Internal = struct
         }
       | AddFeatureToArgument of { features: TaintFeatures.t }
       | Sanitize of SanitizeAnnotation.t list
-    [@@deriving show, equal]
+    [@@deriving equal]
 
     let from_source source = Source { source; features = TaintFeatures.empty }
 
     let from_sink sink = Sink { sink; features = TaintFeatures.empty }
 
     let from_tito tito = Tito { tito; features = TaintFeatures.empty }
+
+    let pp formatter = function
+      | Sink { sink; features } ->
+          Format.fprintf
+            formatter
+            "TaintSink[%s]"
+            (String.concat ~sep:", " (Sinks.show sink :: TaintFeatures.show_as_list features))
+      | Source { source; features } ->
+          Format.fprintf
+            formatter
+            "TaintSource[%s]"
+            (String.concat ~sep:", " (Sources.show source :: TaintFeatures.show_as_list features))
+      | Tito { tito; features } ->
+          Format.fprintf
+            formatter
+            "TaintInTaintOut[%s]"
+            (String.concat ~sep:", " (Sinks.show tito :: TaintFeatures.show_as_list features))
+      | AddFeatureToArgument { features } ->
+          Format.fprintf
+            formatter
+            "AddFeatureToArgument[%s]"
+            (String.concat ~sep:", " (TaintFeatures.show_as_list features))
+      | Sanitize sanitize_annotations ->
+          Format.fprintf
+            formatter
+            "Sanitize[%s]"
+            (String.concat
+               ~sep:", "
+               (sanitize_annotations |> List.map ~f:SanitizeAnnotation.show_as_list |> List.concat))
+
+
+    let show = Format.asprintf "%a" pp
   end
 
   module AnnotationKind = struct

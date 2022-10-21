@@ -33,7 +33,7 @@ module Internal : sig
       name: string;
       subkind: string option;
     }
-    [@@deriving show, equal]
+    [@@deriving equal]
   end
 
   module TaintFeatures : sig
@@ -45,7 +45,7 @@ module Internal : sig
       leaf_name_provided: bool;
       trace_length: int option;
     }
-    [@@deriving show, equal]
+    [@@deriving equal]
 
     val empty : t
   end
@@ -61,7 +61,7 @@ module Internal : sig
           sources: SanitizeTransform.Source.t list;
           sinks: SanitizeTransform.Sink.t list;
         }
-    [@@deriving show, equal]
+    [@@deriving equal]
   end
 
   module TaintAnnotation : sig

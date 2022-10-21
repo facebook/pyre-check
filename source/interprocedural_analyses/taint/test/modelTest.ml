@@ -3117,11 +3117,7 @@ let test_invalid_models context =
       def test.foo(x): ...
     |}
     ~expect:
-      {|`Sanitize(TaintSource[(A, Via[featureA])])` is an invalid taint annotation: `ModelParser.Internal.TaintAnnotation.Source {source = A;
-   features =
-   { ModelParser.Internal.TaintFeatures.breadcrumbs = [SimpleVia[featureA]];
-     via_features = []; path = None; leaf_names = [];
-     leaf_name_provided = false; trace_length = None }}` is not supported within `Sanitize[...]`|}
+      {|`Sanitize(TaintSource[(A, Via[featureA])])` is an invalid taint annotation: `TaintSource[A, Via[featureA]]` is not supported within `Sanitize[...]`|}
     ();
   assert_invalid_model
     ~model_source:
