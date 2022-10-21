@@ -192,6 +192,7 @@ class AbstractRequestHandler(abc.ABC):
     async def update_overlay(
         self,
         path: Path,
+        process_id: int,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         raise NotImplementedError()
@@ -343,15 +344,14 @@ class RequestHandler(AbstractRequestHandler):
     async def update_overlay(
         self,
         path: Path,
+        process_id: int,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         source_path = f"{path}"
         overlay_update_json = [
             "OverlayUpdate",
             {
-                # TODO: T126924773 Include a language server identifier (e.g. PID of
-                # the current process) in this overlay id.
-                "overlay_id": source_path,
+                "overlay_id": f"{source_path}, pid_{process_id}",
                 "source_path": source_path,
                 "code_update": ["NewCode", code],
             },

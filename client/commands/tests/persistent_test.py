@@ -232,6 +232,7 @@ class MockRequestHandler(AbstractRequestHandler):
     async def update_overlay(
         self,
         path: Path,
+        process_id: int,
         code: str,
     ) -> Union[DaemonConnectionFailure, str]:
         self.requests.append({"path": path, "code": code})

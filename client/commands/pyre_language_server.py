@@ -13,6 +13,7 @@ because it illustrates that this is the intermediary between the Language server
 
 import dataclasses
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Union
@@ -189,9 +190,11 @@ class PyreLanguageServer:
             self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
         error_message = None
+        process_id = os.getpid()
         if process_unsaved_changes:
             result = await self.handler.update_overlay(
                 path=document_path.resolve(),
+                process_id=process_id,
                 code=str(
                     "".join(
                         [
@@ -220,6 +223,8 @@ class PyreLanguageServer:
                     self.server_state.server_last_status.value
                 ),
                 "error_message": str(error_message),
+                "overlays_enabled_for_user": process_unsaved_changes,
+                "process_id": process_id,
             },
             activity_key,
         )
