@@ -1156,65 +1156,55 @@ let introduce_sink_taint
     taint_sink_kind
   =
   let open Core.Result in
-  if
+  if Sinks.equal taint_sink_kind Sinks.LocalReturn then
+    Error "Invalid TaintSink annotation `LocalReturn`"
+  else if
     source_sink_filter
     |> Option.map ~f:(fun source_sink_filter ->
            SourceSinkFilter.should_keep_sink source_sink_filter taint_sink_kind)
     |> Option.value ~default:true
   then
-    let backward =
-      let assign_backward_taint environment taint =
-        let path = Option.value ~default:[] path in
-        BackwardState.assign ~weak:true ~root ~path taint environment
-      in
-      match taint_sink_kind with
-      | Sinks.LocalReturn -> Error "Invalid TaintSink annotation `LocalReturn`"
-      | _ ->
-          let transform_call_information taint =
-            if leaf_name_provided then
-              BackwardTaint.transform
-                BackwardTaint.call_info
-                Map
-                ~f:(function
-                  | CallInfo.Declaration _ -> CallInfo.Declaration { leaf_name_provided = true }
-                  | call_info -> call_info)
-                taint
-            else
-              taint
-          in
-          let transform_trace_length taint =
-            match trace_length with
-            | Some trace_length ->
-                Frame.transform TraceLength.Self Map ~f:(fun _ -> trace_length) taint
-            | None -> taint
-          in
-          let leaf_names =
-            leaf_names
-            |> List.map ~f:Features.LeafNameInterned.intern
-            |> Features.LeafNameSet.of_list
-          in
-          let breadcrumbs =
-            breadcrumbs
-            |> List.map ~f:Features.BreadcrumbInterned.intern
-            |> List.map ~f:Features.BreadcrumbSet.inject
-            |> Features.BreadcrumbSet.of_approximation
-            |> Features.BreadcrumbSet.add_set ~to_add:signature_breadcrumbs
-          in
-          let via_features = Features.ViaFeatureSet.of_list via_features in
-          let leaf_taint =
-            Frame.initial
-            |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
-            |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
-            |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-            |> transform_trace_length
-            |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
-            |> transform_call_information
-            |> BackwardState.Tree.create_leaf
-          in
-          let sink_taint = assign_backward_taint sink_taint leaf_taint in
-          Ok { model.backward with sink_taint }
+    let transform_call_information taint =
+      if leaf_name_provided then
+        BackwardTaint.transform
+          BackwardTaint.call_info
+          Map
+          ~f:(function
+            | CallInfo.Declaration _ -> CallInfo.Declaration { leaf_name_provided = true }
+            | call_info -> call_info)
+          taint
+      else
+        taint
     in
-    backward >>| fun backward -> { model with backward }
+    let transform_trace_length taint =
+      match trace_length with
+      | Some trace_length -> Frame.transform TraceLength.Self Map ~f:(fun _ -> trace_length) taint
+      | None -> taint
+    in
+    let leaf_names =
+      leaf_names |> List.map ~f:Features.LeafNameInterned.intern |> Features.LeafNameSet.of_list
+    in
+    let breadcrumbs =
+      breadcrumbs
+      |> List.map ~f:Features.BreadcrumbInterned.intern
+      |> List.map ~f:Features.BreadcrumbSet.inject
+      |> Features.BreadcrumbSet.of_approximation
+      |> Features.BreadcrumbSet.add_set ~to_add:signature_breadcrumbs
+    in
+    let via_features = Features.ViaFeatureSet.of_list via_features in
+    let leaf_taint =
+      Frame.initial
+      |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
+      |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+      |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+      |> transform_trace_length
+      |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
+      |> transform_call_information
+      |> BackwardState.Tree.create_leaf
+    in
+    let path = Option.value ~default:[] path in
+    let sink_taint = BackwardState.assign ~weak:true ~root ~path leaf_taint sink_taint in
+    Ok { model with backward = { model.backward with sink_taint } }
   else
     Ok model
 
