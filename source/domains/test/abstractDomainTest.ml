@@ -2395,7 +2395,7 @@ module TreeOfStringSets = struct
          ~subtree:(parse_tree ["", ["item2"]]));
     (* Weak assignment on anyindex. *)
     assert_equal_trees
-      ~expected:(parse_tree ["a", ["item1"]; "*", ["item2"]])
+      ~expected:(parse_tree ["a", ["item1"; "item2"]; "*", ["item2"]])
       (assign
          ~weak:true
          ~tree:(parse_tree ["a", ["item1"]])
@@ -2411,7 +2411,7 @@ module TreeOfStringSets = struct
          ~subtree:(parse_tree ["", ["item2"]]));
     (* Strong assignment on anyindex. *)
     assert_equal_trees
-      ~expected:(parse_tree ["a", ["item1"]; "*", ["item2"]])
+      ~expected:(parse_tree ["a", ["item1"; "item2"]; "*", ["item2"]])
       (assign
          ~weak:false
          ~tree:(parse_tree ["a", ["item1"]])
@@ -2427,7 +2427,7 @@ module TreeOfStringSets = struct
          ~subtree:(parse_tree ["", ["item2"]]));
     (* Weak assignment on anyindex: updates anyindex and every index. *)
     assert_equal_trees
-      ~expected:(parse_tree ["a", ["item1"]; "*", ["item2"; "item3"]])
+      ~expected:(parse_tree ["a", ["item1"; "item3"]; "*", ["item2"; "item3"]])
       (assign
          ~weak:true
          ~tree:(parse_tree ["a", ["item1"]; "*", ["item2"]])
@@ -2435,7 +2435,7 @@ module TreeOfStringSets = struct
          ~subtree:(parse_tree ["", ["item3"]]));
     (* Strong assignment on anyindex: updates anyindex and every index. *)
     assert_equal_trees
-      ~expected:(parse_tree ["a", ["item1"]; "*", ["item2"; "item3"]])
+      ~expected:(parse_tree ["a", ["item1"; "item3"]; "*", ["item2"; "item3"]])
       (assign
          ~weak:false
          ~tree:(parse_tree ["a", ["item1"]; "*", ["item2"]])

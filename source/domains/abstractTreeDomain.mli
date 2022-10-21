@@ -28,7 +28,7 @@ module Label : sig
 
   val compare : t -> t -> int
 
-  val compare_path : path -> path -> int
+  val compare_path : ?cmp:(t -> t -> int) -> path -> path -> int
 
   val equal_path : path -> path -> bool
 
