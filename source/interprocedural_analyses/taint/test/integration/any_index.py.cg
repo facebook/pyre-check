@@ -1,0 +1,11 @@
+@generated
+Call dependencies
+any_index.$toplevel (fun) -> []
+any_index.post_0 (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
+any_index.post_1 (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
+any_index.post_2 (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method) int::__gt__ (method) int::__le__ (method)]
+any_index.post_3 (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method) int::__gt__ (method) int::__le__ (method)]
+any_index.pre_0 (fun) -> [_test_sink (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
+any_index.pre_1 (fun) -> [_test_sink (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
+any_index.pre_2 (fun) -> [_test_sink (fun) dict::__getitem__ (method) dict::__setitem__ (method) int::__gt__ (method) int::__le__ (method)]
+any_index.pre_3 (fun) -> [_test_sink (fun) dict::__getitem__ (method) dict::__setitem__ (method) int::__gt__ (method) int::__le__ (method)]
