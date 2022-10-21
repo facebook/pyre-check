@@ -93,7 +93,7 @@ type t = {
      module, as we are still unsure whether to rely on it or not in the long term. *)
   query_owner_targets:
     targets:Target.t list -> PyrePath.t list -> BuckChangedTargetsQueryOutput.t list Lwt.t;
-  construct_build_map: Target.t list -> BuildResult.t Lwt.t;
+  construct_build_map: source_root:PyrePath.t -> Target.t list -> BuildResult.t Lwt.t;
 }
 
 module V1 = struct
@@ -487,7 +487,7 @@ let load_and_merge_source_databases target_and_source_database_paths =
   |> load_and_merge_build_maps
 
 
-let construct_build_map_with_options buck_options normalized_targets =
+let construct_build_map_with_options buck_options ~source_root:_ normalized_targets =
   let open Lwt.Infix in
   build_source_databases buck_options normalized_targets
   >>= fun target_and_source_database_paths ->
@@ -522,5 +522,5 @@ let query_owner_targets { query_owner_targets; _ } ~targets paths =
   query_owner_targets ~targets paths
 
 
-let construct_build_map { construct_build_map; _ } normalized_targets =
-  construct_build_map normalized_targets
+let construct_build_map { construct_build_map; _ } ~source_root normalized_targets =
+  construct_build_map ~source_root normalized_targets
