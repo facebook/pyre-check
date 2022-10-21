@@ -12,21 +12,6 @@ open Base
 module Partial = struct
   type t = string Hashtbl.M(String).t [@@deriving sexp]
 
-  module MergeResult = struct
-    module IncompatibleItem = struct
-      type t = {
-        key: string;
-        left_value: string;
-        right_value: string;
-      }
-      [@@deriving sexp, compare]
-    end
-
-    type nonrec t =
-      | Ok of t
-      | Incompatible of IncompatibleItem.t
-  end
-
   let of_alist_implementation ~add items =
     let result =
       let size = List.length items in
@@ -79,24 +64,14 @@ module Partial = struct
 
   let filter = Hashtbl.filteri
 
-  exception FoundIncompatibleItem of MergeResult.IncompatibleItem.t
-
-  let merge left right =
-    try
-      let merge_item ~key = function
-        | `Left value
-        | `Right value ->
-            Some value
-        | `Both (left_value, right_value) ->
-            if String.equal left_value right_value then
-              Some left_value
-            else
-              raise
-                (FoundIncompatibleItem { MergeResult.IncompatibleItem.key; left_value; right_value })
-      in
-      MergeResult.Ok (Hashtbl.merge left right ~f:merge_item)
-    with
-    | FoundIncompatibleItem item -> MergeResult.Incompatible item
+  let merge ~resolve_conflict left right =
+    let merge_item ~key = function
+      | `Left value
+      | `Right value ->
+          Some value
+      | `Both (left_value, right_value) -> Some (resolve_conflict ~key left_value right_value)
+    in
+    Hashtbl.merge left right ~f:merge_item
 
 
   let to_alist = Hashtbl.to_alist

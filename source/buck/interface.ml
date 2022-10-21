@@ -27,6 +27,24 @@ module BuildResult = struct
   }
 end
 
+module IncompatibleMergeItem = struct
+  type t = {
+    key: string;
+    left_value: string;
+    right_value: string;
+  }
+  [@@deriving sexp, compare]
+end
+
+exception FoundIncompatibleMergeItem of IncompatibleMergeItem.t
+
+let resolve_merge_conflict_by_name ~key left_value right_value =
+  if String.equal left_value right_value then
+    left_value
+  else
+    raise (FoundIncompatibleMergeItem { IncompatibleMergeItem.key; left_value; right_value })
+
+
 module BuckChangedTargetsQueryOutput = struct
   type t = {
     source_base_path: string;
@@ -53,12 +71,18 @@ module BuckChangedTargetsQueryOutput = struct
           match to_partial_build_map output with
           | Result.Error _ as error -> error
           | Result.Ok next_build_map -> (
-              match BuildMap.Partial.merge sofar next_build_map with
-              | BuildMap.Partial.MergeResult.Incompatible
-                  { BuildMap.Partial.MergeResult.IncompatibleItem.key; _ } ->
+              try
+                let sofar =
+                  BuildMap.Partial.merge
+                    sofar
+                    next_build_map
+                    ~resolve_conflict:resolve_merge_conflict_by_name
+                in
+                merge ~sofar rest
+              with
+              | FoundIncompatibleMergeItem { IncompatibleMergeItem.key; _ } ->
                   let message = Format.sprintf "Overlapping artifact file detected: %s" key in
-                  Result.Error message
-              | BuildMap.Partial.MergeResult.Ok sofar -> merge ~sofar rest))
+                  Result.Error message))
     in
     merge ~sofar:BuildMap.Partial.empty outputs
 end
@@ -397,8 +421,13 @@ let merge_target_and_build_map
     (next_target, next_build_map)
   =
   let open BuildMap.Partial in
-  match merge build_map_sofar next_build_map with
-  | MergeResult.Incompatible { MergeResult.IncompatibleItem.key; left_value; right_value } ->
+  try
+    let merged_build_map =
+      merge build_map_sofar next_build_map ~resolve_conflict:resolve_merge_conflict_by_name
+    in
+    (next_target, next_build_map) :: target_and_build_maps_sofar, merged_build_map
+  with
+  | FoundIncompatibleMergeItem { IncompatibleMergeItem.key; left_value; right_value } ->
       Log.warning "Cannot include target for type checking: %s" (Target.show next_target);
       (* For better error message, try to figure out which target casued the conflict. *)
       let conflicting_target =
@@ -414,8 +443,6 @@ let merge_target_and_build_map
         (Option.value_map conflicting_target ~default:"" ~f:(Format.sprintf " by `%s`"))
         right_value;
       target_and_build_maps_sofar, build_map_sofar
-  | MergeResult.Ok merged_build_map ->
-      (next_target, next_build_map) :: target_and_build_maps_sofar, merged_build_map
 
 
 let load_and_merge_build_maps target_and_source_database_paths =
