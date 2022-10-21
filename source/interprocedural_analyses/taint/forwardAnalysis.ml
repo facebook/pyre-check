@@ -387,7 +387,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              |> ForwardState.Tree.join taint)
            ~init:accumulated_tito
     in
-    let convert_tito_tree_to_taint ~argument ~argument_taint ~kind ~tito_tree tito_effects =
+    let convert_tito_tree_to_taint
+        ~argument
+        ~argument_taint
+        ~kind
+        ~pair:{ CallModel.TaintInTaintOutMap.TreeRootsPair.tree = tito_tree; _ }
+        tito_effects
+      =
       let tito_tree =
         BackwardState.Tree.fold
           BackwardState.Tree.Path

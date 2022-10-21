@@ -28,6 +28,8 @@ module Root : sig
   val parameter_name : t -> string option
 
   val to_string : t -> string
+
+  module Set : Caml.Set.S with type elt = t
 end
 
 type t = {

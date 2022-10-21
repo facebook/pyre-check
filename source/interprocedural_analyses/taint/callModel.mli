@@ -33,11 +33,19 @@ val match_actuals_to_formals
   ArgumentMatches.t list
 
 (* A mapping from a taint-in-taint-out kind (e.g, `Sinks.LocalReturn`, `Sinks.ParameterUpdate` or
-   `Sinks.AddFeatureToArgument`) to a tito taint (including features, return paths, depth). *)
+   `Sinks.AddFeatureToArgument`) to a tito taint (including features, return paths, depth) and the
+   roots in the tito model whose trees contain this sink. *)
 module TaintInTaintOutMap : sig
-  type t = (Sinks.t, BackwardState.Tree.t) Map.Poly.t
+  module TreeRootsPair : sig
+    type t = {
+      tree: BackwardState.Tree.t;
+      roots: AccessPath.Root.Set.t;
+    }
+  end
 
-  val fold : t -> init:'a -> f:(kind:Sinks.t -> tito_tree:BackwardState.Tree.t -> 'a -> 'a) -> 'a
+  type t = (Sinks.t, TreeRootsPair.t) Map.Poly.t
+
+  val fold : t -> init:'a -> f:(kind:Sinks.t -> pair:TreeRootsPair.t -> 'a -> 'a) -> 'a
 end
 
 val taint_in_taint_out_mapping
