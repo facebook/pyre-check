@@ -2064,7 +2064,9 @@ module TreeOfStringSets = struct
 
   let parse_path path =
     let parse_element element =
-      if String.sub element ~pos:0 ~len:1 = "$" then
+      if String.equal element "*" then
+        AbstractTreeDomain.Label.AnyIndex
+      else if String.sub element ~pos:0 ~len:1 |> String.equal "$" then
         AbstractTreeDomain.Label.Field element
       else
         AbstractTreeDomain.Label.create_name_index element
@@ -2320,6 +2322,22 @@ module TreeOfStringSets = struct
       (create [Part (Path, ([], StringSet.of_list ["a"]))])
       (parse_tree ["$keys", ["a"]])
       ~expected:(create [Part (Path, ([], StringSet.of_list ["a"]))]);
+    assert_join
+      (parse_tree ["i", ["a"]])
+      (parse_tree ["*", ["b"]])
+      ~expected:(parse_tree ["i", ["a"; "b"]; "*", ["b"]]);
+    assert_join
+      (parse_tree ["*", ["b"]])
+      (parse_tree ["i", ["a"]])
+      ~expected:(parse_tree ["i", ["a"; "b"]; "*", ["b"]]);
+    assert_join
+      (parse_tree ["i", ["a"]; "*", ["c"]])
+      (parse_tree ["*", ["b"]])
+      ~expected:(parse_tree ["i", ["a"; "b"]; "*", ["b"; "c"]]);
+    assert_join
+      (parse_tree ["*", ["b"]])
+      (parse_tree ["i", ["a"]; "*", ["c"]])
+      ~expected:(parse_tree ["i", ["a"; "b"]; "*", ["b"; "c"]]);
     ();
 
     let assert_show ~expected tree = assert_equal ~printer:Fn.id expected (show tree) in
@@ -2348,14 +2366,81 @@ module TreeOfStringSets = struct
       ~expected:(create [Part (Path, ([], StringSet.of_list ["a"; "b"]))])
       ~width:1
       (parse_tree ["a", ["a"]; "b", ["b"]]);
+    let assert_equal_trees ~expected actual =
+      assert_equal ~cmp:compare ~printer:show expected actual
+    in
     (* Weak assignment with bottom. *)
-    assert_equal
-      (parse_tree ["a", ["item"]])
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item"]])
       (assign
          ~weak:true
          ~tree:(parse_tree ["a", ["item"]])
          [AbstractTreeDomain.Label.Index "b"]
          ~subtree:bottom);
+    (* Weak assignment on same index. *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item1"; "item2"]])
+      (assign
+         ~weak:true
+         ~tree:(parse_tree ["a", ["item1"]])
+         [AbstractTreeDomain.Label.Index "a"]
+         ~subtree:(parse_tree ["", ["item2"]]));
+    (* Strong assignment on same index. *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item2"]])
+      (assign
+         ~weak:false
+         ~tree:(parse_tree ["a", ["item1"]])
+         [AbstractTreeDomain.Label.Index "a"]
+         ~subtree:(parse_tree ["", ["item2"]]));
+    (* Weak assignment on anyindex. *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item1"]; "*", ["item2"]])
+      (assign
+         ~weak:true
+         ~tree:(parse_tree ["a", ["item1"]])
+         [AbstractTreeDomain.Label.AnyIndex]
+         ~subtree:(parse_tree ["", ["item2"]]));
+    (* Same, swapping arguments *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item2"]; "*", ["item1"]])
+      (assign
+         ~weak:true
+         ~tree:(parse_tree ["*", ["item1"]])
+         [AbstractTreeDomain.Label.Index "a"]
+         ~subtree:(parse_tree ["", ["item2"]]));
+    (* Strong assignment on anyindex. *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item1"]; "*", ["item2"]])
+      (assign
+         ~weak:false
+         ~tree:(parse_tree ["a", ["item1"]])
+         [AbstractTreeDomain.Label.AnyIndex]
+         ~subtree:(parse_tree ["", ["item2"]]));
+    (* Same, swapping arguments *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item2"]; "*", ["item1"]])
+      (assign
+         ~weak:false
+         ~tree:(parse_tree ["*", ["item1"]])
+         [AbstractTreeDomain.Label.Index "a"]
+         ~subtree:(parse_tree ["", ["item2"]]));
+    (* Weak assignment on anyindex: updates anyindex and every index. *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item1"]; "*", ["item2"; "item3"]])
+      (assign
+         ~weak:true
+         ~tree:(parse_tree ["a", ["item1"]; "*", ["item2"]])
+         [AbstractTreeDomain.Label.AnyIndex]
+         ~subtree:(parse_tree ["", ["item3"]]));
+    (* Strong assignment on anyindex: updates anyindex and every index. *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["item1"]; "*", ["item2"; "item3"]])
+      (assign
+         ~weak:false
+         ~tree:(parse_tree ["a", ["item1"]; "*", ["item2"]])
+         [AbstractTreeDomain.Label.AnyIndex]
+         ~subtree:(parse_tree ["", ["item3"]]));
     (* collapse *)
     let assert_collapse ~transform ~expected tree =
       let actual =

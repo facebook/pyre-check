@@ -1180,11 +1180,11 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     let create parts =
       let create_path result part =
         match part with
-        | Part (Path, (path, tip)) -> create_leaf tip |> create_tree path |> join result
-        | Part (Self, info) -> join result (info : t)
+        | Part (Path, (path, tip)) -> assign ~weak:true ~tree:result path ~subtree:(create_leaf tip)
+        | Part (Self, info) -> assign ~weak:true ~tree:result [] ~subtree:info
         | _ ->
             (* Assume [] path *)
-            Element.create [part] |> create_leaf |> join result
+            assign ~weak:true ~tree:result [] ~subtree:(Element.create [part] |> create_leaf)
       in
       ListLabels.fold_left parts ~init:bottom ~f:create_path
 
