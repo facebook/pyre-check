@@ -901,7 +901,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
 @click.option(
     "--unsaved-changes",
     type=click.Choice(
-        [kind.value for kind in language_server_features.DocumentSymbolsAvailability]
+        [kind.value for kind in language_server_features.UnsavedChangesAvailability]
     ),
     default=language_server_features.LanguageServerFeatures.unsaved_changes.value,
     help="Availability support for Pyre analyzing unsaved editor buffers",
