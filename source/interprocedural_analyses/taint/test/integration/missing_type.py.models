@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -18,7 +18,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -38,7 +38,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -61,7 +61,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -76,7 +76,7 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -89,7 +89,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -112,7 +112,7 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "root": {
+            "origin": {
               "filename": "missing_type.py",
               "line": 31,
               "start": 15,
@@ -151,8 +151,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 30, "start": 8, "end": 17 } ],
-            "root": {
+            "tito_positions": [ { "line": 30, "start": 8, "end": 17 } ],
+            "origin": {
               "filename": "missing_type.py",
               "line": 30,
               "start": 8,
@@ -172,7 +172,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "missing_type.py",
               "line": 31,
               "start": 15,
@@ -212,7 +212,7 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "root": {
+            "origin": {
               "filename": "missing_type.py",
               "line": 19,
               "start": 15,

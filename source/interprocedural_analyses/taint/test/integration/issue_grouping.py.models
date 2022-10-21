@@ -21,7 +21,7 @@
                 "kind": "SourceB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "issue_grouping.py",
               "line": 31,
               "start": 13,
@@ -90,7 +90,7 @@
                 "kind": "SourceA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "issue_grouping.py",
               "line": 30,
               "start": 13,
@@ -155,7 +155,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "issue_grouping.py",
               "line": 24,
               "start": 11,
@@ -177,7 +177,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "root": {
+            "origin": {
               "filename": "issue_grouping.py",
               "line": 25,
               "start": 11,
@@ -196,7 +196,9 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "SinkA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SinkA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -208,7 +210,9 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "SinkB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SinkB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -220,7 +224,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -232,7 +238,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceB" } ], "declaration": null }
+        ]
       }
     ]
   }

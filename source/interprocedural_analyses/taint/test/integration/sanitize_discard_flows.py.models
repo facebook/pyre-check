@@ -6,7 +6,9 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -19,7 +21,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -32,7 +36,9 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -123,8 +129,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 34, "start": 32, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 34, "start": 32, "end": 42 } ],
+            "origin": {
               "filename": "sanitize_discard_flows.py",
               "line": 34,
               "start": 32,

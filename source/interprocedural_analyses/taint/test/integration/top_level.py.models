@@ -22,7 +22,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "top_level.py",
               "line": 16,
               "start": 4,
@@ -92,7 +92,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "top_level.py",
               "line": 8,
               "start": 4,
@@ -112,7 +112,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "top_level.py",
               "line": 9,
               "start": 11,
@@ -141,7 +141,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -153,7 +153,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -165,7 +165,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -179,7 +181,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -193,7 +198,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -214,7 +219,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -237,7 +242,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -280,7 +285,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -319,7 +324,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -333,7 +341,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [
@@ -386,7 +396,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "top_level.py",
               "line": 13,
               "start": 15,

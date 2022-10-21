@@ -24,7 +24,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 460, "start": 23, "end": 28 } ],
+            "tito_positions": [ { "line": 460, "start": 23, "end": 28 } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -48,7 +48,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 461,
               "start": 11,
@@ -192,7 +192,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 478,
               "start": 11,
@@ -235,11 +235,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 435, "start": 32, "end": 37 },
               { "line": 436, "start": 24, "end": 28 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 434,
               "start": 12,
@@ -258,7 +258,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 437,
               "start": 11,
@@ -301,8 +301,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 448, "start": 39, "end": 44 } ],
-            "root": {
+            "tito_positions": [ { "line": 448, "start": 39, "end": 44 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 447,
               "start": 12,
@@ -321,7 +321,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 449,
               "start": 11,
@@ -363,7 +363,7 @@
                 "kind": "SourceA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 330,
               "start": 12,
@@ -433,8 +433,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 303, "start": 39, "end": 44 } ],
-            "root": {
+            "tito_positions": [ { "line": 303, "start": 39, "end": 44 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 302,
               "start": 12,
@@ -453,7 +453,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 304,
               "start": 11,
@@ -496,8 +496,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 88, "start": 23, "end": 28 } ],
-            "root": {
+            "tito_positions": [ { "line": 88, "start": 23, "end": 28 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 87,
               "start": 12,
@@ -516,7 +516,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 89,
               "start": 11,
@@ -559,8 +559,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 314, "start": 23, "end": 28 } ],
-            "root": {
+            "tito_positions": [ { "line": 314, "start": 23, "end": 28 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 313,
               "start": 12,
@@ -628,11 +628,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 290, "start": 23, "end": 28 },
               { "line": 291, "start": 35, "end": 39 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 289,
               "start": 12,
@@ -651,7 +651,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 292,
               "start": 11,
@@ -694,11 +694,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 119, "start": 23, "end": 28 },
               { "line": 120, "start": 24, "end": 28 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 118,
               "start": 12,
@@ -717,7 +717,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 121,
               "start": 11,
@@ -760,8 +760,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 221, "start": 23, "end": 28 } ],
-            "root": {
+            "tito_positions": [ { "line": 221, "start": 23, "end": 28 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 220,
               "start": 12,
@@ -831,8 +831,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 203, "start": 34, "end": 39 } ],
-            "root": {
+            "tito_positions": [ { "line": 203, "start": 34, "end": 39 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 202,
               "start": 12,
@@ -851,7 +851,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 204,
               "start": 11,
@@ -893,7 +893,7 @@
                 "kind": "SourceA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 175,
               "start": 12,
@@ -1113,7 +1113,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 197, "start": 23, "end": 28 } ],
+            "tito_positions": [ { "line": 197, "start": 23, "end": 28 } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -1139,7 +1139,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 198,
               "start": 11,
@@ -1285,7 +1285,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 171,
               "start": 11,
@@ -1327,7 +1327,7 @@
                 "kind": "SourceC"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 100,
               "start": 12,
@@ -1346,7 +1346,7 @@
                 "kind": "SinkD"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 101,
               "start": 11,
@@ -1484,7 +1484,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 154, "start": 34, "end": 37 } ],
+            "tito_positions": [ { "line": 154, "start": 34, "end": 37 } ],
             "tito": null
           }
         ]
@@ -1507,7 +1507,7 @@
                 "kind": "TransformY:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 132,
               "start": 24,
@@ -1535,8 +1535,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 308, "start": 35, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 308, "start": 35, "end": 38 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 309,
               "start": 11,
@@ -1564,8 +1564,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 363, "start": 35, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 363, "start": 35, "end": 38 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 364,
               "start": 23,
@@ -1580,11 +1580,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 363, "start": 35, "end": 38 },
               { "line": 364, "start": 23, "end": 28 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 365,
               "start": 24,
@@ -1599,12 +1599,12 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 363, "start": 35, "end": 38 },
               { "line": 364, "start": 23, "end": 28 },
               { "line": 365, "start": 24, "end": 28 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 366,
               "start": 11,
@@ -1632,8 +1632,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 264, "start": 35, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 264, "start": 35, "end": 38 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 265,
               "start": 23,
@@ -1656,7 +1656,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 264, "start": 35, "end": 38 },
               { "line": 265, "start": 23, "end": 28 }
             ],
@@ -1683,11 +1683,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 270, "start": 35, "end": 38 },
               { "line": 271, "start": 34, "end": 39 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 272,
               "start": 24,
@@ -1730,7 +1730,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 270, "start": 35, "end": 38 },
               { "line": 271, "start": 34, "end": 39 },
               { "line": 272, "start": 24, "end": 28 }
@@ -1758,8 +1758,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 357, "start": 35, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 357, "start": 35, "end": 38 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 358,
               "start": 23,
@@ -1787,8 +1787,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 345, "start": 35, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 345, "start": 35, "end": 38 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 346,
               "start": 23,
@@ -1811,7 +1811,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 345, "start": 35, "end": 38 },
               { "line": 346, "start": 23, "end": 28 }
             ],
@@ -1848,8 +1848,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 441, "start": 33, "end": 36 } ],
-            "root": {
+            "tito_positions": [ { "line": 441, "start": 33, "end": 36 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 442,
               "start": 23,
@@ -1872,7 +1872,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 441, "start": 33, "end": 36 },
               { "line": 442, "start": 23, "end": 28 }
             ],
@@ -1982,7 +1982,9 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "SinkB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SinkB" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -1995,7 +1997,9 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "SinkD" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SinkD" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -2017,8 +2021,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 165, "start": 35, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 165, "start": 35, "end": 38 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 166,
               "start": 11,
@@ -2070,7 +2074,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 125,
               "start": 24,
@@ -2085,8 +2089,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 125, "start": 24, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 125, "start": 24, "end": 27 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 126,
               "start": 11,
@@ -2113,7 +2117,7 @@
                 "kind": "TransformY:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 137,
               "start": 24,
@@ -2128,8 +2132,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 137, "start": 24, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 137, "start": 24, "end": 27 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 138,
               "start": 23,
@@ -2144,11 +2148,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 137, "start": 24, "end": 27 },
               { "line": 138, "start": 23, "end": 28 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 139,
               "start": 11,
@@ -2175,7 +2179,7 @@
                 "kind": "TransformZ:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 186,
               "start": 24,
@@ -2190,8 +2194,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 186, "start": 24, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 186, "start": 24, "end": 27 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 187,
               "start": 11,
@@ -2210,7 +2214,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -2232,8 +2238,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 454, "start": 32, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 454, "start": 32, "end": 37 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 453,
               "start": 12,
@@ -2261,11 +2267,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 471, "start": 32, "end": 37 },
               { "line": 472, "start": 24, "end": 28 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 470,
               "start": 12,
@@ -2293,11 +2299,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 412, "start": 23, "end": 28 },
               { "line": 413, "start": 33, "end": 37 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 411,
               "start": 12,
@@ -2316,7 +2322,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceC" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceC" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -2338,8 +2346,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 160, "start": 34, "end": 39 } ],
-            "root": {
+            "tito_positions": [ { "line": 160, "start": 34, "end": 39 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 159,
               "start": 12,
@@ -2367,8 +2375,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 181, "start": 23, "end": 28 } ],
-            "root": {
+            "tito_positions": [ { "line": 181, "start": 23, "end": 28 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 180,
               "start": 12,
@@ -2396,8 +2404,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 37, "start": 23, "end": 28 } ],
-            "root": {
+            "tito_positions": [ { "line": 37, "start": 23, "end": 28 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 36,
               "start": 12,
@@ -2431,8 +2439,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 47, "start": 31, "end": 36 } ],
-            "root": {
+            "tito_positions": [ { "line": 47, "start": 31, "end": 36 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 46,
               "start": 12,
@@ -2460,8 +2468,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 57, "start": 36, "end": 41 } ],
-            "root": {
+            "tito_positions": [ { "line": 57, "start": 36, "end": 41 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 56,
               "start": 12,
@@ -2489,11 +2497,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 63, "start": 23, "end": 28 },
               { "line": 64, "start": 24, "end": 28 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 62,
               "start": 12,
@@ -2521,8 +2529,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 238, "start": 34, "end": 35 } ],
-            "root": {
+            "tito_positions": [ { "line": 238, "start": 34, "end": 35 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 236,
               "start": 8,
@@ -2580,7 +2588,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 552, "start": 40, "end": 43 },
               { "line": 553, "start": 32, "end": 37 }
             ],
@@ -2609,7 +2617,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 558, "start": 33, "end": 36 } ],
+            "tito_positions": [ { "line": 558, "start": 33, "end": 36 } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -2639,7 +2647,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 558, "start": 33, "end": 36 },
               { "line": 559, "start": 39, "end": 44 }
             ],
@@ -2695,7 +2703,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 564, "start": 40, "end": 43 },
               { "line": 565, "start": 32, "end": 37 }
             ],
@@ -2723,7 +2731,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 570, "start": 33, "end": 36 } ],
+            "tito_positions": [ { "line": 570, "start": 33, "end": 36 } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -2753,7 +2761,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 570, "start": 33, "end": 36 },
               { "line": 571, "start": 39, "end": 44 }
             ],
@@ -2810,7 +2818,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 528, "start": 40, "end": 43 },
               { "line": 529, "start": 34, "end": 39 }
             ],
@@ -2839,7 +2847,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 534, "start": 35, "end": 38 } ],
+            "tito_positions": [ { "line": 534, "start": 35, "end": 38 } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -2869,7 +2877,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 534, "start": 35, "end": 38 },
               { "line": 535, "start": 39, "end": 44 }
             ],
@@ -2925,7 +2933,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 540, "start": 40, "end": 43 },
               { "line": 541, "start": 34, "end": 39 }
             ],
@@ -2953,7 +2961,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 546, "start": 35, "end": 38 } ],
+            "tito_positions": [ { "line": 546, "start": 35, "end": 38 } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -2983,7 +2991,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 546, "start": 35, "end": 38 },
               { "line": 547, "start": 39, "end": 44 }
             ],
@@ -3033,7 +3041,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 582, "start": 40, "end": 43 },
               { "line": 583, "start": 34, "end": 39 },
               { "line": 584, "start": 33, "end": 37 }
@@ -3067,7 +3075,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 582, "start": 40, "end": 43 },
               { "line": 583, "start": 34, "end": 39 },
               { "line": 584, "start": 33, "end": 37 },
@@ -3097,7 +3105,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 590, "start": 35, "end": 38 } ],
+            "tito_positions": [ { "line": 590, "start": 35, "end": 38 } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -3131,7 +3139,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 143,
               "start": 24,
@@ -3154,7 +3162,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 143, "start": 24, "end": 27 } ],
+            "tito_positions": [ { "line": 143, "start": 24, "end": 27 } ],
             "tito": null
           }
         ]
@@ -3177,7 +3185,7 @@
                 "kind": "TransformY:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 148,
               "start": 24,
@@ -3192,8 +3200,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 148, "start": 24, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 148, "start": 24, "end": 27 } ],
+            "origin": {
               "filename": "taint_transform.py",
               "line": 149,
               "start": 23,
@@ -3216,7 +3224,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 148, "start": 24, "end": 27 },
               { "line": 149, "start": 23, "end": 28 }
             ],
@@ -3237,7 +3245,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -3267,7 +3275,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -3303,7 +3311,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 324,
               "start": 24,
@@ -3318,11 +3326,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 324, "start": 24, "end": 27 },
               { "line": 325, "start": 34, "end": 39 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 326,
               "start": 11,
@@ -3349,7 +3357,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 296,
               "start": 24,
@@ -3372,7 +3380,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 296, "start": 24, "end": 27 },
               { "line": 297, "start": 34, "end": 39 }
             ],
@@ -3398,7 +3406,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 399,
               "start": 24,
@@ -3421,7 +3429,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 399, "start": 24, "end": 27 },
               { "line": 400, "start": 32, "end": 37 }
             ],
@@ -3442,7 +3450,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -3477,7 +3485,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 505,
               "start": 23,
@@ -3500,7 +3508,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 505, "start": 23, "end": 24 } ],
+            "tito_positions": [ { "line": 505, "start": 23, "end": 24 } ],
             "tito": null
           }
         ]
@@ -3524,7 +3532,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 485,
               "start": 23,
@@ -3547,7 +3555,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 485, "start": 23, "end": 24 } ],
+            "tito_positions": [ { "line": 485, "start": 23, "end": 24 } ],
             "tito": null
           }
         ]
@@ -3573,7 +3581,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 495,
               "start": 23,
@@ -3596,7 +3604,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 495, "start": 23, "end": 24 } ],
+            "tito_positions": [ { "line": 495, "start": 23, "end": 24 } ],
             "tito": null
           }
         ]
@@ -3623,7 +3631,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 515,
               "start": 23,
@@ -3648,7 +3656,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformY@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -3683,7 +3691,7 @@
                 "kind": "TransformY:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_transform.py",
               "line": 576,
               "start": 24,
@@ -3706,7 +3714,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 576, "start": 24, "end": 27 },
               { "line": 577, "start": 32, "end": 37 }
             ],
@@ -3727,7 +3735,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformZ@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }

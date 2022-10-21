@@ -77,7 +77,9 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "TestA[X]" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA[X]" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -90,7 +92,9 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "TestA[Y]" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA[Y]" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -103,7 +107,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "TestA[X]" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA[X]" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -116,7 +122,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "TestA[Y]" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA[Y]" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -137,7 +145,7 @@
                 "kind": "TestA[X]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "sanitize_parametric.py",
               "line": 41,
               "start": 17,
@@ -152,8 +160,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 43, "start": 35, "end": 36 } ],
-            "root": {
+            "tito_positions": [ { "line": 43, "start": 35, "end": 36 } ],
+            "origin": {
               "filename": "sanitize_parametric.py",
               "line": 44,
               "start": 17,
@@ -181,8 +189,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 34, "start": 36, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 34, "start": 36, "end": 37 } ],
+            "origin": {
               "filename": "sanitize_parametric.py",
               "line": 33,
               "start": 12,
@@ -196,7 +204,7 @@
                 "kind": "TestA[Y]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "sanitize_parametric.py",
               "line": 36,
               "start": 15,

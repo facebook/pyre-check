@@ -22,7 +22,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 224,
               "start": 14,
@@ -94,7 +94,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 220,
               "start": 29,
@@ -171,7 +171,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 207,
               "start": 20,
@@ -241,7 +241,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 228,
               "start": 26,
@@ -311,7 +311,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 205,
               "start": 20,
@@ -381,7 +381,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 212,
               "start": 39,
@@ -458,7 +458,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 222,
               "start": 14,
@@ -530,7 +530,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 204,
               "start": 18,
@@ -607,7 +607,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 216,
               "start": 32,
@@ -677,7 +677,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 203,
               "start": 8,
@@ -754,7 +754,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 218,
               "start": 28,
@@ -831,7 +831,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 226,
               "start": 39,
@@ -895,7 +895,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -918,7 +918,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1008,7 +1008,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 62,
               "start": 19,
@@ -1028,7 +1028,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 62,
               "start": 19,
@@ -1412,7 +1412,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 180,
               "start": 19,
@@ -1607,7 +1607,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 19,
               "start": 19,
@@ -1670,7 +1670,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 62,
               "start": 19,
@@ -1785,7 +1785,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 82,
               "start": 15,
@@ -1848,7 +1848,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 50,
               "start": 23,
@@ -1921,7 +1921,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 135,
               "start": 23,
@@ -1984,7 +1984,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 117,
               "start": 23,
@@ -2146,7 +2146,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 164,
               "start": 19,
@@ -2213,7 +2213,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 87,
               "start": 19,
@@ -2245,7 +2245,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 95, "start": 17, "end": 18 } ],
+            "tito_positions": [ { "line": 95, "start": 17, "end": 18 } ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -2290,8 +2290,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 95, "start": 21, "end": 35 } ],
-            "root": {
+            "tito_positions": [ { "line": 95, "start": 21, "end": 35 } ],
+            "origin": {
               "filename": "decorator.py",
               "line": 95,
               "start": 21,
@@ -2444,7 +2444,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 39,
               "start": 15,
@@ -2463,7 +2463,7 @@
     "sources": [
       {
         "port": "formal(arg2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -2490,7 +2490,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 243,
               "start": 33,
@@ -2510,7 +2510,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 244,
               "start": 15,
@@ -2549,7 +2549,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 19,
               "start": 19,
@@ -2577,7 +2577,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 62,
               "start": 19,
@@ -2605,7 +2605,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 50,
               "start": 23,
@@ -2636,7 +2636,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 135,
               "start": 23,
@@ -2664,7 +2664,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 164,
               "start": 19,
@@ -2727,7 +2727,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 87,
               "start": 19,
@@ -2755,7 +2755,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "decorator.py",
               "line": 117,
               "start": 23,

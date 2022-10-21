@@ -22,7 +22,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_sink_ports.py",
               "line": 41,
               "start": 8,
@@ -148,8 +148,8 @@
               { "via": "broadening" },
               { "via": "issue-broadening" }
             ],
-            "tito": [ { "line": 82, "start": 27, "end": 32 } ],
-            "root": {
+            "tito_positions": [ { "line": 82, "start": 27, "end": 32 } ],
+            "origin": {
               "filename": "multi_sink_ports.py",
               "line": 81,
               "start": 12,
@@ -345,7 +345,7 @@
             "local_features": [
               { "via": "split" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 58, "start": 28, "end": 32 } ],
+            "tito_positions": [ { "line": 58, "start": 28, "end": 32 } ],
             "tito": null
           }
         ]
@@ -374,7 +374,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_sink_ports.py",
               "line": 67,
               "start": 10,
@@ -399,7 +399,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_sink_ports.py",
               "line": 66,
               "start": 10,
@@ -430,7 +430,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -456,7 +456,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -482,7 +482,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -504,7 +504,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -526,7 +526,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -554,7 +554,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_sink_ports.py",
               "line": 29,
               "start": 10,
@@ -574,7 +574,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_sink_ports.py",
               "line": 30,
               "start": 10,
@@ -589,7 +589,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_sink_ports.py",
               "line": 31,
               "start": 10,
@@ -684,7 +684,7 @@
             "local_features": [
               { "via": "split" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 46, "start": 17, "end": 18 } ],
+            "tito_positions": [ { "line": 46, "start": 17, "end": 18 } ],
             "tito": null
           }
         ]
@@ -716,8 +716,8 @@
             "local_features": [
               { "via": "split" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 36, "start": 14, "end": 15 } ],
-            "root": {
+            "tito_positions": [ { "line": 36, "start": 14, "end": 15 } ],
+            "origin": {
               "filename": "multi_sink_ports.py",
               "line": 37,
               "start": 10,
@@ -876,7 +876,7 @@
             "local_features": [
               { "via": "split" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 74, "start": 19, "end": 20 } ],
+            "tito_positions": [ { "line": 74, "start": 19, "end": 20 } ],
             "call": {
               "position": {
                 "filename": "multi_sink_ports.py",

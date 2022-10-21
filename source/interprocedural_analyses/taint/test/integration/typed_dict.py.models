@@ -24,7 +24,7 @@
               { "always-type": "integer" },
               { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "typed_dict.py",
               "line": 21,
               "start": 15,
@@ -40,7 +40,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "typed_dict.py",
               "line": 22,
               "start": 15,
@@ -90,7 +90,7 @@
               { "always-type": "integer" },
               { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "typed_dict.py",
               "line": 26,
               "start": 15,
@@ -106,7 +106,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "typed_dict.py",
               "line": 28,
               "start": 15,
@@ -156,7 +156,7 @@
               { "always-type": "integer" },
               { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "typed_dict.py",
               "line": 32,
               "start": 15,
@@ -172,7 +172,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "typed_dict.py",
               "line": 33,
               "start": 15,
@@ -211,7 +211,7 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -224,7 +224,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]

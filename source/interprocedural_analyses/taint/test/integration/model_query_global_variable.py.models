@@ -18,7 +18,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_global_variable.py",
               "line": 34,
               "start": 11,
@@ -34,7 +34,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_global_variable.py",
               "line": 34,
               "start": 11,
@@ -73,7 +73,7 @@
             "kinds": [
               { "leaves": [ { "name": "Obj{os.environ}" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_global_variable.py",
               "line": 14,
               "start": 15,
@@ -89,7 +89,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_global_variable.py",
               "line": 14,
               "start": 15,
@@ -133,7 +133,7 @@
                 "kind": "Test1"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_global_variable.py",
               "line": 27,
               "start": 4,
@@ -149,7 +149,7 @@
             "kinds": [
               { "leaves": [ { "name": "list.append" } ], "kind": "Test1" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_global_variable.py",
               "line": 27,
               "start": 4,
@@ -176,7 +176,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test1" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Test1" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -189,7 +191,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "SelectIntAndStr" } ], "decl": null }
+          { "kinds": [ { "kind": "SelectIntAndStr" } ], "declaration": null }
         ]
       }
     ]
@@ -203,7 +205,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "SelectCallable" } ], "decl": null }
+          { "kinds": [ { "kind": "SelectCallable" } ], "declaration": null }
         ]
       }
     ]
@@ -216,7 +218,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SelectDict" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SelectDict" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -229,7 +233,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "SelectCallable" } ], "decl": null }
+          { "kinds": [ { "kind": "SelectCallable" } ], "declaration": null }
         ]
       }
     ]
@@ -243,7 +247,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "SelectIntAndStr" } ], "decl": null }
+          { "kinds": [ { "kind": "SelectIntAndStr" } ], "declaration": null }
         ]
       }
     ]
@@ -256,7 +260,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -268,7 +272,7 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -281,7 +285,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -294,7 +298,9 @@
     "sinks": [
       {
         "port": "formal(self)",
-        "taint": [ { "kinds": [ { "kind": "Test1" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Test1" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -322,7 +328,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 49, "start": 15, "end": 21 },
               { "line": 49, "start": 19, "end": 20 }
             ],
@@ -347,7 +353,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 49, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 49, "start": 11, "end": 12 } ],
             "tito": null
           }
         ]
@@ -362,7 +368,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SelectAny" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
+        ]
       }
     ]
   }

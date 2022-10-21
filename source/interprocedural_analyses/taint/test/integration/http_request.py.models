@@ -23,7 +23,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "http_request.py",
               "line": 24,
               "start": 15,
@@ -43,7 +43,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "http_request.py",
               "line": 24,
               "start": 15,
@@ -87,7 +87,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "http_request.py",
               "line": 20,
               "start": 15,
@@ -107,7 +107,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "http_request.py",
               "line": 20,
               "start": 15,
@@ -151,7 +151,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "http_request.py",
               "line": 15,
               "start": 15,
@@ -171,7 +171,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "http_request.py",
               "line": 15,
               "start": 15,
@@ -198,7 +198,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "global_sanitizer": {
@@ -215,7 +215,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "global_sanitizer": {
@@ -240,7 +240,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -263,7 +263,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }

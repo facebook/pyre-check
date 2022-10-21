@@ -586,7 +586,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -616,7 +616,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -646,7 +646,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -676,7 +676,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -708,7 +708,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -749,7 +749,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -779,7 +779,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -820,7 +820,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -861,7 +861,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -905,7 +905,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -928,7 +928,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -953,7 +953,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 32, "start": 35, "end": 38 } ],
+            "tito_positions": [ { "line": 32, "start": 35, "end": 38 } ],
             "tito": null
           }
         ]
@@ -964,7 +964,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 32, "start": 8, "end": 25 } ],
+            "tito_positions": [ { "line": 32, "start": 8, "end": 25 } ],
             "tito": null
           }
         ]
@@ -990,7 +990,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "overrides.py",
               "line": 35,
               "start": 19,
@@ -1019,7 +1019,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 42, "start": 35, "end": 38 } ],
+            "tito_positions": [ { "line": 42, "start": 35, "end": 38 } ],
             "tito": null
           }
         ]
@@ -1030,7 +1030,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 42, "start": 8, "end": 25 } ],
+            "tito_positions": [ { "line": 42, "start": 8, "end": 25 } ],
             "tito": null
           }
         ]
@@ -1056,7 +1056,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "overrides.py",
               "line": 49,
               "start": 19,
@@ -1086,7 +1086,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "overrides.py",
               "line": 45,
               "start": 15,
@@ -1143,7 +1143,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 56, "start": 32, "end": 35 } ],
+            "tito_positions": [ { "line": 56, "start": 32, "end": 35 } ],
             "tito": null
           }
         ]
@@ -1154,7 +1154,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 56, "start": 8, "end": 22 } ],
+            "tito_positions": [ { "line": 56, "start": 8, "end": 22 } ],
             "tito": null
           }
         ]
@@ -1179,7 +1179,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 68, "start": 32, "end": 35 } ],
+            "tito_positions": [ { "line": 68, "start": 32, "end": 35 } ],
             "tito": null
           }
         ]
@@ -1190,7 +1190,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 68, "start": 8, "end": 22 } ],
+            "tito_positions": [ { "line": 68, "start": 8, "end": 22 } ],
             "tito": null
           }
         ]
@@ -1216,7 +1216,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "overrides.py",
               "line": 71,
               "start": 19,
@@ -1246,7 +1246,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "overrides.py",
               "line": 74,
               "start": 15,
@@ -1276,7 +1276,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "overrides.py",
               "line": 181,
               "start": 19,
@@ -1340,8 +1340,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 158, "start": 15, "end": 29 } ],
-            "root": {
+            "tito_positions": [ { "line": 158, "start": 15, "end": 29 } ],
+            "origin": {
               "filename": "overrides.py",
               "line": 158,
               "start": 15,

@@ -28,7 +28,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 22,
               "start": 8,
@@ -48,7 +48,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 23,
               "start": 15,
@@ -93,7 +93,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 31,
               "start": 13,
@@ -117,7 +117,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 32,
               "start": 33,
@@ -152,7 +152,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -175,7 +175,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -203,7 +203,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -232,7 +232,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -249,7 +249,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 10,
               "start": 15,
@@ -290,7 +290,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 9,
               "start": 28,
@@ -310,7 +310,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 10,
               "start": 15,
@@ -354,7 +354,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -383,7 +383,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -412,7 +412,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 44,
               "start": 23,
@@ -486,7 +486,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "cross_repository.py",
               "line": 36,
               "start": 11,

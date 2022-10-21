@@ -24,7 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 73,
               "start": 27,
@@ -103,8 +103,8 @@
               { "first-field": "underlying" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 160, "start": 38, "end": 52 } ],
-            "root": {
+            "tito_positions": [ { "line": 160, "start": 38, "end": 52 } ],
+            "origin": {
               "filename": "properties.py",
               "line": 160,
               "start": 38,
@@ -124,7 +124,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 162,
               "start": 15,
@@ -178,11 +178,11 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 160, "start": 38, "end": 52 },
               { "line": 161, "start": 15, "end": 18 }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 160,
               "start": 38,
@@ -202,7 +202,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 161,
               "start": 15,
@@ -251,7 +251,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 97,
               "start": 20,
@@ -324,11 +324,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 117, "start": 10, "end": 24 },
               { "line": 119, "start": 15, "end": 16 }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 117,
               "start": 10,
@@ -348,7 +348,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 119,
               "start": 15,
@@ -397,7 +397,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 129,
               "start": 15,
@@ -417,7 +417,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 129,
               "start": 15,
@@ -463,8 +463,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 186, "start": 27, "end": 41 } ],
-            "root": {
+            "tito_positions": [ { "line": 186, "start": 27, "end": 41 } ],
+            "origin": {
               "filename": "properties.py",
               "line": 186,
               "start": 27,
@@ -536,7 +536,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 187,
               "start": 25,
@@ -685,7 +685,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -726,7 +726,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -784,7 +784,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -803,7 +803,7 @@
     "sources": [
       {
         "port": "formal(self)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "result",
@@ -821,7 +821,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -845,7 +845,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -890,7 +890,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
@@ -907,7 +907,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -934,7 +934,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -957,7 +957,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1045,7 +1045,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 31, "start": 19, "end": 24 } ],
+            "tito_positions": [ { "line": 31, "start": 19, "end": 24 } ],
             "tito": null
           }
         ]
@@ -1072,8 +1072,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 23, "start": 15, "end": 19 } ],
-            "root": {
+            "tito_positions": [ { "line": 23, "start": 15, "end": 19 } ],
+            "origin": {
               "filename": "properties.py",
               "line": 22,
               "start": 23,
@@ -1153,7 +1153,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 27, "start": 15, "end": 19 } ],
+            "tito_positions": [ { "line": 27, "start": 15, "end": 19 } ],
             "tito": null
           }
         ]
@@ -1176,7 +1176,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1219,8 +1219,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 39, "start": 15, "end": 19 } ],
-            "root": {
+            "tito_positions": [ { "line": 39, "start": 15, "end": 19 } ],
+            "origin": {
               "filename": "properties.py",
               "line": 38,
               "start": 23,
@@ -1249,7 +1249,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 43, "start": 15, "end": 19 } ],
+            "tito_positions": [ { "line": 43, "start": 15, "end": 19 } ],
             "tito": null
           }
         ]
@@ -1275,7 +1275,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 83,
               "start": 19,
@@ -1333,7 +1333,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 49,
               "start": 15,
@@ -1427,8 +1427,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 182, "start": 38, "end": 52 } ],
-            "root": {
+            "tito_positions": [ { "line": 182, "start": 38, "end": 52 } ],
+            "origin": {
               "filename": "properties.py",
               "line": 182,
               "start": 38,
@@ -1452,7 +1452,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 181,
               "start": 19,
@@ -1482,7 +1482,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 171,
               "start": 19,
@@ -1504,7 +1504,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 170,
               "start": 19,
@@ -1561,7 +1561,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 148, "start": 17, "end": 18 } ],
+            "tito_positions": [ { "line": 148, "start": 17, "end": 18 } ],
             "tito": null
           }
         ]
@@ -1572,7 +1572,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 148, "start": 8, "end": 12 } ],
+            "tito_positions": [ { "line": 148, "start": 8, "end": 12 } ],
             "tito": null
           }
         ]
@@ -1728,7 +1728,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
@@ -1745,7 +1745,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 62,
               "start": 19,
@@ -1764,7 +1764,7 @@
     "sources": [
       {
         "port": "formal(self)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "result",
@@ -1782,7 +1782,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 66,
               "start": 20,
@@ -1841,7 +1841,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 70,
               "start": 15,
@@ -1924,7 +1924,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 234,
               "start": 19,
@@ -1944,7 +1944,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 234,
               "start": 19,
@@ -2027,7 +2027,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 214,
               "start": 15,
@@ -2047,7 +2047,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 214,
               "start": 15,
@@ -2084,7 +2084,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 142, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 142, "start": 11, "end": 12 } ],
             "tito": null
           }
         ]
@@ -2109,8 +2109,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 209, "start": 31, "end": 32 } ],
-            "root": {
+            "tito_positions": [ { "line": 209, "start": 31, "end": 32 } ],
+            "origin": {
               "filename": "properties.py",
               "line": 210,
               "start": 15,
@@ -2127,7 +2127,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 209, "start": 31, "end": 32 } ],
+            "tito_positions": [ { "line": 209, "start": 31, "end": 32 } ],
             "call": {
               "position": {
                 "filename": "properties.py",
@@ -2170,7 +2170,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 210,
               "start": 15,
@@ -2190,7 +2190,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 210,
               "start": 15,
@@ -2231,8 +2231,8 @@
               { "first-field": "my_property" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 200, "start": 31, "end": 45 } ],
-            "root": {
+            "tito_positions": [ { "line": 200, "start": 31, "end": 45 } ],
+            "origin": {
               "filename": "properties.py",
               "line": 200,
               "start": 31,
@@ -2248,7 +2248,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "properties.py",
               "line": 201,
               "start": 11,
@@ -2288,8 +2288,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito": [ { "line": 200, "start": 31, "end": 45 } ],
-            "root": {
+            "tito_positions": [ { "line": 200, "start": 31, "end": 45 } ],
+            "origin": {
               "filename": "properties.py",
               "line": 200,
               "start": 31,

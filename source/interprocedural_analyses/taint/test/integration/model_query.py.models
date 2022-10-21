@@ -18,7 +18,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 154,
               "start": 17,
@@ -39,7 +39,7 @@
                 "kind": "SinkC"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 154,
               "start": 4,
@@ -77,7 +77,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 154,
               "start": 17,
@@ -98,7 +98,7 @@
                 "kind": "SinkA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 154,
               "start": 4,
@@ -124,7 +124,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -136,7 +138,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -148,7 +152,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -160,7 +166,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -175,7 +183,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "SinkA" }, { "kind": "SinkB" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -192,7 +200,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "SinkA" }, { "kind": "SinkC" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -209,7 +217,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "SourceC" }, { "kind": "SourceD" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -226,7 +234,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "SourceC" }, { "kind": "SourceE" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -240,7 +248,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -252,7 +262,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -264,7 +276,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -276,7 +290,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -288,7 +304,7 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -301,7 +317,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -450,11 +466,11 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "formal(self)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "result",
@@ -466,7 +482,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -488,7 +504,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -510,13 +526,13 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
       {
         "port": "formal(self)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -528,7 +544,7 @@
     "sources": [
       {
         "port": "formal(y)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -540,7 +556,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -552,7 +570,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceC" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceC" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -564,7 +584,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceC" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceC" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -576,7 +598,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceC" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceC" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -588,7 +612,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -608,7 +634,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -627,7 +653,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 129,
               "start": 15,
@@ -665,7 +691,7 @@
                 "kind": "SourceA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 129,
               "start": 15,
@@ -681,7 +707,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 129,
               "start": 15,
@@ -713,7 +739,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 174,
               "start": 15,
@@ -751,7 +777,7 @@
                 "kind": "SourceB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 174,
               "start": 15,
@@ -767,7 +793,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 174,
               "start": 15,
@@ -799,7 +825,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 179,
               "start": 15,
@@ -837,7 +863,7 @@
                 "kind": "SourceB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 179,
               "start": 15,
@@ -853,7 +879,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 179,
               "start": 15,
@@ -885,7 +911,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 184,
               "start": 15,
@@ -923,7 +949,7 @@
                 "kind": "SourceB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 184,
               "start": 15,
@@ -939,7 +965,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 184,
               "start": 15,
@@ -971,7 +997,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 134,
               "start": 15,
@@ -1007,7 +1033,7 @@
                 "kind": "SourceA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 134,
               "start": 15,
@@ -1023,7 +1049,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 134,
               "start": 15,
@@ -1055,7 +1081,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 139,
               "start": 15,
@@ -1093,7 +1119,7 @@
                 "kind": "SourceA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 139,
               "start": 15,
@@ -1109,7 +1135,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 139,
               "start": 15,
@@ -1141,7 +1167,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 144,
               "start": 15,
@@ -1177,7 +1203,7 @@
                 "kind": "SourceA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 144,
               "start": 15,
@@ -1193,7 +1219,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 144,
               "start": 15,
@@ -1220,7 +1246,7 @@
     "sources": [
       {
         "port": "formal(source)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
@@ -1246,7 +1272,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 149,
               "start": 4,
@@ -1280,7 +1306,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 147,
               "start": 36,
@@ -1303,7 +1329,7 @@
                 "kind": "SinkB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 149,
               "start": 4,
@@ -1344,7 +1370,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 147,
               "start": 36,
@@ -1367,7 +1393,7 @@
                 "kind": "SinkA"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 149,
               "start": 4,
@@ -1413,7 +1439,7 @@
                 "kind": "SourceD"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 159,
               "start": 11,
@@ -1426,7 +1452,7 @@
     "sinks": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
@@ -1468,7 +1494,7 @@
                 "kind": "SourceD"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 159,
               "start": 11,
@@ -1482,7 +1508,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "Test" } ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 159,
               "start": 4,
@@ -1523,7 +1549,7 @@
                 "kind": "SourceC"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 159,
               "start": 11,
@@ -1537,7 +1563,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "Test" } ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 159,
               "start": 4,
@@ -1564,7 +1590,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 164,
               "start": 15,
@@ -1600,7 +1626,7 @@
                 "kind": "SourceE"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 164,
               "start": 15,
@@ -1616,7 +1642,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 164,
               "start": 15,
@@ -1660,7 +1686,7 @@
                 "kind": "SourceC"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 164,
               "start": 15,
@@ -1676,7 +1702,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 164,
               "start": 15,
@@ -1708,7 +1734,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 169,
               "start": 15,
@@ -1746,7 +1772,7 @@
                 "kind": "SourceB"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 169,
               "start": 15,
@@ -1762,7 +1788,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 169,
               "start": 15,
@@ -1797,7 +1823,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1819,7 +1845,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1833,7 +1859,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -1845,7 +1873,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "SourceA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -1862,7 +1892,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 188,
               "start": 15,
@@ -1878,7 +1908,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 189,
               "start": 15,
@@ -1902,7 +1932,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 193,
               "start": 15,
@@ -1913,7 +1943,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query.py",
               "line": 194,
               "start": 15,
@@ -1932,7 +1962,7 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1944,7 +1974,7 @@
     "sources": [
       {
         "port": "formal(y)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1956,7 +1986,7 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -1977,13 +2007,13 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -2003,13 +2033,13 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

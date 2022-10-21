@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -18,7 +18,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -30,7 +30,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -44,7 +46,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -58,7 +63,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -79,7 +84,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -102,7 +107,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -145,7 +150,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -184,7 +189,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -198,7 +206,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [
@@ -253,8 +263,8 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito": [ { "line": 41, "start": 24, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 41, "start": 24, "end": 27 } ],
+            "origin": {
               "filename": "model_simplification.py",
               "line": 42,
               "start": 47,
@@ -280,7 +290,7 @@
             "local_features": [
               { "always-via": "object" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 42, "start": 42, "end": 45 } ],
+            "tito_positions": [ { "line": 42, "start": 42, "end": 45 } ],
             "call": {
               "position": {
                 "filename": "model_simplification.py",
@@ -392,7 +402,7 @@
               { "via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 49, "start": 25, "end": 87 },
               { "line": 49, "start": 41, "end": 86 },
               { "line": 49, "start": 59, "end": 71 }
@@ -409,7 +419,7 @@
             "local_features": [
               { "via": "obscure:model" }, { "via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 49, "start": 25, "end": 87 },
               { "line": 49, "start": 41, "end": 86 },
               { "line": 49, "start": 56, "end": 57 }
@@ -476,7 +486,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [ { "line": 34, "start": 30, "end": 42 } ],
+            "tito_positions": [ { "line": 34, "start": 30, "end": 42 } ],
             "tito": null
           }
         ]
@@ -495,7 +505,7 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 34, "start": 25, "end": 28 } ],
+            "tito_positions": [ { "line": 34, "start": 25, "end": 28 } ],
             "tito": null
           }
         ]
@@ -556,7 +566,7 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 75, "start": 18, "end": 21 } ],
+            "tito_positions": [ { "line": 75, "start": 18, "end": 21 } ],
             "tito": null
           }
         ]
@@ -581,8 +591,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 79, "start": 21, "end": 35 } ],
-            "root": {
+            "tito_positions": [ { "line": 79, "start": 21, "end": 35 } ],
+            "origin": {
               "filename": "model_simplification.py",
               "line": 79,
               "start": 21,
@@ -609,7 +619,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 79, "start": 11, "end": 20 },
               { "line": 79, "start": 16, "end": 19 }
             ],

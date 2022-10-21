@@ -22,8 +22,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 66, "start": 4, "end": 6 } ],
-            "root": {
+            "tito_positions": [ { "line": 66, "start": 4, "end": 6 } ],
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 65,
               "start": 9,
@@ -42,7 +42,7 @@
                 "kind": "SinkA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 67,
               "start": 9,
@@ -85,8 +85,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 66, "start": 4, "end": 6 } ],
-            "root": {
+            "tito_positions": [ { "line": 66, "start": 4, "end": 6 } ],
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 65,
               "start": 9,
@@ -105,7 +105,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 67,
               "start": 9,
@@ -147,7 +147,7 @@
                 "kind": "SourceA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 71,
               "start": 9,
@@ -166,7 +166,7 @@
                 "kind": "SinkA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 73,
               "start": 9,
@@ -208,7 +208,7 @@
                 "kind": "SourceA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 71,
               "start": 9,
@@ -227,7 +227,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 73,
               "start": 9,
@@ -269,7 +269,7 @@
                 "kind": "SourceA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 77,
               "start": 9,
@@ -288,7 +288,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 80,
               "start": 9,
@@ -330,7 +330,7 @@
                 "kind": "SourceA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 84,
               "start": 9,
@@ -349,7 +349,7 @@
                 "kind": "SinkA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 87,
               "start": 9,
@@ -391,7 +391,7 @@
                 "kind": "SourceA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 84,
               "start": 9,
@@ -410,7 +410,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 87,
               "start": 9,
@@ -457,8 +457,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 93, "start": 4, "end": 6 } ],
-            "root": {
+            "tito_positions": [ { "line": 93, "start": 4, "end": 6 } ],
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 91,
               "start": 9,
@@ -477,7 +477,7 @@
                 "kind": "SinkA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 94,
               "start": 9,
@@ -520,8 +520,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 93, "start": 4, "end": 6 } ],
-            "root": {
+            "tito_positions": [ { "line": 93, "start": 4, "end": 6 } ],
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 91,
               "start": 9,
@@ -540,7 +540,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 94,
               "start": 9,
@@ -582,7 +582,7 @@
                 "kind": "SourceA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 98,
               "start": 9,
@@ -601,7 +601,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 101,
               "start": 9,
@@ -647,7 +647,7 @@
                 "kind": "SourceA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 105,
               "start": 9,
@@ -666,7 +666,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 108,
               "start": 9,
@@ -712,7 +712,7 @@
                 "kind": "SourceA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 112,
               "start": 9,
@@ -731,7 +731,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 115,
               "start": 9,
@@ -777,7 +777,7 @@
                 "kind": "SourceA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 119,
               "start": 9,
@@ -796,7 +796,7 @@
                 "kind": "SinkA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "lineage_analysis.py",
               "line": 122,
               "start": 9,
@@ -875,13 +875,13 @@
       {
         "port": "formal(arg)[a]",
         "taint": [
-          { "kinds": [ { "kind": "SinkA[KindA]" } ], "decl": null }
+          { "kinds": [ { "kind": "SinkA[KindA]" } ], "declaration": null }
         ]
       },
       {
         "port": "formal(arg)[b]",
         "taint": [
-          { "kinds": [ { "kind": "SinkA[KindB]" } ], "decl": null }
+          { "kinds": [ { "kind": "SinkA[KindB]" } ], "declaration": null }
         ]
       }
     ]
@@ -895,13 +895,13 @@
       {
         "port": "result[a]",
         "taint": [
-          { "kinds": [ { "kind": "SourceA[KindA]" } ], "decl": null }
+          { "kinds": [ { "kind": "SourceA[KindA]" } ], "declaration": null }
         ]
       },
       {
         "port": "result[b]",
         "taint": [
-          { "kinds": [ { "kind": "SourceA[KindB]" } ], "decl": null }
+          { "kinds": [ { "kind": "SourceA[KindB]" } ], "declaration": null }
         ]
       }
     ]

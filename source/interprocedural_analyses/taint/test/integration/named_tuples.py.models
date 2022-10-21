@@ -56,7 +56,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 68,
               "start": 15,
@@ -138,7 +138,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 22,
               "start": 15,
@@ -218,7 +218,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 57,
               "start": 15,
@@ -267,7 +267,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 93,
               "start": 39,
@@ -371,7 +371,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 39,
               "start": 15,
@@ -404,7 +404,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -424,7 +424,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -447,7 +447,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -518,7 +518,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 87,
               "start": 0,
@@ -621,7 +621,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 79,
               "start": 15,
@@ -641,7 +641,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 78,
               "start": 15,
@@ -672,7 +672,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "root": {
+            "origin": {
               "filename": "named_tuples.py",
               "line": 84,
               "start": 15,
@@ -740,8 +740,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 52, "start": 35, "end": 49 } ],
-            "root": {
+            "tito_positions": [ { "line": 52, "start": 35, "end": 49 } ],
+            "origin": {
               "filename": "named_tuples.py",
               "line": 52,
               "start": 35,
@@ -770,8 +770,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 34, "start": 35, "end": 49 } ],
-            "root": {
+            "tito_positions": [ { "line": 34, "start": 35, "end": 49 } ],
+            "origin": {
               "filename": "named_tuples.py",
               "line": 34,
               "start": 35,
@@ -800,8 +800,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 17, "start": 28, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 17, "start": 28, "end": 42 } ],
+            "origin": {
               "filename": "named_tuples.py",
               "line": 17,
               "start": 28,

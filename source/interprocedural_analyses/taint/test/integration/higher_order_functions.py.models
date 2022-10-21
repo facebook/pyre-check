@@ -27,8 +27,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito": [ { "line": 83, "start": 17, "end": 31 } ],
-            "root": {
+            "tito_positions": [ { "line": 83, "start": 17, "end": 31 } ],
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 83,
               "start": 17,
@@ -48,7 +48,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 85,
               "start": 15,
@@ -97,7 +97,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 22,
               "start": 40,
@@ -167,7 +167,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 52,
               "start": 49,
@@ -239,7 +239,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 52,
               "start": 49,
@@ -309,7 +309,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 38,
               "start": 29,
@@ -384,7 +384,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 42,
               "start": 11,
@@ -440,7 +440,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -452,7 +452,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -464,7 +464,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -478,7 +480,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -492,7 +497,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -513,7 +518,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -536,7 +541,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -579,7 +584,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -618,7 +623,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -632,7 +640,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [
@@ -687,7 +697,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 27,
               "start": 19,
@@ -717,7 +727,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 30,
               "start": 19,
@@ -768,7 +778,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 61, "start": 13, "end": 14 } ],
+            "tito_positions": [ { "line": 61, "start": 13, "end": 14 } ],
             "tito": null
           }
         ]
@@ -802,7 +812,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 10,
               "start": 15,
@@ -847,7 +857,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 48,
               "start": 15,
@@ -911,7 +921,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 90,
               "start": 19,
@@ -944,11 +954,11 @@
               { "always-via": "obscure:unknown-callee" },
               { "via": "lambda" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 70, "start": 14, "end": 22 },
               { "line": 70, "start": 24, "end": 25 }
             ],
-            "root": {
+            "origin": {
               "filename": "higher_order_functions.py",
               "line": 69,
               "start": 8,
@@ -981,7 +991,7 @@
               { "always-via": "obscure:unknown-callee" },
               { "via": "lambda" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 65, "start": 17, "end": 25 },
               { "line": 65, "start": 27, "end": 28 }
             ],

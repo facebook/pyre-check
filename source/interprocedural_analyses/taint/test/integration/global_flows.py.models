@@ -23,8 +23,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 65, "start": 13, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 65, "start": 13, "end": 27 } ],
+            "origin": {
               "filename": "global_flows.py",
               "line": 65,
               "start": 13,
@@ -43,7 +43,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "global_flows.py",
               "line": 65,
               "start": 4,
@@ -87,7 +87,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "global_flows.py",
               "line": 73,
               "start": 20,
@@ -158,8 +158,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 21, "start": 19, "end": 33 } ],
-            "root": {
+            "tito_positions": [ { "line": 21, "start": 19, "end": 33 } ],
+            "origin": {
               "filename": "global_flows.py",
               "line": 21,
               "start": 19,
@@ -178,7 +178,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "global_flows.py",
               "line": 21,
               "start": 16,
@@ -223,8 +223,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 29, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 29, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "global_flows.py",
               "line": 29,
               "start": 16,
@@ -243,7 +243,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "global_flows.py",
               "line": 29,
               "start": 32,
@@ -287,7 +287,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "global_flows.py",
               "line": 41,
               "start": 29,
@@ -357,7 +357,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "global_flows.py",
               "line": 53,
               "start": 29,
@@ -411,7 +411,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -423,7 +423,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -443,7 +443,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -466,7 +466,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -510,8 +510,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 69, "start": 13, "end": 16 } ],
-            "root": {
+            "tito_positions": [ { "line": 69, "start": 13, "end": 16 } ],
+            "origin": {
               "filename": "global_flows.py",
               "line": 69,
               "start": 4,
@@ -539,8 +539,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 37, "start": 19, "end": 22 } ],
-            "root": {
+            "tito_positions": [ { "line": 37, "start": 19, "end": 22 } ],
+            "origin": {
               "filename": "global_flows.py",
               "line": 37,
               "start": 16,
@@ -568,8 +568,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 49, "start": 16, "end": 19 } ],
-            "root": {
+            "tito_positions": [ { "line": 49, "start": 16, "end": 19 } ],
+            "origin": {
               "filename": "global_flows.py",
               "line": 49,
               "start": 21,

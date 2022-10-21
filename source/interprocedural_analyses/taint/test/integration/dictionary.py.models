@@ -22,7 +22,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 433,
               "start": 8,
@@ -42,7 +42,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 435,
               "start": 21,
@@ -91,7 +91,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 212,
               "start": 9,
@@ -111,7 +111,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 213,
               "start": 15,
@@ -163,7 +163,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 218,
               "start": 6,
@@ -183,7 +183,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 219,
               "start": 15,
@@ -234,7 +234,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 158,
               "start": 24,
@@ -254,7 +254,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 160,
               "start": 15,
@@ -306,7 +306,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 77,
               "start": 39,
@@ -381,7 +381,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 445,
               "start": 6,
@@ -451,7 +451,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 445,
               "start": 6,
@@ -471,7 +471,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 447,
               "start": 15,
@@ -519,7 +519,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "with_feature" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 192,
               "start": 38,
@@ -539,7 +539,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 194,
               "start": 19,
@@ -588,8 +588,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 311, "start": 31, "end": 32 } ],
-            "root": {
+            "tito_positions": [ { "line": 311, "start": 31, "end": 32 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 310,
               "start": 14,
@@ -609,7 +609,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 311,
               "start": 15,
@@ -656,7 +656,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 315,
               "start": 22,
@@ -676,7 +676,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 319,
               "start": 19,
@@ -721,7 +721,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 316,
               "start": 29,
@@ -741,7 +741,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 327,
               "start": 19,
@@ -790,7 +790,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 246,
               "start": 43,
@@ -810,7 +810,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 248,
               "start": 15,
@@ -858,7 +858,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 254,
               "start": 20,
@@ -878,7 +878,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 256,
               "start": 15,
@@ -926,8 +926,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 296, "start": 38, "end": 52 } ],
-            "root": {
+            "tito_positions": [ { "line": 296, "start": 38, "end": 52 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 296,
               "start": 38,
@@ -947,7 +947,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 296,
               "start": 15,
@@ -998,8 +998,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 301, "start": 41, "end": 55 } ],
-            "root": {
+            "tito_positions": [ { "line": 301, "start": 41, "end": 55 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 301,
               "start": 41,
@@ -1019,7 +1019,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 301,
               "start": 15,
@@ -1067,7 +1067,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 272,
               "start": 15,
@@ -1087,7 +1087,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 273,
               "start": 43,
@@ -1136,8 +1136,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito": [ { "line": 64, "start": 36, "end": 50 } ],
-            "root": {
+            "tito_positions": [ { "line": 64, "start": 36, "end": 50 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 64,
               "start": 36,
@@ -1158,7 +1158,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 64,
               "start": 4,
@@ -1188,7 +1188,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1211,7 +1211,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -1291,7 +1291,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -1329,7 +1329,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1352,7 +1352,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1459,7 +1459,7 @@
               { "via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 288, "start": 16, "end": 58 },
               { "line": 288, "start": 52, "end": 57 }
             ],
@@ -1488,7 +1488,7 @@
             "local_features": [
               { "via": "obscure:model" }, { "via": "tito" }
             ],
-            "tito": [ { "line": 285, "start": 30, "end": 33 } ],
+            "tito_positions": [ { "line": 285, "start": 30, "end": 33 } ],
             "tito": null
           }
         ]
@@ -1518,7 +1518,7 @@
               { "via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 291, "start": 15, "end": 65 },
               { "line": 291, "start": 22, "end": 64 },
               { "line": 291, "start": 58, "end": 63 }
@@ -1548,7 +1548,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 165,
               "start": 19,
@@ -1587,7 +1587,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 440,
               "start": 21,
@@ -1615,7 +1615,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 414,
               "start": 15,
@@ -1695,7 +1695,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 204,
               "start": 9,
@@ -1726,8 +1726,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "A" }
             ],
-            "tito": [ { "line": 152, "start": 19, "end": 25 } ],
-            "root": {
+            "tito_positions": [ { "line": 152, "start": 19, "end": 25 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 153,
               "start": 15,
@@ -1745,8 +1745,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "tito": [ { "line": 152, "start": 19, "end": 25 } ],
-            "root": {
+            "tito_positions": [ { "line": 152, "start": 19, "end": 25 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 154,
               "start": 15,
@@ -1777,8 +1777,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "tito": [ { "line": 114, "start": 19, "end": 25 } ],
-            "root": {
+            "tito_positions": [ { "line": 114, "start": 19, "end": 25 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 113,
               "start": 14,
@@ -1806,8 +1806,8 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 135, "start": 17, "end": 31 } ],
-            "root": {
+            "tito_positions": [ { "line": 135, "start": 17, "end": 31 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 135,
               "start": 17,
@@ -1827,8 +1827,8 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 136, "start": 17, "end": 31 } ],
-            "root": {
+            "tito_positions": [ { "line": 136, "start": 17, "end": 31 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 136,
               "start": 17,
@@ -1848,7 +1848,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 130,
               "start": 13,
@@ -1879,8 +1879,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "c" }
             ],
-            "tito": [ { "line": 98, "start": 32, "end": 33 } ],
-            "root": {
+            "tito_positions": [ { "line": 98, "start": 32, "end": 33 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 101,
               "start": 15,
@@ -1903,7 +1903,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 100,
               "start": 15,
@@ -1931,8 +1931,8 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 120, "start": 19, "end": 33 } ],
-            "root": {
+            "tito_positions": [ { "line": 120, "start": 19, "end": 33 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 120,
               "start": 19,
@@ -1960,7 +1960,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 38,
               "start": 13,
@@ -1991,7 +1991,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 26,
               "start": 13,
@@ -2019,7 +2019,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 16,
               "start": 30,
@@ -2050,7 +2050,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 44,
               "start": 18,
@@ -2081,7 +2081,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 50,
               "start": 18,
@@ -2109,7 +2109,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 11,
               "start": 19,
@@ -2175,7 +2175,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 188,
               "start": 20,
@@ -2203,7 +2203,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 179,
               "start": 9,
@@ -2231,7 +2231,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 184,
               "start": 25,
@@ -2259,7 +2259,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 174,
               "start": 14,
@@ -2287,7 +2287,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 427,
               "start": 6,
@@ -2334,7 +2334,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 231,
               "start": 9,
@@ -2381,7 +2381,7 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 398, "start": 14, "end": 15 } ],
+            "tito_positions": [ { "line": 398, "start": 14, "end": 15 } ],
             "tito": null
           }
         ]
@@ -2416,7 +2416,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 223,
               "start": 16,
@@ -2439,7 +2439,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 169, "start": 4, "end": 5 } ],
+            "tito_positions": [ { "line": 169, "start": 4, "end": 5 } ],
             "tito": null
           }
         ]
@@ -2470,7 +2470,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 169,
               "start": 6,
@@ -2540,8 +2540,8 @@
               { "first-index": "<unknown>" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 356, "start": 15, "end": 16 } ],
-            "root": {
+            "tito_positions": [ { "line": 356, "start": 15, "end": 16 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 356,
               "start": 15,
@@ -2572,7 +2572,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 360,
               "start": 15,
@@ -2600,7 +2600,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 334,
               "start": 19,
@@ -2628,7 +2628,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 347,
               "start": 19,
@@ -2661,8 +2661,8 @@
               { "first-index": "<unknown>" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 364, "start": 15, "end": 16 } ],
-            "root": {
+            "tito_positions": [ { "line": 364, "start": 15, "end": 16 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 364,
               "start": 15,
@@ -2693,7 +2693,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 368,
               "start": 15,
@@ -2721,7 +2721,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 351,
               "start": 20,
@@ -2788,8 +2788,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 73, "start": 30, "end": 33 } ],
-            "root": {
+            "tito_positions": [ { "line": 73, "start": 30, "end": 33 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 73,
               "start": 4,
@@ -2818,8 +2818,8 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 68, "start": 36, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 68, "start": 36, "end": 37 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 68,
               "start": 4,
@@ -2834,8 +2834,8 @@
                 "kind": "Test"
               }
             ],
-            "tito": [ { "line": 68, "start": 36, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 68, "start": 36, "end": 37 } ],
+            "origin": {
               "filename": "dictionary.py",
               "line": 69,
               "start": 15,
@@ -2863,7 +2863,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 419,
               "start": 12,
@@ -2883,7 +2883,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dictionary.py",
               "line": 419,
               "start": 12,

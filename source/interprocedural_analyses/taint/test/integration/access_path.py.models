@@ -25,7 +25,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "attribute" }
             ],
-            "root": {
+            "origin": {
               "filename": "access_path.py",
               "line": 27,
               "start": 18,
@@ -45,7 +45,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "access_path.py",
               "line": 29,
               "start": 15,
@@ -96,7 +96,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "root": {
+            "origin": {
               "filename": "access_path.py",
               "line": 12,
               "start": 11,
@@ -116,7 +116,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "access_path.py",
               "line": 13,
               "start": 15,
@@ -148,7 +148,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -160,7 +160,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -172,7 +172,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -186,7 +188,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -200,7 +205,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -221,7 +226,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -244,7 +249,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -287,7 +292,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -316,7 +321,7 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 22, "start": 29, "end": 32 } ],
+            "tito_positions": [ { "line": 22, "start": 29, "end": 32 } ],
             "tito": null
           }
         ]
@@ -338,7 +343,7 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 22, "start": 15, "end": 24 } ],
+            "tito_positions": [ { "line": 22, "start": 15, "end": 24 } ],
             "tito": null
           }
         ]
@@ -395,7 +400,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -409,7 +417,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [

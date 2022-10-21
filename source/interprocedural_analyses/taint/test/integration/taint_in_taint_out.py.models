@@ -30,8 +30,8 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "tito": [ { "line": 285, "start": 40, "end": 41 } ],
-            "root": {
+            "tito_positions": [ { "line": 285, "start": 40, "end": 41 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 284,
               "start": 10,
@@ -51,7 +51,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 286,
               "start": 15,
@@ -111,8 +111,8 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "tito": [ { "line": 292, "start": 40, "end": 41 } ],
-            "root": {
+            "tito_positions": [ { "line": 292, "start": 40, "end": 41 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 291,
               "start": 12,
@@ -132,7 +132,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 293,
               "start": 15,
@@ -184,7 +184,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 99,
               "start": 8,
@@ -267,8 +267,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 246, "start": 37, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 246, "start": 37, "end": 38 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 245,
               "start": 8,
@@ -288,7 +288,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 247,
               "start": 15,
@@ -346,8 +346,8 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "tito": [ { "line": 299, "start": 40, "end": 41 } ],
-            "root": {
+            "tito_positions": [ { "line": 299, "start": 40, "end": 41 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 298,
               "start": 10,
@@ -367,7 +367,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 301,
               "start": 15,
@@ -422,8 +422,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 178, "start": 33, "end": 47 } ],
-            "root": {
+            "tito_positions": [ { "line": 178, "start": 33, "end": 47 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 178,
               "start": 33,
@@ -443,7 +443,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 178,
               "start": 15,
@@ -498,8 +498,8 @@
               { "always-via": "issue-broadening" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [ { "line": 224, "start": 47, "end": 61 } ],
-            "root": {
+            "tito_positions": [ { "line": 224, "start": 47, "end": 61 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 224,
               "start": 47,
@@ -519,7 +519,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 224,
               "start": 15,
@@ -575,8 +575,8 @@
               { "first-field": "arg" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 195, "start": 19, "end": 33 } ],
-            "root": {
+            "tito_positions": [ { "line": 195, "start": 19, "end": 33 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 195,
               "start": 19,
@@ -596,7 +596,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 196,
               "start": 15,
@@ -650,8 +650,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito": [ { "line": 204, "start": 29, "end": 43 } ],
-            "root": {
+            "tito_positions": [ { "line": 204, "start": 29, "end": 43 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 204,
               "start": 29,
@@ -671,7 +671,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 204,
               "start": 15,
@@ -704,7 +704,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
@@ -741,7 +741,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -764,7 +764,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -811,7 +811,7 @@
               { "always-via": "broadening" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [ { "line": 220, "start": 31, "end": 36 } ],
+            "tito_positions": [ { "line": 220, "start": 31, "end": 36 } ],
             "tito": null
           }
         ]
@@ -841,7 +841,7 @@
               { "via": "broadening" },
               { "via": "obscure:unknown-callee" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 217, "start": 50, "end": 55 },
               { "line": 218, "start": 44, "end": 49 }
             ],
@@ -936,7 +936,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 191, "start": 32, "end": 35 } ],
+            "tito_positions": [ { "line": 191, "start": 32, "end": 35 } ],
             "tito": null
           }
         ]
@@ -947,7 +947,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 191, "start": 26, "end": 30 } ],
+            "tito_positions": [ { "line": 191, "start": 26, "end": 30 } ],
             "tito": null
           }
         ]
@@ -983,7 +983,7 @@
               { "via": "broadening" },
               { "via": "issue-broadening" }
             ],
-            "tito": [ { "line": 67, "start": 35, "end": 41 } ],
+            "tito_positions": [ { "line": 67, "start": 35, "end": 41 } ],
             "tito": null
           }
         ]
@@ -1015,7 +1015,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1034,7 +1034,7 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "result",
@@ -1053,7 +1053,7 @@
               { "always-via": "string_concat_lhs" },
               { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 78,
               "start": 14,
@@ -1084,7 +1084,7 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "result",
@@ -1105,7 +1105,7 @@
               { "always-via": "string_concat_lhs" },
               { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 86,
               "start": 24,
@@ -1247,7 +1247,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 352, "start": 26, "end": 27 } ],
+            "tito_positions": [ { "line": 352, "start": 26, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1272,7 +1272,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 342, "start": 26, "end": 27 } ],
+            "tito_positions": [ { "line": 342, "start": 26, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1297,7 +1297,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 358, "start": 26, "end": 27 },
               { "line": 360, "start": 26, "end": 27 }
             ],
@@ -1325,7 +1325,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 390, "start": 26, "end": 27 },
               { "line": 392, "start": 26, "end": 27 }
             ],
@@ -1353,7 +1353,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 374, "start": 28, "end": 29 },
               { "line": 376, "start": 28, "end": 29 }
             ],
@@ -1381,7 +1381,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 366, "start": 26, "end": 27 },
               { "line": 368, "start": 26, "end": 27 }
             ],
@@ -1409,7 +1409,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 382, "start": 26, "end": 27 },
               { "line": 384, "start": 26, "end": 27 }
             ],
@@ -1499,7 +1499,7 @@
               { "via": "broadening" },
               { "via": "issue-broadening" }
             ],
-            "tito": [ { "line": 71, "start": 21, "end": 27 } ],
+            "tito_positions": [ { "line": 71, "start": 21, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1524,7 +1524,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "root": {
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 95,
               "start": 15,
@@ -1553,7 +1553,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 338, "start": 29, "end": 30 } ],
+            "tito_positions": [ { "line": 338, "start": 29, "end": 30 } ],
             "tito": null
           }
         ]
@@ -1578,7 +1578,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 262, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 262, "start": 24, "end": 25 } ],
             "tito": null
           }
         ]
@@ -1605,7 +1605,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 236, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 236, "start": 24, "end": 25 } ],
             "tito": null
           }
         ]
@@ -1630,7 +1630,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 420, "start": 37, "end": 38 },
               { "line": 422, "start": 39, "end": 40 }
             ],
@@ -1658,7 +1658,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 429, "start": 37, "end": 38 },
               { "line": 431, "start": 41, "end": 42 }
             ],
@@ -1686,7 +1686,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 451, "start": 33, "end": 34 },
               { "line": 453, "start": 41, "end": 42 }
             ],
@@ -1719,7 +1719,7 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 399, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 399, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]
@@ -1740,7 +1740,7 @@
               { "return_paths": { "[a]": 0, "": 4 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 406, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 406, "start": 30, "end": 31 } ],
             "tito": null
           }
         ]
@@ -1764,7 +1764,7 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 413, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 413, "start": 30, "end": 31 } ],
             "tito": null
           }
         ]
@@ -1806,7 +1806,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 347, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 347, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -1831,7 +1831,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 266, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 266, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -1889,7 +1889,7 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 33, "start": 20, "end": 21 },
               { "line": 36, "start": 30, "end": 38 },
               { "line": 40, "start": 30, "end": 37 },
@@ -1935,7 +1935,7 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 51, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 51, "start": 24, "end": 25 } ],
             "tito": null
           }
         ]
@@ -2044,8 +2044,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2068,8 +2068,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2092,8 +2092,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2116,8 +2116,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2140,8 +2140,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2164,8 +2164,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2188,8 +2188,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2212,8 +2212,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2236,8 +2236,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2260,8 +2260,8 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 32, "end": 46 } ],
+            "origin": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
@@ -2294,7 +2294,7 @@
               { "first-index": "c" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 314, "start": 39, "end": 40 } ],
+            "tito_positions": [ { "line": 314, "start": 39, "end": 40 } ],
             "tito": null
           }
         ]
@@ -2342,7 +2342,7 @@
               { "first-index": "b" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 436, "start": 29, "end": 40 } ],
+            "tito_positions": [ { "line": 436, "start": 29, "end": 40 } ],
             "tito": null
           }
         ]
@@ -2367,7 +2367,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 440, "start": 45, "end": 46 } ],
+            "tito_positions": [ { "line": 440, "start": 45, "end": 46 } ],
             "tito": null
           }
         ]
@@ -2394,7 +2394,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 240, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 240, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -2423,7 +2423,7 @@
               { "first-index": "a" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 332, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 332, "start": 37, "end": 38 } ],
             "tito": null
           }
         ]
@@ -2471,7 +2471,7 @@
               { "first-index": "b" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 323, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 323, "start": 37, "end": 38 } ],
             "tito": null
           }
         ]
@@ -2513,14 +2513,14 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "via": "tito" }
             ],
-            "tito": [ { "line": 174, "start": 27, "end": 30 } ],
+            "tito_positions": [ { "line": 174, "start": 27, "end": 30 } ],
             "tito": null
           }
         ]

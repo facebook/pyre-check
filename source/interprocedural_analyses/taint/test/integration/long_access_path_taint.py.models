@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -18,7 +18,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -30,7 +30,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -44,7 +46,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -58,7 +63,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -79,7 +84,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -102,7 +107,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -145,7 +150,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -184,7 +189,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -198,7 +206,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [
@@ -280,7 +290,7 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 15, "start": 25, "end": 31 },
               { "line": 16, "start": 22, "end": 28 }
             ],
@@ -331,7 +341,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 31, "start": 37, "end": 44 } ],
+            "tito_positions": [ { "line": 31, "start": 37, "end": 44 } ],
             "tito": null
           }
         ]
@@ -355,7 +365,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 24, "start": 19, "end": 25 },
               { "line": 29, "start": 30, "end": 36 },
               { "line": 31, "start": 23, "end": 29 },
@@ -382,7 +392,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 31, "start": 19, "end": 21 } ],
+            "tito_positions": [ { "line": 31, "start": 19, "end": 21 } ],
             "tito": null
           }
         ]

@@ -127,11 +127,11 @@ module CallInfo = struct
   (* Returns the (dictionary key * json) to emit *)
   let to_json ~filename_lookup trace : string * Yojson.Safe.t =
     match trace with
-    | Declaration _ -> "decl", `Null
+    | Declaration _ -> "declaration", `Null
     | Tito -> "tito", `Null
     | Origin location ->
         let location_json = location_with_module_to_json ~filename_lookup location in
-        "root", location_json
+        "origin", location_json
     | CallSite { location; callees; port; path } ->
         let callee_json =
           callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
@@ -700,7 +700,7 @@ end = struct
         |> TitoPositionSet.elements
         |> List.map ~f:location_to_json
       in
-      let json = cons_if_non_empty "tito" tito_positions json in
+      let json = cons_if_non_empty "tito_positions" tito_positions json in
 
       let local_breadcrumbs =
         breadcrumbs_to_json

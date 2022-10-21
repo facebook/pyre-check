@@ -19,7 +19,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -47,7 +47,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -75,7 +75,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "b" } ],
-            "root": {
+            "origin": {
               "filename": "callable_classes.py",
               "line": 36,
               "start": 11,
@@ -105,7 +105,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "a" } ],
-            "root": {
+            "origin": {
               "filename": "callable_classes.py",
               "line": 22,
               "start": 11,

@@ -6,7 +6,9 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "TestSink" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestSink" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -19,7 +21,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "TestSource" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestSource" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -40,7 +44,7 @@
                 "kind": "TransformY:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "extra_trace.py",
               "line": 69,
               "start": 27,
@@ -87,8 +91,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 59, "start": 32, "end": 34 } ],
-            "root": {
+            "tito_positions": [ { "line": 59, "start": 32, "end": 34 } ],
+            "origin": {
               "filename": "extra_trace.py",
               "line": 57,
               "start": 9,
@@ -143,7 +147,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 38, "start": 30, "end": 33 } ],
+            "tito_positions": [ { "line": 38, "start": 30, "end": 33 } ],
             "tito": null
           }
         ]
@@ -166,7 +170,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "extra_trace.py",
               "line": 82,
               "start": 26,
@@ -177,7 +181,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "TestSink" }
             ],
-            "root": {
+            "origin": {
               "filename": "extra_trace.py",
               "line": 83,
               "start": 15,
@@ -209,8 +213,8 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 76, "start": 25, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 76, "start": 25, "end": 27 } ],
+            "origin": {
               "filename": "extra_trace.py",
               "line": 74,
               "start": 9,
@@ -237,7 +241,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "extra_trace.py",
               "line": 34,
               "start": 23,
@@ -260,7 +264,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 34, "start": 23, "end": 26 } ],
+            "tito_positions": [ { "line": 34, "start": 23, "end": 26 } ],
             "tito": null
           }
         ]
@@ -284,12 +288,12 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 50, "start": 30, "end": 33 },
               { "line": 51, "start": 16, "end": 20 },
               { "line": 52, "start": 24, "end": 28 }
             ],
-            "root": {
+            "origin": {
               "filename": "extra_trace.py",
               "line": 53,
               "start": 15,
@@ -331,7 +335,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 50, "start": 30, "end": 33 },
               { "line": 51, "start": 16, "end": 20 }
             ],
@@ -367,12 +371,12 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 43, "start": 28, "end": 30 },
               { "line": 44, "start": 14, "end": 16 },
               { "line": 45, "start": 22, "end": 24 }
             ],
-            "root": {
+            "origin": {
               "filename": "extra_trace.py",
               "line": 42,
               "start": 9,
@@ -411,7 +415,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -441,7 +445,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformY@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -477,8 +481,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 26, "start": 16, "end": 19 } ],
-            "root": {
+            "tito_positions": [ { "line": 26, "start": 16, "end": 19 } ],
+            "origin": {
               "filename": "extra_trace.py",
               "line": 27,
               "start": 23,
@@ -493,12 +497,12 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 26, "start": 16, "end": 19 },
               { "line": 27, "start": 23, "end": 27 },
               { "line": 28, "start": 16, "end": 20 }
             ],
-            "root": {
+            "origin": {
               "filename": "extra_trace.py",
               "line": 29,
               "start": 23,
@@ -521,7 +525,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [
+            "tito_positions": [
               { "line": 26, "start": 16, "end": 19 },
               { "line": 27, "start": 23, "end": 27 },
               { "line": 28, "start": 16, "end": 20 },
@@ -544,7 +548,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformZ@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }

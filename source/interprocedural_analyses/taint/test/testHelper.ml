@@ -561,12 +561,12 @@ let initialize
             TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file_and_string
               ~models_and_names
               ~path
-            |> assert_equal ~cmp:String.equal expected_string
+            |> assert_equal ~cmp:String.equal ~printer:Fn.id expected_string
         | Some path, None ->
             TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
         | None, Some expected_string ->
             TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_string ~models_and_names
-            |> assert_equal ~cmp:String.equal expected_string
+            |> assert_equal ~cmp:String.equal ~printer:Fn.id expected_string
         | None, None -> ());
         let verify = static_analysis_configuration.verify_models && verify_model_queries in
         ModelVerificationError.verify_models_and_dsl errors verify;

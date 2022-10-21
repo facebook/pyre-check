@@ -25,7 +25,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "x" }
             ],
-            "root": {
+            "origin": {
               "filename": "locals.py",
               "line": 18,
               "start": 8,
@@ -45,7 +45,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "locals.py",
               "line": 20,
               "start": 15,
@@ -93,7 +93,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "locals.py",
               "line": 18,
               "start": 8,
@@ -155,7 +155,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -178,7 +178,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -202,7 +202,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "locals.py",
               "line": 12,
               "start": 15,
@@ -221,7 +221,7 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -251,7 +251,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "x" }
             ],
-            "root": {
+            "origin": {
               "filename": "locals.py",
               "line": 28,
               "start": 29,
@@ -271,7 +271,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "locals.py",
               "line": 29,
               "start": 15,

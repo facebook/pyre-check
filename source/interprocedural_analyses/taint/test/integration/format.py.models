@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -18,7 +18,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -30,7 +30,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -44,7 +46,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -58,7 +63,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -79,7 +84,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -102,7 +107,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -145,7 +150,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -184,7 +189,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -212,11 +220,11 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 32, "start": 14, "end": 31 },
               { "line": 32, "start": 25, "end": 30 }
             ],
-            "root": {
+            "origin": {
               "filename": "format.py",
               "line": 31,
               "start": 12,
@@ -251,7 +259,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "format.py",
               "line": 31,
               "start": 12,
@@ -271,7 +279,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "format.py",
               "line": 32,
               "start": 25,
@@ -309,7 +317,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "format.py",
               "line": 27,
               "start": 18,
@@ -340,8 +348,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 23, "start": 18, "end": 21 } ],
-            "root": {
+            "tito_positions": [ { "line": 23, "start": 18, "end": 21 } ],
+            "origin": {
               "filename": "format.py",
               "line": 23,
               "start": 15,
@@ -372,8 +380,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 15, "start": 14, "end": 28 } ],
-            "root": {
+            "tito_positions": [ { "line": 15, "start": 14, "end": 28 } ],
+            "origin": {
               "filename": "format.py",
               "line": 15,
               "start": 14,
@@ -404,8 +412,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 11, "start": 14, "end": 19 } ],
-            "root": {
+            "tito_positions": [ { "line": 11, "start": 14, "end": 19 } ],
+            "origin": {
               "filename": "format.py",
               "line": 10,
               "start": 12,
@@ -430,7 +438,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 19, "start": 25, "end": 29 } ],
+            "tito_positions": [ { "line": 19, "start": 25, "end": 29 } ],
             "tito": null
           }
         ]
@@ -443,7 +451,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 19, "start": 14, "end": 18 } ],
+            "tito_positions": [ { "line": 19, "start": 14, "end": 18 } ],
             "tito": null
           }
         ]
@@ -458,7 +466,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [

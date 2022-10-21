@@ -22,7 +22,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 15,
               "start": 13,
@@ -44,7 +44,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 16,
               "start": 13,
@@ -89,7 +89,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 20,
               "start": 31,
@@ -111,7 +111,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 21,
               "start": 18,
@@ -159,7 +159,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 25,
               "start": 13,
@@ -181,7 +181,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "int" } ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 26,
               "start": 23,
@@ -229,7 +229,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 46,
               "start": 13,
@@ -253,7 +253,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 47,
               "start": 9,
@@ -298,7 +298,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 51,
               "start": 24,
@@ -324,7 +324,7 @@
             "local_features": [
               { "always-via-type": "typing.Dict[str, int]" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 52,
               "start": 14,
@@ -370,7 +370,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 56,
               "start": 17,
@@ -398,7 +398,7 @@
                 "always-via-type": "model_query_parameters_viatypeof.Test2_T"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 57,
               "start": 19,
@@ -447,7 +447,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 61,
               "start": 13,
@@ -471,7 +471,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "int" } ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 62,
               "start": 9,
@@ -519,7 +519,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 66,
               "start": 29,
@@ -547,7 +547,7 @@
                 "always-via-type": "typing.List[typing.List[model_query_parameters_viatypeof.Test2_T]]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 67,
               "start": 14,
@@ -596,7 +596,7 @@
               }
             ],
             "local_features": [ { "always-type": "scalar" } ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 71,
               "start": 15,
@@ -620,7 +620,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "float" } ],
-            "root": {
+            "origin": {
               "filename": "model_query_parameters_viatypeof.py",
               "line": 72,
               "start": 19,
@@ -659,7 +659,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -682,7 +682,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -710,7 +710,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -729,7 +729,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -748,7 +748,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -775,7 +775,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -794,7 +794,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -813,7 +813,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -840,7 +840,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -859,7 +859,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -878,7 +878,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }

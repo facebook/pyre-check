@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -19,7 +19,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -45,7 +45,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [
@@ -60,7 +60,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 100,
               "start": 15,
@@ -92,7 +92,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [
@@ -107,7 +107,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 92,
               "start": 11,
@@ -139,7 +139,7 @@
             "local_features": [
               { "always-via-value": "<unknown:positional>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 39,
               "start": 11,
@@ -169,7 +169,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:named>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 43,
               "start": 11,
@@ -199,7 +199,7 @@
             "local_features": [
               { "always-via-value": "<unknown:positional>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 72,
               "start": 22,
@@ -227,7 +227,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:args>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 76,
               "start": 22,
@@ -255,7 +255,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:kwargs>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 80,
               "start": 22,
@@ -288,7 +288,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -315,7 +315,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -342,7 +342,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -369,7 +369,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -396,7 +396,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_kwargs>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 140,
               "start": 11,
@@ -426,7 +426,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:args>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 129,
               "start": 11,
@@ -526,7 +526,7 @@
               { "always-via-value": "by_backwards" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 68, "start": 16, "end": 25 } ],
+            "tito_positions": [ { "line": 68, "start": 16, "end": 25 } ],
             "tito": null
           }
         ]
@@ -552,7 +552,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "False" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 27,
               "start": 11,
@@ -582,7 +582,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "FOO" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 31,
               "start": 11,
@@ -612,7 +612,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:kwargs>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 134,
               "start": 11,
@@ -642,7 +642,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<missing>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 35,
               "start": 11,
@@ -672,7 +672,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "2" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 150,
               "start": 11,
@@ -702,7 +702,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "1" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 23,
               "start": 11,
@@ -732,7 +732,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:kwargs>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 145,
               "start": 11,
@@ -764,7 +764,7 @@
             "local_features": [
               { "always-via-parameter-value": "parameter_value" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 112,
               "start": 11,
@@ -794,7 +794,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "2" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 120,
               "start": 11,
@@ -824,7 +824,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "2" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 124,
               "start": 11,
@@ -852,7 +852,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "second" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 64,
               "start": 29,
@@ -917,7 +917,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "A" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 19,
               "start": 11,
@@ -944,8 +944,8 @@
             "local_features": [
               { "always-via-value": "second" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 55, "start": 13, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 13, "end": 27 } ],
+            "origin": {
               "filename": "via_value_of.py",
               "line": 55,
               "start": 13,
@@ -977,7 +977,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_named>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 155,
               "start": 11,
@@ -1009,7 +1009,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_named>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 196,
               "start": 11,
@@ -1039,7 +1039,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:named>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 160,
               "start": 11,
@@ -1071,7 +1071,7 @@
             "local_features": [
               { "always-via-value": "<unknown:positional>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 165,
               "start": 11,
@@ -1103,7 +1103,7 @@
             "local_features": [
               { "always-via-value": "<unknown:positional>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 170,
               "start": 11,
@@ -1135,7 +1135,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_named>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 175,
               "start": 11,
@@ -1167,7 +1167,7 @@
             "local_features": [
               { "always-via-value": "<unknown:named_or_positional>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 180,
               "start": 11,
@@ -1199,7 +1199,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_named>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 202,
               "start": 11,
@@ -1229,7 +1229,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:named>" } ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 185,
               "start": 11,
@@ -1261,7 +1261,7 @@
             "local_features": [
               { "always-via-value": "<unknown:named_or_positional>" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_value_of.py",
               "line": 190,
               "start": 11,

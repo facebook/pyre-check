@@ -23,7 +23,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 29,
               "start": 9,
@@ -39,7 +39,7 @@
             "kinds": [
               { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 30,
               "start": 22,
@@ -83,7 +83,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 127,
               "start": 34,
@@ -99,7 +99,7 @@
             "kinds": [
               { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 127,
               "start": 34,
@@ -143,7 +143,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 85,
               "start": 43,
@@ -159,7 +159,7 @@
             "kinds": [
               { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 85,
               "start": 43,
@@ -203,7 +203,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 86,
               "start": 43,
@@ -219,7 +219,7 @@
             "kinds": [
               { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 86,
               "start": 43,
@@ -263,7 +263,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 49,
               "start": 9,
@@ -333,7 +333,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 44,
               "start": 9,
@@ -433,7 +433,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 16, "start": 19, "end": 21 } ],
+            "tito_positions": [ { "line": 16, "start": 19, "end": 21 } ],
             "tito": null
           }
         ]
@@ -451,7 +451,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -460,7 +460,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -475,7 +475,9 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -487,7 +489,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -499,7 +503,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -514,7 +520,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[b]]" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -523,7 +529,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[a]]" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -547,7 +553,7 @@
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 35,
               "start": 22,
@@ -581,8 +587,8 @@
               { "first-index": "<unknown>" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 40, "start": 13, "end": 15 } ],
-            "root": {
+            "tito_positions": [ { "line": 40, "start": 13, "end": 15 } ],
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 40,
               "start": 4,
@@ -609,7 +615,7 @@
                 "kind": "TransformT:ExtraTraceSink"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multiple_sources.py",
               "line": 120,
               "start": 20,
@@ -629,7 +635,10 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "PermissiveContext" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "PermissiveContext" } ],
+            "declaration": null
+          }
         ]
       }
     ]
@@ -714,7 +723,7 @@
         "taint": [
           {
             "kinds": [ { "kind": "TransformT@ExtraTraceSink" } ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -742,7 +751,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]

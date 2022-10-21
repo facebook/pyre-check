@@ -25,8 +25,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 18, "start": 24, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 18, "start": 24, "end": 38 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 18,
               "start": 24,
@@ -46,7 +46,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "strings.py",
               "line": 19,
               "start": 15,
@@ -97,8 +97,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 23, "start": 24, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 23, "start": 24, "end": 38 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 23,
               "start": 24,
@@ -118,7 +118,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "strings.py",
               "line": 24,
               "start": 15,
@@ -169,8 +169,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 29, "start": 28, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 29, "start": 28, "end": 42 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 29,
               "start": 28,
@@ -188,8 +188,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 31, "start": 28, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 31, "start": 28, "end": 42 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 31,
               "start": 28,
@@ -209,7 +209,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "strings.py",
               "line": 32,
               "start": 15,
@@ -261,8 +261,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 37, "start": 28, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 37, "start": 28, "end": 42 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 37,
               "start": 28,
@@ -277,7 +277,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "strings.py",
               "line": 39,
               "start": 12,
@@ -297,7 +297,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "strings.py",
               "line": 40,
               "start": 15,
@@ -345,7 +345,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "strings.py",
               "line": 45,
               "start": 12,
@@ -363,8 +363,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 47, "start": 28, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 47, "start": 28, "end": 42 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 47,
               "start": 28,
@@ -384,7 +384,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "strings.py",
               "line": 48,
               "start": 15,
@@ -435,8 +435,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 54, "start": 9, "end": 10 } ],
-            "root": {
+            "tito_positions": [ { "line": 54, "start": 9, "end": 10 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 52,
               "start": 8,
@@ -456,7 +456,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "strings.py",
               "line": 55,
               "start": 15,
@@ -496,7 +496,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -519,7 +519,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -578,7 +578,7 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 10, "start": 11, "end": 17 } ],
+            "tito_positions": [ { "line": 10, "start": 11, "end": 17 } ],
             "tito": null
           }
         ]
@@ -599,7 +599,7 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 14, "start": 17, "end": 23 } ],
+            "tito_positions": [ { "line": 14, "start": 17, "end": 23 } ],
             "tito": null
           }
         ]
@@ -626,8 +626,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 68, "start": 22, "end": 23 } ],
-            "root": {
+            "tito_positions": [ { "line": 68, "start": 22, "end": 23 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 69,
               "start": 15,
@@ -658,8 +658,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 64, "start": 25, "end": 26 } ],
-            "root": {
+            "tito_positions": [ { "line": 64, "start": 25, "end": 26 } ],
+            "origin": {
               "filename": "strings.py",
               "line": 63,
               "start": 8,
@@ -684,7 +684,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 59, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 59, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]

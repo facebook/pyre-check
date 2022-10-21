@@ -22,7 +22,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 92,
               "start": 18,
@@ -41,7 +41,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 92,
               "start": 8,
@@ -83,7 +83,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 90,
               "start": 14,
@@ -102,7 +102,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 90,
               "start": 4,
@@ -149,8 +149,8 @@
               { "first-index": "a" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 66, "start": 23, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 66, "start": 23, "end": 37 } ],
+            "origin": {
               "filename": "attributes.py",
               "line": 66,
               "start": 23,
@@ -170,7 +170,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 69,
               "start": 15,
@@ -224,8 +224,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito": [ { "line": 66, "start": 23, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 66, "start": 23, "end": 37 } ],
+            "origin": {
               "filename": "attributes.py",
               "line": 66,
               "start": 23,
@@ -245,7 +245,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 68,
               "start": 15,
@@ -295,8 +295,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 114, "start": 20, "end": 34 } ],
-            "root": {
+            "tito_positions": [ { "line": 114, "start": 20, "end": 34 } ],
+            "origin": {
               "filename": "attributes.py",
               "line": 114,
               "start": 20,
@@ -315,7 +315,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 114,
               "start": 4,
@@ -343,7 +343,7 @@
     "sources": [
       {
         "port": "result[text]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -355,7 +355,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -367,7 +367,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -379,7 +379,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -399,7 +399,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -422,7 +422,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -484,7 +484,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 40,
               "start": 11,
@@ -523,7 +523,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 78,
               "start": 15,
@@ -538,7 +538,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 80,
               "start": 19,
@@ -553,7 +553,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 82,
               "start": 19,
@@ -587,7 +587,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 80,
               "start": 19,
@@ -607,7 +607,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 80,
               "start": 19,
@@ -649,7 +649,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 78,
               "start": 15,
@@ -669,7 +669,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 78,
               "start": 15,
@@ -705,7 +705,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 52,
               "start": 15,
@@ -733,7 +733,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 56,
               "start": 15,
@@ -761,7 +761,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 48,
               "start": 35,
@@ -799,7 +799,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 44,
               "start": 11,
@@ -841,7 +841,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "text" }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 102,
               "start": 15,
@@ -878,7 +878,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "text" }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 102,
               "start": 15,
@@ -898,7 +898,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 102,
               "start": 15,
@@ -941,7 +941,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "other" }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 106,
               "start": 15,
@@ -968,7 +968,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 35,
               "start": 15,
@@ -1006,7 +1006,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attributes.py",
               "line": 28,
               "start": 19,

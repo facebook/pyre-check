@@ -27,11 +27,11 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 112, "start": 12, "end": 18 },
               { "line": 112, "start": 16, "end": 17 }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 110,
               "start": 10,
@@ -50,7 +50,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 112,
               "start": 9,
@@ -103,8 +103,8 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 114, "start": 12, "end": 13 } ],
-            "root": {
+            "tito_positions": [ { "line": 114, "start": 12, "end": 13 } ],
+            "origin": {
               "filename": "string_conversion.py",
               "line": 110,
               "start": 10,
@@ -123,7 +123,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 114,
               "start": 9,
@@ -179,7 +179,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 52, "start": 18, "end": 29 } ],
+            "tito_positions": [ { "line": 52, "start": 18, "end": 29 } ],
             "call": {
               "position": {
                 "filename": "string_conversion.py",
@@ -203,7 +203,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 52,
               "start": 9,
@@ -280,7 +280,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 47,
               "start": 9,
@@ -356,7 +356,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 42,
               "start": 9,
@@ -409,8 +409,8 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 95, "start": 12, "end": 13 } ],
-            "root": {
+            "tito_positions": [ { "line": 95, "start": 12, "end": 13 } ],
+            "origin": {
               "filename": "string_conversion.py",
               "line": 92,
               "start": 17,
@@ -451,7 +451,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 95,
               "start": 9,
@@ -505,8 +505,8 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 105, "start": 12, "end": 13 } ],
-            "root": {
+            "tito_positions": [ { "line": 105, "start": 12, "end": 13 } ],
+            "origin": {
               "filename": "string_conversion.py",
               "line": 103,
               "start": 8,
@@ -525,7 +525,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 105,
               "start": 9,
@@ -578,11 +578,11 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 64, "start": 12, "end": 37 },
               { "line": 64, "start": 14, "end": 36 }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 64,
               "start": 14,
@@ -601,7 +601,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 64,
               "start": 9,
@@ -677,7 +677,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 32,
               "start": 9,
@@ -748,7 +748,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 37,
               "start": 9,
@@ -819,7 +819,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 27,
               "start": 9,
@@ -847,7 +847,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]
@@ -861,7 +861,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]
@@ -887,7 +887,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -919,7 +919,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -946,7 +946,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -969,7 +969,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -985,7 +985,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -1071,7 +1074,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 87,
               "start": 15,
@@ -1115,8 +1118,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 170, "start": 18, "end": 19 } ],
-            "root": {
+            "tito_positions": [ { "line": 170, "start": 18, "end": 19 } ],
+            "origin": {
               "filename": "string_conversion.py",
               "line": 169,
               "start": 12,
@@ -1148,7 +1151,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 22,
               "start": 15,
@@ -1180,7 +1183,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 17,
               "start": 15,
@@ -1205,7 +1208,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 160, "start": 14, "end": 15 } ],
+            "tito_positions": [ { "line": 160, "start": 14, "end": 15 } ],
             "tito": null
           }
         ]
@@ -1228,7 +1231,7 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 152, "start": 14, "end": 15 } ],
+            "tito_positions": [ { "line": 152, "start": 14, "end": 15 } ],
             "tito": null
           }
         ]
@@ -1249,7 +1252,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 156, "start": 14, "end": 15 } ],
+            "tito_positions": [ { "line": 156, "start": 14, "end": 15 } ],
             "tito": null
           }
         ]
@@ -1278,7 +1281,7 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 174, "start": 14, "end": 21 },
               { "line": 174, "start": 19, "end": 20 }
             ],
@@ -1308,7 +1311,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 133, "start": 14, "end": 23 },
               { "line": 133, "start": 21, "end": 22 }
             ],
@@ -1330,7 +1333,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 133, "start": 25, "end": 34 },
               { "line": 133, "start": 32, "end": 33 }
             ],
@@ -1362,8 +1365,8 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 143, "start": 14, "end": 15 } ],
-            "root": {
+            "tito_positions": [ { "line": 143, "start": 14, "end": 15 } ],
+            "origin": {
               "filename": "string_conversion.py",
               "line": 142,
               "start": 23,
@@ -1394,8 +1397,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 148, "start": 14, "end": 15 } ],
-            "root": {
+            "tito_positions": [ { "line": 148, "start": 14, "end": 15 } ],
+            "origin": {
               "filename": "string_conversion.py",
               "line": 147,
               "start": 23,
@@ -1431,7 +1434,7 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 188, "start": 11, "end": 17 } ],
+            "tito_positions": [ { "line": 188, "start": 11, "end": 17 } ],
             "call": {
               "position": {
                 "filename": "string_conversion.py",
@@ -1466,8 +1469,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 73, "start": 12, "end": 13 } ],
-            "root": {
+            "tito_positions": [ { "line": 73, "start": 12, "end": 13 } ],
+            "origin": {
               "filename": "string_conversion.py",
               "line": 73,
               "start": 9,
@@ -1531,7 +1534,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 73,
               "start": 9,
@@ -1575,8 +1578,8 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 99, "start": 12, "end": 13 } ],
-            "root": {
+            "tito_positions": [ { "line": 99, "start": 12, "end": 13 } ],
+            "origin": {
               "filename": "string_conversion.py",
               "line": 99,
               "start": 9,
@@ -1637,7 +1640,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "string_conversion.py",
               "line": 99,
               "start": 9,
@@ -1703,7 +1706,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 120, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 120, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]
@@ -1716,7 +1719,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 120, "start": 17, "end": 23 } ],
+            "tito_positions": [ { "line": 120, "start": 17, "end": 23 } ],
             "tito": null
           }
         ]
@@ -1769,7 +1772,7 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 164, "start": 14, "end": 15 } ],
+            "tito_positions": [ { "line": 164, "start": 14, "end": 15 } ],
             "tito": null
           }
         ]

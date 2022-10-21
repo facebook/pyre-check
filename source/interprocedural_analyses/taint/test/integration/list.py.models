@@ -14,7 +14,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -37,7 +37,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -81,7 +81,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "list.py",
               "line": 12,
               "start": 9,
@@ -109,7 +109,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "list.py",
               "line": 25,
               "start": 9,
@@ -129,7 +129,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "list.py",
               "line": 26,
               "start": 9,
@@ -149,7 +149,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "list.py",
               "line": 27,
               "start": 9,
@@ -178,8 +178,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 54, "start": 13, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 54, "start": 13, "end": 27 } ],
+            "origin": {
               "filename": "list.py",
               "line": 54,
               "start": 13,
@@ -208,8 +208,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 61, "start": 13, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 61, "start": 13, "end": 27 } ],
+            "origin": {
               "filename": "list.py",
               "line": 61,
               "start": 13,
@@ -237,7 +237,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "list.py",
               "line": 36,
               "start": 19,
@@ -273,8 +273,8 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito": [ { "line": 21, "start": 16, "end": 25 } ],
-            "root": {
+            "tito_positions": [ { "line": 21, "start": 16, "end": 25 } ],
+            "origin": {
               "filename": "list.py",
               "line": 19,
               "start": 9,

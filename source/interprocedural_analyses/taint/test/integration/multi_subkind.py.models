@@ -21,7 +21,7 @@
                 "kind": "SourceA[KindB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_subkind.py",
               "line": 31,
               "start": 13,
@@ -90,7 +90,7 @@
                 "kind": "SourceA[KindA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_subkind.py",
               "line": 30,
               "start": 13,
@@ -155,7 +155,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_subkind.py",
               "line": 24,
               "start": 11,
@@ -177,7 +177,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "root": {
+            "origin": {
               "filename": "multi_subkind.py",
               "line": 25,
               "start": 11,
@@ -197,7 +197,7 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "SinkA[KindA]" } ], "decl": null }
+          { "kinds": [ { "kind": "SinkA[KindA]" } ], "declaration": null }
         ]
       }
     ]
@@ -211,7 +211,7 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "SinkA[KindB]" } ], "decl": null }
+          { "kinds": [ { "kind": "SinkA[KindB]" } ], "declaration": null }
         ]
       }
     ]
@@ -225,7 +225,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "SourceA[KindA]" } ], "decl": null }
+          { "kinds": [ { "kind": "SourceA[KindA]" } ], "declaration": null }
         ]
       }
     ]
@@ -239,7 +239,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "SourceA[KindB]" } ], "decl": null }
+          { "kinds": [ { "kind": "SourceA[KindB]" } ], "declaration": null }
         ]
       }
     ]

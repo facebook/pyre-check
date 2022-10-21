@@ -22,7 +22,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "my-data" } ],
-            "root": {
+            "origin": {
               "filename": "conditional.py",
               "line": 23,
               "start": 8,
@@ -36,7 +36,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "InTest" } ],
-            "root": {
+            "origin": {
               "filename": "conditional.py",
               "line": 24,
               "start": 7,
@@ -74,7 +74,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "other" } ],
-            "root": {
+            "origin": {
               "filename": "conditional.py",
               "line": 29,
               "start": 8,
@@ -88,7 +88,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "InTest" } ],
-            "root": {
+            "origin": {
               "filename": "conditional.py",
               "line": 30,
               "start": 16,
@@ -123,7 +123,7 @@
                 "kind": "MySource"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }

@@ -14,7 +14,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -37,7 +37,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -52,7 +52,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
@@ -93,11 +93,11 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 21, "start": 17, "end": 36 },
               { "line": 29, "start": 21, "end": 40 }
             ],
-            "root": {
+            "origin": {
               "filename": "always_in_none.py",
               "line": 33,
               "start": 15,
@@ -137,7 +137,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "always_in_none.py",
               "line": 21,
               "start": 17,
@@ -157,7 +157,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "always_in_none.py",
               "line": 29,
               "start": 21,
@@ -177,7 +177,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "always_in_none.py",
               "line": 33,
               "start": 15,

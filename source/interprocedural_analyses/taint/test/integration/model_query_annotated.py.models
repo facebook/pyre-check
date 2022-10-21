@@ -26,7 +26,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 28,
               "start": 15,
@@ -46,7 +46,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 28,
               "start": 15,
@@ -96,7 +96,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 34,
               "start": 15,
@@ -116,7 +116,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 34,
               "start": 15,
@@ -166,7 +166,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 39,
               "start": 15,
@@ -186,7 +186,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 39,
               "start": 15,
@@ -236,7 +236,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 44,
               "start": 15,
@@ -256,7 +256,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 44,
               "start": 15,
@@ -306,7 +306,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 55,
               "start": 15,
@@ -326,7 +326,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 55,
               "start": 15,
@@ -376,7 +376,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 60,
               "start": 15,
@@ -396,7 +396,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 60,
               "start": 15,
@@ -439,7 +439,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -466,7 +466,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -493,7 +493,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -520,7 +520,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -547,7 +547,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -574,7 +574,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -596,7 +596,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -619,7 +619,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -634,11 +634,11 @@
     "sources": [
       {
         "port": "formal(c)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
@@ -653,7 +653,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 79,
               "start": 15,
@@ -689,7 +689,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 77,
               "start": 4,
@@ -709,7 +709,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 79,
               "start": 15,
@@ -736,11 +736,11 @@
     "sources": [
       {
         "port": "formal(c)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
@@ -755,7 +755,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 85,
               "start": 15,
@@ -791,7 +791,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 83,
               "start": 42,
@@ -811,7 +811,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 85,
               "start": 15,
@@ -847,7 +847,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 69,
               "start": 15,
@@ -878,7 +878,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 73,
               "start": 15,
@@ -897,11 +897,11 @@
     "sources": [
       {
         "port": "formal(c)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "formal(a)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
@@ -916,7 +916,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "model_query_annotated.py",
               "line": 91,
               "start": 15,

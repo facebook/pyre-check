@@ -14,7 +14,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -37,7 +37,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -121,8 +121,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 55, "start": 26, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 55, "start": 26, "end": 27 } ],
+            "origin": {
               "filename": "side_effects.py",
               "line": 56,
               "start": 15,
@@ -155,8 +155,8 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 17, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 17, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "side_effects.py",
               "line": 17,
               "start": 16,
@@ -189,8 +189,8 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 11, "start": 19, "end": 33 } ],
-            "root": {
+            "tito_positions": [ { "line": 11, "start": 19, "end": 33 } ],
+            "origin": {
               "filename": "side_effects.py",
               "line": 11,
               "start": 19,
@@ -223,8 +223,8 @@
               { "first-field": "foo" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 23, "start": 23, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 23, "start": 23, "end": 37 } ],
+            "origin": {
               "filename": "side_effects.py",
               "line": 23,
               "start": 23,
@@ -253,8 +253,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 35, "start": 13, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 35, "start": 13, "end": 27 } ],
+            "origin": {
               "filename": "side_effects.py",
               "line": 35,
               "start": 13,
@@ -283,8 +283,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 49, "start": 19, "end": 20 } ],
-            "root": {
+            "tito_positions": [ { "line": 49, "start": 19, "end": 20 } ],
+            "origin": {
               "filename": "side_effects.py",
               "line": 50,
               "start": 15,

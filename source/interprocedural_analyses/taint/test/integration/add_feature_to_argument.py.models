@@ -27,7 +27,7 @@
               { "first-index": "<numeric>" },
               { "always-via": "string_concat_lhs" }
             ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 49,
               "start": 15,
@@ -47,7 +47,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 51,
               "start": 15,
@@ -88,7 +88,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -111,7 +111,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -134,7 +134,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -156,7 +156,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -183,7 +183,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -207,7 +207,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 18,
               "start": 8,
@@ -236,7 +236,7 @@
               }
             ],
             "local_features": [ { "via-value": "second" } ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 38,
               "start": 8,
@@ -266,7 +266,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 24,
               "start": 32,
@@ -296,7 +296,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 63,
               "start": 33,
@@ -318,7 +318,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 61,
               "start": 29,
@@ -348,7 +348,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 44,
               "start": 25,
@@ -364,7 +364,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 45,
               "start": 15,
@@ -394,7 +394,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 55,
               "start": 54,
@@ -410,7 +410,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 56,
               "start": 15,
@@ -441,7 +441,7 @@
             "local_features": [
               { "via": "string_concat_rhs" }, { "via": "string_concat_lhs" }
             ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 68,
               "start": 15,
@@ -528,7 +528,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "second" } ],
-            "root": {
+            "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 32,
               "start": 8,

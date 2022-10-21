@@ -14,7 +14,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -37,7 +37,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -64,7 +64,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
@@ -81,7 +81,7 @@
               { "always-via": "string_concat_rhs" },
               { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 59,
               "start": 19,
@@ -109,7 +109,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 63,
               "start": 8,
@@ -134,7 +134,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -164,7 +164,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 63,
               "start": 8,
@@ -184,7 +184,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 64,
               "start": 4,
@@ -221,7 +221,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -243,7 +243,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -257,7 +257,7 @@
     "sources": [
       {
         "port": "result[f]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
         "port": "result[g]",
@@ -269,13 +269,13 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
       {
         "port": "result[g][h]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -295,7 +295,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -351,7 +351,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 25,
               "start": 15,
@@ -370,7 +370,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [
@@ -381,7 +381,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_rhs" } ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 24,
               "start": 15,
@@ -400,7 +400,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [
@@ -411,7 +411,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 23,
               "start": 15,
@@ -442,7 +442,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [
@@ -457,7 +457,7 @@
               { "always-via": "string_concat_rhs" },
               { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 54,
               "start": 15,
@@ -512,7 +512,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -532,7 +532,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [
@@ -542,7 +542,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 14,
               "start": 8,
@@ -569,7 +569,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -596,7 +596,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [
@@ -607,7 +607,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_rhs" } ],
-            "root": {
+            "origin": {
               "filename": "attach_features.py",
               "line": 37,
               "start": 15,
@@ -628,7 +628,7 @@
                 "kind": "Attach"
               }
             ],
-            "decl": null
+            "declaration": null
           },
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -659,7 +659,7 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 42, "start": 30, "end": 33 } ],
+            "tito_positions": [ { "line": 42, "start": 30, "end": 33 } ],
             "tito": null
           }
         ]

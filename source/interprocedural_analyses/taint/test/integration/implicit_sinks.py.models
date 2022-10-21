@@ -21,8 +21,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 27, "start": 18, "end": 19 } ],
-            "root": {
+            "tito_positions": [ { "line": 27, "start": 18, "end": 19 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 26,
               "start": 8,
@@ -36,7 +36,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "Test" } ],
-            "root": {
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 27,
               "start": 4,
@@ -75,8 +75,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 17, "start": 8, "end": 9 } ],
-            "root": {
+            "tito_positions": [ { "line": 17, "start": 8, "end": 9 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 16,
               "start": 8,
@@ -90,7 +90,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "Test" } ],
-            "root": {
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 17,
               "start": 4,
@@ -129,8 +129,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 61, "start": 8, "end": 9 } ],
-            "root": {
+            "tito_positions": [ { "line": 61, "start": 8, "end": 9 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 60,
               "start": 14,
@@ -144,8 +144,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 61, "start": 14, "end": 15 } ],
-            "root": {
+            "tito_positions": [ { "line": 61, "start": 14, "end": 15 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 60,
               "start": 34,
@@ -159,7 +159,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "Test" } ],
-            "root": {
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 61,
               "start": 4,
@@ -198,8 +198,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 56, "start": 14, "end": 15 } ],
-            "root": {
+            "tito_positions": [ { "line": 56, "start": 14, "end": 15 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 54,
               "start": 8,
@@ -213,7 +213,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "Test" } ],
-            "root": {
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 56,
               "start": 14,
@@ -255,8 +255,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito": [ { "line": 36, "start": 13, "end": 17 } ],
-            "root": {
+            "tito_positions": [ { "line": 36, "start": 13, "end": 17 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 35,
               "start": 8,
@@ -270,7 +270,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "Test" } ],
-            "root": {
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 36,
               "start": 4,
@@ -312,8 +312,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 45, "start": 17, "end": 18 } ],
-            "root": {
+            "tito_positions": [ { "line": 45, "start": 17, "end": 18 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 44,
               "start": 8,
@@ -327,7 +327,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "Test" } ],
-            "root": {
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 45,
               "start": 4,
@@ -351,7 +351,7 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -364,7 +364,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -383,8 +383,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 22, "start": 18, "end": 19 } ],
-            "root": {
+            "tito_positions": [ { "line": 22, "start": 18, "end": 19 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 22,
               "start": 4,
@@ -409,8 +409,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 12, "start": 8, "end": 9 } ],
-            "root": {
+            "tito_positions": [ { "line": 12, "start": 8, "end": 9 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 12,
               "start": 4,
@@ -435,8 +435,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 50, "start": 14, "end": 15 } ],
-            "root": {
+            "tito_positions": [ { "line": 50, "start": 14, "end": 15 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 50,
               "start": 14,
@@ -461,8 +461,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 31, "start": 13, "end": 17 } ],
-            "root": {
+            "tito_positions": [ { "line": 31, "start": 13, "end": 17 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 31,
               "start": 4,
@@ -487,8 +487,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 40, "start": 17, "end": 18 } ],
-            "root": {
+            "tito_positions": [ { "line": 40, "start": 17, "end": 18 } ],
+            "origin": {
               "filename": "implicit_sinks.py",
               "line": 40,
               "start": 4,

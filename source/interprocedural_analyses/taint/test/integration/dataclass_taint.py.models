@@ -22,7 +22,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 39,
               "start": 26,
@@ -99,7 +99,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 93,
               "start": 51,
@@ -122,7 +122,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 93,
               "start": 51,
@@ -165,7 +165,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 99,
               "start": 28,
@@ -188,7 +188,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 99,
               "start": 4,
@@ -230,7 +230,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 112,
               "start": 56,
@@ -256,7 +256,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 112,
               "start": 56,
@@ -287,7 +287,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -299,7 +299,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -311,7 +311,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -323,7 +323,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -343,7 +343,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -366,7 +366,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -481,7 +481,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 35,
               "start": 19,
@@ -536,7 +536,7 @@
     "sinks": [
       {
         "port": "formal(bad)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
@@ -585,7 +585,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -708,7 +708,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       },
@@ -732,7 +732,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 50,
               "start": 23,
@@ -760,7 +760,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 52,
               "start": 8,
@@ -771,7 +771,7 @@
       },
       {
         "port": "formal(bad_sink)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
@@ -857,8 +857,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 18, "start": 28, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 18, "start": 28, "end": 42 } ],
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 18,
               "start": 28,
@@ -898,8 +898,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito": [ { "line": 18, "start": 28, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 18, "start": 28, "end": 42 } ],
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 18,
               "start": 28,
@@ -919,7 +919,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 19,
               "start": 15,
@@ -962,8 +962,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 24, "start": 28, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 24, "start": 28, "end": 42 } ],
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 24,
               "start": 28,
@@ -992,7 +992,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 126, "start": 35, "end": 36 } ],
+            "tito_positions": [ { "line": 126, "start": 35, "end": 36 } ],
             "tito": null
           }
         ]
@@ -1013,7 +1013,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 126, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 126, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]
@@ -1037,7 +1037,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 80,
               "start": 15,
@@ -1057,7 +1057,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 79,
               "start": 15,
@@ -1095,7 +1095,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 79,
               "start": 15,
@@ -1115,7 +1115,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 79,
               "start": 15,
@@ -1151,7 +1151,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 68,
               "start": 15,
@@ -1171,7 +1171,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 67,
               "start": 15,
@@ -1209,7 +1209,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 67,
               "start": 15,
@@ -1229,7 +1229,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "dataclass_taint.py",
               "line": 67,
               "start": 15,

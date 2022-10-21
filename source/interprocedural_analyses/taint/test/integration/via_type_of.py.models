@@ -25,8 +25,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 19, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 19, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 19,
               "start": 16,
@@ -42,7 +42,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 20,
               "start": 15,
@@ -94,8 +94,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 25, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 25, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 25,
               "start": 16,
@@ -111,7 +111,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 26,
               "start": 15,
@@ -163,8 +163,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 31, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 31, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 31,
               "start": 16,
@@ -180,7 +180,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 32,
               "start": 15,
@@ -237,8 +237,8 @@
               { "type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 37, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 37, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 37,
               "start": 16,
@@ -254,7 +254,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 43,
               "start": 15,
@@ -311,8 +311,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 54, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 54, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 54,
               "start": 16,
@@ -328,7 +328,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 55,
               "start": 15,
@@ -380,8 +380,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 60, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 60, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 60,
               "start": 16,
@@ -397,7 +397,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 61,
               "start": 15,
@@ -449,8 +449,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 66, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 66, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 66,
               "start": 16,
@@ -466,7 +466,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 67,
               "start": 15,
@@ -522,8 +522,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 72, "start": 16, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 72, "start": 16, "end": 30 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 72,
               "start": 16,
@@ -539,7 +539,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 78,
               "start": 15,
@@ -588,7 +588,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 126,
               "start": 10,
@@ -608,7 +608,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "unknown" } ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 126,
               "start": 4,
@@ -646,7 +646,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 131,
               "start": 10,
@@ -666,7 +666,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "typing.Any" } ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 131,
               "start": 4,
@@ -704,7 +704,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 136,
               "start": 10,
@@ -724,7 +724,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "object" } ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 136,
               "start": 4,
@@ -931,7 +931,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -958,7 +958,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -985,7 +985,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1012,7 +1012,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1039,7 +1039,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1066,7 +1066,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1080,7 +1080,7 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -1093,7 +1093,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -1117,7 +1117,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "typing.Any" } ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 156,
               "start": 11,
@@ -1149,7 +1149,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1177,7 +1177,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1196,7 +1196,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 93,
               "start": 15,
@@ -1233,7 +1233,7 @@
             "local_features": [
               { "always-via-type": "typing.Dict[str, typing.List[int]]" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 93,
               "start": 15,
@@ -1249,7 +1249,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 93,
               "start": 15,
@@ -1283,7 +1283,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 98,
               "start": 15,
@@ -1320,7 +1320,7 @@
             "local_features": [
               { "always-via-type": "via_type_of.Test3_Foo" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 98,
               "start": 15,
@@ -1336,7 +1336,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 98,
               "start": 15,
@@ -1368,7 +1368,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 103,
               "start": 15,
@@ -1405,7 +1405,7 @@
             "local_features": [
               { "always-via-type": "typing.List[typing.List[str]]" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 103,
               "start": 15,
@@ -1421,7 +1421,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 103,
               "start": 15,
@@ -1453,7 +1453,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 115,
               "start": 15,
@@ -1469,7 +1469,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 115,
               "start": 15,
@@ -1485,7 +1485,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 115,
               "start": 15,
@@ -1522,7 +1522,7 @@
             "local_features": [
               { "always-via-type": "typing.Dict[str, typing.List[int]]" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 110,
               "start": 10,
@@ -1539,7 +1539,7 @@
             "local_features": [
               { "always-via-type": "via_type_of.Test3_Foo" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 112,
               "start": 14,
@@ -1556,7 +1556,7 @@
             "local_features": [
               { "always-via-type": "typing.List[typing.List[str]]" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 114,
               "start": 14,
@@ -1572,7 +1572,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 115,
               "start": 15,
@@ -1615,7 +1615,7 @@
             "local_features": [
               { "always-via-type": "str" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 181, "start": 16, "end": 25 } ],
+            "tito_positions": [ { "line": 181, "start": 16, "end": 25 } ],
             "tito": null
           }
         ]
@@ -1641,7 +1641,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "typing.List[str]" } ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 152,
               "start": 11,
@@ -1671,7 +1671,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "int" } ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 148,
               "start": 11,
@@ -1699,7 +1699,7 @@
               }
             ],
             "local_features": [ { "always-via-TheY-type": "int" } ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 177,
               "start": 28,
@@ -1729,7 +1729,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "root": {
+            "origin": {
               "filename": "via_type_of.py",
               "line": 144,
               "start": 11,
@@ -1757,8 +1757,8 @@
               { "always-via-type": "typing.List[int]" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 168, "start": 13, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 168, "start": 13, "end": 27 } ],
+            "origin": {
               "filename": "via_type_of.py",
               "line": 168,
               "start": 13,

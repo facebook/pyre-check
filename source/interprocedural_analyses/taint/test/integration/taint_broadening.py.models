@@ -26,7 +26,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 37,
               "start": 14,
@@ -46,7 +46,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 38,
               "start": 15,
@@ -102,8 +102,8 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito": [ { "line": 21, "start": 13, "end": 14 } ],
-            "root": {
+            "tito_positions": [ { "line": 21, "start": 13, "end": 14 } ],
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 20,
               "start": 14,
@@ -123,7 +123,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 22,
               "start": 15,
@@ -182,12 +182,12 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "tito": [
+            "tito_positions": [
               { "line": 133, "start": 41, "end": 47 },
               { "line": 136, "start": 22, "end": 43 },
               { "line": 136, "start": 32, "end": 42 }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 132,
               "start": 13,
@@ -207,7 +207,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 135,
               "start": 8,
@@ -242,7 +242,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -254,7 +254,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -266,7 +266,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -280,7 +282,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -294,7 +299,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -315,7 +320,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -338,7 +343,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -381,7 +386,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -420,7 +425,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -434,7 +442,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [
@@ -549,7 +559,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 44,
               "start": 19,
@@ -568,7 +578,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 45,
               "start": 19,
@@ -587,7 +597,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 46,
               "start": 19,
@@ -606,7 +616,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 47,
               "start": 19,
@@ -625,7 +635,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 48,
               "start": 19,
@@ -644,7 +654,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 49,
               "start": 19,
@@ -663,7 +673,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 50,
               "start": 19,
@@ -682,7 +692,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 51,
               "start": 19,
@@ -701,7 +711,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 52,
               "start": 19,
@@ -720,7 +730,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 53,
               "start": 20,
@@ -739,7 +749,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 54,
               "start": 20,
@@ -758,7 +768,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 55,
               "start": 20,
@@ -777,7 +787,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 56,
               "start": 20,
@@ -796,7 +806,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 57,
               "start": 20,
@@ -815,7 +825,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 58,
               "start": 20,
@@ -834,7 +844,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 60,
               "start": 19,
@@ -853,7 +863,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 61,
               "start": 19,
@@ -872,7 +882,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 62,
               "start": 19,
@@ -891,7 +901,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 63,
               "start": 19,
@@ -910,7 +920,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 64,
               "start": 19,
@@ -929,7 +939,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 65,
               "start": 19,
@@ -948,7 +958,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 66,
               "start": 19,
@@ -967,7 +977,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 67,
               "start": 19,
@@ -986,7 +996,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 68,
               "start": 19,
@@ -1005,7 +1015,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 69,
               "start": 20,
@@ -1024,7 +1034,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 70,
               "start": 20,
@@ -1043,7 +1053,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 71,
               "start": 20,
@@ -1062,7 +1072,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 72,
               "start": 20,
@@ -1081,7 +1091,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 73,
               "start": 20,
@@ -1100,7 +1110,7 @@
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 74,
               "start": 20,
@@ -1131,7 +1141,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 15,
               "start": 15,
@@ -1167,8 +1177,8 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito": [ { "line": 26, "start": 13, "end": 14 } ],
-            "root": {
+            "tito_positions": [ { "line": 26, "start": 13, "end": 14 } ],
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 27,
               "start": 15,
@@ -1202,8 +1212,8 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito": [ { "line": 32, "start": 16, "end": 17 } ],
-            "root": {
+            "tito_positions": [ { "line": 32, "start": 16, "end": 17 } ],
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 31,
               "start": 14,
@@ -1234,7 +1244,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 92,
               "start": 19,
@@ -1257,7 +1267,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 94,
               "start": 19,
@@ -1285,7 +1295,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 82,
               "start": 37,
@@ -1305,7 +1315,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "taint_broadening.py",
               "line": 84,
               "start": 37,

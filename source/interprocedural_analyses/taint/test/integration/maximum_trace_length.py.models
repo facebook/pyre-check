@@ -219,7 +219,7 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -232,7 +232,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -309,7 +309,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "maximum_trace_length.py",
               "line": 23,
               "start": 15,
@@ -365,7 +365,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "maximum_trace_length.py",
               "line": 10,
               "start": 11,

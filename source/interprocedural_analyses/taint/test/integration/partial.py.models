@@ -22,7 +22,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "partial.py",
               "line": 38,
               "start": 58,
@@ -92,7 +92,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "partial.py",
               "line": 28,
               "start": 8,
@@ -162,7 +162,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "partial.py",
               "line": 18,
               "start": 8,
@@ -216,7 +216,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -228,7 +228,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -240,7 +240,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -254,7 +256,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -268,7 +273,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -289,7 +294,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -312,7 +317,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -355,7 +360,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -394,7 +399,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -408,7 +416,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [
@@ -495,7 +505,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 82, "start": 43, "end": 51 } ],
+            "tito_positions": [ { "line": 82, "start": 43, "end": 51 } ],
             "tito": null
           }
         ]
@@ -506,7 +516,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 82, "start": 26, "end": 34 } ],
+            "tito_positions": [ { "line": 82, "start": 26, "end": 34 } ],
             "tito": null
           }
         ]
@@ -517,7 +527,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 82, "start": 36, "end": 41 } ],
+            "tito_positions": [ { "line": 82, "start": 36, "end": 41 } ],
             "tito": null
           }
         ]
@@ -555,7 +565,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [ { "line": 76, "start": 40, "end": 48 } ],
+            "tito_positions": [ { "line": 76, "start": 40, "end": 48 } ],
             "tito": null
           }
         ]
@@ -575,7 +585,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [ { "line": 76, "start": 33, "end": 38 } ],
+            "tito_positions": [ { "line": 76, "start": 33, "end": 38 } ],
             "tito": null
           }
         ]
@@ -661,7 +671,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 54, "start": 43, "end": 51 } ],
+            "tito_positions": [ { "line": 54, "start": 43, "end": 51 } ],
             "tito": null
           }
         ]
@@ -672,7 +682,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 54, "start": 26, "end": 34 } ],
+            "tito_positions": [ { "line": 54, "start": 26, "end": 34 } ],
             "tito": null
           }
         ]
@@ -683,7 +693,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 54, "start": 36, "end": 41 } ],
+            "tito_positions": [ { "line": 54, "start": 36, "end": 41 } ],
             "tito": null
           }
         ]
@@ -721,7 +731,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [ { "line": 50, "start": 57, "end": 65 } ],
+            "tito_positions": [ { "line": 50, "start": 57, "end": 65 } ],
             "tito": null
           }
         ]
@@ -741,7 +751,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [ { "line": 50, "start": 33, "end": 37 } ],
+            "tito_positions": [ { "line": 50, "start": 33, "end": 37 } ],
             "tito": null
           }
         ]
@@ -793,7 +803,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "partial.py",
               "line": 14,
               "start": 15,
@@ -816,7 +826,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 93, "start": 38, "end": 39 } ],
+            "tito_positions": [ { "line": 93, "start": 38, "end": 39 } ],
             "tito": null
           }
         ]
@@ -827,7 +837,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": [ { "line": 93, "start": 35, "end": 36 } ],
+            "tito_positions": [ { "line": 93, "start": 35, "end": 36 } ],
             "tito": null
           }
         ]
@@ -854,7 +864,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 66, "start": 33, "end": 34 } ],
+            "tito_positions": [ { "line": 66, "start": 33, "end": 34 } ],
             "tito": null
           }
         ]
@@ -873,7 +883,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 66, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 66, "start": 30, "end": 31 } ],
             "tito": null
           }
         ]

@@ -7,7 +7,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]
@@ -28,7 +28,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -51,7 +51,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -84,7 +84,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -110,7 +113,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "access_token" }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 21,
               "start": 8,
@@ -141,7 +144,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 26,
               "start": 8,
@@ -172,7 +175,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 31,
               "start": 8,
@@ -204,8 +207,8 @@
               { "first-index": "payload" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
-            "root": {
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
+            "origin": {
               "filename": "select.py",
               "line": 41,
               "start": 11,
@@ -219,7 +222,10 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -240,7 +246,7 @@
               { "first-index": "payload" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
             "tito": null
           }
         ]
@@ -275,8 +281,8 @@
               { "first-index": "payload" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
-            "root": {
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
+            "origin": {
               "filename": "select.py",
               "line": 41,
               "start": 11,
@@ -290,7 +296,7 @@
         "roots": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 41,
               "start": 4,
@@ -317,7 +323,7 @@
       {
         "port": "formal(request)",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -332,7 +338,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 13,
               "start": 9,
@@ -369,7 +375,7 @@
             "local_features": [
               { "has": "first-field" }, { "first-field": "payload" }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 12,
               "start": 21,
@@ -388,7 +394,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 13,
               "start": 9,
@@ -428,8 +434,8 @@
               { "first-index": "payload" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 37, "start": 9, "end": 20 } ],
-            "root": {
+            "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
+            "origin": {
               "filename": "select.py",
               "line": 37,
               "start": 9,
@@ -468,8 +474,8 @@
               { "first-index": "payload" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 37, "start": 9, "end": 20 } ],
-            "root": {
+            "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
+            "origin": {
               "filename": "select.py",
               "line": 37,
               "start": 9,
@@ -488,7 +494,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 37,
               "start": 9,
@@ -520,7 +526,7 @@
       {
         "port": "formal(request)",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -538,7 +544,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "payload" }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 17,
               "start": 9,
@@ -578,7 +584,7 @@
               { "has": "first-field" },
               { "first-field": "GET" }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 16,
               "start": 21,
@@ -597,7 +603,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "select.py",
               "line": 17,
               "start": 9,

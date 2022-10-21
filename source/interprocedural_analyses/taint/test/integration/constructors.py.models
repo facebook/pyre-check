@@ -97,7 +97,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "constructors.py",
               "line": 61,
               "start": 21,
@@ -195,7 +195,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "constructors.py",
               "line": 45,
               "start": 15,
@@ -227,7 +227,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -239,7 +239,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -251,7 +251,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -265,7 +267,10 @@
       {
         "port": "formal(argument)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -279,7 +284,7 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -300,7 +305,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -323,7 +328,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -366,7 +371,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -391,7 +396,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "constructors.py",
               "line": 80,
               "start": 17,
@@ -432,7 +437,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "constructors.py",
               "line": 71,
               "start": 19,
@@ -473,7 +478,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "constructors.py",
               "line": 67,
               "start": 18,
@@ -503,7 +508,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "constructors.py",
               "line": 56,
               "start": 19,
@@ -528,7 +533,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 57, "start": 30, "end": 33 } ],
+            "tito_positions": [ { "line": 57, "start": 30, "end": 33 } ],
             "tito": null
           }
         ]
@@ -591,7 +596,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito": [ { "line": 85, "start": 8, "end": 15 } ],
+            "tito_positions": [ { "line": 85, "start": 8, "end": 15 } ],
             "tito": null
           }
         ]
@@ -678,7 +683,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "constructors.py",
               "line": 23,
               "start": 13,
@@ -707,7 +712,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 20, "start": 32, "end": 50 } ],
+            "tito_positions": [ { "line": 20, "start": 32, "end": 50 } ],
             "tito": null
           }
         ]
@@ -724,7 +729,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 20, "start": 19, "end": 30 } ],
+            "tito_positions": [ { "line": 20, "start": 19, "end": 30 } ],
             "tito": null
           }
         ]
@@ -750,7 +755,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "constructors.py",
               "line": 39,
               "start": 17,
@@ -794,7 +799,7 @@
               { "first-index": "<numeric>" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 32, "start": 41, "end": 50 } ],
+            "tito_positions": [ { "line": 32, "start": 41, "end": 50 } ],
             "tito": null
           }
         ]
@@ -815,7 +820,7 @@
               { "first-index": "<numeric>" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 32, "start": 52, "end": 61 } ],
+            "tito_positions": [ { "line": 32, "start": 52, "end": 61 } ],
             "tito": null
           }
         ]
@@ -855,7 +860,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -869,7 +877,9 @@
     "sinks": [
       {
         "port": "formal(name)",
-        "taint": [ { "kinds": [ { "kind": "GetAttr" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
       }
     ],
     "tito": [

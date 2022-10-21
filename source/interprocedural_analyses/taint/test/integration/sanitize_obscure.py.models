@@ -6,7 +6,9 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -18,7 +20,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -30,7 +34,9 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -42,7 +48,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -65,8 +73,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 133, "start": 46, "end": 47 } ],
-            "root": {
+            "tito_positions": [ { "line": 133, "start": 46, "end": 47 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 134,
               "start": 11,
@@ -96,8 +104,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 115, "start": 46, "end": 47 } ],
-            "root": {
+            "tito_positions": [ { "line": 115, "start": 46, "end": 47 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 114,
               "start": 8,
@@ -127,8 +135,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 86, "start": 29, "end": 30 } ],
-            "root": {
+            "tito_positions": [ { "line": 86, "start": 29, "end": 30 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 87,
               "start": 11,
@@ -158,8 +166,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 194, "start": 34, "end": 35 } ],
-            "root": {
+            "tito_positions": [ { "line": 194, "start": 34, "end": 35 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 195,
               "start": 11,
@@ -189,8 +197,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 138, "start": 39, "end": 40 } ],
-            "root": {
+            "tito_positions": [ { "line": 138, "start": 39, "end": 40 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 139,
               "start": 11,
@@ -220,8 +228,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 222, "start": 31, "end": 32 } ],
-            "root": {
+            "tito_positions": [ { "line": 222, "start": 31, "end": 32 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 223,
               "start": 11,
@@ -251,8 +259,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 166, "start": 36, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 166, "start": 36, "end": 37 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 167,
               "start": 11,
@@ -282,8 +290,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 101, "start": 34, "end": 35 } ],
-            "root": {
+            "tito_positions": [ { "line": 101, "start": 34, "end": 35 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 100,
               "start": 8,
@@ -313,8 +321,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 181, "start": 39, "end": 40 } ],
-            "root": {
+            "tito_positions": [ { "line": 181, "start": 39, "end": 40 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 180,
               "start": 8,
@@ -344,8 +352,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 120, "start": 44, "end": 45 } ],
-            "root": {
+            "tito_positions": [ { "line": 120, "start": 44, "end": 45 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 119,
               "start": 8,
@@ -375,8 +383,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 209, "start": 36, "end": 37 } ],
-            "root": {
+            "tito_positions": [ { "line": 209, "start": 36, "end": 37 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 208,
               "start": 8,
@@ -406,8 +414,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 153, "start": 41, "end": 42 } ],
-            "root": {
+            "tito_positions": [ { "line": 153, "start": 41, "end": 42 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 152,
               "start": 8,
@@ -437,8 +445,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 72, "start": 27, "end": 28 } ],
-            "root": {
+            "tito_positions": [ { "line": 72, "start": 27, "end": 28 } ],
+            "origin": {
               "filename": "sanitize_obscure.py",
               "line": 71,
               "start": 8,
@@ -535,7 +543,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 231, "start": 47, "end": 48 } ],
+            "tito_positions": [ { "line": 231, "start": 47, "end": 48 } ],
             "tito": null
           }
         ]
@@ -554,7 +562,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 231, "start": 44, "end": 45 } ],
+            "tito_positions": [ { "line": 231, "start": 44, "end": 45 } ],
             "tito": null
           }
         ]

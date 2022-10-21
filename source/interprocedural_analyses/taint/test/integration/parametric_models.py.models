@@ -21,7 +21,7 @@
                 "kind": "WithSubkind[A]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "parametric_models.py",
               "line": 26,
               "start": 12,
@@ -35,7 +35,7 @@
                 "kind": "WithSubkind[B]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "parametric_models.py",
               "line": 28,
               "start": 12,
@@ -54,7 +54,7 @@
                 "kind": "ExpectsSubkind"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "parametric_models.py",
               "line": 30,
               "start": 9,
@@ -93,7 +93,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "parametric_models.py",
               "line": 49,
               "start": 8,
@@ -149,7 +149,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -163,7 +163,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "WithSubkind[A]" } ], "decl": null }
+          { "kinds": [ { "kind": "WithSubkind[A]" } ], "declaration": null }
         ]
       }
     ],
@@ -178,7 +178,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "WithSubkind[B]" } ], "decl": null }
+          { "kinds": [ { "kind": "WithSubkind[B]" } ], "declaration": null }
         ]
       }
     ],
@@ -200,7 +200,7 @@
                 "kind": "SinkWithSubkind[SinkA]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "parametric_models.py",
               "line": 43,
               "start": 23,
@@ -214,7 +214,7 @@
                 "kind": "SinkWithSubkind[SinkB]"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "parametric_models.py",
               "line": 45,
               "start": 23,
@@ -234,7 +234,7 @@
       {
         "port": "formal(x)",
         "taint": [
-          { "kinds": [ { "kind": "ExpectsSubkind" } ], "decl": null }
+          { "kinds": [ { "kind": "ExpectsSubkind" } ], "declaration": null }
         ]
       }
     ],
@@ -249,7 +249,10 @@
       {
         "port": "formal(x)",
         "taint": [
-          { "kinds": [ { "kind": "SinkWithSubkind[SinkA]" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "SinkWithSubkind[SinkA]" } ],
+            "declaration": null
+          }
         ]
       }
     ],
@@ -264,7 +267,10 @@
       {
         "port": "formal(x)",
         "taint": [
-          { "kinds": [ { "kind": "SinkWithSubkind[SinkB]" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "SinkWithSubkind[SinkB]" } ],
+            "declaration": null
+          }
         ]
       }
     ],

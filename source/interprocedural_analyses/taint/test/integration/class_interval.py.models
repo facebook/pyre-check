@@ -49,7 +49,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 391,
               "start": 15,
@@ -121,7 +121,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 498,
               "start": 15,
@@ -166,7 +166,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 106,
               "start": 9,
@@ -238,7 +238,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 148,
               "start": 9,
@@ -297,7 +297,10 @@
       {
         "port": "formal($global)",
         "taint": [
-          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
         ]
       }
     ]
@@ -321,7 +324,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -351,7 +354,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -383,7 +386,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -415,7 +418,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -445,7 +448,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -475,7 +478,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -505,7 +508,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -535,7 +538,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -565,7 +568,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -595,7 +598,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -625,7 +628,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -678,7 +681,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -744,7 +747,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -797,7 +800,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -827,7 +830,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -859,7 +862,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -889,7 +892,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -919,7 +922,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -985,7 +988,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -1015,7 +1018,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -1045,7 +1048,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -1075,7 +1078,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -1105,7 +1108,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -1137,7 +1140,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "builtins.pyi",
               "line": -1,
               "start": -1,
@@ -1164,7 +1167,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1187,7 +1190,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -1284,7 +1287,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 345,
               "start": 8,
@@ -1806,7 +1809,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 328,
               "start": 15,
@@ -1836,7 +1839,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 333,
               "start": 15,
@@ -1974,7 +1977,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 246,
               "start": 19,
@@ -2027,7 +2030,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 281,
               "start": 15,
@@ -2093,7 +2096,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 302,
               "start": 15,
@@ -2123,7 +2126,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 34,
               "start": 19,
@@ -2153,7 +2156,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 66,
               "start": 19,
@@ -2183,7 +2186,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 360,
               "start": 15,
@@ -2213,7 +2216,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 386,
               "start": 15,
@@ -2245,7 +2248,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 419,
               "start": 15,
@@ -2311,7 +2314,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 136,
               "start": 19,
@@ -2341,7 +2344,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 175,
               "start": 19,
@@ -2371,7 +2374,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 494,
               "start": 15,
@@ -2401,7 +2404,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 102,
               "start": 19,
@@ -2431,7 +2434,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 215,
               "start": 19,
@@ -2463,7 +2466,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 448,
               "start": 15,
@@ -2493,7 +2496,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "class_interval.py",
               "line": 263,
               "start": 15,
@@ -2558,8 +2561,8 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito": [ { "line": 364, "start": 8, "end": 9 } ],
-            "root": {
+            "tito_positions": [ { "line": 364, "start": 8, "end": 9 } ],
+            "origin": {
               "filename": "class_interval.py",
               "line": 367,
               "start": 15,

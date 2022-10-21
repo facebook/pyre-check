@@ -21,7 +21,7 @@
                 "kind": "MyTestSource"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "rule.py",
               "line": 16,
               "start": 8,
@@ -37,7 +37,7 @@
             "kinds": [
               { "leaves": [ { "name": "rule.sink" } ], "kind": "MyTestSink" }
             ],
-            "root": {
+            "origin": {
               "filename": "rule.py",
               "line": 17,
               "start": 9,
@@ -64,7 +64,9 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "kinds": [ { "kind": "MyTestSink" } ], "decl": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "MyTestSink" } ], "declaration": null }
+        ]
       }
     ]
   }
@@ -77,7 +79,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "MyTestSource" } ], "decl": null }
+          { "kinds": [ { "kind": "MyTestSource" } ], "declaration": null }
         ]
       }
     ]

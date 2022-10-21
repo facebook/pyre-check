@@ -57,7 +57,7 @@ let test_dump_model_query_results context =
               {
                 "port": "result",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -75,7 +75,7 @@ let test_dump_model_query_results context =
               {
                 "port": "result",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -97,7 +97,7 @@ let test_dump_model_query_results context =
               {
                 "port": "result",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -115,7 +115,7 @@ let test_dump_model_query_results context =
               {
                 "port": "result",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -133,7 +133,7 @@ let test_dump_model_query_results context =
               {
                 "port": "result",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -155,7 +155,7 @@ let test_dump_model_query_results context =
               {
                 "port": "result",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -211,7 +211,7 @@ let test_dump_model_query_results context =
               {
                 "port": "formal(self)",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ]
@@ -228,7 +228,7 @@ let test_dump_model_query_results context =
               {
                 "port": "formal(self)",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ]
@@ -276,7 +276,7 @@ let test_dump_model_query_results context =
               {
                 "port": "result",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -298,7 +298,10 @@ let test_dump_model_query_results context =
               {
                 "port": "result",
                 "taint": [
-                  { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+                  {
+                    "kinds": [ { "kind": "UserControlled" } ],
+                    "declaration": null
+                  }
                 ]
               }
             ],
@@ -361,7 +364,7 @@ let test_dump_model_query_results context =
               {
                 "port": "formal(b)",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -379,7 +382,7 @@ let test_dump_model_query_results context =
               {
                 "port": "formal(b)",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -448,7 +451,7 @@ let test_dump_model_query_results context =
               {
                 "port": "formal(b)",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -466,7 +469,7 @@ let test_dump_model_query_results context =
               {
                 "port": "formal(b)",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],
@@ -484,7 +487,7 @@ let test_dump_model_query_results context =
               {
                 "port": "formal(b)",
                 "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
                 ]
               }
             ],

@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -19,7 +19,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -67,7 +67,7 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ],
@@ -113,8 +113,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 36, "start": 24, "end": 38 } ],
-            "root": {
+            "tito_positions": [ { "line": 36, "start": 24, "end": 38 } ],
+            "origin": {
               "filename": "obscure_models.py",
               "line": 36,
               "start": 24,
@@ -139,7 +139,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 36, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 36, "start": 11, "end": 12 } ],
             "tito": null
           }
         ]
@@ -160,8 +160,8 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 60, "start": 45, "end": 59 } ],
-            "root": {
+            "tito_positions": [ { "line": 60, "start": 45, "end": 59 } ],
+            "origin": {
               "filename": "obscure_models.py",
               "line": 60,
               "start": 45,
@@ -188,8 +188,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 44, "start": 43, "end": 57 } ],
-            "root": {
+            "tito_positions": [ { "line": 44, "start": 43, "end": 57 } ],
+            "origin": {
               "filename": "obscure_models.py",
               "line": 44,
               "start": 43,
@@ -214,7 +214,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 44, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 44, "start": 11, "end": 12 } ],
             "tito": null
           }
         ]
@@ -235,8 +235,8 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 56, "start": 51, "end": 65 } ],
-            "root": {
+            "tito_positions": [ { "line": 56, "start": 51, "end": 65 } ],
+            "origin": {
               "filename": "obscure_models.py",
               "line": 56,
               "start": 51,
@@ -263,8 +263,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 40, "start": 44, "end": 58 } ],
-            "root": {
+            "tito_positions": [ { "line": 40, "start": 44, "end": 58 } ],
+            "origin": {
               "filename": "obscure_models.py",
               "line": 40,
               "start": 44,
@@ -289,7 +289,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 40, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 40, "start": 11, "end": 12 } ],
             "tito": null
           }
         ]
@@ -316,7 +316,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "obscure_models.py",
               "line": 48,
               "start": 11,
@@ -330,8 +330,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 48, "start": 36, "end": 50 } ],
-            "root": {
+            "tito_positions": [ { "line": 48, "start": 36, "end": 50 } ],
+            "origin": {
               "filename": "obscure_models.py",
               "line": 48,
               "start": 36,
@@ -356,7 +356,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 48, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 48, "start": 11, "end": 12 } ],
             "tito": null
           }
         ]
@@ -379,8 +379,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 64, "start": 15, "end": 16 } ],
-            "root": {
+            "tito_positions": [ { "line": 64, "start": 15, "end": 16 } ],
+            "origin": {
               "filename": "obscure_models.py",
               "line": 64,
               "start": 15,
@@ -416,8 +416,8 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 64, "start": 35, "end": 49 } ],
-            "root": {
+            "tito_positions": [ { "line": 64, "start": 35, "end": 49 } ],
+            "origin": {
               "filename": "obscure_models.py",
               "line": 64,
               "start": 35,
@@ -433,7 +433,7 @@
             "kinds": [
               { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
-            "root": {
+            "origin": {
               "filename": "obscure_models.py",
               "line": 64,
               "start": 15,

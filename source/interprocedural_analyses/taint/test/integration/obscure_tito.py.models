@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -47,7 +47,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -70,7 +70,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -85,7 +85,7 @@
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -130,8 +130,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito": [ { "line": 33, "start": 20, "end": 34 } ],
-            "root": {
+            "tito_positions": [ { "line": 33, "start": 20, "end": 34 } ],
+            "origin": {
               "filename": "obscure_tito.py",
               "line": 33,
               "start": 20,
@@ -162,7 +162,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "obscure_tito.py",
               "line": 38,
               "start": 22,
@@ -191,8 +191,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 27, "start": 13, "end": 27 } ],
-            "root": {
+            "tito_positions": [ { "line": 27, "start": 13, "end": 27 } ],
+            "origin": {
               "filename": "obscure_tito.py",
               "line": 27,
               "start": 13,

@@ -26,7 +26,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 49,
               "start": 8,
@@ -46,7 +46,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 50,
               "start": 15,
@@ -94,7 +94,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 22,
               "start": 22,
@@ -114,7 +114,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 23,
               "start": 15,
@@ -158,7 +158,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 28,
               "start": 22,
@@ -178,7 +178,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 30,
               "start": 15,
@@ -225,7 +225,7 @@
             "local_features": [
               { "has": "first-field" }, { "first-field": "a" }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 59,
               "start": 8,
@@ -245,7 +245,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 60,
               "start": 15,
@@ -284,7 +284,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -307,7 +307,7 @@
                 "kind": "Test"
               }
             ],
-            "decl": null
+            "declaration": null
           }
         ]
       }
@@ -332,7 +332,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 41,
               "start": 11,
@@ -368,7 +368,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 34,
               "start": 20,
@@ -388,7 +388,7 @@
                 "kind": "Test"
               }
             ],
-            "root": {
+            "origin": {
               "filename": "applies_to_index.py",
               "line": 37,
               "start": 15,
@@ -415,7 +415,7 @@
     "sources": [
       {
         "port": "result[a]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -427,7 +427,7 @@
     "sources": [
       {
         "port": "result[a]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -440,7 +440,7 @@
     "sources": [
       {
         "port": "result[0]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -452,7 +452,7 @@
     "sources": [
       {
         "port": "result[0][1]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -464,7 +464,7 @@
     "sources": [
       {
         "port": "result[1]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
