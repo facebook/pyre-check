@@ -67,6 +67,7 @@ module QueryConfiguration = struct
             number_of_workers;
             shared_memory =
               { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+            enable_readonly_analysis;
             remote_logging = _;
             profiling_output = _;
             memory_profiling_output = _;
@@ -97,6 +98,7 @@ module QueryConfiguration = struct
       ~shared_memory_hash_table_power:hash_table_power
       ~enable_type_comments
       ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
+      ~enable_readonly_analysis
       ()
 end
 

@@ -320,6 +320,8 @@ module Analysis = struct
 
   let default_constraint_solving_style = FunctionCallLevel
 
+  let default_enable_readonly_analysis = false
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -346,6 +348,7 @@ module Analysis = struct
     shared_memory: shared_memory;
     enable_type_comments: bool;
     constraint_solving_style: constraint_solving_style;
+    enable_readonly_analysis: bool;
   }
   [@@deriving show]
 
@@ -376,6 +379,7 @@ module Analysis = struct
       ?(shared_memory_hash_table_power = default_shared_memory_hash_table_power)
       ?(enable_type_comments = true)
       ?(constraint_solving_style = default_constraint_solving_style)
+      ?(enable_readonly_analysis = default_enable_readonly_analysis)
       ~source_paths
       ()
     =
@@ -419,6 +423,7 @@ module Analysis = struct
         };
       enable_type_comments;
       constraint_solving_style;
+      enable_readonly_analysis;
     }
 
 

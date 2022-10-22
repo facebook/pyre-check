@@ -36,6 +36,7 @@ module BaseConfiguration = struct
     remote_logging: Configuration.RemoteLogging.t option;
     profiling_output: string option;
     memory_profiling_output: string option;
+    enable_readonly_analysis: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -100,6 +101,12 @@ module BaseConfiguration = struct
       in
       let profiling_output = json |> optional_string_member "profiling_output" in
       let memory_profiling_output = json |> optional_string_member "memory_profiling_output" in
+      let enable_readonly_analysis =
+        json
+        |> bool_member
+             "enable_readonly_analysis"
+             ~default:Configuration.Analysis.default_enable_readonly_analysis
+      in
       Result.Ok
         {
           source_paths;
@@ -120,6 +127,7 @@ module BaseConfiguration = struct
           remote_logging;
           profiling_output;
           memory_profiling_output;
+          enable_readonly_analysis;
         }
     with
     | Type_error (message, _)

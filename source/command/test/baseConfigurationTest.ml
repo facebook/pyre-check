@@ -25,6 +25,7 @@ let dummy_base_configuration =
     excludes = [];
     checked_directory_allowlist = [];
     checked_directory_blocklist = [];
+    enable_readonly_analysis = false;
     extensions = [];
     log_path = PyrePath.create_absolute "/log";
     global_root = PyrePath.create_absolute "/project";
