@@ -52,9 +52,15 @@ let test_forward_expression context =
     let global_resolution = global_resolution
 
     let local_annotations =
-      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
+      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations
         type_environment
         (Node.value define |> Define.name)
+
+
+    let type_resolution_for_statement =
+      TypeCheck.resolution_with_key
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
   end
   in
   let module State = State (Context) in
@@ -117,9 +123,15 @@ let test_check_arguments_against_parameters context =
     let global_resolution = global_resolution
 
     let local_annotations =
-      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
+      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations
         type_environment
         (Node.value define |> Define.name)
+
+
+    let type_resolution_for_statement =
+      TypeCheck.resolution_with_key
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
   end
   in
   let module State = State (Context) in
@@ -261,13 +273,22 @@ let test_callable_data_list_for_callee context =
 
 let assert_readonly_errors ~context =
   let check ~environment ~source =
-    source
-    |> Preprocessing.defines ~include_toplevels:true
-    |> List.concat_map
-         ~f:
-           (ReadOnlyCheck.readonly_errors_for_define
-              ~type_environment:(TypeEnvironment.read_only environment)
-              ~qualifier:!&"test")
+    let errors_for_define define =
+      let environment = TypeEnvironment.read_only environment in
+      ReadOnlyCheck.readonly_errors_for_define
+        ~type_resolution_for_statement:
+          (TypeCheck.resolution_with_key
+             (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+             (module TypeCheck.DummyContext))
+        ~global_resolution:(TypeEnvironment.ReadOnly.global_resolution environment)
+        ~local_annotations:
+          (TypeEnvironment.ReadOnly.get_or_recompute_local_annotations
+             environment
+             (Node.value define |> Define.name))
+        ~qualifier:!&"test"
+        define
+    in
+    source |> Preprocessing.defines ~include_toplevels:true |> List.concat_map ~f:errors_for_define
   in
   assert_errors ~context ~check
 
