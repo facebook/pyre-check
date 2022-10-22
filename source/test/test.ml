@@ -2745,6 +2745,7 @@ module ScratchProject = struct
       ?(no_validation_on_class_lookup_failure = false)
       ?debug
       ?strict
+      ?enable_readonly_analysis
       sources
     =
     let local_root, external_root, log_directory =
@@ -2783,6 +2784,7 @@ module ScratchProject = struct
           ~parallel:false
           ?strict
           ?debug
+          ?enable_readonly_analysis
           ()
       in
       if in_memory then
@@ -2983,6 +2985,7 @@ let assert_errors
     ?(update_environment_with = [])
     ?(include_line_numbers = false)
     ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
+    ?enable_readonly_analysis
     ~context
     ~check
     source
@@ -3011,6 +3014,7 @@ let assert_errors
             ~in_memory
             ~strict
             ~debug
+            ?enable_readonly_analysis
             [handle, source]
         in
         let { ScratchProject.BuiltGlobalEnvironment.sources; _ } =

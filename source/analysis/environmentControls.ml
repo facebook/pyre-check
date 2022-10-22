@@ -91,6 +91,7 @@ module TypeCheckControls = struct
     constraint_solving_style: Configuration.Analysis.constraint_solving_style;
     include_type_errors: bool;
     include_local_annotations: bool;
+    include_readonly_errors: bool;
     debug: bool;
   }
 end
@@ -103,6 +104,7 @@ let type_check_controls
           store_type_errors;
           store_type_check_resolution;
           constraint_solving_style;
+          enable_readonly_analysis;
           _;
         };
       _;
@@ -114,4 +116,5 @@ let type_check_controls
       constraint_solving_style;
       include_type_errors = store_type_errors;
       include_local_annotations = store_type_check_resolution;
+      include_readonly_errors = enable_readonly_analysis;
     }

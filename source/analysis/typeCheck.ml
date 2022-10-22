@@ -24,6 +24,13 @@ type class_name_and_is_abstract_and_is_protocol = {
   is_protocol: bool;
 }
 
+type exit_state_of_define = {
+  resolution: Resolution.t;
+  errors: Error.t list;
+  local_annotations: LocalAnnotationMap.t option;
+  callees: Callgraph.callee_with_locations list option;
+}
+
 module LocalErrorMap = struct
   type t = Error.t list Int.Table.t
 
@@ -7003,10 +7010,14 @@ let exit_state ~resolution (module Context : Context) =
         ~message:"analysis context has no error map"
         (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
     in
-    ( emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
-      |> filter_errors (module Context) ~global_resolution,
-      None,
-      None )
+    {
+      resolution;
+      errors =
+        emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
+        |> filter_errors (module Context) ~global_resolution;
+      local_annotations = None;
+      callees = None;
+    }
   else (
     Log.log ~section:`Check "Checking %a" Reference.pp name;
     Context.Builder.initialize ();
@@ -7047,15 +7058,16 @@ let exit_state ~resolution (module Context : Context) =
         ~message:"analysis context has no error map"
         (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
     in
-    let errors =
+    let resolution, errors =
       match exit with
-      | None -> errors
+      | None -> resolution, errors
       | Some post_state ->
           let resolution = State.resolution_or_default post_state ~default:resolution in
-          emit_errors_on_exit (module Context) ~errors_sofar:errors ~resolution ()
-          |> filter_errors (module Context) ~global_resolution
+          ( resolution,
+            emit_errors_on_exit (module Context) ~errors_sofar:errors ~resolution ()
+            |> filter_errors (module Context) ~global_resolution )
     in
-    errors, Some local_annotations, Some callees)
+    { resolution; errors; local_annotations = Some local_annotations; callees = Some callees })
 
 
 let compute_local_annotations ~global_environment name =
@@ -7083,7 +7095,7 @@ let compute_local_annotations ~global_environment name =
   in
   GlobalResolution.define_body global_resolution name
   >>| exit_state_of_define
-  >>= (fun (_, local_annotations, _) -> local_annotations)
+  >>= (fun { local_annotations; _ } -> local_annotations)
   >>| LocalAnnotationMap.read_only
 
 
@@ -7093,6 +7105,7 @@ let check_define
         EnvironmentControls.TypeCheckControls.constraint_solving_style;
         include_type_errors;
         include_local_annotations;
+        include_readonly_errors;
         debug;
       }
     ~call_graph_builder:(module Builder : Callgraph.Builder)
@@ -7118,7 +7131,9 @@ let check_define
         module Builder = Builder
       end
       in
-      let type_errors, local_annotations, callees = exit_state ~resolution (module Context) in
+      let { resolution; errors = type_errors; local_annotations; callees } =
+        exit_state ~resolution (module Context)
+      in
       let errors =
         if include_type_errors then
           let uninitialized_local_errors =
@@ -7127,7 +7142,21 @@ let check_define
             else
               UninitializedLocalCheck.check_define ~qualifier define_node
           in
-          Some (List.append uninitialized_local_errors type_errors)
+          let readonly_errors =
+            if include_readonly_errors then
+              ReadOnlyCheck.readonly_errors_for_define
+                ~type_resolution_for_statement:
+                  (resolution_with_key
+                     (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                     (module DummyContext))
+                ~global_resolution:(Resolution.global_resolution resolution)
+                ~local_annotations:(local_annotations >>| LocalAnnotationMap.read_only)
+                ~qualifier
+                define_node
+            else
+              []
+          in
+          Some (uninitialized_local_errors @ readonly_errors @ type_errors)
         else
           None
       in
