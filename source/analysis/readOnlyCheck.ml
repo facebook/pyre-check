@@ -301,7 +301,9 @@ module State (Context : Context) = struct
         in
         { Resolved.resolved; errors; resolution }
     | Call { callee; arguments } -> forward_call ~type_resolution ~resolution ~callee arguments
-    | _ -> failwith "TODO(T130377746)"
+    | _ ->
+        (* TODO(T130377746): Actually handle other expressions. *)
+        { Resolved.resolved = Mutable; errors = []; resolution }
 
 
   let forward_assignment

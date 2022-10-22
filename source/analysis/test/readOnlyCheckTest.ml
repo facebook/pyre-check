@@ -564,6 +564,22 @@ let test_function_call context =
   ()
 
 
+let test_await context =
+  let assert_readonly_errors = assert_readonly_errors ~context in
+  (* TODO(T130377746): This should have a readonly violation error. *)
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      async def return_readonly() -> ReadOnly[int]: ...
+
+      async def main() -> None:
+        y: int = await return_readonly()
+    |}
+    [];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -572,5 +588,6 @@ let () =
          "callable_data_list_for_callee" >:: test_callable_data_list_for_callee;
          "assignment" >:: test_assignment;
          "function_call" >:: test_function_call;
+         "await" >:: test_await;
        ]
   |> Test.run
