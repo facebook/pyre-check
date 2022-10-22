@@ -493,42 +493,27 @@ class PartialConfiguration:
                     checksum_path=files.checksum_path,
                 ),
             )
-        return PartialConfiguration(
+        return dataclasses.replace(
+            self,
             binary=binary,
-            buck_mode=self.buck_mode,
             only_check_paths=[
                 expand_relative_path(root, path) for path in self.only_check_paths
             ],
-            dot_pyre_directory=self.dot_pyre_directory,
-            enable_readonly_analysis=self.enable_readonly_analysis,
-            excludes=self.excludes,
-            extensions=self.extensions,
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
-            isolation_prefix=self.isolation_prefix,
             logger=logger,
-            number_of_workers=self.number_of_workers,
-            oncall=self.oncall,
             other_critical_files=[
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
-            pysa_version_hash=self.pysa_version_hash,
-            python_version=self.python_version,
             search_path=[path.expand_relative_root(root) for path in self.search_path],
-            shared_memory=self.shared_memory,
             site_package_search_strategy=self.site_package_search_strategy,
-            site_roots=self.site_roots,
             source_directories=source_directories,
-            strict=self.strict,
             taint_models_path=[
                 expand_relative_path(root, path) for path in self.taint_models_path
             ],
-            targets=self.targets,
             typeshed=typeshed,
             unwatched_dependency=unwatched_dependency,
-            use_buck2=self.use_buck2,
-            version_hash=self.version_hash,
         )
 
 
