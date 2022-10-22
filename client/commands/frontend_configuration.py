@@ -136,6 +136,10 @@ class Base(abc.ABC):
     def get_project_identifier(self) -> str:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def get_enable_readonly_analysis(self) -> Optional[bool]:
+        raise NotImplementedError()
+
     def get_local_root(self) -> Optional[Path]:
         relative_local_root = self.get_relative_local_root()
         if relative_local_root is None:
@@ -241,6 +245,9 @@ class OpenSource(Base):
 
     def get_taint_models_path(self) -> List[str]:
         return list(self.configuration.taint_models_path)
+
+    def get_enable_readonly_analysis(self) -> Optional[bool]:
+        return self.configuration.enable_readonly_analysis
 
     def get_project_identifier(self) -> str:
         return self.configuration.project_identifier

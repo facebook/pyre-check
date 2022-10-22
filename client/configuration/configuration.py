@@ -115,6 +115,7 @@ class PartialConfiguration:
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
     )
     dot_pyre_directory: Optional[Path] = None
+    enable_readonly_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
@@ -403,6 +404,9 @@ class PartialConfiguration:
                 dot_pyre_directory=Path(dot_pyre_directory)
                 if dot_pyre_directory is not None
                 else None,
+                enable_readonly_analysis=ensure_option_type(
+                    configuration_json, "enable_readonly_analysis", bool
+                ),
                 excludes=ensure_string_list(
                     configuration_json, "exclude", allow_single_string=True
                 ),
@@ -496,6 +500,7 @@ class PartialConfiguration:
                 expand_relative_path(root, path) for path in self.only_check_paths
             ],
             dot_pyre_directory=self.dot_pyre_directory,
+            enable_readonly_analysis=self.enable_readonly_analysis,
             excludes=self.excludes,
             extensions=self.extensions,
             ignore_all_errors=[
@@ -545,6 +550,7 @@ class Configuration:
     binary: Optional[str] = None
     buck_mode: Optional[platform_aware.PlatformAware[str]] = None
     only_check_paths: Sequence[str] = field(default_factory=list)
+    enable_readonly_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[extension.Element] = field(default_factory=list)
     ignore_all_errors: Sequence[str] = field(default_factory=list)
@@ -594,6 +600,7 @@ class Configuration:
                 expand_global_root(path, global_root=str(project_root))
                 for path in only_check_paths
             ],
+            enable_readonly_analysis=partial_configuration.enable_readonly_analysis,
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             ignore_all_errors=_expand_all_globs(
@@ -678,6 +685,11 @@ class Configuration:
             **({"binary": binary} if binary is not None else {}),
             **({"buck_mode": buck_mode.to_json()} if buck_mode is not None else {}),
             "only_check_paths": list(self.only_check_paths),
+            **(
+                {"enable_readonly_analysis": self.enable_readonly_analysis}
+                if self.enable_readonly_analysis is not None
+                else {}
+            ),
             "excludes": list(self.excludes),
             "extensions": list(self.extensions),
             "ignore_all_errors": list(self.ignore_all_errors),
