@@ -95,6 +95,7 @@ def create_check_arguments(
             ),
             checked_directory_blocklist=(configuration.get_ignore_all_errors()),
             debug=check_arguments.debug,
+            enable_readonly_analysis=configuration.get_enable_readonly_analysis(),
             excludes=configuration.get_excludes(),
             extensions=configuration.get_valid_extension_suffixes(),
             relative_local_root=configuration.get_relative_local_root(),
