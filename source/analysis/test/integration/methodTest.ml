@@ -1012,6 +1012,14 @@ let test_check_method_parameters context =
       "Incompatible parameter type [6]: In call `never_input`, for 1st positional only parameter \
        expected `Never` but got `int`.";
     ];
+  assert_type_errors
+    {|
+      def return_str() -> str: ...
+
+      def foo(x: int = 1 + return_str()) -> None:
+        pass
+    |}
+    ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."];
   ()
 
 

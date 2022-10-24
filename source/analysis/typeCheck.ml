@@ -561,6 +561,7 @@ module State (Context : Context) = struct
       | Class of Type.t
       | Instance of Type.t
       | Super of Type.t
+    [@@deriving show]
 
     type t = {
       resolution: Resolution.t;
@@ -569,6 +570,9 @@ module State (Context : Context) = struct
       resolved_annotation: Annotation.t option;
       base: base option;
     }
+    [@@deriving show]
+
+    let _ = show
 
     let resolved_base_type = function
       | Some (Class base_type)
@@ -5485,10 +5489,14 @@ module State (Context : Context) = struct
                   in
                   contains_literal_any && Type.contains_prohibited_any parsed_annotation
                 in
-                let value_annotation =
-                  value
-                  >>| (fun expression -> forward_expression ~resolution expression)
-                  >>| fun { resolved; _ } -> resolved
+                let value_annotation, errors =
+                  match value with
+                  | Some value ->
+                      let { Resolved.resolved; errors = value_errors; _ } =
+                        forward_expression ~resolution value
+                      in
+                      Some resolved, value_errors @ errors
+                  | None -> None, errors
                 in
                 let errors =
                   match parsed_annotation, value_annotation with
