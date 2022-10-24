@@ -312,12 +312,12 @@ let test_load_partial_build_map context =
   ()
 
 
-let test_merge_build_map context =
+let test_merge_build_map_by_name context =
   let assert_loaded ~targets ~build_map target_and_build_maps =
     let actual_targets, actual_build_map =
       List.map target_and_build_maps ~f:(fun (target, build_map) ->
           Target.of_string target, BuildMap.Partial.of_alist_exn build_map)
-      |> Interface.merge_build_maps
+      |> Interface.(merge_build_maps ~resolve_conflict:resolve_merge_conflict_by_name)
     in
     assert_equal
       ~ctxt:context
@@ -383,6 +383,124 @@ let test_merge_build_map context =
     ]
     ~targets:["//foo:bar"]
     ~build_map:["a.py", "source/a.py"; "x.py", "source/b.py"];
+  ()
+
+
+let test_merge_build_map_by_name_and_content context =
+  let assert_loaded ~targets ~included target_and_file_map =
+    (* Some explanation on the test setup: we expect each test to specify a [target_and_file_map],
+       which is an alist from targets to another alist of relative path -> file content mapping. The
+       test function will attempt to create a bunch of partial build maps out of the mappings, merge
+       them with the name+content conflict handler, and assert on how many targets get kept and what
+       keys are remained in the merged build map.
+
+       For example, if [target_and_file_map] looks like this:
+     * { "//foo": { "a.py": "a = 1", "b.py": "b = 2" }, "//bar": { "c.py": "c = 3"} }
+
+       Then we are going to lay out the source dir as follows:
+     *  Source root is a temporary dir `root/`.
+     *  `root/target0_a.py` has content "a = 1"
+     *  `root/target0_b.py` has content "b = 2"
+     *  `root/target1_c.py` has content "c = 3"
+
+     * Partial build map of `//foo` will be { "a.py": "root/target0_a.py", "b.py": "root/target0_b.py" }
+     * Partial build map of `//bar` will be { "c.py": "root/target1_c.py" }
+
+       The basic idea here is to lay out all specified files&contents under the source root,
+       with some name mangling on source path side to avoid overwriting. This way, we could fine-tune
+       the content of each source file, and observe the build map merger's behavior when a conflict
+       occurs on the artifact path side. *)
+    let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
+    let actual_targets, actual_build_map =
+      let get_mangled_source_path index original_path =
+        Format.sprintf "target%d_%s" index original_path
+      in
+      List.mapi target_and_file_map ~f:(fun index (target, file_map) ->
+          List.iter file_map ~f:(fun (path, content) ->
+              let source_path =
+                PyrePath.create_relative
+                  ~root:source_root
+                  ~relative:(get_mangled_source_path index path)
+              in
+              File.create source_path ~content |> File.write);
+          let build_map =
+            (* Using a simple identity build map *)
+            List.map file_map ~f:(fun (path, _) -> path, get_mangled_source_path index path)
+            |> BuildMap.Partial.of_alist_exn
+          in
+          Target.of_string target, build_map)
+      |> Interface.(
+           merge_build_maps
+             ~resolve_conflict:(resolve_merge_conflict_by_name_and_content ~source_root))
+    in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: string list]
+      ~printer:(fun targets -> Sexp.to_string_hum ([%sexp_of: string list] targets))
+      targets
+      (List.map actual_targets ~f:Target.show);
+    let actual_included = BuildMap.to_alist actual_build_map |> List.map ~f:fst in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: string list]
+      ~printer:(fun paths -> Sexp.to_string_hum ([%sexp_of: string list] paths))
+      (List.sort ~compare:String.compare included)
+      (List.sort ~compare:String.compare actual_included)
+  in
+
+  assert_loaded [] ~targets:[] ~included:[];
+  assert_loaded ["//foo:bar", ["a.py", "a = 1"]] ~targets:["//foo:bar"] ~included:["a.py"];
+  assert_loaded
+    ["//foo:bar", ["a.py", "a = 1"; "b.py", "b = 2"]]
+    ~targets:["//foo:bar"]
+    ~included:["a.py"; "b.py"];
+  assert_loaded
+    ["//foo:bar", ["a.py", "a = 1"]; "//foo:baz", ["b.py", "b = 2"]]
+    ~targets:["//foo:bar"; "//foo:baz"]
+    ~included:["a.py"; "b.py"];
+
+  (* Name conflict on b.py but content matches *)
+  assert_loaded
+    ["//foo:bar", ["a.py", "a = 1"; "b.py", "b = 2"]; "//foo:baz", ["b.py", "b = 2"]]
+    ~targets:["//foo:bar"; "//foo:baz"]
+    ~included:["a.py"; "b.py"];
+  assert_loaded
+    ["//foo:bar", ["b.py", "b = 2"]; "//foo:baz", ["a.py", "a = 1"; "b.py", "b = 2"]]
+    ~targets:["//foo:bar"; "//foo:baz"]
+    ~included:["a.py"; "b.py"];
+  assert_loaded
+    [
+      "//foo:bar", ["a.py", "a = 1"; "b.py", "b = 2"];
+      "//foo:baz", ["a.py", "a = 1"; "b.py", "b = 2"];
+    ]
+    ~targets:["//foo:bar"; "//foo:baz"]
+    ~included:["a.py"; "b.py"];
+
+  (* Name and content conflict on b.py *)
+  assert_loaded
+    ["//foo:bar", ["a.py", "a = 1"; "b.py", "b = 2"]; "//foo:baz", ["b.py", "b = 3"]]
+    ~targets:["//foo:bar"]
+    ~included:["a.py"; "b.py"];
+  assert_loaded
+    ["//foo:bar", ["b.py", "b = 2"]; "//foo:baz", ["a.py", "a = 1"; "b.py", "b = 3"]]
+    ~targets:["//foo:bar"]
+    ~included:["b.py"];
+  assert_loaded
+    [
+      "//foo:bar", ["a.py", "a = 1"; "b.py", "b = 2"];
+      "//foo:baz", ["a.py", "a = 1"; "b.py", "b = 3"];
+    ]
+    ~targets:["//foo:bar"]
+    ~included:["a.py"; "b.py"];
+
+  assert_loaded
+    [
+      "//foo:bar", ["b.py", "b = 2"];
+      "//foo:baz", ["a.py", "a = 1"; "b.py", "b = 2"];
+      "//foo:qux", ["b.py", "b = 3"; "c.py", "c = 3"];
+    ]
+    ~targets:["//foo:bar"; "//foo:baz"]
+    ~included:["a.py"; "b.py"];
   ()
 
 
@@ -466,7 +584,8 @@ let () =
          "parse_buck_changed_targets_query_output" >:: test_parse_buck_changed_targets_query_output;
          "parse_buck_build_output" >:: test_parse_buck_build_output;
          "load_parital_build_map" >:: test_load_partial_build_map;
-         "merge_build_map" >:: test_merge_build_map;
+         "merge_build_map_by_name" >:: test_merge_build_map_by_name;
+         "merge_build_map_by_name_and_content" >:: test_merge_build_map_by_name_and_content;
          "buck_changed_targets_to_build_map" >:: test_buck_changed_targets_to_build_map;
        ]
   |> Test.run

@@ -306,6 +306,10 @@ module ReadOnly = struct
         mismatch: mismatch;
       }
     | AssigningToReadOnlyAttribute of { attribute_name: Identifier.t }
+    | RevealedType of {
+        expression: Expression.t;
+        readonlyness: ReadOnlyness.t;
+      }
   [@@deriving compare, sexp, show, hash]
 
   let error_messages ~concise kind =
@@ -362,6 +366,14 @@ module ReadOnly = struct
         ]
     | AssigningToReadOnlyAttribute { attribute_name } ->
         [Format.asprintf "Cannot assign to attribute `%s` since it is readonly" attribute_name]
+    | RevealedType { expression; readonlyness } ->
+        [
+          Format.asprintf
+            "Revealed type for `%s` is %a."
+            (Ast.Transform.sanitize_expression expression |> Expression.show)
+            ReadOnlyness.pp
+            readonlyness;
+        ]
 
 
   let join left right =
@@ -433,6 +445,15 @@ module ReadOnly = struct
         AssigningToReadOnlyAttribute { attribute_name = right_attribute_name } )
       when Identifier.equal left_attribute_name right_attribute_name ->
         Some left
+    | ( RevealedType { expression = left_expression; readonlyness = left_readonlyness },
+        RevealedType { expression = right_expression; readonlyness = right_readonlyness } )
+      when [%compare.equal: Expression.t] left_expression right_expression ->
+        RevealedType
+          {
+            expression = left_expression;
+            readonlyness = ReadOnlyness.join left_readonlyness right_readonlyness;
+          }
+        |> Option.some
     | _ -> None
 
 
@@ -440,12 +461,14 @@ module ReadOnly = struct
     | IncompatibleVariableType _ -> 3001
     | IncompatibleParameterType _ -> 3002
     | AssigningToReadOnlyAttribute _ -> 3003
+    | RevealedType _ -> 3004
 
 
   let name_of_kind = function
     | IncompatibleVariableType _ -> "ReadOnly violation - Incompatible variable type"
     | IncompatibleParameterType _ -> "ReadOnly violation - Incompatible parameter type"
     | AssigningToReadOnlyAttribute _ -> "ReadOnly violation - Assigning to readonly attribute"
+    | RevealedType _ -> "ReadOnly - Revealed type"
 end
 
 type invalid_decoration =

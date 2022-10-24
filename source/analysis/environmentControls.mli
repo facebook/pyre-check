@@ -50,6 +50,7 @@ module TypeCheckControls : sig
     constraint_solving_style: Configuration.Analysis.constraint_solving_style;
     include_type_errors: bool;
     include_local_annotations: bool;
+    include_readonly_errors: bool;
     debug: bool;
   }
 end

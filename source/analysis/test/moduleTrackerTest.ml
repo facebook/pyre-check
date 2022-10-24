@@ -782,7 +782,8 @@ let test_initialization context =
           TestFiles.Directory { relative = "d"; children = [TestFiles.File "__init__.py"] };
           TestFiles.File "e.py";
           TestFiles.File "f.first";
-          TestFiles.File "g.special";
+          TestFiles.File "a.special";
+          TestFiles.File "b.special";
         ]
       ~external_tree:
         [
@@ -844,9 +845,16 @@ let test_initialization context =
       ~is_external:false
       ~is_init:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "g.special"))
+      (lookup_exn tracker (Reference.create "a.special"))
       ~search_root:local_root
-      ~relative:"g.special"
+      ~relative:"a.special"
+      ~is_stub:false
+      ~is_external:false
+      ~is_init:false;
+    assert_module_path
+      (lookup_exn tracker (Reference.create "b.special"))
+      ~search_root:local_root
+      ~relative:"b.special"
       ~is_stub:false
       ~is_external:false
       ~is_init:false;

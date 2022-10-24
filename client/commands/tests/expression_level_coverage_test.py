@@ -10,16 +10,10 @@ from typing import Iterable, List
 import testslide
 
 from ... import command_arguments, configuration
-from ...tests import setup
 
-from .. import (
-    commands,
-    connections,
-    daemon_query,
-    expression_level_coverage,
-    frontend_configuration,
-    language_server_protocol as lsp,
-)
+from ...language_server import connections, protocol as lsp
+from ...tests import setup
+from .. import commands, daemon_query, expression_level_coverage, frontend_configuration
 
 
 class ExpressionLevelTest(testslide.TestCase):

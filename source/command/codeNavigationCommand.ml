@@ -66,6 +66,7 @@ module CodeNavigationConfiguration = struct
             python_version = { Configuration.PythonVersion.major; minor; micro };
             parallel;
             number_of_workers;
+            enable_readonly_analysis;
             shared_memory =
               { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
             remote_logging = _;
@@ -101,6 +102,7 @@ module CodeNavigationConfiguration = struct
       ~shared_memory_hash_table_power:hash_table_power
       ~enable_type_comments
       ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
+      ~enable_readonly_analysis
       ()
 
 

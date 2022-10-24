@@ -386,6 +386,9 @@ let initial_models_source =
       ClassWithSinkAttribute.attribute: TaintSink[Test] = ...
 
       def copy(obj: TaintInTaintOut[Via[copy]]): ...
+
+      @SkipOverrides
+      def dict.__setitem__(self): ...
     |}
   |> Test.trim_extra_indentation
 

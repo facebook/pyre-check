@@ -22,10 +22,11 @@ from .. import (
     identifiers,
     statistics_logger,
 )
+
+from ..language_server import connections
 from . import (
     backend_arguments,
     commands,
-    connections,
     daemon_socket,
     frontend_configuration,
     server_event,

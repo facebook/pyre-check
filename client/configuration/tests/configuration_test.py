@@ -90,6 +90,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.site_roots, None)
         self.assertEqual(configuration.number_of_workers, 43)
         self.assertEqual(configuration.use_buck2, True)
+        self.assertEqual(configuration.enable_readonly_analysis, None)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
@@ -406,6 +407,16 @@ class PartialConfigurationTest(unittest.TestCase):
                 files=UnwatchedFiles(root="bar", checksum_path="baz"),
             ),
         )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"enable_readonly_analysis": True})
+            ).enable_readonly_analysis,
+            True,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({})).enable_readonly_analysis,
+            None,
+        )
 
     def test_create_from_string_failure(self) -> None:
         def assert_raises(content: str) -> None:
@@ -429,6 +440,7 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         assert_raises(json.dumps({"only_check_paths": "abc"}))
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
+        assert_raises(json.dumps({"enable_readonly_analysis": 42}))
         assert_raises(json.dumps({"exclude": 42}))
         assert_raises(json.dumps({"extensions": 42}))
         assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
@@ -524,6 +536,12 @@ class PartialConfigurationTest(unittest.TestCase):
             PartialConfiguration(typeshed="foo").expand_relative_paths("bar").typeshed,
             "bar/foo",
         )
+        self.assertEqual(
+            PartialConfiguration(enable_readonly_analysis=True)
+            .expand_relative_paths("bar")
+            .enable_readonly_analysis,
+            True,
+        )
 
         def assert_expanded_unwatched_root(
             original: str, root: str, expected: str
@@ -558,6 +576,7 @@ class ConfigurationTest(testslide.TestCase):
                 buck_mode=PlatformAware.from_json("opt", "buck_mode"),
                 only_check_paths=["//foo"],
                 dot_pyre_directory=None,
+                enable_readonly_analysis=True,
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
                 ignore_all_errors=["bar"],
@@ -587,6 +606,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.buck_mode.get(), "opt")
         self.assertListEqual(list(configuration.only_check_paths), ["root/foo"])
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
+        self.assertEqual(configuration.enable_readonly_analysis, True)
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])

@@ -15,7 +15,8 @@ from typing import Dict, List, Set
 
 from .. import timer
 
-from . import language_server_protocol as lsp, pyre_server_options
+from ..language_server import protocol as lsp
+from . import pyre_server_options
 
 
 class ServerStatus(enum.Enum):

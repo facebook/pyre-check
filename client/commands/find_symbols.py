@@ -12,7 +12,7 @@ import ast
 import dataclasses
 from typing import List, Optional, Union
 
-from .language_server_protocol import (
+from ..language_server.protocol import (
     DocumentSymbolsResponse,
     LspRange,
     PyrePosition,

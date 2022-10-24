@@ -9,13 +9,14 @@ from typing import List, Optional
 
 import testslide
 
-from ..find_symbols import parse_source_and_collect_symbols, UnparseableError
-from ..language_server_protocol import (
+from ...language_server.protocol import (
     DocumentSymbolsResponse,
     LspPosition,
     LspRange,
     SymbolKind,
 )
+
+from ..find_symbols import parse_source_and_collect_symbols, UnparseableError
 
 
 def make_document_symbol(

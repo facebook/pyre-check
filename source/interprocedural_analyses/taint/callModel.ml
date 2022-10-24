@@ -90,9 +90,23 @@ let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
 
 
 (* A mapping from a taint-in-taint-out kind (e.g, `Sinks.LocalReturn`, `Sinks.ParameterUpdate` or
-   `Sinks.AddFeatureToArgument`) to a tito taint (including features, return paths, depth). *)
+   `Sinks.AddFeatureToArgument`) to a tito taint (including features, return paths, depth) and the
+   roots in the tito model whose trees contain this sink. *)
 module TaintInTaintOutMap = struct
-  type t = (Sinks.t, BackwardState.Tree.t) Map.Poly.t
+  module TreeRootsPair = struct
+    type t = {
+      tree: BackwardState.Tree.t;
+      roots: AccessPath.Root.Set.t;
+    }
+
+    let join { tree = left_tree; roots = left_roots } { tree = right_tree; roots = right_roots } =
+      {
+        tree = BackwardState.Tree.join left_tree right_tree;
+        roots = AccessPath.Root.Set.union left_roots right_roots;
+      }
+  end
+
+  type t = (Sinks.t, TreeRootsPair.t) Map.Poly.t
 
   let empty = Map.Poly.empty
 
@@ -100,20 +114,35 @@ module TaintInTaintOutMap = struct
     let join ~key:_ = function
       | `Left left -> Some left
       | `Right right -> Some right
-      | `Both (left, right) -> Some (BackwardState.Tree.join left right)
+      | `Both (left, right) -> Some (TreeRootsPair.join left right)
     in
     Map.Poly.merge left right ~f:join
 
 
   let get map ~kind = Map.Poly.find map kind
 
-  let set map ~kind ~tito_tree = Map.Poly.set map ~key:kind ~data:tito_tree
+  let get_tree map ~kind =
+    match get map ~kind with
+    | Some { TreeRootsPair.tree; _ } -> Some tree
+    | None -> None
+
+
+  let set_tree map ~kind ~tito_tree =
+    let tito_information =
+      match get map ~kind with
+      | Some pair -> { pair with TreeRootsPair.tree = tito_tree }
+      | None -> { TreeRootsPair.roots = AccessPath.Root.Set.empty; tree = tito_tree }
+    in
+    Map.Poly.set map ~key:kind ~data:tito_information
+
 
   let remove map ~kind = Map.Poly.remove map kind
 
-  let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~tito_tree:data)
+  let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~pair:data)
 
   let filter map ~f = Map.Poly.filter_keys map ~f
+
+  let map map ~f = Map.Poly.map map ~f
 end
 
 let taint_in_taint_out_mapping
@@ -140,7 +169,9 @@ let taint_in_taint_out_mapping
       else
         mapping_for_path
     in
-    TaintInTaintOutMap.join sofar mapping_for_path
+    TaintInTaintOutMap.map mapping_for_path ~f:(fun tree ->
+        { TaintInTaintOutMap.TreeRootsPair.tree; roots = AccessPath.Root.Set.singleton root })
+    |> TaintInTaintOutMap.join sofar
   in
   let mapping = List.fold tito_matches ~f:combine_tito ~init:TaintInTaintOutMap.empty in
   let mapping =
@@ -149,7 +180,7 @@ let taint_in_taint_out_mapping
        * sanitize taint transforms for obscure models. *)
       let obscure_sanitize = tito_sanitize_of_argument ~model ~sanitize_matches in
       let obscure_breadcrumbs =
-        TaintInTaintOutMap.get mapping ~kind:Sinks.LocalReturn
+        TaintInTaintOutMap.get_tree mapping ~kind:Sinks.LocalReturn
         >>| BackwardState.Tree.joined_breadcrumbs
         |> Option.value ~default:Features.BreadcrumbSet.empty
         |> Features.BreadcrumbSet.add (Features.obscure_model ())
@@ -164,7 +195,7 @@ let taint_in_taint_out_mapping
           |> BackwardTaint.singleton CallInfo.declaration Sinks.LocalReturn
           |> BackwardState.Tree.create_leaf
         in
-        TaintInTaintOutMap.set mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
+        TaintInTaintOutMap.set_tree mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
       else
         let tito_kind =
           Option.value_exn
@@ -180,7 +211,7 @@ let taint_in_taint_out_mapping
           |> BackwardTaint.singleton CallInfo.Tito tito_kind
           |> BackwardState.Tree.create_leaf
         in
-        TaintInTaintOutMap.set mapping ~kind:tito_kind ~tito_tree:return_tito
+        TaintInTaintOutMap.set_tree mapping ~kind:tito_kind ~tito_tree:return_tito
     else
       mapping
   in
@@ -242,3 +273,54 @@ let type_breadcrumbs_of_calls targets =
       | None -> so_far
       | Some return_type ->
           return_type |> Features.type_breadcrumbs |> Features.BreadcrumbSet.join so_far)
+
+
+(* Collect sink taints that will be used as first hops of extra traces, i.e., whose call info
+   matches the given callee roots and whose taint match the given named transforms *)
+let extra_trace_first_hops ~named_transforms ~tito_roots ~sink_taint =
+  let match_call_info = function
+    | CallInfo.CallSite { port; _ } -> AccessPath.Root.Set.mem port tito_roots
+    | CallInfo.Origin _ -> false (* Skip origins because there is no subtrace to show *)
+    | CallInfo.Declaration _
+    | CallInfo.Tito ->
+        false
+  in
+  let accumulate_extra_trace_first_hop call_info sink_kind so_far =
+    match Sinks.discard_transforms sink_kind with
+    | Sinks.ExtraTraceSink
+      when List.equal TaintTransform.equal (Sinks.get_named_transforms sink_kind) named_transforms
+      ->
+        let extra_trace = { ExtraTraceFirstHop.call_info; kind = sink_kind } in
+        ExtraTraceFirstHop.Set.add extra_trace so_far
+    | _ -> so_far
+  in
+  sink_taint
+  |> BackwardTaint.transform BackwardTaint.call_info Filter ~f:match_call_info
+  |> BackwardTaint.reduce
+       BackwardTaint.kind
+       ~using:(Context (BackwardTaint.call_info, Acc))
+       ~f:accumulate_extra_trace_first_hop
+       ~init:ExtraTraceFirstHop.Set.bottom
+
+
+let extra_traces_from_sink_trees ~argument_access_path ~named_transforms ~tito_roots ~sink_trees =
+  let accumulate_extra_traces_from_sink_path (path, tip) so_far =
+    let is_prefix =
+      Abstract.TreeDomain.Label.is_prefix ~prefix:path argument_access_path
+      || Abstract.TreeDomain.Label.is_prefix ~prefix:argument_access_path path
+    in
+    if not is_prefix then
+      so_far
+    else
+      let extra_traces = extra_trace_first_hops ~tito_roots ~named_transforms ~sink_taint:tip in
+      ExtraTraceFirstHop.Set.join extra_traces so_far
+  in
+  let accumulate_extra_traces so_far { Issue.SinkTreeWithHandle.sink_tree; _ } =
+    BackwardState.Tree.fold
+      BackwardState.Tree.Path
+      ~f:accumulate_extra_traces_from_sink_path
+      ~init:so_far
+      sink_tree
+    |> ExtraTraceFirstHop.Set.join so_far
+  in
+  List.fold sink_trees ~init:ExtraTraceFirstHop.Set.bottom ~f:accumulate_extra_traces

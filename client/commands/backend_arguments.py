@@ -135,7 +135,7 @@ SourcePath = Union[SimpleSourcePath, WithUnwatchedDependencySourcePath, BuckSour
 class BaseArguments:
     """
     Data structure for configuration options common to many backend commands.
-    Need to keep in sync with `pyre/command/newCommandStartup.ml`
+    Need to keep in sync with `pyre/source/command/commandStartup.ml`
     """
 
     log_path: str
@@ -150,6 +150,7 @@ class BaseArguments:
     checked_directory_blocklist: Sequence[str] = dataclasses.field(default_factory=list)
 
     debug: bool = False
+    enable_readonly_analysis: Optional[bool] = None
     excludes: Sequence[str] = dataclasses.field(default_factory=list)
     extensions: Sequence[str] = dataclasses.field(default_factory=list)
     relative_local_root: Optional[str] = None
@@ -183,6 +184,11 @@ class BaseArguments:
             "excludes": self.excludes,
             "checked_directory_allowlist": self.checked_directory_allowlist,
             "checked_directory_blocklist": self.checked_directory_blocklist,
+            **(
+                {"enable_readonly_analysis": self.enable_readonly_analysis}
+                if self.enable_readonly_analysis is not None
+                else {}
+            ),
             "extensions": self.extensions,
             "log_path": self.log_path,
             "global_root": self.global_root,

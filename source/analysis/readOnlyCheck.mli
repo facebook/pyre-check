@@ -50,6 +50,13 @@ module type Context = sig
   val error_map : LocalErrorMap.t option
 
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
+
+  val type_resolution_for_statement
+    :  global_resolution:GlobalResolution.t ->
+    local_annotations:LocalAnnotationMap.ReadOnly.t option ->
+    parent:Reference.t option ->
+    statement_key:int ->
+    TypeResolution.t
 end
 
 type callable_data_for_function_call = {
@@ -84,7 +91,14 @@ module State (Context : Context) : sig
 end
 
 val readonly_errors_for_define
-  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  :  type_resolution_for_statement:
+       (global_resolution:GlobalResolution.t ->
+       local_annotations:LocalAnnotationMap.ReadOnly.t option ->
+       parent:Reference.t option ->
+       statement_key:int ->
+       TypeResolution.t) ->
+  global_resolution:GlobalResolution.t ->
+  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
   qualifier:Reference.t ->
   Define.t Node.t ->
   Error.t list

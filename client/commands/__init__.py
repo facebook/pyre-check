@@ -8,10 +8,11 @@ TODO(T132414938) Add a module-level docstring
 """
 
 
-from . import (  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401
+from . import (  # noqa F401
     analyze,
     backend_arguments,
     check,
+    code_navigation,
     coverage,
     expression_level_coverage,
     incremental,
@@ -33,7 +34,4 @@ from . import (  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401
     stop,
     validate_models,
 )
-from .commands import (  # noqa; noqa; noqa
-    ClientException as ClientException,
-    ExitCode as ExitCode,
-)
+from .commands import ClientException as ClientException, ExitCode as ExitCode  # noqa

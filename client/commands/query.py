@@ -18,9 +18,9 @@ from .. import (
     log,
 )
 
+from ..language_server import connections
 from . import (
     commands,
-    connections,
     daemon_query,
     daemon_socket,
     frontend_configuration,

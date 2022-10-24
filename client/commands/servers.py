@@ -18,7 +18,8 @@ import tabulate
 from typing_extensions import TypedDict
 
 from .. import command_arguments, log
-from . import commands, connections, daemon_socket, stop
+from ..language_server import connections
+from . import commands, daemon_socket, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

@@ -87,23 +87,12 @@ let test_partial_build_map_from_json context =
 
 
 let test_partial_build_map_merge context =
+  let resolve_conflict ~key:_ = String.min in
   let assert_merged ~left ~right ~expected () =
-    match BuildMap.Partial.(merge (of_alist_exn left) (of_alist_exn right)) with
-    | BuildMap.Partial.MergeResult.Ok merged ->
-        assert_mapping_equal ~context ~expected (BuildMap.Partial.to_alist merged)
-    | _ -> assert_failure "Expected partial map merging to succeed but it unexpectedly failed."
-  in
-  let assert_not_merged ~left ~right ~key ~left_value ~right_value () =
-    match BuildMap.Partial.(merge (of_alist_exn left) (of_alist_exn right)) with
-    | BuildMap.Partial.MergeResult.Incompatible actual ->
-        assert_equal
-          ~ctxt:context
-          ~cmp:[%compare.equal: BuildMap.Partial.MergeResult.IncompatibleItem.t]
-          ~printer:(fun item ->
-            [%sexp_of: BuildMap.Partial.MergeResult.IncompatibleItem.t] item |> Sexp.to_string_hum)
-          { BuildMap.Partial.MergeResult.IncompatibleItem.key; left_value; right_value }
-          actual
-    | _ -> assert_failure "Expected partial map merging to succeed but it unexpectedly failed."
+    let merged =
+      BuildMap.Partial.(merge (of_alist_exn left) (of_alist_exn right) ~resolve_conflict)
+    in
+    assert_mapping_equal ~context ~expected (BuildMap.Partial.to_alist merged)
   in
   assert_merged
     ~left:["foo.py", "source/foo.py"]
@@ -120,12 +109,10 @@ let test_partial_build_map_merge context =
     ~right:["foo.py", "source/foo.py"]
     ~expected:["foo.py", "source/foo.py"; "bar.py", "source/bar.py"]
     ();
-  assert_not_merged
-    ~left:["foo.py", "source/foo0.py"; "bar.py", "source/bar.py"]
-    ~right:["foo.py", "source/foo1.py"; "bar.py", "source/bar.py"]
-    ~key:"foo.py"
-    ~left_value:"source/foo0.py"
-    ~right_value:"source/foo1.py"
+  assert_merged
+    ~left:["foo.py", "source/foo0.py"; "bar.py", "source/bar1.py"]
+    ~right:["foo.py", "source/foo1.py"; "bar.py", "source/bar0.py"]
+    ~expected:["foo.py", "source/foo0.py"; "bar.py", "source/bar0.py"]
     ();
   ()
 

@@ -88,22 +88,6 @@ module BuildMap : sig
   module Partial : sig
     type t [@@deriving sexp]
 
-    (** Result type for the [merge] operation. *)
-    module MergeResult : sig
-      module IncompatibleItem : sig
-        type t = {
-          key: string;
-          left_value: string;
-          right_value: string;
-        }
-        [@@deriving sexp, compare]
-      end
-
-      type nonrec t =
-        | Ok of t
-        | Incompatible of IncompatibleItem.t
-    end
-
     (** An empty map. *)
     val empty : t
 
@@ -123,13 +107,14 @@ module BuildMap : sig
         the ones on which [f ~key ~data] returns [false]. *)
     val filter : t -> f:(key:string -> data:string -> bool) -> t
 
-    (** Given two partial build maps [l] and [r], [merge l r] returns [MergeResult.Ok m] where [m]
-        is a new partial build map containing items in both maps, if the merging process succeeds.
-        Merging would fail only if there exists at least one key which is mapped to different values
-        in [l] and [r]. In the failing case, [MergeResult.Incompatible item] would be returned,
-        where [item] would keep track of which values are different as well as what the
-        corresponding key is. *)
-    val merge : t -> t -> MergeResult.t
+    (** Given two partial build maps [l] and [r], [merge ~resolve_conflict l r] returns a new
+        partial build map [m] containing items in both maps. Specifically:
+
+        - [m] will map [key] to [value] for [(key, value)] pairs that are present in exactly one of
+          [l] and [r].
+        - [m] will map [key] to [resolve_conflict ~key value0 value1] when both [l] and [r] contain
+          a given key with [value0] and [value1], respectively. *)
+    val merge : resolve_conflict:(key:string -> string -> string -> string) -> t -> t -> t
   end
 
   (** Result type for the [index] operation. *)
@@ -385,7 +370,7 @@ module Interface : sig
       behavior. Useful for unit testing. *)
   val create_for_testing
     :  normalize_targets:(string list -> Target.t list Lwt.t) ->
-    construct_build_map:(Target.t list -> BuildResult.t Lwt.t) ->
+    construct_build_map:(source_root:PyrePath.t -> Target.t list -> BuildResult.t Lwt.t) ->
     unit ->
     t
 
@@ -400,14 +385,16 @@ module Interface : sig
       source databases. It then loads all generated source databases, and merge all of them into a
       single [BuildMap.t].
 
-      Source-db merging may not always succeed (see {!val:BuildMap.Partial.merge}). If it is deteced
-      that the source-db for one target cannot be merged into the build map due to confliction, a
-      warning will be printed and the target will be dropped. If a target is dropped, it will not
-      show up in the final target list returned from this API (alongside with the build map).
+      Source-db merging may not always succeed when merge conflict cannot be resolved (see
+      {!val:BuildMap.Partial.merge}). If it is deteced that the source-db for one target cannot be
+      merged into the build map due to unresolvable conflict, a warning will be printed and the
+      target will be dropped. If a target is dropped, it will not show up in the final target list
+      returned from this API (alongside with the build map). The [source_root] argument may be
+      needed for conflict detection purpose.
 
       May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
       succeeds but its output cannot be parsed. *)
-  val construct_build_map : t -> Target.t list -> BuildResult.t Lwt.t
+  val construct_build_map : t -> source_root:PyrePath.t -> Target.t list -> BuildResult.t Lwt.t
 end
 
 (** This module contains highest-level interfaces for [buck]-related logic. It relies on

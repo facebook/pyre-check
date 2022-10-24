@@ -27,18 +27,10 @@ import testslide
 from libcst.metadata import CodePosition, CodeRange
 
 from ... import error, identifiers, json_rpc
-from ...commands.language_server_protocol import SymbolKind
 from ...coverage_collector import CoveredAndUncoveredLines
-from ...tests import setup
-from .. import (
-    backend_arguments,
-    background,
-    connections,
-    language_server_protocol as lsp,
-    start,
-    subscription,
-)
-from ..connections import (
+from ...language_server import connections, protocol as lsp
+from ...language_server.connections import (
+    AsyncBytesWriter,
     AsyncTextReader,
     AsyncTextWriter,
     create_memory_text_reader,
@@ -46,9 +38,7 @@ from ..connections import (
     MemoryBytesReader,
     MemoryBytesWriter,
 )
-from ..daemon_connection import DaemonConnectionFailure
-from ..daemon_query import DaemonQueryFailure
-from ..language_server_features import (
+from ...language_server.features import (
     DefinitionAvailability,
     HoverAvailability,
     LanguageServerFeatures,
@@ -57,6 +47,11 @@ from ..language_server_features import (
     TypeCoverageAvailability,
     TypeErrorsAvailability,
 )
+from ...language_server.protocol import SymbolKind
+from ...tests import setup
+from .. import backend_arguments, background, start, subscription
+from ..daemon_connection import DaemonConnectionFailure
+from ..daemon_query import DaemonQueryFailure
 from ..persistent import (
     ClientStatusMessageHandler,
     ClientTypeErrorHandler,
@@ -80,7 +75,6 @@ from ..request_handler import (
     uncovered_range_to_diagnostic,
 )
 from ..server_state import ServerState
-from .language_server_protocol_test import ExceptionRaisingBytesWriter
 
 
 DEFAULT_BINARY = "/bin/pyre"
@@ -175,6 +169,21 @@ mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
 mock_server_state: ServerState = ServerState(server_options=mock_initial_server_options)
 
 
+class ExceptionRaisingBytesWriter(AsyncBytesWriter):
+    """
+    An AsyncBytesWriter that always raises a given except when write is invoked.
+    """
+
+    def __init__(self, exception: Exception) -> None:
+        self.exception = exception
+
+    async def write(self, data: bytes) -> None:
+        raise self.exception
+
+    async def close(self) -> None:
+        pass
+
+
 class MockRequestHandler(AbstractRequestHandler):
     def __init__(
         self,
@@ -229,6 +238,7 @@ class MockRequestHandler(AbstractRequestHandler):
     async def update_overlay(
         self,
         path: Path,
+        process_id: int,
         code: str,
     ) -> Union[DaemonConnectionFailure, str]:
         self.requests.append({"path": path, "code": code})

@@ -33,6 +33,8 @@ module Resolved = struct
     errors: Error.t list;
   }
   [@@deriving show]
+
+  let resolved { resolved; _ } = resolved
 end
 
 module LocalErrorMap = struct
@@ -60,6 +62,13 @@ module type Context = sig
   val error_map : LocalErrorMap.t option
 
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
+
+  val type_resolution_for_statement
+    :  global_resolution:GlobalResolution.t ->
+    local_annotations:LocalAnnotationMap.ReadOnly.t option ->
+    parent:Reference.t option ->
+    statement_key:int ->
+    TypeResolution.t
 end
 
 type callable_data_for_function_call = {
@@ -293,8 +302,26 @@ module State (Context : Context) = struct
               |> ReadOnlyness.of_type
         in
         { Resolved.resolved; errors; resolution }
+    | Call
+        {
+          callee = { Node.location; value = Name (Name.Identifier "reveal_type") };
+          arguments = { Call.Argument.value; _ } :: _;
+        } ->
+        let error =
+          Error.ReadOnlynessMismatch
+            (RevealedType
+               {
+                 expression = value;
+                 readonlyness =
+                   forward_expression ~type_resolution ~resolution value |> Resolved.resolved;
+               })
+          |> create_error ~location
+        in
+        { Resolved.resolved = Mutable; errors = [error]; resolution }
     | Call { callee; arguments } -> forward_call ~type_resolution ~resolution ~callee arguments
-    | _ -> failwith "TODO(T130377746)"
+    | _ ->
+        (* TODO(T130377746): Actually handle other expressions. *)
+        { Resolved.resolved = Mutable; errors = []; resolution }
 
 
   let forward_assignment
@@ -388,20 +415,95 @@ module State (Context : Context) = struct
     | _ -> state, []
 
 
-  let initial = Resolution.of_list []
+  let check_parameter_annotations ~type_resolution ~resolution parameters =
+    let make_parameter_name name =
+      name
+      (* Hack: The qualifier name will be `$parameter$*args`, so we just filter stars. *)
+      |> String.filter ~f:(function
+             | '*' -> false
+             | _ -> true)
+      |> Reference.create
+    in
+    let add_parameter_as_local_variable
+        (resolution_with_parameters, errors)
+        { Node.location; value = { Parameter.name; value; annotation } }
+      =
+      let annotation_readonlyness =
+        annotation
+        >>| GlobalResolution.parse_annotation
+              (TypeResolution.global_resolution type_resolution)
+              ~validation:NoValidation
+        >>| ReadOnlyness.of_type
+      in
+      let value_readonlyness, errors =
+        match value with
+        | Some value ->
+            let { Resolved.resolved; errors = value_errors; _ } =
+              (* NOTE: We use the original `resolution`, because `resolution_with_parameters` has
+                 the earlier parameters in scope. We don't want to consider them in scope when
+                 resolving the default value. *)
+              forward_expression ~type_resolution ~resolution value
+            in
+            Some resolved, value_errors @ errors
+        | None -> None, errors
+      in
+      let errors =
+        match annotation_readonlyness, value_readonlyness with
+        | Some annotation_readonlyness, Some value_readonlyness
+          when not
+                 (ReadOnlyness.less_or_equal
+                    ~left:value_readonlyness
+                    ~right:annotation_readonlyness) ->
+            add_error
+              ~location
+              ~kind:
+                (Error.ReadOnlynessMismatch
+                   (IncompatibleVariableType
+                      {
+                        incompatible_type =
+                          {
+                            name = Reference.create name;
+                            mismatch =
+                              { actual = value_readonlyness; expected = annotation_readonlyness };
+                          };
+                        declare_location =
+                          instantiate_path ~global_resolution:Context.global_resolution location;
+                      }))
+              errors
+        | _ -> errors
+      in
+      ( Resolution.set
+          resolution_with_parameters
+          ~key:(make_parameter_name name)
+          ~data:(Option.value ~default:ReadOnlyness.bottom annotation_readonlyness),
+        errors )
+    in
+    List.fold ~init:(resolution, []) ~f:add_parameter_as_local_variable parameters
+
+
+  let initial =
+    let { Node.value = { Define.signature = { parent; parameters; _ }; _ }; _ } = Context.define in
+    let dummy_statement_key = 0 in
+    let type_resolution =
+      Context.type_resolution_for_statement
+        ~global_resolution:Context.global_resolution
+        ~local_annotations:Context.local_annotations
+        ~parent
+        ~statement_key:dummy_statement_key
+    in
+    check_parameter_annotations ~type_resolution ~resolution:(Resolution.of_list []) parameters
+
 
   let forward ~statement_key state ~statement =
     let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
       Context.define
     in
     let type_resolution =
-      TypeCheck.resolution_with_key
+      Context.type_resolution_for_statement
         ~global_resolution:Context.global_resolution
         ~local_annotations:Context.local_annotations
         ~parent
         ~statement_key
-        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-        (module TypeCheck.DummyContext)
     in
     let new_state, errors = forward_statement ~type_resolution ~state ~statement in
     let () =
@@ -415,26 +517,35 @@ module State (Context : Context) = struct
     failwith "Not implementing this for readonly analysis"
 end
 
-let readonly_errors_for_define ~type_environment ~qualifier define =
+let readonly_errors_for_define
+    ~type_resolution_for_statement
+    ~global_resolution
+    ~local_annotations
+    ~qualifier
+    define
+  =
   let module Context = struct
     let qualifier = qualifier
 
     let define = define
 
-    let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment
+    let global_resolution = global_resolution
 
     let error_map = Some (LocalErrorMap.empty ())
 
-    let local_annotations =
-      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
-        type_environment
-        (Node.value define |> Define.name)
+    let local_annotations = local_annotations
+
+    let type_resolution_for_statement = type_resolution_for_statement
   end
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let cfg = Node.value define |> Cfg.create in
-  let _state = Fixpoint.forward ~cfg ~initial:State.initial |> Fixpoint.exit in
-  Option.value_exn
-    ~message:"no error map found in the analysis context"
-    (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
+  let resolution, initial_errors = State.initial in
+  let _state = Fixpoint.forward ~cfg ~initial:resolution |> Fixpoint.exit in
+  let errors =
+    Option.value_exn
+      ~message:"no error map found in the analysis context"
+      (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
+  in
+  initial_errors @ errors

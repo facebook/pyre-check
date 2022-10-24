@@ -315,6 +315,33 @@ module CallInfoIntervals = struct
   end)
 end
 
+(* Represents a sink trace that begins from a frame and ends up with a special sink that is only
+   used to show extra traces *)
+module ExtraTraceFirstHop = struct
+  module T = struct
+    type t = {
+      (* The first frame of an extra trace *)
+      call_info: CallInfo.t;
+      (* The taint kind related with the first frame *)
+      kind: Sinks.t;
+    }
+    [@@deriving compare, show]
+
+    let name = "extra trace"
+
+    let to_json { call_info; kind } =
+      `Assoc [CallInfo.to_json ~filename_lookup:None call_info; "kind", `String (Sinks.show kind)]
+  end
+
+  include T
+
+  module Set = struct
+    include Abstract.SetDomain.Make (T)
+
+    let to_json set = elements set |> List.map ~f:(fun e -> T.to_json e)
+  end
+end
+
 (* Represents a frame, i.e a single hop between functions. *)
 module Frame = struct
   module Slots = struct
@@ -491,6 +518,8 @@ module type TAINT_DOMAIN = sig
     f:'f ->
     t ->
     t
+
+  val add_extra_traces : extra_traces:ExtraTraceFirstHop.Set.t -> t -> t
 end
 
 module type KIND_ARG = sig
@@ -522,6 +551,8 @@ module type KIND_ARG = sig
     TaintTransforms.Order.t ->
     t ->
     t option
+
+  val get_named_transforms : t -> TaintTransform.t list
 
   module Set : sig
     include Stdlib.Set.S with type elt = t
@@ -561,9 +592,10 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | FirstIndex : Features.FirstIndexSet.t slot
       | FirstField : Features.FirstFieldSet.t slot
       | CallInfoIntervals : CallInfoIntervals.t slot
+      | ExtraTraceFirstHopSet : ExtraTraceFirstHop.Set.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 6
+    let slots = 7
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -573,6 +605,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
       | CallInfoIntervals -> "CallInfoIntervals"
+      | ExtraTraceFirstHopSet -> "ExtraTraceFirstHopSet"
 
 
     let slot_domain (type a) (slot : a slot) =
@@ -583,6 +616,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
       | CallInfoIntervals -> (module CallInfoIntervals : Abstract.Domain.S with type t = a)
+      | ExtraTraceFirstHopSet -> (module ExtraTraceFirstHop.Set : Abstract.Domain.S with type t = a)
 
 
     let strict (type a) (slot : a slot) =
@@ -761,6 +795,11 @@ end = struct
         |> List.map ~f:add_kind
       in
       let json = cons_if_non_empty "kinds" kinds json in
+      let extra_traces =
+        LocalTaintDomain.get LocalTaintDomain.Slots.ExtraTraceFirstHopSet local_taint
+        |> ExtraTraceFirstHop.Set.to_json
+      in
+      let json = cons_if_non_empty "extra_traces" extra_traces json in
       let json =
         let call_info_intervals =
           LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
@@ -1026,6 +1065,9 @@ end = struct
         |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb via_features_breadcrumbs
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex Features.FirstIndexSet.bottom
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
+        |> LocalTaintDomain.update
+             LocalTaintDomain.Slots.ExtraTraceFirstHopSet
+             ExtraTraceFirstHop.Set.bottom
       in
       let apply_frame frame =
         frame
@@ -1165,6 +1207,9 @@ end = struct
         |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb Features.BreadcrumbSet.empty
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex Features.FirstIndexSet.bottom
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
+        |> LocalTaintDomain.update
+             LocalTaintDomain.Slots.ExtraTraceFirstHopSet
+             ExtraTraceFirstHop.Set.bottom
       in
       let apply_frame frame =
         frame
@@ -1179,6 +1224,13 @@ end = struct
       call_info, local_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
+
+
+  let add_extra_traces ~extra_traces taint =
+    let add_extra_traces existing_extra_traces =
+      ExtraTraceFirstHop.Set.join existing_extra_traces extra_traces
+    in
+    Map.transform ExtraTraceFirstHop.Set.Self Map ~f:add_extra_traces taint
 end
 
 module ForwardTaint = MakeTaint (struct

@@ -43,6 +43,7 @@ class PyreFlavor(enum.Enum):
 
     CLASSIC = "classic"
     SHADOW = "shadow"
+    CODE_NAVIGATION = "code_navigation"
 
     def path_suffix(self) -> str:
         return "" if self == PyreFlavor.CLASSIC else f"__{self.value}"

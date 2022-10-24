@@ -115,6 +115,7 @@ class PartialConfiguration:
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
     )
     dot_pyre_directory: Optional[Path] = None
+    enable_readonly_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
@@ -403,6 +404,9 @@ class PartialConfiguration:
                 dot_pyre_directory=Path(dot_pyre_directory)
                 if dot_pyre_directory is not None
                 else None,
+                enable_readonly_analysis=ensure_option_type(
+                    configuration_json, "enable_readonly_analysis", bool
+                ),
                 excludes=ensure_string_list(
                     configuration_json, "exclude", allow_single_string=True
                 ),
@@ -465,20 +469,6 @@ class PartialConfiguration:
             raise exceptions.InvalidConfiguration(f"Error when reading {path}: {error}")
 
     def expand_relative_paths(self, root: str) -> "PartialConfiguration":
-        binary = self.binary
-        if binary is not None:
-            binary = expand_relative_path(root, binary)
-        logger = self.logger
-        if logger is not None:
-            logger = expand_relative_path(root, logger)
-        source_directories = self.source_directories
-        if source_directories is not None:
-            source_directories = [
-                path.expand_relative_root(root) for path in source_directories
-            ]
-        typeshed = self.typeshed
-        if typeshed is not None:
-            typeshed = expand_relative_path(root, typeshed)
         unwatched_dependency = self.unwatched_dependency
         if unwatched_dependency is not None:
             files = unwatched_dependency.files
@@ -489,41 +479,37 @@ class PartialConfiguration:
                     checksum_path=files.checksum_path,
                 ),
             )
-        return PartialConfiguration(
-            binary=binary,
-            buck_mode=self.buck_mode,
+        return dataclasses.replace(
+            self,
+            binary=expand_relative_path(root, self.binary)
+            if self.binary is not None
+            else self.binary,
             only_check_paths=[
                 expand_relative_path(root, path) for path in self.only_check_paths
             ],
-            dot_pyre_directory=self.dot_pyre_directory,
-            excludes=self.excludes,
-            extensions=self.extensions,
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
-            isolation_prefix=self.isolation_prefix,
-            logger=logger,
-            number_of_workers=self.number_of_workers,
-            oncall=self.oncall,
+            logger=expand_relative_path(root, self.logger)
+            if self.logger is not None
+            else self.logger,
             other_critical_files=[
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
-            pysa_version_hash=self.pysa_version_hash,
-            python_version=self.python_version,
             search_path=[path.expand_relative_root(root) for path in self.search_path],
-            shared_memory=self.shared_memory,
             site_package_search_strategy=self.site_package_search_strategy,
-            site_roots=self.site_roots,
-            source_directories=source_directories,
-            strict=self.strict,
+            source_directories=[
+                path.expand_relative_root(root) for path in self.source_directories
+            ]
+            if self.source_directories is not None
+            else self.source_directories,
             taint_models_path=[
                 expand_relative_path(root, path) for path in self.taint_models_path
             ],
-            targets=self.targets,
-            typeshed=typeshed,
+            typeshed=expand_relative_path(root, self.typeshed)
+            if self.typeshed is not None
+            else self.typeshed,
             unwatched_dependency=unwatched_dependency,
-            use_buck2=self.use_buck2,
-            version_hash=self.version_hash,
         )
 
 
@@ -545,6 +531,7 @@ class Configuration:
     binary: Optional[str] = None
     buck_mode: Optional[platform_aware.PlatformAware[str]] = None
     only_check_paths: Sequence[str] = field(default_factory=list)
+    enable_readonly_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[extension.Element] = field(default_factory=list)
     ignore_all_errors: Sequence[str] = field(default_factory=list)
@@ -594,6 +581,7 @@ class Configuration:
                 expand_global_root(path, global_root=str(project_root))
                 for path in only_check_paths
             ],
+            enable_readonly_analysis=partial_configuration.enable_readonly_analysis,
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             ignore_all_errors=_expand_all_globs(
@@ -678,6 +666,11 @@ class Configuration:
             **({"binary": binary} if binary is not None else {}),
             **({"buck_mode": buck_mode.to_json()} if buck_mode is not None else {}),
             "only_check_paths": list(self.only_check_paths),
+            **(
+                {"enable_readonly_analysis": self.enable_readonly_analysis}
+                if self.enable_readonly_analysis is not None
+                else {}
+            ),
             "excludes": list(self.excludes),
             "extensions": list(self.extensions),
             "ignore_all_errors": list(self.ignore_all_errors),

@@ -166,6 +166,48 @@ class BasicTestCase(unittest.TestCase):
         except Exception:
             self.fail("ReadOnly type is missing or broken")
 
+    def test_override(self):
+        from .. import override
+
+        class Base:
+            def normal_method(self) -> int:
+                ...
+
+            @staticmethod
+            def static_method_good_order() -> int:
+                ...
+
+            @staticmethod
+            def static_method_bad_order() -> int:
+                ...
+
+            @staticmethod
+            def decorator_with_slots() -> int:
+                ...
+
+        class Derived(Base):
+            @override
+            def normal_method(self) -> int:
+                return 42
+
+            @staticmethod
+            @override
+            def static_method_good_order() -> int:
+                return 42
+
+            @override
+            @staticmethod
+            def static_method_bad_order() -> int:
+                return 42
+
+        instance = Derived()
+        self.assertEqual(instance.normal_method(), 42)
+        self.assertIs(True, instance.normal_method.__override__)
+        self.assertEqual(Derived.static_method_good_order(), 42)
+        self.assertIs(True, Derived.static_method_good_order.__override__)
+        self.assertEqual(Derived.static_method_bad_order(), 42)
+        self.assertIs(False, hasattr(Derived.static_method_bad_order, "__override__"))
+
 
 if __name__ == "__main__":
     unittest.main()

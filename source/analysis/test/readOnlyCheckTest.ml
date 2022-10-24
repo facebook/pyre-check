@@ -52,9 +52,15 @@ let test_forward_expression context =
     let global_resolution = global_resolution
 
     let local_annotations =
-      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
+      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations
         type_environment
         (Node.value define |> Define.name)
+
+
+    let type_resolution_for_statement =
+      TypeCheck.resolution_with_key
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
   end
   in
   let module State = State (Context) in
@@ -117,9 +123,15 @@ let test_check_arguments_against_parameters context =
     let global_resolution = global_resolution
 
     let local_annotations =
-      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
+      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations
         type_environment
         (Node.value define |> Define.name)
+
+
+    let type_resolution_for_statement =
+      TypeCheck.resolution_with_key
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
   end
   in
   let module State = State (Context) in
@@ -261,13 +273,22 @@ let test_callable_data_list_for_callee context =
 
 let assert_readonly_errors ~context =
   let check ~environment ~source =
-    source
-    |> Preprocessing.defines ~include_toplevels:true
-    |> List.concat_map
-         ~f:
-           (ReadOnlyCheck.readonly_errors_for_define
-              ~type_environment:(TypeEnvironment.read_only environment)
-              ~qualifier:!&"test")
+    let errors_for_define define =
+      let environment = TypeEnvironment.read_only environment in
+      ReadOnlyCheck.readonly_errors_for_define
+        ~type_resolution_for_statement:
+          (TypeCheck.resolution_with_key
+             (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+             (module TypeCheck.DummyContext))
+        ~global_resolution:(TypeEnvironment.ReadOnly.global_resolution environment)
+        ~local_annotations:
+          (TypeEnvironment.ReadOnly.get_or_recompute_local_annotations
+             environment
+             (Node.value define |> Define.name))
+        ~qualifier:!&"test"
+        define
+    in
+    source |> Preprocessing.defines ~include_toplevels:true |> List.concat_map ~f:errors_for_define
   in
   assert_errors ~context ~check
 
@@ -543,6 +564,124 @@ let test_function_call context =
   ()
 
 
+let test_await context =
+  let assert_readonly_errors = assert_readonly_errors ~context in
+  (* TODO(T130377746): This should have a readonly violation error. *)
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      async def return_readonly() -> ReadOnly[int]: ...
+
+      async def main() -> None:
+        y: int = await return_readonly()
+    |}
+    [];
+  ()
+
+
+let test_parameters context =
+  let assert_readonly_errors = assert_readonly_errors ~context in
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(my_mutable: int, my_readonly: ReadOnly[int]) -> None:
+        y: int = my_readonly
+        y2: ReadOnly[int] = my_mutable
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(unannotated) -> None:
+        y: int = unannotated
+    |}
+    [];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(x: ReadOnly[int], /, y: ReadOnly[int], *, z: ReadOnly[int]) -> None:
+        y1: int = x
+        y2: int = y
+        y3: int = z
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y3 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(*args: ReadOnly[int], **kwargs: ReadOnly[int]) -> None:
+        y1: int = args
+        y2: int = kwargs
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  (* Check for errors in constructing the default value of a parameter. *)
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def return_readonly() -> ReadOnly[int]: ...
+
+      def expect_mutable(x: int) -> int: ...
+
+      def main(x: int = expect_mutable(return_readonly())) -> None:
+        pass
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
+       1st positional only parameter expected `ReadOnlyness.Mutable` but got \
+       `ReadOnlyness.ReadOnly`.";
+    ];
+  (* Don't consider `x` in scope for the default value of parameter `y`. We don't need to emit an
+     error here, because the type checking analysis will. *)
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def foo(x: ReadOnly[int], y: int = x) -> None:
+        pass
+    |}
+    [];
+  ()
+
+
+let test_reveal_type context =
+  let assert_readonly_errors = assert_readonly_errors ~context in
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(my_mutable: int, my_readonly: ReadOnly[int]) -> None:
+        y1 = my_readonly
+        y2 = my_mutable
+        reveal_type(y1)
+        reveal_type(y2)
+    |}
+    [
+      "ReadOnly - Revealed type [3004]: Revealed type for `y2` is ReadOnlyness.Mutable.";
+      "ReadOnly - Revealed type [3004]: Revealed type for `y1` is ReadOnlyness.ReadOnly.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -551,5 +690,8 @@ let () =
          "callable_data_list_for_callee" >:: test_callable_data_list_for_callee;
          "assignment" >:: test_assignment;
          "function_call" >:: test_function_call;
+         "await" >:: test_await;
+         "parameters" >:: test_parameters;
+         "reveal_type" >:: test_reveal_type;
        ]
   |> Test.run

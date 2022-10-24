@@ -352,7 +352,7 @@ let test_buck_renormalize context =
         incr normalize_counter;
         Lwt.return (List.map targets ~f:Buck.Target.of_string)
       in
-      let construct_build_map targets =
+      let construct_build_map ~source_root:_ targets =
         Lwt.return
           {
             Buck.Interface.BuildResult.targets;
@@ -439,7 +439,7 @@ let test_buck_update context =
          TARGET file to include another source in the target. *)
       let is_rebuild = ref false in
       let normalize_targets targets = Lwt.return (List.map targets ~f:Buck.Target.of_string) in
-      let construct_build_map targets =
+      let construct_build_map ~source_root:_ targets =
         let build_mappings =
           if !is_rebuild then
             ["bar.py", "foo/bar.py"; "baz.py", "foo/baz.py"]
@@ -528,7 +528,7 @@ let test_buck_update_without_rebuild context =
     let interface =
       let is_rebuild = ref false in
       let normalize_targets targets = Lwt.return (List.map targets ~f:Buck.Target.of_string) in
-      let construct_build_map targets =
+      let construct_build_map ~source_root:_ targets =
         let build_mappings =
           if not !is_rebuild then (
             is_rebuild := true;

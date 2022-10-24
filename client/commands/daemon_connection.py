@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import AsyncIterator, Union
 
 from .. import dataclasses_json_extensions as json_mixins, log
-from . import connections
+from ..language_server import connections
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

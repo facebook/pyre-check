@@ -120,6 +120,8 @@ module Analysis : sig
 
   val default_constraint_solving_style : constraint_solving_style
 
+  val default_enable_readonly_analysis : bool
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -146,6 +148,7 @@ module Analysis : sig
     shared_memory: shared_memory;
     enable_type_comments: bool;
     constraint_solving_style: constraint_solving_style;
+    enable_readonly_analysis: bool;
   }
   [@@deriving show]
 
@@ -176,6 +179,7 @@ module Analysis : sig
     ?shared_memory_hash_table_power:int ->
     ?enable_type_comments:bool ->
     ?constraint_solving_style:constraint_solving_style ->
+    ?enable_readonly_analysis:bool ->
     source_paths:SearchPath.t list ->
     unit ->
     t
