@@ -5078,83 +5078,6 @@ module State (Context : Context) = struct
       =
       Context.define
     in
-    (* Add type variables *)
-    let outer_scope_variables, current_scope_variables =
-      let type_variables_of_class class_name =
-        let unarize unary =
-          let fix_invalid_parameters_in_bounds unary =
-            match
-              GlobalResolution.check_invalid_type_parameters global_resolution (Type.Variable unary)
-            with
-            | _, Type.Variable unary -> unary
-            | _ -> failwith "did not transform"
-          in
-          fix_invalid_parameters_in_bounds unary |> fun unary -> Type.Variable.Unary unary
-        in
-        let extract = function
-          | Type.Variable.Unary unary -> unarize unary
-          | ParameterVariadic variable -> ParameterVariadic variable
-          | TupleVariadic variable -> TupleVariadic variable
-        in
-        Reference.show class_name
-        |> GlobalResolution.variables global_resolution
-        >>| List.map ~f:extract
-        |> Option.value ~default:[]
-      in
-      let type_variables_of_define signature =
-        let parser =
-          GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
-        in
-        let variables = GlobalResolution.variables global_resolution in
-        let define_variables =
-          AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
-          |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
-          |> Type.Variable.all_free_variables
-          |> List.dedup_and_sort ~compare:Type.Variable.compare
-        in
-        let parent_variables =
-          let { Define.Signature.parent; _ } = signature in
-          (* PEP484 specifies that scope of the type variables of the outer class doesn't cover the
-             inner one. We are able to inspect only 1 level of nesting class as a result. *)
-          Option.value_map parent ~f:type_variables_of_class ~default:[]
-        in
-        List.append parent_variables define_variables
-      in
-      match Define.is_class_toplevel define with
-      | true ->
-          let class_name = Option.value_exn parent in
-          [], type_variables_of_class class_name
-      | false ->
-          let define_variables = type_variables_of_define signature in
-          let nesting_define_variables =
-            let rec walk_nesting_define sofar = function
-              | None -> sofar
-              | Some define_name -> (
-                  (* TODO (T57339384): This operation should only depend on the signature, not the
-                     body *)
-                  match GlobalResolution.define_body global_resolution define_name with
-                  | None -> sofar
-                  | Some
-                      {
-                        Node.value =
-                          {
-                            Define.signature = { Define.Signature.nesting_define; _ } as signature;
-                            _;
-                          };
-                        _;
-                      } ->
-                      let sofar = List.rev_append (type_variables_of_define signature) sofar in
-                      walk_nesting_define sofar nesting_define)
-            in
-            walk_nesting_define [] nesting_define
-          in
-          nesting_define_variables, define_variables
-    in
-    let resolution =
-      List.append current_scope_variables outer_scope_variables
-      |> List.fold ~init:resolution ~f:(fun resolution variable ->
-             Resolution.add_type_variable resolution ~variable)
-    in
     let check_decorators resolution errors =
       let check_final_decorator errors =
         if Option.is_none parent && Define.is_final_method define then
@@ -5337,11 +5260,11 @@ module State (Context : Context) = struct
           add_async_generator_error ~errors annotation
           |> fun errors -> add_variance_error ~errors annotation
     in
-    let add_capture_annotations resolution errors =
+    let add_capture_annotations ~outer_scope_type_variables resolution errors =
       let process_signature ({ Define.Signature.name; _ } as signature) =
         if Reference.is_local name then
           type_of_signature ~resolution signature
-          |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_variables
+          |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables
           |> Annotation.create_mutable
           |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
         else
@@ -5363,7 +5286,7 @@ module State (Context : Context) = struct
               ( resolution,
                 errors,
                 type_of_signature ~resolution signature
-                |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_variables )
+                |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables )
           | Define.Capture.Kind.Self parent ->
               resolution, errors, type_of_parent ~global_resolution parent
           | Define.Capture.Kind.ClassSelf parent ->
@@ -6209,9 +6132,85 @@ module State (Context : Context) = struct
                     ~kind:(Error.IncompatibleConstructorAnnotation annotation))
         | _ -> errors
     in
+    let outer_scope_type_variables, current_scope_type_variables =
+      let type_variables_of_class class_name =
+        let unarize unary =
+          let fix_invalid_parameters_in_bounds unary =
+            match
+              GlobalResolution.check_invalid_type_parameters global_resolution (Type.Variable unary)
+            with
+            | _, Type.Variable unary -> unary
+            | _ -> failwith "did not transform"
+          in
+          fix_invalid_parameters_in_bounds unary |> fun unary -> Type.Variable.Unary unary
+        in
+        let extract = function
+          | Type.Variable.Unary unary -> unarize unary
+          | ParameterVariadic variable -> ParameterVariadic variable
+          | TupleVariadic variable -> TupleVariadic variable
+        in
+        Reference.show class_name
+        |> GlobalResolution.variables global_resolution
+        >>| List.map ~f:extract
+        |> Option.value ~default:[]
+      in
+      let type_variables_of_define signature =
+        let parser =
+          GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
+        in
+        let variables = GlobalResolution.variables global_resolution in
+        let define_variables =
+          AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
+          |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
+          |> Type.Variable.all_free_variables
+          |> List.dedup_and_sort ~compare:Type.Variable.compare
+        in
+        let parent_variables =
+          let { Define.Signature.parent; _ } = signature in
+          (* PEP484 specifies that scope of the type variables of the outer class doesn't cover the
+             inner one. We are able to inspect only 1 level of nesting class as a result. *)
+          Option.value_map parent ~f:type_variables_of_class ~default:[]
+        in
+        List.append parent_variables define_variables
+      in
+      match Define.is_class_toplevel define with
+      | true ->
+          let class_name = Option.value_exn parent in
+          [], type_variables_of_class class_name
+      | false ->
+          let define_variables = type_variables_of_define signature in
+          let nesting_define_variables =
+            let rec walk_nesting_define sofar = function
+              | None -> sofar
+              | Some define_name -> (
+                  (* TODO (T57339384): This operation should only depend on the signature, not the
+                     body *)
+                  match GlobalResolution.define_body global_resolution define_name with
+                  | None -> sofar
+                  | Some
+                      {
+                        Node.value =
+                          {
+                            Define.signature = { Define.Signature.nesting_define; _ } as signature;
+                            _;
+                          };
+                        _;
+                      } ->
+                      let sofar = List.rev_append (type_variables_of_define signature) sofar in
+                      walk_nesting_define sofar nesting_define)
+            in
+            walk_nesting_define [] nesting_define
+          in
+          nesting_define_variables, define_variables
+    in
     let resolution, errors =
+      let resolution =
+        List.append current_scope_type_variables outer_scope_type_variables
+        |> List.fold ~init:resolution ~f:(fun resolution variable ->
+               Resolution.add_type_variable resolution ~variable)
+      in
       let resolution = Resolution.with_parent resolution ~parent in
-      let resolution, errors = add_capture_annotations resolution [] in
+      let resolution, errors = add_capture_annotations ~outer_scope_type_variables resolution [] in
       let resolution, errors = check_parameter_annotations resolution errors in
       let errors =
         check_unbound_names errors
