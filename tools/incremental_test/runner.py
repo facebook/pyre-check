@@ -82,8 +82,7 @@ class PyreRunner:
                 incremental_update_logs = self.run_profile("incremental_updates")
                 if len(incremental_update_logs) > expected:
                     break
-                else:
-                    sleep(1)
+                sleep(1)
         return incremental_update_logs
 
     def run_check(self) -> List[PyreError]:
@@ -100,8 +99,7 @@ class PyreRunner:
         )
         if output.return_code == 0:
             return []
-        else:
-            return [PyreError.from_json(x) for x in json.loads(output.stdout)]
+        return [PyreError.from_json(x) for x in json.loads(output.stdout)]
 
     def run_start(self) -> Mapping[str, int]:
         pyre_start_command = (
@@ -159,8 +157,7 @@ class PyreRunner:
         )
         if output.return_code == 0:
             return []
-        else:
-            return [PyreError.from_json(x) for x in json.loads(output.stdout)]
+        return [PyreError.from_json(x) for x in json.loads(output.stdout)]
 
     @overload
     def run_profile(
@@ -244,11 +241,10 @@ class ResultComparison:
         discrepancy = self.discrepancy
         if dont_show_discrepancy:
             return result
-        else:
-            result["discrepancy"] = (
-                "none" if discrepancy is None else discrepancy.to_json()
-            )
-            return result
+        result["discrepancy"] = (
+            "none" if discrepancy is None else discrepancy.to_json()
+        )
+        return result
 
 
 def compare_server_to_full(

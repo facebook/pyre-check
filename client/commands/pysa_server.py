@@ -86,7 +86,7 @@ async def try_initialize(
         if initialized_notification.method == "shutdown":
             await _wait_for_exit(input_channel, output_channel)
             return InitializationExit()
-        elif initialized_notification.method != "initialized":
+        if initialized_notification.method != "initialized":
             actual_message = json.dumps(initialized_notification.json())
             raise lsp.ServerNotInitializedError(
                 "Failed to receive an `initialized` request from client. "
@@ -168,8 +168,7 @@ class PysaServer:
 
             if request.method == "exit":
                 return 0
-            else:
-                raise json_rpc.InvalidRequestError("LSP server has been shut down")
+            raise json_rpc.InvalidRequestError("LSP server has been shut down")
 
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
@@ -210,13 +209,13 @@ class PysaServer:
             try:
                 if request.method == "exit":
                     return commands.ExitCode.FAILURE
-                elif request.method == "shutdown":
+                if request.method == "shutdown":
                     lsp.write_json_rpc(
                         self.output_channel,
                         json_rpc.SuccessResponse(id=request.id, result=None),
                     )
                     return await self.wait_for_exit()
-                elif request.method == "textDocument/didOpen":
+                if request.method == "textDocument/didOpen":
                     parameters = request.parameters
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
@@ -275,7 +274,7 @@ async def run_persistent(
         if isinstance(initialize_result, InitializationExit):
             LOG.info("Received exit request before initialization.")
             return 0
-        elif isinstance(initialize_result, InitializationSuccess):
+        if isinstance(initialize_result, InitializationSuccess):
             LOG.info("Initialization successful.")
             client_info = initialize_result.client_info
             _log_lsp_event(
@@ -302,15 +301,14 @@ async def run_persistent(
                 pyre_arguments=pysa_arguments,
             )
             return await server.run()
-        elif isinstance(initialize_result, InitializationFailure):
+        if isinstance(initialize_result, InitializationFailure):
             exception = initialize_result.exception
             message = (
                 str(exception) if exception is not None else "ignoring notification"
             )
             LOG.info(f"Initialization failed: {message}")
             # Loop until we get either InitializeExit or InitializeSuccess
-        else:
-            raise RuntimeError("Cannot determine the type of initialize_result")
+        raise RuntimeError("Cannot determine the type of initialize_result")
 
 
 def run(

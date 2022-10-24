@@ -49,10 +49,9 @@ class BasicExecute:
     def get_check_result(self) -> CommandOutput:
         if self._current_commit == "hash1":
             return self._error_output
-        elif self._current_commit == "hash3":
+        if self._current_commit == "hash3":
             raise RuntimeError("Intentionally crash the check")
-        else:
-            return self._clean_output
+        return self._clean_output
 
     def get_incremental_result(self) -> CommandOutput:
         return self._clean_output
@@ -63,18 +62,17 @@ class BasicExecute:
             new_commit = command.split()[-1]
             self._current_commit = new_commit
             return self._clean_output
-        elif "total_shared_memory_size_over_time" in command:
+        if "total_shared_memory_size_over_time" in command:
             return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-        elif "cold_start_phases" in command:
+        if "cold_start_phases" in command:
             return CommandOutput(return_code=0, stdout="{}", stderr="")
-        elif " profile" in command:
+        if " profile" in command:
             return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-        elif command.endswith("check"):
+        if command.endswith("check"):
             return self.get_check_result()
-        elif command.endswith("incremental"):
+        if command.endswith("incremental"):
             return self.get_incremental_result()
-        else:
-            return self._clean_output
+        return self._clean_output
 
 
 class RunnerTest(unittest.TestCase):

@@ -50,8 +50,7 @@ def _create_source_directory_element(source: str) -> Union[str, Dict[str, str]]:
             "import_root": os.path.relpath(str(package_root.parent), "."),
             "source": source,
         }
-    else:
-        return source
+    return source
 
 
 def _check_configuration_file_location(

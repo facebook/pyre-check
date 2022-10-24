@@ -46,9 +46,8 @@ def get_all_subclasses_from_pyre(
             if subclasses:
                 result[base_class] = subclasses
         return result
-    else:
-        LOG.debug(f"Did not find class hierarchy for {targets}")
-        return None
+    LOG.debug(f"Did not find class hierarchy for {targets}")
+    return None
 
 
 def get_all_subclass_defines_from_pyre(
@@ -67,10 +66,9 @@ def get_all_subclass_defines_from_pyre(
     if subclasses is not None:
         return {
             target: query.defines(pyre_connection, subclasses[target], batch_size=500)
-            for target in subclasses.keys()
+            for target in subclasses
         }
-    else:
-        return None
+    return None
 
 
 T = TypeVar("T")

@@ -167,8 +167,7 @@ class StartArguments:
         """
         if self._log_identifier is not None:
             return self._log_identifier
-        else:
-            return self.flavor.value
+        return self.flavor.value
 
 
 @dataclass(frozen=True)

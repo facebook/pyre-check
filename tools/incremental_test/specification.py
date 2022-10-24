@@ -44,14 +44,14 @@ class RepositoryState(ABC):
                     repository=Path(input_json["repository"]),
                     commit_hash=input_json["commit_hash"],
                 )
-            elif kind == "file":
+            if kind == "file":
                 files = input_json["files"]
                 if not isinstance(files, dict):
                     raise InvalidSpecificationException(
                         "File repository must be specified as dicts"
                     )
                 return FileRepositoryState(files)
-            elif kind == "updated":
+            if kind == "updated":
                 base = input_json["base"]
                 updates = input_json["updates"]
                 if not isinstance(updates, list):
@@ -62,10 +62,9 @@ class RepositoryState(ABC):
                     RepositoryState.from_json(base),
                     [RepositoryUpdate.from_json(update) for update in updates],
                 )
-            else:
-                raise InvalidSpecificationException(
-                    "Cannot create RepositoryState due to unrecognized kind"
-                )
+            raise InvalidSpecificationException(
+                "Cannot create RepositoryState due to unrecognized kind"
+            )
         except KeyError as key:
             raise InvalidSpecificationException(
                 f"Cannot create RespositoryState due to missing field '{key}'"
@@ -91,12 +90,12 @@ class RepositoryUpdate(ABC):
             kind = input_json["kind"]
             if kind == "hg":
                 return HgRepositoryUpdate(commit_hash=input_json["commit_hash"])
-            elif kind == "patch":
+            if kind == "patch":
                 return PatchRepositoryUpdate(
                     patch=input_json["patch"],
                     patch_flags=input_json.get("patch_flags", ""),
                 )
-            elif kind == "file":
+            if kind == "file":
                 changes = input_json.get("changes", {})
                 removals = input_json.get("removals", [])
                 if not isinstance(changes, dict):
@@ -110,7 +109,7 @@ class RepositoryUpdate(ABC):
                 if len(changes) == 0 and len(removals) == 0:
                     raise InvalidSpecificationException("No file change is given")
                 return FileRepositoryUpdate(changes=changes, removals=removals)
-            elif kind == "batch":
+            if kind == "batch":
                 updates = input_json["updates"]
                 if not isinstance(updates, list):
                     raise InvalidSpecificationException(
@@ -121,10 +120,9 @@ class RepositoryUpdate(ABC):
                     parsed_update = RepositoryUpdate.from_json(update)
                     parsed_updates.extend(parsed_update.update_steps())
                 return BatchRepositoryUpdate(parsed_updates)
-            else:
-                raise InvalidSpecificationException(
-                    "Cannot create RepositoryUpdate due to unrecognized kind"
-                )
+            raise InvalidSpecificationException(
+                "Cannot create RepositoryUpdate due to unrecognized kind"
+            )
         except KeyError as key:
             raise InvalidSpecificationException(
                 f"Cannot create RepositoryUpdate due to missing field '{key}'"
@@ -298,7 +296,7 @@ class FileRepositoryUpdate(SingleUpdate):
         for handle, content in self.changes.items():
             # Need to create parent directory if it doesn't exist
             parent_path = Path(handle).parent
-            if not parent_path == Path("."):
+            if parent_path != Path("."):
                 environment.checked_run(
                     working_directory=working_directory,
                     command=f"mkdir -p {parent_path}",

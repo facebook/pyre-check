@@ -75,7 +75,7 @@ def _validate_typed_dictionary(value: object, target_type: Type[object]) -> None
 def _validate_value(value: object, target_type: Type[object]) -> None:
     if target_type is Any:
         return
-    elif _is_list(target_type):
+    if _is_list(target_type):
         _validate_list(value, cast(Type[List[object]], target_type))
     elif _is_dictionary(target_type):
         _validate_dictionary(value, cast(Type[Dict[object, object]], target_type))

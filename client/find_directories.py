@@ -124,12 +124,11 @@ def get_relative_local_root(
 ) -> Optional[str]:
     if local_root is None:
         return None
-    else:
-        try:
-            return str(local_root.relative_to(global_root))
-        except ValueError:
-            # This happens when `local_root` is not prefixed by `global_root`
-            return None
+    try:
+        return str(local_root.relative_to(global_root))
+    except ValueError:
+        # This happens when `local_root` is not prefixed by `global_root`
+        return None
 
 
 class FoundRoot(NamedTuple):
@@ -159,8 +158,7 @@ def find_global_and_local_root(base: Path) -> Optional[FoundRoot]:
     # If the global configuration root is deeper than local configuration, ignore local.
     if found_local_root in found_global_root.parents:
         return FoundRoot(found_global_root)
-    else:
-        return FoundRoot(found_global_root, found_local_root)
+    return FoundRoot(found_global_root, found_local_root)
 
 
 def find_parent_directory_containing_directory(
@@ -249,8 +247,7 @@ class TypeshedLayout(enum.Enum):
             return TypeshedLayout.COMBINED_THIRD_PARTY
         if TypeshedLayout.standard_stubs_directory(typeshed_root).is_dir():
             return TypeshedLayout.STANDARD_THIRD_PARTY
-        else:
-            return TypeshedLayout.STDLIB_ONLY
+        return TypeshedLayout.STDLIB_ONLY
 
     @staticmethod
     def find_third_party_roots(
@@ -268,14 +265,13 @@ class TypeshedLayout(enum.Enum):
         layout = layout or TypeshedLayout.infer_layout(typeshed_root)
         if layout == TypeshedLayout.STDLIB_ONLY:
             return []
-        elif layout == TypeshedLayout.COMBINED_THIRD_PARTY:
+        if layout == TypeshedLayout.COMBINED_THIRD_PARTY:
             return [TypeshedLayout.combined_stubs_root(typeshed_root)]
-        elif layout == TypeshedLayout.STANDARD_THIRD_PARTY:
+        if layout == TypeshedLayout.STANDARD_THIRD_PARTY:
             return sorted(
                 TypeshedLayout.standard_stubs_directory(typeshed_root).iterdir()
             )
-        else:
-            raise RuntimeError(f"Unknown layout {layout}")
+        raise RuntimeError(f"Unknown layout {layout}")
 
 
 def find_typeshed_search_paths(

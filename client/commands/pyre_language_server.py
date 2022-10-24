@@ -386,11 +386,10 @@ class PyreLanguageServer:
         )
         if isinstance(definitions, DaemonQueryFailure):
             return definitions
-        else:
-            return lsp.LspLocation.cached_schema().dump(
-                definitions,
-                many=True,
-            )
+        return lsp.LspLocation.cached_schema().dump(
+            definitions,
+            many=True,
+        )
 
     async def process_definition_request(
         self,
@@ -575,9 +574,9 @@ class PyreLanguageServer:
         """
         if request.method == "exit":
             return commands.ExitCode.FAILURE
-        elif request.method == "shutdown":
+        if request.method == "shutdown":
             return await self.process_shutdown_request(request.id)
-        elif request.method == "textDocument/definition":
+        if request.method == "textDocument/definition":
             await self.process_definition_request(
                 lsp.DefinitionParameters.from_json_rpc_parameters(
                     request.extract_parameters()

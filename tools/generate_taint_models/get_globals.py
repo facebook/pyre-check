@@ -9,7 +9,6 @@
 import ast
 import glob
 import logging
-import os
 from typing import Callable, Iterable, Optional, Set, Tuple, Union
 
 from typing_extensions import Final

@@ -80,10 +80,9 @@ class MissingOverrideReturnAnnotations(Command):
                         lines[line] = lines[line].replace("):", ") -> %s:" % annotation)
                         LOG.info("%d: %s", line, lines[line])
                         break
-                    else:
-                        line = line + 1
+                    line = line + 1
 
-            LOG.warn("Writing patched %s", str(path))
+            LOG.warning("Writing patched %s", str(path))
             path.write_text("\n".join(lines))
 
 

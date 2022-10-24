@@ -28,7 +28,7 @@ class Element:
     def from_json(json: object) -> "Element":
         if isinstance(json, str):
             return Element(suffix=json, include_suffix_in_module_qualifier=False)
-        elif isinstance(json, dict):
+        if isinstance(json, dict):
             suffix = json.get("suffix", None)
             include_suffix_in_module_qualifier = json.get(
                 "include_suffix_in_module_qualifier", None

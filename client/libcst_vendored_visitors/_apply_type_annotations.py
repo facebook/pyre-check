@@ -383,16 +383,15 @@ class TypeCollector(m.MatcherDecoratableVisitor):
         module, target = self._module_and_target(qualified_name)
         if module in ("", "builtins"):
             return False
-        elif qualified_name not in self.existing_imports:
+        if qualified_name not in self.existing_imports:
             if module in self.existing_imports:
                 return True
-            else:
-                AddImportsVisitor.add_needed_import(
-                    self.context,
-                    module,
-                    target,
-                )
-                return False
+            AddImportsVisitor.add_needed_import(
+                self.context,
+                module,
+                target,
+            )
+            return False
         return False
 
     # Handler functions.
@@ -414,8 +413,7 @@ class TypeCollector(m.MatcherDecoratableVisitor):
         self.annotations.names.add(qualified_name)
         if should_qualify:
             return node
-        else:
-            return dequalified_node
+        return dequalified_node
 
     def _handle_Index(
         self,
@@ -424,12 +422,11 @@ class TypeCollector(m.MatcherDecoratableVisitor):
         value = slice.value
         if isinstance(value, cst.Subscript):
             return slice.with_changes(value=self._handle_Subscript(value))
-        elif isinstance(value, cst.Attribute):
+        if isinstance(value, cst.Attribute):
             return slice.with_changes(value=self._handle_NameOrAttribute(value))
-        else:
-            if isinstance(value, cst.SimpleString):
-                self.annotations.names.add(_get_string_value(value))
-            return slice
+        if isinstance(value, cst.SimpleString):
+            self.annotations.names.add(_get_string_value(value))
+        return slice
 
     def _handle_Subscript(
         self,
@@ -463,11 +460,10 @@ class TypeCollector(m.MatcherDecoratableVisitor):
                         item = item.with_changes(slice=new_index)
                     new_slice.append(item)
             return new_node.with_changes(slice=tuple(new_slice))
-        elif isinstance(slice, cst.Index):
+        if isinstance(slice, cst.Index):
             new_slice = self._handle_Index(slice)
             return new_node.with_changes(slice=new_slice)
-        else:
-            return new_node
+        return new_node
 
     def _handle_Annotation(
         self,
@@ -477,12 +473,11 @@ class TypeCollector(m.MatcherDecoratableVisitor):
         if isinstance(node, cst.SimpleString):
             self.annotations.names.add(_get_string_value(node))
             return annotation
-        elif isinstance(node, cst.Subscript):
+        if isinstance(node, cst.Subscript):
             return cst.Annotation(annotation=self._handle_Subscript(node))
-        elif isinstance(node, NAME_OR_ATTRIBUTE):
+        if isinstance(node, NAME_OR_ATTRIBUTE):
             return cst.Annotation(annotation=self._handle_NameOrAttribute(node))
-        else:
-            raise ValueError(f"Unexpected annotation node: {node}")
+        raise ValueError(f"Unexpected annotation node: {node}")
 
     def _handle_Parameters(
         self,
@@ -691,8 +686,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         # don't modify the imports if we didn't actually add any type information
         if self.annotation_counts.any_changes_applied():
             return tree_with_changes
-        else:
-            return tree
+        return tree
 
     # helpers for processing annotation nodes
     def _quote_future_annotations(self, annotation: cst.Annotation) -> cst.Annotation:
@@ -786,8 +780,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
                         annotation=annotation,
                         value=node.value,
                     )
-                else:
-                    self.qualifier.pop()
+                self.qualifier.pop()
         return updated_node
 
     def _split_module(
@@ -1083,8 +1076,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
                         # as `a: int` and `b: int`.
                         self._add_to_toplevel_annotations(name)
             return updated_node
-        else:
-            return self._annotate_single_target(original_node, updated_node)
+        return self._annotate_single_target(original_node, updated_node)
 
     def leave_ImportFrom(
         self,

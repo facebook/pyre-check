@@ -41,8 +41,7 @@ def run_and_check_output(
         logging.error("Output differs from expected:")
         subprocess.run(["diff", "result.expected", output_file_name])
         return False
-    else:
-        return True
+    return True
 
 
 def run_test_no_cache(

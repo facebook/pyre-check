@@ -155,12 +155,11 @@ def _merge_fields(
     ) -> Optional[T]:
         if base is None:
             return override
-        elif override is None:
+        if override is None:
             return base
-        else:
-            raise DataclassMergeError(
-                f"Field `{name}` is not allowed to be overwritten."
-            )
+        raise DataclassMergeError(
+            f"Field `{name}` is not allowed to be overwritten."
+        )
 
     def default_policy(cls: Type[object], base: object, override: object) -> object:
         if hasattr(cls, "merge"):
@@ -176,14 +175,13 @@ def _merge_fields(
         merge_policy = field.metadata.get("merge_policy", None)
         if merge_policy == Policy.RAISE_WHEN_OVERWRITTEN:
             return raise_when_overwritten(base_value, override_value, field_name)
-        elif merge_policy == Policy.PREPEND:
+        if merge_policy == Policy.PREPEND:
             return prepend(base_value, override_value, field_name)
-        elif merge_policy == Policy.OVERWRITE:
+        if merge_policy == Policy.OVERWRITE:
             return overwrite(base_value, override_value)
-        elif merge_policy is not None:
+        if merge_policy is not None:
             return merge_policy(base_value, override_value)
-        else:
-            return default_policy(field.type, base_value, override_value)
+        return default_policy(field.type, base_value, override_value)
 
     return (merge(field) for field in fields)
 

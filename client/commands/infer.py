@@ -379,19 +379,18 @@ class TypeAnnotation:
     def to_stub(self, prefix: str = "") -> str:
         if self.annotation is None:
             return ""
-        else:
-            sanitized = AnnotationFixer.sanitize(
-                annotation=self.annotation,
-                qualifier=self.qualifier,
-                quote_annotations=self.options.quote_annotations,
-                dequalify_all=self.options.dequalify,
-                runtime_defined=self.runtime_defined,
-            )
-            if self.options.simple_annotations and not TypeAnnotation.is_simple(
-                sanitized
-            ):
-                return ""
-            return prefix + sanitized
+        sanitized = AnnotationFixer.sanitize(
+            annotation=self.annotation,
+            qualifier=self.qualifier,
+            quote_annotations=self.options.quote_annotations,
+            dequalify_all=self.options.dequalify,
+            runtime_defined=self.runtime_defined,
+        )
+        if self.options.simple_annotations and not TypeAnnotation.is_simple(
+            sanitized
+        ):
+            return ""
+        return prefix + sanitized
 
     @property
     def missing(self) -> bool:
@@ -796,29 +795,28 @@ def _run_infer_command_get_output(command: Sequence[str]) -> str:
             # `source/command/inferCommand.ml`.
             if return_code == 0:
                 return result.stdout
-            elif return_code == 1:
+            if return_code == 1:
                 raise commands.ClientException(
                     message="Pyre encountered an internal failure",
                     exit_code=commands.ExitCode.FAILURE,
                 )
-            elif return_code == 2:
+            if return_code == 2:
                 raise commands.ClientException(
                     message="Pyre encountered a failure within buck.",
                     exit_code=commands.ExitCode.BUCK_INTERNAL_ERROR,
                 )
-            elif return_code == 3:
+            if return_code == 3:
                 raise commands.ClientException(
                     message="Pyre encountered an error when building the buck targets.",
                     exit_code=commands.ExitCode.BUCK_USER_ERROR,
                 )
-            else:
-                raise commands.ClientException(
-                    message=(
-                        "Infer command exited with unexpected return code: "
-                        f"{return_code}."
-                    ),
-                    exit_code=commands.ExitCode.FAILURE,
-                )
+            raise commands.ClientException(
+                message=(
+                    "Infer command exited with unexpected return code: "
+                    f"{return_code}."
+                ),
+                exit_code=commands.ExitCode.FAILURE,
+            )
 
 
 def _get_infer_command_output(
@@ -845,8 +843,7 @@ def _load_output(
 ) -> str:
     if infer_arguments.read_stdin:
         return sys.stdin.read()
-    else:
-        return _get_infer_command_output(configuration, infer_arguments)
+    return _get_infer_command_output(configuration, infer_arguments)
 
 
 def _relativize_path(path: str, against: Path) -> Optional[str]:

@@ -89,11 +89,11 @@ class Response:
                         return Response(
                             name=name, body=_parse_type_error_subscription(body[1])
                         )
-                    elif tag == "StatusUpdate":
+                    if tag == "StatusUpdate":
                         return Response(
                             name=name, body=_parse_status_update_subscription(body[1])
                         )
-                    elif tag == "Error":
+                    if tag == "Error":
                         return Response(
                             name=name, body=_parse_error_subscription(body[1])
                         )

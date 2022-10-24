@@ -15,7 +15,7 @@ class ParentWithConstructor:
 
 class ChildWithParentConstructor(ParentWithConstructor):
     def __init__(self, arg):
-        super(ChildWithParentConstructor, self).__init__(arg)
+        super().__init__(arg)
 
 
 class ParentWithoutConstructor:
@@ -24,7 +24,7 @@ class ParentWithoutConstructor:
 
 class ChildWithoutParentConstructor(ParentWithoutConstructor):
     def __init__(self, arg):
-        super(ChildWithoutParentConstructor, self).__init__(arg)
+        super().__init__(arg)
 
 
 def test1(request: HttpRequest):

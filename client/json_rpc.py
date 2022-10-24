@@ -128,12 +128,11 @@ def _parse_json_rpc_activity_key(json: JSON) -> Optional[JSON]:
     activity_key = json.get("activityKey")
     if activity_key is None:
         return None
-    elif isinstance(activity_key, dict):
+    if isinstance(activity_key, dict):
         return activity_key
-    else:
-        raise InvalidParameterError(
-            f"Cannot parse request activityKey JSON: {activity_key}"
-        )
+    raise InvalidParameterError(
+        f"Cannot parse request activityKey JSON: {activity_key}"
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -243,13 +242,12 @@ class Response(JSONRPC):
         """
         if "result" in response_json:
             return SuccessResponse.from_json(response_json)
-        elif "error" in response_json:
+        if "error" in response_json:
             return ErrorResponse.from_json(response_json)
-        else:
-            raise InvalidRequestError(
-                "Either `result` or `error` must be presented in JSON-RPC "
-                + f"responses. Got {response_json}."
-            )
+        raise InvalidRequestError(
+            "Either `result` or `error` must be presented in JSON-RPC "
+            + f"responses. Got {response_json}."
+        )
 
     @staticmethod
     def from_string(response_string: str) -> "Response":

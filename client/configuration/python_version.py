@@ -25,9 +25,9 @@ class PythonVersion:
             splits = input.split(".")
             if len(splits) == 1:
                 return PythonVersion(major=int(splits[0]))
-            elif len(splits) == 2:
+            if len(splits) == 2:
                 return PythonVersion(major=int(splits[0]), minor=int(splits[1]))
-            elif len(splits) == 3:
+            if len(splits) == 3:
                 return PythonVersion(
                     major=int(splits[0]), minor=int(splits[1]), micro=int(splits[2])
                 )

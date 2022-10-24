@@ -20,7 +20,7 @@ def test(complicated_service: ComplicatedService):
     try:
         result = complicated_service.serve_tainted_request()
 
-    except:
+    except Exception:
         exception = True
 
     # Only try reactivation if all other checks passed

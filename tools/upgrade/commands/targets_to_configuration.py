@@ -15,8 +15,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import libcst
-from pyre_extensions import override
 from typing_extensions import Final
+from pyre_extensions import override
 
 from ..configuration import Configuration
 from ..errors import Errors

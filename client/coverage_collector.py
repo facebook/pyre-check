@@ -51,14 +51,12 @@ class CoverageCollector(AnnotationCollector):
     def covered_functions(self) -> List[FunctionAnnotationInfo]:
         if self.is_strict:
             return self.functions
-        else:
-            return [f for f in self.functions if f.is_annotated]
+        return [f for f in self.functions if f.is_annotated]
 
     def uncovered_functions(self) -> List[FunctionAnnotationInfo]:
         if self.is_strict:
             return []
-        else:
-            return [f for f in self.functions if not f.is_annotated]
+        return [f for f in self.functions if not f.is_annotated]
 
     def covered_and_uncovered_lines(self) -> CoveredAndUncoveredLines:
         def num_lines(code_range_and_is_covered: Tuple[CodeRange, bool]) -> int:

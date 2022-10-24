@@ -243,7 +243,7 @@ class PartialConfiguration:
             result = json.pop(name, None)
             if result is None:
                 return None
-            elif isinstance(result, expected_type):
+            if isinstance(result, expected_type):
                 return result
             raise exceptions.InvalidConfiguration(
                 f"Configuration field `{name}` is expected to have type "
@@ -256,9 +256,9 @@ class PartialConfiguration:
             result = json.pop(name, None)
             if result is None:
                 return None
-            elif isinstance(result, str):
+            if isinstance(result, str):
                 return result
-            elif isinstance(result, Dict):
+            if isinstance(result, Dict):
                 for value in result.values():
                     if not isinstance(value, str):
                         raise exceptions.InvalidConfiguration(
@@ -277,7 +277,7 @@ class PartialConfiguration:
             result = json.pop(name, None)
             if result is None:
                 return None
-            elif is_list_of_string(result):
+            if is_list_of_string(result):
                 return result
             raise exceptions.InvalidConfiguration(
                 f"Configuration field `{name}` is expected to be a list of "
@@ -800,8 +800,7 @@ class Configuration:
             return search_path_module.process_raw_elements(
                 source_directories, self.get_site_roots()
             )
-        else:
-            return []
+        return []
 
     def get_binary_respecting_override(self) -> Optional[str]:
         binary = self.binary
@@ -832,9 +831,8 @@ class Configuration:
                 "and standard libraries may be missing!"
             )
             return None
-        else:
-            LOG.info(f"Found: `{auto_determined_typeshed}`")
-            return str(auto_determined_typeshed)
+        LOG.info(f"Found: `{auto_determined_typeshed}`")
+        return str(auto_determined_typeshed)
 
     def get_version_hash_respecting_override(self) -> Optional[str]:
         overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
@@ -890,13 +888,12 @@ class Configuration:
         python_version = self.python_version
         if python_version is not None:
             return python_version
-        else:
-            version_info = sys.version_info
-            return python_version_module.PythonVersion(
-                major=version_info.major,
-                minor=version_info.minor,
-                micro=version_info.micro,
-            )
+        version_info = sys.version_info
+        return python_version_module.PythonVersion(
+            major=version_info.major,
+            minor=version_info.minor,
+            micro=version_info.micro,
+        )
 
 
 def create_configuration(
@@ -919,7 +916,7 @@ def create_configuration(
                 + f" {CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
-        elif found_root.local_root is None:
+        if found_root.local_root is None:
             raise exceptions.InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
                 + f" {LOCAL_CONFIGURATION_FILE} file was found in {search_base}"

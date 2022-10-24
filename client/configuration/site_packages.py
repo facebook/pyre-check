@@ -82,8 +82,7 @@ class PackageInfo:
             if nonstub_package is not None and stub_package.is_partial:
                 # Partial stubs use the corresponding non-stub as fallback
                 return [stub_search_path, nonstub_package.to_search_path_element()]
-            else:
-                return [stub_search_path]
+            return [stub_search_path]
 
         if nonstub_package is not None and nonstub_package.is_typed:
             return [nonstub_package.to_search_path_element()]
@@ -108,8 +107,7 @@ def get_package_status(path: Path) -> PackageStatus:
             first_line = marker_file.readline().strip()
         if first_line == "partial":
             return PackageStatus.PARTIALLY_TYPED
-        else:
-            return PackageStatus.TYPED
+        return PackageStatus.TYPED
     except FileNotFoundError:
         return PackageStatus.UNTYPED
     except Exception as error:
@@ -132,12 +130,11 @@ def create_package_from_path(path: Path) -> Union[StubPackage, NonStubPackage, N
             path=path,
             is_partial=(status == PackageStatus.PARTIALLY_TYPED),
         )
-    else:
-        return NonStubPackage(
-            name=name,
-            path=path,
-            is_typed=(status != PackageStatus.UNTYPED),
-        )
+    return NonStubPackage(
+        name=name,
+        path=path,
+        is_typed=(status != PackageStatus.UNTYPED),
+    )
 
 
 def find_packages(site_roots: Iterable[str]) -> List[PackageInfo]:
@@ -168,17 +165,16 @@ def search_for_paths(
 ) -> List[search_path.Element]:
     if strategy == SearchStrategy.NONE:
         return []
-    elif strategy == SearchStrategy.ALL:
+    if strategy == SearchStrategy.ALL:
         return [
             search_path.SimpleElement(root)
             for root in site_roots
             if Path(root).is_dir()
         ]
-    elif strategy == SearchStrategy.PEP561:
+    if strategy == SearchStrategy.PEP561:
         return [
             element
             for package in find_packages(site_roots)
             for element in package.to_search_path_elements()
         ]
-    else:
-        raise RuntimeError(f"Unhandled site package search strategy: {strategy}")
+    raise RuntimeError(f"Unhandled site package search strategy: {strategy}")

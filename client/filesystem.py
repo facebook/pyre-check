@@ -49,8 +49,7 @@ def expand_relative_path(root: str, path: str) -> str:
     expanded_path = Path(path).expanduser()
     if expanded_path.is_absolute():
         return str(expanded_path)
-    else:
-        return str(Path(root) / expanded_path)
+    return str(Path(root) / expanded_path)
 
 
 def expand_global_root(path: str, global_root: str) -> str:

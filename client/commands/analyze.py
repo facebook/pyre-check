@@ -348,29 +348,28 @@ def _run_analyze_command(
                 if forward_stdout:
                     log.stdout.write(result.stdout)
                 return commands.ExitCode.SUCCESS
-            elif return_code == 2:
+            if return_code == 2:
                 LOG.error("Pyre encountered a failure within buck.")
                 return commands.ExitCode.BUCK_INTERNAL_ERROR
-            elif return_code == 3:
+            if return_code == 3:
                 LOG.error("Pyre encountered an error when building the buck targets.")
                 return commands.ExitCode.BUCK_USER_ERROR
-            elif return_code == 10:
+            if return_code == 10:
                 error_module.print_errors(
                     parse_taint_configuration_errors(result.stdout),
                     output=output,
                     error_kind="taint configuration",
                 )
                 return commands.ExitCode.TAINT_CONFIGURATION_ERROR
-            elif return_code == 11:
+            if return_code == 11:
                 error_module.print_errors(
                     parse_model_validation_errors(result.stdout),
                     output=output,
                     error_kind="model verification",
                 )
                 return commands.ExitCode.MODEL_VERIFICATION_ERROR
-            else:
-                LOG.error(f"Pyre exited with non-zero return code: {return_code}.")
-                return commands.ExitCode.FAILURE
+            LOG.error(f"Pyre exited with non-zero return code: {return_code}.")
+            return commands.ExitCode.FAILURE
 
 
 def run_analyze(

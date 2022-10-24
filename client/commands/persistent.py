@@ -175,7 +175,7 @@ async def try_initialize(
                 # as well.
                 LOG.info("Initialization connection closed by LSP client")
             return InitializationExit()
-        elif initialized_notification.method != "initialized":
+        if initialized_notification.method != "initialized":
             actual_message = json.dumps(initialized_notification.json())
             raise lsp.ServerNotInitializedError(
                 "Failed to receive an `initialized` request from client. "
@@ -296,10 +296,9 @@ async def _start_pyre_server(
         LOG.error(message)
         if error.kind == server_event.ErrorKind.BUCK_USER:
             return BuckStartFailure(message)
-        else:
-            # We know where the exception come from. Let's keep the error details
-            # succinct.
-            return OtherStartFailure(message=message, detail=message)
+        # We know where the exception come from. Let's keep the error details
+        # succinct.
+        return OtherStartFailure(message=message, detail=message)
     except Exception as error:
         # These exceptions are unexpected. Let's keep verbose stack traces to
         # help with post-mortem analyses.
@@ -343,8 +342,7 @@ def _client_has_status_bar_support(
     window_capabilities = client_capabilities.window
     if window_capabilities is not None:
         return window_capabilities.status is not None
-    else:
-        return False
+    return False
 
 
 async def _write_status(
@@ -787,7 +785,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 is_preexisting=False,
             )
             return state.ServerStatus.READY
-        elif isinstance(start_status, BuckStartFailure):
+        if isinstance(start_status, BuckStartFailure):
             # Buck start failures are intentionally not counted towards
             # `consecutive_start_failure` -- they happen far too often in practice
             # so we do not want them to trigger suspensions.
@@ -819,7 +817,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 fallback_to_notification=False,
             )
             return state.ServerStatus.NOT_CONNECTED
-        elif isinstance(start_status, OtherStartFailure):
+        if isinstance(start_status, OtherStartFailure):
             self.server_state.consecutive_start_failure += 1
             if (
                 self.server_state.consecutive_start_failure
@@ -842,26 +840,24 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     fallback_to_notification=True,
                 )
                 return state.ServerStatus.NOT_CONNECTED
-            else:
-                log_lsp_event._log_lsp_event(
-                    remote_logging=self.remote_logging,
-                    event=log_lsp_event.LSPEvent.SUSPENDED,
-                    integers={"duration": int(connection_timer.stop_in_millisecond())},
-                    normals={
-                        **self._auxiliary_logging_info(server_options),
-                        "exception": str(start_status.detail),
-                    },
-                )
-                await self.client_status_message_handler.show_status_message_to_client(
-                    f"Pyre server restart at `{project_identifier}` has been "
-                    "failing repeatedly. Disabling The Pyre plugin for now.",
-                    short_message="Pyre Disabled",
-                    level=lsp.MessageType.ERROR,
-                    fallback_to_notification=True,
-                )
-                return state.ServerStatus.SUSPENDED
-        else:
-            raise RuntimeError("Impossible type for `start_status`")
+            log_lsp_event._log_lsp_event(
+                remote_logging=self.remote_logging,
+                event=log_lsp_event.LSPEvent.SUSPENDED,
+                integers={"duration": int(connection_timer.stop_in_millisecond())},
+                normals={
+                    **self._auxiliary_logging_info(server_options),
+                    "exception": str(start_status.detail),
+                },
+            )
+            await self.client_status_message_handler.show_status_message_to_client(
+                f"Pyre server restart at `{project_identifier}` has been "
+                "failing repeatedly. Disabling The Pyre plugin for now.",
+                short_message="Pyre Disabled",
+                level=lsp.MessageType.ERROR,
+                fallback_to_notification=True,
+            )
+            return state.ServerStatus.SUSPENDED
+        raise RuntimeError("Impossible type for `start_status`")
 
     async def run(self) -> None:
         """
@@ -918,10 +914,10 @@ async def try_initialize_loop(
         if isinstance(initialize_result, InitializationExit):
             LOG.info("Received exit request before initialization.")
             return initialize_result
-        elif isinstance(initialize_result, InitializationSuccess):
+        if isinstance(initialize_result, InitializationSuccess):
             LOG.info("Initialization successful.")
             return initialize_result
-        elif isinstance(initialize_result, InitializationFailure):
+        if isinstance(initialize_result, InitializationFailure):
             exception = initialize_result.exception
             message = (
                 str(exception) if exception is not None else "ignoring notification"

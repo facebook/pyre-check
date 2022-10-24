@@ -409,12 +409,11 @@ class FindGlobalAndLocalRootTest(testslide.TestCase):
     ) -> Optional[FoundRoot]:
         if expected is None:
             return None
-        elif isinstance(expected, str):
+        if isinstance(expected, str):
             return FoundRoot(root_path / expected)
-        elif isinstance(expected, tuple):
+        if isinstance(expected, tuple):
             return FoundRoot(root_path / expected[0], root_path / expected[1])
-        else:
-            raise RuntimeError("Malformed argument passed to `expected`")
+        raise RuntimeError("Malformed argument passed to `expected`")
 
     def assert_find_roots(
         self,

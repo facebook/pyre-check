@@ -32,10 +32,9 @@ class Response:
             and response_json[0] == "Query"
         ):
             return Response(response_json[1])
-        else:
-            raise InvalidQueryResponse(
-                f"Unexpected JSON response from server: {response_json}"
-            )
+        raise InvalidQueryResponse(
+            f"Unexpected JSON response from server: {response_json}"
+        )
 
     @staticmethod
     def parse(

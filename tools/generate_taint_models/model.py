@@ -224,10 +224,8 @@ class FunctionDefinitionModel(RawCallableModel):
             unparsed_annotation = ast_to_pretty_string(annotation)
             if strip_annotated:
                 return strip_custom_annotations(unparsed_annotation)
-            else:
-                return unparsed_annotation
-        else:
-            return None
+            return unparsed_annotation
+        return None
 
     def _generate_parameters(self) -> List[Parameter]:
         parameters: List[Parameter] = []

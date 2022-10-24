@@ -13,9 +13,9 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pyre_extensions import override
-
 from typing_extensions import Final
+
+from pyre_extensions import override
 
 from ..configuration import Configuration
 from ..filesystem import find_files
@@ -89,7 +89,7 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
                     nested_configurations[topmost_configuration].append(configuration)
                     inserted = True
                     break
-                elif existing.startswith(current):
+                if existing.startswith(current):
                     nested_configurations[configuration] = nested_configurations[
                         topmost_configuration
                     ] + [topmost_configuration]

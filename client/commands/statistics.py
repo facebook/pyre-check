@@ -238,7 +238,7 @@ def aggregate_statistics(
         annotation_counts = collectors.AnnotationCountCollector.get_result_counts(
             statistics_data.annotations
         )
-        for key in aggregate_annotations.keys():
+        for key in aggregate_annotations:
             aggregate_annotations[key] += annotation_counts[key]
 
     return AggregatedStatisticsData(

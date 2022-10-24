@@ -13,9 +13,9 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from pyre_extensions import override
-
 from typing_extensions import Final
+
+from pyre_extensions import override
 
 from ..configuration import Configuration
 from ..filesystem import find_files, LocalMode, path_exists

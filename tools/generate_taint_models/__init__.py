@@ -214,18 +214,17 @@ def run_from_parsed_arguments(
         if error.exit_code == 3:
             LOG.error("Error while starting a pyre server: buck internal error")
             return ExitCode.BUCK_INTERNAL_ERROR
-        elif error.exit_code == 7:
+        if error.exit_code == 7:
             LOG.error("Error while starting a pyre server: buck user error")
             return ExitCode.BUCK_USER_ERROR
-        elif error.exit_code == 6:
+        if error.exit_code == 6:
             LOG.error("Error while starting a pyre server: configuration error")
             return ExitCode.CONFIGURATION_ERROR
-        elif error.exit_code == 8:
+        if error.exit_code == 8:
             LOG.error("Error while starting a pyre server: watchman error")
             return ExitCode.WATCHMAN_ERROR
-        else:
-            LOG.error(str(error))
-            return ExitCode.PYRE_INTERNAL_ERROR
+        LOG.error(str(error))
+        return ExitCode.PYRE_INTERNAL_ERROR
     except PyreQueryError as error:
         LOG.error(str(error))
         traceback.print_exc()

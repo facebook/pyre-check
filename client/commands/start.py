@@ -389,9 +389,8 @@ def _run_in_foreground(
 
     if return_code == 0:
         return commands.ExitCode.SUCCESS
-    else:
-        LOG.error(f"Server exited with non-zero return code: {return_code}")
-        return commands.ExitCode.FAILURE
+    LOG.error(f"Server exited with non-zero return code: {return_code}")
+    return commands.ExitCode.FAILURE
 
 
 @contextlib.contextmanager
@@ -523,21 +522,20 @@ def run_start(
         }
         if start_arguments.terminal:
             return _run_in_foreground(server_command, server_environment)
-        else:
-            socket_path = daemon_socket.get_socket_path(
-                configuration.get_project_identifier(),
-                flavor=start_arguments.flavor,
-            )
-            return _run_in_background(
-                server_command,
-                server_environment,
-                log_directory,
-                socket_path,
-                flavor=start_arguments.flavor,
-                event_waiter=server_event.Waiter(
-                    wait_on_initialization=start_arguments.wait_on_initialization
-                ),
-            )
+        socket_path = daemon_socket.get_socket_path(
+            configuration.get_project_identifier(),
+            flavor=start_arguments.flavor,
+        )
+        return _run_in_background(
+            server_command,
+            server_environment,
+            log_directory,
+            socket_path,
+            flavor=start_arguments.flavor,
+            event_waiter=server_event.Waiter(
+                wait_on_initialization=start_arguments.wait_on_initialization
+            ),
+        )
 
 
 def run(

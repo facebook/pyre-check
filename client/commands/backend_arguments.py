@@ -276,8 +276,7 @@ def get_source_path(
                 unwatched_dependency=unwatched_dependency,
                 elements=elements,
             )
-        else:
-            return SimpleSourcePath(elements)
+        return SimpleSourcePath(elements)
 
     if targets is not None and not source_directories:
         if len(targets) == 0:

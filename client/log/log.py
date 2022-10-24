@@ -63,12 +63,12 @@ class Character:
 
 class SectionFormatter(logging.Formatter):
     def __init__(self) -> None:
-        super(SectionFormatter, self).__init__(
+        super().__init__(
             "%(asctime)s [PID %(process)d] %(levelname)s %(message)s"
         )
 
     def format(self, record: logging.LogRecord) -> str:
-        formatted = super(SectionFormatter, self).format(record)
+        formatted = super().format(record)
         return re.sub(r"DEBUG \[(.*)\]", r"\1", formatted)
 
 
@@ -81,7 +81,7 @@ class TimedStreamHandler(logging.StreamHandler):
     _last_update: float = 0.0
 
     def __init__(self) -> None:
-        super(TimedStreamHandler, self).__init__()
+        super().__init__()
         self.setFormatter(logging.Formatter("%(message)s"))
         self.terminator: str = ""
         self.setLevel(logging.INFO)
@@ -161,7 +161,7 @@ class TimedStreamHandler(logging.StreamHandler):
             else new_message
         )
         self._active_lines = active_lines
-        super(TimedStreamHandler, self).emit(timed_record)
+        super().emit(timed_record)
 
     def _thread(self) -> None:
         while not self._terminate:

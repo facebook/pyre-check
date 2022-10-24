@@ -191,7 +191,7 @@ class Pysa:
                 line = line.rstrip()
                 if line == "":
                     break
-                elif "ERROR" in line and "is not part of the environment" in line:
+                if "ERROR" in line and "is not part of the environment" in line:
                     model_verification_errors.append(line)
                 elif "INFO" in line or "ERROR" in line:
                     if model_verification_errors:

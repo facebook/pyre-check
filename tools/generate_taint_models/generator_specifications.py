@@ -42,10 +42,10 @@ class AllParametersAnnotation(ParameterAnnotation):
     def get(self, parameter: "Parameter") -> Optional[str]:
         if parameter.kind == Parameter.Kind.ARG:
             return self.arg
-        elif parameter.kind == Parameter.Kind.VARARG:
+        if parameter.kind == Parameter.Kind.VARARG:
             return self.vararg
-        else:  # KWARG
-            return self.kwarg
+        # KWARG
+        return self.kwarg
 
 
 class AnnotationSpecification(NamedTuple):

@@ -229,9 +229,8 @@ class MemoryBytesReader(AsyncBytesReader):
         if new_cursor <= data_size:
             self._cursor = new_cursor
             return self._data[old_cursor:new_cursor]
-        else:
-            self._cursor = data_size
-            raise asyncio.IncompleteReadError(self._data[old_cursor:], count)
+        self._cursor = data_size
+        raise asyncio.IncompleteReadError(self._data[old_cursor:], count)
 
     def reset(self) -> None:
         self._cursor = 0

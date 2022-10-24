@@ -65,8 +65,7 @@ def _custom_linker_option(pyre_directory: Path, build_type: BuildType) -> str:
             .read_text()
             .rstrip()
         )
-    else:
-        return ""
+    return ""
 
 
 class Setup(NamedTuple):
@@ -274,8 +273,7 @@ class Setup(NamedTuple):
         )
         if output.endswith("\n"):
             return output[:-1]
-        else:
-            return output
+        return output
 
 
 def _make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) -> Path:

@@ -204,8 +204,7 @@ class MockRequestHandler(AbstractRequestHandler):
         self.requests.append({"path": path, "position": position})
         if self.mock_hover_response is None:
             raise ValueError("You need to set hover response in the mock handler")
-        else:
-            return self.mock_hover_response
+        return self.mock_hover_response
 
     async def get_definition_locations(
         self,
@@ -215,8 +214,7 @@ class MockRequestHandler(AbstractRequestHandler):
         self.requests.append({"path": path, "position": position})
         if self.mock_definition_response is None:
             raise ValueError("You need to set hover response in the mock handler")
-        else:
-            return self.mock_definition_response
+        return self.mock_definition_response
 
     async def get_reference_locations(
         self,
@@ -226,8 +224,7 @@ class MockRequestHandler(AbstractRequestHandler):
         self.requests.append({"path": path, "position": position})
         if self.mock_references_response is None:
             raise ValueError("You need to set hover response in the mock handler")
-        else:
-            return self.mock_references_response
+        return self.mock_references_response
 
     async def update_overlay(
         self,
@@ -322,7 +319,7 @@ class PersistentTest(testslide.TestCase):
         bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(bytes_writer)
         actual_request = await read_lsp_request(input_channel, output_channel)
-        self.assertEquals(actual_request, expected_request)
+        self.assertEqual(actual_request, expected_request)
         self.assertEqual(len(bytes_writer.items()), 0)
 
     @setup.async_test
@@ -356,7 +353,7 @@ class PersistentTest(testslide.TestCase):
         bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(bytes_writer)
         actual_request = await read_lsp_request(input_channel, output_channel)
-        self.assertEquals(actual_request, expected_request)
+        self.assertEqual(actual_request, expected_request)
         # Two messages for two failed reads
         self.assertEqual(len(bytes_writer.items()), 2)
 

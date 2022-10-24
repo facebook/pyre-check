@@ -88,11 +88,10 @@ def parse_event(input_string: str) -> Event:
     if event_type[0] == "Duration":
         duration = event_type[1]
         return DurationEvent(duration=duration, metadata=metadata)
-    elif event_type[0] == "Counter":
+    if event_type[0] == "Counter":
         description = None if len(event_type) <= 1 else event_type[1]
         return CounterEvent(description=description, metadata=metadata)
-    else:
-        raise ValueError(f"Unrecognized event type: {input}")
+    raise ValueError(f"Unrecognized event type: {input}")
 
 
 def parse_events(input_string: str) -> List[Event]:
@@ -238,7 +237,7 @@ def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
                 "dur": duration_us,
                 "args": event.metadata.tags,
             }
-        elif isinstance(event, CounterEvent):
+        if isinstance(event, CounterEvent):
             timestamp_us = event.metadata.timestamp
             arguments: Dict[str, Any] = {
                 key: int(value) for key, value in event.metadata.tags.items()
@@ -251,8 +250,7 @@ def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
                 "name": event.metadata.name,
                 "args": arguments,
             }
-        else:
-            return None
+        return None
 
     return [
         trace_event

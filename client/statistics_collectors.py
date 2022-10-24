@@ -414,7 +414,7 @@ class StrictCountCollector(StatisticsCollector):
     def is_unsafe_module(self) -> bool:
         if self.explicit_unsafe_comment_line is not None:
             return True
-        elif self.explicit_strict_comment_line is not None or self.strict_by_default:
+        if self.explicit_strict_comment_line is not None or self.strict_by_default:
             return False
         return True
 

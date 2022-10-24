@@ -64,11 +64,10 @@ def create_from_string(input_string: str) -> Optional[Event]:
         if input_kind == "SocketCreated":
             if len(input_json) < 2:
                 return None
-            else:
-                return SocketCreated(socket_path=Path(input_json[1]))
-        elif input_kind == "ServerInitialized":
+            return SocketCreated(socket_path=Path(input_json[1]))
+        if input_kind == "ServerInitialized":
             return ServerInitialized()
-        elif input_kind == "Exception":
+        if input_kind == "Exception":
             if len(input_json) < 2:
                 return None
             if not isinstance(input_json[1], str):
@@ -83,8 +82,7 @@ def create_from_string(input_string: str) -> Optional[Event]:
                     message=input_json[1], kind=ErrorKind.from_string(input_json[2][0])
                 )
             return ServerException(message=input_json[1], kind=ErrorKind.UNKNOWN)
-        else:
-            return None
+        return None
     except json.JSONDecodeError:
         return None
 
@@ -107,7 +105,7 @@ def _parse_server_event(event_string: str) -> Event:
         raise EventParsingException(
             f"Unrecognized status update from server: {event_string}"
         )
-    elif isinstance(event, ServerException):
+    if isinstance(event, ServerException):
         raise ServerStartException(event)
     return event
 

@@ -108,15 +108,14 @@ class PyreConnection:
             )
             self.server_initialized = True
             return PyreCheckResult(exit_code=result.returncode, errors=None)
-        else:
-            # incremental will start a new server when needed.
-            result = subprocess.run(
-                ["pyre", "--noninteractive", *self.pyre_arguments, "incremental"],
-                stdout=subprocess.PIPE,
-                cwd=str(self.pyre_directory),
-            )
-            self.server_initialized = True
-            return _parse_check_output(result)
+        # incremental will start a new server when needed.
+        result = subprocess.run(
+            ["pyre", "--noninteractive", *self.pyre_arguments, "incremental"],
+            stdout=subprocess.PIPE,
+            cwd=str(self.pyre_directory),
+        )
+        self.server_initialized = True
+        return _parse_check_output(result)
 
     def restart_server(self) -> PyreCheckResult:
         if self.skip_initial_type_check:

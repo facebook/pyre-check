@@ -204,9 +204,9 @@ def run_incremental(
 def _exit_code_from_error_kind(error_kind: server_event.ErrorKind) -> commands.ExitCode:
     if error_kind == server_event.ErrorKind.WATCHMAN:
         return commands.ExitCode.WATCHMAN_ERROR
-    elif error_kind == server_event.ErrorKind.BUCK_INTERNAL:
+    if error_kind == server_event.ErrorKind.BUCK_INTERNAL:
         return commands.ExitCode.BUCK_INTERNAL_ERROR
-    elif error_kind == server_event.ErrorKind.BUCK_USER:
+    if error_kind == server_event.ErrorKind.BUCK_USER:
         return commands.ExitCode.BUCK_USER_ERROR
     return commands.ExitCode.FAILURE
 

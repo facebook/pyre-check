@@ -189,12 +189,11 @@ def _extract_substring(
     assert line_number >= start_position.line and line_number <= stop_position.line
     if start_position.line == stop_position.line and line_number == start_position.line:
         return line[start_position.column : stop_position.column]
-    elif line_number == start_position.line:
+    if line_number == start_position.line:
         return line[start_position.column :]
-    elif line_number == stop_position.line:
+    if line_number == stop_position.line:
         return line[: stop_position.column]
-    else:
-        return line
+    return line
 
 
 def _extract_multiline_text(corpus: List[str], start: Position, stop: Position) -> str:

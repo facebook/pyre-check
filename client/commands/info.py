@@ -53,7 +53,7 @@ class Info(dataclasses_json.DataClassJsonMixin):
     ) -> "Info":
         binary_location = configuration.get_binary_location(download_if_needed=False)
         if binary_location is None:
-            LOG.warn("Could not locate a Pyre binary to run.")
+            LOG.warning("Could not locate a Pyre binary to run.")
         log_directory = configuration.get_log_directory()
         client_logs = log_directory / "pyre.stderr"
         server_log_directory = log_directory / "new_server"

@@ -109,9 +109,8 @@ class SimpleRawElement(RawElement):
         expanded = sorted(glob.glob(self.root))
         if expanded:
             return [SimpleRawElement(path) for path in expanded]
-        else:
-            LOG.warning(f"'{self.root}' does not match any paths.")
-            return []
+        LOG.warning(f"'{self.root}' does not match any paths.")
+        return []
 
     def to_element(self) -> SimpleElement:
         return SimpleElement(self.root)
@@ -168,7 +167,7 @@ class SitePackageRawElement(RawElement):
 def create_raw_element(json: Union[str, Dict[str, object]]) -> RawElement:
     if isinstance(json, str):
         return SimpleRawElement(json)
-    elif isinstance(json, dict):
+    if isinstance(json, dict):
 
         def assert_string_item(input: Dict[str, object], name: str) -> str:
             value = input.get(name, None)
@@ -184,12 +183,12 @@ def create_raw_element(json: Union[str, Dict[str, object]]) -> RawElement:
                 root=assert_string_item(json, "root"),
                 subdirectory=assert_string_item(json, "subdirectory"),
             )
-        elif "import_root" in json and "source" in json:
+        if "import_root" in json and "source" in json:
             return SubdirectoryRawElement(
                 root=assert_string_item(json, "import_root"),
                 subdirectory=assert_string_item(json, "source"),
             )
-        elif "site-package" in json:
+        if "site-package" in json:
             is_toplevel_module = (
                 "is_toplevel_module" in json and json["is_toplevel_module"]
             )

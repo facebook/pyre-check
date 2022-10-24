@@ -231,11 +231,10 @@ class Errors:
                     "Received invalid JSON as input. "
                     "If piping from `pyre check` be sure to use `--output=json`."
                 )
-            else:
-                raise UserError(
-                    "Encountered invalid output when checking for pyre errors: "
-                    f"`{json_string}`."
-                )
+            raise UserError(
+                "Encountered invalid output when checking for pyre errors: "
+                f"`{json_string}`."
+            )
 
     @staticmethod
     def from_stdin(only_fix_error_code: Optional[int] = None) -> "Errors":
@@ -435,11 +434,10 @@ def _remove_unused_ignores(line: str, errors: List[Dict[str, str]]) -> str:
     remaining_ignore_codes = set(ignore_codes) - set(unused_ignore_codes)
     if len(remaining_ignore_codes) == 0 or len(unused_ignore_codes) == 0:
         return stripped_line
-    else:
-        return line.replace(
-            ignore_codes_string,
-            ", ".join([str(code) for code in remaining_ignore_codes]),
-        )
+    return line.replace(
+        ignore_codes_string,
+        ", ".join([str(code) for code in remaining_ignore_codes]),
+    )
 
 
 def _line_ranges_spanned_by_format_strings(

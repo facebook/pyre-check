@@ -116,14 +116,13 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         comparison = self.assert_run(
             mock_execute=always_clean_execute,
@@ -141,20 +140,19 @@ class RunnerTest(unittest.TestCase):
             )
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            elif command_input.command.endswith(
+            if command_input.command.endswith(
                 "check"
             ) or command_input.command.endswith("incremental"):
                 return CommandOutput(
                     return_code=1, stdout=json.dumps([asdict(pyre_error)]), stderr=""
                 )
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=consistent_not_clean_execute,
@@ -169,18 +167,17 @@ class RunnerTest(unittest.TestCase):
             )
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            elif command_input.command.endswith("check"):
+            if command_input.command.endswith("check"):
                 return CommandOutput(
                     return_code=1, stdout=json.dumps([asdict(pyre_error)]), stderr=""
                 )
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=inconsistent_execute0,
@@ -211,24 +208,23 @@ class RunnerTest(unittest.TestCase):
             )
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            elif command_input.command.endswith("check"):
+            if command_input.command.endswith("check"):
                 return CommandOutput(
                     return_code=1, stdout=json.dumps([asdict(pyre_error0)]), stderr=""
                 )
-            elif command_input.command.endswith("incremental"):
+            if command_input.command.endswith("incremental"):
                 return CommandOutput(
                     return_code=1,
                     stdout=json.dumps([asdict(pyre_error1), asdict(pyre_error2)]),
                     stderr="",
                 )
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=inconsistent_execute1,
@@ -376,14 +372,13 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=always_clean_execute,
@@ -451,14 +446,13 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=always_clean_execute,
@@ -522,14 +516,13 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=always_clean_execute,
@@ -596,16 +589,15 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("mktemp"):
                 return CommandOutput(return_code=0, stdout="/mock/tmp", stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            elif "watchman watch" in command_input.command:
+            if "watchman watch" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=always_clean_execute,
@@ -668,14 +660,13 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
-            elif "total_shared_memory_size_over_time" in command_input.command:
+            if "total_shared_memory_size_over_time" in command_input.command:
                 return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
-            elif "cold_start_phases" in command_input.command:
+            if "cold_start_phases" in command_input.command:
                 return CommandOutput(return_code=0, stdout="{}", stderr="")
-            elif " profile" in command_input.command:
+            if " profile" in command_input.command:
                 return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
-            else:
-                return CommandOutput(return_code=0, stdout="", stderr="")
+            return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=always_clean_execute,

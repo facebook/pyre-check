@@ -47,12 +47,11 @@ class InitializeTest(unittest.TestCase):
         def exists(path):
             if str(path).endswith(".watchmanconfig"):
                 return False
-            elif str(path).endswith(".pyre_configuration"):
+            if str(path).endswith(".pyre_configuration"):
                 return False
-            elif str(path).endswith(".pyre_configuration.local"):
+            if str(path).endswith(".pyre_configuration.local"):
                 return False
-            else:
-                return True
+            return True
 
         isfile.side_effect = exists
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).

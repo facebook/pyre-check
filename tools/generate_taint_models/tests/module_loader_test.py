@@ -40,10 +40,9 @@ class ModuleLoaderTest(unittest.TestCase):
         def _open_implementation(path: str, mode: str) -> IO[str]:
             if path == valid_path:
                 return mock_open(read_data=valid_syntax).return_value
-            elif path == invalid_syntax_path:
+            if path == invalid_syntax_path:
                 return mock_open(read_data=invalid_syntax).return_value
-            else:
-                raise FileNotFoundError(path)
+            raise FileNotFoundError(path)
 
         open.side_effect = _open_implementation
 

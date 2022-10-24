@@ -101,10 +101,9 @@ def _make_expression_level_coverage_response(
                 #  str]` but got `object`.
                 CoverageAtPath=CoverageAtPath.from_dict(path[1])
             )
-        else:
-            # pyre-ignore[6]: For 1st param expected `Union[None, List[typing.Any],
-            #  Dict[typing.Any, typing.Any], bool, float, int, str]` but got `object`.
-            return ErrorAtPathResponse(ErrorAtPath=ErrorAtPath.from_dict(path[1]))
+        # pyre-ignore[6]: For 1st param expected `Union[None, List[typing.Any],
+        #  Dict[typing.Any, typing.Any], bool, float, int, str]` but got `object`.
+        return ErrorAtPathResponse(ErrorAtPath=ErrorAtPath.from_dict(path[1]))
 
     try:
         if not isinstance(json, dict):

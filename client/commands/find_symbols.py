@@ -115,9 +115,9 @@ class _SymbolsCollector(ast.NodeVisitor):
     ) -> List[SymbolInfo]:
         if isinstance(target, ast.Name):
             return [_generate_lsp_symbol_info(target, target.id, SymbolKind.VARIABLE)]
-        elif isinstance(target, (ast.Starred, ast.Subscript, ast.Attribute)):
+        if isinstance(target, (ast.Starred, ast.Subscript, ast.Attribute)):
             return self.generate_symbols_from_assignment_target(target.value)
-        elif isinstance(target, (ast.Tuple, ast.List)):
+        if isinstance(target, (ast.Tuple, ast.List)):
             return [
                 symbol
                 for nested_target in target.elts
@@ -125,8 +125,7 @@ class _SymbolsCollector(ast.NodeVisitor):
                     nested_target
                 )
             ]
-        else:
-            return []
+        return []
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if isinstance(node.target, ast.Name):

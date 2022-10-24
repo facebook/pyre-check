@@ -38,7 +38,7 @@ class PlatformAware(Generic[T]):
     def from_json(value: object, field_name: str) -> "Optional[PlatformAware[T]]":
         if value is None:
             return None
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             if len(value) == 0:
                 return None
 
@@ -56,9 +56,8 @@ class PlatformAware(Generic[T]):
                 macos=value["macos"] if "macos" in value else None,
                 linux=value["linux"] if "linux" in value else None,
             )
-        else:
-            # pyre-ignore[7]: we can't verify the type of value
-            return PlatformAware(default=value)
+        # pyre-ignore[7]: we can't verify the type of value
+        return PlatformAware(default=value)
 
     @staticmethod
     def merge_optional(
@@ -66,11 +65,10 @@ class PlatformAware(Generic[T]):
     ) -> "Optional[PlatformAware[U]]":
         if base is None:
             return override
-        elif override is None:
+        if override is None:
             return base
-        else:
-            # pyre-ignore[16]: Pyre does not understand `dataclass_merge`
-            return PlatformAware.merge(base, override)
+        # pyre-ignore[16]: Pyre does not understand `dataclass_merge`
+        return PlatformAware.merge(base, override)
 
     def get(self, key: Optional[str] = None) -> Optional[T]:
         if key is None:

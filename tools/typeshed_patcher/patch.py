@@ -49,8 +49,7 @@ class QualifiedName:
     def from_string(qualified_name: str) -> "QualifiedName":
         if len(qualified_name) == 0:
             return QualifiedName([])
-        else:
-            return QualifiedName(qualified_name.split("."))
+        return QualifiedName(qualified_name.split("."))
 
     @staticmethod
     def from_json(input_object: object) -> "QualifiedName":

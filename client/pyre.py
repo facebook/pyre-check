@@ -127,15 +127,14 @@ def _run_default_command(
             no_start_server=False,
             no_watchman=False,
         )
-    else:
-        watchman_link = "https://facebook.github.io/watchman/docs/install"
-        LOG.warning(
-            "No watchman binary found. \n"
-            + "To enable pyre incremental, "
-            + f"you can install watchman: {watchman_link}"
-        )
-        LOG.warning("Defaulting to non-incremental check.")
-        return _run_check_command(arguments)
+    watchman_link = "https://facebook.github.io/watchman/docs/install"
+    LOG.warning(
+        "No watchman binary found. \n"
+        + "To enable pyre incremental, "
+        + f"you can install watchman: {watchman_link}"
+    )
+    LOG.warning("Defaulting to non-incremental check.")
+    return _run_check_command(arguments)
 
 
 def _check_open_source_version(
@@ -1191,12 +1190,11 @@ def run_default_servers_command(
     if context.invoked_subcommand is None:
         arguments: command_arguments.CommandArguments = context.obj["arguments"]
         return commands.servers.run_list(arguments.output)
-    elif value is not None:
+    if value is not None:
         return value
-    else:
-        raise commands.ClientException(
-            "Non-default serevers subcommand did not return a value"
-        )
+    raise commands.ClientException(
+        "Non-default serevers subcommand did not return a value"
+    )
 
 
 @servers.command(name="list")
@@ -1429,12 +1427,11 @@ def run_default_command(
     if command_argument.version:
         show_pyre_version(command_argument)
         return commands.ExitCode.SUCCESS
-    elif context.invoked_subcommand is None:
+    if context.invoked_subcommand is None:
         return _run_default_command(command_argument)
-    elif value is not None:
+    if value is not None:
         return value
-    else:
-        raise commands.ClientException("Non-default command did not return a value")
+    raise commands.ClientException("Non-default command did not return a value")
 
 
 # Need the default argument here since this is our entry point in setup.py
