@@ -12,6 +12,7 @@ from . import (  # noqa F401
     analyze,
     backend_arguments,
     check,
+    code_navigation,
     coverage,
     expression_level_coverage,
     incremental,
