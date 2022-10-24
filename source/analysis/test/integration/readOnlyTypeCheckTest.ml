@@ -90,10 +90,33 @@ let test_readonly_configuration_flag context =
   ()
 
 
+let test_reveal_type context =
+  let assert_type_errors_including_readonly =
+    assert_type_errors ~context ~enable_readonly_analysis:true
+  in
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        some_attribute: int = 42
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        y1 = readonly_foo.some_attribute
+        reveal_type(y1)
+    |}
+    [
+      "ReadOnly - Revealed type [3004]: Revealed type for `y1` is ReadOnlyness.ReadOnly.";
+      "Revealed type [-1]: Revealed type for `y1` is `int`.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
          "ignore" >:: test_ignore_readonly;
          "readonly_configuration_flag" >:: test_readonly_configuration_flag;
+         "reveal_type" >:: test_reveal_type;
        ]
   |> Test.run

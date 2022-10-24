@@ -663,6 +663,25 @@ let test_parameters context =
   ()
 
 
+let test_reveal_type context =
+  let assert_readonly_errors = assert_readonly_errors ~context in
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(my_mutable: int, my_readonly: ReadOnly[int]) -> None:
+        y1 = my_readonly
+        y2 = my_mutable
+        reveal_type(y1)
+        reveal_type(y2)
+    |}
+    [
+      "ReadOnly - Revealed type [3004]: Revealed type for `y2` is ReadOnlyness.Mutable.";
+      "ReadOnly - Revealed type [3004]: Revealed type for `y1` is ReadOnlyness.ReadOnly.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -673,5 +692,6 @@ let () =
          "function_call" >:: test_function_call;
          "await" >:: test_await;
          "parameters" >:: test_parameters;
+         "reveal_type" >:: test_reveal_type;
        ]
   |> Test.run

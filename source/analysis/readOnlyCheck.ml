@@ -33,6 +33,8 @@ module Resolved = struct
     errors: Error.t list;
   }
   [@@deriving show]
+
+  let resolved { resolved; _ } = resolved
 end
 
 module LocalErrorMap = struct
@@ -300,6 +302,22 @@ module State (Context : Context) = struct
               |> ReadOnlyness.of_type
         in
         { Resolved.resolved; errors; resolution }
+    | Call
+        {
+          callee = { Node.location; value = Name (Name.Identifier "reveal_type") };
+          arguments = { Call.Argument.value; _ } :: _;
+        } ->
+        let error =
+          Error.ReadOnlynessMismatch
+            (RevealedType
+               {
+                 expression = value;
+                 readonlyness =
+                   forward_expression ~type_resolution ~resolution value |> Resolved.resolved;
+               })
+          |> create_error ~location
+        in
+        { Resolved.resolved = Mutable; errors = [error]; resolution }
     | Call { callee; arguments } -> forward_call ~type_resolution ~resolution ~callee arguments
     | _ ->
         (* TODO(T130377746): Actually handle other expressions. *)
