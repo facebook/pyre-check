@@ -12,7 +12,8 @@ import logging
 from pathlib import Path
 
 from .. import configuration as configuration_module, identifiers
-from . import commands, connections, daemon_socket, frontend_configuration
+from ..language_server import connections
+from . import commands, daemon_socket, frontend_configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

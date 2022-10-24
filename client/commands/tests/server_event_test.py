@@ -9,8 +9,9 @@ from typing import Type
 
 import testslide
 
+from ...language_server.connections import create_memory_text_reader
+
 from ...tests import setup
-from ..connections import create_memory_text_reader
 from ..server_event import (
     create_from_string,
     ErrorKind,

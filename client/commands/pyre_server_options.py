@@ -17,13 +17,13 @@ from pathlib import Path
 from typing import Callable, Optional, Sequence
 
 from .. import command_arguments, configuration as configuration_module, identifiers
+from ..language_server import features
 
 from . import (
     backend_arguments,
     commands,
     daemon_socket,
     frontend_configuration,
-    language_server_features as features,
     log_lsp_event,
     start,
 )

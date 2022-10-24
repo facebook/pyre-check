@@ -10,9 +10,9 @@ from typing import AsyncContextManager, Optional, Type, TypeVar
 
 import testslide
 
-from ...tests import setup
+from ...language_server import connections
 
-from .. import connections
+from ...tests import setup
 from ..daemon_connection import attempt_send_async_raw_request, DaemonConnectionFailure
 
 T = TypeVar("T")

@@ -34,7 +34,7 @@ from . import (
     identifiers,
     log,
 )
-from .commands import language_server_features
+from .language_server import features as language_server_features
 from .version import __version__
 
 

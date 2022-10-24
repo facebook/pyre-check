@@ -18,7 +18,7 @@ from ..connections import (
     create_memory_text_reader,
     MemoryBytesWriter,
 )
-from ..language_server_protocol import (
+from ..protocol import (
     ClientCapabilities,
     ContentChange,
     DiagnosticTag,

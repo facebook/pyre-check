@@ -25,12 +25,11 @@ from .. import dataclasses_json_extensions as json_mixins
 
 from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 
+from ..language_server import features, protocol as lsp
 from . import (
     daemon_connection,
     daemon_query,
     expression_level_coverage,
-    language_server_features as features,
-    language_server_protocol as lsp,
     server_state as state,
     statistics,
 )

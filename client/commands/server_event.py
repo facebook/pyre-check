@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from typing import IO, List, Optional, Union
 
-from . import connections
+from ..language_server import connections
 
 
 @dataclasses.dataclass

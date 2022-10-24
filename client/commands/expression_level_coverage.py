@@ -23,15 +23,9 @@ from .. import (
     log,
     statistics_logger,
 )
-from . import (
-    commands,
-    connections,
-    coverage,
-    daemon_query,
-    daemon_socket,
-    frontend_configuration,
-    language_server_protocol as lsp,
-)
+
+from ..language_server import connections, protocol as lsp
+from . import commands, coverage, daemon_query, daemon_socket, frontend_configuration
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

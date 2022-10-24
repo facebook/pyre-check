@@ -15,13 +15,8 @@ import logging
 from typing import Union
 
 from .. import command_arguments, configuration as configuration_module, json_rpc, log
-from . import (
-    commands,
-    connections,
-    frontend_configuration,
-    language_server_protocol as lsp,
-    start,
-)
+from ..language_server import connections, protocol as lsp
+from . import commands, frontend_configuration, start
 from .log_lsp_event import _log_lsp_event, LSPEvent
 from .persistent import (
     InitializationExit,

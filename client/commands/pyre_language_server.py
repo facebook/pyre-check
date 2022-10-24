@@ -20,16 +20,8 @@ from typing import Dict, List, Optional, Union
 
 from .. import json_rpc, log
 
-from . import (
-    background,
-    commands,
-    connections,
-    find_symbols,
-    language_server_features as features,
-    language_server_protocol as lsp,
-    request_handler,
-    server_state as state,
-)
+from ..language_server import connections, features, protocol as lsp
+from . import background, commands, find_symbols, request_handler, server_state as state
 
 from .daemon_connection import DaemonConnectionFailure
 

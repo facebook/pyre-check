@@ -22,13 +22,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
 from .. import error, identifiers, json_rpc, log, timer, version
+from ..language_server import connections, features, protocol as lsp
 from . import (
     backend_arguments,
     background,
-    connections,
     incremental,
-    language_server_features as features,
-    language_server_protocol as lsp,
     log_lsp_event,
     pyre_language_server,
     pyre_server_options,
