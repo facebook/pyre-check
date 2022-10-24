@@ -580,6 +580,89 @@ let test_await context =
   ()
 
 
+let test_parameters context =
+  let assert_readonly_errors = assert_readonly_errors ~context in
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(my_mutable: int, my_readonly: ReadOnly[int]) -> None:
+        y: int = my_readonly
+        y2: ReadOnly[int] = my_mutable
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(unannotated) -> None:
+        y: int = unannotated
+    |}
+    [];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(x: ReadOnly[int], /, y: ReadOnly[int], *, z: ReadOnly[int]) -> None:
+        y1: int = x
+        y2: int = y
+        y3: int = z
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y3 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(*args: ReadOnly[int], **kwargs: ReadOnly[int]) -> None:
+        y1: int = args
+        y2: int = kwargs
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have readonlyness \
+       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+    ];
+  (* Check for errors in constructing the default value of a parameter. *)
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def return_readonly() -> ReadOnly[int]: ...
+
+      def expect_mutable(x: int) -> int: ...
+
+      def main(x: int = expect_mutable(return_readonly())) -> None:
+        pass
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
+       1st positional only parameter expected `ReadOnlyness.Mutable` but got \
+       `ReadOnlyness.ReadOnly`.";
+    ];
+  (* Don't consider `x` in scope for the default value of parameter `y`. We don't need to emit an
+     error here, because the type checking analysis will. *)
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def foo(x: ReadOnly[int], y: int = x) -> None:
+        pass
+    |}
+    [];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -589,5 +672,6 @@ let () =
          "assignment" >:: test_assignment;
          "function_call" >:: test_function_call;
          "await" >:: test_await;
+         "parameters" >:: test_parameters;
        ]
   |> Test.run
