@@ -1020,6 +1020,24 @@ let test_check_method_parameters context =
         pass
     |}
     ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."];
+  (* TODO(T135867020): Respect the variable bound in the default value. *)
+  assert_type_errors
+    {|
+      def return_str() -> str: ...
+
+      def foo(x: int = (y := 42), z: str = y) -> None:
+        y2 = y
+        reveal_type(y2)
+        reveal_type(y)
+        reveal_type(z)
+    |}
+    [
+      "Incompatible variable type [9]: z is declared to have type `str` but is used as type \
+       `unknown`.";
+      "Revealed type [-1]: Revealed type for `y2` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `y` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `z` is `str`.";
+    ];
   ()
 
 
