@@ -294,6 +294,18 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 448, "start": 39, "end": 44 },
+                  "resolves_to": [
+                    "taint_transform.sanitize_b_transform_x_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -426,6 +438,18 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 303, "start": 39, "end": 44 },
+                  "resolves_to": [
+                    "taint_transform.transform_x_sanitize_a_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -824,6 +848,16 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 203, "start": 34, "end": 39 },
+                  "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformY:TransformZ:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2339,6 +2373,16 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 160, "start": 34, "end": 39 },
+                  "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformY:TransformZ:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2522,6 +2566,16 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 238, "start": 34, "end": 35 },
+                  "resolves_to": [ "taint_transform.tito_with_transform_x" ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],

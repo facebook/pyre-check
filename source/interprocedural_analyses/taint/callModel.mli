@@ -76,3 +76,10 @@ val sink_trees_of_argument
   Issue.SinkTreeWithHandle.t list
 
 val type_breadcrumbs_of_calls : CallGraph.CallTarget.t list -> Features.BreadcrumbSet.t
+
+val extra_traces_from_sink_trees
+  :  argument_access_path:Abstract.TreeDomain.Label.path ->
+  named_transforms:TaintTransform.t list ->
+  tito_roots:AccessPath.Root.Set.t ->
+  sink_trees:Issue.SinkTreeWithHandle.t list ->
+  ExtraTraceFirstHop.Set.t

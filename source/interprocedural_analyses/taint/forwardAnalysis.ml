@@ -286,6 +286,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~taint:data)
   end
 
+  let add_extra_traces ~argument_access_path ~named_transforms ~sink_trees ~tito_roots taint =
+    let extra_traces =
+      CallModel.extra_traces_from_sink_trees
+        ~argument_access_path
+        ~named_transforms
+        ~tito_roots
+        ~sink_trees
+    in
+    ForwardState.Tree.transform
+      ForwardTaint.Self
+      Map
+      ~f:(ForwardTaint.add_extra_traces ~extra_traces)
+      taint
+
+
   let apply_call_target
       ~resolution
       ~is_result_used
@@ -345,15 +360,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let convert_tito_path_to_taint
         ~argument
         ~argument_taint
+        ~tito_roots
+        ~sink_trees
         ~kind
-        (path, tito_taint)
+        (argument_access_path, tito_taint)
         accumulated_tito
       =
       let breadcrumbs =
         BackwardTaint.joined_breadcrumbs tito_taint |> Features.BreadcrumbSet.add (Features.tito ())
       in
       let taint_to_propagate =
-        ForwardState.Tree.read path argument_taint
+        ForwardState.Tree.read argument_access_path argument_taint
         |> ForwardState.Tree.transform
              Features.TitoPositionSet.Element
              Add
@@ -364,12 +381,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match kind with
         | Sinks.Transform { local = transforms; global; _ } when TaintTransforms.is_empty global ->
             (* Apply source- and sink- specific tito sanitizers. *)
-            ForwardState.Tree.apply_transforms
-              ~taint_configuration:FunctionContext.taint_configuration
-              transforms
-              TaintTransformOperation.InsertLocation.Front
-              TaintTransforms.Order.Backward
+            let taint_to_propagate =
+              ForwardState.Tree.apply_transforms
+                ~taint_configuration:FunctionContext.taint_configuration
+                transforms
+                TaintTransformOperation.InsertLocation.Front
+                TaintTransforms.Order.Backward
+                taint_to_propagate
+            in
+            let named_transforms = TaintTransforms.discard_sanitize_transforms transforms in
+            if List.is_empty named_transforms then
               taint_to_propagate
+            else
+              add_extra_traces
+                ~argument_access_path
+                ~named_transforms
+                ~sink_trees
+                ~tito_roots
+                taint_to_propagate
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"
         | _ -> taint_to_propagate
       in
@@ -390,8 +419,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let convert_tito_tree_to_taint
         ~argument
         ~argument_taint
+        ~sink_trees
         ~kind
-        ~pair:{ CallModel.TaintInTaintOutMap.TreeRootsPair.tree = tito_tree; _ }
+        ~pair:{ CallModel.TaintInTaintOutMap.TreeRootsPair.tree = tito_tree; roots = tito_roots }
         tito_effects
       =
       let tito_tree =
@@ -399,7 +429,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.Tree.Path
           tito_tree
           ~init:ForwardState.Tree.empty
-          ~f:(convert_tito_path_to_taint ~argument ~argument_taint ~kind)
+          ~f:(convert_tito_path_to_taint ~argument ~argument_taint ~tito_roots ~sink_trees ~kind)
       in
       TaintInTaintOutEffects.add tito_effects ~kind:(Sinks.discard_transforms kind) ~taint:tito_tree
     in
@@ -408,18 +438,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ( argument_taint,
           { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches } )
       =
-      let tito_effects =
-        CallModel.taint_in_taint_out_mapping
-          ~transform_non_leaves:(fun _ tito -> tito)
-          ~taint_configuration:FunctionContext.taint_configuration
-          ~ignore_local_return:(not is_result_used)
-          ~model:taint_model
-          ~tito_matches
-          ~sanitize_matches
-        |> CallModel.TaintInTaintOutMap.fold
-             ~init:tito_effects
-             ~f:(convert_tito_tree_to_taint ~argument ~argument_taint)
-      in
       let location =
         Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
       in
@@ -435,6 +453,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~is_self_call
           ~caller_class_interval:FunctionContext.caller_class_interval
           ~receiver_class_interval
+      in
+      let tito_effects =
+        CallModel.taint_in_taint_out_mapping
+          ~transform_non_leaves:(fun _ tito -> tito)
+          ~taint_configuration:FunctionContext.taint_configuration
+          ~ignore_local_return:(not is_result_used)
+          ~model:taint_model
+          ~tito_matches
+          ~sanitize_matches
+        |> CallModel.TaintInTaintOutMap.fold
+             ~init:tito_effects
+             ~f:(convert_tito_tree_to_taint ~argument ~argument_taint ~sink_trees)
       in
       (* Compute triggered partial sinks, if any. *)
       let () =

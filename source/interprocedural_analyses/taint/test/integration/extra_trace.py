@@ -53,12 +53,13 @@ def sequential_tito_backward(arg):
     _test_sink(arg3)
 
 
-def branch_tito_forward():
+def branch_tito_forward(b):
     x0 = _test_source()
-    if 1 == 1:
+    if b:
         x1 = nested_transform_x(x0)
     else:
-        x1 = transform_y(x0)
+        x1 = nested_transform_x(x0)
+        x1 = transform_y(x1)
     return x1
 
 
@@ -81,3 +82,11 @@ def loop_tito_backward(arg):
     while 1:
         arg = transform_x(arg)
     _test_sink(arg)
+
+
+def transform_nested_x_y(arg):
+    return transform_y(nested_transform_x(arg))
+
+
+def source_transform_nested_x_y():
+    return transform_nested_x_y(_test_source())

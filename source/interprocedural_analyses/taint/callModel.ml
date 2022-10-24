@@ -273,3 +273,54 @@ let type_breadcrumbs_of_calls targets =
       | None -> so_far
       | Some return_type ->
           return_type |> Features.type_breadcrumbs |> Features.BreadcrumbSet.join so_far)
+
+
+(* Collect sink taints that will be used as first hops of extra traces, i.e., whose call info
+   matches the given callee roots and whose taint match the given named transforms *)
+let extra_trace_first_hops ~named_transforms ~tito_roots ~sink_taint =
+  let match_call_info = function
+    | CallInfo.CallSite { port; _ } -> AccessPath.Root.Set.mem port tito_roots
+    | CallInfo.Origin _ -> false (* Skip origins because there is no subtrace to show *)
+    | CallInfo.Declaration _
+    | CallInfo.Tito ->
+        false
+  in
+  let accumulate_extra_trace_first_hop call_info sink_kind so_far =
+    match Sinks.discard_transforms sink_kind with
+    | Sinks.ExtraTraceSink
+      when List.equal TaintTransform.equal (Sinks.get_named_transforms sink_kind) named_transforms
+      ->
+        let extra_trace = { ExtraTraceFirstHop.call_info; kind = sink_kind } in
+        ExtraTraceFirstHop.Set.add extra_trace so_far
+    | _ -> so_far
+  in
+  sink_taint
+  |> BackwardTaint.transform BackwardTaint.call_info Filter ~f:match_call_info
+  |> BackwardTaint.reduce
+       BackwardTaint.kind
+       ~using:(Context (BackwardTaint.call_info, Acc))
+       ~f:accumulate_extra_trace_first_hop
+       ~init:ExtraTraceFirstHop.Set.bottom
+
+
+let extra_traces_from_sink_trees ~argument_access_path ~named_transforms ~tito_roots ~sink_trees =
+  let accumulate_extra_traces_from_sink_path (path, tip) so_far =
+    let is_prefix =
+      Abstract.TreeDomain.Label.is_prefix ~prefix:path argument_access_path
+      || Abstract.TreeDomain.Label.is_prefix ~prefix:argument_access_path path
+    in
+    if not is_prefix then
+      so_far
+    else
+      let extra_traces = extra_trace_first_hops ~tito_roots ~named_transforms ~sink_taint:tip in
+      ExtraTraceFirstHop.Set.join extra_traces so_far
+  in
+  let accumulate_extra_traces so_far { Issue.SinkTreeWithHandle.sink_tree; _ } =
+    BackwardState.Tree.fold
+      BackwardState.Tree.Path
+      ~f:accumulate_extra_traces_from_sink_path
+      ~init:so_far
+      sink_tree
+    |> ExtraTraceFirstHop.Set.join so_far
+  in
+  List.fold sink_trees ~init:ExtraTraceFirstHop.Set.bottom ~f:accumulate_extra_traces
