@@ -272,6 +272,10 @@ module ReadOnly : sig
         mismatch: mismatch;
       }
     | AssigningToReadOnlyAttribute of { attribute_name: Identifier.t }
+    | RevealedType of {
+        expression: Expression.t;
+        readonlyness: ReadOnlyness.t;
+      }
   [@@deriving compare, sexp, show, hash]
 end
 
