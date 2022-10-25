@@ -184,6 +184,7 @@ class PyreLanguageServer:
         error_message = None
         process_id = os.getpid()
         server_status_before = self.server_state.server_last_status.value
+        start_time = time.time()
         if process_unsaved_changes:
             result = await self.handler.update_overlay(
                 path=document_path.resolve(),
@@ -204,6 +205,7 @@ class PyreLanguageServer:
                     )
                 )
                 error_message = result.error_message
+        end_time = time.time()
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -212,11 +214,12 @@ class PyreLanguageServer:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
+                "duration_ms": duration_ms(start_time, end_time),
                 "server_status_before": str(server_status_before),
                 "server_status_after": self.server_state.server_last_status.value,
                 "server_state_start_status": self.server_state.server_last_status.value,
                 "error_message": str(error_message),
-                "overlays_enabled_for_user": process_unsaved_changes,
+                "overlays_enabled": process_unsaved_changes,
                 "process_id": process_id,
             },
             activity_key,
