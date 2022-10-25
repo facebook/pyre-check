@@ -17,10 +17,11 @@ import psutil
 
 from .. import (
     configuration as configuration_module,
+    daemon_socket,
     find_directories,
     recently_used_configurations,
 )
-from . import commands, daemon_socket, frontend_configuration, stop
+from . import commands, frontend_configuration, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

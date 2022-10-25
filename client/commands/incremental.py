@@ -18,20 +18,14 @@ from typing import Dict, Iterable, List, Optional, Sequence
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    daemon_socket,
     error,
     identifiers,
     statistics_logger,
 )
 
 from ..language_server import connections
-from . import (
-    backend_arguments,
-    commands,
-    daemon_socket,
-    frontend_configuration,
-    server_event,
-    start,
-)
+from . import backend_arguments, commands, frontend_configuration, server_event, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

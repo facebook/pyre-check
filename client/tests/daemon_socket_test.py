@@ -9,14 +9,14 @@ from typing import Optional
 
 import testslide
 
-from ...identifiers import get_project_identifier, PyreFlavor
-
 from ..daemon_socket import (
     _get_socket_path_in_root,
     find_socket_files,
     get_md5,
     MD5_LENGTH,
 )
+
+from ..identifiers import get_project_identifier, PyreFlavor
 
 
 class SocketTest(testslide.TestCase):

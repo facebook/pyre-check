@@ -17,9 +17,9 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 import tabulate
 from typing_extensions import TypedDict
 
-from .. import command_arguments, log
+from .. import command_arguments, daemon_socket, log
 from ..language_server import connections
-from . import commands, daemon_socket, stop
+from . import commands, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

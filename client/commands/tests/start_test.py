@@ -10,11 +10,11 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration
+from ... import command_arguments, configuration, daemon_socket
 from ...configuration import search_path
 from ...identifiers import PyreFlavor
 from ...tests import setup
-from .. import backend_arguments, daemon_socket, frontend_configuration
+from .. import backend_arguments, frontend_configuration
 from ..start import (
     Arguments,
     background_server_log_file,

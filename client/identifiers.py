@@ -7,7 +7,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import enum
 from pathlib import Path
 from typing import List, Optional

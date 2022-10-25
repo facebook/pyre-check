@@ -14,9 +14,14 @@ import os
 from pathlib import Path
 from typing import Dict, List
 
-from .. import configuration as configuration_module, error as error_module, identifiers
+from .. import (
+    configuration as configuration_module,
+    daemon_socket,
+    error as error_module,
+    identifiers,
+)
 from ..language_server import connections
-from . import commands, daemon_query, daemon_socket, frontend_configuration
+from . import commands, daemon_query, frontend_configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

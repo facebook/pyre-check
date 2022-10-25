@@ -16,7 +16,7 @@ import tempfile
 from pathlib import Path
 from typing import Iterable
 
-from ..identifiers import PyreFlavor
+from .identifiers import PyreFlavor
 
 
 # Socket path logic ---
