@@ -11,7 +11,7 @@ TODO(T132414938) Add a module-level docstring
 import dataclasses
 import enum
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List
 
 from .. import timer
 
@@ -28,6 +28,12 @@ class ServerStatus(enum.Enum):
     INCREMENTAL_CHECK = "INCREMENTAL_CHECK"
 
 
+@dataclasses.dataclass(frozen=True)
+class OpenedDocumentState:
+    code: str
+    is_dirty: bool = False
+
+
 @dataclasses.dataclass
 class ServerState:
     # State that can only change on config reload
@@ -39,7 +45,9 @@ class ServerState:
     # Mutable States
     consecutive_start_failure: int = 0
     is_user_notified_on_buck_failure: bool = False
-    opened_documents: Set[Path] = dataclasses.field(default_factory=set)
+    opened_documents: Dict[Path, OpenedDocumentState] = dataclasses.field(
+        default_factory=dict
+    )
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
