@@ -17,10 +17,11 @@ import dataclasses_json
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    daemon_socket,
     identifiers,
     version,
 )
-from . import commands, daemon_socket, frontend_configuration
+from . import commands, frontend_configuration
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

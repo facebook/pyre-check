@@ -11,9 +11,9 @@ TODO(T132414938) Add a module-level docstring
 import logging
 from pathlib import Path
 
-from .. import configuration as configuration_module, identifiers
+from .. import configuration as configuration_module, daemon_socket, identifiers
 from ..language_server import connections
-from . import commands, daemon_socket, frontend_configuration
+from . import commands, frontend_configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

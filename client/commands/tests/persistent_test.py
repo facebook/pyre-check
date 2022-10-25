@@ -12,12 +12,12 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import (
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Union,
 )
@@ -74,7 +74,7 @@ from ..request_handler import (
     to_coverage_result,
     uncovered_range_to_diagnostic,
 )
-from ..server_state import ServerState
+from ..server_state import OpenedDocumentState, ServerState
 
 
 DEFAULT_BINARY = "/bin/pyre"
@@ -94,6 +94,7 @@ DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
 DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 DEFAULT_ENABLE_TELEMETRY: bool = False
+DEFAULT_FILE_CONTENTS: str = "```foo.Foo```"
 
 
 def _create_server_options(
@@ -247,7 +248,7 @@ class MockRequestHandler(AbstractRequestHandler):
 
 
 async def _create_server_for_request_test(
-    opened_documents: Set[Path],
+    opened_documents: Dict[Path, OpenedDocumentState],
     handler: MockRequestHandler,
     server_options: PyreServerOptions = mock_initial_server_options,
 ) -> Tuple[PyreLanguageServer, MemoryBytesWriter]:
@@ -814,7 +815,10 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
-                server_options=mock_initial_server_options, opened_documents={test_path}
+                server_options=mock_initial_server_options,
+                opened_documents={
+                    test_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                },
             ),
             daemon_manager=fake_task_manager,
             handler=MockRequestHandler(),
@@ -840,7 +844,9 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
                 server_options=mock_initial_server_options,
-                opened_documents={test_path},
+                opened_documents={
+                    test_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                },
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
             daemon_manager=fake_task_manager,
@@ -866,7 +872,10 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
-                server_options=mock_initial_server_options, opened_documents={test_path}
+                server_options=mock_initial_server_options,
+                opened_documents={
+                    test_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                },
             ),
             daemon_manager=fake_task_manager,
             handler=MockRequestHandler(),
@@ -1378,13 +1387,15 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         lsp_line = 3
         daemon_line = lsp_line + 1
-        expected_response = lsp.LspHoverResponse(contents="```foo.Foo```")
+        expected_response = lsp.LspHoverResponse(contents=DEFAULT_FILE_CONTENTS)
         for enabled_telemetry_event in (True, False):
             handler = MockRequestHandler(
                 mock_hover_response=expected_response,
             )
             server, output_writer = await _create_server_for_request_test(
-                opened_documents={tracked_path},
+                opened_documents={
+                    tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                },
                 handler=handler,
                 server_options=_create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event
@@ -1436,7 +1447,9 @@ class PyreServerTest(testslide.TestCase):
         lsp_line = 3
         handler = MockRequestHandler()
         server, output_writer = await _create_server_for_request_test(
-            opened_documents={tracked_path},
+            opened_documents={
+                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+            },
             handler=handler,
         )
         await server.process_hover_request(
@@ -1479,7 +1492,9 @@ class PyreServerTest(testslide.TestCase):
                 mock_definition_response=expected_response,
             )
             server, output_writer = await _create_server_for_request_test(
-                opened_documents={tracked_path},
+                opened_documents={
+                    tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                },
                 handler=handler,
                 server_options=_create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event
@@ -1543,7 +1558,9 @@ class PyreServerTest(testslide.TestCase):
             mock_definition_response=expected_telemetry_response,
         )
         server, output_writer = await _create_server_for_request_test(
-            opened_documents={tracked_path},
+            opened_documents={
+                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+            },
             handler=handler,
             server_options=_create_server_options(
                 enabled_telemetry_event=True,
@@ -1593,7 +1610,9 @@ class PyreServerTest(testslide.TestCase):
         lsp_line = 3
         handler = MockRequestHandler()
         server, output_writer = await _create_server_for_request_test(
-            opened_documents={tracked_path},
+            opened_documents={
+                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+            },
             handler=handler,
         )
         await server.process_definition_request(
@@ -1629,7 +1648,9 @@ class PyreServerTest(testslide.TestCase):
             mock_references_response=expected_response,
         )
         server, output_writer = await _create_server_for_request_test(
-            opened_documents={tracked_path},
+            opened_documents={
+                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+            },
             handler=handler,
         )
         await server.process_find_all_references_request(
@@ -1668,7 +1689,9 @@ class PyreServerTest(testslide.TestCase):
         lsp_line = 3
         handler = MockRequestHandler()
         server, output_writer = await _create_server_for_request_test(
-            opened_documents={tracked_path},
+            opened_documents={
+                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+            },
             handler=handler,
         )
         await server.process_find_all_references_request(
@@ -1693,7 +1716,9 @@ class PyreServerTest(testslide.TestCase):
             temporary_file.flush()
             test_path = Path(temporary_file.name)
             server, output_writer = await _create_server_for_request_test(
-                opened_documents={test_path},
+                opened_documents={
+                    test_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                },
                 handler=MockRequestHandler(),
             )
             await server.process_document_symbols_request(

@@ -18,6 +18,7 @@ from . import (  # noqa F401
     incremental,
     infer,
     info,
+    initialization,
     initialize,
     initialize_pysa,
     kill,

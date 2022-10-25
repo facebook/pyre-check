@@ -27,6 +27,8 @@ from .daemon_connection import DaemonConnectionFailure
 
 from .daemon_query import DaemonQueryFailure
 
+from .server_state import OpenedDocumentState
+
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
 
@@ -143,9 +145,10 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        self.server_state.opened_documents.add(document_path)
+        self.server_state.opened_documents[document_path] = OpenedDocumentState(
+            code=parameters.text_document.text, is_dirty=False
+        )
         LOG.info(f"File opened: {document_path}")
-
         # Attempt to trigger a background Pyre server start on each file open
         if not self.daemon_manager.is_task_running():
             await self._try_restart_pyre_daemon()
@@ -159,7 +162,7 @@ class PyreLanguageServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         try:
-            self.server_state.opened_documents.remove(document_path)
+            del self.server_state.opened_documents[document_path]
             LOG.info(f"File closed: {document_path}")
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
@@ -183,19 +186,16 @@ class PyreLanguageServer:
         )
         error_message = None
         process_id = os.getpid()
-        server_state_before_request = self.server_state.server_last_status.value
+        server_status_before = self.server_state.server_last_status.value
+        start_time = time.time()
+        code_changes = str(
+            "".join(
+                [content_change.text for content_change in parameters.content_changes]
+            )
+        )
         if process_unsaved_changes:
             result = await self.handler.update_overlay(
-                path=document_path.resolve(),
-                process_id=process_id,
-                code=str(
-                    "".join(
-                        [
-                            content_change.text
-                            for content_change in parameters.content_changes
-                        ]
-                    )
-                ),
+                path=document_path.resolve(), process_id=process_id, code=code_changes
             )
             if isinstance(result, DaemonConnectionFailure):
                 LOG.info(
@@ -204,6 +204,13 @@ class PyreLanguageServer:
                     )
                 )
                 error_message = result.error_message
+            else:
+                self.server_state.opened_documents[document_path] = OpenedDocumentState(
+                    code=code_changes, is_dirty=True
+                )
+
+        end_time = time.time()
+
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -212,11 +219,12 @@ class PyreLanguageServer:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "server_state_before_request": str(server_state_before_request),
-                "server_state_after_request": self.server_state.server_last_status.value,
+                "duration_ms": duration_ms(start_time, end_time),
+                "server_status_before": str(server_status_before),
+                "server_status_after": self.server_state.server_last_status.value,
                 "server_state_start_status": self.server_state.server_last_status.value,
                 "error_message": str(error_message),
-                "overlays_enabled_for_user": process_unsaved_changes,
+                "overlays_enabled": process_unsaved_changes,
                 "process_id": process_id,
             },
             activity_key,
@@ -239,6 +247,12 @@ class PyreLanguageServer:
 
         if document_path not in self.server_state.opened_documents:
             return
+
+        code_changes = self.server_state.opened_documents[document_path].code
+
+        self.server_state.opened_documents[document_path] = OpenedDocumentState(
+            code=code_changes, is_dirty=False
+        )
 
         await self.write_telemetry(
             {
@@ -271,7 +285,7 @@ class PyreLanguageServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         start_time = time.time()
-        server_state_before_request = self.server_state.server_last_status.value
+        server_status_before = self.server_state.server_last_status.value
         response = await self.handler.get_type_coverage(path=document_path)
         if response is not None:
             await lsp.write_json_rpc(
@@ -292,8 +306,8 @@ class PyreLanguageServer:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "server_state_before_request": str(server_state_before_request),
-                "server_state_after_request": self.server_state.server_last_status.value,
+                "server_status_before": str(server_status_before),
+                "server_status_after": self.server_state.server_last_status.value,
                 "server_state_start_status": self.server_state.server_last_status.value,
             },
             activity_key,
@@ -327,7 +341,7 @@ class PyreLanguageServer:
             )
         else:
             start_time = time.time()
-            server_state_before_request = self.server_state.server_last_status.value
+            server_status_before = self.server_state.server_last_status.value
             result = await self.handler.get_hover(
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
@@ -364,8 +378,8 @@ class PyreLanguageServer:
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
-                    "server_state_before_request": str(server_state_before_request),
-                    "server_state_after_request": self.server_state.server_last_status.value,
+                    "server_status_before": str(server_status_before),
+                    "server_status_after": self.server_state.server_last_status.value,
                     "server_state_start_status": self.server_state.server_last_status.value,
                     "error_message": str(error_message),
                 },
@@ -417,7 +431,7 @@ class PyreLanguageServer:
         else:
             start_time = time.time()
             shadow_mode = self.get_language_server_features().definition.is_shadow()
-            server_state_before_request = self.server_state.server_last_status.value
+            server_status_before = self.server_state.server_last_status.value
             if not shadow_mode:
                 raw_result = await self._get_definition_result(
                     document_path=document_path,
@@ -472,8 +486,8 @@ class PyreLanguageServer:
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
-                    "server_state_before_request": str(server_state_before_request),
-                    "server_state_after_request": self.server_state.server_last_status.value,
+                    "server_status_before": str(server_status_before),
+                    "server_status_after": self.server_state.server_last_status.value,
                     "server_state_start_status": self.server_state.server_last_status.value,
                     "overlays_enabled_for_user": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                     "error_message": str(error_message),
@@ -687,3 +701,7 @@ class PyreLanguageServer:
             return commands.ExitCode.SUCCESS
         finally:
             await self.daemon_manager.ensure_task_stop()
+
+
+class CodeNavigationServer(PyreLanguageServer):
+    pass
