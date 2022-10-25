@@ -183,7 +183,7 @@ class PyreLanguageServer:
         )
         error_message = None
         process_id = os.getpid()
-        server_state_before_request = self.server_state.server_last_status.value
+        server_status_before = self.server_state.server_last_status.value
         if process_unsaved_changes:
             result = await self.handler.update_overlay(
                 path=document_path.resolve(),
@@ -212,8 +212,8 @@ class PyreLanguageServer:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "server_state_before_request": str(server_state_before_request),
-                "server_state_after_request": self.server_state.server_last_status.value,
+                "server_status_before": str(server_status_before),
+                "server_status_after": self.server_state.server_last_status.value,
                 "server_state_start_status": self.server_state.server_last_status.value,
                 "error_message": str(error_message),
                 "overlays_enabled_for_user": process_unsaved_changes,
@@ -271,7 +271,7 @@ class PyreLanguageServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         start_time = time.time()
-        server_state_before_request = self.server_state.server_last_status.value
+        server_status_before = self.server_state.server_last_status.value
         response = await self.handler.get_type_coverage(path=document_path)
         if response is not None:
             await lsp.write_json_rpc(
@@ -292,8 +292,8 @@ class PyreLanguageServer:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "server_state_before_request": str(server_state_before_request),
-                "server_state_after_request": self.server_state.server_last_status.value,
+                "server_status_before": str(server_status_before),
+                "server_status_after": self.server_state.server_last_status.value,
                 "server_state_start_status": self.server_state.server_last_status.value,
             },
             activity_key,
@@ -327,7 +327,7 @@ class PyreLanguageServer:
             )
         else:
             start_time = time.time()
-            server_state_before_request = self.server_state.server_last_status.value
+            server_status_before = self.server_state.server_last_status.value
             result = await self.handler.get_hover(
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
@@ -364,8 +364,8 @@ class PyreLanguageServer:
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
-                    "server_state_before_request": str(server_state_before_request),
-                    "server_state_after_request": self.server_state.server_last_status.value,
+                    "server_status_before": str(server_status_before),
+                    "server_status_after": self.server_state.server_last_status.value,
                     "server_state_start_status": self.server_state.server_last_status.value,
                     "error_message": str(error_message),
                 },
@@ -418,7 +418,7 @@ class PyreLanguageServer:
         else:
             start_time = time.time()
             shadow_mode = self.get_language_server_features().definition.is_shadow()
-            server_state_before_request = self.server_state.server_last_status.value
+            server_status_before = self.server_state.server_last_status.value
             if not shadow_mode:
                 raw_result = await self._get_definition_result(
                     document_path=document_path,
@@ -473,8 +473,8 @@ class PyreLanguageServer:
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
-                    "server_state_before_request": str(server_state_before_request),
-                    "server_state_after_request": self.server_state.server_last_status.value,
+                    "server_status_before": str(server_status_before),
+                    "server_status_after": self.server_state.server_last_status.value,
                     "server_state_start_status": self.server_state.server_last_status.value,
                     "overlays_enabled_for_user": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                     "error_message": str(error_message),
