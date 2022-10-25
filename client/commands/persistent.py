@@ -36,6 +36,12 @@ from . import (
     start,
     subscription,
 )
+from .initialization import (
+    async_try_initialize_loop,
+    InitializationExit,
+    InitializationFailure,
+    InitializationSuccess,
+)
 
 from .pyre_server_options import PyreServerOptionsReader
 from .server_state import ServerState
@@ -88,23 +94,6 @@ def process_initialize_request(
     return lsp.InitializeResult(
         capabilities=server_capabilities, server_info=server_info
     )
-
-
-@dataclasses.dataclass(frozen=True)
-class InitializationSuccess:
-    client_capabilities: lsp.ClientCapabilities
-    client_info: Optional[lsp.Info] = None
-    initialization_options: Optional[lsp.InitializationOptions] = None
-
-
-@dataclasses.dataclass(frozen=True)
-class InitializationFailure:
-    exception: Optional[json_rpc.JSONRPCException] = None
-
-
-@dataclasses.dataclass(frozen=True)
-class InitializationExit:
-    pass
 
 
 async def try_initialize(
@@ -265,9 +254,14 @@ async def _start_pyre_server(
                 Path(pyre_arguments.base_arguments.log_path),
                 flavor=flavor,
             ) as server_stderr:
+                server_start_command = (
+                    "newserver"
+                    if flavor != identifiers.PyreFlavor.CODE_NAVIGATION
+                    else "code-navigation"
+                )
                 server_process = await asyncio.create_subprocess_exec(
                     binary_location,
-                    "newserver",
+                    server_start_command,
                     str(argument_file_path),
                     stdout=subprocess.PIPE,
                     stderr=server_stderr,
@@ -903,42 +897,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             )
 
 
-async def try_initialize_loop(
-    server_options: pyre_server_options.PyreServerOptions,
-    input_channel: connections.AsyncTextReader,
-    output_channel: connections.AsyncTextWriter,
-    remote_logging: Optional[backend_arguments.RemoteLogging],
-) -> InitializationSuccess | InitializationExit:
-    while True:
-        initialize_result = await try_initialize(
-            input_channel, output_channel, server_options
-        )
-        if isinstance(initialize_result, InitializationExit):
-            LOG.info("Received exit request before initialization.")
-            return initialize_result
-        elif isinstance(initialize_result, InitializationSuccess):
-            LOG.info("Initialization successful.")
-            return initialize_result
-        elif isinstance(initialize_result, InitializationFailure):
-            exception = initialize_result.exception
-            message = (
-                str(exception) if exception is not None else "ignoring notification"
-            )
-            LOG.info(f"Initialization failed: {message}")
-            log_lsp_event._log_lsp_event(
-                remote_logging=remote_logging,
-                event=log_lsp_event.LSPEvent.NOT_INITIALIZED,
-                normals=(
-                    {
-                        "exception": message,
-                    }
-                ),
-            )
-            # Loop until we get either InitializeExit or InitializeSuccess
-        else:
-            raise RuntimeError("Cannot determine the type of initialize_result")
-
-
 async def run_persistent(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
@@ -948,8 +906,8 @@ async def run_persistent(
     )
     stdin, stdout = await connections.create_async_stdin_stdout()
 
-    initialize_result = await try_initialize_loop(
-        initial_server_options, stdin, stdout, remote_logging
+    initialize_result = await async_try_initialize_loop(
+        initial_server_options, stdin, stdout, remote_logging, try_initialize
     )
     if isinstance(initialize_result, InitializationExit):
         return 0

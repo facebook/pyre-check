@@ -688,3 +688,7 @@ class PyreLanguageServer:
             return commands.ExitCode.SUCCESS
         finally:
             await self.daemon_manager.ensure_task_stop()
+
+
+class CodeNavigationServer(PyreLanguageServer):
+    pass
