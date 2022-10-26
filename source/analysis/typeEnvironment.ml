@@ -134,7 +134,7 @@ let populate_for_definitions ~scheduler environment defines =
       ()
   in
 
-  Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ()
+  Statistics.performance ~name:"check_TypeCheck" ~phase_name:CheckResultValue.description ~timer ()
 
 
 let populate_for_modules ~scheduler environment qualifiers =
