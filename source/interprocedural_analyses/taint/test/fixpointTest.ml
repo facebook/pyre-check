@@ -480,6 +480,7 @@ let test_primed_sink_analysis context =
               ~returns:[Sources.NamedSource "Test"]
               ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
               ~sink_parameters:[] (* No backward prop on return sinks *)
+              ~return_sinks:[Sinks.NamedSink "Test"]
               ~tito_parameters:[{ name = "y"; sinks = [Sinks.LocalReturn] }]
               ~errors:[{ code = 5002; pattern = ".*Test.*" }]
               "qualifier.primed_model";

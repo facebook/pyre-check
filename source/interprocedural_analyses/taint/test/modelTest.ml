@@ -1440,7 +1440,10 @@ let test_sink_models context =
           "test.sink";
       ]
     ();
-
+  assert_model
+    ~model_source:"def test.multiple() -> TaintSink[XSS]: ..."
+    ~expect:[outcome ~kind:`Function ~return_sinks:[Sinks.NamedSink "XSS"] "test.multiple"]
+    ();
   ()
 
 

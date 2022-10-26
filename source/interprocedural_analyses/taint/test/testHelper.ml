@@ -44,6 +44,7 @@ type expectation = {
   sink_parameters: parameter_taint list;
   tito_parameters: parameter_taint list;
   returns: Sources.t list;
+  return_sinks: Sinks.t list;
   errors: error_expectation list;
   global_sanitizer: Sanitize.t;
   parameters_sanitizer: Sanitize.t;
@@ -58,6 +59,7 @@ let outcome
     ?(sink_parameters = [])
     ?(tito_parameters = [])
     ?(returns = [])
+    ?(return_sinks = [])
     ?(errors = [])
     ?(global_sanitizer = Sanitize.empty)
     ?(parameters_sanitizer = Sanitize.empty)
@@ -73,6 +75,7 @@ let outcome
     sink_parameters;
     tito_parameters;
     returns;
+    return_sinks;
     errors;
     global_sanitizer;
     parameters_sanitizer;
@@ -104,6 +107,7 @@ let check_expectation
       sink_parameters;
       tito_parameters;
       returns;
+      return_sinks;
       errors;
       global_sanitizer;
       parameters_sanitizer;
@@ -332,6 +336,25 @@ let check_expectation
     ~printer:Int.to_string
     ~msg:(Format.sprintf "Define %s: List of tito parameters differ in length." define_name);
   String.Map.iter2 ~f:check_each_sink expected_tito parameter_taint_in_taint_out_map;
+
+  (* Check return sinks. *)
+  let expected_return_sinks = List.map ~f:Sinks.show return_sinks |> String.Set.of_list in
+  let actual_return_sinks =
+    Domains.BackwardState.read ~root:AccessPath.Root.LocalResult ~path:[] backward.sink_taint
+    |> Domains.BackwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
+    |> Domains.BackwardTaint.kinds
+    |> List.map ~f:Sinks.show
+    |> String.Set.of_list
+  in
+  assert_equal
+    ~cmp:String.Set.equal
+    ~printer:(fun set ->
+      Format.sprintf
+        "Return sinks %s: %s"
+        define_name
+        (Sexp.to_string [%message (set : String.Set.t)]))
+    expected_return_sinks
+    actual_return_sinks;
 
   (* Check sanitizers *)
   assert_equal ~cmp:Sanitize.equal ~printer:Sanitize.show global_sanitizer sanitizers.global;
