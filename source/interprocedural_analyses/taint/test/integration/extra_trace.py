@@ -63,8 +63,8 @@ def branch_tito_forward(b):
     return x1
 
 
-def branch_tito_backward(arg):
-    if 1 == 1:
+def branch_tito_backward(arg, b):
+    if b:
         arg1 = nested_transform_x(arg)
     else:
         arg1 = transform_y(arg)

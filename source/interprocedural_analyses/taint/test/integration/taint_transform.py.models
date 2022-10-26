@@ -1510,6 +1510,16 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 154, "start": 34, "end": 37 },
+                  "resolves_to": [ "taint_transform.tito_with_transform_x" ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -1710,6 +1720,16 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 270, "start": 35, "end": 38 },
+                  "resolves_to": [ "taint_transform.sanitize_a_transform_x" ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.transform_y" } ],
@@ -1756,6 +1776,16 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 270, "start": 35, "end": 38 },
+                  "resolves_to": [ "taint_transform.sanitize_a_transform_x" ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -2048,6 +2078,16 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 165, "start": 35, "end": 38 },
+                  "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformY:TransformZ:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
@@ -2634,6 +2674,18 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 552, "start": 40, "end": 43 },
+                  "resolves_to": [
+                    "taint_transform.sanitize_b_transform_x_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -2693,6 +2745,18 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 559, "start": 39, "end": 44 },
+                  "resolves_to": [
+                    "taint_transform.sanitize_b_transform_x_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -2749,6 +2813,18 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 564, "start": 40, "end": 43 },
+                  "resolves_to": [
+                    "taint_transform.transform_x_sanitize_b_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -2807,6 +2883,18 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 571, "start": 39, "end": 44 },
+                  "resolves_to": [
+                    "taint_transform.transform_x_sanitize_b_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -2864,6 +2952,18 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 528, "start": 40, "end": 43 },
+                  "resolves_to": [
+                    "taint_transform.sanitize_a_transform_x_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -2923,6 +3023,18 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 535, "start": 39, "end": 44 },
+                  "resolves_to": [
+                    "taint_transform.sanitize_a_transform_x_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -2979,6 +3091,18 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 540, "start": 40, "end": 43 },
+                  "resolves_to": [
+                    "taint_transform.transform_x_sanitize_a_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -3037,6 +3161,18 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 547, "start": 39, "end": 44 },
+                  "resolves_to": [
+                    "taint_transform.transform_x_sanitize_a_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -3087,6 +3223,18 @@
             }
           },
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 582, "start": 40, "end": 43 },
+                  "resolves_to": [
+                    "taint_transform.sanitize_a_transform_x_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.transform_y" } ],
@@ -3121,6 +3269,28 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 582, "start": 40, "end": 43 },
+                  "resolves_to": [
+                    "taint_transform.sanitize_a_transform_x_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformX:ExtraTraceSink"
+              },
+              {
+                "call": {
+                  "position": { "line": 585, "start": 40, "end": 45 },
+                  "resolves_to": [
+                    "taint_transform.transform_y_sanitize_b_tito"
+                  ],
+                  "port": "formal(arg)"
+                },
+                "kind": "TransformY:ExtraTraceSink"
+              }
+            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
