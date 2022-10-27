@@ -19,6 +19,7 @@ from .. import (
     configuration as configuration_module,
     daemon_socket,
     find_directories,
+    identifiers,
     recently_used_configurations,
 )
 from . import commands, frontend_configuration, stop
@@ -99,13 +100,15 @@ def _kill_client_processes(configuration: frontend_configuration.Base) -> None:
     # TODO (T85602687): Run `buck kill` once buck is supported by the server
 
 
-def _delete_server_files(configuration: frontend_configuration.Base) -> None:
+def _delete_server_files(
+    configuration: frontend_configuration.Base, flavor: identifiers.PyreFlavor
+) -> None:
     socket_root = daemon_socket.get_default_socket_root()
     LOG.info(f"Deleting socket files and lock files under {socket_root}")
     for socket_path in daemon_socket.find_socket_files(socket_root):
         stop.remove_socket_if_exists(socket_path)
 
-    log_directory = configuration.get_log_directory() / "new_server"
+    log_directory = configuration.get_log_directory() / flavor.server_log_subdirectory()
     LOG.info(f"Deleting server logs under {log_directory}")
     try:
         shutil.rmtree(str(log_directory), ignore_errors=True)
@@ -138,7 +141,7 @@ def run(
     _kill_client_processes(kill_configuration)
     # TODO (T85602550): Store a rage log before this happens.
     # TODO (T85614630): Delete client logs as well.
-    _delete_server_files(kill_configuration)
+    _delete_server_files(kill_configuration, identifiers.PyreFlavor.CLASSIC)
     _delete_caches(kill_configuration)
     if with_fire:
         LOG.warning(

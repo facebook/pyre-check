@@ -160,12 +160,17 @@ def run_incremental(
     configuration: frontend_configuration.Base,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> ExitStatus:
+    flavor = identifiers.PyreFlavor.CLASSIC
     socket_path = daemon_socket.get_socket_path(
         configuration.get_project_identifier(),
-        flavor=identifiers.PyreFlavor.CLASSIC,
+        flavor=flavor,
     )
     # Need to be consistent with the log symlink location in start command
-    log_path = configuration.get_log_directory() / "new_server" / "server.stderr"
+    log_path = (
+        configuration.get_log_directory()
+        / flavor.server_log_subdirectory()
+        / "server.stderr"
+    )
     output = incremental_arguments.output
     remote_logging = backend_arguments.RemoteLogging.create(
         configuration.get_remote_logger(),

@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from typing_extensions import Final
 
-from .. import command_arguments, configuration as configuration_module
+from .. import command_arguments, configuration as configuration_module, identifiers
 from . import backend_arguments, commands, frontend_configuration
 
 
@@ -197,7 +197,11 @@ class TableStatistics:
 
 
 def _get_server_log(log_directory: Path) -> Path:
-    server_stderr_path = log_directory / "new_server" / "server.stderr"
+    server_stderr_path = (
+        log_directory
+        / identifiers.PyreFlavor.CLASSIC.server_log_subdirectory()
+        / "server.stderr"
+    )
     if not server_stderr_path.is_file():
         raise RuntimeError(f"Cannot find server output at `{server_stderr_path}`.")
     return server_stderr_path

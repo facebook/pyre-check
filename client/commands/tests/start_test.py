@@ -505,5 +505,12 @@ class StartTest(testslide.TestCase):
                 print("foo", file=log_file)
             # Make sure that the log content can be read from a known location.
             self.assertEqual(
-                (root_path / "new_server" / "server.stderr").read_text().strip(), "foo"
+                (
+                    root_path
+                    / PyreFlavor.CLASSIC.server_log_subdirectory()
+                    / "server.stderr"
+                )
+                .read_text()
+                .strip(),
+                "foo",
             )

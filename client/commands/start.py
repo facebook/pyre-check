@@ -410,7 +410,7 @@ def background_server_log_file(
     log_directory: Path,
     flavor: identifiers.PyreFlavor,
 ) -> Iterator[TextIO]:
-    new_server_log_directory = log_directory / "new_server"
+    new_server_log_directory = log_directory / flavor.server_log_subdirectory()
     new_server_log_directory.mkdir(parents=True, exist_ok=True)
     log_file_path = daemon_log_path(
         log_directory=new_server_log_directory,

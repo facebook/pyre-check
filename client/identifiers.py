@@ -53,3 +53,8 @@ class PyreFlavor(enum.Enum):
         Valid flavors to use for the `pyre persistent` command.
         """
         return [PyreFlavor.CLASSIC.value, PyreFlavor.SHADOW.value]
+
+    def server_log_subdirectory(self) -> str:
+        if self == PyreFlavor.CODE_NAVIGATION:
+            return self.value
+        return "new_server"
