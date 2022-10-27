@@ -141,7 +141,11 @@ def run(
     _kill_client_processes(kill_configuration)
     # TODO (T85602550): Store a rage log before this happens.
     # TODO (T85614630): Delete client logs as well.
-    _delete_server_files(kill_configuration, identifiers.PyreFlavor.CLASSIC)
+    for flavor in [
+        identifiers.PyreFlavor.CLASSIC,
+        identifiers.PyreFlavor.CODE_NAVIGATION,
+    ]:
+        _delete_server_files(kill_configuration, flavor)
     _delete_caches(kill_configuration)
     if with_fire:
         LOG.warning(
