@@ -48,9 +48,33 @@ async def _read_server_response(
     return await server_input_channel.read_until(separator="\n")
 
 
+class PyreCodeNavigationSubscriptionResponseParser(
+    launch_and_subscribe_handler.PyreSubscriptionResponseParser
+):
+    def parse_response(self, response: str) -> subscription.Response:
+        return subscription.Response.parse_code_navigation_response(response)
+
+
 class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler
 ):
+    def __init__(
+        self,
+        server_options_reader: pyre_server_options.PyreServerOptionsReader,
+        server_state: state.ServerState,
+        client_status_message_handler: persistent.ClientStatusMessageHandler,
+        client_type_error_handler: persistent.ClientTypeErrorHandler,
+        remote_logging: Optional[backend_arguments.RemoteLogging] = None,
+    ) -> None:
+        super().__init__(
+            server_options_reader,
+            server_state,
+            client_status_message_handler,
+            client_type_error_handler,
+            PyreCodeNavigationSubscriptionResponseParser(),
+            remote_logging,
+        )
+
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
         return self.server_state.server_options.language_server_features.type_errors
 
@@ -74,12 +98,18 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         server_input_channel: connections.AsyncTextReader,
         server_output_channel: connections.AsyncTextWriter,
     ) -> None:
+        subscription_name = "code_navigation"
         await server_output_channel.write('["Subscription", ["Subscribe"]]\n')
         first_response = await _read_server_response(server_input_channel)
         if json.loads(first_response) != ["Ok"]:
             raise ValueError(
                 f"Unexpected server response to Subscription: {first_response!r}"
             )
+        await self._run_subscription_loop(
+            subscription_name,
+            server_input_channel,
+            server_output_channel,
+        )
 
 
 def process_initialize_request(

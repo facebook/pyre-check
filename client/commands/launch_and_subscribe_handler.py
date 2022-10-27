@@ -50,12 +50,19 @@ class PyreDaemonShutdown(Exception):
     pass
 
 
+class PyreSubscriptionResponseParser(abc.ABC):
+    @abc.abstractmethod
+    def parse_response(self, response: str) -> subscription.Response:
+        pass
+
+
 class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     server_options_reader: PyreServerOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
     server_state: ServerState
     client_status_message_handler: ClientStatusMessageHandler
     client_type_error_handler: ClientTypeErrorHandler
+    subscription_response_parser: PyreSubscriptionResponseParser
 
     def __init__(
         self,
@@ -63,6 +70,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         server_state: ServerState,
         client_status_message_handler: ClientStatusMessageHandler,
         client_type_error_handler: ClientTypeErrorHandler,
+        subscription_response_parser: PyreSubscriptionResponseParser,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         self.server_options_reader = server_options_reader
@@ -70,6 +78,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         self.server_state = server_state
         self.client_status_message_handler = client_status_message_handler
         self.client_type_error_handler = client_type_error_handler
+        self.subscription_response_parser = subscription_response_parser
 
     @abc.abstractmethod
     async def handle_type_error_subscription(
@@ -145,7 +154,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             raw_subscription_response = await self._read_server_response(
                 server_input_channel
             )
-            subscription_response = subscription.Response.parse(
+            subscription_response = self.subscription_response_parser.parse_response(
                 raw_subscription_response
             )
             if subscription_name == subscription_response.name:

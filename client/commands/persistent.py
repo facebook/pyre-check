@@ -276,9 +276,33 @@ READY_MESSAGE: str = "Pyre has completed an incremental check and is currently w
 READY_SHORT: str = "Pyre Ready"
 
 
+class PyrePersistentSubscriptionResponseParser(
+    launch_and_subscribe_handler.PyreSubscriptionResponseParser
+):
+    def parse_response(self, response: str) -> subscription.Response:
+        return subscription.Response.parse(response)
+
+
 class PyrePersistentDaemonLaunchAndSubscribeHandler(
     launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler
 ):
+    def __init__(
+        self,
+        server_options_reader: pyre_server_options.PyreServerOptionsReader,
+        server_state: ServerState,
+        client_status_message_handler: ClientStatusMessageHandler,
+        client_type_error_handler: ClientTypeErrorHandler,
+        remote_logging: Optional[backend_arguments.RemoteLogging] = None,
+    ) -> None:
+        super().__init__(
+            server_options_reader,
+            server_state,
+            client_status_message_handler,
+            client_type_error_handler,
+            PyrePersistentSubscriptionResponseParser(),
+            remote_logging,
+        )
+
     async def handle_type_error_subscription(
         self,
         type_error_subscription: subscription.TypeErrors,

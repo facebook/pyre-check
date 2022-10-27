@@ -103,3 +103,28 @@ class Response:
         except json.JSONDecodeError as decode_error:
             message = f"Cannot parse subscription as JSON: {decode_error}"
             raise incremental.InvalidServerResponse(message) from decode_error
+
+    @staticmethod
+    def parse_code_navigation_response(response: str) -> "Response":
+        # The response JSON has the form ["ResponseKind", response_body_json]
+        try:
+            response_json = json.loads(response)
+            if not isinstance(response_json, list) or len(response_json) != 2:
+                raise incremental.InvalidServerResponse(
+                    f"Unexpected JSON subscription from code navigation server: {response_json}"
+                )
+            tag, body = response_json
+            name = "code_navigation"
+            if tag == "ServerStatus":
+                return Response(name=name, body=_parse_status_update_subscription(body))
+            elif tag == "TypeErrors":
+                return Response(name=name, body=_parse_type_error_subscription(body))
+            elif tag == "Error":
+                return Response(name=name, body=_parse_error_subscription(body))
+            raise incremental.InvalidServerResponse(
+                f"Invalid tag from code navigation server response: {tag}"
+            )
+
+        except json.JSONDecodeError as decode_error:
+            message = f"Cannot parse subscription as JSON: {decode_error}"
+            raise incremental.InvalidServerResponse(message) from decode_error
