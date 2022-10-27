@@ -157,7 +157,9 @@ let taint_in_taint_out_mapping
     let mapping_for_path =
       BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
       |> BackwardState.Tree.prepend actual_path
-      |> BackwardState.Tree.partition Domains.BackwardTaint.kind By ~f:Fn.id
+      |> BackwardState.Tree.partition Domains.BackwardTaint.kind ByFilter ~f:(function
+             | Sinks.Attach -> None
+             | kind -> Some kind)
     in
     let mapping_for_path =
       if ignore_local_return then
@@ -230,7 +232,6 @@ let return_paths_and_collapse_depths ~kind ~tito_taint =
           failwith "unexpected empty return path set"
       in
       paths
-  | Sinks.Attach -> [[], 0]
   | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp kind |> failwith
 
 

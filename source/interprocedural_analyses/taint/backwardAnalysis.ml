@@ -421,7 +421,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             match List.nth arguments n with
             | None -> BackwardState.Tree.empty
             | Some argument -> get_argument_taint ~resolution ~argument)
-        | _ -> failwith "unexpected tito sink"
+        | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp kind |> failwith
       in
       let taint_to_propagate =
         match kind with

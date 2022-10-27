@@ -580,8 +580,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             match List.nth arguments n with
             | None -> state
             | Some argument -> apply_argument_effect ~argument ~source_tree:taint state)
-        | Attach -> state (* These synthetic nodes should be ignored for analysis.*)
-        | _ -> Format.asprintf "unexpected sink `%a` in tito" Sinks.pp target |> failwith
+        | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp target |> failwith
       in
       TaintInTaintOutEffects.fold tito_effects ~f:for_each_target ~init:state
     in
