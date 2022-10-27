@@ -11,16 +11,13 @@ TODO(T132414938) Add a module-level docstring
 from __future__ import annotations
 
 import asyncio
-import dataclasses
 import logging
 import os
-import subprocess
-import tempfile
 import traceback
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Dict, List, Optional, Sequence
 
-from .. import error, identifiers, json_rpc, timer, version
+from .. import error, json_rpc, timer, version
 from ..language_server import connections, features, protocol as lsp
 from . import (
     backend_arguments,
@@ -30,12 +27,17 @@ from . import (
     pyre_language_server,
     pyre_server_options,
     request_handler,
-    server_event,
     server_state as state,
-    start,
     subscription,
 )
-from .initialization import async_try_initialize_loop, InitializationExit
+from .initialization import (
+    async_start_pyre_server,
+    async_try_initialize_loop,
+    BuckStartFailure,
+    InitializationExit,
+    OtherStartFailure,
+    StartSuccess,
+)
 
 from .pyre_server_options import PyreServerOptionsReader
 from .server_state import ServerState
@@ -114,91 +116,6 @@ async def _read_server_response(
     server_input_channel: connections.AsyncTextReader,
 ) -> str:
     return await server_input_channel.read_until(separator="\n")
-
-
-@dataclasses.dataclass(frozen=True)
-class StartSuccess:
-    pass
-
-
-@dataclasses.dataclass(frozen=True)
-class BuckStartFailure:
-    message: str
-
-
-@dataclasses.dataclass(frozen=True)
-class OtherStartFailure:
-    message: str
-    detail: str
-
-
-async def _start_pyre_server(
-    binary_location: str,
-    pyre_arguments: start.Arguments,
-    flavor: identifiers.PyreFlavor,
-) -> Union[StartSuccess, BuckStartFailure, OtherStartFailure]:
-    try:
-        with backend_arguments.temporary_argument_file(
-            pyre_arguments
-        ) as argument_file_path:
-            server_environment = {
-                **os.environ,
-                # This is to make sure that backend server shares the socket root
-                # directory with the client.
-                # TODO(T77556312): It might be cleaner to turn this into a
-                # configuration option instead.
-                "TMPDIR": tempfile.gettempdir(),
-            }
-
-            with start.background_server_log_file(
-                Path(pyre_arguments.base_arguments.log_path),
-                flavor=flavor,
-            ) as server_stderr:
-                server_start_command = (
-                    "newserver"
-                    if flavor != identifiers.PyreFlavor.CODE_NAVIGATION
-                    else "code-navigation"
-                )
-                server_process = await asyncio.create_subprocess_exec(
-                    binary_location,
-                    server_start_command,
-                    str(argument_file_path),
-                    stdout=subprocess.PIPE,
-                    stderr=server_stderr,
-                    env=server_environment,
-                    start_new_session=True,
-                )
-
-            server_stdout = server_process.stdout
-            if server_stdout is None:
-                raise RuntimeError(
-                    "asyncio.create_subprocess_exec failed to set up a pipe for "
-                    "server stdout"
-                )
-
-            await server_event.Waiter(wait_on_initialization=True).async_wait_on(
-                connections.AsyncTextReader(
-                    connections.StreamBytesReader(server_stdout)
-                )
-            )
-
-        return StartSuccess()
-    except server_event.ServerStartException as error:
-        message = str(error)
-        LOG.error(message)
-        if error.kind == server_event.ErrorKind.BUCK_USER:
-            return BuckStartFailure(message)
-        else:
-            # We know where the exception come from. Let's keep the error details
-            # succinct.
-            return OtherStartFailure(message=message, detail=message)
-    except Exception as error:
-        # These exceptions are unexpected. Let's keep verbose stack traces to
-        # help with post-mortem analyses.
-        message = str(error)
-        detail = traceback.format_exc()
-        LOG.error(f"{detail}")
-        return OtherStartFailure(message=message, detail=detail)
 
 
 def type_error_to_diagnostic(type_error: error.Error) -> lsp.Diagnostic:
@@ -662,7 +579,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             level=lsp.MessageType.WARNING,
             fallback_to_notification=True,
         )
-        start_status = await _start_pyre_server(
+        start_status = await async_start_pyre_server(
             server_options.binary,
             start_arguments,
             flavor,

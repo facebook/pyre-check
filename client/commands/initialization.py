@@ -3,18 +3,28 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""
+This module handles the initialization-related code for the LSP server, including the
+LSP handshake and the policy of starting a Pyre server.
+"""
 from __future__ import annotations
+
+import asyncio
 
 import json
 
 import logging
-
+import os
+import subprocess
+import tempfile
+import traceback
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Optional, Union
 
 from typing_extensions import TypeAlias
 
-from .. import json_rpc, log
+from .. import identifiers, json_rpc, log
 from ..language_server import connections, protocol as lsp
 from ..language_server.features import LanguageServerFeatures
 from ..language_server.protocol import InitializeParameters, InitializeResult
@@ -24,6 +34,8 @@ from . import (
     log_lsp_event,
     pyre_language_server,
     pyre_server_options,
+    server_event,
+    start,
 )
 from .pyre_server_options import PyreServerOptions
 
@@ -182,3 +194,88 @@ async def async_try_initialize_loop(
             # Loop until we get either InitializeExit or InitializeSuccess
         else:
             raise RuntimeError("Cannot determine the type of initialize_result")
+
+
+@dataclass(frozen=True)
+class StartSuccess:
+    pass
+
+
+@dataclass(frozen=True)
+class BuckStartFailure:
+    message: str
+
+
+@dataclass(frozen=True)
+class OtherStartFailure:
+    message: str
+    detail: str
+
+
+async def async_start_pyre_server(
+    binary_location: str,
+    pyre_arguments: start.Arguments,
+    flavor: identifiers.PyreFlavor,
+) -> Union[StartSuccess, BuckStartFailure, OtherStartFailure]:
+    try:
+        is_code_navigation_server = flavor == identifiers.PyreFlavor.CODE_NAVIGATION
+        with backend_arguments.temporary_argument_file(
+            pyre_arguments
+        ) as argument_file_path:
+            server_environment = {
+                **os.environ,
+                # This is to make sure that backend server shares the socket root
+                # directory with the client.
+                # TODO(T77556312): It might be cleaner to turn this into a
+                # configuration option instead.
+                "TMPDIR": tempfile.gettempdir(),
+            }
+
+            with start.background_server_log_file(
+                Path(pyre_arguments.base_arguments.log_path),
+                flavor=flavor,
+            ) as server_stderr:
+                server_start_command = (
+                    "code-navigation" if is_code_navigation_server else "newserver"
+                )
+                server_process = await asyncio.create_subprocess_exec(
+                    binary_location,
+                    server_start_command,
+                    str(argument_file_path),
+                    stdout=subprocess.PIPE,
+                    stderr=server_stderr,
+                    env=server_environment,
+                    start_new_session=True,
+                )
+            server_stdout = server_process.stdout
+            if server_stdout is None:
+                raise RuntimeError(
+                    "asyncio.create_subprocess_exec failed to set up a pipe for "
+                    "server stdout"
+                )
+
+            await server_event.Waiter(
+                wait_on_initialization=not is_code_navigation_server
+            ).async_wait_on(
+                connections.AsyncTextReader(
+                    connections.StreamBytesReader(server_stdout)
+                )
+            )
+
+        return StartSuccess()
+    except server_event.ServerStartException as error:
+        message = str(error)
+        LOG.error(message)
+        if error.kind == server_event.ErrorKind.BUCK_USER:
+            return BuckStartFailure(message)
+        else:
+            # We know where the exception come from. Let's keep the error details
+            # succinct.
+            return OtherStartFailure(message=message, detail=message)
+    except Exception as error:
+        # These exceptions are unexpected. Let's keep verbose stack traces to
+        # help with post-mortem analyses.
+        message = str(error)
+        detail = traceback.format_exc()
+        LOG.error(f"{detail}")
+        return OtherStartFailure(message=message, detail=detail)
