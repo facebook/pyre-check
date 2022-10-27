@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
-import json
 import logging
 import os
 import subprocess
@@ -21,7 +20,7 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
-from .. import error, identifiers, json_rpc, log, timer, version
+from .. import error, identifiers, json_rpc, timer, version
 from ..language_server import connections, features, protocol as lsp
 from . import (
     backend_arguments,
@@ -36,12 +35,7 @@ from . import (
     start,
     subscription,
 )
-from .initialization import (
-    async_try_initialize_loop,
-    InitializationExit,
-    InitializationFailure,
-    InitializationSuccess,
-)
+from .initialization import async_try_initialize_loop, InitializationExit
 
 from .pyre_server_options import PyreServerOptionsReader
 from .server_state import ServerState
@@ -94,100 +88,6 @@ def process_initialize_request(
     return lsp.InitializeResult(
         capabilities=server_capabilities, server_info=server_info
     )
-
-
-async def try_initialize(
-    input_channel: connections.AsyncTextReader,
-    output_channel: connections.AsyncTextWriter,
-    server_options: pyre_server_options.PyreServerOptions,
-) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
-    """
-    Read an LSP message from the input channel and try to initialize an LSP
-    server. Also write to the output channel with proper response if the input
-    message is a request instead of a notification.
-
-    The function can return one of three possibilities:
-    - If the initialization succeeds, return `InitializationSuccess`.
-    - If the initialization fails, return `InitializationFailure`. There could
-      be many reasons for the failure: The incoming LSP message may not be an
-      initiailization request. The incoming LSP request may be malformed. Or the
-      client may not complete the handshake by sending back an `initialized` request.
-    - If an exit notification is received, return `InitializationExit`. The LSP
-      spec allows exiting a server without a preceding initialize request.
-    """
-    request = None
-    try:
-        request = await lsp.read_json_rpc(input_channel)
-        LOG.debug(f"Received pre-initialization LSP request: {request}")
-
-        request_id = request.id
-        if request_id is None:
-            return (
-                InitializationExit()
-                if request.method == "exit"
-                else InitializationFailure()
-            )
-        if request.method != "initialize":
-            raise lsp.ServerNotInitializedError("An initialize request is needed.")
-        request_parameters = request.parameters
-        if request_parameters is None:
-            raise lsp.ServerNotInitializedError(
-                "Missing parameters for initialize request."
-            )
-        initialize_parameters = lsp.InitializeParameters.from_json_rpc_parameters(
-            request_parameters
-        )
-
-        result = process_initialize_request(
-            initialize_parameters, server_options.language_server_features
-        )
-        await lsp.write_json_rpc_ignore_connection_error(
-            output_channel,
-            json_rpc.SuccessResponse(
-                id=request_id,
-                activity_key=request.activity_key,
-                result=result.to_dict(),
-            ),
-        )
-
-        initialized_notification = await lsp.read_json_rpc(input_channel)
-        if initialized_notification.method == "shutdown":
-            try:
-                await pyre_language_server._wait_for_exit(input_channel, output_channel)
-            except lsp.ReadChannelClosedError:
-                # This error can happen when the connection gets closed unilaterally
-                # from the language client, which causes issue when we try to access
-                # the input channel. This usually signals that the language client
-                # has exited, which implies that the language server should do that
-                # as well.
-                LOG.info("Initialization connection closed by LSP client")
-            return InitializationExit()
-        elif initialized_notification.method != "initialized":
-            actual_message = json.dumps(initialized_notification.json())
-            raise lsp.ServerNotInitializedError(
-                "Failed to receive an `initialized` request from client. "
-                + f"Got {log.truncate(actual_message, 100)}"
-            )
-
-        return InitializationSuccess(
-            client_capabilities=initialize_parameters.capabilities,
-            client_info=initialize_parameters.client_info,
-            initialization_options=initialize_parameters.initialization_options,
-        )
-    except json_rpc.JSONRPCException as json_rpc_error:
-        await lsp.write_json_rpc_ignore_connection_error(
-            output_channel,
-            json_rpc.ErrorResponse(
-                id=request.id if request is not None else None,
-                activity_key=request.activity_key if request is not None else None,
-                code=json_rpc_error.error_code(),
-                message=str(json_rpc_error),
-                data={"retry": False},
-            ),
-        )
-        return InitializationFailure(exception=json_rpc_error)
-    except lsp.ReadChannelClosedError:
-        return InitializationExit()
 
 
 async def _publish_diagnostics(
@@ -624,10 +524,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             f'["SubscribeToStateChanges", "{subscription_name}"]\n'
         )
         first_response = await _read_server_response(server_input_channel)
-        if json.loads(first_response) != ["Ok"]:
-            raise ValueError(
-                f"Unexpected server response to SubscribeToStateChanges: {first_response!r}"
-            )
         await self._run_subscription_loop(
             subscription_name,
             server_input_channel,
@@ -907,7 +803,11 @@ async def run_persistent(
     stdin, stdout = await connections.create_async_stdin_stdout()
 
     initialize_result = await async_try_initialize_loop(
-        initial_server_options, stdin, stdout, remote_logging, try_initialize
+        initial_server_options,
+        stdin,
+        stdout,
+        remote_logging,
+        process_initialize_request,
     )
     if isinstance(initialize_result, InitializationExit):
         return 0

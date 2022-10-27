@@ -52,16 +52,19 @@ from ...tests import setup
 from .. import backend_arguments, background, start, subscription
 from ..daemon_connection import DaemonConnectionFailure
 from ..daemon_query import DaemonQueryFailure
+from ..initialization import (
+    async_try_initialize,
+    InitializationExit,
+    InitializationFailure,
+    InitializationSuccess,
+)
 from ..persistent import (
     ClientStatusMessageHandler,
     ClientTypeErrorHandler,
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
-    InitializationExit,
-    InitializationFailure,
-    InitializationSuccess,
+    process_initialize_request,
     PyreDaemonLaunchAndSubscribeHandler,
     PyreDaemonShutdown,
-    try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
 )
@@ -399,8 +402,11 @@ class PersistentTest(testslide.TestCase):
             ]
         )
         bytes_writer = MemoryBytesWriter()
-        result = await try_initialize(
-            input_channel, AsyncTextWriter(bytes_writer), mock_initial_server_options
+        result = await async_try_initialize(
+            input_channel,
+            AsyncTextWriter(bytes_writer),
+            mock_initial_server_options,
+            process_initialize_request,
         )
         self.assertIsInstance(result, InitializationSuccess)
         self.assertEqual(len(bytes_writer.items()), 1)
@@ -411,8 +417,11 @@ class PersistentTest(testslide.TestCase):
             [json_rpc.Request(method="derp", parameters=None)]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(
-            input_channel, output_channel, mock_initial_server_options
+        result = await async_try_initialize(
+            input_channel,
+            output_channel,
+            mock_initial_server_options,
+            process_initialize_request,
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -422,8 +431,11 @@ class PersistentTest(testslide.TestCase):
             [json_rpc.Request(id=0, method="initialize", parameters=None)]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(
-            input_channel, output_channel, mock_initial_server_options
+        result = await async_try_initialize(
+            input_channel,
+            output_channel,
+            mock_initial_server_options,
+            process_initialize_request,
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -455,8 +467,11 @@ class PersistentTest(testslide.TestCase):
             ]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(
-            input_channel, output_channel, mock_initial_server_options
+        result = await async_try_initialize(
+            input_channel,
+            output_channel,
+            mock_initial_server_options,
+            process_initialize_request,
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -466,8 +481,11 @@ class PersistentTest(testslide.TestCase):
             [json_rpc.Request(method="exit", parameters=None)]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(
-            input_channel, output_channel, mock_initial_server_options
+        result = await async_try_initialize(
+            input_channel,
+            output_channel,
+            mock_initial_server_options,
+            process_initialize_request,
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -498,8 +516,11 @@ class PersistentTest(testslide.TestCase):
             ]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(
-            input_channel, output_channel, mock_initial_server_options
+        result = await async_try_initialize(
+            input_channel,
+            output_channel,
+            mock_initial_server_options,
+            process_initialize_request,
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -522,17 +543,21 @@ class PersistentTest(testslide.TestCase):
             ]
         )
         output_channel = create_memory_text_writer()
-        result = await try_initialize(
-            input_channel, output_channel, mock_initial_server_options
+        result = await async_try_initialize(
+            input_channel,
+            output_channel,
+            mock_initial_server_options,
+            process_initialize_request,
         )
         self.assertIsInstance(result, InitializationExit)
 
     @setup.async_test
     async def test_try_initialize_exit__without_anything(self) -> None:
-        result = await try_initialize(
+        result = await async_try_initialize(
             create_memory_text_reader(""),
             create_memory_text_writer(),
             mock_initial_server_options,
+            process_initialize_request,
         )
         self.assertIsInstance(result, InitializationExit)
 
