@@ -603,33 +603,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "multiple_sources.no_sink_with_transform",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "multiple_sources.transform_t" } ],
-                "kind": "TransformT:ExtraTraceSink"
-              }
-            ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 120,
-              "start": 20,
-              "end": 21
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "multiple_sources.permissive_context",
     "sources": [
       {

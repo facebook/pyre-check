@@ -1529,33 +1529,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "taint_transform.no_sink_taint_with_transform_y",
-    "sinks": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_y" } ],
-                "kind": "TransformY:ExtraTraceSink"
-              }
-            ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 132,
-              "start": 24,
-              "end": 27
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "taint_transform.sanitize_a_sink_b_taint",
     "sinks": [
       {
@@ -1590,41 +1563,6 @@
       {
         "port": "formal(arg)",
         "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_y" } ],
-                "kind": "TransformY:ExtraTraceSink"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 363, "start": 35, "end": 38 } ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 364,
-              "start": 23,
-              "end": 28
-            }
-          },
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_z" } ],
-                "kind": "TransformY@TransformZ:ExtraTraceSink"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 363, "start": 35, "end": 38 },
-              { "line": 364, "start": 23, "end": 28 }
-            ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 365,
-              "start": 24,
-              "end": 28
-            }
-          },
           {
             "kinds": [
               {
@@ -1780,35 +1718,6 @@
               { "line": 272, "start": 24, "end": 28 }
             ],
             "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_transform.sanitize_a_transform_x_sink_b_no_taint",
-    "sinks": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_x" } ],
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 357, "start": 35, "end": 38 } ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 358,
-              "start": 23,
-              "end": 28
-            }
           }
         ]
       }
@@ -2082,31 +1991,6 @@
               "start": 11,
               "end": 16
             }
-          },
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_y" } ],
-                "length": 1,
-                "kind": "TransformY:ExtraTraceSink"
-              },
-              {
-                "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "name": "taint_transform.transform_z" } ],
-                "length": 1,
-                "kind": "TransformY:TransformZ:ExtraTraceSink"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "taint_transform.py",
-                "line": 165,
-                "start": 35,
-                "end": 38
-              },
-              "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
-              "port": "formal(arg)"
-            }
           }
         ]
       }
@@ -2121,20 +2005,6 @@
       {
         "port": "formal(arg)",
         "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_x" } ],
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 125,
-              "start": 24,
-              "end": 27
-            }
-          },
           {
             "kinds": [
               {
@@ -2167,36 +2037,6 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "taint_transform.transform_y" } ],
-                "kind": "TransformY:ExtraTraceSink"
-              }
-            ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 137,
-              "start": 24,
-              "end": 27
-            }
-          },
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_z" } ],
-                "kind": "TransformY@TransformZ:ExtraTraceSink"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 137, "start": 24, "end": 27 } ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 138,
-              "start": 23,
-              "end": 28
-            }
-          },
-          {
-            "kinds": [
-              {
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "kind": "TransformY:TransformZ@SinkB"
               }
@@ -2226,20 +2066,6 @@
       {
         "port": "formal(arg)",
         "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_z" } ],
-                "kind": "TransformZ:ExtraTraceSink"
-              }
-            ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 186,
-              "start": 24,
-              "end": 27
-            }
-          },
           {
             "kinds": [
               {
@@ -3177,42 +3003,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "taint_transform.tito_propagation_source_sink_sanitizers_mixed_2",
-    "sinks": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_y" } ],
-                "length": 1,
-                "kind": "TransformY:ExtraTraceSink"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 590, "start": 35, "end": 38 } ],
-            "call": {
-              "position": {
-                "filename": "taint_transform.py",
-                "line": 591,
-                "start": 39,
-                "end": 44
-              },
-              "resolves_to": [
-                "taint_transform.transform_y_sanitize_b_tito"
-              ],
-              "port": "formal(arg)"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "taint_transform.tito_with_transform_x",
     "sinks": [
       {
@@ -3390,20 +3180,6 @@
       {
         "port": "formal(arg)",
         "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "taint_transform.transform_x" } ],
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
-            "origin": {
-              "filename": "taint_transform.py",
-              "line": 324,
-              "start": 24,
-              "end": 27
-            }
-          },
           {
             "kinds": [
               {

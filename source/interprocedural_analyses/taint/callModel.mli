@@ -83,3 +83,11 @@ val extra_traces_from_sink_trees
   tito_roots:AccessPath.Root.Set.t ->
   sink_trees:Issue.SinkTreeWithHandle.t list ->
   ExtraTraceFirstHop.Set.t
+
+(* ExtraTraceSink is used to show taint transforms. Hence, if a function does not have a tito
+   behavior on an access path, then this access path will not have any taint transform and hence we
+   can remove ExtraTraceSink on the same access path *)
+val prune_extra_trace_sink
+  :  sink_tree:BackwardState.Tree.t ->
+  tito_tree:BackwardState.Tree.t ->
+  BackwardState.Tree.t

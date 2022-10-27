@@ -2292,7 +2292,14 @@ let extract_tito_and_sink_models
                   BackwardState.Tree.prune_maximum_length maximum_trace_length sink_tree
               | _ -> sink_tree
             in
-            simplify annotation sink_tree |> BackwardState.Tree.join accumulator
+            let sink_tree = simplify annotation sink_tree in
+            let sink_tree =
+              match Sinks.discard_transforms sink with
+              | Sinks.ExtraTraceSink ->
+                  CallModel.prune_extra_trace_sink ~sink_tree ~tito_tree:taint_in_taint_out
+              | _ -> sink_tree
+            in
+            BackwardState.Tree.join accumulator sink_tree
       in
       Map.Poly.fold ~init:BackwardState.Tree.empty ~f:simplify_sink_taint partition
     in

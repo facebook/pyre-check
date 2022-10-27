@@ -324,3 +324,24 @@ let extra_traces_from_sink_trees ~argument_access_path ~named_transforms ~tito_r
     |> ExtraTraceFirstHop.Set.join so_far
   in
   List.fold sink_trees ~init:ExtraTraceFirstHop.Set.bottom ~f:accumulate_extra_traces
+
+
+(* ExtraTraceSink is used to show taint transforms. Hence, if a function does not have a tito
+   behavior on an access path, then this access path will not have any taint transform and hence we
+   can remove ExtraTraceSink on the same access path *)
+let prune_extra_trace_sink ~sink_tree ~tito_tree =
+  let remove_sink (sink_path, sink_tip) =
+    let find_tito (tito_path, _) so_far =
+      so_far
+      || Abstract.TreeDomain.Label.is_prefix ~prefix:tito_path sink_path
+      || Abstract.TreeDomain.Label.is_prefix ~prefix:sink_path tito_path
+    in
+    let exist_tito =
+      BackwardState.Tree.fold BackwardState.Tree.Path ~f:find_tito ~init:false tito_tree
+    in
+    if exist_tito then
+      sink_path, sink_tip
+    else
+      sink_path, BackwardTaint.bottom
+  in
+  BackwardState.Tree.transform BackwardState.Tree.Path Map ~f:remove_sink sink_tree
