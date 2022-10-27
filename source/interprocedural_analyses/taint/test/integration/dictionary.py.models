@@ -2778,7 +2778,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[0][*]": 2 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[1]": 3, "[0][*]": 2 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }

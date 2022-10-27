@@ -302,6 +302,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let apply_call_target
+      ?(apply_tito = true)
       ~resolution
       ~is_result_used
       ~triggered_sinks
@@ -455,16 +456,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~receiver_class_interval
       in
       let tito_effects =
-        CallModel.taint_in_taint_out_mapping
-          ~transform_non_leaves:(fun _ tito -> tito)
-          ~taint_configuration:FunctionContext.taint_configuration
-          ~ignore_local_return:(not is_result_used)
-          ~model:taint_model
-          ~tito_matches
-          ~sanitize_matches
-        |> CallModel.TaintInTaintOutMap.fold
-             ~init:tito_effects
-             ~f:(convert_tito_tree_to_taint ~argument ~argument_taint ~sink_trees)
+        if apply_tito then
+          CallModel.taint_in_taint_out_mapping
+            ~transform_non_leaves:(fun _ tito -> tito)
+            ~taint_configuration:FunctionContext.taint_configuration
+            ~ignore_local_return:(not is_result_used)
+            ~model:taint_model
+            ~tito_matches
+            ~sanitize_matches
+          |> CallModel.TaintInTaintOutMap.fold
+               ~init:tito_effects
+               ~f:(convert_tito_tree_to_taint ~argument ~argument_taint ~sink_trees)
+        else
+          TaintInTaintOutEffects.empty
       in
       (* Compute triggered partial sinks, if any. *)
       let () =
@@ -594,7 +598,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     returned_taint, state
 
 
-  let apply_obscure_call ~callee ~callee_taint ~arguments ~arguments_taint ~state:initial_state =
+  let apply_obscure_call
+      ~apply_tito
+      ~callee
+      ~callee_taint
+      ~arguments
+      ~arguments_taint
+      ~state:initial_state
+    =
     log
       "Forward analysis of obscure call to `%a` with arguments (%a)"
       Expression.pp
@@ -618,9 +629,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> ForwardState.Tree.join taint_accumulator
     in
     let taint =
-      List.zip_exn arguments arguments_taint
-      |> List.fold ~f:analyze_argument ~init:callee_taint
-      |> ForwardState.Tree.add_local_breadcrumb (Features.obscure_unknown_callee ())
+      if apply_tito then
+        List.zip_exn arguments arguments_taint
+        |> List.fold ~f:analyze_argument ~init:callee_taint
+        |> ForwardState.Tree.add_local_breadcrumb (Features.obscure_unknown_callee ())
+      else
+        ForwardState.Tree.empty
     in
     taint, initial_state
 
@@ -704,6 +718,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let apply_callees_with_arguments_taint
+      ?(apply_tito = true)
       ~resolution
       ~is_result_used
       ~callee
@@ -742,6 +757,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         call_targets
         ~f:
           (apply_call_target
+             ~apply_tito
              ~resolution
              ~is_result_used
              ~triggered_sinks
@@ -763,7 +779,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let taint, state =
       if unresolved then
         let obscure_taint, new_state =
-          apply_obscure_call ~callee ~callee_taint ~arguments ~arguments_taint ~state:initial_state
+          apply_obscure_call
+            ~apply_tito
+            ~callee
+            ~callee_taint
+            ~arguments
+            ~arguments_taint
+            ~state:initial_state
         in
         ForwardState.Tree.join taint obscure_taint, join state new_state
       else
@@ -1118,6 +1140,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and apply_callees
+      ?(apply_tito = true)
       ~resolution
       ~is_result_used
       ~is_property
@@ -1151,6 +1174,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
 
     apply_callees_with_arguments_taint
+      ~apply_tito
       ~resolution
       ~is_result_used
       ~callee
@@ -1370,8 +1394,33 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 true
             | _ -> false
           in
-          if is_dict_setitem || not (CallGraph.CallCallees.is_partially_resolved callees) then
-            (* Use the hardcoded model of `__setitem__` for any subtype of dict or unresolved
+          let use_custom_tito =
+            is_dict_setitem || not (CallGraph.CallCallees.is_partially_resolved callees)
+          in
+          let taint_from_analyze_callee, state_from_analyze_callee =
+            (* Process the custom behavior of `__setitem__`. We treat `e.__setitem__(k, v)` as `e =
+               e.__setitem__(k, v)` where method `__setitem__` returns the updated self. Due to
+               modeling with the assignment, the user-provided models of `__setitem__` will be
+               ignored, if they are inconsistent with treating `__setitem__` as returning an updated
+               self. In the case that the call target is a dict, only propagate sources and sinks,
+               and ignore tito propagation. *)
+            let taint, state =
+              apply_callees
+                ~apply_tito:(not use_custom_tito)
+                ~resolution
+                ~is_result_used:true
+                ~is_property:false
+                ~callee
+                ~call_location:location
+                ~arguments
+                ~state
+                callees
+            in
+            let state = analyze_assignment ~resolution base taint taint state in
+            taint, state
+          in
+          if use_custom_tito then
+            (* Use the hardcoded behavior of `__setitem__` for any subtype of dict or unresolved
                callees: `base[index] = value`. This is incorrect, but can lead to higher SNR,
                because we assume in most cases, we run into an expression whose type is exactly
                `dict`, rather than a (strict) subtype of `dict` that overrides `__setitem__`. *)
@@ -1387,7 +1436,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 value_taint
                 state
             in
-            let state =
+            let state_from_key_value =
               let key_taint, state =
                 analyze_expression ~resolution ~state ~is_result_used:true ~expression:index
               in
@@ -1402,27 +1451,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 key_taint
                 state
             in
+            let state = join state_from_key_value state_from_analyze_callee in
             (* Since `dict.__setitem__` returns None, we return no taint here. *)
             ForwardState.Tree.empty, state
           else
-            (* Use the custom model of `__setitem__`. We treat `e.__setitem__(k, v)` as `e =
-               e.__setitem__(k, v)` where method `__setitem__` returns the updated self. Due to
-               modeling with the assignment, the user-provided models of `__setitem__` will be`
-               ignored, if they are inconsistent with treating `__setitem__` as returning an updated
-               self. *)
-            let taint, state =
-              apply_callees
-                ~resolution
-                ~is_result_used:true
-                ~is_property:false
-                ~callee
-                ~call_location:location
-                ~arguments
-                ~state
-                callees
-            in
-            let state = analyze_assignment ~resolution base taint taint state in
-            taint, state
+            taint_from_analyze_callee, state_from_analyze_callee
       (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
          being frozen post-initialization. *)
       | {

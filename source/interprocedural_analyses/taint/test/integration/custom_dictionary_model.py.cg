@@ -1,0 +1,9 @@
+@generated
+Call dependencies
+custom_dictionary_model.sink_dictionary_key (fun) -> [custom_dictionary_model._test_source_2 (fun) dict::__setitem__ (method)]
+custom_dictionary_model.sink_dictionary_value (fun) -> [custom_dictionary_model._test_source_2 (fun) dict::__setitem__ (method)]
+custom_dictionary_model.tainted_dictionary_key_sink (fun) -> [_test_sink (fun) _test_source (fun) dict::__setitem__ (method)]
+custom_dictionary_model.tainted_dictionary_value_sink (fun) -> [_test_sink (fun) _test_source (fun) dict::__setitem__ (method)]
+custom_dictionary_model.untainted_dictionary (fun) -> [_test_sink (fun) dict::__setitem__ (method)]
+custom_dictionary_model.$toplevel (fun) -> []
+custom_dictionary_model._test_source_2 (fun) -> []
