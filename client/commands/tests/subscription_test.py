@@ -38,7 +38,7 @@ class SubscriptionTest(testslide.TestCase):
 
         assert_parsed(
             json.dumps({"name": "foo", "body": ["TypeErrors", []]}),
-            expected=Response(name="foo", body=TypeErrors()),
+            expected=Response(body=TypeErrors()),
         )
         assert_parsed(
             json.dumps(
@@ -62,7 +62,6 @@ class SubscriptionTest(testslide.TestCase):
                 }
             ),
             expected=Response(
-                name="foo",
                 body=TypeErrors(
                     [
                         error.Error(
@@ -87,7 +86,6 @@ class SubscriptionTest(testslide.TestCase):
                 }
             ),
             expected=Response(
-                name="foo",
                 body=StatusUpdate(kind="derp"),
             ),
         )
@@ -99,7 +97,6 @@ class SubscriptionTest(testslide.TestCase):
                 }
             ),
             expected=Response(
-                name="foo",
                 body=Error(message="rip and tear!"),
             ),
         )
@@ -124,9 +121,7 @@ class SubscriptionTest(testslide.TestCase):
 
         assert_parsed(
             json.dumps(["ServerStatus", ["BusyChecking"]]),
-            expected=Response(
-                name="code_navigation", body=StatusUpdate(kind="BusyChecking")
-            ),
+            expected=Response(body=StatusUpdate(kind="BusyChecking")),
         )
         assert_parsed(
             json.dumps(
@@ -147,7 +142,6 @@ class SubscriptionTest(testslide.TestCase):
                 ]
             ),
             expected=Response(
-                name="code_navigation",
                 body=TypeErrors(
                     [
                         error.Error(
@@ -167,7 +161,6 @@ class SubscriptionTest(testslide.TestCase):
         assert_parsed(
             json.dumps(["Error", "Needs more cowbell"]),
             expected=Response(
-                name="code_navigation",
                 body=Error(message="Needs more cowbell"),
             ),
         )

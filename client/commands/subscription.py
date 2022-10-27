@@ -64,7 +64,6 @@ Body = Union[TypeErrors, StatusUpdate, Error]
 
 @dataclasses.dataclass(frozen=True)
 class Response:
-    name: str
     body: Body
 
     @staticmethod
@@ -75,28 +74,23 @@ class Response:
             # `{"name": "foo", "body": ["TypeErrors", [error_json, ...]]}`
             # `{"name": "foo", "body": ["StatusUpdate", ["message_kind", ...]]}`
             # `{"name": "foo", "body": ["Error", "error message"]}`
+            # The legacy subscription protocol includes a subscription name - we have
+            # since moved away from requiring a name associated with a subscription, as
+            # there aren't practical ways to set up multiple subscriptions on the same connection,
+            # and a connection serves as a unique identifier for a subscription.
+
+            # For backwards compatibility, we allow the "name" field to be in the response, but do not
+            # parse it on the client.
             if isinstance(response_json, dict):
-                name = response_json.get("name", None)
                 body = response_json.get("body", None)
-                if (
-                    name is not None
-                    and body is not None
-                    and isinstance(body, list)
-                    and len(body) > 1
-                ):
+                if body is not None and isinstance(body, list) and len(body) > 1:
                     tag = body[0]
                     if tag == "TypeErrors":
-                        return Response(
-                            name=name, body=_parse_type_error_subscription(body[1])
-                        )
+                        return Response(body=_parse_type_error_subscription(body[1]))
                     elif tag == "StatusUpdate":
-                        return Response(
-                            name=name, body=_parse_status_update_subscription(body[1])
-                        )
+                        return Response(body=_parse_status_update_subscription(body[1]))
                     elif tag == "Error":
-                        return Response(
-                            name=name, body=_parse_error_subscription(body[1])
-                        )
+                        return Response(body=_parse_error_subscription(body[1]))
             raise incremental.InvalidServerResponse(
                 f"Unexpected JSON subscription from server: {response_json}"
             )
@@ -114,13 +108,12 @@ class Response:
                     f"Unexpected JSON subscription from code navigation server: {response_json}"
                 )
             tag, body = response_json
-            name = "code_navigation"
             if tag == "ServerStatus":
-                return Response(name=name, body=_parse_status_update_subscription(body))
+                return Response(body=_parse_status_update_subscription(body))
             elif tag == "TypeErrors":
-                return Response(name=name, body=_parse_type_error_subscription(body))
+                return Response(body=_parse_type_error_subscription(body))
             elif tag == "Error":
-                return Response(name=name, body=_parse_error_subscription(body))
+                return Response(body=_parse_error_subscription(body))
             raise incremental.InvalidServerResponse(
                 f"Invalid tag from code navigation server response: {tag}"
             )

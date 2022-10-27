@@ -157,8 +157,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             subscription_response = self.subscription_response_parser.parse_response(
                 raw_subscription_response
             )
-            if subscription_name == subscription_response.name:
-                await self._handle_subscription_body(subscription_response.body)
+            await self._handle_subscription_body(subscription_response.body)
 
     async def subscribe(
         self,
