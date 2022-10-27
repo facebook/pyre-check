@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module includes methods to fetch/query a saved state: pyre's remote repository of cached
+   state. *)
 
 open Core
 open Lwt.Infix

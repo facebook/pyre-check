@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module includes the API to communicate with watchman, the primary file watching service used
+   on pyre. *)
 
 open Core
 
@@ -235,6 +236,7 @@ module Filter = struct
       ]
 end
 
+(* Module for a watchman subscription *)
 module Subscriber = struct
   module Setting = struct
     type t = {
@@ -408,6 +410,7 @@ module Subscriber = struct
     subscribe config >>= fun subscriber -> listen ~f subscriber
 end
 
+(* Module for a single watchman query: to determine file changes since SavedState. *)
 module SinceQuery = struct
   module Since = struct
     module SavedState = struct
