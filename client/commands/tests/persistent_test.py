@@ -58,16 +58,19 @@ from ..initialization import (
     InitializationFailure,
     InitializationSuccess,
 )
+from ..launch_and_subscribe_handler import (
+    CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+    PyreDaemonShutdown,
+)
 from ..persistent import (
     ClientStatusMessageHandler,
     ClientTypeErrorHandler,
-    CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     process_initialize_request,
-    PyreDaemonLaunchAndSubscribeHandler,
-    PyreDaemonShutdown,
+    PyrePersistentDaemonLaunchAndSubscribeHandler,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
 )
+
 from ..pyre_language_server import PyreLanguageServer, read_lsp_request
 from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 from ..request_handler import (
@@ -581,7 +584,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 
         client_output_channel = AsyncTextWriter(bytes_writer)
 
-        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+        server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
             client_status_message_handler=ClientStatusMessageHandler(
@@ -647,7 +650,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 
         client_output_channel = AsyncTextWriter(bytes_writer)
 
-        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+        server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
             client_status_message_handler=ClientStatusMessageHandler(
@@ -691,7 +694,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             raise NotImplementedError()
 
         client_output_channel = AsyncTextWriter(MemoryBytesWriter())
-        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+        server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=mock_server_state,
             client_status_message_handler=ClientStatusMessageHandler(
@@ -719,7 +722,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             raise NotImplementedError()
 
         client_output_channel = AsyncTextWriter(bytes_writer)
-        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+        server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
             client_status_message_handler=ClientStatusMessageHandler(
@@ -760,7 +763,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             # Server start option is not relevant to this test
             raise NotImplementedError()
 
-        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+        server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
             client_status_message_handler=ClientStatusMessageHandler(
@@ -1060,7 +1063,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 
         bytes_writer = MemoryBytesWriter()
         client_output_channel = AsyncTextWriter(bytes_writer)
-        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+        server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1122,7 +1125,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             ),
             server_options=mock_initial_server_options,
         )
-        server_handler = PyreDaemonLaunchAndSubscribeHandler(
+        server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=_create_server_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
