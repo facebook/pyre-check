@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+access_path.indexes_are_attributes_for___dict__ (fun) -> [_test_sink (fun) _test_source (fun) object::__init__ (method) object::__new__ (method)]
 access_path.$toplevel (fun) -> []
 access_path.indexes_and_attributes (fun) -> [_test_sink (fun) _test_source (fun) access_path.SpecialDict::__getitem__ (method) access_path.SpecialDict::__init__ (method) object::__new__ (method)]
 access_path.indexes_are_strings (fun) -> [_test_sink (fun) _test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]

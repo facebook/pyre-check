@@ -27,3 +27,9 @@ def indexes_and_attributes():
     o.attribute = _test_source()
     # False positive, attributes and indexes are mixed.
     _test_sink(o["attribute"])
+
+
+def indexes_are_attributes_for___dict__():
+    o = object()
+    o.attribute = _test_source()
+    _test_sink(o.__dict__["attribute"])

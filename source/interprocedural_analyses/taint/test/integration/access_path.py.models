@@ -73,6 +73,77 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "access_path.indexes_are_attributes_for___dict__",
+    "callable_line": 32,
+    "code": 5002,
+    "line": 35,
+    "start": 15,
+    "end": 38,
+    "filename": "access_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "attribute" }
+            ],
+            "origin": {
+              "filename": "access_path.py",
+              "line": 34,
+              "start": 18,
+              "end": 32
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "access_path.py",
+              "line": 35,
+              "start": 15,
+              "end": 38
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "attribute" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "access_path.indexes_are_attributes_for___dict__:5002:0:Call|_test_sink|0|formal(arg):80db47c956c3136cc4ca0ecadd1238f3"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "access_path.indexes_are_strings",
     "callable_line": 10,
     "code": 5002,
