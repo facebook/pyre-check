@@ -198,16 +198,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "call": {
-                  "position": { "line": 38, "start": 30, "end": 33 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg)"
-                },
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },
@@ -626,16 +616,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "extra_traces": [
-              {
-                "call": {
-                  "position": { "line": 88, "start": 42, "end": 45 },
-                  "resolves_to": [ "extra_trace.nested_transform_x" ],
-                  "port": "formal(arg)"
-                },
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
             "kinds": [
               {
                 "return_paths": { "": 0 },

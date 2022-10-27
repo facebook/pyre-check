@@ -1230,7 +1230,20 @@ end = struct
     let add_extra_traces existing_extra_traces =
       ExtraTraceFirstHop.Set.join existing_extra_traces extra_traces
     in
-    Map.transform ExtraTraceFirstHop.Set.Self Map ~f:add_extra_traces taint
+    let apply (call_info, local_taint) =
+      match call_info with
+      | CallInfo.Tito -> (* Tito taint needs no extra traces *) call_info, local_taint
+      | _ ->
+          let local_taint =
+            LocalTaintDomain.transform
+              ExtraTraceFirstHop.Set.Self
+              Map
+              ~f:add_extra_traces
+              local_taint
+          in
+          call_info, local_taint
+    in
+    Map.transform Map.KeyValue Map ~f:apply taint
 end
 
 module ForwardTaint = MakeTaint (struct
