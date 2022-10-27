@@ -220,7 +220,8 @@ let taint_in_taint_out_mapping
 
 let return_paths_and_collapse_depths ~kind ~tito_taint =
   match Sinks.discard_transforms kind with
-  | Sinks.LocalReturn ->
+  | Sinks.LocalReturn
+  | Sinks.ParameterUpdate _ ->
       let paths =
         BackwardTaint.fold Features.ReturnAccessPathTree.Path tito_taint ~f:List.cons ~init:[]
       in
@@ -229,10 +230,8 @@ let return_paths_and_collapse_depths ~kind ~tito_taint =
           failwith "unexpected empty return path set"
       in
       paths
-  | _ ->
-      (* No special handling of paths for side effects *)
-      (* TODO(T118287187): Handle tito collapse depth for ParameterUpdate *)
-      [[], 0]
+  | Sinks.Attach -> [[], 0]
+  | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp kind |> failwith
 
 
 let sink_trees_of_argument

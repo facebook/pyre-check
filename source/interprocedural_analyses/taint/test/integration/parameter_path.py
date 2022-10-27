@@ -160,7 +160,7 @@ def tito_from_a_to_self_b(self, arg):
 def issue_tito_from_a_to_self_b():
     x = {}
     tito_from_a_to_self_b(x, {"a": _test_source(), "b": 0})
-    _test_sink(x["a"])  # False positive.
+    _test_sink(x["a"])
     _test_sink(x["b"])
 
     x = {}
