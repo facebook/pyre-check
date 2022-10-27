@@ -462,7 +462,10 @@ let rec parse_access_path ~path ~location expression =
   | Expression.Name (Name.Identifier _) ->
       Error (annotation_error "access path must start with `_`")
   | Expression.Name (Name.Attribute { base; attribute; _ }) ->
-      parse_access_path ~path ~location base >>| fun base -> base @ [Label.Field attribute]
+      (* The analysis does not currently distinguish between fields and indices.
+       * Silently convert fields to indices to prevent confusion. *)
+      parse_access_path ~path ~location base
+      >>| fun base -> base @ [Label.create_name_index attribute]
   | Expression.Call
       {
         callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };

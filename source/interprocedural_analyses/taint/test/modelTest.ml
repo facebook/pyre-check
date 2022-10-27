@@ -5474,23 +5474,23 @@ let test_access_path _ =
     | Ok _ -> assert_bool (Format.sprintf "Unexpected valid access path for: %s" source) false
   in
   assert_valid_path ~source:"_" ~expected:[];
-  assert_valid_path ~source:"_.foo" ~expected:[Label.Field "foo"];
-  assert_valid_path ~source:"_.foo.bar" ~expected:[Label.Field "foo"; Label.Field "bar"];
+  assert_valid_path ~source:"_.foo" ~expected:[Label.Index "foo"];
+  assert_valid_path ~source:"_.foo.bar" ~expected:[Label.Index "foo"; Label.Index "bar"];
   assert_valid_path ~source:"_['foo']" ~expected:[Label.Index "foo"];
   assert_valid_path ~source:"_[\"foo\"]" ~expected:[Label.Index "foo"];
   assert_valid_path ~source:"_[0]" ~expected:[Label.Index "0"];
   assert_valid_path ~source:"_['foo']['bar']" ~expected:[Label.Index "foo"; Label.Index "bar"];
-  assert_valid_path ~source:"_['foo'].bar" ~expected:[Label.Index "foo"; Label.Field "bar"];
-  assert_valid_path ~source:"_.foo['bar']" ~expected:[Label.Field "foo"; Label.Index "bar"];
-  assert_valid_path ~source:"_.foo[0]" ~expected:[Label.Field "foo"; Label.Index "0"];
+  assert_valid_path ~source:"_['foo'].bar" ~expected:[Label.Index "foo"; Label.Index "bar"];
+  assert_valid_path ~source:"_.foo['bar']" ~expected:[Label.Index "foo"; Label.Index "bar"];
+  assert_valid_path ~source:"_.foo[0]" ~expected:[Label.Index "foo"; Label.Index "0"];
   assert_valid_path ~source:"_.keys()" ~expected:[AccessPath.dictionary_keys];
   assert_valid_path ~source:"_.all()" ~expected:[Label.AnyIndex];
   assert_valid_path
     ~source:"_[0].keys().foo.all()"
-    ~expected:[Label.Index "0"; AccessPath.dictionary_keys; Label.Field "foo"; Label.AnyIndex];
+    ~expected:[Label.Index "0"; AccessPath.dictionary_keys; Label.Index "foo"; Label.AnyIndex];
   assert_valid_path
     ~source:"_.all()['a'].bar"
-    ~expected:[Label.AnyIndex; Label.Index "a"; Label.Field "bar"];
+    ~expected:[Label.AnyIndex; Label.Index "a"; Label.Index "bar"];
   assert_invalid_path
     ~source:"foo"
     ~expected:"`foo` is an invalid access path: access path must start with `_`";
