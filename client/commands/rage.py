@@ -127,12 +127,13 @@ def _get_server_log_timestamp_and_paths(
 
 
 def _server_log_sections(
-    log_directory: Path, limit: Optional[int] = None
+    log_directory: Path, flavor: identifiers.PyreFlavor, limit: Optional[int] = None
 ) -> List[Section]:
     # Log files are sorted according to server start time: recently started servers
     # will come first.
     timestamp_and_paths = _get_server_log_timestamp_and_paths(
-        log_directory, flavor=identifiers.PyreFlavor.CLASSIC
+        log_directory,
+        flavor,
     )
 
     sections: List[Section] = []
@@ -142,7 +143,9 @@ def _server_log_sections(
         content = _get_file_content(path)
         if content is None:
             continue
-        sections.append(Section(name=f"Server Log ({timestamp})", content=content))
+        sections.append(
+            Section(name=f"Server Log ({flavor.value}) ({timestamp})", content=content)
+        )
     return sections
 
 
@@ -189,15 +192,19 @@ def _print_watchman_sections(output: TextIO) -> None:
 def _print_log_file_sections(
     log_directory: Path, server_log_count: Optional[int], output: TextIO
 ) -> None:
-    LOG.info("Collecting information from Pyre's log files...")
-    for section in itertools.chain(
-        _server_log_sections(log_directory, limit=server_log_count),
-        [
-            _client_log_section(log_directory),
-        ],
-    ):
-        if section is not None:
-            _print_section(section, output)
+    flavors = [identifiers.PyreFlavor.CLASSIC, identifiers.PyreFlavor.CODE_NAVIGATION]
+    for flavor in flavors:
+        LOG.info(
+            f"Collecting information from Pyre's log files for the {flavor.value} flavor..."
+        )
+        for section in itertools.chain(
+            _server_log_sections(log_directory, flavor, limit=server_log_count),
+            [
+                _client_log_section(log_directory),
+            ],
+        ):
+            if section is not None:
+                _print_section(section, output)
 
 
 def run_rage(
