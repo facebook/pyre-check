@@ -1652,15 +1652,18 @@ module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
     using the special LocalReturn sink. *)
 module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 
-let local_return_frame ~collapse_depth =
+let local_return_frame ~output_path ~collapse_depth =
   Frame.create
     [
       Part (TraceLength.Self, 0);
-      Part (Features.ReturnAccessPathTree.Path, ([], collapse_depth));
+      Part (Features.ReturnAccessPathTree.Path, (output_path, collapse_depth));
       Part (Features.BreadcrumbSet.Self, Features.BreadcrumbSet.empty);
     ]
 
 
 (* Special sink as it needs the return access path *)
-let local_return_taint ~collapse_depth =
-  BackwardTaint.singleton CallInfo.Tito Sinks.LocalReturn (local_return_frame ~collapse_depth)
+let local_return_taint ~output_path ~collapse_depth =
+  BackwardTaint.singleton
+    CallInfo.Tito
+    Sinks.LocalReturn
+    (local_return_frame ~output_path ~collapse_depth)

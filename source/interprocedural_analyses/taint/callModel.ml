@@ -190,7 +190,7 @@ let taint_in_taint_out_mapping
         mapping
       else if SanitizeTransformSet.is_empty obscure_sanitize then
         let return_tito =
-          Domains.local_return_frame ~collapse_depth:0
+          Domains.local_return_frame ~output_path:[] ~collapse_depth:0
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
           |> BackwardTaint.singleton CallInfo.declaration Sinks.LocalReturn
           |> BackwardState.Tree.create_leaf
@@ -206,7 +206,7 @@ let taint_in_taint_out_mapping
                Sinks.LocalReturn)
         in
         let return_tito =
-          Domains.local_return_frame ~collapse_depth:0
+          Domains.local_return_frame ~output_path:[] ~collapse_depth:0
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
           |> BackwardTaint.singleton CallInfo.Tito tito_kind
           |> BackwardState.Tree.create_leaf

@@ -40,7 +40,10 @@ module Internal : sig
     type t = {
       breadcrumbs: Features.Breadcrumb.t list;
       via_features: Features.ViaFeature.t list;
-      path: Abstract.TreeDomain.Label.path option;
+      applies_to: Abstract.TreeDomain.Label.path option;
+      parameter_path: Abstract.TreeDomain.Label.path option;
+      return_path: Abstract.TreeDomain.Label.path option;
+      update_path: Abstract.TreeDomain.Label.path option;
       leaf_names: Features.LeafName.t list;
       leaf_name_provided: bool;
       trace_length: int option;

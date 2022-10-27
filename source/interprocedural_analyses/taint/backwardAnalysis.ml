@@ -198,7 +198,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let local_return_leaf =
       BackwardState.Tree.create_leaf
-        (Domains.local_return_taint ~collapse_depth:maximum_tito_collapse_depth)
+        (Domains.local_return_taint ~output_path:[] ~collapse_depth:maximum_tito_collapse_depth)
     in
     (* We handle constructors, __setitem__ methods, and property setters specially and track
        effects. *)
@@ -760,6 +760,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let call_taint =
             BackwardState.Tree.create_leaf
               (Domains.local_return_taint
+                 ~output_path:[]
                  ~collapse_depth:
                    FunctionContext.taint_configuration.analysis_model_constraints
                      .maximum_tito_collapse_depth)

@@ -65,7 +65,10 @@ module Internal = struct
     type t = {
       breadcrumbs: Features.Breadcrumb.t list;
       via_features: Features.ViaFeature.t list;
-      path: Abstract.TreeDomain.Label.path option;
+      applies_to: Abstract.TreeDomain.Label.path option;
+      parameter_path: Abstract.TreeDomain.Label.path option;
+      return_path: Abstract.TreeDomain.Label.path option;
+      update_path: Abstract.TreeDomain.Label.path option;
       leaf_names: Features.LeafName.t list;
       leaf_name_provided: bool;
       trace_length: int option;
@@ -76,7 +79,10 @@ module Internal = struct
       {
         breadcrumbs = [];
         via_features = [];
-        path = None;
+        applies_to = None;
+        parameter_path = None;
+        return_path = None;
+        update_path = None;
         leaf_names = [];
         leaf_name_provided = false;
         trace_length = None;
@@ -94,28 +100,47 @@ module Internal = struct
         | None, Some right -> Ok (Some right)
         | None, None -> Ok None
       in
-      join_option ~name:"path" left.path right.path
-      >>= fun path ->
+      join_option ~name:"AppliesTo" left.applies_to right.applies_to
+      >>= fun applies_to ->
+      join_option ~name:"ParameterPath" left.parameter_path right.parameter_path
+      >>= fun parameter_path ->
+      join_option ~name:"ReturnPath" left.return_path right.return_path
+      >>= fun return_path ->
+      join_option ~name:"UpdatePath" left.update_path right.update_path
+      >>= fun update_path ->
       join_option ~name:"trace length" left.trace_length right.trace_length
       >>| fun trace_length ->
       {
         breadcrumbs = left.breadcrumbs @ right.breadcrumbs;
         via_features = left.via_features @ right.via_features;
-        path;
+        applies_to;
+        parameter_path;
+        return_path;
+        update_path;
         leaf_names = left.leaf_names @ right.leaf_names;
         leaf_name_provided = left.leaf_name_provided || right.leaf_name_provided;
         trace_length;
       }
 
 
-    let extend_path features element =
-      match features.path with
-      | None -> { features with path = Some [element] }
-      | Some path -> { features with path = Some (element :: path) }
+    let extend_applies_to features element =
+      match features.applies_to with
+      | None -> { features with applies_to = Some [element] }
+      | Some applies_to -> { features with applies_to = Some (element :: applies_to) }
 
 
     let show_as_list
-        { breadcrumbs; via_features; path; leaf_names; leaf_name_provided = _; trace_length }
+        {
+          breadcrumbs;
+          via_features;
+          applies_to;
+          parameter_path;
+          return_path;
+          update_path;
+          leaf_names;
+          leaf_name_provided = _;
+          trace_length;
+        }
       =
       let show_breadcrumb = function
         | Features.Breadcrumb.SimpleVia name -> Format.sprintf "Via[%s]" name
@@ -126,18 +151,20 @@ module Internal = struct
         @ List.map ~f:Features.ViaFeature.show via_features
         @ List.map ~f:Features.LeafName.show leaf_names
       in
-      let features =
-        match path with
-        | Some path ->
-            features @ [Format.asprintf "Path[%a]" Abstract.TreeDomain.Label.pp_path path]
+      let add_option ~name ~pp option features =
+        match option with
+        | Some value -> features @ [Format.asprintf "%s[%a]" name pp value]
         | None -> features
       in
-      let features =
-        match trace_length with
-        | Some trace_length -> features @ [Format.sprintf "TraceLength[%d]" trace_length]
-        | None -> features
+      let add_path_option ~name path features =
+        add_option ~name ~pp:Abstract.TreeDomain.Label.pp_path path features
       in
       features
+      |> add_path_option ~name:"AppliesTo" applies_to
+      |> add_path_option ~name:"ParameterPath" parameter_path
+      |> add_path_option ~name:"ReturnPath" return_path
+      |> add_path_option ~name:"UpdatePath" update_path
+      |> add_option ~name:"TraceLength" ~pp:Int.pp trace_length
   end
 
   module TaintKindsWithFeatures = struct
@@ -161,6 +188,18 @@ module Internal = struct
 
 
     let from_via_feature via_feature = from_via_features [via_feature]
+
+    let from_parameter_path path =
+      { kinds = []; features = { TaintFeatures.empty with parameter_path = Some path } }
+
+
+    let from_return_path path =
+      { kinds = []; features = { TaintFeatures.empty with return_path = Some path } }
+
+
+    let from_update_path path =
+      { kinds = []; features = { TaintFeatures.empty with update_path = Some path } }
+
 
     let join left right =
       let open Core.Result in
@@ -670,6 +709,13 @@ let rec parse_annotations
             in
             extract_names expression
             >>= fun names -> List.map ~f:to_leaf names |> all >>| TaintKindsWithFeatures.from_kinds
+        | Some "ParameterPath" ->
+            parse_access_path ~path ~location expression
+            >>| TaintKindsWithFeatures.from_parameter_path
+        | Some "ReturnPath" ->
+            parse_access_path ~path ~location expression >>| TaintKindsWithFeatures.from_return_path
+        | Some "UpdatePath" ->
+            parse_access_path ~path ~location expression >>| TaintKindsWithFeatures.from_update_path
         | _ ->
             let subkind = extract_subkind expression in
             extract_kinds_with_features callee
@@ -741,7 +787,10 @@ let rec parse_annotations
           {
             breadcrumbs = _;
             via_features = _;
-            path = None;
+            applies_to = None;
+            parameter_path = None;
+            return_path = None;
+            update_path = None;
             leaf_names = [];
             leaf_name_provided = false;
             trace_length = None;
@@ -784,28 +833,30 @@ let rec parse_annotations
                 (annotation_error
                    "Expected either integer or string as index in AppliesTo annotation.")
         in
-        let extend_path field = function
+        let extend_applies_to field = function
           | TaintAnnotation.Sink { sink; features } ->
               Ok
-                (TaintAnnotation.Sink { sink; features = TaintFeatures.extend_path features field })
+                (TaintAnnotation.Sink
+                   { sink; features = TaintFeatures.extend_applies_to features field })
           | TaintAnnotation.Source { source; features } ->
               Ok
                 (TaintAnnotation.Source
-                   { source; features = TaintFeatures.extend_path features field })
+                   { source; features = TaintFeatures.extend_applies_to features field })
           | TaintAnnotation.Tito { tito; features } ->
               Ok
-                (TaintAnnotation.Tito { tito; features = TaintFeatures.extend_path features field })
+                (TaintAnnotation.Tito
+                   { tito; features = TaintFeatures.extend_applies_to features field })
           | TaintAnnotation.AddFeatureToArgument { features } ->
               Ok
                 (TaintAnnotation.AddFeatureToArgument
-                   { features = TaintFeatures.extend_path features field })
+                   { features = TaintFeatures.extend_applies_to features field })
           | TaintAnnotation.Sanitize _ ->
               Error (annotation_error "`AppliesTo[Sanitize[...]]` is not supported.")
         in
         field
         >>= fun field ->
         parse_annotation expression
-        >>= fun annotations -> List.map ~f:(extend_path field) annotations |> all
+        >>= fun annotations -> List.map ~f:(extend_applies_to field) annotations |> all
     | Call { callee; arguments }
       when [%compare.equal: string option] (base_name callee) (Some "CrossRepositoryTaint") -> (
         let required_arguments, optional_arguments =
@@ -1142,17 +1193,74 @@ let rec parse_annotations
   parse_annotation (Node.value annotation)
 
 
+let path_for_source_or_sink ~kind ~root ~features =
+  let path_for_parameter () =
+    let kind =
+      match kind with
+      | "source" -> "parameter source"
+      | name -> name
+    in
+    match features with
+    | {
+     TaintFeatures.parameter_path = Some parameter_path;
+     applies_to = None;
+     return_path = None;
+     update_path = None;
+     _;
+    } ->
+        Ok parameter_path
+    | { return_path = Some _; _ } ->
+        Error (Format.sprintf "Invalid ReturnPath annotation for %s" kind)
+    | { update_path = Some _; _ } ->
+        Error (Format.sprintf "Invalid UpdatePath annotation for %s" kind)
+    | _ ->
+        Error (Format.sprintf "Invalid mix of AppliesTo and ParameterPath annotation for %s" kind)
+  in
+  let path_for_return () =
+    let kind =
+      match kind with
+      | "sink" -> "return sink"
+      | name -> name
+    in
+    match features with
+    | {
+     TaintFeatures.return_path = Some return_path;
+     applies_to = None;
+     parameter_path = None;
+     update_path = None;
+     _;
+    } ->
+        Ok return_path
+    | { parameter_path = Some _; _ } ->
+        Error (Format.sprintf "Invalid ParameterPath annotation for %s" kind)
+    | { update_path = Some _; _ } ->
+        Error (Format.sprintf "Invalid UpdatePath annotation for %s" kind)
+    | _ -> Error (Format.sprintf "Invalid mix of AppliesTo and ReturnPath for %s" kind)
+  in
+  match root, features with
+  | ( _,
+      { TaintFeatures.applies_to; parameter_path = None; return_path = None; update_path = None; _ }
+    ) ->
+      (* AppliesTo works for both parameter and return sources/sinks. *)
+      Ok (Option.value ~default:[] applies_to)
+  | AccessPath.Root.LocalResult, _ -> path_for_return ()
+  | _ -> path_for_parameter ()
+
+
 let introduce_sink_taint
     ~root
     ~features:
-      {
-        TaintFeatures.breadcrumbs;
-        via_features;
-        path;
-        leaf_names;
-        leaf_name_provided;
-        trace_length;
-      }
+      ({
+         TaintFeatures.breadcrumbs;
+         via_features;
+         applies_to = _;
+         parameter_path = _;
+         return_path = _;
+         update_path = _;
+         leaf_names;
+         leaf_name_provided;
+         trace_length;
+       } as features)
     ~signature_breadcrumbs
     ~source_sink_filter
     ({ Model.backward = { sink_taint; _ }; _ } as model)
@@ -1205,9 +1313,10 @@ let introduce_sink_taint
       |> transform_call_information
       |> BackwardState.Tree.create_leaf
     in
-    let path = Option.value ~default:[] path in
+    path_for_source_or_sink ~kind:"sink" ~root ~features
+    >>| fun path ->
     let sink_taint = BackwardState.assign ~weak:true ~root ~path leaf_taint sink_taint in
-    Ok { model with backward = { model.backward with sink_taint } }
+    { model with backward = { model.backward with sink_taint } }
   else
     Ok model
 
@@ -1215,23 +1324,22 @@ let introduce_sink_taint
 let introduce_taint_in_taint_out
     ~root
     ~features:
-      {
-        TaintFeatures.breadcrumbs;
-        via_features;
-        path;
-        leaf_names = _;
-        leaf_name_provided = _;
-        trace_length = _;
-      }
+      ({
+         TaintFeatures.breadcrumbs;
+         via_features;
+         applies_to = _;
+         parameter_path = _;
+         return_path = _;
+         update_path = _;
+         leaf_names = _;
+         leaf_name_provided = _;
+         trace_length = _;
+       } as features)
     ~signature_breadcrumbs
     ({ Model.backward = { taint_in_taint_out; sink_taint }; _ } as model)
     taint_sink_kind
   =
   let open Core.Result in
-  let assign_backward_taint environment taint =
-    let path = Option.value ~default:[] path in
-    BackwardState.assign ~weak:true ~root ~path taint environment
-  in
   let breadcrumbs =
     breadcrumbs
     |> List.map ~f:Features.BreadcrumbInterned.intern
@@ -1240,8 +1348,44 @@ let introduce_taint_in_taint_out
     |> Features.BreadcrumbSet.add_set ~to_add:signature_breadcrumbs
   in
   let via_features = Features.ViaFeatureSet.of_list via_features in
+  let input_path =
+    match features with
+    | { applies_to; parameter_path = None; _ } -> Ok (Option.value ~default:[] applies_to)
+    | { parameter_path = Some parameter_path; applies_to = None; _ } -> Ok parameter_path
+    | _ ->
+        Error
+          (Format.asprintf
+             "Invalid mix of AppliesTo and ParameterPath for %a annotation"
+             Sinks.pp
+             taint_sink_kind)
+  in
+  input_path
+  >>= fun input_path ->
+  let output_path =
+    match Sinks.discard_transforms taint_sink_kind, features with
+    | _, { return_path = None; update_path = None; _ } -> Ok []
+    | Sinks.LocalReturn, { return_path = Some return_path; update_path = None; _ } -> Ok return_path
+    | Sinks.LocalReturn, { update_path = Some _; return_path = None; _ } ->
+        Error "Invalid UpdatePath annotation for TaintInTaintOut annotation"
+    | Sinks.ParameterUpdate _, { return_path = Some _; update_path = None; _ } ->
+        Error "Invalid ReturnPath annotation for Updates annotation"
+    | Sinks.ParameterUpdate _, { update_path = Some update_path; return_path = None; _ } ->
+        Ok update_path
+    | Sinks.Attach, { return_path = Some _; _ } ->
+        Error "Invalid ReturnPath annotation for AttachTo annotation"
+    | Sinks.Attach, { update_path = Some _; _ } ->
+        Error "Invalid UpdatePath annotation for AttachTo annotation"
+    | taint_sink_kind, _ ->
+        Error
+          (Format.asprintf
+             "Invalid mix of ReturnPath and UpdatePath for %a annotation"
+             Sinks.pp
+             taint_sink_kind)
+  in
+  output_path
+  >>= fun output_path ->
   let tito_result_taint =
-    Domains.local_return_frame ~collapse_depth:0
+    Domains.local_return_frame ~output_path ~collapse_depth:0
     |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
     |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
     |> BackwardTaint.singleton CallInfo.Tito taint_sink_kind
@@ -1251,37 +1395,52 @@ let introduce_taint_in_taint_out
     match taint_sink_kind with
     | Sinks.LocalReturn
     | Sinks.ParameterUpdate _ ->
-        let taint_in_taint_out = assign_backward_taint taint_in_taint_out tito_result_taint in
+        let taint_in_taint_out =
+          BackwardState.assign
+            ~weak:true
+            ~root
+            ~path:input_path
+            tito_result_taint
+            taint_in_taint_out
+        in
         Ok { model.backward with taint_in_taint_out }
     | Sinks.Transform { local; global; _ } ->
-        let taint_in_taint_out = assign_backward_taint taint_in_taint_out tito_result_taint in
+        let taint_in_taint_out =
+          BackwardState.assign
+            ~weak:true
+            ~root
+            ~path:input_path
+            tito_result_taint
+            taint_in_taint_out
+        in
         let extra_trace_sink = Sinks.make_transform ~local ~global ~base:Sinks.ExtraTraceSink in
         let extra_sink_taint =
           Frame.initial
           |> BackwardTaint.singleton CallInfo.declaration extra_trace_sink
           |> BackwardState.Tree.create_leaf
         in
-        let sink_taint = assign_backward_taint sink_taint extra_sink_taint in
+        let sink_taint =
+          BackwardState.assign ~weak:true ~root ~path:input_path extra_sink_taint sink_taint
+        in
         Ok { Model.Backward.taint_in_taint_out; sink_taint }
     | Sinks.Attach
       when Features.BreadcrumbSet.is_empty breadcrumbs
            && Features.ViaFeatureSet.is_bottom via_features ->
         Error "`Attach` must be accompanied by a list of features to attach."
     | Sinks.Attach ->
-        let update_taint =
+        let attach_taint =
           Frame.initial
           |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
           |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
-        let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
+        let taint_in_taint_out =
+          BackwardState.assign ~weak:true ~root ~path:input_path attach_taint taint_in_taint_out
+        in
         Ok { model.backward with taint_in_taint_out }
     | _ ->
-        let error =
-          Format.asprintf "Invalid TaintInTaintOut annotation `%s`" (Sinks.show taint_sink_kind)
-        in
-        Error error
+        Error (Format.asprintf "Invalid TaintInTaintOut annotation `%a`" Sinks.pp taint_sink_kind)
   in
   backward >>| fun backward -> { model with backward }
 
@@ -1289,14 +1448,17 @@ let introduce_taint_in_taint_out
 let introduce_source_taint
     ~root
     ~features:
-      {
-        TaintFeatures.breadcrumbs;
-        via_features;
-        path;
-        leaf_names;
-        leaf_name_provided;
-        trace_length;
-      }
+      ({
+         TaintFeatures.breadcrumbs;
+         via_features;
+         applies_to = _;
+         parameter_path = _;
+         return_path = _;
+         update_path = _;
+         leaf_names;
+         leaf_name_provided;
+         trace_length;
+       } as features)
     ~signature_breadcrumbs
     ~source_sink_filter
     ({ Model.forward = { source_taint }; _ } as model)
@@ -1315,7 +1477,6 @@ let introduce_source_taint
            SourceSinkFilter.should_keep_source source_sink_filter taint_source_kind)
     |> Option.value ~default:true
   then
-    let path = Option.value ~default:[] path in
     let breadcrumbs =
       breadcrumbs
       |> List.map ~f:Features.BreadcrumbInterned.intern
@@ -1324,41 +1485,40 @@ let introduce_source_taint
       |> Features.BreadcrumbSet.add_set ~to_add:signature_breadcrumbs
     in
     let via_features = Features.ViaFeatureSet.of_list via_features in
-    let source_taint =
-      let transform_call_information taint =
-        if leaf_name_provided then
-          ForwardTaint.transform
-            ForwardTaint.call_info
-            Map
-            ~f:(function
-              | CallInfo.Declaration _ -> CallInfo.Declaration { leaf_name_provided = true }
-              | call_info -> call_info)
-            taint
-        else
+    let transform_call_information taint =
+      if leaf_name_provided then
+        ForwardTaint.transform
+          ForwardTaint.call_info
+          Map
+          ~f:(function
+            | CallInfo.Declaration _ -> CallInfo.Declaration { leaf_name_provided = true }
+            | call_info -> call_info)
           taint
-      in
-      let transform_trace_length taint =
-        match trace_length with
-        | Some trace_length -> Frame.transform TraceLength.Self Map ~f:(fun _ -> trace_length) taint
-        | None -> taint
-      in
-
-      let leaf_taint =
-        let leaf_names =
-          leaf_names |> List.map ~f:Features.LeafNameInterned.intern |> Features.LeafNameSet.of_list
-        in
-        Frame.initial
-        |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
-        |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
-        |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-        |> transform_trace_length
-        |> ForwardTaint.singleton CallInfo.declaration taint_source_kind
-        |> transform_call_information
-        |> ForwardState.Tree.create_leaf
-      in
-      ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint
+      else
+        taint
     in
-    Ok { model with forward = { source_taint } }
+    let transform_trace_length taint =
+      match trace_length with
+      | Some trace_length -> Frame.transform TraceLength.Self Map ~f:(fun _ -> trace_length) taint
+      | None -> taint
+    in
+    let leaf_taint =
+      let leaf_names =
+        leaf_names |> List.map ~f:Features.LeafNameInterned.intern |> Features.LeafNameSet.of_list
+      in
+      Frame.initial
+      |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
+      |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+      |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+      |> transform_trace_length
+      |> ForwardTaint.singleton CallInfo.declaration taint_source_kind
+      |> transform_call_information
+      |> ForwardState.Tree.create_leaf
+    in
+    path_for_source_or_sink ~kind:"source" ~root ~features
+    >>| fun path ->
+    let source_taint = ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint in
+    { model with forward = { source_taint } }
   else
     Ok model
 
