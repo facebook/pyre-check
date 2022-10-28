@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module stores all server state related fields as a single class, so all the mutable state
+can be accessed in one place. Note that this state is mutable and a singleton, so users of this module
+should be aware a change to this state could affect other modules that interact with this state.
 """
 
 
