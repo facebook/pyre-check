@@ -4,7 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module represents a very high level API for
+all the processing that will be done by the Pyre server when a
+'pyre query' command is invoked on the command line.
+
+Queries can either operate with or without a long-standing Pyre daemon: the
+modules daemon_query.py and no_daemon_query.py are responsible
+for handling the low-level details of how those queries are executed.
 """
 
 
