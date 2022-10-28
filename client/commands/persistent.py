@@ -4,7 +4,20 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module represents the top level class and entry point for the LSP client to interact with the Pyre Server.
+The LSP client will invoke the top level method here, which will instantiate a running instance
+of a persistent Pyre client that will interact with the pyre server.
+
+The meaning of "persistent" in this context is to illustrate that the connection to the pyre server is non-transient
+and is designed to stay alive during the entire duration of a user's interaction with Vscode.
+
+The main responsibilities of this class are:
+1. Instantiating an instance of the persistent Pyre client and ensuring re-launch of the
+Pyre server in the scenario that it goes down.
+2. Handling subscriptions to the Pyre server - listening to events and status updates from the server,
+and sending updates back to the LSP to display appropriate notifications to the user. These events include
+type errors, status updates, and error messages.
+
 """
 
 
