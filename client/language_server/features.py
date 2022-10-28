@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains all the different availability states that could apply to all of the language server features.
+
+The actual availability of the each individual feature is handled by the vscode client
+and is passed to the pyre client entry point (pyre.py) upon initialization of the persistent client.
 """
 
 
