@@ -14,6 +14,7 @@ because it illustrates that this is the intermediary between the Language server
 import dataclasses
 import logging
 import os
+import random
 import time
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union
@@ -502,6 +503,28 @@ class PyreLanguageServer:
                     error_message = raw_result.error_message
                     raw_result = []
             end_time = time.time()
+
+            downsample_rate = 100
+            if random.randrange(0, downsample_rate) == 0:
+                source_code_context = await SourceCodeContext.from_source_and_position(
+                    self.server_state.opened_documents[document_path].code,
+                    parameters.position,
+                )
+
+                if source_code_context is None:
+                    source_code_context = f"""
+                    ERROR: Position specified by parameters: {parameters.position} is an illegal position.
+                    Check if the position contains negative numbers or if it is
+                    larger than the bounds of the file path: {document_path}
+                    """
+                    LOG.warning(source_code_context)
+
+                LOG.debug(
+                    f"Logging file contents to scuba near requested line: {source_code_context} for definition request position: {parameters.position}"
+                )
+            else:
+                source_code_context = "Skipping logging context to scuba"
+                LOG.debug(f"{source_code_context} for request id: {request_id}")
             await self.write_telemetry(
                 {
                     "type": "LSP",
@@ -518,6 +541,10 @@ class PyreLanguageServer:
                     "server_state_start_status": self.server_state.server_last_status.value,
                     "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                     "error_message": str(error_message),
+                    "is_dirty": self.server_state.opened_documents[
+                        document_path
+                    ].is_dirty,
+                    "truncated_file_contents": str(source_code_context),
                 },
                 activity_key,
             )
