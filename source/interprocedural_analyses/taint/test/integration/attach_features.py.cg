@@ -2,7 +2,6 @@
 Call dependencies
 attach_features.attach_to_returned_source (fun) -> []
 attach_features.attach_to_returned_source_2 (fun) -> []
-attach_features.attach_to_returned_source_ports (fun) -> []
 attach_features.modeled_sink_with_optionals (fun) -> [_test_sink (fun)]
 attach_features.$toplevel (fun) -> []
 attach_features.attach_to_returned_sink (fun) -> [_test_source (fun)]

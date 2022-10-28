@@ -68,9 +68,5 @@ def attach_to_returned_source():
     return 0
 
 
-def attach_to_returned_source_ports():
-    return 0
-
-
 def attach_to_returned_source_2():
     return 0

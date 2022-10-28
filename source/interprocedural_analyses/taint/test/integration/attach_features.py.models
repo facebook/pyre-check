@@ -253,36 +253,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "attach_features.attach_to_returned_source_ports",
-    "sources": [
-      {
-        "port": "result[f]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "result[g]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "kind": "Attach"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "result[g][h]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "attach_features.attach_without_tito",
     "tito": [
       {

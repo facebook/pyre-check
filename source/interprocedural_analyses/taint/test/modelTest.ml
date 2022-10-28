@@ -2905,6 +2905,24 @@ let test_invalid_models context =
       "`AttachToSource[feature]` is an invalid taint annotation: All parameters to \
        `AttachToSource` must be of the form `Via[feature]`."
     ();
+  assert_invalid_model
+    ~model_source:"def test.source() -> AttachToSource[Via[featureA], ReturnPath[_]]: ..."
+    ~expect:
+      "`AttachToSource[(Via[featureA], ReturnPath[_])]` is an invalid taint annotation: All \
+       parameters to `AttachToSource` must be of the form `Via[feature]`."
+    ();
+  assert_invalid_model
+    ~model_source:"def test.sink(parameter: AttachToSink[Via[featureA], ParameterPath[_]]): ..."
+    ~expect:
+      "`AttachToSink[(Via[featureA], ParameterPath[_])]` is an invalid taint annotation: All \
+       parameters to `AttachToSink` must be of the form `Via[feature]`."
+    ();
+  assert_invalid_model
+    ~model_source:"def test.sink(parameter: AttachToTito[Via[featureA], ParameterPath[_]]): ..."
+    ~expect:
+      "`AttachToTito[(Via[featureA], ParameterPath[_])]` is an invalid taint annotation: All \
+       parameters to `AttachToTito` must be of the form `Via[feature]`."
+    ();
 
   (* Multiple features. *)
   assert_valid_model
