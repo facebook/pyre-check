@@ -4,7 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains two main responsibilities:
+1. Provide all the different data models representing requests/responses for the LSP client
+to/from the persistent Pyre client (such as hover, definition, etc.)
+
+2. Provide protocols for reading requests, parsing, and writing responses to/from
+the LSP client. This currently involves doing some kind of transformation to/from a JSON string
+to the specific representation in class form.
 """
 
 
