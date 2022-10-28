@@ -13,7 +13,7 @@ import logging
 import subprocess
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Generator, List, Optional, Sequence
 
 from . import UserError
 from .errors import Errors
@@ -142,6 +142,10 @@ class Configuration:
 
     def get_path(self) -> Path:
         return self._path
+
+    def get_source_paths(self) -> Generator[Path, None, None]:
+        # This is an approximation
+        return Path(self.root).glob("**/*.py")
 
     def get_directory(self) -> Path:
         return self._path.parent

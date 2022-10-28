@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 from unittest.mock import MagicMock, mock_open, patch
 
+from ...filesystem import LocalMode
 from ...repository import Repository
 from .. import strict_default
 from ..strict_default import (
@@ -25,6 +26,8 @@ repository = Repository()
 
 
 class StrictDefaultTest(unittest.TestCase):
+    @patch.object(Configuration, "get_source_paths")
+    @patch(f"{strict_default.__name__}.remove_local_mode")
     @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
     @patch.object(Configuration, "get_directory")
     @patch.object(Configuration, "write")
@@ -37,6 +40,8 @@ class StrictDefaultTest(unittest.TestCase):
         configuration_write,
         get_directory,
         get_configuration_path,
+        remove_local_mode,
+        get_source_paths,
     ) -> None:
         arguments = MagicMock()
         arguments.local_configuration = Path("local")
@@ -58,6 +63,136 @@ class StrictDefaultTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             StrictDefault.from_arguments(arguments, repository).run()
             get_and_suppress_errors.assert_called_once()
+
+    @patch.object(Configuration, "get_source_paths")
+    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
+    @patch.object(Configuration, "get_directory")
+    @patch.object(Configuration, "write")
+    @patch.object(Configuration, "add_strict")
+    @patch.object(ErrorSuppressingCommand, "_get_and_suppress_errors")
+    def test_remove_strict_headers(
+        self,
+        get_and_suppress_errors,
+        add_strict,
+        configuration_write,
+        get_directory,
+        get_configuration_path,
+        remove_local_mode,
+        get_source_paths,
+    ) -> None:
+        arguments = MagicMock()
+        arguments.local_configuration = Path("local")
+        arguments.fixme_threshold = 1
+        configuration_contents = '{"targets":[]}'
+        get_source_paths.return_value = {Path("foo.py")}
+
+        # Remove strict headers only
+        arguments.remove_strict_headers = True
+        arguments.remove_unsafe_headers = False
+        configuration_contents = '{"source_directories":[]}'
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            StrictDefault.from_arguments(arguments, repository).run()
+            remove_local_mode.assert_called_once_with(
+                Path("foo.py"), [LocalMode.STRICT]
+            )
+
+    @patch.object(Configuration, "get_source_paths")
+    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
+    @patch.object(Configuration, "get_directory")
+    @patch.object(Configuration, "write")
+    @patch.object(Configuration, "add_strict")
+    @patch.object(ErrorSuppressingCommand, "_get_and_suppress_errors")
+    def test_remove_unsafe_headers(
+        self,
+        get_and_suppress_errors,
+        add_strict,
+        configuration_write,
+        get_directory,
+        get_configuration_path,
+        remove_local_mode,
+        get_source_paths,
+    ) -> None:
+        arguments = MagicMock()
+        arguments.local_configuration = Path("local")
+        arguments.fixme_threshold = 1
+        configuration_contents = '{"targets":[]}'
+        get_source_paths.return_value = {Path("foo.py")}
+
+        # Remove unsafe headers only
+        remove_local_mode.reset_mock()
+        arguments.remove_strict_headers = False
+        arguments.remove_unsafe_headers = True
+        configuration_contents = '{"targets":[]}'
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            StrictDefault.from_arguments(arguments, repository).run()
+            remove_local_mode.assert_called_once_with(
+                Path("foo.py"), [LocalMode.UNSAFE]
+            )
+
+    @patch.object(Configuration, "get_source_paths")
+    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
+    @patch.object(Configuration, "get_directory")
+    @patch.object(Configuration, "write")
+    @patch.object(Configuration, "add_strict")
+    @patch.object(ErrorSuppressingCommand, "_get_and_suppress_errors")
+    def test_remove_strict_and_unsafe_headers(
+        self,
+        get_and_suppress_errors,
+        add_strict,
+        configuration_write,
+        get_directory,
+        get_configuration_path,
+        remove_local_mode,
+        get_source_paths,
+    ) -> None:
+        arguments = MagicMock()
+        arguments.local_configuration = Path("local")
+        arguments.fixme_threshold = 1
+        configuration_contents = '{"targets":[]}'
+
+        # Remove unsafe and strict headers
+        arguments.remove_strict_headers = True
+        configuration_contents = '{"targets":[]}'
+        get_source_paths.return_value = {Path("foo.py")}
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            StrictDefault.from_arguments(arguments, repository).run()
+            remove_local_mode.assert_called_once_with(
+                Path("foo.py"), [LocalMode.STRICT, LocalMode.UNSAFE]
+            )
+
+    @patch.object(Configuration, "get_source_paths")
+    @patch(f"{strict_default.__name__}.remove_local_mode")
+    @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
+    @patch.object(Configuration, "get_directory")
+    @patch.object(Configuration, "write")
+    @patch.object(Configuration, "add_strict")
+    @patch.object(ErrorSuppressingCommand, "_get_and_suppress_errors")
+    def test_dont_remove_strict_or_unsafe_headers(
+        self,
+        get_and_suppress_errors,
+        add_strict,
+        configuration_write,
+        get_directory,
+        get_configuration_path,
+        remove_local_mode,
+        get_source_paths,
+    ) -> None:
+        arguments = MagicMock()
+        arguments.local_configuration = Path("local")
+        arguments.fixme_threshold = 1
+        configuration_contents = '{"targets":[]}'
+        get_source_paths.return_value = {Path("foo.py")}
+
+        # Don't remove unsafe or strict headers
+        arguments.remove_strict_headers = False
+        arguments.remove_unsafe_headers = False
+        configuration_contents = '{"targets":[]}'
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            StrictDefault.from_arguments(arguments, repository).run()
+            remove_local_mode.assert_not_called()
 
 
 def _ensure_files_exist(root: Path, relatives: Iterable[str]) -> None:

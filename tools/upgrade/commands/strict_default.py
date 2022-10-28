@@ -22,7 +22,7 @@ from ....client.find_directories import (
 )
 from .. import UserError
 from ..configuration import Configuration
-from ..filesystem import LocalMode, path_exists
+from ..filesystem import LocalMode, path_exists, remove_local_mode
 from ..repository import Repository
 from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
@@ -52,11 +52,13 @@ class StrictDefault(ErrorSuppressingCommand):
         local_configuration: Path,
         remove_strict_headers: bool,
         fixme_threshold: int,
+        remove_unsafe_headers: bool,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._local_configuration: Path = local_configuration
         self._remove_strict_headers: bool = remove_strict_headers
         self._fixme_threshold: int = fixme_threshold
+        self._remove_unsafe_headers: bool = remove_unsafe_headers
 
     @staticmethod
     def from_arguments(
@@ -69,6 +71,7 @@ class StrictDefault(ErrorSuppressingCommand):
             local_configuration=arguments.local_configuration,
             remove_strict_headers=arguments.remove_strict_headers,
             fixme_threshold=arguments.fixme_threshold,
+            remove_unsafe_headers=arguments.remove_unsafe_headers,
         )
 
     @classmethod
@@ -82,7 +85,6 @@ class StrictDefault(ErrorSuppressingCommand):
             help="Path to project root with local configuration",
         )
         parser.add_argument(
-            # TODO(T53195818): Not implemented
             "--remove-strict-headers",
             action="store_true",
             help="Delete unnecessary `# pyre-strict` headers.",
@@ -92,6 +94,11 @@ class StrictDefault(ErrorSuppressingCommand):
             type=int,
             default=None,
             help="Mark file as unsafe if fixme count exceeds threshold.",
+        )
+        parser.add_argument(
+            "--remove-unsafe-headers",
+            action="store_true",
+            help="Remove `# pyre-unsafe` headers and replace with `# pyre-fixmes` if the number of new suppressions is under the given fixme threshold",
         )
 
     def _commit_changes(self) -> None:
@@ -116,6 +123,16 @@ class StrictDefault(ErrorSuppressingCommand):
         LOG.info("Processing %s", configuration.get_directory())
         configuration.add_strict()
         configuration.write()
+
+        source_paths = configuration.get_source_paths()
+        modes = [
+            *([LocalMode.STRICT] if self._remove_strict_headers else []),
+            *([LocalMode.UNSAFE] if self._remove_unsafe_headers else []),
+        ]
+
+        if self._remove_strict_headers or self._remove_unsafe_headers:
+            for path in source_paths:
+                remove_local_mode(path, modes)
 
         self._get_and_suppress_errors(
             configuration,

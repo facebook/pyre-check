@@ -285,6 +285,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 local_configuration=directory,
                 remove_strict_headers=True,
                 fixme_threshold=0,
+                remove_unsafe_headers=False,
             )
             strict_codemod.run()
         else:
