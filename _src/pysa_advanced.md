@@ -33,6 +33,126 @@ To prevent a function or method to be marked as obscure, one can use the
 def module.foo(): ...
 ```
 
+## Parameter and return path
+
+When writing a model for a source, the `ReturnPath` annotation allows to specify
+which index or attribute of the returned value is tainted. For instance:
+
+```python
+def only_attribute_foo_tainted() -> TaintSource[Test, ReturnPath[_.foo]]: ...
+```
+
+Similarly, the `ParameterPath` annotation allows to specify which index or attribute
+of an argument leads to a sink. For instance:
+
+```python
+def only_arg_dot_bar_is_sink(arg: TaintSink[Test, ParameterPath[_.bar]]): ...
+```
+
+### Access path definition
+
+The `ParameterPath` and `ReturnPath` annotation takes an **access path** as an argument.
+An access path starts with an underscore `_` which represents the whole argument or
+return value (depending on the context). The underscore can be followed by attribute
+accesses (e.g, `_.foo.bar`) and index accesses (e.g, `_["foo"][0]["bar"]`), or a
+combination of both (e.g, `_.foo[0]`).
+
+In addition to these, two special calls can be used: `.all()` and `.keys()`.
+
+`.all()` is used to represent that any index might be tainted. This is usually when
+the index cannot be known statically. For instance:
+
+```python
+def foo(i: int):
+  i = random.randint(0, 100)
+  return {i: source()}
+```
+
+This can be represented by the model:
+```python
+def foo(): TaintSource[Test, ReturnPath[_.all()]]: ...
+```
+
+`.keys()` is used to represent that any key of the dictionary might be tainted.
+For instance:
+
+```python
+def foo():
+  return {source(): 0}
+```
+
+This can be represented by the model:
+```python
+def foo(): TaintSource[Test, ReturnPath[_.keys()]]: ...
+```
+
+### Taint In Taint Out
+
+`ParameterPath` and `ReturnPath` can also be used to give more information about
+a propagation. For instance:
+
+```python
+def foo(arg):
+  return {"a": arg["b"][42]}
+```
+
+This can be represented by the model:
+```python
+def foo(arg: TaintInTaintOut[ParameterPath[_["b"][42]], ReturnPath[_["a"]]]): ...
+```
+
+Note that Pysa will automatically infer propagations if it has access to the body
+of the function. Writing taint-in-taint-out models should rarely be required.
+
+When using the `Updates` annotation, the annotation `UpdatePath` is used instead
+of `ReturnPath`. For instance:
+
+```python
+def MyClass.updates_foo(self, x: TaintInTaintOut[Updates[self], UpdatePath[_.foo]]): ...
+```
+
+## Collapsing on taint-in-taint-out
+
+Collapsing (also called taint broadening) is an over-approximation performed by
+the taint analysis for correctness or performance reasons. After applying collapsing,
+Pysa considers that a whole object or variable is tainted when only some attributes
+or keys were initially tainted.
+
+The most common causes for taint collapsing are:
+* Taint goes through an [obscure model](#obscure-models), when it does not have
+the body of the callee; Pysa must assume anything could get tainted, for correctness.
+* The number of tainted attributes or keys hits a [threshold](#tune-the-taint-tree-width-and-depth).
+To prevent the analysis from blowing up by tracking too many values, Pysa assumes the whole object is tainted.
+
+Whenever collapsing happens, Pysa will add the [broadening feature](pysa_features.md#broadening-feature) on
+the taint flow, which can help discard false positives in post processing.
+
+When specifying a [taint propagation](pysa_basics.md#taint-propagation) in a `.pysa` file,
+the propagation will collapse the taint by default. For instance:
+
+```python
+def tito(arg: TaintInTaintOut): ...
+```
+
+```python
+def foo():
+  x = {"a": source()}
+  y = tito(x) # Only `x['a']` is tainted, but `y` gets tainted.
+  sink(y) # Issue since `y` is tainted
+  sink(y['b']) # Also an issue, because taint is propagated from `y` to `y['b']`.
+```
+
+If the function is known to preserve the structure of the argument, the `NoCollapse`
+annotation can be used to disable collapsing. For instance:
+
+```python
+def tito(arg: TaintInTaintOut[NoCollapse]): ...
+```
+
+This would remove both issues from the previous example.
+
+Note that this can be used in combination with [`ParameterPath` and `ReturnPath`](#parameter-and-return-path).
+
 ## Tainting Specific `kwargs`
 
 Sometimes, a function can have potential sinks mixed together with benign

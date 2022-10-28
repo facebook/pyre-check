@@ -120,15 +120,15 @@ class BaseException(TaintSource[Exception]): ...
 ```
 
 When tainting indexable return types such as `Dict`s, `List`s, and `Tuple`s, the
-`AppliesTo` syntax can be used to only mark a portion of the return type as
+`ReturnPath` syntax can be used to only mark a portion of the return type as
 tainted:
 
 ```python
-def applies_to_index.only_applies_to_nested() -> AppliesTo[0, AppliesTo[1, TaintSource[Test]]]: ...
-def applies_to_index.only_applies_to_a_key() -> AppliesTo["a", TaintSource[Test]]: ...
+def applies_to_index.only_applies_to_nested() -> TaintSource[Test, ReturnPath[_[0][1]]]: ...
+def applies_to_index.only_applies_to_a_key() -> TaintSource[Test, ReturnPath[_["a"]]]: ...
 ```
 
-Note that `AppliesTo` syntax can also be applied to fields of classes and globals,
+Note that `ReturnPath` syntax can also be applied to fields of classes and globals,
 which can be particularly helpful when annotating dictionaries.
 
 ```python
@@ -137,8 +137,10 @@ class C:
     dictionary_field = {"text": "will_be_tainted"}
 
 # Model file: models.pysa
-a.C.dictionary_field: AppliesTo["text", TaintSource[Test]]
+a.C.dictionary_field: TaintSource[Test, ReturnPath[_["text"]]]
 ```
+
+See [Parameter and Return Path](pysa_advanced.md#parameter-and-return-path) for additional information.
 
 ## Sinks
 
