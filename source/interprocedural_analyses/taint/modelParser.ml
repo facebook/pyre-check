@@ -520,7 +520,7 @@ let rec parse_access_path ~path ~location expression =
           Error
             (annotation_error
                (Format.sprintf
-                  "expected int or string literal argument for __getitem__, got `%s`"
+                  "expected int or string literal argument for index access, got `%s`"
                   (Expression.show argument))))
   | Expression.Call
       {
@@ -540,9 +540,7 @@ let rec parse_access_path ~path ~location expression =
       >>= fun _ ->
       Error
         (annotation_error
-           (Format.sprintf
-              "unexpected method call `%s` (allowed: `__getitem__`, `keys`, `all`)"
-              attribute))
+           (Format.sprintf "unexpected method call `%s` (allowed: `keys`, `all`)" attribute))
   | _ -> Error (annotation_error "unexpected expression")
 
 

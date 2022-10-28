@@ -2894,8 +2894,8 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[Test, ParameterPath[_.unknown()]]): ..."
     ~expect:
-      "`_.unknown()` is an invalid access path: unexpected method call `unknown` (allowed: \
-       `__getitem__`, `keys`, `all`)"
+      "`_.unknown()` is an invalid access path: unexpected method call `unknown` (allowed: `keys`, \
+       `all`)"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[Test, ReturnPath[_[0]]]): ..."
@@ -5672,22 +5672,22 @@ let test_access_path _ =
     ~source:"_.a-b"
     ~expected:
       "`_.a.__sub__(b)` is an invalid access path: unexpected method call `__sub__` (allowed: \
-       `__getitem__`, `keys`, `all`)";
+       `keys`, `all`)";
   assert_invalid_path
     ~source:"_[a]"
     ~expected:
-      "`_[a]` is an invalid access path: expected int or string literal argument for __getitem__, \
+      "`_[a]` is an invalid access path: expected int or string literal argument for index access, \
        got `a`";
   assert_invalid_path
     ~source:"_[_.foo]"
     ~expected:
-      "`_[_.foo]` is an invalid access path: expected int or string literal argument for \
-       __getitem__, got `_.foo`";
+      "`_[_.foo]` is an invalid access path: expected int or string literal argument for index \
+       access, got `_.foo`";
   assert_invalid_path
     ~source:"_.keys().something()"
     ~expected:
       "`_.keys().something()` is an invalid access path: unexpected method call `something` \
-       (allowed: `__getitem__`, `keys`, `all`)";
+       (allowed: `keys`, `all`)";
   ()
 
 
