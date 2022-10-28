@@ -4,7 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module represents an API for all no-daemon queries that are invoked
+on the command line. No-daemon in this context means that no running instance of a Pyre
+server will be created and maintained: rather, a transient process will be created for the query
+and terminated as soon as the query is completed and the response is returned to the user.
+
+This class also only handles queries that are specified as no-daemon, and not
+those that query a running pyre daemon.
 """
 
 
