@@ -596,9 +596,7 @@ let rec parse_annotations
     | _ ->
         Error
           (annotation_error
-             (Format.sprintf
-                "Invalid expression for breadcrumb: %s"
-                (show_expression expression.Node.value)))
+             (Format.sprintf "Invalid expression for breadcrumb: %s" (Expression.show expression)))
   in
   let extract_subkind { Node.value = expression; _ } =
     match expression with
@@ -618,7 +616,7 @@ let rec parse_annotations
           (annotation_error
              (Format.sprintf
                 "Invalid expression for ViaValueOf or ViaTypeOf: %s"
-                (show_expression expression.Node.value)))
+                (Expression.show expression)))
   in
   let rec extract_via_tag expression =
     match expression.Node.value with
@@ -655,7 +653,7 @@ let rec parse_annotations
     | _ ->
         Error
           (annotation_error
-             (Format.sprintf "Invalid expression name: %s" (show_expression expression.Node.value)))
+             (Format.sprintf "Invalid expression name: %s" (Expression.show expression)))
   in
   let rec extract_kinds_with_features expression =
     match expression.Node.value with
@@ -735,9 +733,7 @@ let rec parse_annotations
     | _ ->
         Error
           (annotation_error
-             (Format.sprintf
-                "Invalid expression for taint kind: %s"
-                (show_expression expression.Node.value)))
+             (Format.sprintf "Invalid expression for taint kind: %s" (Expression.show expression)))
   in
   let get_source_kinds expression =
     let open TaintConfiguration.Heap in
