@@ -1827,6 +1827,45 @@ let test_taint_in_taint_out_models context =
           "test.tito";
       ]
     ();
+  assert_model
+    ~context
+    ~model_source:
+      "def test.tito(parameter: TaintInTaintOut[ParameterPath[_[0]], ReturnPath[_[1]], \
+       NoCollapse]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          "test.tito";
+      ]
+    ();
+  assert_model
+    ~context
+    ~model_source:
+      "def test.tito(parameter: TaintInTaintOut[ParameterPath[_[0]], ReturnPath[_[1]], Collapse]): \
+       ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          "test.tito";
+      ]
+    ();
+  assert_model
+    ~context
+    ~model_source:
+      "def test.tito(parameter: TaintInTaintOut[ParameterPath[_[0]], ReturnPath[_[1]], \
+       CollapseDepth[2]]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          "test.tito";
+      ]
+    ();
   ()
 
 
@@ -2972,6 +3011,20 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:"def test.taint(x, y: TaintInTaintOut[Updates[x], ReturnPath[_[0]]]): ..."
     ~expect:"Invalid model for `test.taint`: Invalid ReturnPath annotation for Updates annotation"
+    ();
+
+  (* Collapse depth specification. *)
+  assert_invalid_model
+    ~model_source:"def test.taint(x: TaintInTaintOut[CollapseDepth[a]]): ..."
+    ~expect:
+      "`TaintInTaintOut[CollapseDepth[a]]` is an invalid taint annotation: expected non-negative \
+       int literal argument for CollapseDepth, got `a`"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.taint(x: TaintInTaintOut[CollapseDepth[-1]]): ..."
+    ~expect:
+      "`TaintInTaintOut[CollapseDepth[-1]]` is an invalid taint annotation: expected non-negative \
+       int literal argument for CollapseDepth, got `-1`"
     ();
 
   (* ViaValueOf models must specify existing parameters. *)

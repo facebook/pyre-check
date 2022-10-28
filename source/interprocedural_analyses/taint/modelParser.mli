@@ -36,6 +36,14 @@ module Internal : sig
     [@@deriving equal]
   end
 
+  module CollapseDepth : sig
+    type t =
+      | Value of int
+      | Collapse
+      | NoCollapse
+    [@@deriving equal]
+  end
+
   module TaintFeatures : sig
     type t = {
       breadcrumbs: Features.Breadcrumb.t list;
@@ -47,6 +55,7 @@ module Internal : sig
       leaf_names: Features.LeafName.t list;
       leaf_name_provided: bool;
       trace_length: int option;
+      collapse_depth: CollapseDepth.t option;
     }
     [@@deriving equal]
 

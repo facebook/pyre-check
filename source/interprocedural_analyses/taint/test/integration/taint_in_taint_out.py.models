@@ -164,6 +164,85 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
+    "callable_line": 483,
+    "code": 5002,
+    "line": 486,
+    "start": 15,
+    "end": 26,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 485, "start": 40, "end": 41 } ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 484,
+              "start": 20,
+              "end": 34
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 486,
+              "start": 15,
+              "end": 26
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "a" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.issue_user_declared_tito_collapse_one:5002:0:Call|_test_sink|0|formal(arg):52a4e58994c49afe4fd19e9968a653e0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "taint_in_taint_out.issue_with_indirect_sink_tito",
     "callable_line": 98,
     "code": 5002,
@@ -2521,6 +2600,42 @@
               { "always-via": "string_concat_rhs" }, { "via": "tito" }
             ],
             "tito_positions": [ { "line": 174, "start": 27, "end": 30 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.user_declared_tito_collapse_one",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 1 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.user_declared_tito_no_collapse",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
             "tito": null
           }
         ]

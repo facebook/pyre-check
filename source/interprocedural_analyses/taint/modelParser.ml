@@ -61,6 +61,22 @@ module Internal = struct
     let from_name name = { name; subkind = None }
   end
 
+  module CollapseDepth = struct
+    type t =
+      | Value of int
+      | Collapse
+      | NoCollapse
+    [@@deriving equal]
+
+    let pp formatter = function
+      | Value depth -> Format.fprintf formatter "CollapseDepth[%d]" depth
+      | Collapse -> Format.fprintf formatter "Collapse"
+      | NoCollapse -> Format.fprintf formatter "NoCollapse"
+
+
+    let show = Format.asprintf "%a" pp
+  end
+
   module TaintFeatures = struct
     type t = {
       breadcrumbs: Features.Breadcrumb.t list;
@@ -72,6 +88,7 @@ module Internal = struct
       leaf_names: Features.LeafName.t list;
       leaf_name_provided: bool;
       trace_length: int option;
+      collapse_depth: CollapseDepth.t option;
     }
     [@@deriving equal]
 
@@ -86,6 +103,7 @@ module Internal = struct
         leaf_names = [];
         leaf_name_provided = false;
         trace_length = None;
+        collapse_depth = None;
       }
 
 
@@ -109,7 +127,9 @@ module Internal = struct
       join_option ~name:"UpdatePath" left.update_path right.update_path
       >>= fun update_path ->
       join_option ~name:"trace length" left.trace_length right.trace_length
-      >>| fun trace_length ->
+      >>= fun trace_length ->
+      join_option ~name:"collapse depth" left.collapse_depth right.collapse_depth
+      >>| fun collapse_depth ->
       {
         breadcrumbs = left.breadcrumbs @ right.breadcrumbs;
         via_features = left.via_features @ right.via_features;
@@ -120,6 +140,7 @@ module Internal = struct
         leaf_names = left.leaf_names @ right.leaf_names;
         leaf_name_provided = left.leaf_name_provided || right.leaf_name_provided;
         trace_length;
+        collapse_depth;
       }
 
 
@@ -140,6 +161,7 @@ module Internal = struct
           leaf_names;
           leaf_name_provided = _;
           trace_length;
+          collapse_depth;
         }
       =
       let show_breadcrumb = function
@@ -159,12 +181,18 @@ module Internal = struct
       let add_path_option ~name path features =
         add_option ~name ~pp:Abstract.TreeDomain.Label.pp_path path features
       in
+      let add_collapse_depth features =
+        match collapse_depth with
+        | Some collapse_depth -> features @ [CollapseDepth.show collapse_depth]
+        | None -> features
+      in
       features
       |> add_path_option ~name:"AppliesTo" applies_to
       |> add_path_option ~name:"ParameterPath" parameter_path
       |> add_path_option ~name:"ReturnPath" return_path
       |> add_path_option ~name:"UpdatePath" update_path
       |> add_option ~name:"TraceLength" ~pp:Int.pp trace_length
+      |> add_collapse_depth
   end
 
   module TaintKindsWithFeatures = struct
@@ -199,6 +227,10 @@ module Internal = struct
 
     let from_update_path path =
       { kinds = []; features = { TaintFeatures.empty with update_path = Some path } }
+
+
+    let from_collapse_depth collapse_depth =
+      { kinds = []; features = { TaintFeatures.empty with collapse_depth = Some collapse_depth } }
 
 
     let join left right =
@@ -655,6 +687,16 @@ let rec parse_annotations
           (annotation_error
              (Format.sprintf "Invalid expression name: %s" (Expression.show expression)))
   in
+  let extract_collapse_depth expression =
+    match expression.Node.value with
+    | Expression.Constant (Constant.Integer depth) when depth >= 0 -> Ok depth
+    | _ ->
+        Error
+          (annotation_error
+             (Format.sprintf
+                "expected non-negative int literal argument for CollapseDepth, got `%s`"
+                (Expression.show expression)))
+  in
   let rec extract_kinds_with_features expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier "ViaTypeOf") ->
@@ -677,6 +719,10 @@ let rec parse_annotations
             (annotation_error
                "A standalone `ViaTypeOf` without arguments can only be used in attribute or global \
                 models.")
+    | Expression.Name (Name.Identifier "Collapse") ->
+        Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.Collapse)
+    | Expression.Name (Name.Identifier "NoCollapse") ->
+        Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse)
     | Expression.Name (Name.Identifier taint_kind) ->
         Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind))
     | Name (Name.Attribute { base; _ }) -> extract_kinds_with_features base
@@ -712,6 +758,9 @@ let rec parse_annotations
             parse_access_path ~path ~location expression >>| TaintKindsWithFeatures.from_return_path
         | Some "UpdatePath" ->
             parse_access_path ~path ~location expression >>| TaintKindsWithFeatures.from_update_path
+        | Some "CollapseDepth" ->
+            extract_collapse_depth expression
+            >>| fun depth -> TaintKindsWithFeatures.from_collapse_depth (CollapseDepth.Value depth)
         | _ ->
             let subkind = extract_subkind expression in
             extract_kinds_with_features callee
@@ -788,6 +837,7 @@ let rec parse_annotations
             leaf_names = [];
             leaf_name_provided = false;
             trace_length = None;
+            collapse_depth = None;
           } as features;
       } ->
         Ok features
@@ -1254,6 +1304,7 @@ let introduce_sink_taint
          leaf_names;
          leaf_name_provided;
          trace_length;
+         collapse_depth = _;
        } as features)
     ~signature_breadcrumbs
     ~source_sink_filter
@@ -1328,6 +1379,7 @@ let introduce_taint_in_taint_out
          leaf_names = _;
          leaf_name_provided = _;
          trace_length = _;
+         collapse_depth;
        } as features)
     ~signature_breadcrumbs
     ({ Model.backward = { taint_in_taint_out; sink_taint }; _ } as model)
@@ -1342,6 +1394,13 @@ let introduce_taint_in_taint_out
     |> Features.BreadcrumbSet.add_set ~to_add:signature_breadcrumbs
   in
   let via_features = Features.ViaFeatureSet.of_list via_features in
+  let collapse_depth =
+    match collapse_depth with
+    | None -> 0
+    | Some CollapseDepth.Collapse -> 0
+    | Some CollapseDepth.NoCollapse -> Features.CollapseDepth.no_collapse
+    | Some (CollapseDepth.Value depth) -> depth
+  in
   let input_path =
     match features with
     | { applies_to; parameter_path = None; _ } -> Ok (Option.value ~default:[] applies_to)
@@ -1379,7 +1438,7 @@ let introduce_taint_in_taint_out
   output_path
   >>= fun output_path ->
   let tito_result_taint =
-    Domains.local_return_frame ~output_path ~collapse_depth:0
+    Domains.local_return_frame ~output_path ~collapse_depth
     |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
     |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
     |> BackwardTaint.singleton CallInfo.Tito taint_sink_kind
@@ -1452,6 +1511,7 @@ let introduce_source_taint
          leaf_names;
          leaf_name_provided;
          trace_length;
+         collapse_depth = _;
        } as features)
     ~signature_breadcrumbs
     ~source_sink_filter
