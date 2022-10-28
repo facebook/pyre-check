@@ -16,7 +16,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import ClassVar, Dict, List, Optional, Union
 
 from .. import json_rpc, log
 
@@ -83,6 +83,32 @@ async def _wait_for_exit(
 
 def daemon_failure_string(operation: str, type_string: str, error_message: str) -> str:
     return f"For {operation} request, encountered failure response of type: {type_string}, error_message: {error_message}"
+
+
+@dataclasses.dataclass(frozen=True)
+class SourceCodeContext:
+
+    MAX_LINES_BEFORE_OR_AFTER: ClassVar[int] = 2500
+
+    @staticmethod
+    async def from_source_and_position(
+        source: str,
+        position: lsp.LspPosition,
+        max_lines_before_or_after: int = MAX_LINES_BEFORE_OR_AFTER,
+    ) -> Optional[str]:
+        lines = source.splitlines()
+        line_number = position.line
+
+        if line_number >= len(lines):
+            return None
+
+        full_document_contents = source.splitlines()
+        lower_line_number = max(position.line - max_lines_before_or_after, 0)
+        higher_line_number = min(
+            position.line + max_lines_before_or_after + 1,
+            len(full_document_contents),
+        )
+        return "\n".join(full_document_contents[lower_line_number:higher_line_number])
 
 
 @dataclasses.dataclass(frozen=True)
