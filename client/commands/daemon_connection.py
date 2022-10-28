@@ -4,7 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+The daemon connection module contains low-level APIs for sending requests to the Pyre daemon.
+This module is responsible for the communication with the Pyre daemon, which is
+at the layer as low as the direct socket connection. The socket connection is used
+to send a string form request to the daemon and returns the response in string form.
+
+This module is NOT responsible for any kind of processing that happens to the request/response,
+which is left to the higher layers.
 """
 
 
