@@ -663,7 +663,8 @@ let create define =
         let node =
           match predecessor.Node.kind with
           | Node.Block preceding_statements ->
-              predecessor.Node.kind <- Node.Block (preceding_statements @ [statement]);
+              (* To avoid a quadratic complexity, we insert in the front here. *)
+              predecessor.Node.kind <- Node.Block (statement :: preceding_statements);
               predecessor
           | _ ->
               let node = Node.empty graph (Node.Block [statement]) in
@@ -696,6 +697,13 @@ let create define =
   let jumps = { break = normal; continue = normal; error; normal } in
   let node = create define.Define.body jumps entry in
   Node.connect_option node normal;
+  (* Since we inserted in the front of blocks, we need to reserve them at the end. *)
+  let reverse_statements node =
+    match node.Node.kind with
+    | Node.Block statements -> node.kind <- Node.Block (List.rev statements)
+    | _ -> ()
+  in
+  let () = Int.Table.iter graph ~f:reverse_statements in
   graph
 
 
