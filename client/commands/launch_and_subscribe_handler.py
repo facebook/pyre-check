@@ -126,7 +126,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     "exception": traceback.format_exc(),
                 },
             )
-        raise
+            raise
 
     @staticmethod
     async def _read_server_response(
