@@ -1,12 +1,17 @@
 @generated
 Call dependencies
+obscure_models.should_collapse_depth_zero (fun) -> [obscure_models.C::obscure (method)]
 obscure_models.test_obscure_with_multiple_models (fun) -> [_test_source (fun) obscure_models.C::obscure_with_multiple_models (method)]
 obscure_models.test_obscure_with_skip_inlining (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_inlining (method)]
 obscure_models.test_obscure_with_skip_obscure (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_obscure (method)]
 obscure_models.test_obscure_with_skip_obscure_and_tito (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_obscure_and_tito (method)]
 obscure_models.test_obscure_with_skip_overrides (fun) -> [_test_source (fun) obscure_models.C::obscure_with_skip_overrides (method)]
 obscure_models.$toplevel (fun) -> []
+obscure_models.test_collapse_depth (fun) -> [_test_sink (fun) _test_source (fun) object::__init__ (method) object::__new__ (method) obscure_models.should_collapse_depth_zero (fun)]
+obscure_models.test_collapse_source (fun) -> [_test_sink (fun) _test_source (fun) obscure_models.C::obscure (method)]
+obscure_models.test_issue (fun) -> [_test_sink (fun) _test_source (fun) obscure_models.C::obscure (method)]
 obscure_models.test_obscure (fun) -> [_test_source (fun) obscure_models.C::obscure (method)]
 obscure_models.test_obscure_with_source (fun) -> [_test_source (fun) obscure_models.C::obscure_with_source (method)]
 obscure_models.test_obscure_with_tito (fun) -> [_test_sink (fun) _test_source (fun) obscure_models.C::obscure_with_tito (method)]
+obscure_models.test_sink_collapse (fun) -> [_test_sink (fun) obscure_models.C::obscure (method)]
 obscure_models.C::$class_toplevel (method) -> []

@@ -1,0 +1,8 @@
+@generated
+Call dependencies
+unknown_callee.should_collapse_depth_zero (fun) -> []
+unknown_callee.$toplevel (fun) -> []
+unknown_callee.test_collapse_depth (fun) -> [_test_sink (fun) _test_source (fun) unknown_callee.should_collapse_depth_zero (fun)]
+unknown_callee.test_collapse_source (fun) -> [_test_sink (fun) _test_source (fun)]
+unknown_callee.test_issue (fun) -> [_test_sink (fun) _test_source (fun)]
+unknown_callee.test_sink_collapse (fun) -> [_test_sink (fun)]
