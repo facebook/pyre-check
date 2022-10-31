@@ -3780,7 +3780,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 4 },
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "LocalReturn"
               }
@@ -3896,7 +3896,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 4 },
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "LocalReturn"
               }

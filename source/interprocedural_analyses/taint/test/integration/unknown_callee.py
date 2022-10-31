@@ -15,7 +15,7 @@ def test_issue(o):
 def test_collapse_source(o):
     x = {"a": _test_source()}
     y = o.method(x)
-    _test_sink(y["b"])  # False negative.
+    _test_sink(y["b"])
 
 
 def test_sink_collapse(arg, o):
@@ -30,4 +30,4 @@ def should_collapse_depth_zero(arg, o):
 def test_collapse_depth():
     x = {"a": _test_source()}
     y = should_collapse_depth_zero(x, 0)
-    _test_sink(y["b"])  # False negative.
+    _test_sink(y["b"])

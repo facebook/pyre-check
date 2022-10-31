@@ -860,7 +860,7 @@
         "port": "formal(field)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "obscure:unknown-callee" } ],
             "tito": null
           }
@@ -909,7 +909,7 @@
           {
             "kinds": [
               {
-                "return_paths": { ".**keys": 0, "[*]": 0, "": 4 },
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "LocalReturn"
               }

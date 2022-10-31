@@ -614,7 +614,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments;
     let callee_taint =
       Option.value_exn callee_taint
-      |> ForwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:callee.Node.location
+      |> ForwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ())
+      |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:callee.Node.location
     in
     let analyze_argument taint_accumulator ({ Call.Argument.value = argument; _ }, argument_taint) =
       let argument_taint =
@@ -625,14 +626,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | _ -> argument_taint
       in
       argument_taint
-      |> ForwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
-      |> ForwardState.Tree.join taint_accumulator
+      |> ForwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ())
+      |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
+      |> ForwardTaint.join taint_accumulator
     in
     let taint =
       if apply_tito then
         List.zip_exn arguments arguments_taint
         |> List.fold ~f:analyze_argument ~init:callee_taint
-        |> ForwardState.Tree.add_local_breadcrumb (Features.obscure_unknown_callee ())
+        |> ForwardTaint.add_local_breadcrumb (Features.obscure_unknown_callee ())
+        |> ForwardState.Tree.create_leaf
       else
         ForwardState.Tree.empty
     in

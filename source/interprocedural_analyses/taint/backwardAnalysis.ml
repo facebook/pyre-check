@@ -587,6 +587,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if apply_tito then
         BackwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ()) call_taint
         |> BackwardTaint.add_local_breadcrumb (Features.obscure_unknown_callee ())
+        |> BackwardTaint.transform_call_info
+             CallInfo.Tito
+             Features.CollapseDepth.Self
+             Map
+             ~f:Features.CollapseDepth.approximate
         |> BackwardState.Tree.create_leaf
       else
         BackwardState.Tree.empty
