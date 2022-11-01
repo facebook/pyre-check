@@ -170,7 +170,7 @@ async def async_run_code_navigation_client(
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
     initial_server_options = launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler.read_server_options(
-        server_options_reader, remote_logging=None
+        server_options_reader, remote_logging
     )
     stdin, stdout = await connections.create_async_stdin_stdout()
     initialize_result = await initialization.async_try_initialize_loop(
