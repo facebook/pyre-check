@@ -158,9 +158,24 @@ class SubscriptionTest(testslide.TestCase):
                 ),
             ),
         )
+        assert_not_parsed(json.dumps(["Error", "Needs more cowbell"]))
         assert_parsed(
-            json.dumps(["Error", "Needs more cowbell"]),
+            json.dumps(["Error", ["InvalidRequest", "some request string"]]),
             expected=Response(
-                body=Error(message="Needs more cowbell"),
+                body=Error(message='InvalidRequest: "some request string"')
+            ),
+        )
+        assert_parsed(
+            json.dumps(
+                ["Error", ["ModuleNotTracked", {"module": ["OfPath", "a/b.py"]}]]
+            ),
+            expected=Response(
+                body=Error(message='ModuleNotTracked: {"module": ["OfPath", "a/b.py"]}')
+            ),
+        )
+        assert_parsed(
+            json.dumps(["Error", ["OverlayNotFound", {"overlay_id": "A"}]]),
+            expected=Response(
+                body=Error(message='OverlayNotFound: {"overlay_id": "A"}')
             ),
         )

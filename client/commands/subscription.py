@@ -59,6 +59,16 @@ def _parse_error_subscription(response: object) -> Error:
     return Error(message=response)
 
 
+def _parse_code_navigation_error_subscription(response: object) -> Error:
+    if not isinstance(response, list) or len(response) != 2:
+        raise incremental.InvalidServerResponse(
+            'Response kind of an error must be of the form ["$KIND", error_data]'
+        )
+    error_kind, error_data = response
+    error_message = f"{error_kind}: {json.dumps(error_data)}"
+    return Error(message=error_message)
+
+
 Body = Union[TypeErrors, StatusUpdate, Error]
 
 
@@ -113,7 +123,7 @@ class Response:
             elif tag == "TypeErrors":
                 return Response(body=_parse_type_error_subscription(body))
             elif tag == "Error":
-                return Response(body=_parse_error_subscription(body))
+                return Response(body=_parse_code_navigation_error_subscription(body))
             raise incremental.InvalidServerResponse(
                 f"Invalid tag from code navigation server response: {tag}"
             )
