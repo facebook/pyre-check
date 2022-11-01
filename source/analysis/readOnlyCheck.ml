@@ -206,6 +206,7 @@ module State (Context : Context) = struct
     in
     let check_arguments_and_update_signature_match ~parameter ~arguments errors_so_far =
       match parameter, arguments with
+      | Parameter.PositionalOnly { annotation = parameter_annotation; _ }, arguments
       | Parameter.Named { annotation = parameter_annotation; _ }, arguments ->
           List.filter_map arguments ~f:(check_non_variadic_parameter ~parameter_annotation)
           @ errors_so_far
