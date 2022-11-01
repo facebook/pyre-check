@@ -81,7 +81,12 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     async def handle_type_error_subscription(
         self, type_error_subscription: subscription.TypeErrors
     ) -> None:
-        raise NotImplementedError
+        # We currently do not broadcast any type errors on the CodeNav server - the intent is to be
+        # as lazy as possible and only provide actionable information to users. The error is intended
+        # to demonstrate that contract.
+        raise RuntimeError(
+            "The Pyre code navigation server is not expected to broadcast type errors at the moment."
+        )
 
     async def handle_status_update_subscription(
         self, status_update_subscription: subscription.StatusUpdate
