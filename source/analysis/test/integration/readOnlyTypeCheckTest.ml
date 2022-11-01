@@ -421,6 +421,18 @@ let test_function_call context =
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_kwargs`, for \
        1st positional argument, expected `Mutable` but got `ReadOnly`.";
     ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Callable
+
+      def main(my_readonly: ReadOnly[int], undefined: Callable[..., ReadOnly[int]]) -> None:
+        x: int = undefined(my_readonly)
+    |}
+    [
+      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have readonlyness \
+       `Mutable` but is used as readonlyness `ReadOnly`.";
+    ];
   ()
 
 
