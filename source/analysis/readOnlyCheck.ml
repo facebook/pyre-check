@@ -195,7 +195,7 @@ module State (Context : Context) = struct
               (Error.ReadOnlynessMismatch
                  (IncompatibleParameterType
                     {
-                      name = name >>| Node.value;
+                      keyword_argument_name = name >>| Node.value;
                       position;
                       callee = function_name;
                       mismatch = { actual = actual_readonlyness; expected = expected_readonlyness };

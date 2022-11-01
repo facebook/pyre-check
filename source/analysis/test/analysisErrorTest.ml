@@ -954,7 +954,7 @@ let test_description _ =
     (ReadOnlynessMismatch
        (IncompatibleParameterType
           {
-            name = Some "my_name";
+            keyword_argument_name = Some "my_name";
             position = 1;
             callee = Some !&"my_callee";
             mismatch =
@@ -966,7 +966,7 @@ let test_description _ =
     (ReadOnlynessMismatch
        (IncompatibleParameterType
           {
-            name = None;
+            keyword_argument_name = None;
             position = 1;
             callee = None;
             mismatch =

@@ -167,7 +167,7 @@ let test_check_arguments_against_parameters context =
     [
       IncompatibleParameterType
         {
-          name = None;
+          keyword_argument_name = None;
           position = 1;
           callee = None;
           mismatch = { actual = ReadOnly; expected = Mutable };
@@ -191,7 +191,7 @@ let test_check_arguments_against_parameters context =
     [
       IncompatibleParameterType
         {
-          name = Some "y";
+          keyword_argument_name = Some "y";
           position = 1;
           callee = None;
           mismatch = { actual = ReadOnly; expected = Mutable };

@@ -266,7 +266,7 @@ module ReadOnly : sig
         declare_location: Location.WithPath.t;
       }
     | IncompatibleParameterType of {
-        name: Identifier.t option;
+        keyword_argument_name: Identifier.t option;
         position: int;
         callee: Reference.t option;
         mismatch: mismatch;
