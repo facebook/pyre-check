@@ -221,12 +221,11 @@ class ClientStatusMessageHandler:
                 self.client_output_channel, message, short_message, level
             )
 
-    async def log_and_show_status_message_to_client(
+    def log(
         self,
         message: str,
         short_message: Optional[str] = None,
         level: lsp.MessageType = lsp.MessageType.INFO,
-        fallback_to_notification: bool = False,
     ) -> None:
         log_message = (
             message if short_message is None else f"[{short_message}] {message}"
@@ -239,6 +238,15 @@ class ClientStatusMessageHandler:
             LOG.info(log_message)
         else:
             LOG.debug(log_message)
+
+    async def log_and_show_status_message_to_client(
+        self,
+        message: str,
+        short_message: Optional[str] = None,
+        level: lsp.MessageType = lsp.MessageType.INFO,
+        fallback_to_notification: bool = False,
+    ) -> None:
+        self.log(message, short_message, level)
         await self.show_status_message_to_client(
             message, short_message, level, fallback_to_notification
         )

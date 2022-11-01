@@ -38,8 +38,8 @@ from . import (
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-READY_MESSAGE: str = "Pyre has completed an incremental check and is currently watching on further source changes."
-READY_SHORT: str = "Pyre Ready"
+READY_MESSAGE: str = "Pyre's code navigation server has completed an incremental check and is currently watching on further source changes."
+READY_SHORT: str = "Pyre CodeNav Ready"
 
 
 async def _read_server_response(
@@ -86,7 +86,29 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     async def handle_status_update_subscription(
         self, status_update_subscription: subscription.StatusUpdate
     ) -> None:
-        raise NotImplementedError
+        if not self.get_type_errors_availability().is_disabled():
+            await self.client_type_error_handler.clear_type_errors_for_client()
+        if status_update_subscription.kind == "Stop":
+            self.server_state.server_last_status = state.ServerStatus.DISCONNECTED
+            self.client_status_message_handler.log(
+                "The Pyre code-navigation server has stopped.",
+                short_message="Pyre code-nav (stopped)",
+                level=lsp.MessageType.WARNING,
+            )
+        elif status_update_subscription.kind == "BusyChecking":
+            self.server_state.server_last_status = state.ServerStatus.INCREMENTAL_CHECK
+            self.client_status_message_handler.log(
+                "The Pyre code-navigation server is busy re-type-checking the project...",
+                short_message="Pyre code-nav (checking)",
+                level=lsp.MessageType.WARNING,
+            )
+        elif status_update_subscription.kind == "Idle":
+            self.server_state.server_last_status = state.ServerStatus.READY
+            self.client_status_message_handler.log(
+                READY_MESSAGE,
+                short_message=READY_SHORT,
+                level=lsp.MessageType.INFO,
+            )
 
     async def handle_error_subscription(
         self, error_subscription: subscription.Error
