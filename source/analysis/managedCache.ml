@@ -5,7 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ManagedCache is a thin wrapper around the EnvironmentTable.t api that makes
+ * it easy to skip shared-memory data and dependency tracking:
+ * - Whenever EnvironmentControls.track_dependencies is `true`, we use an
+ *   EnvironmentTable.t for the data in a ManagedCache layer
+ * - Whenever it is false, we use a process-local hashmap and we disable dependency
+ *   tracking.
+ *
+ * The benefit of turning off dependency tracking and shared memory is that in
+ * settings where we both
+ * - don't expect different worker processes to share much data
+ * - don't need incremental updates (e.g. `pyre check`)
+ * we can bypass quite a bit of serialization overhead.
+ *)
 
 open Core
 
