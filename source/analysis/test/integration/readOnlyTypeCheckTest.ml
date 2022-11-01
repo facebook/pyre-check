@@ -386,6 +386,25 @@ let test_function_call context =
        `test.expect_positional_mutable_and_readonly`, for 1st positional only parameter expected \
        `Mutable` but got `ReadOnly`.";
     ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_keyword_only( *, x: int, y: ReadOnly[int]) -> None:
+        reveal_type(x)
+        reveal_type(y)
+
+      def main(my_readonly: ReadOnly[int], my_mutable: int) -> None:
+        expect_keyword_only(y=my_mutable, x=my_readonly)
+    |}
+    [
+      "ReadOnly - Revealed type [3004]: Revealed type for `x` is Mutable.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "ReadOnly - Revealed type [3004]: Revealed type for `y` is ReadOnly.";
+      "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible parameter type [3002]: In call \
+       `test.expect_keyword_only`, for 2nd parameter `x` expected `Mutable` but got `ReadOnly`.";
+    ];
   ()
 
 
