@@ -5,7 +5,42 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Core abstraction for a single-table layer in the environment stack.
+ *
+ * An environment layer combines two underlying components:
+ * - A shared memory hashmap, whose keys are string representations of
+ *   some Key.t type values are serialied Value.t values. This shared
+ *   memory hashmap may also have a regular ocaml hash table in front
+ *   of it acting as a per-process cache to reduce deserialization costs.
+ * - A `produce_value` function, which knows how to compute a `Value.t`
+ *   given a `Key.t`. This function should also pass along a dependency
+ *   key to all reads of lower layers of the environment, which is used
+ *   when pushing incremental updates. This logic, along with some metadata
+ *   that controls exactly how it is handled, is specified in the `In.t` module
+ *    signature
+ *
+ * The EnvironmentTable.t functor takes an In.t, constructs a shared memory
+ * hashmap, and defines logic from these two components to make a lazy table
+ * that:
+ * - populates each key only when needed, and is multiprocessing-safe in the
+ *   way that it does so.
+ * - knows how to update itself (and, recursively, all lower layers) in response
+ *   to a list of possibly-changed files.
+ *
+ * These layers are stacked with each layer wrapping the previous lower-level
+ * layer, which can be accessed as `upstream_environment`.
+ *
+ * It moreover knows how to construct additional "overlay" tables from
+ * a base table; this is intended mainly to power unsaved-changes support
+ * in IDEs.
+ *
+ * Overlay tables create views where specific files contain possibly-different
+ * content from what is on disk. Only the keys that are "owned" by those files
+ * will be re-computed in an overlay, which minimizes fanout. They have to be
+ * updated not only when the overlaid file contents change, but also when the base
+ * environment changes (since changes to non-overlaid files may affect the results
+ * in an overlay, e.g. if a rebase introduces type errors to an open file).
+ *)
 
 open Core
 open Pyre
