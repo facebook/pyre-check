@@ -208,6 +208,7 @@ module State (Context : Context) = struct
       match parameter, arguments with
       | Parameter.KeywordOnly { annotation = parameter_annotation; _ }, arguments
       | Parameter.PositionalOnly { annotation = parameter_annotation; _ }, arguments
+      | Parameter.Keywords parameter_annotation, arguments
       | Parameter.Named { annotation = parameter_annotation; _ }, arguments ->
           List.filter_map arguments ~f:(check_non_variadic_parameter ~parameter_annotation)
           @ errors_so_far
