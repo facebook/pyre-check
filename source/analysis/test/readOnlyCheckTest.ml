@@ -390,6 +390,49 @@ let test_assignment context =
       "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
        `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        some_attribute: int = 42
+
+      def main() -> None:
+        readonly_foo: ReadOnly[Foo]
+        readonly_foo.some_attribute = 99
+    |}
+    [
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
+       `some_attribute` since it is readonly";
+    ];
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        readonly_attribute: ReadOnly[int] = 42
+        mutable_attribute: int = 42
+
+      def main() -> None:
+        mutable_foo: Foo
+        mutable_foo.readonly_attribute = 99
+        mutable_foo.mutable_attribute = 99
+    |}
+    [
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
+       `readonly_attribute` since it is readonly";
+    ];
+  (* Technically, reassigning to a variable doesn't mutate it. So, we don't emit an error in this
+     case. *)
+  assert_readonly_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main() -> None:
+        x: ReadOnly[int] = 42
+        x = 99
+    |}
+    [];
   ()
 
 
@@ -517,49 +560,6 @@ let test_function_call context =
        `test.Foo.expect_mutable_self`, for 0th positional only parameter expected `Mutable` but \
        got `ReadOnly`.";
     ];
-  assert_readonly_errors
-    {|
-      from pyre_extensions import ReadOnly
-
-      class Foo:
-        some_attribute: int = 42
-
-      def main() -> None:
-        readonly_foo: ReadOnly[Foo]
-        readonly_foo.some_attribute = 99
-    |}
-    [
-      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
-       `some_attribute` since it is readonly";
-    ];
-  assert_readonly_errors
-    {|
-      from pyre_extensions import ReadOnly
-
-      class Foo:
-        readonly_attribute: ReadOnly[int] = 42
-        mutable_attribute: int = 42
-
-      def main() -> None:
-        mutable_foo: Foo
-        mutable_foo.readonly_attribute = 99
-        mutable_foo.mutable_attribute = 99
-    |}
-    [
-      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
-       `readonly_attribute` since it is readonly";
-    ];
-  (* Technically, reassigning to a variable doesn't mutate it. So, we don't emit an error in this
-     case. *)
-  assert_readonly_errors
-    {|
-      from pyre_extensions import ReadOnly
-
-      def main() -> None:
-        x: ReadOnly[int] = 42
-        x = 99
-    |}
-    [];
   ()
 
 
