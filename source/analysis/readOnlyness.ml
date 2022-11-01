@@ -8,7 +8,18 @@
 type t =
   | Mutable
   | ReadOnly
-[@@deriving compare, sexp, show, hash]
+[@@deriving compare, sexp, hash]
+
+let pp format readonlyness =
+  let string =
+    match readonlyness with
+    | Mutable -> "Mutable"
+    | ReadOnly -> "ReadOnly"
+  in
+  Format.fprintf format "%s" string
+
+
+let show = Format.asprintf "%a" pp
 
 let name = "ReadOnlyness"
 

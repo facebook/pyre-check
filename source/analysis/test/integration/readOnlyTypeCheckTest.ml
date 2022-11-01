@@ -73,7 +73,7 @@ let test_readonly_configuration_flag context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: z is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   (* Test readonly violations at the top level. *)
   assert_type_errors_including_readonly
@@ -85,7 +85,7 @@ let test_readonly_configuration_flag context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   ()
 
@@ -106,7 +106,7 @@ let test_reveal_type context =
         reveal_type(y1)
     |}
     [
-      "ReadOnly - Revealed type [3004]: Revealed type for `y1` is ReadOnlyness.ReadOnly.";
+      "ReadOnly - Revealed type [3004]: Revealed type for `y1` is ReadOnly.";
       "Revealed type [-1]: Revealed type for `y1` is `int`.";
     ];
   ()

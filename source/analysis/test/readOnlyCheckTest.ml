@@ -156,7 +156,7 @@ let test_check_arguments_against_parameters context =
              [
                make_matched_argument
                  {
-                   Argument.WithPosition.resolved = ReadOnlyness.ReadOnly;
+                   Argument.WithPosition.resolved = ReadOnly;
                    kind = Positional;
                    expression = None;
                    position = 1;
@@ -170,7 +170,7 @@ let test_check_arguments_against_parameters context =
           name = None;
           position = 1;
           callee = None;
-          mismatch = { actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
+          mismatch = { actual = ReadOnly; expected = Mutable };
         };
     ];
   assert_arguments_against_parameters
@@ -181,7 +181,7 @@ let test_check_arguments_against_parameters context =
              [
                make_matched_argument
                  {
-                   Argument.WithPosition.resolved = ReadOnlyness.ReadOnly;
+                   Argument.WithPosition.resolved = ReadOnly;
                    kind = Named (Node.create_with_default_location "y");
                    expression = None;
                    position = 1;
@@ -194,7 +194,7 @@ let test_check_arguments_against_parameters context =
           name = Some "y";
           position = 1;
           callee = None;
-          mismatch = { actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
+          mismatch = { actual = ReadOnly; expected = Mutable };
         };
     ];
   ()
@@ -306,7 +306,7 @@ let test_assignment context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: z is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -347,7 +347,7 @@ let test_assignment context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -368,7 +368,7 @@ let test_assignment context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -386,9 +386,9 @@ let test_assignment context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: x2 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
       "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   ()
 
@@ -407,10 +407,10 @@ let test_function_call context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.expect_mutable_and_readonly`, for 1st positional only parameter expected \
-       `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+       `test.expect_mutable_and_readonly`, for 1st positional only parameter expected `Mutable` \
+       but got `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -423,9 +423,9 @@ let test_function_call context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.foo`, for 1st \
-       positional only parameter expected `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+       positional only parameter expected `Mutable` but got `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -439,8 +439,7 @@ let test_function_call context =
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional only parameter expected `ReadOnlyness.Mutable` but got \
-       `ReadOnlyness.ReadOnly`.";
+       1st positional only parameter expected `Mutable` but got `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -456,10 +455,10 @@ let test_function_call context =
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.Foo.return_readonly`, for 1st positional only parameter expected \
-       `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+       `test.Foo.return_readonly`, for 1st positional only parameter expected `Mutable` but got \
+       `ReadOnly`.";
       "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -477,12 +476,12 @@ let test_function_call context =
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.Foo.return_readonly`, for 1st positional only parameter expected \
-       `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+       `test.Foo.return_readonly`, for 1st positional only parameter expected `Mutable` but got \
+       `ReadOnly`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.return_foo`, for 1st \
-       positional only parameter expected `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+       positional only parameter expected `Mutable` but got `ReadOnly`.";
       "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -515,8 +514,8 @@ let test_function_call context =
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.Foo.expect_mutable_self`, for 0th positional only parameter expected \
-       `ReadOnlyness.Mutable` but got `ReadOnlyness.ReadOnly`.";
+       `test.Foo.expect_mutable_self`, for 0th positional only parameter expected `Mutable` but \
+       got `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -592,7 +591,7 @@ let test_parameters context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -613,11 +612,11 @@ let test_parameters context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: y3 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
       "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
       "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   assert_readonly_errors
     {|
@@ -629,9 +628,9 @@ let test_parameters context =
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
       "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have readonlyness \
-       `ReadOnlyness.Mutable` but is used as readonlyness `ReadOnlyness.ReadOnly`.";
+       `Mutable` but is used as readonlyness `ReadOnly`.";
     ];
   (* Check for errors in constructing the default value of a parameter. *)
   assert_readonly_errors
@@ -647,8 +646,7 @@ let test_parameters context =
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional only parameter expected `ReadOnlyness.Mutable` but got \
-       `ReadOnlyness.ReadOnly`.";
+       1st positional only parameter expected `Mutable` but got `ReadOnly`.";
     ];
   (* Don't consider `x` in scope for the default value of parameter `y`. We don't need to emit an
      error here, because the type checking analysis will. *)
@@ -676,8 +674,8 @@ let test_reveal_type context =
         reveal_type(y2)
     |}
     [
-      "ReadOnly - Revealed type [3004]: Revealed type for `y2` is ReadOnlyness.Mutable.";
-      "ReadOnly - Revealed type [3004]: Revealed type for `y1` is ReadOnlyness.ReadOnly.";
+      "ReadOnly - Revealed type [3004]: Revealed type for `y2` is Mutable.";
+      "ReadOnly - Revealed type [3004]: Revealed type for `y1` is ReadOnly.";
     ];
   ()
 

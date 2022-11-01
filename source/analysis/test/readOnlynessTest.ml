@@ -48,6 +48,19 @@ let test_meet _ =
   ()
 
 
+let test_pp _ =
+  let assert_pp readonlyness expected =
+    assert_equal
+      ~cmp:Ast.Identifier.equal
+      ~printer:Fn.id
+      expected
+      (Format.asprintf "%a" pp readonlyness)
+  in
+  assert_pp Mutable "Mutable";
+  assert_pp ReadOnly "ReadOnly";
+  ()
+
+
 let test_of_type _ =
   let assert_of_type type_ expected =
     let assert_equal = assert_equal ~cmp:[%compare.equal: t] ~printer:show in
@@ -64,6 +77,7 @@ let () =
          "less_or_equal" >:: test_less_or_equal;
          "join" >:: test_join;
          "meet" >:: test_meet;
+         "pp" >:: test_pp;
          "of_type" >:: test_of_type;
        ]
   |> Test.run
