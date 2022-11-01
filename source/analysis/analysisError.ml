@@ -342,8 +342,8 @@ module ReadOnly = struct
         let target =
           let parameter =
             match name with
-            | Some name -> Format.asprintf "parameter `%a`" Identifier.pp_sanitized name
-            | _ -> "positional only parameter"
+            | Some name -> Format.asprintf "argument `%a`" Identifier.pp_sanitized name
+            | _ -> Format.asprintf "%s positional argument" (ordinal position)
           in
           let callee =
             match callee with
@@ -351,9 +351,9 @@ module ReadOnly = struct
             | _ -> "anonymous call"
           in
           if concise then
-            Format.asprintf "For %s param" (ordinal position)
+            Format.asprintf "For %s argument" (ordinal position)
           else
-            Format.asprintf "In %s, for %s %s" callee (ordinal position) parameter
+            Format.asprintf "In %s, for %s," callee parameter
         in
         [
           Format.asprintf

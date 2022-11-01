@@ -960,8 +960,8 @@ let test_description _ =
             mismatch =
               { Error.ReadOnly.actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
           }))
-    "ReadOnly violation - Incompatible parameter type [3002]: In call `my_callee`, for 1st \
-     parameter `my_name` expected `Mutable` but got `ReadOnly`.";
+    "ReadOnly violation - Incompatible parameter type [3002]: In call `my_callee`, for argument \
+     `my_name`, expected `Mutable` but got `ReadOnly`.";
   assert_messages
     (ReadOnlynessMismatch
        (IncompatibleParameterType
@@ -973,7 +973,7 @@ let test_description _ =
               { Error.ReadOnly.actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In anonymous call, for 1st \
-     positional only parameter expected `Mutable` but got `ReadOnly`.";
+     positional argument, expected `Mutable` but got `ReadOnly`.";
   ()
 
 
