@@ -363,6 +363,15 @@ module EnvironmentTable = struct
       let upstream { upstream; _ } = upstream
     end
 
+    (* The core logic for overlay and base environment data handling is mostly
+     * shared - the differences are that the concrete types are not the same
+     * and that overlays have to deal with ownership checks and parent
+     * environment result propagation (that is, changes to the base environment
+     * triggering invalidations in an overlay).
+     *
+     * This module, which is not part of the public interface, defines all of
+     * the core, shared logic.
+     *)
     module FromReadOnlyUpstream = struct
       type t = {
         table: Table.t;
@@ -371,6 +380,8 @@ module EnvironmentTable = struct
 
       let create upstream_environment = { table = Table.create (); upstream_environment }
 
+      (* Defines how to perform a lazy read: first see if there is a cache hit, otherwise convert
+         key -> trigger -> dependency and call produce_value to populate the cache. *)
       let get { table; upstream_environment } ?dependency key =
         match Table.get table ?dependency key with
         | Some hit -> hit
@@ -391,6 +402,8 @@ module EnvironmentTable = struct
         type t = In.trigger [@@deriving sexp, compare]
       end)
 
+      (* Given an update result for the layer below this, find all of the keys that require
+         invalidation in this layer. *)
       let compute_trigger_map upstream_triggered_dependencies =
         List.fold
           upstream_triggered_dependencies
@@ -410,6 +423,8 @@ module EnvironmentTable = struct
               triggers)
 
 
+      (* Given an update result for the layer below this, update this layer and return the update
+         result. *)
       let update_only_this_environment ~scheduler { table; upstream_environment } trigger_map =
         Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
         let update ~names_to_update () =
@@ -471,6 +486,8 @@ module EnvironmentTable = struct
         triggered_dependencies
     end
 
+    (* The Base module implements the non-overlay functionality for an environment layer; most of
+       the actual work is done by FromReadOnlyUpstream. *)
     module Base = struct
       type t = {
         upstream_environment: In.PreviousEnvironment.t;
@@ -495,6 +512,8 @@ module EnvironmentTable = struct
         FromReadOnlyUpstream.read_only from_read_only_upstream
 
 
+      (* Update an environment layer (which wraps all lower layers) by passing filesystem events
+         down to ModuleTracker and recursively pushing updates, invalidating data as needed *)
       let update_this_and_all_preceding_environments
           { upstream_environment; from_read_only_upstream }
           ~scheduler
@@ -523,6 +542,8 @@ module EnvironmentTable = struct
       let load controls = In.PreviousEnvironment.load controls |> from_upstream_environment
     end
 
+    (* The Overlay module implements the overlay functionality for an environment layer; most of the
+       actual work is done by FromReadOnlyUpstream. *)
     module Overlay = struct
       type t = {
         parent: ReadOnly.t;
@@ -551,6 +572,9 @@ module EnvironmentTable = struct
         In.convert_trigger trigger |> overlay_owns_key environment
 
 
+      (* Filter the triggered dependencies from an update result to only the ones that are owned by
+         an overlay. This is what prevents fanouts of updates, keeping overlays O(module size) both
+         in memory use and incrmental update compute costs *)
       let compute_owned_trigger_map environment upstream_triggered_dependencies =
         List.fold
           upstream_triggered_dependencies
@@ -573,6 +597,7 @@ module EnvironmentTable = struct
               triggers)
 
 
+      (* Core logic for updating an overlay based on upstream changes. *)
       let consume_upstream_update ({ from_read_only_upstream; _ } as environment) update_result =
         let triggered_dependencies =
           In.PreviousEnvironment.UpdateResult.all_triggered_dependencies update_result
@@ -584,11 +609,17 @@ module EnvironmentTable = struct
         { UpdateResult.triggered_dependencies; upstream = update_result }
 
 
+      (* Update an overlay, given new source code for the overlaid modules (usually that new source
+         code consists of unsaved editor text). This is the equivalent of
+         Base.update_this_and_all_preceding_environments. *)
       let update_overlaid_code ({ upstream_environment; _ } as environment) ~code_updates =
         In.PreviousEnvironment.Overlay.update_overlaid_code upstream_environment ~code_updates
         |> consume_upstream_update environment
 
 
+      (* Propagate updates from the parent of an overlay environment. This is important so that, for
+         example, if we change `foo.py` in a way that breaks `bar.py` while we have `bar.py` open
+         with unsaved changes, the editor will be able to show type errors correctly. *)
       let propagate_parent_update ({ upstream_environment; _ } as environment) parent_update_result =
         let upstream =
           UpdateResult.upstream parent_update_result
