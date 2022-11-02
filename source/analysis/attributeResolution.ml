@@ -23,7 +23,7 @@
  *   - key: AttributeTableKey, a combination of a Type.t and
  *     some flags that determine which attributes exist in different contexts
  *   - value: UninstantiatedAttributeTable.t, a table mapping names (strings)
- *     to UninstantiatedAnnotation.t AnnotatedAnnotation.t, which has
+ *     to UninstantiatedAnnotation.t AnnotatedAttribute.t, which has
  *     - information about annotations, visibility, and other factors that
  *       determine how attributes may be used in typing as well
  *     - possible problems detected while resolving the attribute, which
