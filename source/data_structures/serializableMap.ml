@@ -44,7 +44,7 @@ module Make (Ordered : OrderedType) : S with type key = Ordered.t = struct
   module Key = struct
     include Ordered
 
-    type 'a assoc = t * 'a [@@deriving compare, sexp, show, hash]
+    type 'a assoc = t * 'a [@@deriving compare, sexp, hash]
   end
 
   let set map ~key ~data = add key data map
@@ -59,7 +59,14 @@ module Make (Ordered : OrderedType) : S with type key = Ordered.t = struct
     bindings map |> Core.List.hash_fold_t (Key.hash_fold_assoc hash_fold_a) hash_state
 
 
-  let pp pp_a format map =
-    let l el = Format.asprintf "%a" (Key.pp_assoc pp_a) el in
-    Format.fprintf format "%s" (List.to_string ~f:l (bindings map))
+  let pp pp_a formatter map =
+    match bindings map with
+    | [] -> Format.fprintf formatter "{}"
+    | [(key, value)] -> Format.fprintf formatter "{%a -> %a}" Ordered.pp key pp_a value
+    | pairs ->
+        let pp_pair formatter (key, value) =
+          Format.fprintf formatter "@,%a -> %a" Ordered.pp key pp_a value
+        in
+        let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+        Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs pairs
 end
