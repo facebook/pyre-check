@@ -102,7 +102,11 @@ module EnvironmentTable : sig
 
     module Key : Memory.KeyType
 
+    val show_key : Key.t -> string
+
     module Value : Memory.ValueTypeWithEquivalence
+
+    val equal_value : Value.t -> Value.t -> bool
 
     (* This is the data type of the key that we are being told to compute. This sometimes
        unfortunately has to differ from the actual key of the table, but the difference should be
@@ -115,13 +119,11 @@ module EnvironmentTable : sig
 
     module TriggerSet : Set.S with type Elt.t = trigger
 
-    val lazy_incremental : bool
+    val trigger_to_dependency : trigger -> SharedMemoryKeys.dependency
 
     (* This function should extract the relevant updates from upstream triggers. Usually this
        selecting the relevant variant from SharedMemoryKeys.dependency *)
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
-
-    val trigger_to_dependency : trigger -> SharedMemoryKeys.dependency
 
     (* This is the actual main function of the update. *)
     val produce_value
@@ -130,11 +132,9 @@ module EnvironmentTable : sig
       dependency:SharedMemoryKeys.DependencyKey.registered option ->
       Value.t
 
-    val show_key : Key.t -> string
-
     val overlay_owns_key : ModuleTracker.Overlay.t -> Key.t -> bool
 
-    val equal_value : Value.t -> Value.t -> bool
+    val lazy_incremental : bool
   end
 
   module type S = sig

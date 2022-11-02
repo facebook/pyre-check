@@ -129,12 +129,42 @@ module type S = sig
 end
 
 module EnvironmentTable = struct
+  (* The `In` module signature describes everything that we must specify
+   * in order to create a new environment layer. The semantics of the environment
+   * stack as a whole are determined by how this signature is implemented at each
+   * layer.
+   *)
   module type In = sig
     module PreviousEnvironment : PreviousEnvironment.S
 
+    (* The Key and Value modules describe the data for this table.
+     *
+     * In most cases Value.t will be an optional type, both because laziness
+     * means we need to be able to represent that we've cached the computation
+     * proving that a key does not actually exist, and because incremental
+     * updates can cause us to need to "delete" keys but that is not really
+     * possible in the underlying SharedMemory tables today.
+     *)
+
     module Key : Memory.KeyType
 
+    val show_key : Key.t -> string
+
     module Value : Memory.ValueTypeWithEquivalence
+
+    val equal_value : Value.t -> Value.t -> bool
+
+    (* The trigger type is the type used to represent a key for actual
+     * computation. In some cases it can be different from Key.t, for example
+     * if Key.t is an int because we are interning triggers to optimize
+     * storage.
+     *
+     * You can think of `trigger` as the "logical" key type and `Key.t`
+     * as the "physical" key type.
+     *
+     * Often they are the same, in which case `key_to_trigger` and
+     * `convert_trigger` can both be `Fn.id`.
+     *)
 
     type trigger [@@deriving sexp, compare]
 
@@ -144,23 +174,57 @@ module EnvironmentTable = struct
 
     module TriggerSet : Set.S with type Elt.t = trigger
 
-    val lazy_incremental : bool
-
-    val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
+    (* The SharedMemoryKeys.dependency type is a variant, and each environment
+     * has its own case in that variant.
+     * - trigger_to_dependency knows how to represent a key of this table
+     *   as a dependency that can be registered on lower-layer tables.
+     * - filter_upstream_dependency knows how to convert back, assuming
+     *   the dependency is of the correct variant.
+     *)
 
     val trigger_to_dependency : trigger -> SharedMemoryKeys.dependency
 
+    val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
+
+    (* The `produce_value` function is at the heart of our lazy table
+     * implementation. It determines what computation we run both
+     *   - when we look * up a key that is not yet cached in the table, and
+     *   - when a key has been invalidated and we need to recompute
+     * It can only depend on lower-layer environments.
+     *)
     val produce_value
       :  PreviousEnvironment.ReadOnly.t ->
       trigger ->
       dependency:SharedMemoryKeys.DependencyKey.registered option ->
       Value.t
 
-    val show_key : Key.t -> string
-
+    (* An Overlay environment involves a separate table for each layer,
+     * where we always check the overlay table first and then fall back
+     * to reading the parent environment. This is used for per-buffer
+     * unsaved changes support in editors.
+     *
+     * To keep overlays small and fast to update, we only include keys
+     * "owned" by a given overlay, where ownership means the key is
+     * associated with a module containing overlaid raw code.
+     *
+     * Almost all key types represent some python identifier (e.g. a
+     * class or function name) whose module ancestry is clear; this
+     * function is responsible for determining whether a module in the
+     * overlay owns a given key. We prevent incremental updates for
+     * keys that are not owned.
+     *)
     val overlay_owns_key : ModuleTracker.Overlay.t -> Key.t -> bool
 
-    val equal_value : Value.t -> Value.t -> bool
+    (* In a nonlazy environment table, incremental updates lead to us:
+     * - recomputing values for all invalidated keys
+     * - comparing those values to old values
+     * - invalidating downstream data only if the value changed
+     *
+     * In a lazy incremental table, incremental updates lead to us:
+     * - deleting all values for invalidated keys
+     * - invalidating all downstream data
+     *)
+    val lazy_incremental : bool
   end
 
   module type Table = sig
