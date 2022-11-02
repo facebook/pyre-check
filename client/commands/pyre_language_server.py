@@ -235,6 +235,10 @@ class PyreLanguageServer:
                 self.server_state.opened_documents[document_path] = OpenedDocumentState(
                     code=code_changes, is_dirty=True
                 )
+        else:
+            self.server_state.opened_documents[document_path] = OpenedDocumentState(
+                code=code_changes, is_dirty=True
+            )
 
         end_time = time.time()
 
