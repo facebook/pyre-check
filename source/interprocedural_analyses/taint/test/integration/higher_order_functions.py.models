@@ -77,7 +77,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "higher_order_functions.test_conditional_apply",
+    "callable": "higher_order_functions.test_conditional_apply_forward",
     "callable_line": 112,
     "code": 5002,
     "line": 113,
@@ -146,13 +146,13 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.test_conditional_apply:5002:0:Call|_test_sink|0|formal(arg):bf91f3f6d6ea1f36b992730d996ec595"
+    "master_handle": "higher_order_functions.test_conditional_apply_forward:5002:0:Call|_test_sink|0|formal(arg):92e77d5b50c5acc056876ffbfe57f28b"
   }
 }
 {
   "kind": "issue",
   "data": {
-    "callable": "higher_order_functions.test_conditional_apply",
+    "callable": "higher_order_functions.test_conditional_apply_forward",
     "callable_line": 112,
     "code": 5002,
     "line": 117,
@@ -221,13 +221,13 @@
       "index": 2,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.test_conditional_apply:5002:0:Call|_test_sink|2|formal(arg):21f06601b6f3410e2c6c03ceedc36f8d"
+    "master_handle": "higher_order_functions.test_conditional_apply_forward:5002:0:Call|_test_sink|2|formal(arg):312fd10ee66ab2c3babb5166f1e79fec"
   }
 }
 {
   "kind": "issue",
   "data": {
-    "callable": "higher_order_functions.test_conditional_apply",
+    "callable": "higher_order_functions.test_conditional_apply_forward",
     "callable_line": 112,
     "code": 5002,
     "line": 115,
@@ -296,13 +296,13 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.test_conditional_apply:5002:0:Call|_test_sink|1|formal(arg):bfe389f3d607539cd2c3b11049f36699"
+    "master_handle": "higher_order_functions.test_conditional_apply_forward:5002:0:Call|_test_sink|1|formal(arg):ca111500e800703df7a10ff8ef680ab2"
   }
 }
 {
   "kind": "issue",
   "data": {
-    "callable": "higher_order_functions.test_conditional_apply",
+    "callable": "higher_order_functions.test_conditional_apply_forward",
     "callable_line": 112,
     "code": 5002,
     "line": 118,
@@ -371,7 +371,7 @@
       "index": 3,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.test_conditional_apply:5002:0:Call|_test_sink|3|formal(arg):8e6c0e733c043cb6e0c225327a5054ef"
+    "master_handle": "higher_order_functions.test_conditional_apply_forward:5002:0:Call|_test_sink|3|formal(arg):0f1ec80077a9c274a969c0a5dec62e99"
   }
 }
 {
@@ -1376,6 +1376,83 @@
               { "line": 65, "start": 27, "end": 28 }
             ],
             "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_conditional_apply_backward",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "lambda" } ],
+            "origin": {
+              "filename": "higher_order_functions.py",
+              "line": 122,
+              "start": 22,
+              "end": 32
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "lambda" } ],
+            "origin": {
+              "filename": "higher_order_functions.py",
+              "line": 124,
+              "start": 22,
+              "end": 32
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "lambda" } ],
+            "origin": {
+              "filename": "higher_order_functions.py",
+              "line": 126,
+              "start": 28,
+              "end": 38
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "lambda" } ],
+            "origin": {
+              "filename": "higher_order_functions.py",
+              "line": 127,
+              "start": 28,
+              "end": 38
+            }
           }
         ]
       }
