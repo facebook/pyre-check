@@ -1032,16 +1032,123 @@ let test_call_graph_of_define context =
                         ~return_type:(Some ReturnType.bool)
                         (Target.Function { name = "test.hof"; kind = Normal });
                     ]
-                  ~higher_order_parameter:
-                    {
-                      index = 0;
-                      call_targets =
-                        [
-                          CallTarget.create
-                            ~return_type:(Some ReturnType.integer)
-                            (Target.Function { name = "test.bar"; kind = Normal });
-                        ];
-                    }
+                  ~higher_order_parameters:
+                    (HigherOrderParameterMap.from_list
+                       [
+                         {
+                           index = 0;
+                           call_targets =
+                             [
+                               CallTarget.create
+                                 ~return_type:(Some ReturnType.integer)
+                                 (Target.Function { name = "test.bar"; kind = Normal });
+                             ];
+                         };
+                       ])
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def hof(f, g, arg) -> bool:
+        f(arg)
+        g(arg)
+
+      def foo(x) -> int:
+        pass
+
+      def bar(x) -> int:
+        pass
+
+      def test():
+        hof(foo, bar, 1)
+      |}
+    ~define_name:"test.test"
+    ~expected:
+      [
+        ( "13:2-13:18",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~return_type:(Some ReturnType.bool)
+                        (Target.Function { name = "test.hof"; kind = Normal });
+                    ]
+                  ~higher_order_parameters:
+                    (HigherOrderParameterMap.from_list
+                       [
+                         {
+                           index = 0;
+                           call_targets =
+                             [
+                               CallTarget.create
+                                 ~return_type:(Some ReturnType.integer)
+                                 (Target.Function { name = "test.foo"; kind = Normal });
+                             ];
+                         };
+                         {
+                           index = 1;
+                           call_targets =
+                             [
+                               CallTarget.create
+                                 ~return_type:(Some ReturnType.integer)
+                                 (Target.Function { name = "test.bar"; kind = Normal });
+                             ];
+                         };
+                       ])
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      _magic_enum = property
+
+      class Enum:
+        @_magic_enum
+        def value(self): ...
+
+      class Permission(Enum):
+        @property
+        def action_name(self) -> bool:
+          if len(self.value):
+              return True
+          return False
+      |}
+    ~define_name:"test.Permission.action_name"
+    ~expected:
+      [
+        ( "11:7-11:22",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~return_type:(Some ReturnType.integer)
+                        (Target.Function { name = "len"; kind = Normal });
+                    ]
+                  ~higher_order_parameters:
+                    (HigherOrderParameterMap.from_list
+                       [
+                         {
+                           index = 0;
+                           call_targets =
+                             [
+                               CallTarget.create
+                                 ~implicit_self:true
+                                 (Target.Method
+                                    {
+                                      class_name = "test.Enum";
+                                      method_name = "value";
+                                      kind = Normal;
+                                    });
+                             ];
+                         };
+                       ])
                   ())) );
       ]
     ();
@@ -2450,23 +2557,26 @@ let test_call_graph_of_define context =
                (CallCallees.create
                   ~call_targets:
                     [CallTarget.create (Target.Function { name = "print"; kind = Normal })]
-                  ~higher_order_parameter:
-                    {
-                      index = 0;
-                      call_targets =
-                        [
-                          CallTarget.create
-                            ~implicit_self:true
-                            ~implicit_dunder_call:true
-                            ~receiver_type:(Type.Primitive "test.CallableClass")
-                            (Target.Method
-                               {
-                                 class_name = "test.CallableClass";
-                                 method_name = "__call__";
-                                 kind = Normal;
-                               });
-                        ];
-                    }
+                  ~higher_order_parameters:
+                    (HigherOrderParameterMap.from_list
+                       [
+                         {
+                           index = 0;
+                           call_targets =
+                             [
+                               CallTarget.create
+                                 ~implicit_self:true
+                                 ~implicit_dunder_call:true
+                                 ~receiver_type:(Type.Primitive "test.CallableClass")
+                                 (Target.Method
+                                    {
+                                      class_name = "test.CallableClass";
+                                      method_name = "__call__";
+                                      kind = Normal;
+                                    });
+                             ];
+                         };
+                       ])
                   ())) );
       ]
     ();

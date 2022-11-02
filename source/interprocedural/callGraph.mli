@@ -70,6 +70,19 @@ module HigherOrderParameter : sig
   [@@deriving eq, show]
 end
 
+(** Mapping from a parameter index to its HigherOrderParameter, if any. *)
+module HigherOrderParameterMap : sig
+  type t [@@deriving eq, show]
+
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val from_list : HigherOrderParameter.t list -> t
+
+  val first_index : t -> HigherOrderParameter.t option
+end
+
 (** An aggregate of all possible callees at a call site. *)
 module CallCallees : sig
   type t = {
@@ -79,8 +92,8 @@ module CallCallees : sig
     new_targets: CallTarget.t list;
     (* Call targets for calls to the `__init__` instance method. *)
     init_targets: CallTarget.t list;
-    (* Information about an argument being a callable, and possibly called. *)
-    higher_order_parameter: HigherOrderParameter.t option;
+    (* Information about arguments that are callables, and possibly called. *)
+    higher_order_parameters: HigherOrderParameterMap.t;
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
     unresolved: bool;
@@ -91,7 +104,7 @@ module CallCallees : sig
     :  ?call_targets:CallTarget.t list ->
     ?new_targets:CallTarget.t list ->
     ?init_targets:CallTarget.t list ->
-    ?higher_order_parameter:HigherOrderParameter.t ->
+    ?higher_order_parameters:HigherOrderParameterMap.t ->
     ?unresolved:bool ->
     unit ->
     t

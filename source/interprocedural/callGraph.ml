@@ -192,18 +192,6 @@ module HigherOrderParameter = struct
   }
   [@@deriving eq, show { with_path = false }]
 
-  let join left right =
-    match left, right with
-    | Some { index = left_index; _ }, Some { index = right_index; _ } ->
-        if left_index <= right_index then
-          left
-        else
-          right
-    | Some _, None -> left
-    | None, Some _ -> right
-    | None, None -> None
-
-
   let all_targets { call_targets; _ } = List.map ~f:CallTarget.target call_targets
 
   let equal_ignoring_types
@@ -212,6 +200,64 @@ module HigherOrderParameter = struct
     =
     index_left == index_right
     && List.equal CallTarget.equal_ignoring_types call_targets_left call_targets_right
+
+
+  let join
+      { index; call_targets = call_targets_left }
+      { index = _; call_targets = call_targets_right }
+    =
+    { index; call_targets = List.rev_append call_targets_left call_targets_right }
+
+
+  let deduplicate { index; call_targets } =
+    { index; call_targets = CallTarget.dedup_and_sort call_targets }
+end
+
+(** Mapping from a parameter index to its HigherOrderParameter, if any. *)
+module HigherOrderParameterMap = struct
+  module Map = Data_structures.SerializableMap.Make (Int)
+
+  type t = HigherOrderParameter.t Map.t
+
+  let empty = Map.empty
+
+  let is_empty = Map.is_empty
+
+  let pp = Map.pp HigherOrderParameter.pp
+
+  let show = Format.asprintf "%a" pp
+
+  let equal = Map.equal HigherOrderParameter.equal
+
+  let equal_ignoring_types = Map.equal HigherOrderParameter.equal_ignoring_types
+
+  let join left right =
+    Map.union (fun _ left right -> Some (HigherOrderParameter.join left right)) left right
+
+
+  let deduplicate map = Map.map HigherOrderParameter.deduplicate map
+
+  let all_targets map =
+    Map.fold
+      (fun _ higher_order_parameter targets ->
+        List.rev_append targets (HigherOrderParameter.all_targets higher_order_parameter))
+      map
+      []
+
+
+  let add map ({ HigherOrderParameter.index; _ } as higher_order_parameter) =
+    Map.update
+      index
+      (function
+        | None -> Some higher_order_parameter
+        | Some existing -> Some (HigherOrderParameter.join existing higher_order_parameter))
+      map
+
+
+  let from_list list = List.fold list ~init:Map.empty ~f:add
+
+  let first_index map =
+    Map.min_binding_opt map >>| fun (_, higher_order_parameter) -> higher_order_parameter
 end
 
 (** An aggregate of all possible callees at a call site. *)
@@ -223,8 +269,8 @@ module CallCallees = struct
     new_targets: CallTarget.t list;
     (* Call targets for calls to the `__init__` instance method. *)
     init_targets: CallTarget.t list;
-    (* Information about an argument being a callable, and possibly called. *)
-    higher_order_parameter: HigherOrderParameter.t option;
+    (* Information about arguments that are callables, and possibly called. *)
+    higher_order_parameters: HigherOrderParameterMap.t;
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
     unresolved: bool;
@@ -235,11 +281,11 @@ module CallCallees = struct
       ?(call_targets = [])
       ?(new_targets = [])
       ?(init_targets = [])
-      ?higher_order_parameter
+      ?(higher_order_parameters = HigherOrderParameterMap.empty)
       ?(unresolved = false)
       ()
     =
-    { call_targets; new_targets; init_targets; higher_order_parameter; unresolved }
+    { call_targets; new_targets; init_targets; higher_order_parameters; unresolved }
 
 
   let unresolved =
@@ -247,7 +293,7 @@ module CallCallees = struct
       call_targets = [];
       new_targets = [];
       init_targets = [];
-      higher_order_parameter = None;
+      higher_order_parameters = HigherOrderParameterMap.empty;
       unresolved = true;
     }
 
@@ -269,47 +315,41 @@ module CallCallees = struct
         call_targets = left_call_targets;
         new_targets = left_new_targets;
         init_targets = left_init_targets;
-        higher_order_parameter = left_higher_order_parameter;
+        higher_order_parameters = left_higher_order_parameters;
         unresolved = left_unresolved;
       }
       {
         call_targets = right_call_targets;
         new_targets = right_new_targets;
         init_targets = right_init_targets;
-        higher_order_parameter = right_higher_order_parameter;
+        higher_order_parameters = right_higher_order_parameters;
         unresolved = right_unresolved;
       }
     =
     let call_targets = List.rev_append left_call_targets right_call_targets in
     let new_targets = List.rev_append left_new_targets right_new_targets in
     let init_targets = List.rev_append left_init_targets right_init_targets in
-    let higher_order_parameter =
-      HigherOrderParameter.join left_higher_order_parameter right_higher_order_parameter
+    let higher_order_parameters =
+      HigherOrderParameterMap.join left_higher_order_parameters right_higher_order_parameters
     in
     let unresolved = left_unresolved || right_unresolved in
-    { call_targets; new_targets; init_targets; higher_order_parameter; unresolved }
+    { call_targets; new_targets; init_targets; higher_order_parameters; unresolved }
 
 
-  let deduplicate { call_targets; new_targets; init_targets; higher_order_parameter; unresolved } =
+  let deduplicate { call_targets; new_targets; init_targets; higher_order_parameters; unresolved } =
     let call_targets = CallTarget.dedup_and_sort call_targets in
     let new_targets = CallTarget.dedup_and_sort new_targets in
     let init_targets = CallTarget.dedup_and_sort init_targets in
-    let higher_order_parameter =
-      match higher_order_parameter with
-      | Some { HigherOrderParameter.index; call_targets } ->
-          Some { HigherOrderParameter.index; call_targets = CallTarget.dedup_and_sort call_targets }
-      | None -> None
-    in
-    { call_targets; new_targets; init_targets; higher_order_parameter; unresolved }
+    let higher_order_parameters = HigherOrderParameterMap.deduplicate higher_order_parameters in
+    { call_targets; new_targets; init_targets; higher_order_parameters; unresolved }
 
 
-  let all_targets { call_targets; new_targets; init_targets; higher_order_parameter; _ } =
+  let all_targets { call_targets; new_targets; init_targets; higher_order_parameters; _ } =
     call_targets
     |> List.rev_append new_targets
     |> List.rev_append init_targets
     |> List.map ~f:CallTarget.target
-    |> List.rev_append
-         (higher_order_parameter >>| HigherOrderParameter.all_targets |> Option.value ~default:[])
+    |> List.rev_append (HigherOrderParameterMap.all_targets higher_order_parameters)
 
 
   let equal_ignoring_types
@@ -317,24 +357,23 @@ module CallCallees = struct
         call_targets = call_targets_left;
         new_targets = new_targets_left;
         init_targets = init_targets_left;
-        higher_order_parameter = higher_order_parameter_left;
+        higher_order_parameters = higher_order_parameter_lefts;
         unresolved = unresolved_left;
       }
       {
         call_targets = call_targets_right;
         new_targets = new_targets_right;
         init_targets = init_targets_right;
-        higher_order_parameter = higher_order_parameter_right;
+        higher_order_parameters = higher_order_parameter_rights;
         unresolved = unresolved_right;
       }
     =
     List.equal CallTarget.equal_ignoring_types call_targets_left call_targets_right
     && List.equal CallTarget.equal_ignoring_types new_targets_left new_targets_right
     && List.equal CallTarget.equal_ignoring_types init_targets_left init_targets_right
-    && Option.equal
-         HigherOrderParameter.equal_ignoring_types
-         higher_order_parameter_left
-         higher_order_parameter_right
+    && HigherOrderParameterMap.equal_ignoring_types
+         higher_order_parameter_lefts
+         higher_order_parameter_rights
     && unresolved_left == unresolved_right
 end
 
@@ -1374,7 +1413,7 @@ let resolve_callees
     ~call_indexer
     ~call:({ Call.callee; arguments } as call)
   =
-  let higher_order_parameter =
+  let higher_order_parameters =
     let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
       let return_type =
         lazy
@@ -1394,7 +1433,8 @@ let resolve_callees
           Some { HigherOrderParameter.index; call_targets = regular_targets }
       | _ -> None
     in
-    List.find_mapi arguments ~f:get_higher_order_function_targets
+    List.filter_mapi arguments ~f:get_higher_order_function_targets
+    |> HigherOrderParameterMap.from_list
   in
   (* Resolving the return type can be costly, hence we prefer the annotation on the callee when
      possible. When that does not work, we fallback to a full resolution of the call expression
@@ -1408,7 +1448,7 @@ let resolve_callees
   let regular_callees =
     resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_type ~callee
   in
-  { regular_callees with higher_order_parameter }
+  { regular_callees with higher_order_parameters }
 
 
 let get_defining_attributes ~resolution ~base_annotation ~attribute =

@@ -730,7 +730,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         CallGraph.CallCallees.call_targets;
         new_targets;
         init_targets;
-        higher_order_parameter = _;
+        higher_order_parameters = _;
         unresolved;
       }
     =
@@ -1103,12 +1103,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
 
     let state =
-      match callees with
-      | {
-       higher_order_parameter =
-         Some ({ CallGraph.HigherOrderParameter.index; _ } as higher_order_parameter);
-       _;
-      } -> (
+      (* TODO(T135474855): Support multiple higher order parameters. *)
+      match CallGraph.HigherOrderParameterMap.first_index callees.higher_order_parameters with
+      | Some ({ CallGraph.HigherOrderParameter.index; _ } as higher_order_parameter) -> (
           match List.nth arguments index with
           | Some lambda_argument ->
               analyze_arguments_for_lambda_call
