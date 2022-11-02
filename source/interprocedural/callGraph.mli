@@ -80,6 +80,8 @@ module HigherOrderParameterMap : sig
 
   val from_list : HigherOrderParameter.t list -> t
 
+  val to_list : t -> HigherOrderParameter.t list
+
   val first_index : t -> HigherOrderParameter.t option
 end
 

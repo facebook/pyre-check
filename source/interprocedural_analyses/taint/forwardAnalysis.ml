@@ -1034,36 +1034,65 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ -> analyze_expression ~resolution ~state ~is_result_used ~expression
 
 
-  and analyze_arguments_for_lambda_call
+  and analyze_arguments_with_higher_order_parameters
       ~resolution
       ~arguments
       ~state
-      ~lambda_argument:
-        { Call.Argument.value = { location = lambda_location; _ } as lambda_callee; _ }
-      { CallGraph.HigherOrderParameter.index = lambda_index; call_targets }
+      ~higher_order_parameters
     =
-    (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
-     * hof(q, fn, x, y) gets translated into the following block: (analyzed forwards)
+    (* If we have functions `fn1`, `fn2`, `fn3` getting passed into `hof`, we use the following strategy:
+     * hof(q, fn1, x, fn2, y, fn3) gets translated into the following block: (analyzed forwards)
      * if rand():
      *   $all = {q, x, y}
-     *   $result = fn( *all, **all)
+     *   $result_fn1 = fn1( *all, **all)
+     *   $result_fn2 = fn2( *all, **all)
+     *   $result_fn3 = fn3( *all, **all)
      * else:
-     *   $result = fn
-     * hof(q, $result, x, y)
+     *   $result_fn1 = fn1
+     *   $result_fn2 = fn2
+     *   $result_fn3 = fn3
+     * hof(q, $result_fn1, x, $result_fn2, y, $result_fn3)
      *)
-    let non_lambda_arguments =
-      List.mapi ~f:(fun index value -> index, value) (List.take arguments lambda_index)
-      @ List.mapi
-          ~f:(fun relative_index value -> lambda_index + 1 + relative_index, value)
-          (List.drop arguments (lambda_index + 1))
+    let higher_order_parameters =
+      higher_order_parameters
+      |> CallGraph.HigherOrderParameterMap.to_list
+      |> List.filter_map
+           ~f:(fun ({ CallGraph.HigherOrderParameter.index; _ } as higher_order_parameter) ->
+             match List.nth arguments index with
+             | Some { Call.Argument.value = argument; _ } -> Some (higher_order_parameter, argument)
+             | None -> None)
     in
 
-    (* Analyze all arguments once. *)
-    let { self_taint = lambda_self_taint; callee_taint = lambda_taint; state } =
-      analyze_callee ~resolution ~is_property_call:false ~state ~callee:lambda_callee
+    (* Analyze all function arguments once (ignoring the higher order call for now). *)
+    let function_callee_taints, state =
+      let analyze_function_arguments
+          (function_callee_taints, state)
+          ({ CallGraph.HigherOrderParameter.index; _ }, function_argument)
+        =
+        let { self_taint; callee_taint; state } =
+          analyze_callee ~resolution ~is_property_call:false ~state ~callee:function_argument
+        in
+        let callee_taint = Option.value_exn callee_taint in
+        (index, self_taint, callee_taint) :: function_callee_taints, state
+      in
+      List.fold ~init:([], state) ~f:analyze_function_arguments higher_order_parameters
     in
-    let lambda_taint = Option.value_exn lambda_taint in
-    let non_lambda_arguments_taint, state =
+
+    (* Analyze all non-function arguments once. *)
+    let non_function_arguments_taint, state =
+      let function_argument_indices =
+        List.fold
+          ~init:Int.Set.empty
+          ~f:(fun indices ({ CallGraph.HigherOrderParameter.index; _ }, _) ->
+            Int.Set.add indices index)
+          higher_order_parameters
+      in
+      let non_function_arguments =
+        List.filter_mapi
+          ~f:(fun index argument ->
+            Option.some_if (not (Int.Set.mem function_argument_indices index)) (index, argument))
+          arguments
+      in
       let compute_argument_taint (arguments_taint, state) (index, argument) =
         let taint, state =
           analyze_unstarred_expression
@@ -1074,70 +1103,84 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         (index, taint) :: arguments_taint, state
       in
-      List.fold ~init:([], state) ~f:compute_argument_taint non_lambda_arguments
+      List.fold ~init:([], state) ~f:compute_argument_taint non_function_arguments
     in
 
     (* Simulate if branch. *)
-    let if_branch_result_taint, if_branch_state =
+    let function_arguments_taints, if_branch_state =
       (* Simulate `$all = {q, x, y}`. *)
-      let all_argument =
-        Expression.Name (Name.Identifier "$all") |> Node.create ~location:lambda_location
-      in
       let all_argument_taint =
         List.fold
-          non_lambda_arguments_taint
+          non_function_arguments_taint
           ~f:(fun taint (_, argument_taint) -> ForwardState.Tree.join taint argument_taint)
           ~init:ForwardState.Tree.empty
         |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       in
 
-      (* Simulate `$result = fn( *all, **all)`. *)
-      let arguments =
-        [
-          {
-            Call.Argument.value =
-              Expression.Starred (Starred.Once all_argument)
-              |> Node.create ~location:lambda_location;
-            name = None;
-          };
-          {
-            Call.Argument.value =
-              Expression.Starred (Starred.Twice all_argument)
-              |> Node.create ~location:lambda_location;
-            name = None;
-          };
-        ]
+      let analyze_function_call
+          (function_call_taints, state)
+          ( { CallGraph.HigherOrderParameter.index; call_targets },
+            ({ Node.location = argument_location; _ } as argument) )
+        =
+        (* Simulate `$result_fn = fn( *all, **all)`. *)
+        let _, self_taint, callee_taint =
+          List.find_exn
+            ~f:(fun (argument_index, _, _) -> Int.equal argument_index index)
+            function_callee_taints
+        in
+        let all_argument =
+          Expression.Name (Name.Identifier "$all") |> Node.create ~location:argument_location
+        in
+        let arguments =
+          [
+            {
+              Call.Argument.value =
+                Expression.Starred (Starred.Once all_argument)
+                |> Node.create ~location:argument_location;
+              name = None;
+            };
+            {
+              Call.Argument.value =
+                Expression.Starred (Starred.Twice all_argument)
+                |> Node.create ~location:argument_location;
+              name = None;
+            };
+          ]
+        in
+        let arguments_taint = [all_argument_taint; all_argument_taint] in
+        let taint, state =
+          apply_callees_with_arguments_taint
+            ~resolution
+            ~is_result_used:true
+            ~callee:argument
+            ~call_location:argument_location
+            ~arguments
+            ~self_taint
+            ~callee_taint:(Some callee_taint)
+            ~arguments_taint
+            ~state
+            (CallGraph.CallCallees.create ~call_targets ())
+        in
+        let taint = ForwardState.Tree.add_local_breadcrumb (Features.lambda ()) taint in
+        (* Join result_fn taint from both if and else branches. *)
+        let taint = ForwardState.Tree.join taint callee_taint in
+        (index, taint) :: function_call_taints, state
       in
-      let arguments_taint = [all_argument_taint; all_argument_taint] in
-      let taint, state =
-        apply_callees_with_arguments_taint
-          ~resolution
-          ~is_result_used:true
-          ~callee:lambda_callee
-          ~call_location:lambda_location
-          ~arguments
-          ~self_taint:lambda_self_taint
-          ~callee_taint:(Some lambda_taint)
-          ~arguments_taint
-          ~state
-          (CallGraph.CallCallees.create ~call_targets ())
-      in
-      let taint = ForwardState.Tree.add_local_breadcrumb (Features.lambda ()) taint in
-      taint, state
+      List.fold ~init:([], state) ~f:analyze_function_call higher_order_parameters
     in
 
-    (* Simulate else branch: nothing to do. *)
-    (* Join both branches. *)
-    let result_taint = ForwardState.Tree.join if_branch_result_taint lambda_taint in
+    (* Join state from both if and else branches. *)
     let state = join state if_branch_state in
 
-    (* Return the arguments taint. The caller will simulate `hof(q, $result, x, y)`. *)
+    (* Return the arguments taint.
+     * The caller will simulate `hof(q, $result_fn1, x, $result_fn2, y, $result_fn3)`. *)
     let index_map_to_ordered_list map =
       let compare_by_index (left_index, _) (right_index, _) = Int.compare left_index right_index in
       map |> List.sort ~compare:compare_by_index |> List.map ~f:snd
     in
     let arguments_taint =
-      index_map_to_ordered_list ((lambda_index, result_taint) :: non_lambda_arguments_taint)
+      List.rev_append non_function_arguments_taint function_arguments_taints
+      |> index_map_to_ordered_list
     in
     arguments_taint, state
 
@@ -1158,19 +1201,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
 
     let arguments_taint, state =
-      (* TODO(T135474855): Support multiple higher order parameters. *)
-      match CallGraph.HigherOrderParameterMap.first_index callees.higher_order_parameters with
-      | Some ({ CallGraph.HigherOrderParameter.index; _ } as higher_order_parameter) -> (
-          match List.nth arguments index with
-          | Some lambda_argument ->
-              analyze_arguments_for_lambda_call
-                ~resolution
-                ~arguments
-                ~state
-                ~lambda_argument
-                higher_order_parameter
-          | _ -> analyze_arguments ~resolution ~state ~arguments)
-      | _ -> analyze_arguments ~resolution ~state ~arguments
+      if CallGraph.HigherOrderParameterMap.is_empty callees.higher_order_parameters then
+        analyze_arguments ~resolution ~state ~arguments
+      else
+        analyze_arguments_with_higher_order_parameters
+          ~resolution
+          ~arguments
+          ~state
+          ~higher_order_parameters:callees.higher_order_parameters
     in
 
     apply_callees_with_arguments_taint

@@ -256,6 +256,8 @@ module HigherOrderParameterMap = struct
 
   let from_list list = List.fold list ~init:Map.empty ~f:add
 
+  let to_list map = map |> Map.bindings |> List.map ~f:snd
+
   let first_index map =
     Map.min_binding_opt map >>| fun (_, higher_order_parameter) -> higher_order_parameter
 end
