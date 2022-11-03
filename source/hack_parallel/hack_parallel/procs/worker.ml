@@ -56,7 +56,7 @@ let max_workers = 1000
  * The job executed by the worker.
  *
  * The 'serializer' is the job continuation: it is a function that must
- * be called at the end of the request ir order to send back the result
+ * be called at the end of the request in order to send back the result
  * to the master (this is "internal business", this is not visible outside
  * this module). The slave will provide the expected function.
  * cf 'send_result' in 'slave_main'.

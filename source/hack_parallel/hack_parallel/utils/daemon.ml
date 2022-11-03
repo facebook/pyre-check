@@ -62,20 +62,26 @@ module Entry : sig
      interface. *)
 
   type ('param, 'input, 'output) t
+
   val register:
     string -> ('param -> ('input, 'output) channel_pair -> unit) ->
     ('param, 'input, 'output) t
+
   val find:
     ('param, 'input, 'output) t ->
     'param ->
     ('input, 'output) channel_pair -> unit
+
   val set_context:
-    ('param, 'input, 'output) t -> 'param ->
+    ('param, 'input, 'output) t ->
+    'param ->
     Unix.file_descr * Unix.file_descr ->
     unit
+
   val get_context:
     unit ->
     (('param, 'input, 'output) t * 'param * ('input, 'output) channel_pair)
+
   val clear_context:
     unit -> unit
 
@@ -306,9 +312,13 @@ let kill_and_wait h =
   ensure_waitpid h.pid
 
 let close_out = close_out
+
 let output_string = output_string
+
 let flush = flush
 
 let close_in = Timeout.close_in
+
 let input_char ic = Timeout.input_char ic
+
 let input_value ic = Timeout.input_value ic
