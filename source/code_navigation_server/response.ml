@@ -50,7 +50,7 @@ type t =
   | Error of ErrorKind.t
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Hover of { contents: HoverContent.t list }
-  | LocationOfDefinition of DefinitionLocation.t list
+  | LocationOfDefinition of { definitions: DefinitionLocation.t list }
   | ServerStatus of Status.t
 [@@deriving sexp, compare, yojson { strict = false }]
 

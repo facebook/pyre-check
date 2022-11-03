@@ -288,7 +288,7 @@ module Testing : sig
           (** Response for {!Request.Hover}. [contents] contains a list of items that will be shown
               to the user (there can be many because build system may map the same file to multiple
               modules). TODO: Add an optional [range] field used to visualize a hover. *)
-      | LocationOfDefinition of DefinitionLocation.t list
+      | LocationOfDefinition of { definitions: DefinitionLocation.t list }
           (** Response for {!Request.LocationOfDefinition}. The associated value is a list since
               there can be many potential definitions for a given item, either because build system
               may map the same file to multiple modules, or because the same name may get redefined

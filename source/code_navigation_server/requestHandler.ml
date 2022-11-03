@@ -128,7 +128,7 @@ let handle_location_of_definition ~module_ ~position ~overlay_id { State.environ
   get_overlay ~environment overlay_id
   >>= fun overlay ->
   get_location_of_definition_in_overlay ~overlay ~position module_
-  >>| fun definitions -> Response.(LocationOfDefinition definitions)
+  >>| fun definitions -> Response.(LocationOfDefinition { definitions })
 
 
 let with_broadcast_busy_checking ~subscriptions ~overlay_id f =

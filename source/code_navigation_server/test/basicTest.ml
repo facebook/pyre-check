@@ -383,7 +383,7 @@ let test_location_of_definition_request context =
               Query
                 (Query.LocationOfDefinition
                    { overlay_id = None; module_ = Module.OfName "test2"; position = position 2 8 }))
-          ~expected:Response.(LocationOfDefinition []);
+          ~expected:Response.(LocationOfDefinition { definitions = [] });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -394,7 +394,15 @@ let test_location_of_definition_request context =
           ~expected:
             Response.(
               LocationOfDefinition
-                [{ DefinitionLocation.path = PyrePath.absolute test_path; range = range 1 0 1 1 }]);
+                {
+                  definitions =
+                    [
+                      {
+                        DefinitionLocation.path = PyrePath.absolute test_path;
+                        range = range 1 0 1 1;
+                      };
+                    ];
+                });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -408,7 +416,15 @@ let test_location_of_definition_request context =
           ~expected:
             Response.(
               LocationOfDefinition
-                [{ DefinitionLocation.path = PyrePath.absolute test_path; range = range 1 0 1 1 }]);
+                {
+                  definitions =
+                    [
+                      {
+                        DefinitionLocation.path = PyrePath.absolute test_path;
+                        range = range 1 0 1 1;
+                      };
+                    ];
+                });
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
