@@ -25,14 +25,13 @@ from .. import dataclasses_json_extensions as json_mixins
 
 from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 
-from ..language_server import features, protocol as lsp
-from . import (
+from ..language_server import (
+    code_navigation_request,
     daemon_connection,
-    daemon_query,
-    expression_level_coverage,
-    server_state as state,
-    statistics,
+    features,
+    protocol as lsp,
 )
+from . import daemon_query, expression_level_coverage, server_state as state, statistics
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -156,6 +155,13 @@ def path_to_expression_coverage_response(
 
 
 class AbstractRequestHandler(abc.ABC):
+    def __init__(
+        self,
+        server_state: state.ServerState,
+    ) -> None:
+        self.server_state = server_state
+        self.socket_path: Path = server_state.server_options.get_socket_path()
+
     @abc.abstractmethod
     async def get_type_coverage(
         self,
@@ -196,18 +202,17 @@ class AbstractRequestHandler(abc.ABC):
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         raise NotImplementedError()
 
-
-class PersistentRequestHandler(AbstractRequestHandler):
-    def __init__(
-        self,
-        server_state: state.ServerState,
-    ) -> None:
-        self.server_state = server_state
-        self.socket_path: Path = server_state.server_options.get_socket_path()
-
     def get_language_server_features(self) -> features.LanguageServerFeatures:
         return self.server_state.server_options.language_server_features
 
+    def _get_overlay_id(self, path: Path) -> Optional[str]:
+        unsaved_changes_enabled = (
+            self.get_language_server_features().unsaved_changes.is_enabled()
+        )
+        return str(path) if unsaved_changes_enabled else None
+
+
+class PersistentRequestHandler(AbstractRequestHandler):
     async def _query_modules_of_path(
         self,
         path: Path,
@@ -235,12 +240,6 @@ class PersistentRequestHandler(AbstractRequestHandler):
             return None
         else:
             return len(response.response) > 0
-
-    def _get_overlay_id(self, path: Path) -> Optional[str]:
-        unsaved_changes_enabled = (
-            self.get_language_server_features().unsaved_changes.is_enabled()
-        )
-        return str(path) if unsaved_changes_enabled else None
 
     async def get_type_coverage(
         self,
@@ -364,17 +363,10 @@ class PersistentRequestHandler(AbstractRequestHandler):
 
 
 class CodeNavigationRequestHandler(AbstractRequestHandler):
-    def __init__(
-        self,
-        server_state: state.ServerState,
-    ) -> None:
-        self.server_state = server_state
-        self.socket_path: Path = server_state.server_options.get_socket_path()
-
     async def get_type_coverage(
         self,
         path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+    ) -> Optional[lsp.TypeCoverageResponse]:
         raise NotImplementedError()
 
     async def get_hover(
@@ -382,7 +374,16 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
-        raise NotImplementedError()
+        hover_request = code_navigation_request.HoverRequest(
+            path=path, overlay_id=self._get_overlay_id(path), position=position
+        )
+        response = await code_navigation_request.async_handle_hover_request(
+            self.socket_path,
+            hover_request,
+        )
+        if isinstance(response, lsp.LspHoverResponse):
+            return response
+        return daemon_query.DaemonQueryFailure(response.error_message)
 
     async def get_definition_locations(
         self,

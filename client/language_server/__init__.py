@@ -8,4 +8,10 @@ The language_server package contains the functionality powering the Pyre client'
 IDE integrations. Handles connection logic and communicating LSP features.
 """
 
-from . import connections, features  # noqa F401
+from . import (  # noqa F401
+    code_navigation_request,
+    connections,
+    daemon_connection,
+    features,
+    protocol,
+)

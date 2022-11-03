@@ -38,6 +38,7 @@ from ...language_server.connections import (
     MemoryBytesReader,
     MemoryBytesWriter,
 )
+from ...language_server.daemon_connection import DaemonConnectionFailure
 from ...language_server.features import (
     DefinitionAvailability,
     HoverAvailability,
@@ -50,7 +51,6 @@ from ...language_server.features import (
 from ...language_server.protocol import SymbolKind
 from ...tests import setup
 from .. import backend_arguments, background, start, subscription
-from ..daemon_connection import DaemonConnectionFailure
 from ..daemon_query import DaemonQueryFailure
 from ..initialization import (
     async_try_initialize,

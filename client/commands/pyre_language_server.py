@@ -21,10 +21,8 @@ from typing import ClassVar, Dict, List, Optional, Union
 
 from .. import json_rpc, log
 
-from ..language_server import connections, features, protocol as lsp
+from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import background, commands, find_symbols, request_handler, server_state as state
-
-from .daemon_connection import DaemonConnectionFailure
 
 from .daemon_query import DaemonQueryFailure
 
@@ -224,7 +222,7 @@ class PyreLanguageServer:
             result = await self.handler.update_overlay(
                 path=document_path.resolve(), process_id=process_id, code=code_changes
             )
-            if isinstance(result, DaemonConnectionFailure):
+            if isinstance(result, daemon_connection.DaemonConnectionFailure):
                 LOG.info(
                     daemon_failure_string(
                         "didChange", str(type(result)), result.error_message

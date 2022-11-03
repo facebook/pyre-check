@@ -29,7 +29,7 @@ import dataclasses_json
 
 from .. import dataclasses_json_extensions as json_mixins
 
-from . import daemon_connection
+from ..language_server import daemon_connection
 from .query_response import InvalidQueryResponse, Response
 
 
