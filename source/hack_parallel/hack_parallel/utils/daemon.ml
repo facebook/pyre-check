@@ -196,7 +196,8 @@ let close_pipe channel_mode (ch_in, ch_out) =
 let fork
     ?(channel_mode = `pipe)
     (type param)
-    (log_stdout, log_stderr) (f : param -> ('a, 'b) channel_pair -> unit)
+    (log_stdout, log_stderr)
+    (f : param -> ('a, 'b) channel_pair -> unit)
     (param : param) : ('b, 'a) handle =
   let (parent_in, child_out), (child_in, parent_out)
     = setup_channels channel_mode in
@@ -233,7 +234,8 @@ let spawn
     ?(channel_mode = `pipe)
     (stdin, stdout, stderr)
     (entry: (param, input, output) entry)
-    (param: param) : (output, input) handle =
+    (param: param)
+    : (output, input) handle =
   let (parent_in, child_out), (child_in, parent_out) =
     setup_channels channel_mode in
   Entry.set_context entry param (child_in, child_out);
@@ -291,7 +293,7 @@ let kill h =
 let kill_and_wait h =
   kill h;
   let rec ensure_waitpid pid =
-    (* `waitpid` may be interrupted by other signals. 
+    (* `waitpid` may be interrupted by other signals.
      * When this happens, we will get an EINTR error in which case the wait
      * operation needs to be retried.
      * For some reason, the EINTR issue happens more frequently on MacOS than

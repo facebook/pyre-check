@@ -41,7 +41,8 @@ let single_threaded_call job merge neutral next =
 
 let multi_threaded_call
     (type a) (type b) (type c)
-    workers (job: c -> a -> b)
+    workers
+    (job: c -> a -> b)
     (merge: b -> c -> c)
     (neutral: c)
     (next: a Hack_bucket.next) =
