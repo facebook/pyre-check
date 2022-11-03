@@ -273,6 +273,8 @@ let extend { root; path = original_path } ~path = { root; path = original_path @
 
 let get_index expression =
   match Interprocedural.CallResolution.extract_constant_name expression with
+  | Some "True" -> Abstract.TreeDomain.Label.Index "1"
+  | Some "False" -> Abstract.TreeDomain.Label.Index "0"
   | Some name -> Abstract.TreeDomain.Label.Index name
   | None -> Abstract.TreeDomain.Label.AnyIndex
 

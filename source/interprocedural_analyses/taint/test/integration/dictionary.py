@@ -455,3 +455,9 @@ def dictionary_int_key():
     d = {0: _test_source()}
     _test_sink(d[0])
     _test_sink(d[1])
+
+
+def dictionary_bool_key():
+    d = {True: _test_source()}
+    _test_sink(d[0])
+    _test_sink(d[1])
