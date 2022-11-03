@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+The `client.commands` namespace of Pyre contains the entrypoints
+for all of the subcommands of pyre such as `pyre check` and
+`pyre incremental`. It also contains some helper modules with shared
+library code used by several commands.
 """
 
 
