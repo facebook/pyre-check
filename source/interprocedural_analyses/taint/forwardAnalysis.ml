@@ -1286,6 +1286,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_call ~resolution ~location ~state ~is_result_used ~callee ~arguments =
+    let { Call.callee; arguments } =
+      CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
+    in
+    let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
+
     (* To properly treat attribute assignments in the constructor, we treat
      * `__init__` calls as an assignment `self = self.__init__()`. *)
     let should_assign_return_to_parameter =
@@ -1314,12 +1319,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let is_result_used = is_result_used || Option.is_some should_assign_return_to_parameter in
     let add_type_breadcrumbs taint =
-      let type_breadcrumbs =
-        let { CallGraph.CallCallees.call_targets; _ } =
-          get_call_callees ~location ~call:{ Call.callee; arguments }
-        in
-        CallModel.type_breadcrumbs_of_calls call_targets
-      in
+      let type_breadcrumbs = CallModel.type_breadcrumbs_of_calls callees.call_targets in
       taint |> ForwardState.Tree.add_local_breadcrumbs type_breadcrumbs
     in
 
@@ -1340,10 +1340,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               |>> ForwardState.Tree.read [index]
               |>> ForwardState.Tree.add_local_first_index index)
           in
-          let { CallGraph.CallCallees.call_targets; _ } =
-            get_call_callees ~location ~call:{ Call.callee; arguments }
-          in
-          if List.is_empty call_targets then
+          if List.is_empty callees.call_targets then
             (* This call may be unresolved, because for example the receiver type is unknown *)
             Lazy.force taint_and_state_after_index_access |>> add_type_breadcrumbs
           else
@@ -1353,7 +1350,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               | _ -> None
             in
             List.fold
-              call_targets
+              callees.call_targets
               ~init:(ForwardState.Tree.empty, bottom)
               ~f:(fun (taint_so_far, state_so_far) call_target ->
                 let taint, state =
@@ -1406,11 +1403,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
        arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
       } ->
-          let ({ CallGraph.CallCallees.call_targets; _ } as callees) =
-            get_call_callees ~location ~call:{ Call.callee; arguments }
-          in
           let is_dict_setitem =
-            match call_targets with
+            match callees.call_targets with
             | [
                 {
                   CallGraph.CallTarget.target =
@@ -1870,9 +1864,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (CallResolution.resolve_ignoring_untracked ~resolution expression |> Type.show);
           ForwardState.Tree.bottom, state
       | _ ->
-          let call = { Call.callee; arguments } in
-          let { Call.callee; arguments } = CallGraph.redirect_special_calls ~resolution call in
-          let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
           apply_callees
             ~resolution
             ~is_result_used
