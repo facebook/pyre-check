@@ -76,7 +76,7 @@ from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 from ..request_handler import (
     AbstractRequestHandler,
     path_to_coverage_response,
-    RequestHandler,
+    PersistentRequestHandler,
     to_coverage_result,
     uncovered_range_to_diagnostic,
 )
@@ -1859,7 +1859,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = RequestHandler(
+            pyre_query_manager = PersistentRequestHandler(
                 server_state=_create_server_state_with_options(strict_default=False),
             )
             input_channel = create_memory_text_reader(
@@ -1882,7 +1882,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__bad_json(self) -> None:
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(strict_default=False),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
@@ -1899,7 +1899,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = RequestHandler(
+            pyre_query_manager = PersistentRequestHandler(
                 server_state=_create_server_state_with_options(strict_default=True),
             )
             input_channel = create_memory_text_reader(
@@ -1915,7 +1915,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__not_typechecked(self) -> None:
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(strict_default=False),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
@@ -1936,7 +1936,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = RequestHandler(
+            pyre_query_manager = PersistentRequestHandler(
                 server_state=_create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
@@ -1968,7 +1968,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = RequestHandler(
+            pyre_query_manager = PersistentRequestHandler(
                 server_state=_create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
@@ -1998,7 +1998,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__expression_level__bad_json(self) -> None:
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(
                 strict_default=False,
                 language_server_features=LanguageServerFeatures(
@@ -2022,7 +2022,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = RequestHandler(
+            pyre_query_manager = PersistentRequestHandler(
                 server_state=_create_server_state_with_options(
                     strict_default=True,
                     language_server_features=LanguageServerFeatures(
@@ -2046,7 +2046,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_hover(self) -> None:
         json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2077,7 +2077,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_hover__bad_json(self) -> None:
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2116,7 +2116,7 @@ class RequestHandlerTest(testslide.TestCase):
             ]
         }
         """
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2156,7 +2156,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_definition_location__bad_json(self) -> None:
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2208,7 +2208,7 @@ class RequestHandlerTest(testslide.TestCase):
             ]
         }
         """
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     references=ReferencesAvailability.ENABLED,
@@ -2255,7 +2255,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_references__bad_json(self) -> None:
-        pyre_query_manager = RequestHandler(
+        pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     references=ReferencesAvailability.ENABLED,

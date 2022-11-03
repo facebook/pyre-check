@@ -219,7 +219,7 @@ async def async_run_code_navigation_client(
                 ),
             )
         ),
-        handler=request_handler.RequestHandler(
+        handler=request_handler.CodeNavigationRequestHandler(
             server_state=server_state,
         ),
     )

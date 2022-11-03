@@ -197,7 +197,7 @@ class AbstractRequestHandler(abc.ABC):
         raise NotImplementedError()
 
 
-class RequestHandler(AbstractRequestHandler):
+class PersistentRequestHandler(AbstractRequestHandler):
     def __init__(
         self,
         server_state: state.ServerState,
@@ -361,3 +361,47 @@ class RequestHandler(AbstractRequestHandler):
             request=json.dumps(overlay_update_json),
         )
         return daemon_response
+
+
+class CodeNavigationRequestHandler(AbstractRequestHandler):
+    def __init__(
+        self,
+        server_state: state.ServerState,
+    ) -> None:
+        self.server_state = server_state
+        self.socket_path: Path = server_state.server_options.get_socket_path()
+
+    async def get_type_coverage(
+        self,
+        path: Path,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+        raise NotImplementedError()
+
+    async def get_hover(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
+        raise NotImplementedError()
+
+    async def get_definition_locations(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+        raise NotImplementedError()
+
+    async def get_reference_locations(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+        raise NotImplementedError()
+
+    async def update_overlay(
+        self,
+        path: Path,
+        process_id: int,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()

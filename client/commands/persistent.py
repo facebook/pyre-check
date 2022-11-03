@@ -485,7 +485,7 @@ async def run_persistent(
                 ),
             )
         ),
-        handler=request_handler.RequestHandler(
+        handler=request_handler.PersistentRequestHandler(
             server_state=server_state,
         ),
     )
