@@ -383,7 +383,7 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         )
         if isinstance(response, lsp.LspHoverResponse):
             return response
-        return daemon_query.DaemonQueryFailure(response.error_message)
+        return daemon_query.DaemonQueryFailure(response.message)
 
     async def get_definition_locations(
         self,
