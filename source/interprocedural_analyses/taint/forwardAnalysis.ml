@@ -1377,8 +1377,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ForwardState.Tree.add_local_breadcrumbs type_breadcrumbs taint
                 in
                 ForwardState.Tree.join taint taint_so_far, join state state_so_far)
-      (* We read the taint at the `__iter__` call to be able to properly reference key taint as
-         appropriate. *)
+      (* Special case `__iter__` and `__next__` as being a random index access (this pattern is the
+         desugaring of `for element in x`). *)
       | {
        callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
        arguments = [];

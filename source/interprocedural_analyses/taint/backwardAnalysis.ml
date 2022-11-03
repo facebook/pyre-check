@@ -1404,35 +1404,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint:BackwardState.Tree.bottom
           ~state
           ~expression:argument_value
-    (* Special case x.__iter__().__next__() as being a random index access (this pattern is the
-       desugaring of `for element in x`). Special case dictionary keys appropriately. *)
+    (* Special case `__iter__` and `__next__` as being a random index access (this pattern is the
+       desugaring of `for element in x`). *)
+    | {
+     callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
+     arguments = [];
+    } ->
+        let taint = add_type_breadcrumbs taint in
+        analyze_expression ~resolution ~taint ~state ~expression:base
     | {
      callee =
-       {
-         Node.value =
-           Name
-             (Name.Attribute
-               {
-                 base =
-                   {
-                     Node.value =
-                       Call
-                         {
-                           callee =
-                             {
-                               Node.value =
-                                 Name (Name.Attribute { base; attribute = "__iter__"; _ });
-                               _;
-                             };
-                           arguments = [];
-                         };
-                     _;
-                   };
-                 attribute = "__next__";
-                 _;
-               });
-         _;
-       };
+       { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; special = true }); _ };
      arguments = [];
     } ->
         let label =
@@ -1445,8 +1427,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           else
             Abstract.TreeDomain.Label.AnyIndex
         in
-
-        let taint = BackwardState.Tree.prepend [label] taint |> add_type_breadcrumbs in
+        let taint = BackwardState.Tree.prepend [label] taint in
         analyze_expression ~resolution ~taint ~state ~expression:base
     (* We special-case object.__setattr__, which is sometimes used in order to work around
        dataclasses being frozen post-initialization. *)
