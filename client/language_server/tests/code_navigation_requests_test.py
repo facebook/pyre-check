@@ -13,7 +13,7 @@ from .. import code_navigation_request, protocol as lsp
 
 
 class CodeNavigationRequestsTest(testslide.TestCase):
-    def test_serialize(self) -> None:
+    def test_serialize_request(self) -> None:
         hover_request = code_navigation_request.HoverRequest(
             path=Path("/a/b.py"),
             overlay_id=None,
@@ -40,6 +40,22 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             hover_request.to_json(),
             [
                 "Hover",
+                {
+                    "module": ["OfPath", "/a/b.py"],
+                    "overlay_id": "overlay_key",
+                    "position": {"line": 1, "column": 2},
+                },
+            ],
+        )
+        definition_request = code_navigation_request.LocationOfDefinitionRequest(
+            path=Path("/a/b.py"),
+            overlay_id="overlay_key",
+            position=lsp.PyrePosition(line=1, character=2),
+        )
+        self.assertEqual(
+            definition_request.to_json(),
+            [
+                "LocationOfDefinition",
                 {
                     "module": ["OfPath", "/a/b.py"],
                     "overlay_id": "overlay_key",
@@ -85,7 +101,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             ),
         )
 
-    def test_server_response(self) -> None:
+    def test_hover_response(self) -> None:
         response = {"contents": [{"kind": ["PlainText"], "value": "`int`"}]}
         self.assertEqual(
             code_navigation_request.parse_response(
@@ -111,6 +127,40 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 contents=[
                     # pyre-ignore[6]: This is documenting a known type error, see comments in test above.
                     code_navigation_request.HoverContent(kind=["PlainText"], value=32)
+                ]
+            ),
+        )
+
+    def test_definition_response(self) -> None:
+        response = {
+            "definitions": [
+                {
+                    "path": "/a/b.py",
+                    "range": {
+                        "start": {"line": 1, "column": 2},
+                        "stop": {"line": 1, "column": 6},
+                    },
+                }
+            ]
+        }
+        self.assertEqual(
+            code_navigation_request.parse_response(
+                response,
+                response_type=code_navigation_request.LocationOfDefinitionResponse,
+            ),
+            code_navigation_request.LocationOfDefinitionResponse(
+                definitions=[
+                    code_navigation_request.DefinitionResponse(
+                        path="/a/b.py",
+                        range=code_navigation_request.CodeNavigationRange(
+                            code_navigation_request.CodeNavigationPosition(
+                                line=1, column=2
+                            ),
+                            code_navigation_request.CodeNavigationPosition(
+                                line=1, column=6
+                            ),
+                        ),
+                    )
                 ]
             ),
         )

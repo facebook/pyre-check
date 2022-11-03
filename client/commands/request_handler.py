@@ -390,7 +390,19 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
-        raise NotImplementedError()
+        definition_request = code_navigation_request.LocationOfDefinitionRequest(
+            path=path, overlay_id=self._get_overlay_id(path), position=position
+        )
+        response = await code_navigation_request.async_handle_definition_request(
+            self.socket_path,
+            definition_request,
+        )
+        if isinstance(response, code_navigation_request.ErrorResponse):
+            return daemon_query.DaemonQueryFailure(response.message)
+        return [
+            definition_location.to_lsp_definition_response()
+            for definition_location in response.definitions
+        ]
 
     async def get_reference_locations(
         self,

@@ -41,6 +41,26 @@ class HoverRequest:
 
 
 @dataclasses.dataclass(frozen=True)
+class LocationOfDefinitionRequest:
+    path: Path
+    overlay_id: Optional[str]
+    position: lsp.PyrePosition
+
+    def to_json(self) -> List[object]:
+        return [
+            "LocationOfDefinition",
+            {
+                "module": ["OfPath", f"{self.path}"],
+                "overlay_id": self.overlay_id,
+                "position": {
+                    "line": self.position.line,
+                    "column": self.position.character,
+                },
+            },
+        ]
+
+
+@dataclasses.dataclass(frozen=True)
 class ErrorResponse:
     message: str
 
@@ -54,6 +74,43 @@ class HoverContent(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     contents: List[HoverContent]
+
+
+@dataclasses.dataclass(frozen=True)
+class CodeNavigationPosition(json_mixins.CamlCaseAndExcludeJsonMixin):
+    """LSP uses 0-indexing for lines whereas Pyre uses 1-indexing."""
+
+    line: int
+    column: int
+
+    def to_lsp_position(self) -> lsp.LspPosition:
+        return lsp.LspPosition(self.line - 1, self.column)
+
+
+@dataclasses.dataclass(frozen=True)
+class CodeNavigationRange(json_mixins.CamlCaseAndExcludeJsonMixin):
+    start: CodeNavigationPosition
+    stop: CodeNavigationPosition
+
+    def to_lsp_range(self) -> lsp.LspRange:
+        return lsp.LspRange(
+            start=self.start.to_lsp_position(),
+            end=self.stop.to_lsp_position(),
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class DefinitionResponse:
+    path: str
+    range: CodeNavigationRange
+
+    def to_lsp_definition_response(self) -> lsp.LspLocation:
+        return lsp.LspLocation(uri=self.path, range=self.range.to_lsp_range())
+
+
+@dataclasses.dataclass(frozen=True)
+class LocationOfDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    definitions: List[DefinitionResponse]
 
 
 def invalid_response(response: str) -> ErrorResponse:
@@ -107,4 +164,21 @@ async def async_handle_hover_request(
         return response
     return lsp.LspHoverResponse(
         "\n".join(content.value for content in response.contents)
+    )
+
+
+async def async_handle_definition_request(
+    socket_path: Path,
+    definition_request: LocationOfDefinitionRequest,
+) -> Union[LocationOfDefinitionResponse, ErrorResponse]:
+    raw_request = json.dumps(["Query", definition_request.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_request
+    )
+    if isinstance(response, daemon_connection.DaemonConnectionFailure):
+        return ErrorResponse(message=response.error_message)
+    return parse_raw_response(
+        response,
+        expected_response_kind="LocationOfDefinition",
+        response_type=LocationOfDefinitionResponse,
     )
