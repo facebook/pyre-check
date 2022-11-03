@@ -18,9 +18,15 @@ LOG: logging.Logger = logging.getLogger(__name__)
 def normalized_json_dump(input: str) -> str:
     normalized = json.loads(input)
 
-    normalized = sorted(normalized, key=lambda issue: issue["path"])
-    normalized = sorted(normalized, key=lambda issue: issue["line"])
-    normalized = sorted(normalized, key=lambda issue: issue["column"])
+    normalized = sorted(
+        normalized,
+        key=lambda issue: (
+            issue["path"],
+            issue["line"],
+            issue["column"],
+            issue["name"],
+        ),
+    )
 
     return json.dumps(normalized, sort_keys=True, indent=2) + "\n"
 
