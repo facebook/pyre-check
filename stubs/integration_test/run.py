@@ -90,7 +90,7 @@ if __name__ == "__main__":
             with open("result.actual", "w") as file:
                 file.write(normalized_json_dump(output))
             LOG.error("Output differs from expected:")
-            subprocess.run(["diff", "result.json", "result.actual"])
+            subprocess.run(["diff", "-u", "result.json", "result.actual"])
             sys.exit(1)
 
         LOG.info("Run produced expected results")
