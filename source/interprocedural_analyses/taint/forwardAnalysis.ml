@@ -943,11 +943,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (taint, state)
       { Dictionary.Entry.key; value }
     =
-    let field_name =
-      match key.Node.value with
-      | Constant (Constant.String literal) -> Abstract.TreeDomain.Label.Index literal.value
-      | _ -> Abstract.TreeDomain.Label.AnyIndex
-    in
+    let field_name = AccessPath.get_index key in
     let key_taint, state =
       analyze_expression ~resolution ~state ~is_result_used ~expression:key
       |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]

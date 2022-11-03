@@ -449,3 +449,9 @@ def issue_in_keys():
 
 def dictionary_tito_any_index(arg):
     return {i: arg for i in range(10)}
+
+
+def dictionary_int_key():
+    d = {0: _test_source()}
+    _test_sink(d[0])
+    _test_sink(d[1])

@@ -37,6 +37,7 @@ dictionary.dict_update_whole_dict (fun) -> [_test_source (fun) dict::update (met
 dictionary.dictionary_assign_to_index (fun) -> [_test_source (fun) dict::__setitem__ (method)]
 dictionary.dictionary_assignment_source (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
 dictionary.dictionary_entry_sink (fun) -> [_test_sink (fun)]
+dictionary.dictionary_int_key (fun) -> [_test_sink (fun) _test_source (fun) dict::__getitem__ (method)]
 dictionary.dictionary_non_source (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
 dictionary.dictionary_source (fun) -> [_test_source (fun)]
 dictionary.dictionary_tito (fun) -> []

@@ -211,6 +211,77 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.dictionary_int_key",
+    "callable_line": 454,
+    "code": 5002,
+    "line": 456,
+    "start": 15,
+    "end": 19,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 455,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 456,
+              "start": 15,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dictionary.dictionary_int_key:5002:0:Call|_test_sink|0|formal(arg):4a66698c70008134332be3f891703f67"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.flow_through_keywords",
     "callable_line": 157,
     "code": 5002,
