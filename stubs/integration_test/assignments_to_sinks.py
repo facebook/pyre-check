@@ -6,7 +6,7 @@
 # flake8: noqa
 
 import pyre
-from django.http import HttpRequest
+from integration_test.taint import source, sink
 
 
 # Integration test illustrating how we deal with assignments to sinks.
@@ -16,11 +16,9 @@ def indirect(into_global_sink):
     pyre._global_sink = into_global_sink
 
 
-def test_indirect(request: HttpRequest):
-    source = request.GET["bad"]
-    indirect(source)
+def test_indirect():
+    indirect(source())
 
 
-def test_direct(request: HttpRequest):
-    source = request.GET["bad"]
-    pyre._global_sink = source
+def test_direct():
+    pyre._global_sink = source()

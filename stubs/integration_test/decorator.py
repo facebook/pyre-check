@@ -7,14 +7,14 @@
 
 from typing import Callable
 
-from django.http import HttpRequest
+from integration_test.taint import source, sink
 
 from .logging_decorator import with_logging_with_helper, with_logging_without_helper
 
 
 def with_logging(f: Callable[[str], None]) -> Callable[[str], None]:
     def inner(x: str) -> None:
-        eval(x)
+        sink(x)
         f(x)
 
     return inner
@@ -28,9 +28,9 @@ def foo(x: str) -> None:
 @with_logging_with_helper
 @with_logging_without_helper
 def foo2(x: int) -> None:
-    eval(x)
+    sink(x)
 
 
-def bar(request: HttpRequest) -> None:
-    foo(request.GET["bad"])
-    foo2(request.GET["bad"])
+def bar() -> None:
+    foo(source())
+    foo2(source())

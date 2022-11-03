@@ -106,7 +106,7 @@
     "line": 21,
     "name": "Possible shell injection",
     "path": "list_comprehension.py",
-    "stop_column": 38,
+    "stop_column": 28,
     "stop_line": 21
   },
   {
@@ -117,7 +117,7 @@
     "line": 30,
     "name": "Possible shell injection",
     "path": "list_comprehension.py",
-    "stop_column": 57,
+    "stop_column": 41,
     "stop_line": 30
   },
   {
@@ -125,11 +125,11 @@
     "column": 9,
     "define": "integration_test.overrides.issue_with_direct_call_of_subclass",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 23,
+    "line": 22,
     "name": "Possible shell injection",
     "path": "overrides.py",
     "stop_column": 22,
-    "stop_line": 23
+    "stop_line": 22
   },
   {
     "code": 5001,
@@ -202,22 +202,22 @@
     "column": 9,
     "define": "integration_test.string_concatenation.bad_1",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 21,
+    "line": 19,
     "name": "Possible shell injection",
     "path": "string_concatenation.py",
     "stop_column": 10,
-    "stop_line": 21
+    "stop_line": 19
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.string_concatenation.bad_2",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 26,
+    "line": 24,
     "name": "Possible shell injection",
     "path": "string_concatenation.py",
     "stop_column": 10,
-    "stop_line": 26
+    "stop_line": 24
   },
   {
     "code": 5001,

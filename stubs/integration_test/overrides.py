@@ -7,7 +7,7 @@
 
 from typing import Iterable, TypeVar
 
-from django.http import HttpRequest
+from integration_test.taint import source, sink
 
 
 T = TypeVar("T")
@@ -15,8 +15,7 @@ T = TypeVar("T")
 
 class MyIterable(Iterable[T]):
     def __iter__(self):
-        request = HttpRequest()
-        return request.GET["bad"]
+        return source()
 
 
 def issue_with_direct_call_of_subclass(mi: MyIterable[int]):

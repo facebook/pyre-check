@@ -5,51 +5,51 @@
 
 # flake8: noqa
 
-from django.http import HttpRequest
+from integration_test.taint import source, sink
 
 
-def dictionary_update(request: HttpRequest):
+def dictionary_update():
     result = {}
-    source = {"source": request.GET["bad"]}
-    result.update(source)
-    eval(result)
+    argument = {"source": source()}
+    result.update(argument)
+    sink(result)
 
 
-def list_append(request: HttpRequest):
+def list_append():
     l = []
-    l.append(request.GET["bad"])
-    eval(l[0])
+    l.append(source())
+    sink(l[0])
 
 
-def list_update(request: HttpRequest):
+def list_update():
     l = []
-    tainted_list = [request.GET["bad"]]
+    tainted_list = [source()]
     l.extend(tainted_list)
-    eval(l[0])
+    sink(l[0])
 
 
-def list_insert(request: HttpRequest):
+def list_insert():
     l = [1] * 10
-    l.insert(5, request.GET["bad"])
-    eval(l[5])
+    l.insert(5, source())
+    sink(l[5])
 
 
-def set_add(request: HttpRequest):
+def set_add():
     s = {1}
-    s.add(request.GET["bad"])
+    s.add(source())
     for element in s:
-        eval(element)
+        sink(element)
 
 
-def set_intersection_update(request: HttpRequest):
+def set_intersection_update():
     s = {1}
-    s.intersection_update({request.GET["bad"]})
+    s.intersection_update({source()})
     for element in s:
-        eval(element)
+        sink(element)
 
 
-def set_update(request: HttpRequest):
+def set_update():
     s = {1}
-    s.update({request.GET["bad"]})
+    s.update({source()})
     for element in s:
-        eval(element)
+        sink(element)

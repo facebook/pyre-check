@@ -5,7 +5,7 @@
 
 # flake8: noqa
 
-from django.http import HttpRequest
+from integration_test.taint import source, sink
 
 
 class ParentWithConstructor:
@@ -27,15 +27,15 @@ class ChildWithoutParentConstructor(ParentWithoutConstructor):
         super(ChildWithoutParentConstructor, self).__init__(arg)
 
 
-def test1(request: HttpRequest):
-    tainted = request.GET["test"]
+def test1():
+    tainted = source()
     child = ChildWithParentConstructor(tainted)
     # This IS detected
-    eval(child.arg)
+    sink(child.arg)
 
 
-def test2(request: HttpRequest):
-    tainted = request.GET["test"]
+def test2():
+    tainted = source()
     child = ChildWithoutParentConstructor(tainted)
     # This IS NOT detected
-    eval(child.arg)
+    sink(child.arg)

@@ -7,24 +7,24 @@
 
 from typing import List
 
-from django.http import HttpRequest
+from integration_test.taint import source, sink
 
 
 class Sink:
     def run(self, command: str) -> str:
-        eval(command)
+        sink(command)
         return ""
 
 
-def take_input(request: HttpRequest) -> None:
+def take_input() -> None:
     sinks: List[Sink] = [Sink()]
-    result = [s.run(request.GET["bad"]) for s in sinks]
+    result = [s.run(source()) for s in sinks]
 
 
 def inductive_comprehension_sink(arguments: List[str]) -> None:
     command = "  ".join(argument.lower() for argument in arguments)
-    eval(command)
+    sink(command)
 
 
-def eval_via_comprehension_sink(request: HttpRequest) -> None:
-    inductive_comprehension_sink(request.GET["arguments"])
+def eval_via_comprehension_sink() -> None:
+    inductive_comprehension_sink(source())
