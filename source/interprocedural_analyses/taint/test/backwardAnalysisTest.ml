@@ -864,7 +864,10 @@ let test_list context =
       outcome ~kind:`Function "qualifier.list_pattern_different_index";
       outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_pattern_star_index";
       outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_same_index_assignment";
-      outcome ~kind:`Function "qualifier.list_different_index_assignment";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[arg_tito]
+        "qualifier.list_different_index_assignment";
       outcome
         ~kind:`Function
         ~tito_parameters:[arg_tito]

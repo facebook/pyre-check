@@ -1179,7 +1179,7 @@ let test_resolve_definition_for_symbol context =
           # No definition found.
     |}
     (* This points to builtins.pyi. *)
-    (Some ":263:0-279:31");
+    (Some ":263:0-286:31");
   assert_resolved_definition
     {|
       class Foo:
@@ -1379,7 +1379,7 @@ let test_resolve_definition_for_symbol context =
                         # ^- cursor
     |}
     (* This points to builtins.pyi. *)
-    (Some ":272:2-272:44");
+    (Some ":272:2-272:46");
   (* TODO(T112570623): The target variable points to the `Exception`. This is unavoidable right now,
      because we don't store its location in `Try.t`. *)
   assert_resolved_definition
@@ -2227,16 +2227,16 @@ let test_lookup_unbound context =
       "3:18-3:20/typing.List[Variable[_T]]";
       "4:2-4:3/typing.Any";
       "4:7-4:8/BoundMethod[typing.Callable(list.__getitem__)[..., unknown][[[Named(self, \
-       typing.List[typing.Any]), Named(i, int)], typing.Any][[Named(self, \
-       typing.List[typing.Any]), Named(s, slice)], typing.List[typing.Any]]], \
+       typing.List[typing.Any]), Named(index, int)], typing.Any][[Named(self, \
+       typing.List[typing.Any]), Named(index, slice)], typing.List[typing.Any]]], \
        typing.List[typing.Any]]";
       "4:7-4:11/typing.Any";
       "4:7-4:26/typing.Any";
       "4:9-4:10/typing_extensions.Literal[0]";
       "4:15-4:16/typing.List[typing.Any]";
       "4:22-4:23/BoundMethod[typing.Callable(list.__getitem__)[..., unknown][[[Named(self, \
-       typing.List[typing.Any]), Named(i, int)], typing.Any][[Named(self, \
-       typing.List[typing.Any]), Named(s, slice)], typing.List[typing.Any]]], \
+       typing.List[typing.Any]), Named(index, int)], typing.Any][[Named(self, \
+       typing.List[typing.Any]), Named(index, slice)], typing.List[typing.Any]]], \
        typing.List[typing.Any]]";
       "4:22-4:26/typing.Any";
       "4:24-4:25/typing_extensions.Literal[1]";
@@ -2256,16 +2256,16 @@ let test_lookup_unbound context =
     ~annotation:
       (Some
          "4:7-4:8/BoundMethod[typing.Callable(list.__getitem__)[..., unknown][[[Named(self, \
-          typing.List[typing.Any]), Named(i, int)], typing.Any][[Named(self, \
-          typing.List[typing.Any]), Named(s, slice)], typing.List[typing.Any]]], \
+          typing.List[typing.Any]), Named(index, int)], typing.Any][[Named(self, \
+          typing.List[typing.Any]), Named(index, slice)], typing.List[typing.Any]]], \
           typing.List[typing.Any]]");
   assert_annotation
     ~position:{ Location.line = 4; column = 22 }
     ~annotation:
       (Some
          "4:22-4:23/BoundMethod[typing.Callable(list.__getitem__)[..., unknown][[[Named(self, \
-          typing.List[typing.Any]), Named(i, int)], typing.Any][[Named(self, \
-          typing.List[typing.Any]), Named(s, slice)], typing.List[typing.Any]]], \
+          typing.List[typing.Any]), Named(index, int)], typing.Any][[Named(self, \
+          typing.List[typing.Any]), Named(index, slice)], typing.List[typing.Any]]], \
           typing.List[typing.Any]]");
   ()
 
@@ -3455,12 +3455,8 @@ let test_resolve_type_for_symbol context =
                               annotation = Type.list Type.integer;
                               default = false;
                             };
-                          Type.Callable.Parameter.Named
-                            {
-                              name = "$parameter$element";
-                              annotation = Type.integer;
-                              default = false;
-                            };
+                          Type.Callable.Parameter.PositionalOnly
+                            { index = 1; annotation = Type.integer; default = false };
                         ];
                   };
                 overloads = [];

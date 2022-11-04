@@ -1035,7 +1035,7 @@
     "callable": "list.append",
     "tito": [
       {
-        "port": "formal(element)",
+        "port": "formal(__element)",
         "taint": [
           {
             "kinds": [
