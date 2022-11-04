@@ -1511,7 +1511,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments = [];
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
-        let taint = taint |> BackwardState.Tree.prepend [AccessPath.dictionary_keys] in
+        let taint =
+          taint
+          |> BackwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
+          |> BackwardState.Tree.prepend [AccessPath.dictionary_keys]
+        in
         analyze_expression ~resolution ~taint ~state ~expression:base
     | {
      callee =

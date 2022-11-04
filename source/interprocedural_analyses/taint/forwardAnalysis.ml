@@ -1600,6 +1600,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         when CallGraph.CallCallees.is_mapping_method callees ->
           analyze_expression ~resolution ~state ~is_result_used ~expression:base
           |>> ForwardState.Tree.read [AccessPath.dictionary_keys]
+          |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       | {
        callee =
          {

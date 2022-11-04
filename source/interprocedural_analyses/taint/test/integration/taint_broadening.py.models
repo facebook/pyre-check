@@ -178,6 +178,7 @@
             "local_features": [
               { "always-via": "obscure:model" },
               { "always-via": "format-string" },
+              { "always-via": "tito-broadening" },
               { "always-via": "tito" },
               { "always-via": "broadening" },
               { "always-via": "widen-broadening" }
@@ -222,6 +223,7 @@
       { "always-via": "special_sink" },
       { "always-via": "obscure:model" },
       { "always-via": "format-string" },
+      { "always-via": "tito-broadening" },
       { "always-via": "tito" },
       { "always-via": "broadening" },
       { "always-via": "widen-broadening" }

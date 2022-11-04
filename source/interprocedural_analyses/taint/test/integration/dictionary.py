@@ -268,6 +268,13 @@ def test_keys_and_values():
     # Shouldn't be an issue.
     _test_sink(tainted_keys.values())
 
+    tainted_tuple_keys = {(_test_source(), 0): ""}
+    for key in tainted_tuple_keys.keys():
+        # Should be an issue.
+        _test_sink(key[0])
+        # Shouldn't be an issue.
+        _test_sink(key[1])
+
 
 def backwards_field_assignment(external):
     d = {}
