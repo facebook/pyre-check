@@ -149,6 +149,11 @@ def list.__add__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
     __x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]
 ): ...
+@SkipObscure
+def tuple.__add__(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __x: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]
+): ...
 
 @SkipObscure
 def list.__iadd__(
@@ -180,6 +185,22 @@ def collections.deque.__iadd__(
 
 @SkipObscure
 def list.__mul__(
+    self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    __n: TaintInTaintOut[LocalReturn, Collapse],
+): ...
+@SkipObscure
+def tuple.__mul__(
+    self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    __n: TaintInTaintOut[LocalReturn, Collapse],
+): ...
+
+@SkipObscure
+def list.__rmul__(
+    self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+    __n: TaintInTaintOut[LocalReturn, Collapse],
+): ...
+@SkipObscure
+def tuple.__rmul__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
     __n: TaintInTaintOut[LocalReturn, Collapse],
 ): ...
