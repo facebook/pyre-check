@@ -2389,6 +2389,10 @@ let test_location_of_definition context =
                 return foo(42) + 1
             |}
       );
+      ( "parse_error_example.py",
+        {|
+              this block of text will result in a parse error.
+            |} );
     ]
   in
   let custom_source_root =
@@ -2463,6 +2467,15 @@ let test_location_of_definition context =
               "response": []
             }
           |} );
+      ( Format.sprintf
+          "location_of_definition(path='%s', line=1, column=9)"
+          (PyrePath.append custom_source_root ~element:"parse_error_example.py" |> PyrePath.absolute),
+        {|
+            {
+              "error": "Parse error in location request. Location: 2:6-2:11, message: invalid syntax"
+            }
+          |}
+      );
     ]
   in
   assert_queries_with_local_root
