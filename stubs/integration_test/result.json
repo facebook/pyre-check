@@ -332,13 +332,13 @@
   {
     "code": 5001,
     "column": 9,
-    "define": "integration_test.containers.list_insert",
+    "define": "integration_test.containers.list_extend",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 123,
+    "line": 121,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 123
+    "stop_line": 121
   },
   {
     "code": 5001,
@@ -348,7 +348,7 @@
     "line": 127,
     "name": "Possible shell injection",
     "path": "containers.py",
-    "stop_column": 18,
+    "stop_column": 13,
     "stop_line": 127
   },
   {
@@ -356,22 +356,22 @@
     "column": 9,
     "define": "integration_test.containers.list_insert",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 132,
+    "line": 131,
     "name": "Possible shell injection",
     "path": "containers.py",
-    "stop_column": 13,
-    "stop_line": 132
+    "stop_column": 18,
+    "stop_line": 131
   },
   {
     "code": 5001,
     "column": 9,
-    "define": "integration_test.containers.list_iadd",
+    "define": "integration_test.containers.list_insert",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 138,
+    "line": 136,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 138
+    "stop_line": 136
   },
   {
     "code": 5001,
@@ -381,7 +381,7 @@
     "line": 142,
     "name": "Possible shell injection",
     "path": "containers.py",
-    "stop_column": 18,
+    "stop_column": 13,
     "stop_line": 142
   },
   {
@@ -389,55 +389,44 @@
     "column": 9,
     "define": "integration_test.containers.list_iadd",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 143,
+    "line": 146,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 143
+    "stop_line": 146
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_iadd",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 144,
+    "line": 147,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 144
+    "stop_line": 147
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_iadd",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 145,
+    "line": 148,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 145
+    "stop_line": 148
   },
   {
     "code": 5001,
     "column": 9,
-    "define": "integration_test.containers.list_add",
+    "define": "integration_test.containers.list_iadd",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 151,
-    "name": "Possible shell injection",
-    "path": "containers.py",
-    "stop_column": 13,
-    "stop_line": 151
-  },
-  {
-    "code": 5001,
-    "column": 9,
-    "define": "integration_test.containers.list_add",
-    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 154,
+    "line": 149,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 154
+    "stop_line": 149
   },
   {
     "code": 5001,
@@ -447,7 +436,7 @@
     "line": 155,
     "name": "Possible shell injection",
     "path": "containers.py",
-    "stop_column": 18,
+    "stop_column": 13,
     "stop_line": 155
   },
   {
@@ -455,242 +444,275 @@
     "column": 9,
     "define": "integration_test.containers.list_add",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 156,
+    "line": 158,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 156
+    "stop_line": 158
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_add",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 157,
+    "line": 159,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 157
+    "stop_line": 159
+  },
+  {
+    "code": 5001,
+    "column": 9,
+    "define": "integration_test.containers.list_add",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 160,
+    "name": "Possible shell injection",
+    "path": "containers.py",
+    "stop_column": 18,
+    "stop_line": 160
+  },
+  {
+    "code": 5001,
+    "column": 9,
+    "define": "integration_test.containers.list_add",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 161,
+    "name": "Possible shell injection",
+    "path": "containers.py",
+    "stop_column": 18,
+    "stop_line": 161
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_imul",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 164,
+    "line": 168,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 14,
-    "stop_line": 164
+    "stop_line": 168
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_imul",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 165,
+    "line": 169,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 165
+    "stop_line": 169
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_sort",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 171,
+    "line": 175,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 171
+    "stop_line": 175
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_sort",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 172,
+    "line": 176,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 172
+    "stop_line": 176
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_remove",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 178,
+    "line": 182,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 178
+    "stop_line": 182
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.list_remove",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 179,
+    "line": 183,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 179
+    "stop_line": 183
   },
   {
     "code": 5001,
     "column": 13,
     "define": "integration_test.containers.set_add",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 186,
+    "line": 190,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 20,
-    "stop_line": 186
+    "stop_line": 190
   },
   {
     "code": 5001,
     "column": 13,
     "define": "integration_test.containers.set_add",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 191,
+    "line": 195,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 23,
-    "stop_line": 191
+    "stop_line": 195
   },
   {
     "code": 5001,
     "column": 13,
     "define": "integration_test.containers.set_intersection_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 199,
+    "line": 203,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 20,
-    "stop_line": 199
+    "stop_line": 203
   },
   {
     "code": 5001,
     "column": 13,
     "define": "integration_test.containers.set_intersection_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 204,
+    "line": 208,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 23,
-    "stop_line": 204
+    "stop_line": 208
   },
   {
     "code": 5001,
     "column": 13,
     "define": "integration_test.containers.set_intersection_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 205,
+    "line": 209,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 23,
-    "stop_line": 205
+    "stop_line": 209
   },
   {
     "code": 5001,
     "column": 13,
     "define": "integration_test.containers.set_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 213,
+    "line": 217,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 20,
-    "stop_line": 213
+    "stop_line": 217
+  },
+  {
+    "code": 5001,
+    "column": 13,
+    "define": "integration_test.containers.set_update",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 222,
+    "name": "Possible shell injection",
+    "path": "containers.py",
+    "stop_column": 20,
+    "stop_line": 222
   },
   {
     "code": 5001,
     "column": 13,
     "define": "integration_test.containers.set_iand",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 220,
+    "line": 229,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 23,
-    "stop_line": 220
+    "stop_line": 229
   },
   {
     "code": 5001,
     "column": 13,
     "define": "integration_test.containers.set_iand",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 221,
+    "line": 230,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 23,
-    "stop_line": 221
+    "stop_line": 230
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.deque_append",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 228,
+    "line": 237,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 228
+    "stop_line": 237
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.deque_append",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 233,
+    "line": 242,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 233
+    "stop_line": 242
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.deque_append",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 234,
+    "line": 243,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 234
+    "stop_line": 243
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.deque_extend",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 241,
+    "line": 250,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 13,
-    "stop_line": 241
+    "stop_line": 250
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.deque_extend",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 246,
+    "line": 255,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 246
+    "stop_line": 255
   },
   {
     "code": 5001,
     "column": 9,
     "define": "integration_test.containers.deque_extend",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 247,
+    "line": 256,
     "name": "Possible shell injection",
     "path": "containers.py",
     "stop_column": 18,
-    "stop_line": 247
+    "stop_line": 256
   },
   {
     "code": 5001,

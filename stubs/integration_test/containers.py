@@ -116,6 +116,10 @@ def list_extend(i: int):
     sink(l[i][0])  # This is an issue.
     sink(l[i][1])  # This is NOT an issue.
 
+    l = []
+    l.extend({source(): 0})
+    sink(l[i])
+
 
 def list_insert(i: int):
     l = [1] * 10
@@ -209,6 +213,11 @@ def set_intersection_update():
 def set_update():
     s = {1}
     s.update({source()})
+    for element in s:
+        sink(element)
+
+    s = {1}
+    s.update({source(): 0})
     for element in s:
         sink(element)
 
