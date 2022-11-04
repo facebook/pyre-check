@@ -2174,6 +2174,33 @@ class RequestHandlerTest(testslide.TestCase):
             self.assertTrue(isinstance(result, DaemonQueryFailure))
 
     @setup.async_test
+    async def test_query_definition_location__error_response(self) -> None:
+        pyre_query_manager = PersistentRequestHandler(
+            server_state=_create_server_state_with_options(
+                language_server_features=LanguageServerFeatures(
+                    hover=HoverAvailability.ENABLED
+                )
+            ),
+        )
+
+        input_channel = create_memory_text_reader(
+            """["Query",{"error":"Parse error"}]\n"""
+        )
+        memory_bytes_writer = MemoryBytesWriter()
+        output_channel = AsyncTextWriter(memory_bytes_writer)
+        with patch_connect_async(input_channel, output_channel):
+            result = await pyre_query_manager.get_definition_locations(
+                path=Path("bar.py"),
+                position=lsp.PyrePosition(line=4, character=10),
+            )
+            self.assertTrue(isinstance(result, DaemonQueryFailure))
+            self.assertEqual(
+                "Daemon query returned error: {'error': 'Parse error'} for query: "
+                "location_of_definition(path='bar.py', line=4, column=10)",
+                result.error_message,
+            )
+
+    @setup.async_test
     async def test_query_references(self) -> None:
         json_output = """
         {
