@@ -267,6 +267,20 @@ def set_intersection_update():
         sink(element[2])  # This is NOT an issue.
 
 
+def frozenset_union():
+    s = frozenset()
+    s = s.union(source())
+    for element in s:
+        sink(element)
+
+    s = frozenset([(0, 0, 0), (source(), 0, 0)])
+    s = s.union({(0, source(), 0)})
+    for element in s:
+        sink(element[0])  # This is an issue.
+        sink(element[1])  # This is an issue.
+        sink(element[2])  # This is NOT an issue.
+
+
 def set_update():
     s = {1}
     s.update({source()})

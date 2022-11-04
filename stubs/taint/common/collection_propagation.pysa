@@ -256,6 +256,10 @@ def set.__init__(self, __iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.
 def set.__init__(self, __iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse]): ...
 
 @SkipObscure
+def frozenset.__new__(cls, __iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse]): ...
+def frozenset.__new__(cls, __iterable: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse]): ...
+
+@SkipObscure
 def set.add(self, __element: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 @SkipObscure
 def typing.MutableSet.add(self, value: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
@@ -285,6 +289,15 @@ def set.intersection(
     self,
     __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
 ): ...
+@SkipObscure
+def frozenset.intersection(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
+def frozenset.intersection(
+    self,
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+): ...
 
 @SkipObscure
 def set.__and__(
@@ -295,6 +308,11 @@ def set.__and__(
 def typing.AbstractSet.__and__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
     other: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
+@SkipObscure
+def frozenset.__and__(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
 ): ...
 
 @SkipObscure
@@ -325,6 +343,15 @@ def set.union(
     self,
     __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
 ): ...
+@SkipObscure
+def frozenset.union(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
+def frozenset.union(
+    self,
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+): ...
 
 @SkipObscure
 def set.__or__(
@@ -335,6 +362,11 @@ def set.__or__(
 def typing.AbstractSet.__or__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
     other: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
+@SkipObscure
+def frozenset.__or__(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
 ): ...
 
 @SkipObscure
@@ -361,6 +393,11 @@ def set.__xor__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
     __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
 ): ...
+@SkipObscure
+def frozenset.__xor__(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
 
 @SkipObscure
 def set.__ixor__(
@@ -390,6 +427,15 @@ def set.difference(
     self,
     __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
 ): ...
+@SkipObscure
+def frozenset.difference(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
+def frozenset.difference(
+    self,
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+): ...
 
 @SkipObscure
 def set.__sub__(
@@ -400,6 +446,11 @@ def set.__sub__(
 def typing.AbstractSet.__sub__(
     self: TaintInTaintOut[LocalReturn, NoCollapse],
     other: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
+@SkipObscure
+def frozenset.__sub__(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
 ): ...
 
 @SkipObscure
@@ -422,10 +473,31 @@ def typing.MutableSet.__isub__(
 ): ...
 
 @SkipObscure
+def set.symmetric_difference(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
+def set.symmetric_difference(
+    self,
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+): ...
+@SkipObscure
+def frozenset.symmetric_difference(
+    self: TaintInTaintOut[LocalReturn, NoCollapse],
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], ReturnPath[_.all()], NoCollapse],
+): ...
+def frozenset.symmetric_difference(
+    self,
+    __s: TaintInTaintOut[LocalReturn, ParameterPath[_.keys()], ReturnPath[_.all()], NoCollapse],
+): ...
+
+@SkipObscure
 def typing.MutableSet.pop(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
 
 @SkipObscure
 def set.copy(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
+@SkipObscure
+def frozenset.copy(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
 
 @SkipObscure
 def set.remove(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
@@ -437,6 +509,8 @@ def set.discard(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
 
 @SkipObscure
 def set.__iter__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
+@SkipObscure
+def frozenset.__iter__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
 
 # Queue propagation
 @SkipObscure
