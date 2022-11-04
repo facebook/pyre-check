@@ -4,7 +4,18 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Any, cast, Dict, Generic, Iterable, Mapping, Optional, TypeVar, Union
+from typing import (
+    Any,
+    cast,
+    Dict,
+    Generic,
+    Iterable,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+    TypedDict,
+)
 
 
 def dictionary_source():
@@ -461,3 +472,15 @@ def dictionary_bool_key():
     d = {True: _test_source()}
     _test_sink(d[0])
     _test_sink(d[1])
+
+
+class MyTypedDict(TypedDict):
+    foo: int
+    bar: str
+
+
+def test_typed_dict_setitem():
+    d: MyTypedDict = {"foo": 0, "bar": ""}
+    d["bar"] = _test_source()
+    _test_sink(d["bar"])
+    _test_sink(d["foo"])

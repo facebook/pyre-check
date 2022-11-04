@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.analyze_getitem_index_issue",
-    "callable_line": 432,
+    "callable_line": 443,
     "code": 5002,
-    "line": 435,
+    "line": 446,
     "start": 21,
     "end": 22,
     "filename": "dictionary.py",
@@ -24,7 +24,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 433,
+              "line": 444,
               "start": 8,
               "end": 22
             }
@@ -44,7 +44,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 435,
+              "line": 446,
               "start": 21,
               "end": 22
             }
@@ -68,9 +68,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.dict_with_tainted_key_flows_to_sink",
-    "callable_line": 211,
+    "callable_line": 222,
     "code": 5002,
-    "line": 213,
+    "line": 224,
     "start": 15,
     "end": 16,
     "filename": "dictionary.py",
@@ -93,7 +93,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 212,
+              "line": 223,
               "start": 9,
               "end": 23
             }
@@ -113,7 +113,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 213,
+              "line": 224,
               "start": 15,
               "end": 16
             }
@@ -140,9 +140,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.dict_with_tainted_key_flows_to_sink_via_setitem",
-    "callable_line": 216,
+    "callable_line": 227,
     "code": 5002,
-    "line": 219,
+    "line": 230,
     "start": 15,
     "end": 16,
     "filename": "dictionary.py",
@@ -165,7 +165,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 218,
+              "line": 229,
               "start": 6,
               "end": 20
             }
@@ -185,7 +185,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 219,
+              "line": 230,
               "start": 15,
               "end": 16
             }
@@ -212,9 +212,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.dictionary_bool_key",
-    "callable_line": 460,
+    "callable_line": 471,
     "code": 5002,
-    "line": 463,
+    "line": 474,
     "start": 15,
     "end": 19,
     "filename": "dictionary.py",
@@ -236,7 +236,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 461,
+              "line": 472,
               "start": 15,
               "end": 29
             }
@@ -256,7 +256,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 463,
+              "line": 474,
               "start": 15,
               "end": 19
             }
@@ -283,9 +283,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.dictionary_int_key",
-    "callable_line": 454,
+    "callable_line": 465,
     "code": 5002,
-    "line": 456,
+    "line": 467,
     "start": 15,
     "end": 19,
     "filename": "dictionary.py",
@@ -307,7 +307,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 455,
+              "line": 466,
               "start": 12,
               "end": 26
             }
@@ -327,7 +327,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 456,
+              "line": 467,
               "start": 15,
               "end": 19
             }
@@ -354,9 +354,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.flow_through_keywords",
-    "callable_line": 157,
+    "callable_line": 168,
     "code": 5002,
-    "line": 160,
+    "line": 171,
     "start": 15,
     "end": 31,
     "filename": "dictionary.py",
@@ -378,7 +378,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 158,
+              "line": 169,
               "start": 24,
               "end": 38
             }
@@ -398,7 +398,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 160,
+              "line": 171,
               "start": 15,
               "end": 31
             }
@@ -425,9 +425,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.indirect_flow_from_source_to_global_dictionary",
-    "callable_line": 76,
+    "callable_line": 87,
     "code": 5002,
-    "line": 77,
+    "line": 88,
     "start": 33,
     "end": 54,
     "filename": "dictionary.py",
@@ -450,7 +450,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 77,
+              "line": 88,
               "start": 39,
               "end": 53
             }
@@ -474,7 +474,7 @@
             "call": {
               "position": {
                 "filename": "dictionary.py",
-                "line": 77,
+                "line": 88,
                 "start": 33,
                 "end": 54
               },
@@ -504,9 +504,74 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.issue_in_keys",
-    "callable_line": 443,
+    "callable_line": 454,
     "code": 5002,
-    "line": 446,
+    "line": 458,
+    "start": 15,
+    "end": 23,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 456,
+              "start": 6,
+              "end": 20
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 458,
+              "start": 15,
+              "end": 23
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dictionary.issue_in_keys:5002:0:Call|_test_sink|0|formal(arg):75c449c931b01b578a8badfb65fe8cdd"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.issue_in_keys",
+    "callable_line": 454,
+    "code": 5002,
+    "line": 457,
     "start": 25,
     "end": 26,
     "filename": "dictionary.py",
@@ -525,7 +590,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 445,
+              "line": 456,
               "start": 6,
               "end": 20
             }
@@ -547,7 +612,7 @@
             "call": {
               "position": {
                 "filename": "dictionary.py",
-                "line": 446,
+                "line": 457,
                 "start": 25,
                 "end": 26
               },
@@ -573,75 +638,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "dictionary.issue_in_keys",
-    "callable_line": 443,
-    "code": 5002,
-    "line": 447,
-    "start": 15,
-    "end": 23,
-    "filename": "dictionary.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 445,
-              "start": 6,
-              "end": 20
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 447,
-              "start": 15,
-              "end": 23
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "dictionary.issue_in_keys:5002:0:Call|_test_sink|0|formal(arg):75c449c931b01b578a8badfb65fe8cdd"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
     "callable": "dictionary.lists_of_dictionary_iteration_is_precise",
-    "callable_line": 191,
+    "callable_line": 202,
     "code": 5002,
-    "line": 194,
+    "line": 205,
     "start": 19,
     "end": 39,
     "filename": "dictionary.py",
@@ -663,7 +663,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 192,
+              "line": 203,
               "start": 38,
               "end": 52
             }
@@ -683,7 +683,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 194,
+              "line": 205,
               "start": 19,
               "end": 39
             }
@@ -710,9 +710,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.test_index_from_tito",
-    "callable_line": 309,
+    "callable_line": 320,
     "code": 5002,
-    "line": 311,
+    "line": 322,
     "start": 15,
     "end": 33,
     "filename": "dictionary.py",
@@ -730,10 +730,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 311, "start": 31, "end": 32 } ],
+            "tito_positions": [ { "line": 322, "start": 31, "end": 32 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 310,
+              "line": 321,
               "start": 14,
               "end": 28
             }
@@ -753,7 +753,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 311,
+              "line": 322,
               "start": 15,
               "end": 33
             }
@@ -779,9 +779,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.test_items",
-    "callable_line": 314,
+    "callable_line": 325,
     "code": 5002,
-    "line": 319,
+    "line": 330,
     "start": 19,
     "end": 20,
     "filename": "dictionary.py",
@@ -800,7 +800,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 315,
+              "line": 326,
               "start": 22,
               "end": 36
             }
@@ -820,7 +820,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 319,
+              "line": 330,
               "start": 19,
               "end": 20
             }
@@ -844,9 +844,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.test_items",
-    "callable_line": 314,
+    "callable_line": 325,
     "code": 5002,
-    "line": 327,
+    "line": 338,
     "start": 19,
     "end": 20,
     "filename": "dictionary.py",
@@ -865,7 +865,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 316,
+              "line": 327,
               "start": 29,
               "end": 43
             }
@@ -885,7 +885,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 327,
+              "line": 338,
               "start": 19,
               "end": 20
             }
@@ -909,9 +909,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.test_keys_and_values",
-    "callable_line": 245,
+    "callable_line": 256,
     "code": 5002,
-    "line": 248,
+    "line": 259,
     "start": 15,
     "end": 38,
     "filename": "dictionary.py",
@@ -934,7 +934,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 246,
+              "line": 257,
               "start": 43,
               "end": 57
             }
@@ -954,7 +954,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 248,
+              "line": 259,
               "start": 15,
               "end": 38
             }
@@ -981,9 +981,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.test_keys_and_values",
-    "callable_line": 245,
+    "callable_line": 256,
     "code": 5002,
-    "line": 256,
+    "line": 267,
     "start": 15,
     "end": 34,
     "filename": "dictionary.py",
@@ -1002,7 +1002,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 254,
+              "line": 265,
               "start": 20,
               "end": 34
             }
@@ -1022,7 +1022,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 256,
+              "line": 267,
               "start": 15,
               "end": 34
             }
@@ -1046,9 +1046,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.test_service_with_dict",
-    "callable_line": 294,
+    "callable_line": 305,
     "code": 5002,
-    "line": 296,
+    "line": 307,
     "start": 15,
     "end": 53,
     "filename": "dictionary.py",
@@ -1068,10 +1068,10 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 296, "start": 38, "end": 52 } ],
+            "tito_positions": [ { "line": 307, "start": 38, "end": 52 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 296,
+              "line": 307,
               "start": 38,
               "end": 52
             }
@@ -1091,7 +1091,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 296,
+              "line": 307,
               "start": 15,
               "end": 53
             }
@@ -1118,9 +1118,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.test_service_with_mapping",
-    "callable_line": 299,
+    "callable_line": 310,
     "code": 5002,
-    "line": 301,
+    "line": 312,
     "start": 15,
     "end": 56,
     "filename": "dictionary.py",
@@ -1140,10 +1140,10 @@
             "local_features": [
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 301, "start": 41, "end": 55 } ],
+            "tito_positions": [ { "line": 312, "start": 41, "end": 55 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 301,
+              "line": 312,
               "start": 41,
               "end": 55
             }
@@ -1163,7 +1163,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 301,
+              "line": 312,
               "start": 15,
               "end": 56
             }
@@ -1189,12 +1189,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "dictionary.test_with_issue_in_dict_comprehension",
-    "callable_line": 271,
+    "callable": "dictionary.test_typed_dict_setitem",
+    "callable_line": 482,
     "code": 5002,
-    "line": 273,
-    "start": 43,
-    "end": 44,
+    "line": 485,
+    "start": 15,
+    "end": 23,
     "filename": "dictionary.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -1209,9 +1209,12 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "bar" }
+            ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 272,
+              "line": 484,
               "start": 15,
               "end": 29
             }
@@ -1231,7 +1234,75 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 273,
+              "line": 485,
+              "start": 15,
+              "end": 23
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dictionary.test_typed_dict_setitem:5002:0:Call|_test_sink|0|formal(arg):692346c6aa89008cf2d600daf9ed9518"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.test_with_issue_in_dict_comprehension",
+    "callable_line": 282,
+    "code": 5002,
+    "line": 284,
+    "start": 43,
+    "end": 44,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 283,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 284,
               "start": 43,
               "end": 44
             }
@@ -1255,9 +1326,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.update_tainted_dictionary",
-    "callable_line": 63,
+    "callable_line": 74,
     "code": 5002,
-    "line": 64,
+    "line": 75,
     "start": 4,
     "end": 22,
     "filename": "dictionary.py",
@@ -1278,10 +1349,10 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 64, "start": 36, "end": 50 } ],
+            "tito_positions": [ { "line": 75, "start": 36, "end": 50 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 64,
+              "line": 75,
               "start": 36,
               "end": 50
             }
@@ -1302,7 +1373,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 64,
+              "line": 75,
               "start": 4,
               "end": 22
             }
@@ -1481,8 +1552,8 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 288, "start": 16, "end": 58 },
-              { "line": 288, "start": 52, "end": 57 }
+              { "line": 299, "start": 16, "end": 58 },
+              { "line": 299, "start": 52, "end": 57 }
             ],
             "tito": null
           }
@@ -1509,7 +1580,7 @@
             "local_features": [
               { "via": "obscure:model" }, { "via": "tito" }
             ],
-            "tito_positions": [ { "line": 285, "start": 30, "end": 33 } ],
+            "tito_positions": [ { "line": 296, "start": 30, "end": 33 } ],
             "tito": null
           }
         ]
@@ -1540,9 +1611,9 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 291, "start": 15, "end": 65 },
-              { "line": 291, "start": 22, "end": 64 },
-              { "line": 291, "start": 58, "end": 63 }
+              { "line": 302, "start": 15, "end": 65 },
+              { "line": 302, "start": 22, "end": 64 },
+              { "line": 302, "start": 58, "end": 63 }
             ],
             "tito": null
           }
@@ -1560,7 +1631,7 @@
         "port": "formal(key)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1571,7 +1642,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 165,
+              "line": 176,
               "start": 19,
               "end": 22
             }
@@ -1610,7 +1681,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 440,
+              "line": 451,
               "start": 21,
               "end": 22
             }
@@ -1638,7 +1709,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 414,
+              "line": 425,
               "start": 15,
               "end": 23
             }
@@ -1687,7 +1758,7 @@
             "call": {
               "position": {
                 "filename": "dictionary.py",
-                "line": 242,
+                "line": 253,
                 "start": 33,
                 "end": 41
               },
@@ -1718,7 +1789,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 204,
+              "line": 215,
               "start": 9,
               "end": 23
             }
@@ -1747,10 +1818,10 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "A" }
             ],
-            "tito_positions": [ { "line": 152, "start": 19, "end": 25 } ],
+            "tito_positions": [ { "line": 163, "start": 19, "end": 25 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 153,
+              "line": 164,
               "start": 15,
               "end": 16
             }
@@ -1766,10 +1837,10 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "tito_positions": [ { "line": 152, "start": 19, "end": 25 } ],
+            "tito_positions": [ { "line": 163, "start": 19, "end": 25 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 154,
+              "line": 165,
               "start": 15,
               "end": 21
             }
@@ -1798,10 +1869,10 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "tito_positions": [ { "line": 114, "start": 19, "end": 25 } ],
+            "tito_positions": [ { "line": 125, "start": 19, "end": 25 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 113,
+              "line": 124,
               "start": 14,
               "end": 28
             }
@@ -1827,10 +1898,10 @@
                 "kind": "Test"
               }
             ],
-            "tito_positions": [ { "line": 135, "start": 17, "end": 31 } ],
+            "tito_positions": [ { "line": 146, "start": 17, "end": 31 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 135,
+              "line": 146,
               "start": 17,
               "end": 31
             }
@@ -1848,10 +1919,10 @@
                 "kind": "Test"
               }
             ],
-            "tito_positions": [ { "line": 136, "start": 17, "end": 31 } ],
+            "tito_positions": [ { "line": 147, "start": 17, "end": 31 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 136,
+              "line": 147,
               "start": 17,
               "end": 31
             }
@@ -1871,7 +1942,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 130,
+              "line": 141,
               "start": 13,
               "end": 27
             }
@@ -1900,10 +1971,10 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "c" }
             ],
-            "tito_positions": [ { "line": 98, "start": 32, "end": 33 } ],
+            "tito_positions": [ { "line": 109, "start": 32, "end": 33 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 101,
+              "line": 112,
               "start": 15,
               "end": 21
             }
@@ -1926,7 +1997,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 100,
+              "line": 111,
               "start": 15,
               "end": 21
             }
@@ -1952,10 +2023,10 @@
                 "kind": "Test"
               }
             ],
-            "tito_positions": [ { "line": 120, "start": 19, "end": 33 } ],
+            "tito_positions": [ { "line": 131, "start": 19, "end": 33 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 120,
+              "line": 131,
               "start": 19,
               "end": 33
             }
@@ -1983,7 +2054,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 38,
+              "line": 49,
               "start": 13,
               "end": 27
             }
@@ -2014,7 +2085,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 26,
+              "line": 37,
               "start": 13,
               "end": 27
             }
@@ -2042,7 +2113,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 16,
+              "line": 27,
               "start": 30,
               "end": 33
             }
@@ -2073,7 +2144,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 44,
+              "line": 55,
               "start": 18,
               "end": 32
             }
@@ -2104,7 +2175,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 50,
+              "line": 61,
               "start": 18,
               "end": 32
             }
@@ -2132,7 +2203,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 11,
+              "line": 22,
               "start": 19,
               "end": 33
             }
@@ -2198,7 +2269,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 188,
+              "line": 199,
               "start": 20,
               "end": 21
             }
@@ -2226,7 +2297,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 179,
+              "line": 190,
               "start": 9,
               "end": 23
             }
@@ -2254,7 +2325,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 184,
+              "line": 195,
               "start": 25,
               "end": 26
             }
@@ -2282,7 +2353,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 174,
+              "line": 185,
               "start": 14,
               "end": 28
             }
@@ -2310,7 +2381,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 427,
+              "line": 438,
               "start": 6,
               "end": 20
             }
@@ -2357,7 +2428,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 231,
+              "line": 242,
               "start": 9,
               "end": 23
             }
@@ -2402,7 +2473,7 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 398, "start": 14, "end": 15 } ],
+            "tito_positions": [ { "line": 409, "start": 14, "end": 15 } ],
             "tito": null
           }
         ]
@@ -2439,7 +2510,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 223,
+              "line": 234,
               "start": 16,
               "end": 17
             }
@@ -2460,7 +2531,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 169, "start": 4, "end": 5 } ],
+            "tito_positions": [ { "line": 180, "start": 4, "end": 5 } ],
             "tito": null
           }
         ]
@@ -2472,9 +2543,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary.tainted_setitem",
-    "callable_line": 168,
+    "callable_line": 179,
     "code": 5002,
-    "line": 169,
+    "line": 180,
     "start": 6,
     "end": 20,
     "filename": "dictionary.py",
@@ -2493,7 +2564,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 169,
+              "line": 180,
               "start": 6,
               "end": 20
             }
@@ -2504,7 +2575,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2517,7 +2588,7 @@
             "call": {
               "position": {
                 "filename": "dictionary.py",
-                "line": 169,
+                "line": 180,
                 "start": 6,
                 "end": 20
               },
@@ -2561,10 +2632,10 @@
               { "first-index": "<unknown>" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 356, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 367, "start": 15, "end": 16 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 356,
+              "line": 367,
               "start": 15,
               "end": 36
             }
@@ -2595,7 +2666,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 360,
+              "line": 371,
               "start": 15,
               "end": 32
             }
@@ -2623,7 +2694,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 334,
+              "line": 345,
               "start": 19,
               "end": 20
             }
@@ -2651,7 +2722,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 347,
+              "line": 358,
               "start": 19,
               "end": 20
             }
@@ -2682,10 +2753,10 @@
               { "first-index": "<unknown>" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 364, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 375, "start": 15, "end": 16 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 364,
+              "line": 375,
               "start": 15,
               "end": 36
             }
@@ -2716,7 +2787,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 368,
+              "line": 379,
               "start": 15,
               "end": 32
             }
@@ -2744,7 +2815,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 351,
+              "line": 362,
               "start": 20,
               "end": 34
             }
@@ -2809,10 +2880,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 73, "start": 30, "end": 33 } ],
+            "tito_positions": [ { "line": 84, "start": 30, "end": 33 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 73,
+              "line": 84,
               "start": 4,
               "end": 22
             }
@@ -2839,10 +2910,10 @@
                 "kind": "Test"
               }
             ],
-            "tito_positions": [ { "line": 68, "start": 36, "end": 37 } ],
+            "tito_positions": [ { "line": 79, "start": 36, "end": 37 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 68,
+              "line": 79,
               "start": 4,
               "end": 22
             }
@@ -2855,10 +2926,10 @@
                 "kind": "Test"
               }
             ],
-            "tito_positions": [ { "line": 68, "start": 36, "end": 37 } ],
+            "tito_positions": [ { "line": 79, "start": 36, "end": 37 } ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 69,
+              "line": 80,
               "start": 15,
               "end": 33
             }
@@ -2886,7 +2957,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 419,
+              "line": 430,
               "start": 12,
               "end": 26
             }
@@ -2906,7 +2977,7 @@
             ],
             "origin": {
               "filename": "dictionary.py",
-              "line": 419,
+              "line": 430,
               "start": 12,
               "end": 26
             }

@@ -116,6 +116,8 @@ module CallCallees : sig
   val is_partially_resolved : t -> bool
 
   val pp_option : Format.formatter -> t option -> unit
+
+  val is_mapping_method : t -> bool
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)

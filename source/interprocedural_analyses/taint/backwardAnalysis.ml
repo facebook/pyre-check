@@ -35,7 +35,6 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
-module CallResolution = Interprocedural.CallResolution
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
@@ -1291,25 +1290,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
      arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
     } ->
-        let is_dict_setitem =
-          match callees.call_targets with
-          | [
-              {
-                CallGraph.CallTarget.target =
-                  Method { class_name = "dict"; method_name = "__setitem__"; kind = Normal };
-                _;
-              };
-            ]
-          | [
-              {
-                CallGraph.CallTarget.target =
-                  Override { class_name = "dict"; method_name = "__setitem__"; kind = Normal };
-                _;
-              };
-            ] ->
-              true
-          | _ -> false
-        in
+        let is_dict_setitem = CallGraph.CallCallees.is_mapping_method callees in
         let use_custom_tito =
           is_dict_setitem || not (CallGraph.CallCallees.is_partially_resolved callees)
         in
@@ -1414,10 +1395,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     } ->
         let label =
           (* For dictionaries, the default iterator is keys. *)
-          if
-            CallResolution.resolve_ignoring_untracked ~resolution base
-            |> Type.is_dictionary_or_mapping
-          then
+          if CallGraph.CallCallees.is_mapping_method callees then
             AccessPath.dictionary_keys
           else
             Abstract.TreeDomain.Label.AnyIndex
@@ -1501,8 +1479,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* dictionary .keys(), .values() and .items() functions are special, as they require handling of
        DictionaryKeys taint. *)
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
-      when CallResolution.resolve_ignoring_untracked ~resolution base
-           |> Type.is_dictionary_or_mapping ->
+      when CallGraph.CallCallees.is_mapping_method callees ->
         let taint =
           taint
           |> BackwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
@@ -1510,8 +1487,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         analyze_expression ~resolution ~taint ~state ~expression:base
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
-      when CallResolution.resolve_ignoring_untracked ~resolution base
-           |> Type.is_dictionary_or_mapping ->
+      when CallGraph.CallCallees.is_mapping_method callees ->
         let taint = taint |> BackwardState.Tree.prepend [AccessPath.dictionary_keys] in
         analyze_expression ~resolution ~taint ~state ~expression:base
     | {
@@ -1536,8 +1512,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
        ];
     }
-      when CallResolution.resolve_ignoring_untracked ~resolution base
-           |> Type.is_dictionary_or_mapping
+      when CallGraph.CallCallees.is_mapping_method callees
            && Option.is_some (Dictionary.string_literal_keys entries) ->
         let entries = Option.value_exn (Dictionary.string_literal_keys entries) in
         let access_path =
@@ -1584,7 +1559,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            Name
              (Name.Attribute
                {
-                 base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                 base = { Node.value = Name (Name.Identifier identifier); _ };
                  attribute = "pop";
                  _;
                });
@@ -1599,8 +1574,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
        ];
     }
-      when CallResolution.resolve_ignoring_untracked ~resolution base
-           |> Type.is_dictionary_or_mapping ->
+      when CallGraph.CallCallees.is_mapping_method callees ->
         let access_path =
           Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] }
         in
@@ -1613,8 +1587,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] new_taint state
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
-      when CallResolution.resolve_ignoring_untracked ~resolution base
-           |> Type.is_dictionary_or_mapping ->
+      when CallGraph.CallCallees.is_mapping_method callees ->
         (* When we're faced with an assign of the form `k, v = d.items().__iter__().__next__()`, the
            taint we analyze d.items() under will be {* -> {0 -> k, 1 -> v} }. We want to analyze d
            itself under the taint of `{* -> v, $keys -> k}`. *)
