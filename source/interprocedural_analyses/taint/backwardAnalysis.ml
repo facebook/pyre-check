@@ -627,29 +627,68 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state:initial_state
       ~call_taint
     =
+    let is_object_new = CallGraph.CallCallees.is_object_new new_targets in
+    let is_object_init = CallGraph.CallCallees.is_object_init init_targets in
+
+    (* If both `is_object_new` and `is_object_init` are true, this is probably a stub
+     * class (e.g, `class X: ...`), in which case, we treat it as an obscure call. *)
+
     (* Call `__init__`. Add the `self` implicit argument. *)
     let { arguments_taint = init_arguments_taint; self_taint; callee_taint = _; state } =
-      match init_targets with
-      | [] ->
-          {
-            arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
-            self_taint = Some call_taint;
-            callee_taint = None;
-            state = initial_state;
-          }
-      | init_targets ->
-          let call_expression =
-            Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
-          in
-          List.map init_targets ~f:(fun target ->
+      if is_object_init && not is_object_new then
+        {
+          arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
+          self_taint = Some call_taint;
+          callee_taint = None;
+          state = initial_state;
+        }
+      else
+        let call_expression =
+          Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
+        in
+        List.map init_targets ~f:(fun target ->
+            apply_call_target
+              ~resolution
+              ~call_location
+              ~self:(Some call_expression)
+              ~callee
+              ~arguments
+              ~state:initial_state
+              ~call_taint
+              target)
+        |> List.fold
+             ~f:join_call_target_results
+             ~init:
+               {
+                 arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
+                 self_taint = None;
+                 callee_taint = None;
+                 state = bottom;
+               }
+    in
+    let self_taint = Option.value self_taint ~default:BackwardState.Tree.bottom in
+
+    (* Call `__new__`. *)
+    let call_target_result =
+      if is_object_new then
+        { arguments_taint = init_arguments_taint; self_taint = None; callee_taint = None; state }
+      else (* Add the `cls` implicit argument. *)
+        let {
+          arguments_taint = new_arguments_taint;
+          self_taint = callee_taint;
+          callee_taint = _;
+          state;
+        }
+          =
+          List.map new_targets ~f:(fun target ->
               apply_call_target
                 ~resolution
                 ~call_location
-                ~self:(Some call_expression)
+                ~self:(Some callee)
                 ~callee
                 ~arguments
-                ~state:initial_state
-                ~call_taint
+                ~state
+                ~call_taint:self_taint
                 target)
           |> List.fold
                ~f:join_call_target_results
@@ -660,58 +699,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                    callee_taint = None;
                    state = bottom;
                  }
-    in
-    let self_taint = Option.value self_taint ~default:BackwardState.Tree.bottom in
-
-    (* Call `__new__`. *)
-    let call_target_result =
-      match new_targets with
-      | []
-      | [
-          {
-            CallGraph.CallTarget.target =
-              Interprocedural.Target.Method
-                { class_name = "object"; method_name = "__new__"; kind = Normal };
-            _;
-          };
-        ] ->
-          { arguments_taint = init_arguments_taint; self_taint = None; callee_taint = None; state }
-      | new_targets ->
-          (* Add the `cls` implicit argument. *)
-          let {
-            arguments_taint = new_arguments_taint;
-            self_taint = callee_taint;
-            callee_taint = _;
-            state;
-          }
-            =
-            List.map new_targets ~f:(fun target ->
-                apply_call_target
-                  ~resolution
-                  ~call_location
-                  ~self:(Some callee)
-                  ~callee
-                  ~arguments
-                  ~state
-                  ~call_taint:self_taint
-                  target)
-            |> List.fold
-                 ~f:join_call_target_results
-                 ~init:
-                   {
-                     arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
-                     self_taint = None;
-                     callee_taint = None;
-                     state = bottom;
-                   }
-          in
-          {
-            arguments_taint =
-              List.map2_exn init_arguments_taint new_arguments_taint ~f:BackwardState.Tree.join;
-            self_taint = None;
-            callee_taint;
-            state;
-          }
+        in
+        {
+          arguments_taint =
+            List.map2_exn init_arguments_taint new_arguments_taint ~f:BackwardState.Tree.join;
+          self_taint = None;
+          callee_taint;
+          state;
+        }
     in
 
     call_target_result

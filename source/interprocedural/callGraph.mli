@@ -120,6 +120,10 @@ module CallCallees : sig
   val is_mapping_method : t -> bool
 
   val is_sequence_method : t -> bool
+
+  val is_object_new : CallTarget.t list -> bool
+
+  val is_object_init : CallTarget.t list -> bool
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)

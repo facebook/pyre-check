@@ -655,66 +655,63 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~init_targets
       ~state:initial_state
     =
+    let is_object_new = CallGraph.CallCallees.is_object_new new_targets in
+    let is_object_init = CallGraph.CallCallees.is_object_init init_targets in
+
+    (* If both `is_object_new` and `is_object_init` are true, this is probably a stub
+     * class (e.g, `class X: ...`), in which case, we treat it as an obscure call. *)
+
     (* Call `__new__`. Add the `cls` implicit argument. *)
     let new_return_taint, state =
-      match new_targets with
-      | [] -> ForwardState.Tree.bottom, initial_state
-      | [
-       {
-         CallGraph.CallTarget.target =
-           Interprocedural.Target.Method
-             { class_name = "object"; method_name = "__new__"; kind = Normal };
-         _;
-       };
-      ] ->
-          ForwardState.Tree.bottom, initial_state
-      | new_targets ->
-          List.map new_targets ~f:(fun target ->
-              apply_call_target
-                ~resolution
-                ~is_result_used:true
-                ~triggered_sinks
-                ~call_location
-                ~self:(Some callee)
-                ~self_taint:callee_taint
-                ~callee
-                ~callee_taint:(Some ForwardState.Tree.bottom)
-                ~arguments
-                ~arguments_taint
-                ~state:initial_state
-                target)
-          |> List.fold
-               ~init:(ForwardState.Tree.empty, bottom)
-               ~f:(fun (taint, state) (new_taint, new_state) ->
-                 ForwardState.Tree.join taint new_taint, join state new_state)
+      if is_object_new then
+        ForwardState.Tree.bottom, initial_state
+      else
+        List.map new_targets ~f:(fun target ->
+            apply_call_target
+              ~resolution
+              ~is_result_used:true
+              ~triggered_sinks
+              ~call_location
+              ~self:(Some callee)
+              ~self_taint:callee_taint
+              ~callee
+              ~callee_taint:(Some ForwardState.Tree.bottom)
+              ~arguments
+              ~arguments_taint
+              ~state:initial_state
+              target)
+        |> List.fold
+             ~init:(ForwardState.Tree.empty, bottom)
+             ~f:(fun (taint, state) (new_taint, new_state) ->
+               ForwardState.Tree.join taint new_taint, join state new_state)
     in
 
     (* Call `__init__`. Add the `self` implicit argument. *)
     let taint, state =
-      match init_targets with
-      | [] -> new_return_taint, state
-      | init_targets ->
-          let call_expression =
-            Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
-          in
-          List.map init_targets ~f:(fun target ->
-              apply_call_target
-                ~resolution
-                ~is_result_used
-                ~triggered_sinks
-                ~call_location
-                ~self:(Some call_expression)
-                ~self_taint:(Some new_return_taint)
-                ~callee
-                ~callee_taint:(Some ForwardState.Tree.bottom)
-                ~arguments
-                ~arguments_taint
-                ~state
-                target)
-          |> List.fold
-               ~init:(ForwardState.Tree.empty, bottom)
-               ~f:(fun (taint, state) (new_taint, new_state) ->
-                 ForwardState.Tree.join taint new_taint, join state new_state)
+      if is_object_init && not is_object_new then
+        new_return_taint, state
+      else
+        let call_expression =
+          Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
+        in
+        List.map init_targets ~f:(fun target ->
+            apply_call_target
+              ~resolution
+              ~is_result_used
+              ~triggered_sinks
+              ~call_location
+              ~self:(Some call_expression)
+              ~self_taint:(Some new_return_taint)
+              ~callee
+              ~callee_taint:(Some ForwardState.Tree.bottom)
+              ~arguments
+              ~arguments_taint
+              ~state
+              target)
+        |> List.fold
+             ~init:(ForwardState.Tree.empty, bottom)
+             ~f:(fun (taint, state) (new_taint, new_state) ->
+               ForwardState.Tree.join taint new_taint, join state new_state)
     in
 
     taint, state

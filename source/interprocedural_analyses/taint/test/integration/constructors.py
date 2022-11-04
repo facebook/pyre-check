@@ -84,3 +84,32 @@ class DerivedConstructor(BaseConstructor):
     def __init__(self, y: int) -> None:
         super().__init__()
         self.y = y
+
+
+class InitWithModel:
+    def __init__(self, tito=None, not_tito=None):
+        ...
+
+
+def test_init_model():
+    _test_sink(InitWithModel(tito=_test_source()))  # This is an issue.
+    _test_sink(InitWithModel(not_tito=_test_source()))  # This is NOT an issue.
+
+
+class NewWithModel:
+    def __new__(cls, tito=None, not_tito=None):
+        ...
+
+
+def test_new_model():
+    _test_sink(NewWithModel(tito=_test_source()))  # This is an issue.
+    _test_sink(NewWithModel(not_tito=_test_source()))  # This is NOT an issue.
+
+
+class ClassStub:
+    ...
+
+
+def test_class_stub():
+    # Assume anything can happen.
+    _test_sink(ClassStub(_test_source()))

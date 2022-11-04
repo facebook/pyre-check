@@ -426,6 +426,32 @@ module CallCallees = struct
       | _ -> false
     in
     is_method_of_class ~is_class_name callees
+
+
+  let is_object_new = function
+    | [] -> (* Unresolved call, assume it's object.__new__ *) true
+    | [
+        {
+          CallTarget.target =
+            Target.Method { class_name = "object"; method_name = "__new__"; kind = Normal };
+          _;
+        };
+      ] ->
+        true
+    | _ -> false
+
+
+  let is_object_init = function
+    | [] -> (* Unresolved call, assume it's object.__init__ *) true
+    | [
+        {
+          CallTarget.target =
+            Target.Method { class_name = "object"; method_name = "__init__"; kind = Normal };
+          _;
+        };
+      ] ->
+        true
+    | _ -> false
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)
