@@ -379,8 +379,31 @@ module CallCallees = struct
     && unresolved_left == unresolved_right
 
 
+  let is_method_of_class ~is_class_name callees =
+    let rec is_class_type = function
+      | Type.Primitive name -> is_class_name name
+      | Type.Parametric { name; _ } -> is_class_name name
+      | Type.Union [NoneType; annotation]
+      | Type.Union [annotation; NoneType] ->
+          is_class_type annotation
+      | Type.Union annotations -> List.for_all ~f:is_class_type annotations
+      | _ -> false
+    in
+    let is_call_target = function
+      | { CallTarget.target = Method { class_name; _ }; receiver_type; _ }
+      | { target = Override { class_name; _ }; receiver_type; _ } ->
+          (* Is it not enough to check the class name, since methods can be inherited.
+           * For instance, `__iter__` is not defined on `Mapping`, but is defined in the parent class `Iterable`. *)
+          is_class_name class_name || receiver_type >>| is_class_type |> Option.value ~default:false
+      | _ -> false
+    in
+    match callees with
+    | { call_targets = []; _ } -> false
+    | { call_targets; _ } -> List.for_all call_targets ~f:is_call_target
+
+
   let is_mapping_method callees =
-    let is_mapping_class = function
+    let is_class_name = function
       | "dict"
       | "typing.Mapping"
       | "typing.MutableMapping"
@@ -389,26 +412,20 @@ module CallCallees = struct
           true
       | _ -> false
     in
-    let rec is_mapping_type = function
-      | Type.Parametric { name; _ } -> is_mapping_class name
-      | Type.Union [NoneType; annotation]
-      | Type.Union [annotation; NoneType] ->
-          is_mapping_type annotation
-      | Type.Union annotations -> List.for_all ~f:is_mapping_type annotations
+    is_method_of_class ~is_class_name callees
+
+
+  let is_sequence_method callees =
+    let is_class_name = function
+      | "list"
+      | "typing.Sequence"
+      | "typing.MutableSequence"
+      | "collections.deque"
+      | "tuple" ->
+          true
       | _ -> false
     in
-    let is_mapping_call_target = function
-      | { CallTarget.target = Method { class_name; _ }; receiver_type; _ }
-      | { target = Override { class_name; _ }; receiver_type; _ } ->
-          (* Is it not enough to check the class name. For instance, `__iter__` is not defined on
-             `Mapping`, but is defined in the parent class `Iterable`. *)
-          is_mapping_class class_name
-          || receiver_type >>| is_mapping_type |> Option.value ~default:false
-      | _ -> false
-    in
-    match callees with
-    | { call_targets = []; _ } -> false
-    | { call_targets; _ } -> List.for_all call_targets ~f:is_mapping_call_target
+    is_method_of_class ~is_class_name callees
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)

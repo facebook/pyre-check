@@ -62,3 +62,10 @@ def push_pop_taint():
     x.append(1)
     x.pop()
     return x
+
+
+def setitem():
+    x = [""] * 10
+    x[2] = _test_source()
+    _test_sink(x[2])
+    _test_sink(x[3])

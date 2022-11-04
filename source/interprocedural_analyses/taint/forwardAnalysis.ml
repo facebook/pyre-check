@@ -1401,16 +1401,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
       } ->
           let is_dict_setitem = CallGraph.CallCallees.is_mapping_method callees in
+          let is_sequence_setitem = CallGraph.CallCallees.is_sequence_method callees in
           let use_custom_tito =
-            is_dict_setitem || not (CallGraph.CallCallees.is_partially_resolved callees)
+            is_dict_setitem
+            || is_sequence_setitem
+            || not (CallGraph.CallCallees.is_partially_resolved callees)
           in
           let taint_from_analyze_callee, state_from_analyze_callee =
-            (* Process the custom behavior of `__setitem__`. We treat `e.__setitem__(k, v)` as `e =
+            (* Process the custom model for `__setitem__`. We treat `e.__setitem__(k, v)` as `e =
                e.__setitem__(k, v)` where method `__setitem__` returns the updated self. Due to
                modeling with the assignment, the user-provided models of `__setitem__` will be
                ignored, if they are inconsistent with treating `__setitem__` as returning an updated
-               self. In the case that the call target is a dict, only propagate sources and sinks,
-               and ignore tito propagation. *)
+               self. In the case that the call target is a dict or list, only propagate sources and
+               sinks, and ignore tito propagation. *)
             let taint, state =
               apply_callees
                 ~apply_tito:(not use_custom_tito)
@@ -1427,10 +1430,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             taint, state
           in
           if use_custom_tito then
-            (* Use the hardcoded behavior of `__setitem__` for any subtype of dict or unresolved
-               callees: `base[index] = value`. This is incorrect, but can lead to higher SNR,
-               because we assume in most cases, we run into an expression whose type is exactly
-               `dict`, rather than a (strict) subtype of `dict` that overrides `__setitem__`. *)
+            (* Use the hardcoded behavior of `__setitem__` for any subtype of dict or list, and for
+               unresolved calls. This is incorrect, but can lead to higher SNR, because we assume in
+               most cases, we run into an expression whose type is exactly `dict`, rather than a
+               (strict) subtype of `dict` that overrides `__setitem__`. *)
             let state =
               let value_taint, state =
                 analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
@@ -1447,15 +1450,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               let key_taint, state =
                 analyze_expression ~resolution ~state ~is_result_used:true ~expression:index
               in
-              (* Smash the taint of ALL keys into one place, i.e., a special field of the
-                 dictionary: `d[**keys] = index`. *)
-              analyze_assignment
-                ~resolution
-                ~fields:[AccessPath.dictionary_keys]
-                ~weak:true
-                base
-                key_taint
-                key_taint
+              if not is_sequence_setitem then
+                (* Smash the taint of ALL keys into one place, i.e., a special field of the
+                   dictionary: `d[**keys] = index`. *)
+                analyze_assignment
+                  ~resolution
+                  ~fields:[AccessPath.dictionary_keys]
+                  ~weak:true
+                  base
+                  key_taint
+                  key_taint
+                  state
+              else
                 state
             in
             let state = join state_from_key_value state_from_analyze_callee in
