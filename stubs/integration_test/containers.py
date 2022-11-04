@@ -9,6 +9,37 @@ from integration_test.taint import source, sink
 import collections
 
 
+def dictionary_constructor(x: str):
+    d = dict({"a": source(), "b": 0})
+    sink(d["a"])  # This is an issue.
+    sink(d["b"])  # This is an issue (false positive).
+
+    d = dict({"a": {"b": source()}})
+    sink(d["a"]["a"])  # This is an issue (false positive).
+    sink(d["a"]["b"])  # This is an issue.
+    sink(d["b"]["a"])  # This is an issue (false positive).
+    sink(d["b"]["b"])  # This is an issue (false positive).
+
+    d = dict({source(): 0})
+    sink(d.keys())  # This is an issue.
+    sink(d[x])  # This is NOT an issue.
+
+    d = dict({(source(), 0): 0})
+    for key in d.keys():
+        sink(key[0])  # This is an issue.
+        sink(key[1])  # This is NOT an issue.
+
+    d = dict(a=source())
+    sink(d["a"])  # This is an issue.
+    sink(d["b"])  # This is an issue (false positive)
+
+    d = dict(a={"b": source()})
+    sink(d["a"]["a"])  # This is NOT an issue.
+    sink(d["a"]["b"])  # This is an issue.
+    sink(d["b"]["a"])  # This is NOT an issue.
+    sink(d["b"]["b"])  # This is an issue (false positive)
+
+
 def dictionary_update():
     result = {}
     argument = {"source": source()}
@@ -79,6 +110,32 @@ def dict_get_default():
     d = {}
     sink(d.get("a", {0: source()})[0])  # This is an issue.
     sink(d.get("a", {0: source()})[1])  # This is NOT an issue.
+
+
+def list_constructor(i: int):
+    l = list([0, source()])
+    sink(l[0])  # This is an issue (false positive).
+    sink(l[1])  # This is an issue.
+
+    l = list([{"a": source()}])
+    sink(l[0]["a"])  # This is an issue.
+    sink(l[0]["b"])  # This is NOT an issue.
+
+    l = list([{"a": source(), "c": 0}, {"b": source(), "c": 0}])
+    sink(l[i]["a"])  # This is an issue.
+    sink(l[i]["b"])  # This is an issue.
+    sink(l[i]["c"])  # This is NOT an issue.
+
+    l = list({(source(), 0)})
+    sink(l[i][0])  # This is an issue.
+    sink(l[i][1])  # This is NOT an issue.
+
+    l = list({source(): 0})
+    sink(l[i])
+
+    l = list({(source(), 0): 0})
+    sink(l[i][0])  # This is an issue.
+    sink(l[i][1])  # This is NOT an issue.
 
 
 def list_append():
@@ -255,3 +312,29 @@ def deque_extend(i: int):
     sink(d[i]["a"])  # This is an issue.
     sink(d[i]["b"])  # This is an issue.
     sink(d[i]["c"])  # This is NOT an issue.
+
+
+def tuple_constructor(i: int):
+    l = tuple([0, source()])
+    sink(l[0])  # This is an issue (false positive).
+    sink(l[1])  # This is an issue.
+
+    l = tuple([{"a": source()}])
+    sink(l[0]["a"])  # This is an issue.
+    sink(l[0]["b"])  # This is NOT an issue.
+
+    l = tuple([{"a": source(), "c": 0}, {"b": source(), "c": 0}])
+    sink(l[i]["a"])  # This is an issue.
+    sink(l[i]["b"])  # This is an issue.
+    sink(l[i]["c"])  # This is NOT an issue.
+
+    l = tuple({(source(), 0)})
+    sink(l[i][0])  # This is an issue.
+    sink(l[i][1])  # This is NOT an issue.
+
+    l = tuple({source(): 0})
+    sink(l[i])
+
+    l = tuple({(source(), 0): 0})
+    sink(l[i][0])  # This is an issue.
+    sink(l[i][1])  # This is NOT an issue.
