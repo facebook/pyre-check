@@ -1328,7 +1328,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | {
        callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
        arguments =
-         [{ Call.Argument.value = { Node.value = argument_expression; _ } as argument_value; _ }];
+         [
+           {
+             Call.Argument.value = { Node.value = argument_expression; _ } as argument_value;
+             name = None;
+           };
+         ];
       } ->
           let _, state =
             analyze_expression ~resolution ~state ~is_result_used:false ~expression:argument_value
@@ -1398,7 +1403,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | {
        callee =
          { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
-       arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
+       arguments =
+         [{ Call.Argument.value = index; name = None }; { Call.Argument.value; name = None }] as
+         arguments;
       } ->
           let is_dict_setitem = CallGraph.CallCallees.is_mapping_method callees in
           let is_sequence_setitem = CallGraph.CallCallees.is_sequence_method callees in
@@ -1517,7 +1524,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        callee = { Node.value = Name (Name.Identifier "getattr"); _ };
        arguments =
          [
-           { Call.Argument.value = base; _ };
+           { Call.Argument.value = base; name = None };
            {
              Call.Argument.value =
                {
@@ -1525,9 +1532,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                    Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
                  _;
                };
-             _;
+             name = None;
            };
-           { Call.Argument.value = default; _ };
+           { Call.Argument.value = default; name = _ };
          ];
       } ->
           let attribute_expression =
@@ -1578,12 +1585,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               }
       (* dictionary .keys(), .values() and .items() functions are special, as they require handling
          of dictionary_keys taint. *)
-      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
+      | {
+       callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
+       arguments = [];
+      }
         when CallGraph.CallCallees.is_mapping_method callees ->
           analyze_expression ~resolution ~state ~is_result_used ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
-      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
+      | {
+       callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
+       arguments = [];
+      }
         when CallGraph.CallCallees.is_mapping_method callees ->
           analyze_expression ~resolution ~state ~is_result_used ~expression:base
           |>> ForwardState.Tree.read [AccessPath.dictionary_keys]
@@ -1605,7 +1618,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            {
              Call.Argument.value =
                { Node.value = Expression.Dictionary { Dictionary.entries; keywords = [] }; _ };
-             _;
+             name = None;
            };
          ];
       }
@@ -1666,7 +1679,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            {
              Call.Argument.value =
                { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
-             _;
+             name = None;
            };
          ];
       }
@@ -1689,7 +1702,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> add_type_breadcrumbs
           in
           key_taint, new_state
-      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
+      | {
+       callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ };
+       arguments = [];
+      }
         when CallGraph.CallCallees.is_mapping_method callees ->
           let taint, state =
             analyze_expression ~resolution ~state ~is_result_used ~expression:base
@@ -1779,7 +1795,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            {
              Call.Argument.value =
                { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
-             _;
+             name = None;
            };
          ];
       } ->
@@ -1804,7 +1820,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  });
            _;
          };
-       arguments = [{ Call.Argument.value = expression; _ }];
+       arguments = [{ Call.Argument.value = expression; name = None }];
       } ->
           analyze_string_literal
             ~resolution

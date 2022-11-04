@@ -484,3 +484,25 @@ def test_typed_dict_setitem():
     d["bar"] = _test_source()
     _test_sink(d["bar"])
     _test_sink(d["foo"])
+
+
+def dictionary_update_keyword():
+    d = {}
+    d.update(a={"b": _test_source()})
+    _test_sink(d["a"]["b"])
+    # TODO(T136908911): Special case update with keyword arguments.
+    _test_sink(d["b"])
+
+
+def dictionary_update_iterable():
+    d = {"a": 0}
+    # TODO(T136908911): Special case update with iterable.
+    d.update([("b", _test_source())])
+    _test_sink(d["a"])
+    _test_sink(d["b"])
+
+    d = {"a": 0}
+    d.update([("b", 0), ("c", _test_source())])
+    _test_sink(d["a"])
+    _test_sink(d["b"])
+    _test_sink(d["c"])

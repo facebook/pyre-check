@@ -1288,7 +1288,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee =
        { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
-     arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
+     arguments =
+       [{ Call.Argument.value = index; name = None }; { Call.Argument.value; name = None }] as
+       arguments;
     } ->
         let is_dict_setitem = CallGraph.CallCallees.is_mapping_method callees in
         let is_sequence_setitem = CallGraph.CallCallees.is_sequence_method callees in
@@ -1351,7 +1353,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
      arguments =
-       [{ Call.Argument.value = { Node.value = argument_expression; _ } as argument_value; _ }];
+       [
+         {
+           Call.Argument.value = { Node.value = argument_expression; _ } as argument_value;
+           name = None;
+         };
+       ];
     } ->
         let taint = add_type_breadcrumbs taint in
         let index = AccessPath.get_index argument_value in
@@ -1454,7 +1461,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      callee = { Node.value = Name (Name.Identifier "getattr"); _ };
      arguments =
        [
-         { Call.Argument.value = base; _ };
+         { Call.Argument.value = base; name = None };
          {
            Call.Argument.value =
              {
@@ -1462,9 +1469,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
                _;
              };
-           _;
+           name = None;
          };
-         { Call.Argument.value = default; _ };
+         { Call.Argument.value = default; name = _ };
        ];
     } ->
         let attribute_expression =
@@ -1488,7 +1495,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         List.foldi lists ~init:state ~f:analyze_zipped_list
     (* dictionary .keys(), .values() and .items() functions are special, as they require handling of
        DictionaryKeys taint. *)
-    | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
+    | {
+     callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
+     arguments = [];
+    }
       when CallGraph.CallCallees.is_mapping_method callees ->
         let taint =
           taint
@@ -1496,7 +1506,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
         in
         analyze_expression ~resolution ~taint ~state ~expression:base
-    | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
+    | {
+     callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
+     arguments = [];
+    }
       when CallGraph.CallCallees.is_mapping_method callees ->
         let taint = taint |> BackwardState.Tree.prepend [AccessPath.dictionary_keys] in
         analyze_expression ~resolution ~taint ~state ~expression:base
@@ -1518,7 +1531,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          {
            Call.Argument.value =
              { Node.value = Expression.Dictionary { Dictionary.entries; keywords = [] }; _ };
-           _;
+           name = None;
          };
        ];
     }
@@ -1580,7 +1593,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          {
            Call.Argument.value =
              { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
-           _;
+           name = None;
          };
        ];
     }
@@ -1596,7 +1609,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~subtree:(add_type_breadcrumbs taint)
         in
         store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] new_taint state
-    | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
+    | {
+     callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ };
+     arguments = [];
+    }
       when CallGraph.CallCallees.is_mapping_method callees ->
         (* When we're faced with an assign of the form `k, v = d.items().__iter__().__next__()`, the
            taint we analyze d.items() under will be {* -> {0 -> k, 1 -> v} }. We want to analyze d
@@ -1697,7 +1713,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          {
            Call.Argument.value =
              { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
-           _;
+           name = None;
          };
        ];
     } ->
@@ -1723,7 +1739,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                });
          _;
        };
-     arguments = [{ Call.Argument.value = expression; _ }];
+     arguments = [{ Call.Argument.value = expression; name = None }];
     } ->
         let formatted_string = Substring.Literal (Node.create ~location value) in
         let substrings = [formatted_string; Substring.Format expression] in
