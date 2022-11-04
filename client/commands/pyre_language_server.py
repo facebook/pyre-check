@@ -210,7 +210,6 @@ class PyreLanguageServer:
             self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
         error_message = None
-        process_id = os.getpid()
         server_status_before = self.server_state.server_last_status.value
         start_time = time.time()
         code_changes = str(
@@ -220,7 +219,7 @@ class PyreLanguageServer:
         )
         if process_unsaved_changes:
             result = await self.handler.update_overlay(
-                path=document_path.resolve(), process_id=process_id, code=code_changes
+                path=document_path.resolve(), code=code_changes
             )
             if isinstance(result, daemon_connection.DaemonConnectionFailure):
                 LOG.info(
@@ -254,7 +253,6 @@ class PyreLanguageServer:
                 "server_state_start_status": self.server_state.server_last_status.value,
                 "error_message": str(error_message),
                 "overlays_enabled": process_unsaved_changes,
-                "process_id": process_id,
             },
             activity_key,
         )

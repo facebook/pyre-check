@@ -16,6 +16,7 @@ import abc
 import dataclasses
 import json
 import logging
+import os
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -197,7 +198,6 @@ class AbstractRequestHandler(abc.ABC):
     async def update_overlay(
         self,
         path: Path,
-        process_id: int,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         raise NotImplementedError()
@@ -209,7 +209,7 @@ class AbstractRequestHandler(abc.ABC):
         unsaved_changes_enabled = (
             self.get_language_server_features().unsaved_changes.is_enabled()
         )
-        return str(path) if unsaved_changes_enabled else None
+        return f"{path}, pid_{os.getpid()}" if unsaved_changes_enabled else None
 
 
 class PersistentRequestHandler(AbstractRequestHandler):
@@ -342,14 +342,13 @@ class PersistentRequestHandler(AbstractRequestHandler):
     async def update_overlay(
         self,
         path: Path,
-        process_id: int,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         source_path = f"{path}"
         overlay_update_json = [
             "OverlayUpdate",
             {
-                "overlay_id": f"{source_path}, pid_{process_id}",
+                "overlay_id": self._get_overlay_id(path),
                 "source_path": source_path,
                 "code_update": ["NewCode", code],
             },
