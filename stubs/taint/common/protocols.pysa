@@ -1,14 +1,17 @@
 # Models for commonly used protocols.
+
 @SkipObscure
 @SkipOverrides
-def typing.Iterable.__iter__(self: TaintInTaintOut[LocalReturn]): ...
+def typing.Iterable.__iter__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
+
 @SkipObscure
 @SkipOverrides
-def typing.Iterator.__iter__(self: TaintInTaintOut[LocalReturn]): ...
+def typing.Iterator.__iter__(self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse]): ...
+
 # `__next__` is handled specially in the analysis.
 @SkipObscure
 @SkipOverrides
-def typing.Iterator.__next__(self: TaintInTaintOut[LocalReturn]): ...
+def typing.Iterator.__next__(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
 
 @SkipObscure
 @SkipOverrides
