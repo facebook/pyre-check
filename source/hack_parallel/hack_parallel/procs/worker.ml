@@ -20,12 +20,15 @@ open Hack_core
  * of tasks better (cf multiWorker.ml)
  *
  * On Unix, we "spawn" workers when initializing Hack. Then, this
- * worker, "fork" a slave for each incoming request. The forked "slave"
- * will die after processing a single request.
+ * worker, "fork" an ephemeral worker for each incoming request. The forked
+ * wephemeral worker will die after processing a single request. (We use this
+ * two-layer architecture because, *if* the long-lived worker was created when the
+ * original process was still very small, those forks run much faster than forking
+ * off the original process which will eventually have a large heap).
  *
  * On Windows, we do not "prespawn" when initializing Hack, but we just
  * allocate all the required information into a record. Then, we
- * spawn a slave for each incoming request. It will also die after
+ * spawn an ephemeral worker for each incoming request. It will also die after
  * one request.
  *
  * A worker never handle more than one request at a time.
@@ -58,8 +61,8 @@ let max_workers = 1000
  * The 'serializer' is the job continuation: it is a function that must
  * be called at the end of the request in order to send back the result
  * to the master (this is "internal business", this is not visible outside
- * this module). The slave will provide the expected function.
- * cf 'send_result' in 'slave_main'.
+ * this module). The ephemeral worker will provide the expected function.
+ * cf 'send_result' in 'ephemeral_worker_main'.
  *
  *****************************************************************************)
 
@@ -98,7 +101,7 @@ type t = {
   (* On Unix, a reference to the 'prespawned' worker. *)
   prespawned: (void, request) Daemon.handle option;
 
-  (* On Windows, a function to spawn a slave. *)
+  (* On Windows, a function to spawn an ephemeral worker. *)
   spawn: unit -> (void, request) Daemon.handle;
 
 }
@@ -115,17 +118,17 @@ type t = {
 type 'a handle = 'a delayed ref
 
 and 'a delayed =
-  | Processing of 'a slave
+  | Processing of 'a ephemeral_worker
   | Cached of 'a
   | Failed of exn
 
-and 'a slave = {
+and 'a ephemeral_worker = {
 
   worker: t;      (* The associated worker *)
-  slave_pid: int; (* The actual slave pid *)
+  ephemeral_worker_pid: int; (* The actual ephemeral worker pid *)
 
   (* The file descriptor we might pass to select in order to
-     wait for the slave to finish its job. *)
+     wait for the ephemeral worker to finish its job. *)
   infd: Unix.file_descr;
 
   (* A blocking function that returns the job result. *)
@@ -145,7 +148,7 @@ end
  *
  *****************************************************************************)
 
-let slave_main ic oc =
+let ephemeral_worker_main ic oc =
   let start_user_time = ref 0.0 in
   let start_system_time = ref 0.0 in
   let send_response response =
@@ -195,7 +198,7 @@ let slave_main ic oc =
 
 let win32_worker_main restore state (ic, oc) =
   restore state;
-  slave_main ic oc
+  ephemeral_worker_main ic oc
 
 let unix_worker_main restore state (ic, oc) =
   restore state;
@@ -204,15 +207,15 @@ let unix_worker_main restore state (ic, oc) =
   try
     while true do
       (* Wait for an incoming job : is there something to read?
-         But we don't read it yet. It will be read by the forked slave. *)
+         But we don't read it yet. It will be read by the forked ephemeral worker. *)
       let readyl, _, _ = Unix.select [in_fd] [] [] (-1.0) in
       if readyl = [] then exit 0;
-      (* We fork a slave for every incoming request.
+      (* We fork an ephemeral worker for every incoming request.
          And let it die after one request. This is the quickest GC. *)
       match Fork.fork() with
-      | 0 -> slave_main ic oc
+      | 0 -> ephemeral_worker_main ic oc
       | pid ->
-          (* Wait for the slave termination... *)
+          (* Wait for the ephemeral worker termination... *)
           match snd (Unix.waitpid [] pid) with
           | Unix.WEXITED 0 -> ()
           | Unix.WEXITED 1 ->
@@ -242,7 +245,7 @@ let register_entry_point ~restore =
     restore st;
     SharedMemory.connect heap_handle;
     Gc.set gc_control in
-  let name = Printf.sprintf "slave_%d" !entry_counter in
+  let name = Printf.sprintf "ephemeral_worker_%d" !entry_counter in
   Daemon.register_entry_point
     name
     (if Sys.win32
@@ -297,14 +300,14 @@ let current_worker_id () = !current_worker_id
 let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   if w.killed then raise Worker_killed;
   if w.busy then raise Worker_busy;
-  (* Spawn the slave, if not prespawned. *)
-  let { Daemon.pid = slave_pid; channels = (inc, outc) } as h =
+  (* Spawn the ephemeral worker, if not prespawned. *)
+  let { Daemon.pid = ephemeral_worker_pid; channels = (inc, outc) } as h =
     match w.prespawned with
     | None -> w.spawn ()
     | Some handle -> handle in
-  (* Prepare ourself to read answer from the slave. *)
+  (* Prepare ourself to read answer from the ephemeral_worker. *)
   let result () : b =
-    match Unix.waitpid [Unix.WNOHANG] slave_pid with
+    match Unix.waitpid [Unix.WNOHANG] ephemeral_worker_pid with
     | 0, _ | _, Unix.WEXITED 0 -> (
         let result : b Response.t = Daemon.input_value inc in
         match result with
@@ -317,22 +320,22 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
     | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
         raise SharedMemory.Out_of_shared_memory
     | _, exit_status ->
-        raise (Worker_exited_abnormally (slave_pid, exit_status))
+        raise (Worker_exited_abnormally (ephemeral_worker_pid, exit_status))
   in
   (* Mark the worker as busy. *)
   let infd = Daemon.descr_of_in_channel inc in
-  let slave = { result; slave_pid; infd; worker = w; } in
+  let ephemeral_worker = { result; ephemeral_worker_pid; infd; worker = w; } in
   w.busy <- true;
   let request =
     let { wrap } = w.call_wrapper in
     Request (fun { send } -> send (wrap f x))
   in
-  (* Send the job to the slave. *)
+  (* Send the job to the ephemeral worker. *)
   let () = try Daemon.to_channel outc
                  ~flush:true ~flags:[Marshal.Closures]
                  request with
   | e -> begin
-      match Unix.waitpid [Unix.WNOHANG] slave_pid with
+      match Unix.waitpid [Unix.WNOHANG] ephemeral_worker_pid with
       | 0, _ ->
           raise (Worker_failed_to_send_job (Other_send_job_failure e))
       | _, status ->
@@ -340,7 +343,7 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
     end
   in
   (* And returned the 'handle'. *)
-  ref (Processing slave)
+  ref (Processing ephemeral_worker)
 
 
 (**************************************************************************
