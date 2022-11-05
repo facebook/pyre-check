@@ -1144,7 +1144,7 @@ let test_distinguish context =
         reveal_type(v)
         return v
     |}
-    ["Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C]`."];
+    ["Revealed type [-1]: Revealed type for `v` is `map[C]`."];
   assert_type_errors
     {|
       import typing
@@ -1157,7 +1157,7 @@ let test_distinguish context =
         reveal_type(v)
         return v
     |}
-    ["Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C[int]]`."];
+    ["Revealed type [-1]: Revealed type for `v` is `map[C[int]]`."];
   assert_type_errors
     {|
       import typing
@@ -1170,7 +1170,7 @@ let test_distinguish context =
         reveal_type(v)
         return v
     |}
-    ["Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C[Variable[T]]]`."];
+    ["Revealed type [-1]: Revealed type for `v` is `map[C[Variable[T]]]`."];
   assert_type_errors
     {|
       import typing
@@ -1213,10 +1213,7 @@ let test_distinguish context =
       def f() -> None:
         reveal_type(map(identity, [1, 2, 3]))
     |}
-    [
-      "Revealed type [-1]: Revealed type for `map(test.identity, [1, 2, 3])` is \
-       `typing.Iterator[int]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `map(test.identity, [1, 2, 3])` is `map[int]`."];
   ()
 
 

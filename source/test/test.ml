@@ -495,8 +495,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           TypeVar, Iterator, Iterable, NoReturn, Never, overload, Container,
           Sequence, MutableSequence, Mapping, MutableMapping, Tuple, List, Any,
           Dict, Callable, Generic, Set, AbstractSet, FrozenSet, MutableSet, Sized,
-          Reversible, SupportsInt, SupportsFloat, SupportsAbs,
-          SupportsComplex, SupportsRound, IO, BinaryIO, Union, final,
+          Reversible, SupportsInt, SupportsFloat, SupportsAbs, SupportsLenAndGetItem,
+          SupportsComplex, SupportsRound, IO, BinaryIO, Union, final, TypeGuard,
           ItemsView, KeysView, ValuesView, ByteString, Optional, AnyStr, Type, Text,
         )
         from pyre_extensions import Add, Multiply, Divide
@@ -507,6 +507,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _S = TypeVar('_S')
         _KT = TypeVar('_KT')
         _VT = TypeVar('_VT')
+        _Self = TypeVar('_Self')
 
         class type:
           __name__: str = ...
@@ -789,16 +790,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         def eval(arg: str) -> None: ...
 
-        @overload
-        def filter(__function: None,
-                   __iterable: Iterable[Optional[_T]]
-        ) -> Iterator[_T]: ...
-
-        @overload
-        def filter(__function: Callable[[_T], Any],
-                   __iterable: Iterable[_T]
-        ) -> Iterator[_T]: ...
-
         def getattr(
           o: object,
           name: str,
@@ -806,62 +797,59 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         ) -> Any: ...
 
         def all(i: Iterable[_T]) -> bool: ...
+
         _T1 = TypeVar("_T1")
         _T2 = TypeVar("_T2")
         _T3 = TypeVar("_T3")
         _T4 = TypeVar("_T4")
         _T5 = TypeVar("_T5")
-        @overload
-        def map(__func: Callable[[_T1], _S],
-                __iter1: Iterable[_T1]
-        ) -> Iterator[_S]:
-            ...
-        @overload
-        def map(
-            __func: Callable[[_T1, _T2], _S],
-            __iter1: Iterable[_T1],
-            __iter2: Iterable[_T2]
-        ) -> Iterator[_S]:
-            ...
-        @overload
-        def map(
-            __func: Callable[[_T1, _T2, _T3], _S],
-            __iter1: Iterable[_T1],
-            __iter2: Iterable[_T2],
-            __iter3: Iterable[_T3],
-        ) -> Iterator[_S]:
-            ...
-        @overload
-        def map(
-            __func: Callable[[_T1, _T2, _T3, _T4], _S],
-            __iter1: Iterable[_T1],
-            __iter2: Iterable[_T2],
-            __iter3: Iterable[_T3],
-            __iter4: Iterable[_T4],
-        ) -> Iterator[_S]:
-            ...
-        @overload
-        def map(
-            __func: Callable[[_T1, _T2, _T3, _T4, _T5], _S],
-            __iter1: Iterable[_T1],
-            __iter2: Iterable[_T2],
-            __iter3: Iterable[_T3],
-            __iter4: Iterable[_T4],
-            __iter5: Iterable[_T5],
-        ) -> Iterator[_S]:
-            ...
-        @overload
-        def map(
-            __func: Callable[..., _S],
-            __iter1: Iterable[Any],
-            __iter2: Iterable[Any],
-            __iter3: Iterable[Any],
-            __iter4: Iterable[Any],
-            __iter5: Iterable[Any],
-            __iter6: Iterable[Any],
-            *__iterables: Iterable[Any],
-        ) -> Iterator[_S]:
-            ...
+
+        class enumerate(Iterator[tuple[int, _T]], Generic[_T]):
+          def __init__(self, iterable: Iterable[_T], start: int = ...) -> None: ...
+          def __iter__(self: Self) -> Self: ...
+          def __next__(self) -> Tuple[int, _T]: ...
+
+        class zip(Iterator[_T_co], Generic[_T_co]):
+          @overload
+          def __new__(cls, __iter1: Iterable[_T1], *, strict: bool = ...) -> zip[Tuple[_T1]]: ...
+          @overload
+          def __new__(cls, __iter1: Iterable[_T1], __iter2: Iterable[_T2], *, strict: bool = ...) -> zip[Tuple[_T1, _T2]]: ...
+          @overload
+          def __new__(
+              cls, __iter1: Iterable[_T1], __iter2: Iterable[_T2], __iter3: Iterable[_T3], *, strict: bool = ...
+          ) -> zip[Tuple[_T1, _T2, _T3]]: ...
+          def __iter__(self: _Self) -> _Self: ...
+          def __next__(self) -> _T_co: ...
+
+        class map(Iterator[_S], Generic[_S]):
+          @overload
+          def __init__(self, __func: Callable[[_T1], _S], __iter1: Iterable[_T1]) -> None: ...
+          @overload
+          def __init__(self, __func: Callable[[_T1, _T2], _S], __iter1: Iterable[_T1], __iter2: Iterable[_T2]) -> None: ...
+          @overload
+          def __init__(
+              self, __func: Callable[[_T1, _T2, _T3], _S], __iter1: Iterable[_T1], __iter2: Iterable[_T2], __iter3: Iterable[_T3]
+          ) -> None: ...
+          def __iter__(self: _Self) -> _Self: ...
+          def __next__(self) -> _S: ...
+
+        class filter(Iterator[_T], Generic[_T]):
+          @overload
+          def __init__(self, __function: None, __iterable: Iterable[_T | None]) -> None: ...
+          @overload
+          def __init__(self, __function: Callable[[_S], TypeGuard[_T]], __iterable: Iterable[_S]) -> None: ...
+          @overload
+          def __init__(self, __function: Callable[[_T], Any], __iterable: Iterable[_T]) -> None: ...
+          def __iter__(self: _Self) -> _Self: ...
+          def __next__(self) -> _T: ...
+
+        class reversed(Iterator[_T], Generic[_T]):
+          @overload
+          def __init__(self, __sequence: Reversible[_T]) -> None: ...
+          @overload
+          def __init__(self, __sequence: SupportsLenAndGetItem[_T]) -> None: ...
+          def __iter__(self: Self) -> Self: ...
+          def __next__(self) -> _T: ...
 
         class property:
            def getter(self, fget: Any) -> Any: ...
@@ -1242,6 +1230,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         if sys.version_info >= (3, 10):
           def is_typeddict(tp: object) -> bool: ...
+
+        class Reversible(Iterable[_T_co], Protocol[_T_co]):
+          @abstractmethod
+          def __reversed__(self) -> Iterator[_T_co]: ...
+
+        class SupportsLenAndGetItem(Protocol[_T_co]):
+          def __len__(self) -> int: ...
+          def __getitem__(self, __k: int) -> _T_co: ...
       |}
     );
     "asyncio/coroutines.pyi", {|

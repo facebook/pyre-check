@@ -1168,7 +1168,7 @@ let test_resolve_definition_for_symbol context =
           return 42
     |}
     (* This points to builtins.pyi. *)
-    (Some ":120:0-181:32");
+    (Some ":121:0-182:32");
   assert_resolved_definition_with_location_string
     ~source:
       {|
@@ -1179,7 +1179,7 @@ let test_resolve_definition_for_symbol context =
           # No definition found.
     |}
     (* This points to builtins.pyi. *)
-    (Some ":263:0-286:31");
+    (Some ":264:0-287:31");
   assert_resolved_definition
     {|
       class Foo:
@@ -1240,7 +1240,7 @@ let test_resolve_definition_for_symbol context =
                      # ^- cursor
     |}
     (* This points to builtins.pyi. *)
-    (Some ":201:2-201:34");
+    (Some ":202:2-202:34");
   assert_resolved_definition
     {|
         class Foo:
@@ -1379,7 +1379,7 @@ let test_resolve_definition_for_symbol context =
                         # ^- cursor
     |}
     (* This points to builtins.pyi. *)
-    (Some ":272:2-272:46");
+    (Some ":273:2-273:46");
   (* TODO(T112570623): The target variable points to the `Exception`. This is unavoidable right now,
      because we don't store its location in `Try.t`. *)
   assert_resolved_definition
