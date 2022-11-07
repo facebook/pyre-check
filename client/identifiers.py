@@ -43,6 +43,8 @@ class PyreFlavor(enum.Enum):
     CLASSIC = "classic"
     SHADOW = "shadow"
     CODE_NAVIGATION = "code_navigation"
+    # For code navigation using classic pyre server
+    CLASSIC_NAV = "classic_nav"
 
     def path_suffix(self) -> str:
         return "" if self == PyreFlavor.CLASSIC else f"__{self.value}"
@@ -52,9 +54,13 @@ class PyreFlavor(enum.Enum):
         """
         Valid flavors to use for the `pyre persistent` command.
         """
-        return [PyreFlavor.CLASSIC.value, PyreFlavor.SHADOW.value]
+        return [
+            PyreFlavor.CLASSIC.value,
+            PyreFlavor.SHADOW.value,
+            PyreFlavor.CLASSIC_NAV.value,
+        ]
 
     def server_log_subdirectory(self) -> str:
-        if self == PyreFlavor.CODE_NAVIGATION:
+        if self == PyreFlavor.CODE_NAVIGATION or self == PyreFlavor.CLASSIC_NAV:
             return self.value
         return "new_server"
