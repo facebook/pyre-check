@@ -13,6 +13,7 @@ from .configuration import (  # noqa: F401
     check_nested_local_configuration,
     Configuration,
     create_configuration,
+    create_overridden_configuration,
 )
 from .exceptions import InvalidConfiguration, InvalidPythonVersion  # noqa: F401
 from .platform_aware import PlatformAware  # noqa: F401

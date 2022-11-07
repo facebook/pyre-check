@@ -383,7 +383,10 @@ class FindParentDirectoryContainingDirectoryTest(testslide.TestCase):
 
 class FindGlobalRootTest(testslide.TestCase):
     def assert_find_global_root(
-        self, files: Iterable[str], base: str, expected: Optional[str]
+        self,
+        files: Iterable[str],
+        base: str,
+        expected: Optional[str],
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()

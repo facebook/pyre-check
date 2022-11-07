@@ -53,6 +53,7 @@ from .. import command_arguments, dataclasses_merge, find_directories, identifie
 from ..filesystem import expand_global_root, expand_relative_path
 from ..find_directories import (
     BINARY_NAME,
+    CODENAV_CONFIGURATION_FILE,
     CONFIGURATION_FILE,
     get_relative_local_root,
     LOCAL_CONFIGURATION_FILE,
@@ -948,6 +949,30 @@ def create_configuration(
 
     return Configuration.from_partial_configuration(
         project_root, relative_local_root, partial_configuration
+    )
+
+
+def create_overridden_configuration(
+    arguments: command_arguments.CommandArguments,
+    base_directory: Path,
+    configuration: str,
+) -> Configuration:
+    if arguments.local_configuration:
+        LOG.warning(
+            f"Local configuration provided but skipped due to overridden global configuration {base_directory / configuration}"
+        )
+    command_argument_configuration = PartialConfiguration.from_command_arguments(
+        arguments
+    ).expand_relative_paths(str(base_directory))
+
+    partial_configuration = merge_partial_configurations(
+        base=PartialConfiguration.from_file(
+            base_directory / configuration
+        ).expand_relative_paths(str(base_directory)),
+        override=command_argument_configuration,
+    )
+    return Configuration.from_partial_configuration(
+        base_directory, None, partial_configuration
     )
 
 

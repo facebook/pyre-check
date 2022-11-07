@@ -31,7 +31,11 @@ from typing import (
 
 from pyre_extensions import ParameterSpecification
 
-from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
+from ..find_directories import (
+    CODENAV_CONFIGURATION_FILE,
+    CONFIGURATION_FILE,
+    LOCAL_CONFIGURATION_FILE,
+)
 
 
 TParams = ParameterSpecification("TParams")
@@ -52,10 +56,17 @@ def ensure_directories_exists(root: Path, relatives: Iterable[str]) -> None:
 
 
 def write_configuration_file(
-    root: Path, content: Mapping[str, Any], relative: Optional[str] = None
+    root: Path,
+    content: Mapping[str, Any],
+    relative: Optional[str] = None,
+    codenav: bool = False,
 ) -> None:
+    if codenav:
+        configuration_file = CODENAV_CONFIGURATION_FILE
+    else:
+        configuration_file = CONFIGURATION_FILE
     if relative is None:
-        (root / CONFIGURATION_FILE).write_text(json.dumps(content))
+        (root / configuration_file).write_text(json.dumps(content))
     else:
         local_root = root / relative
         local_root.mkdir(parents=True, exist_ok=True)
