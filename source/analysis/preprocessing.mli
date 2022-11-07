@@ -130,5 +130,7 @@ module Qualify (Context : QualifyContext) : sig
 end
 
 module SelfType : sig
+  val is_synthetic_type_variable : string -> bool
+
   val expand_self_type : Source.t -> Source.t
 end

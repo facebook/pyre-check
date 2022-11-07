@@ -369,7 +369,12 @@ module State (Context : Context) = struct
       GlobalResolution.check_invalid_type_parameters resolution annotation
     in
     let add_error errors mismatch =
-      emit_error ~errors ~location ~kind:(Error.InvalidTypeParameters mismatch)
+      match annotation with
+      (* Ignore errors from synthetic Self type when it is Generic without the proper bound *)
+      | Type.Variable variable
+        when Preprocessing.SelfType.is_synthetic_type_variable variable.variable ->
+          errors
+      | _ -> emit_error ~errors ~location ~kind:(Error.InvalidTypeParameters mismatch)
     in
     List.fold mismatches ~f:add_error ~init:errors, annotation
 

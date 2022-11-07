@@ -3766,8 +3766,6 @@ let test_self_type context =
         concrete.set_value("bad")
      |}
     [
-      (* TODO(T103918696): Don't complain about the synthetic TypeVar bound. *)
-      "Invalid type parameters [24]: Generic type `Container` expects 1 type parameter.";
       "Revealed type [-1]: Revealed type for `self` is `Variable[_Self_test_Container__ (bound to \
        Container[typing.Any])]`.";
       "Revealed type [-1]: Revealed type for `y` is `ChildContainer[str]`.";
