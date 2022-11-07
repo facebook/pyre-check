@@ -236,6 +236,7 @@ let missing_typing_classes =
     make "typing.ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;
     make "typing.StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
     make "typing.GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
+    make "typing.TypeAlias";
     make "typing.TypeGuard" ~bases:(Type.bool :: single_unary_generic);
     make "typing.Required" ~bases:single_unary_generic;
     make "typing.NotRequired" ~bases:single_unary_generic;

@@ -230,7 +230,11 @@ let extract_alias unannotated_global_environment name ~dependency =
                   Name
                     (Name.Attribute
                       {
-                        base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
+                        base =
+                          {
+                            Node.value = Name (Name.Identifier ("typing_extensions" | "typing"));
+                            _;
+                          };
                         attribute = "TypeAlias";
                         _;
                       });
