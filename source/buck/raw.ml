@@ -82,9 +82,7 @@ let isolation_prefix_to_buck2_arguments = function
   | None
   | Some "" ->
       []
-  | Some isolation_prefix ->
-      (* Consistent directory location with Buck v1 *)
-      ["--isolation-dir"; Format.sprintf "%s-buck-out" isolation_prefix]
+  | Some isolation_prefix -> ["--isolation-dir"; isolation_prefix]
 
 
 let mode_to_buck_arguments = function
