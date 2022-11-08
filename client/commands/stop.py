@@ -19,12 +19,27 @@ from . import commands, frontend_configuration
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def stop_server(socket_path: Path) -> None:
+def stop_message(flavor: identifiers.PyreFlavor) -> str:
+    if flavor == identifiers.PyreFlavor.CODE_NAVIGATION:
+        return '["Command", ["Stop"]]'
+    else:
+        if flavor not in (
+            identifiers.PyreFlavor.CLASSIC,
+            identifiers.PyreFlavor.SHADOW,
+            identifiers.PyreFlavor.CLASSIC_NAV,
+        ):
+            raise AssertionError(
+                f"Attempted to stop a server for unsupported flavor {flavor}"
+            )
+        return '["Stop"]'
+
+
+def stop_server(socket_path: Path, flavor: identifiers.PyreFlavor) -> None:
     with connections.connect(socket_path) as (
         input_channel,
         output_channel,
     ):
-        output_channel.write('["Stop"]\n')
+        output_channel.write(f"{stop_message(flavor)}\n")
         # Wait for the server to shutdown on its side
         input_channel.read()
 
@@ -44,15 +59,20 @@ def remove_socket_if_exists(socket_path: Path) -> None:
         LOG.warning(f"Failed to remove lock file at `{socket_path}.lock`: {error}")
 
 
-def run_stop(configuration: frontend_configuration.Base) -> commands.ExitCode:
+def run_stop(
+    configuration: frontend_configuration.Base, flavor: identifiers.PyreFlavor
+) -> commands.ExitCode:
     socket_path = daemon_socket.get_socket_path(
         configuration.get_project_identifier(),
-        flavor=identifiers.PyreFlavor.CLASSIC,
+        flavor,
     )
     try:
-        LOG.info("Stopping server...")
-        stop_server(socket_path)
-        LOG.info(f"Stopped server at `{configuration.get_project_identifier()}`\n")
+        LOG.info(f"Stopping {flavor.value} server...")
+        LOG.info(f"Socket is {socket_path}")
+        stop_server(socket_path, flavor)
+        LOG.info(
+            f"Stopped {flavor.value} server at `{configuration.get_project_identifier()}`\n"
+        )
         return commands.ExitCode.SUCCESS
     except connections.ConnectionFailure:
         LOG.info("No running Pyre server to stop.\n")
@@ -60,5 +80,7 @@ def run_stop(configuration: frontend_configuration.Base) -> commands.ExitCode:
         return commands.ExitCode.SERVER_NOT_FOUND
 
 
-def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
-    return run_stop(frontend_configuration.OpenSource(configuration))
+def run(
+    configuration: configuration_module.Configuration, flavor: identifiers.PyreFlavor
+) -> commands.ExitCode:
+    return run_stop(frontend_configuration.OpenSource(configuration), flavor)

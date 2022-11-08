@@ -60,6 +60,14 @@ class PyreFlavor(enum.Enum):
             PyreFlavor.CLASSIC_NAV.value,
         ]
 
+    @staticmethod
+    def stop_choices() -> List[str]:
+        return [
+            PyreFlavor.CLASSIC.value,
+            PyreFlavor.CODE_NAVIGATION.value,
+            PyreFlavor.CLASSIC_NAV.value,
+        ]
+
     def server_log_subdirectory(self) -> str:
         if self == PyreFlavor.CODE_NAVIGATION or self == PyreFlavor.CLASSIC_NAV:
             return self.value

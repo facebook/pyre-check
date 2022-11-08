@@ -1390,8 +1390,16 @@ def coverage(
 
 
 @pyre.command()
+@click.option(
+    "--flavor",
+    type=click.Choice(identifiers.PyreFlavor.stop_choices()),
+    help=(
+        "Flavor of the pyre server to stop."
+        "This is used to disambiguate paths and log handling."
+    ),
+)
 @click.pass_context
-def stop(context: click.Context) -> int:
+def stop(context: click.Context, flavor: Optional[str]) -> int:
     """
     Signals the Pyre server to stop.
     """
@@ -1399,8 +1407,11 @@ def stop(context: click.Context) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
-    return commands.stop.run(configuration)
+    flavor_choice = (
+        identifiers.PyreFlavor(flavor) if flavor is not None else CLASSIC_FLAVOR
+    )
+    start_logging_to_directory(configuration.log_directory, flavor_choice)
+    return commands.stop.run(configuration, flavor_choice)
 
 
 @pyre.command()

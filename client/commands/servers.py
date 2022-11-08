@@ -17,7 +17,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 import tabulate
 from typing_extensions import TypedDict
 
-from .. import command_arguments, daemon_socket, log
+from .. import command_arguments, daemon_socket, identifiers, log
 from ..language_server import connections
 from . import commands, stop
 
@@ -188,7 +188,7 @@ def _print_server_status(server_status: AllServerStatus, output_format: str) -> 
 def _stop_server(socket_path: Path) -> None:
     try:
         LOG.info(f"Stopping server at `{socket_path}...`")
-        stop.stop_server(socket_path)
+        stop.stop_server(socket_path, identifiers.PyreFlavor.CLASSIC)
         LOG.info(f"Successfully stopped `{socket_path}.`")
     except connections.ConnectionFailure:
         LOG.info(f"Failed to connect to `{socket_path}`. Removing it...")

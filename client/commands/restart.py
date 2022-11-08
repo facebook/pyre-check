@@ -10,7 +10,7 @@ TODO(T132414938) Add a module-level docstring
 
 import logging
 
-from .. import command_arguments, configuration as configuration_module
+from .. import command_arguments, configuration as configuration_module, identifiers
 from . import commands, frontend_configuration, incremental, stop
 
 
@@ -22,7 +22,7 @@ def run(
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> commands.ExitCode:
     restart_configuration = frontend_configuration.OpenSource(configuration)
-    stop.run_stop(restart_configuration)
+    stop.run_stop(restart_configuration, flavor=identifiers.PyreFlavor.CLASSIC)
     return incremental.run_incremental(
         restart_configuration, incremental_arguments
     ).exit_code
