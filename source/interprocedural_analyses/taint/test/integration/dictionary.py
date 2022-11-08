@@ -14,7 +14,6 @@ from typing import (
     Optional,
     TypeVar,
     Union,
-    TypedDict,
 )
 
 
@@ -479,22 +478,6 @@ def dictionary_bool_key():
     d = {True: _test_source()}
     _test_sink(d[0])
     _test_sink(d[1])
-
-
-class MyTypedDict(TypedDict):
-    foo: int
-    bar: str
-
-
-def test_typed_dict_setitem():
-    d: MyTypedDict = {"foo": 0, "bar": ""}
-    d["bar"] = _test_source()
-    _test_sink(d["bar"])
-    _test_sink(d["foo"])
-
-
-def test_typed_dict_constructor():
-    return MyTypedDict(foo=0, bar=_test_source())
 
 
 def dictionary_update_keyword():

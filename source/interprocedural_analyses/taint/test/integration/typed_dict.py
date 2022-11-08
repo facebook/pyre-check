@@ -7,27 +7,42 @@ from builtins import _test_sink, _test_source
 from typing import TypedDict
 
 
-class Foo(TypedDict):
-    a: int
-    b: int
+class SimpleTypedDict(TypedDict):
+    foo: int
+    bar: str
 
 
-class Bar(TypedDict):
-    other: int
-    foo: Foo
+def test_typed_dict_setitem():
+    d: SimpleTypedDict = {"foo": 0, "bar": ""}
+    d["bar"] = _test_source()
+    _test_sink(d["bar"])  # This is an issue.
+    _test_sink(d["foo"])  # This is NOT an issue.
 
 
-def test1():
-    bar: Bar = _test_source()
-    _test_sink(bar["other"])
+def test_typed_dict_constructor():
+    d = SimpleTypedDict(foo=0, bar=_test_source())
+    _test_sink(d["bar"])  # This is an issue.
+    # TODO(T137160019): handle typed dict construction precisely.
+    _test_sink(d["foo"])  # This is an issue (false positive).
 
 
-def test2():
-    bar: Bar = _test_source()
+class SanitizedFieldTypedDict(TypedDict):
+    sanitized: str
+    safe: str
+
+
+class NestedTypedDict(TypedDict):
+    genuine: int
+    nested: SanitizedFieldTypedDict
+
+
+def test_sanitize_field():
+    d: NestedTypedDict = _test_source()
+    _test_sink(d["genuine"])
+
+    d: NestedTypedDict = _test_source()
     # TODO(T81192268): this should not trigger an issue.
-    _test_sink(bar["foo"]["a"])
+    _test_sink(d["nested"]["sanitized"])
 
-
-def test3():
-    bar: Bar = _test_source()
-    _test_sink(bar["foo"]["b"])
+    bar: NestedTypedDict = _test_source()
+    _test_sink(bar["nested"]["safe"])
