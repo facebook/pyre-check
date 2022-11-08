@@ -567,6 +567,26 @@ let test_reveal_type context =
   ()
 
 
+let test_format_string context =
+  let assert_type_errors_including_readonly =
+    assert_type_errors ~context ~enable_readonly_analysis:true
+  in
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_mutable(x: int) -> ReadOnly[int]: ...
+
+      def main(my_readonly: ReadOnly[int], my_mutable: int) -> None:
+        s = f"hello, {expect_mutable(my_readonly)}, {expect_mutable(my_mutable)}"
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
+       1st positional argument, expected `Mutable` but got `ReadOnly`.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -577,5 +597,6 @@ let () =
          "await" >:: test_await;
          "parameters" >:: test_parameters;
          "reveal_type" >:: test_reveal_type;
+         "format_string" >:: test_format_string;
        ]
   |> Test.run

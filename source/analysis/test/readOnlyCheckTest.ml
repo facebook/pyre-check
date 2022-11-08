@@ -98,6 +98,8 @@ let test_forward_expression context =
          ~annotation:(Annotation.create_mutable (Type.Primitive "test.Foo")))
     "x.readonly_attribute"
     ReadOnly;
+  assert_resolved ~resolution:(Resolution.of_list [!&"x", ReadOnly]) {| f"hello, {x}" |} Mutable;
+  assert_resolved ~resolution:(Resolution.of_list [!&"x", Mutable]) {| f"hello, {x}" |} Mutable;
   ()
 
 

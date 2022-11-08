@@ -322,6 +322,19 @@ module State (Context : Context) = struct
         in
         { Resolved.resolved = Mutable; errors = [error]; resolution }
     | Call { callee; arguments } -> forward_call ~type_resolution ~resolution ~callee arguments
+    | FormatString substrings ->
+        let forward_substring ((resolution, errors) as sofar) = function
+          | Substring.Literal _ -> sofar
+          | Substring.Format expression ->
+              let { Resolved.resolution; errors = new_errors; _ } =
+                forward_expression ~type_resolution ~resolution expression
+              in
+              resolution, List.append new_errors errors
+        in
+        let resolution, errors = List.fold substrings ~f:forward_substring ~init:(resolution, []) in
+        (* Format strings can be assigned to either readonly or mutable variables. So, their
+           readonlyness is bottom (i.e., Mutable). *)
+        { Resolved.resolved = Mutable; errors; resolution }
     | _ ->
         (* TODO(T130377746): Actually handle other expressions. *)
         { Resolved.resolved = Mutable; errors = []; resolution }
