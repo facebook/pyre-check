@@ -493,6 +493,10 @@ def test_typed_dict_setitem():
     _test_sink(d["foo"])
 
 
+def test_typed_dict_constructor():
+    return MyTypedDict(foo=0, bar=_test_source())
+
+
 def dictionary_update_keyword():
     d = {}
     d.update(a={"b": _test_source()})

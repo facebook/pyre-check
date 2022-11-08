@@ -639,6 +639,45 @@ let test_call_graph_of_define context =
   assert_call_graph_of_define
     ~source:
       {|
+        from typing import TypedDict
+
+        class A(TypedDict):
+          x: str
+          y: int
+
+        def foo():
+          return A(x="foo", x=0)
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "9:9-9:24",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~return_type:(Some ReturnType.any)
+                        ~receiver_type:(Type.meta (Type.Primitive "test.A"))
+                        (Target.Method { class_name = ""; method_name = "__init__"; kind = Normal });
+                    ]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~return_type:(Some ReturnType.any)
+                        ~receiver_type:(Type.meta (Type.Primitive "test.A"))
+                        (Target.Method
+                           { class_name = "object"; method_name = "__new__"; kind = Normal });
+                    ]
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
         class C:
           @property
           def p(self) -> int: ...
