@@ -4232,8 +4232,7 @@ let add_dataclass_keyword_only_specifiers source =
 
 module SelfType = struct
   let is_synthetic_type_variable type_name =
-    String_utils.string_starts_with type_name "_Self_"
-    && String_utils.string_ends_with type_name "__"
+    String.is_prefix ~prefix:"_Self_" type_name && String.is_suffix ~suffix:"__" type_name
 
 
   let self_variable_name class_reference =
