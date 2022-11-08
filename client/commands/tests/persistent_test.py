@@ -1611,10 +1611,11 @@ class PyreServerTest(testslide.TestCase):
         self.assertEqual(
             handler.requests,
             [
+                {"path": tracked_path, "code": DEFAULT_FILE_CONTENTS},
                 {
                     "path": tracked_path,
                     "position": lsp.PyrePosition(line=daemon_line, character=4),
-                }
+                },
             ],
         )
         self._assert_output_messages(

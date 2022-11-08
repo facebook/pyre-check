@@ -218,23 +218,8 @@ class PyreLanguageServer:
             )
         )
         if process_unsaved_changes:
-            result = await self.handler.update_overlay(
-                path=document_path, code=code_changes
-            )
-            if isinstance(result, daemon_connection.DaemonConnectionFailure):
-                LOG.info(
-                    daemon_failure_string(
-                        "didChange", str(type(result)), result.error_message
-                    )
-                )
-                error_message = result.error_message
-            else:
-                self.server_state.opened_documents[document_path] = OpenedDocumentState(
-                    code=code_changes, is_dirty=True
-                )
-        else:
             self.server_state.opened_documents[document_path] = OpenedDocumentState(
-                code=code_changes, is_dirty=True
+                code=code_changes, is_dirty=True, pyre_code_updated=False
             )
 
         end_time = time.time()
@@ -278,7 +263,7 @@ class PyreLanguageServer:
         code_changes = self.server_state.opened_documents[document_path].code
 
         self.server_state.opened_documents[document_path] = OpenedDocumentState(
-            code=code_changes, is_dirty=False
+            code=code_changes, is_dirty=False, pyre_code_updated=False
         )
 
         await self.write_telemetry(
@@ -433,6 +418,35 @@ class PyreLanguageServer:
                 many=True,
             )
 
+    async def update_overlay_with_latest_code(self, document_path: Path) -> None:
+        if document_path in self.server_state.opened_documents:
+            opened_document_state = self.server_state.opened_documents[document_path]
+            code_changes = opened_document_state.code
+            current_is_dirty_state = opened_document_state.is_dirty
+            if not opened_document_state.pyre_code_updated:
+                result = await self.handler.update_overlay(
+                    path=document_path, code=code_changes
+                )
+                if isinstance(result, daemon_connection.DaemonConnectionFailure):
+                    LOG.info(
+                        daemon_failure_string(
+                            "didChange", str(type(result)), result.error_message
+                        )
+                    )
+                    LOG.info(result.error_message)
+                else:
+                    self.server_state.opened_documents[
+                        document_path
+                    ] = OpenedDocumentState(
+                        code=code_changes,
+                        is_dirty=current_is_dirty_state,
+                        pyre_code_updated=True,
+                    )
+        else:
+            LOG.info(
+                f"Error: Document path: {str(document_path)} not in server state opened documents"
+            )
+
     async def process_definition_request(
         self,
         parameters: lsp.DefinitionParameters,
@@ -446,7 +460,6 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-
         if document_path not in self.server_state.opened_documents:
             await lsp.write_json_rpc(
                 self.output_channel,
@@ -491,6 +504,8 @@ class PyreLanguageServer:
                         result=lsp.LspLocation.cached_schema().dump([], many=True),
                     ),
                 )
+                await self.update_overlay_with_latest_code(document_path)
+                # Proceed with the definition request even if the overlay update fails.
                 raw_result = await self._get_definition_result(
                     document_path=document_path,
                     position=parameters.position,
@@ -506,11 +521,15 @@ class PyreLanguageServer:
 
             downsample_rate = 100
             if random.randrange(0, downsample_rate) == 0:
-                source_code_context = await SourceCodeContext.from_source_and_position(
-                    self.server_state.opened_documents[document_path].code,
-                    parameters.position,
-                )
-
+                if document_path not in self.server_state.opened_documents:
+                    source_code_context = f"Error: Document path: {document_path} could not be found in opened documents structure"
+                else:
+                    source_code_context = (
+                        await SourceCodeContext.from_source_and_position(
+                            self.server_state.opened_documents[document_path].code,
+                            parameters.position,
+                        )
+                    )
                 if source_code_context is None:
                     source_code_context = f"""
                     ERROR: Position specified by parameters: {parameters.position} is an illegal position.

@@ -34,6 +34,7 @@ class ServerStatus(enum.Enum):
 class OpenedDocumentState:
     code: str
     is_dirty: bool = False
+    pyre_code_updated: bool = False
 
 
 @dataclasses.dataclass
