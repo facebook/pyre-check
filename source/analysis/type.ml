@@ -6211,7 +6211,7 @@ module TypedDictionary = struct
 
   let constructor ~name ~fields =
     {
-      Callable.kind = Named (Reference.create "__init__");
+      Callable.kind = Named (Reference.create ~prefix:(Reference.create name) "__init__");
       implementation = { annotation = Top; parameters = Undefined };
       overloads =
         [
@@ -6237,7 +6237,7 @@ module TypedDictionary = struct
         overloads = [{ parameters = Defined (_self :: parameters); _ }; _];
         _;
       }
-      when String.equal (Reference.show name) "__init__" ->
+      when String.equal (Reference.last name) "__init__" ->
         let parameter_to_field = function
           | Record.Callable.RecordParameter.KeywordOnly { name; annotation; default } ->
               Some

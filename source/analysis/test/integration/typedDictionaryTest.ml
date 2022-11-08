@@ -351,9 +351,9 @@ let test_check_typed_dictionaries context =
         return movie['year']
     |}
     [
-      "Revealed type [-1]: Revealed type for `Movie.__init__` is `typing.Callable(__init__)[..., \
-       unknown][[[Named(self, Movie), KeywordOnly(name, str), KeywordOnly(year, int)], \
-       None][[Movie, Movie], None]]`.";
+      "Revealed type [-1]: Revealed type for `Movie.__init__` is \
+       `typing.Callable(Movie.__init__)[..., unknown][[[Named(self, Movie), KeywordOnly(name, \
+       str), KeywordOnly(year, int)], None][[Movie, Movie], None]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -373,10 +373,10 @@ let test_check_typed_dictionaries context =
         return movie['year']
     |}
     [
-      "Incompatible parameter type [6]: In call `__init__`, for 1st parameter `name` expected \
-       `str` but got `int`.";
-      "Incompatible parameter type [6]: In call `__init__`, for 2nd parameter `year` expected \
-       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Movie.__init__`, for 1st parameter `name` \
+       expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `Movie.__init__`, for 2nd parameter `year` \
+       expected `int` but got `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -386,7 +386,10 @@ let test_check_typed_dictionaries context =
         movie = Movie('Blade Runner', 1982)
         return movie['year']
     |}
-    ["Too many arguments [19]: Call `__init__` expects 0 positional arguments, 2 were provided."];
+    [
+      "Too many arguments [19]: Call `Movie.__init__` expects 0 positional arguments, 2 were \
+       provided.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -396,8 +399,8 @@ let test_check_typed_dictionaries context =
         return movie['year']
     |}
     [
-      "Incompatible parameter type [6]: In call `__init__`, for 1st positional only parameter \
-       expected `Movie` but got `str`.";
+      "Incompatible parameter type [6]: In call `Movie.__init__`, for 1st positional only \
+       parameter expected `Movie` but got `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -430,7 +433,7 @@ let test_check_typed_dictionaries context =
         movie = Movie(name='Blade Runner', year=1982, extra=42)
         return movie['year']
     |}
-    ["Unexpected keyword [28]: Unexpected keyword argument `extra` to call `__init__`."];
+    ["Unexpected keyword [28]: Unexpected keyword argument `extra` to call `Movie.__init__`."];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -439,7 +442,7 @@ let test_check_typed_dictionaries context =
         movie = Movie(year=1982)
         return movie['year']
     |}
-    ["Missing argument [20]: Call `__init__` expects argument `name`."];
+    ["Missing argument [20]: Call `Movie.__init__` expects argument `name`."];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -775,7 +778,10 @@ let test_check_typed_dictionaries context =
         baz = ClassBasedTypedDictGreekLetters(alpha = 7, gamma = True)
         return baz['alpha']
     |}
-    ["Missing argument [20]: Call `__init__` expects argument `beta`."];
+    [
+      "Missing argument [20]: Call `ClassBasedTypedDictGreekLetters.__init__` expects argument \
+       `beta`.";
+    ];
   assert_test_typed_dictionary
     {|
       from foo.bar.baz import ClassBasedNonTotalTypedDictGreekLetters
@@ -1605,8 +1611,8 @@ let test_check_typed_dictionary_inheritance context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, Child), KeywordOnly(foo, int)], \
-       None][[Child, Child], None]]`.";
+       `typing.Callable(Child.__init__)[..., unknown][[[Named(self, Child), KeywordOnly(foo, \
+       int)], None][[Child, Child], None]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1621,8 +1627,8 @@ let test_check_typed_dictionary_inheritance context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, Child), KeywordOnly(foo, int)], \
-       None][[Child, Child], None]]`.";
+       `typing.Callable(Child.__init__)[..., unknown][[[Named(self, Child), KeywordOnly(foo, \
+       int)], None][[Child, Child], None]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1643,7 +1649,7 @@ let test_check_typed_dictionary_inheritance context =
        Type `str` is not a subtype of the overridden attribute `int`.";
       (* Only the shadowing field shows up in the constructor. *)
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, Child), KeywordOnly(bar, int), \
+       `typing.Callable(Child.__init__)[..., unknown][[[Named(self, Child), KeywordOnly(bar, int), \
        KeywordOnly(foo, str)], None][[Child, Child], None]]`.";
     ];
   (* Error when one field is required and the other is not. *)
@@ -1736,12 +1742,12 @@ let test_check_typed_dictionary_inheritance context =
       "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
        dictionary. Expected a typed dictionary.";
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, Child), KeywordOnly(baz, str), \
+       `typing.Callable(Child.__init__)[..., unknown][[[Named(self, Child), KeywordOnly(baz, str), \
        KeywordOnly(foo, int)], None][[Child, Child], None]]`.";
       "Revealed type [-1]: Revealed type for `test.NonTotalChild.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, NonTotalChild), KeywordOnly(foo, \
-       int), KeywordOnly(non_total_baz, str, default)], None][[NonTotalChild, NonTotalChild], \
-       None]]`.";
+       `typing.Callable(NonTotalChild.__init__)[..., unknown][[[Named(self, NonTotalChild), \
+       KeywordOnly(foo, int), KeywordOnly(non_total_baz, str, default)], None][[NonTotalChild, \
+       NonTotalChild], None]]`.";
     ];
   ()
 

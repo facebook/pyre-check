@@ -65,7 +65,7 @@ dictionary.test_keys_and_values (fun) -> [_test_sink (fun) _test_source (fun) tu
 dictionary.test_mapping_sanitize_get (fun) -> [_test_sink (fun) _test_source (fun) typing.Mapping::get (method)]
 dictionary.test_service_with_dict (fun) -> [_test_sink (fun) _test_source (fun) dictionary.Service::async_get_dict (method) object::__init__ (method) object::__new__ (method)]
 dictionary.test_service_with_mapping (fun) -> [_test_sink (fun) _test_source (fun) dictionary.Service::async_get_mapping (method) object::__init__ (method) object::__new__ (method)]
-dictionary.test_typed_dict_constructor (fun) -> [::__init__ (method) _test_source (fun) object::__new__ (method)]
+dictionary.test_typed_dict_constructor (fun) -> [_test_source (fun) dictionary.MyTypedDict::__init__ (method) object::__new__ (method)]
 dictionary.test_typed_dict_setitem (fun) -> [TypedDictionary::__getitem__ (method) TypedDictionary::__setitem__ (method) _test_sink (fun) _test_source (fun)]
 dictionary.tito_with_index (fun) -> [dict::__getitem__ (method)]
 dictionary.to_map (fun) -> []

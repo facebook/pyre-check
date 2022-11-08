@@ -661,7 +661,8 @@ let test_call_graph_of_define context =
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
                         ~receiver_type:(Type.meta (Type.Primitive "test.A"))
-                        (Target.Method { class_name = ""; method_name = "__init__"; kind = Normal });
+                        (Target.Method
+                           { class_name = "test.A"; method_name = "__init__"; kind = Normal });
                     ]
                   ~new_targets:
                     [
