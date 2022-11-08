@@ -471,14 +471,20 @@ class PyreLanguageServer:
             )
         else:
             start_time = time.time()
+            error_message = None
             shadow_mode = self.get_language_server_features().definition.is_shadow()
             server_status_before = self.server_state.server_last_status.value
             if not shadow_mode:
+                # Overlays do not get updated upon definition request in classic mode.
+                overlay_update_duration = 0
+                definition_request_start_time = time.time()
                 raw_result = await self._get_definition_result(
                     document_path=document_path,
                     position=parameters.position,
                 )
-                error_message = None
+                definition_request_duration = duration_ms(
+                    definition_request_start_time, time.time()
+                )
                 if isinstance(raw_result, DaemonQueryFailure):
                     LOG.info(
                         f"Non-shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.error_message)}"
@@ -504,13 +510,21 @@ class PyreLanguageServer:
                         result=lsp.LspLocation.cached_schema().dump([], many=True),
                     ),
                 )
+                overlay_update_start_time = time.time()
                 await self.update_overlay_with_latest_code(document_path)
+                overlay_update_duration = duration_ms(
+                    overlay_update_start_time, time.time()
+                )
                 # Proceed with the definition request even if the overlay update fails.
+
+                definition_request_start_time = time.time()
                 raw_result = await self._get_definition_result(
                     document_path=document_path,
                     position=parameters.position,
                 )
-                error_message = None
+                definition_request_duration = duration_ms(
+                    definition_request_start_time, time.time()
+                )
                 if isinstance(raw_result, DaemonQueryFailure):
                     LOG.info(
                         f"Shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.error_message)}"
@@ -552,6 +566,8 @@ class PyreLanguageServer:
                     "count": len(raw_result),
                     "response": raw_result,
                     "duration_ms": duration_ms(start_time, end_time),
+                    "overlay_update_duration": overlay_update_duration,
+                    "definition_request_duration": definition_request_duration,
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
