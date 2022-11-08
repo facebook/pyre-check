@@ -53,7 +53,6 @@ from .. import command_arguments, dataclasses_merge, find_directories, identifie
 from ..filesystem import expand_global_root, expand_relative_path
 from ..find_directories import (
     BINARY_NAME,
-    CODENAV_CONFIGURATION_FILE,
     CONFIGURATION_FILE,
     get_relative_local_root,
     LOCAL_CONFIGURATION_FILE,
