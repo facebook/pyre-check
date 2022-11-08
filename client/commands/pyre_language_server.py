@@ -219,7 +219,7 @@ class PyreLanguageServer:
         )
         if process_unsaved_changes:
             result = await self.handler.update_overlay(
-                path=document_path.resolve(), code=code_changes
+                path=document_path, code=code_changes
             )
             if isinstance(result, daemon_connection.DaemonConnectionFailure):
                 LOG.info(
