@@ -10,7 +10,7 @@ TODO(T132414938) Add a module-level docstring
 
 import dataclasses
 import json
-from typing import List, Union
+from typing import List, Optional, Union
 
 from .. import error
 
@@ -31,6 +31,7 @@ def _parse_type_error_subscription(response: object) -> TypeErrors:
 @dataclasses.dataclass(frozen=True)
 class StatusUpdate:
     kind: str
+    message: Optional[str] = None
 
 
 def _parse_status_update_subscription(response: object) -> StatusUpdate:
@@ -43,7 +44,10 @@ def _parse_status_update_subscription(response: object) -> StatusUpdate:
         raise incremental.InvalidServerResponse(
             f"Response kind of a status update must be a string. Got {response}"
         )
-    return StatusUpdate(kind=kind)
+    message = None
+    if len(response) > 1 and isinstance(response[1], dict) and "message" in response[1]:
+        message = response[1]["message"]
+    return StatusUpdate(kind=kind, message=message)
 
 
 @dataclasses.dataclass(frozen=True)

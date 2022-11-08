@@ -126,6 +126,26 @@ class SubscriptionTest(testslide.TestCase):
         assert_parsed(
             json.dumps(
                 [
+                    "ServerStatus",
+                    [
+                        "Stop",
+                        {
+                            "message": "Pyre server stopped because one client explicitly sent a `stop` request"
+                        },
+                    ],
+                ]
+            ),
+            expected=Response(
+                body=StatusUpdate(
+                    kind="Stop",
+                    message="Pyre server stopped because one client explicitly sent a `stop` request",
+                )
+            ),
+        )
+
+        assert_parsed(
+            json.dumps(
+                [
                     "TypeErrors",
                     [
                         {

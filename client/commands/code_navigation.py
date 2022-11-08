@@ -100,6 +100,9 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
                 short_message="Pyre code-nav (stopped)",
                 level=lsp.MessageType.WARNING,
             )
+            raise launch_and_subscribe_handler.PyreDaemonShutdown(
+                status_update_subscription.message or ""
+            )
         elif status_update_subscription.kind == "BusyChecking":
             self.server_state.server_last_status = state.ServerStatus.INCREMENTAL_CHECK
             self.client_status_message_handler.log(
