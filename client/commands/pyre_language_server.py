@@ -170,7 +170,9 @@ class PyreLanguageServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         self.server_state.opened_documents[document_path] = OpenedDocumentState(
-            code=parameters.text_document.text, is_dirty=False
+            code=parameters.text_document.text,
+            is_dirty=False,
+            pyre_code_updated=True,
         )
         LOG.info(f"File opened: {document_path}")
         # Attempt to trigger a background Pyre server start on each file open
@@ -216,11 +218,11 @@ class PyreLanguageServer:
                 [content_change.text for content_change in parameters.content_changes]
             )
         )
-        if process_unsaved_changes:
-            self.server_state.opened_documents[document_path] = OpenedDocumentState(
-                code=code_changes, is_dirty=True, pyre_code_updated=False
-            )
-
+        self.server_state.opened_documents[document_path] = OpenedDocumentState(
+            code=code_changes,
+            is_dirty=True,
+            pyre_code_updated=False,
+        )
         end_time = time.time()
 
         await self.write_telemetry(
@@ -262,7 +264,12 @@ class PyreLanguageServer:
         code_changes = self.server_state.opened_documents[document_path].code
 
         self.server_state.opened_documents[document_path] = OpenedDocumentState(
-            code=code_changes, is_dirty=False, pyre_code_updated=False
+            code=code_changes,
+            is_dirty=False,
+            # False here because even though a didSave event means the base environment
+            # will be up-to-date (after an incremental push), it is not necessarily
+            # the case that the overlay environment is up to date.
+            pyre_code_updated=False,
         )
 
         await self.write_telemetry(
@@ -418,7 +425,17 @@ class PyreLanguageServer:
             )
 
     async def update_overlay_with_latest_code(self, document_path: Path) -> None:
-        if document_path in self.server_state.opened_documents:
+        """
+        Send an overlay update to the daemon if three conditions are met:
+        - unsaved changes support is enabled
+        - a document is listed in `server_state.opened_documents`
+        - the OpenedDocumentState indicates that the daemon has setale date
+
+        """
+        if (
+            self.get_language_server_features().unsaved_changes.is_enabled()
+            and document_path in self.server_state.opened_documents
+        ):
             opened_document_state = self.server_state.opened_documents[document_path]
             code_changes = opened_document_state.code
             current_is_dirty_state = opened_document_state.is_dirty

@@ -47,6 +47,7 @@ from ...language_server.features import (
     StatusUpdatesAvailability,
     TypeCoverageAvailability,
     TypeErrorsAvailability,
+    UnsavedChangesAvailability,
 )
 from ...language_server.protocol import SymbolKind
 from ...tests import setup
@@ -1542,6 +1543,75 @@ class PyreServerTest(testslide.TestCase):
             self.assertEqual(
                 handler.requests,
                 [
+                    {
+                        "path": tracked_path,
+                        "position": lsp.PyrePosition(line=daemon_line, character=4),
+                    },
+                ],
+            )
+            raw_expected_response = lsp.LspLocation.cached_schema().dump(
+                expected_response, many=True
+            )
+            expect_correct_response = self._expect_success_message(
+                raw_expected_response
+            )
+            if enabled_telemetry_event:
+                expectations = [
+                    expect_correct_response,
+                    self._expect_telemetry_event(
+                        operation="definition",
+                        result=raw_expected_response,
+                    ),
+                ]
+            else:
+                expectations = [expect_correct_response]
+            self._assert_output_messages(
+                output_writer,
+                expectations,
+            )
+
+    @setup.async_test
+    async def test_definition__with_overlays(self) -> None:
+        tracked_path = Path("/tracked.py")
+        lsp_line = 3
+        daemon_line = lsp_line + 1
+        expected_response = [
+            lsp.LspLocation(
+                uri="file:///path/to/foo.py",
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=5, character=6),
+                    end=lsp.LspPosition(line=5, character=9),
+                ),
+            )
+        ]
+        for enabled_telemetry_event in (True, False):
+            handler = MockRequestHandler(
+                mock_definition_response=expected_response,
+            )
+            server, output_writer = await _create_server_for_request_test(
+                opened_documents={
+                    tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                },
+                handler=handler,
+                server_options=_create_server_options(
+                    enabled_telemetry_event=enabled_telemetry_event,
+                    language_server_features=LanguageServerFeatures(
+                        unsaved_changes=UnsavedChangesAvailability.ENABLED
+                    ),
+                ),
+            )
+            await server.process_definition_request(
+                parameters=lsp.DefinitionParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                    ),
+                    position=lsp.LspPosition(line=lsp_line, character=4),
+                ),
+                request_id=DEFAULT_REQUEST_ID,
+            )
+            self.assertEqual(
+                handler.requests,
+                [
                     {"path": tracked_path, "code": DEFAULT_FILE_CONTENTS},
                     {
                         "path": tracked_path,
@@ -1612,7 +1682,6 @@ class PyreServerTest(testslide.TestCase):
         self.assertEqual(
             handler.requests,
             [
-                {"path": tracked_path, "code": DEFAULT_FILE_CONTENTS},
                 {
                     "path": tracked_path,
                     "position": lsp.PyrePosition(line=daemon_line, character=4),
