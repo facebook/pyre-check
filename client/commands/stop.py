@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Core logic for the `pyre stop` command, which attempts to do a clean
+shutdown of a running Pyre daemon by sending it a shutdown request
+via a socket connection.
 """
 
 
