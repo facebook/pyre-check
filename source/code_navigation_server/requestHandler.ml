@@ -231,7 +231,19 @@ let response_from_result = function
   | Result.Error kind -> Response.Error kind
 
 
-let handle_query ~server:{ ServerInternal.state; _ } = function
+let handle_query
+    ~server:
+      {
+        ServerInternal.state;
+        properties =
+          {
+            Server.ServerProperties.socket_path;
+            configuration = { Configuration.Analysis.project_root; local_root; _ };
+            _;
+          };
+        _;
+      }
+  = function
   | Request.Query.GetTypeErrors { module_; overlay_id } ->
       let f state =
         let response = handle_get_type_errors ~module_ ~overlay_id state |> response_from_result in
@@ -252,6 +264,16 @@ let handle_query ~server:{ ServerInternal.state; _ } = function
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
+  | Request.Query.GetInfo ->
+      Response.Info
+        {
+          version = Version.version ();
+          pid = Core.Unix.getpid () |> Core.Pid.to_int;
+          socket = PyrePath.absolute socket_path;
+          global_root = PyrePath.absolute project_root;
+          relative_local_root = PyrePath.get_relative_to_root ~root:project_root ~path:local_root;
+        }
+      |> Lwt.return
 
 
 let handle_command ~server:{ ServerInternal.state; subscriptions; properties } = function

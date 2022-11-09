@@ -62,6 +62,7 @@ module Query = struct
         position: Ast.Location.position;
         overlay_id: string option;
       }
+    | GetInfo (* Poll the server's state. *)
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 

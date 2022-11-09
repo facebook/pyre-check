@@ -52,6 +52,14 @@ type t =
   | Hover of { contents: HoverContent.t list }
   | LocationOfDefinition of { definitions: DefinitionLocation.t list }
   | ServerStatus of Status.t
+  | Info of {
+      (* All fields are required to implement `pyre servers` *)
+      version: string;
+      pid: int;
+      socket: string;
+      global_root: string;
+      relative_local_root: string option;
+    }
 [@@deriving sexp, compare, yojson { strict = false }]
 
 let to_string response = to_yojson response |> Yojson.Safe.to_string

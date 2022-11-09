@@ -185,6 +185,9 @@ module Testing : sig
                 respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot
                 find the overlay with the given ID, it will respond with a
                 {!Response.ErrorKind.OverlayNotFound} error. *)
+        | GetInfo
+            (** A query that asks for server metadata, intended to be consumed by the `pyre servers`
+                command. *)
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
@@ -296,6 +299,15 @@ module Testing : sig
       | ServerStatus of Status.t
           (** Response the server may push if the client choose to establish a subscription on
               server status. *)
+      | Info of {
+          version: string;
+          pid: int;
+          socket: string;
+          global_root: string;
+          relative_local_root: string option;
+        }
+          (** The information provides in response to GetInfo queries. All fields must be present
+              for the `pyre servers` command. *)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 

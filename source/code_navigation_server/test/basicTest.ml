@@ -461,6 +461,30 @@ let test_location_of_definition_request context =
       ]
 
 
+let test_get_info_request context =
+  let project = ScratchProject.setup ~context ~include_typeshed_stubs:false [] in
+  let root = ScratchProject.source_root_of project in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        ScratchProject.ClientConnection.assert_response
+          ~request:Request.((* This location points to an empty space *)
+                            Query Query.GetInfo)
+          ~expected:
+            Response.(
+              Info
+                {
+                  socket = PyrePath.show project.start_options.socket_path;
+                  pid = Unix.getpid () |> Pid.to_int;
+                  version = Version.version ();
+                  global_root = PyrePath.show root;
+                  relative_local_root = None;
+                });
+      ]
+
+
 let watchman_version = "fake_watchman_version"
 
 let watchman_initial_clock = "fake:clock:0"
@@ -565,6 +589,7 @@ let () =
          "invalid_request" >:: OUnitLwt.lwt_wrapper test_invalid_request;
          "stop_request" >:: OUnitLwt.lwt_wrapper test_stop_request;
          "get_type_errors_request" >:: OUnitLwt.lwt_wrapper test_get_type_errors_request;
+         "get_info_request" >:: OUnitLwt.lwt_wrapper test_get_info_request;
          "local_update_request" >:: OUnitLwt.lwt_wrapper test_local_update_request;
          "file_update_request" >:: OUnitLwt.lwt_wrapper test_file_update_request;
          "file_and_local_update" >:: OUnitLwt.lwt_wrapper test_file_and_local_update;
