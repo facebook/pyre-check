@@ -204,10 +204,10 @@ def _print_server_status(server_status: AllServerStatus, output_format: str) -> 
         _print_server_status_json(server_status)
 
 
-def _stop_server(socket_path: Path) -> None:
+def _stop_server(socket_path: Path, flavor: identifiers.PyreFlavor) -> None:
     try:
         LOG.info(f"Stopping server at `{socket_path}...`")
-        stop.stop_server(socket_path, identifiers.PyreFlavor.CLASSIC)
+        stop.stop_server(socket_path, flavor)
         LOG.info(f"Successfully stopped `{socket_path}.`")
     except connections.ConnectionFailure:
         LOG.info(f"Failed to connect to `{socket_path}`. Removing it...")
@@ -257,6 +257,7 @@ def run_stop() -> commands.ExitCode:
     for socket_path in daemon_socket.find_socket_files(
         daemon_socket.get_default_socket_root()
     ):
-        _stop_server(socket_path)
+        flavor = _find_server_flavor(socket_path)
+        _stop_server(socket_path, flavor)
     LOG.info("Done\n")
     return commands.ExitCode.SUCCESS
