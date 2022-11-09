@@ -399,6 +399,7 @@ class PyreLanguageServer:
         else:
             start_time = time.time()
             server_status_before = self.server_state.server_last_status.value
+            await self.update_overlay_if_needed(document_path)
             result = await self.handler.get_hover(
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
