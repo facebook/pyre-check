@@ -934,7 +934,7 @@ def persistent(
         skip_initial_type_check=skip_initial_type_check,
         use_lazy_module_tracking=use_lazy_module_tracking,
     )
-    base_directory: Path = Path(".")
+    base_directory: Path = Path(".").resolve()
     configuration = configuration_module.create_configuration(
         command_argument, base_directory
     )
