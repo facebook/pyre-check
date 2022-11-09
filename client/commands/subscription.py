@@ -4,7 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Shared logic for client-side handling of subscriptions to the
+Pyre daemon. Context on this:
+- A Pyre daemon opens a socket accepting client connections.
+- The socket accepts one-off requests using a request/response model
+- But the socket also allows long-running connections where we send a
+  subscription request, and the connection stays open. The server will
+  then push notifications (type errors and/or state change alerts) to
+  the client.
 """
 
 
