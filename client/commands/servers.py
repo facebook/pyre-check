@@ -44,10 +44,13 @@ class RunningServerStatus:
     pid: int
     version: str
     global_root: str
+    flavor: str
     relative_local_root: Optional[str] = None
 
     @staticmethod
-    def from_json(input_json: Dict[str, object]) -> "RunningServerStatus":
+    def from_json(
+        input_json: Dict[str, object], flavor: identifiers.PyreFlavor
+    ) -> "RunningServerStatus":
         pid = input_json.get("pid", None)
         if not isinstance(pid, int):
             raise InvalidServerResponse(f"Expect `pid` to be an int but got {pid}")
@@ -72,10 +75,13 @@ class RunningServerStatus:
             version=version,
             global_root=global_root,
             relative_local_root=relative_local_root,
+            flavor=flavor.value,
         )
 
     @staticmethod
-    def from_server_response(response: str) -> "RunningServerStatus":
+    def from_server_response(
+        response: str, flavor: identifiers.PyreFlavor
+    ) -> "RunningServerStatus":
         try:
             response_json = json.loads(response)
             if (
@@ -86,7 +92,7 @@ class RunningServerStatus:
             ):
                 message = f"Unexpected JSON response: {response_json}"
                 raise InvalidServerResponse(message)
-            return RunningServerStatus.from_json(response_json[1])
+            return RunningServerStatus.from_json(response_json[1], flavor)
         except json.JSONDecodeError as error:
             message = f"Cannot parse response as JSON: {error}"
             raise InvalidServerResponse(message) from error
@@ -98,6 +104,7 @@ class RunningServerStatus:
             "version": self.version,
             "global_root": self.global_root,
             "relative_local_root": self.relative_local_root,
+            "flavor": self.flavor,
         }
 
 
@@ -132,11 +139,13 @@ def _get_server_status(
             if flavor != identifiers.PyreFlavor.CODE_NAVIGATION:
                 output_channel.write('["GetInfo"]\n')
                 return RunningServerStatus.from_server_response(
-                    input_channel.readline()
+                    input_channel.readline(), flavor
                 )
             # For now, we assume that a code-navigation server we can connect to is fine.
             output_channel.write('["Query", ["GetInfo"]]\n')
-            return RunningServerStatus.from_server_response(input_channel.readline())
+            return RunningServerStatus.from_server_response(
+                input_channel.readline(), flavor
+            )
 
     except connections.ConnectionFailure:
         return DefunctServerStatus(str(socket_path))
@@ -155,6 +164,7 @@ def _print_running_server_status(running_status: Sequence[RunningServerStatus]) 
                         status.global_root,
                         status.relative_local_root or "",
                         status.version,
+                        status.flavor,
                     ]
                     for status in running_status
                 ],
@@ -163,6 +173,7 @@ def _print_running_server_status(running_status: Sequence[RunningServerStatus]) 
                     "Global Root",
                     "Relative Local Root",
                     "Version",
+                    "Flavor",
                 ],
             ),
         )

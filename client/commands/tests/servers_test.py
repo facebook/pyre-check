@@ -10,6 +10,8 @@ from pathlib import Path
 
 import testslide
 
+from ... import identifiers
+
 from ...tests import setup
 from ..servers import (
     AllServerStatus,
@@ -46,12 +48,20 @@ class MockServerRequestHandler(socketserver.StreamRequestHandler):
 
 class ServersTest(testslide.TestCase):
     def test_parse_running_server_status(self) -> None:
-        def assert_parsed(input: str, expected: RunningServerStatus) -> None:
-            self.assertEqual(RunningServerStatus.from_server_response(input), expected)
+        def assert_parsed(
+            input: str,
+            expected: RunningServerStatus,
+            flavor: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC,
+        ) -> None:
+            self.assertEqual(
+                RunningServerStatus.from_server_response(input, flavor), expected
+            )
 
         def assert_raises(input: str) -> None:
             with self.assertRaises(InvalidServerResponse):
-                RunningServerStatus.from_server_response(input)
+                RunningServerStatus.from_server_response(
+                    input, identifiers.PyreFlavor.CLASSIC
+                )
 
         assert_raises("42")
         assert_raises("[]")
@@ -99,7 +109,12 @@ class ServersTest(testslide.TestCase):
                     },
                 ]
             ),
-            expected=RunningServerStatus(pid=42, version="abc", global_root="/global"),
+            expected=RunningServerStatus(
+                pid=42,
+                version="abc",
+                global_root="/global",
+                flavor=identifiers.PyreFlavor.CLASSIC.value,
+            ),
         )
         assert_parsed(
             json.dumps(
@@ -117,6 +132,7 @@ class ServersTest(testslide.TestCase):
                 pid=42,
                 version="abc",
                 global_root="/global",
+                flavor="classic",
             ),
         )
         assert_parsed(
@@ -135,6 +151,7 @@ class ServersTest(testslide.TestCase):
                 pid=42,
                 version="abc",
                 global_root="/global",
+                flavor="classic",
             ),
         )
         assert_parsed(
@@ -154,6 +171,28 @@ class ServersTest(testslide.TestCase):
                 version="abc",
                 global_root="/global",
                 relative_local_root="local",
+                flavor="classic",
+            ),
+        )
+        assert_parsed(
+            json.dumps(
+                [
+                    "Info",
+                    {
+                        "pid": 42,
+                        "version": "abc",
+                        "global_root": "/global",
+                        "relative_local_root": "local",
+                    },
+                ]
+            ),
+            flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
+            expected=RunningServerStatus(
+                pid=42,
+                version="abc",
+                global_root="/global",
+                relative_local_root="local",
+                flavor="code_navigation",
             ),
         )
 
@@ -174,6 +213,7 @@ class ServersTest(testslide.TestCase):
                             pid=42,
                             version="abc",
                             global_root="/global",
+                            flavor=identifiers.PyreFlavor.CLASSIC.value,
                         )
                     ],
                 )
@@ -188,12 +228,18 @@ class ServersTest(testslide.TestCase):
         self.assertCountEqual(
             AllServerStatus(
                 running=[
-                    RunningServerStatus(pid=123, version="abc", global_root="/g0"),
+                    RunningServerStatus(
+                        pid=123,
+                        version="abc",
+                        global_root="/g0",
+                        flavor=identifiers.PyreFlavor.CLASSIC.value,
+                    ),
                     RunningServerStatus(
                         pid=456,
                         version="xyz",
                         global_root="/g1",
                         relative_local_root="local",
+                        flavor=identifiers.PyreFlavor.CODE_NAVIGATION.value,
                     ),
                 ],
                 defunct=[
@@ -208,6 +254,7 @@ class ServersTest(testslide.TestCase):
                     "version": "abc",
                     "global_root": "/g0",
                     "relative_local_root": None,
+                    "flavor": "classic",
                 },
                 {
                     "status": "running",
@@ -215,6 +262,7 @@ class ServersTest(testslide.TestCase):
                     "version": "xyz",
                     "global_root": "/g1",
                     "relative_local_root": "local",
+                    "flavor": "code_navigation",
                 },
                 {"status": "defunct", "socket": "/p0.sock"},
                 {"status": "defunct", "socket": "/p1.sock"},
