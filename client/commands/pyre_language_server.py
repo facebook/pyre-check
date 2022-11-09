@@ -159,6 +159,45 @@ class PyreLanguageServer:
                 " has been reached."
             )
 
+    async def update_overlay_with_latest_code(self, document_path: Path) -> None:
+        """
+        Send an overlay update to the daemon if three conditions are met:
+        - unsaved changes support is enabled
+        - a document is listed in `server_state.opened_documents`
+        - the OpenedDocumentState says the overlay overlay may be stale
+
+        """
+        if (
+            self.get_language_server_features().unsaved_changes.is_enabled()
+            and document_path in self.server_state.opened_documents
+        ):
+            opened_document_state = self.server_state.opened_documents[document_path]
+            code_changes = opened_document_state.code
+            current_is_dirty_state = opened_document_state.is_dirty
+            if not opened_document_state.pyre_code_updated:
+                result = await self.handler.update_overlay(
+                    path=document_path, code=code_changes
+                )
+                if isinstance(result, daemon_connection.DaemonConnectionFailure):
+                    LOG.info(
+                        daemon_failure_string(
+                            "didChange", str(type(result)), result.error_message
+                        )
+                    )
+                    LOG.info(result.error_message)
+                else:
+                    self.server_state.opened_documents[
+                        document_path
+                    ] = OpenedDocumentState(
+                        code=code_changes,
+                        is_dirty=current_is_dirty_state,
+                        pyre_code_updated=True,
+                    )
+        else:
+            LOG.info(
+                f"Error: Document path: {str(document_path)} not in server state opened documents"
+            )
+
     async def process_open_request(
         self,
         parameters: lsp.DidOpenTextDocumentParameters,
@@ -422,45 +461,6 @@ class PyreLanguageServer:
             return lsp.LspLocation.cached_schema().dump(
                 definitions,
                 many=True,
-            )
-
-    async def update_overlay_with_latest_code(self, document_path: Path) -> None:
-        """
-        Send an overlay update to the daemon if three conditions are met:
-        - unsaved changes support is enabled
-        - a document is listed in `server_state.opened_documents`
-        - the OpenedDocumentState indicates that the daemon has setale date
-
-        """
-        if (
-            self.get_language_server_features().unsaved_changes.is_enabled()
-            and document_path in self.server_state.opened_documents
-        ):
-            opened_document_state = self.server_state.opened_documents[document_path]
-            code_changes = opened_document_state.code
-            current_is_dirty_state = opened_document_state.is_dirty
-            if not opened_document_state.pyre_code_updated:
-                result = await self.handler.update_overlay(
-                    path=document_path, code=code_changes
-                )
-                if isinstance(result, daemon_connection.DaemonConnectionFailure):
-                    LOG.info(
-                        daemon_failure_string(
-                            "didChange", str(type(result)), result.error_message
-                        )
-                    )
-                    LOG.info(result.error_message)
-                else:
-                    self.server_state.opened_documents[
-                        document_path
-                    ] = OpenedDocumentState(
-                        code=code_changes,
-                        is_dirty=current_is_dirty_state,
-                        pyre_code_updated=True,
-                    )
-        else:
-            LOG.info(
-                f"Error: Document path: {str(document_path)} not in server state opened documents"
             )
 
     async def process_definition_request(
