@@ -122,14 +122,22 @@ class AllServerStatus:
 
 def _get_server_status(
     socket_path: Path,
+    flavor: identifiers.PyreFlavor,
 ) -> Union[RunningServerStatus, DefunctServerStatus]:
     try:
         with connections.connect(socket_path) as (
             input_channel,
             output_channel,
         ):
-            output_channel.write('["GetInfo"]\n')
+            if flavor != identifiers.PyreFlavor.CODE_NAVIGATION:
+                output_channel.write('["GetInfo"]\n')
+                return RunningServerStatus.from_server_response(
+                    input_channel.readline()
+                )
+            # For now, we assume that a code-navigation server we can connect to is fine.
+            output_channel.write('["Query", ["GetInfo"]]\n')
             return RunningServerStatus.from_server_response(input_channel.readline())
+
     except connections.ConnectionFailure:
         return DefunctServerStatus(str(socket_path))
 
@@ -199,12 +207,23 @@ def _stop_server(socket_path: Path) -> None:
         )
 
 
+def _find_server_flavor(socket_path: Path) -> identifiers.PyreFlavor:
+    # Socket paths are of the form `/tmp/pyre_{md5}[__{flavor}].sock`.
+    serialized_path = str(socket_path)
+    for flavor in identifiers.PyreFlavor:
+        if flavor.value in serialized_path:
+            return flavor
+    # No suffix indicates a classic server.
+    return identifiers.PyreFlavor.CLASSIC
+
+
 def find_all_servers(socket_paths: Iterable[Path]) -> AllServerStatus:
     running_servers = []
     defunct_servers = []
 
     for socket_path in socket_paths:
-        status = _get_server_status(socket_path)
+        flavor = _find_server_flavor(socket_path)
+        status = _get_server_status(socket_path, flavor)
         if isinstance(status, RunningServerStatus):
             running_servers.append(status)
         else:
