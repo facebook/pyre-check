@@ -159,7 +159,7 @@ class PyreLanguageServer:
                 " has been reached."
             )
 
-    async def update_overlay_with_latest_code(self, document_path: Path) -> None:
+    async def update_overlay_if_needed(self, document_path: Path) -> None:
         """
         Send an overlay update to the daemon if three conditions are met:
         - unsaved changes support is enabled
@@ -492,7 +492,7 @@ class PyreLanguageServer:
             server_status_before = self.server_state.server_last_status.value
             if not shadow_mode:
                 overlay_update_start_time = time.time()
-                await self.update_overlay_with_latest_code(document_path)
+                await self.update_overlay_if_needed(document_path)
                 overlay_update_duration = duration_ms(
                     overlay_update_start_time, time.time()
                 )
@@ -530,7 +530,7 @@ class PyreLanguageServer:
                     ),
                 )
                 overlay_update_start_time = time.time()
-                await self.update_overlay_with_latest_code(document_path)
+                await self.update_overlay_if_needed(document_path)
                 overlay_update_duration = duration_ms(
                     overlay_update_start_time, time.time()
                 )
