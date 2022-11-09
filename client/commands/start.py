@@ -200,6 +200,7 @@ class Arguments:
 
 def get_critical_files(
     configuration: frontend_configuration.Base,
+    flavor: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC,
 ) -> List[CriticalFile]:
     def get_full_path(root: str, relative: str) -> str:
         full_path = (Path(root) / relative).resolve(strict=False)
@@ -207,13 +208,20 @@ def get_critical_files(
             LOG.warning(f"Critical file does not exist: {full_path}")
         return str(full_path)
 
+    # TODO(T137504540) update critical files for overridden configs as well
+    configuration_name = (
+        find_directories.CODENAV_CONFIGURATION_FILE
+        if flavor
+        in [identifiers.PyreFlavor.CODE_NAVIGATION, identifiers.PyreFlavor.CLASSIC_NAV]
+        else find_directories.CONFIGURATION_FILE
+    )
     local_root = configuration.get_local_root()
     return [
         CriticalFile(
             policy=MatchPolicy.FULL_PATH,
             path=get_full_path(
                 root=str(configuration.get_global_root()),
-                relative=find_directories.CONFIGURATION_FILE,
+                relative=configuration_name,
             ),
         ),
         *(
@@ -346,7 +354,7 @@ def create_server_arguments(
         else backend_arguments.find_watchman_root(global_root),
         taint_models_path=configuration.get_taint_models_path(),
         store_type_check_resolution=start_arguments.store_type_check_resolution,
-        critical_files=get_critical_files(configuration),
+        critical_files=get_critical_files(configuration, start_arguments.flavor),
         saved_state_action=None
         if start_arguments.no_saved_state
         else get_saved_state_action(
