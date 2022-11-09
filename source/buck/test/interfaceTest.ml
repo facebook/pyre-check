@@ -55,13 +55,6 @@ let test_parse_buck_normalized_targets_query_output context =
       }
     |}
     ~expected:["//foo:bar"; "//foo:baz"; "//foo:qux"];
-  assert_parsed
-    {|
-      {
-        "//foo:bar":["//foo:bar", "//foo:baz-mypy_ini", "foo:qux-testmodules-lib"]
-      }
-    |}
-    ~expected:["//foo:bar"];
 
   assert_not_parsed "42";
   assert_not_parsed "derp";

@@ -303,19 +303,12 @@ let run_buck_build_for_targets ({ BuckOptions.use_buck2; _ } as buck_options) ta
 
 
 let parse_buck_normalized_targets_query_output query_output =
-  let is_ignored_target target =
-    (* We should probably tag these targets as `no_pyre` in the long run. *)
-    String.is_suffix target ~suffix:"-mypy_ini"
-    || String.is_suffix target ~suffix:"-testmodules-lib"
-  in
   let open Yojson.Safe in
   try
     from_string ~fname:"buck query output" query_output
     |> Util.to_assoc
     |> List.map ~f:(fun (_, targets_json) ->
-           Util.to_list targets_json
-           |> List.map ~f:Util.to_string
-           |> List.filter ~f:(Fn.non is_ignored_target))
+           Util.to_list targets_json |> List.map ~f:Util.to_string)
     |> List.concat_no_order
     |> List.dedup_and_sort ~compare:String.compare
   with
