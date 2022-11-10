@@ -500,3 +500,13 @@ def dictionary_update_iterable():
     _test_sink(d["a"])
     _test_sink(d["b"])
     _test_sink(d["c"])
+
+
+def dict_update_keys(arg: Dict[str, str]) -> Dict[str, str]:
+    return {"key": value for key, value in arg.items()}
+
+
+def dictionary_keys_and_any_index_bug(arg: Dict[str, str]) -> Dict[str, str]:
+    d = dict_update_keys(arg)
+    _test_sink(d.keys())
+    return d

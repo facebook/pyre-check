@@ -2483,6 +2483,25 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.dict_update_keys",
+    "tito": [
+      {
+        "port": "formal(arg)[*]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[*]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.dict_update_multiple",
     "sources": [
       {
