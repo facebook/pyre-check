@@ -97,6 +97,7 @@ class CommandArguments:
     shared_memory_hash_table_power: Optional[int] = None
     number_of_workers: Optional[int] = None
     use_buck2: Optional[bool] = None
+    configuration_path: Optional[str] = None
 
 
 @dataclass(frozen=True)
