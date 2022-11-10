@@ -15,7 +15,7 @@ import dataclasses
 import logging
 import random
 from pathlib import Path
-from typing import ClassVar, Dict, List, Optional, Union
+from typing import ClassVar, Dict, Generic, List, Optional, TypeVar, Union
 
 from .. import json_rpc, log, timer
 
@@ -99,6 +99,17 @@ class SourceCodeContext:
             len(full_document_contents),
         )
         return "\n".join(full_document_contents[lower_line_number:higher_line_number])
+
+
+QueryResultType = TypeVar("QueryResultType")
+
+
+@dataclasses.dataclass(frozen=True)
+class QueryResultWithDurations(Generic[QueryResultType]):
+    result: Union[QueryResultType, DaemonQueryFailure]
+    overlay_update_duration: float
+    query_duration: float
+    overall_duration: float
 
 
 @dataclasses.dataclass(frozen=True)
@@ -434,23 +445,41 @@ class PyreLanguageServer:
 
     async def _get_definition_result(
         self, document_path: Path, position: lsp.LspPosition
-    ) -> Union[DaemonQueryFailure, List[Dict[str, object]]]:
+    ) -> QueryResultWithDurations[List[Dict[str, object]]]:
         """
         Helper function to call the handler. Exists only to reduce code duplication
         due to shadow mode, please don't make more of these - we already have enough
         layers of handling.
         """
-        definitions = await self.handler.get_definition_locations(
+        overall_timer = timer.Timer()
+        overlay_update_timer = timer.Timer()
+        await self.update_overlay_if_needed(document_path)
+        overlay_update_duration = overlay_update_timer.stop_in_millisecond()
+        query_timer = timer.Timer()
+        raw_result = await self.handler.get_definition_locations(
             path=document_path,
             position=position.to_pyre_position(),
         )
-        if isinstance(definitions, DaemonQueryFailure):
-            return definitions
+        query_duration = query_timer.stop_in_millisecond()
+        if isinstance(raw_result, DaemonQueryFailure):
+            LOG.info(
+                "%s",
+                daemon_failure_string(
+                    "definition", str(type(raw_result)), raw_result.error_message
+                ),
+            )
+            result = raw_result
         else:
-            return lsp.LspLocation.cached_schema().dump(
-                definitions,
+            result = lsp.LspLocation.cached_schema().dump(
+                raw_result,
                 many=True,
             )
+        return QueryResultWithDurations(
+            result=result,
+            overlay_update_duration=overlay_update_duration,
+            query_duration=query_duration,
+            overall_duration=overall_timer.stop_in_millisecond(),
+        )
 
     async def process_definition_request(
         self,
@@ -475,39 +504,10 @@ class PyreLanguageServer:
                 ),
             )
         else:
-            overall_timer = timer.Timer()
-            error_message = None
-            shadow_mode = self.get_language_server_features().definition.is_shadow()
             server_status_before = self.server_state.server_last_status.value
-            if not shadow_mode:
-                overlay_update_timer = timer.Timer()
-                await self.update_overlay_if_needed(document_path)
-                overlay_update_duration = overlay_update_timer.stop_in_millisecond()
-                definition_request_timer = timer.Timer()
-                raw_result = await self._get_definition_result(
-                    document_path=document_path,
-                    position=parameters.position,
-                )
-                definition_request_duration = (
-                    definition_request_timer.stop_in_millisecond()
-                )
-                if isinstance(raw_result, DaemonQueryFailure):
-                    LOG.info(
-                        f"Non-shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.error_message)}"
-                    )
-                    error_message = raw_result.error_message
-                    raw_result = []
-                await lsp.write_json_rpc(
-                    self.output_channel,
-                    json_rpc.SuccessResponse(
-                        id=request_id,
-                        activity_key=activity_key,
-                        result=raw_result,
-                    ),
-                )
-            else:
-                # send an empty result to the client first, then get the real
-                # result so we can log it (and realistic perf) in telemetry.
+            shadow_mode = self.get_language_server_features().definition.is_shadow()
+            # In shadow mode, we need to return an empty response immediately
+            if shadow_mode:
                 await lsp.write_json_rpc(
                     self.output_channel,
                     json_rpc.SuccessResponse(
@@ -516,26 +516,29 @@ class PyreLanguageServer:
                         result=lsp.LspLocation.cached_schema().dump([], many=True),
                     ),
                 )
-                overlay_update_timer = timer.Timer()
-                await self.update_overlay_if_needed(document_path)
-                overlay_update_duration = overlay_update_timer.stop_in_millisecond()
-                definition_request_timer = timer.Timer()
-                raw_result = await self._get_definition_result(
-                    document_path=document_path,
-                    position=parameters.position,
+            # Regardless of the mode, we want to get the actual result
+            result_with_durations = await self._get_definition_result(
+                document_path=document_path,
+                position=parameters.position,
+            )
+            result = result_with_durations.result
+            if isinstance(result, DaemonQueryFailure):
+                error_message = result.error_message
+                output_result = []
+            else:
+                error_message = "None"
+                output_result = result
+            # Unless we are in shadow mode, we send the response as output
+            if not shadow_mode:
+                await lsp.write_json_rpc(
+                    self.output_channel,
+                    json_rpc.SuccessResponse(
+                        id=request_id,
+                        activity_key=activity_key,
+                        result=output_result,
+                    ),
                 )
-                definition_request_duration = (
-                    definition_request_timer.stop_in_millisecond()
-                )
-                if isinstance(raw_result, DaemonQueryFailure):
-                    LOG.info(
-                        f"Shadow mode: {daemon_failure_string('definition', str(type(raw_result)), raw_result.error_message)}"
-                    )
-                    error_message = raw_result.error_message
-                    raw_result = []
-
-            overall_duration = overall_timer.stop_in_millisecond()
-
+            # Regardless of the mode, we gather telemetry
             downsample_rate = 100
             if random.randrange(0, downsample_rate) == 0:
                 if document_path not in self.server_state.opened_documents:
@@ -566,11 +569,11 @@ class PyreLanguageServer:
                     "type": "LSP",
                     "operation": "definition",
                     "filePath": str(document_path),
-                    "count": len(raw_result),
-                    "response": raw_result,
-                    "duration_ms": overall_duration,
-                    "overlay_update_duration": overlay_update_duration,
-                    "definition_request_duration": definition_request_duration,
+                    "count": len(output_result),
+                    "response": output_result,
+                    "duration_ms": result_with_durations.overall_duration,
+                    "overlay_update_duration": result_with_durations.overlay_update_duration,
+                    "query_duration": result_with_durations.query_duration,
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
