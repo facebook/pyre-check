@@ -14,11 +14,10 @@ because it illustrates that this is the intermediary between the Language server
 import dataclasses
 import logging
 import random
-import time
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union
 
-from .. import json_rpc, log
+from .. import json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import background, commands, find_symbols, request_handler, server_state as state
@@ -49,13 +48,6 @@ async def read_lsp_request(
                     message=str(json_rpc_error),
                 ),
             )
-
-
-def duration_ms(
-    start_time: float,
-    end_time: float,
-) -> int:
-    return int(1000 * (end_time - start_time))
 
 
 async def _wait_for_exit(
@@ -251,7 +243,7 @@ class PyreLanguageServer:
         )
         error_message = None
         server_status_before = self.server_state.server_last_status.value
-        start_time = time.time()
+        did_change_timer = timer.Timer()
         code_changes = str(
             "".join(
                 [content_change.text for content_change in parameters.content_changes]
@@ -262,8 +254,6 @@ class PyreLanguageServer:
             is_dirty=True,
             pyre_code_updated=False,
         )
-        end_time = time.time()
-
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -272,7 +262,7 @@ class PyreLanguageServer:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "duration_ms": duration_ms(start_time, end_time),
+                "duration_ms": did_change_timer.stop_in_millisecond(),
                 "server_status_before": str(server_status_before),
                 "server_status_after": self.server_state.server_last_status.value,
                 "server_state_start_status": self.server_state.server_last_status.value,
@@ -341,7 +331,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        start_time = time.time()
+        type_coverage_timer = timer.Timer()
         server_status_before = self.server_state.server_last_status.value
         response = await self.handler.get_type_coverage(path=document_path)
         if response is not None:
@@ -353,13 +343,12 @@ class PyreLanguageServer:
                     result=response.to_dict(),
                 ),
             )
-        end_time = time.time()
         await self.write_telemetry(
             {
                 "type": "LSP",
                 "operation": "typeCoverage",
                 "filePath": str(document_path),
-                "duration_ms": duration_ms(start_time, end_time),
+                "duration_ms": type_coverage_timer.stop_in_millisecond(),
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
@@ -397,7 +386,7 @@ class PyreLanguageServer:
                 ),
             )
         else:
-            start_time = time.time()
+            hover_timer = timer.Timer()
             server_status_before = self.server_state.server_last_status.value
             await self.update_overlay_if_needed(document_path)
             result = await self.handler.get_hover(
@@ -424,7 +413,6 @@ class PyreLanguageServer:
                     result=raw_result,
                 ),
             )
-            end_time = time.time()
             await self.write_telemetry(
                 {
                     "type": "LSP",
@@ -432,7 +420,7 @@ class PyreLanguageServer:
                     "filePath": str(document_path),
                     "nonEmpty": len(result.contents) > 0,
                     "response": raw_result,
-                    "duration_ms": duration_ms(start_time, end_time),
+                    "duration_ms": hover_timer.stop_in_millisecond(),
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
@@ -487,23 +475,21 @@ class PyreLanguageServer:
                 ),
             )
         else:
-            start_time = time.time()
+            overall_timer = timer.Timer()
             error_message = None
             shadow_mode = self.get_language_server_features().definition.is_shadow()
             server_status_before = self.server_state.server_last_status.value
             if not shadow_mode:
-                overlay_update_start_time = time.time()
+                overlay_update_timer = timer.Timer()
                 await self.update_overlay_if_needed(document_path)
-                overlay_update_duration = duration_ms(
-                    overlay_update_start_time, time.time()
-                )
-                definition_request_start_time = time.time()
+                overlay_update_duration = overlay_update_timer.stop_in_millisecond()
+                definition_request_timer = timer.Timer()
                 raw_result = await self._get_definition_result(
                     document_path=document_path,
                     position=parameters.position,
                 )
-                definition_request_duration = duration_ms(
-                    definition_request_start_time, time.time()
+                definition_request_duration = (
+                    definition_request_timer.stop_in_millisecond()
                 )
                 if isinstance(raw_result, DaemonQueryFailure):
                     LOG.info(
@@ -530,18 +516,16 @@ class PyreLanguageServer:
                         result=lsp.LspLocation.cached_schema().dump([], many=True),
                     ),
                 )
-                overlay_update_start_time = time.time()
+                overlay_update_timer = timer.Timer()
                 await self.update_overlay_if_needed(document_path)
-                overlay_update_duration = duration_ms(
-                    overlay_update_start_time, time.time()
-                )
-                definition_request_start_time = time.time()
+                overlay_update_duration = overlay_update_timer.stop_in_millisecond()
+                definition_request_timer = timer.Timer()
                 raw_result = await self._get_definition_result(
                     document_path=document_path,
                     position=parameters.position,
                 )
-                definition_request_duration = duration_ms(
-                    definition_request_start_time, time.time()
+                definition_request_duration = (
+                    definition_request_timer.stop_in_millisecond()
                 )
                 if isinstance(raw_result, DaemonQueryFailure):
                     LOG.info(
@@ -549,7 +533,8 @@ class PyreLanguageServer:
                     )
                     error_message = raw_result.error_message
                     raw_result = []
-            end_time = time.time()
+
+            overall_duration = overall_timer.stop_in_millisecond()
 
             downsample_rate = 100
             if random.randrange(0, downsample_rate) == 0:
@@ -583,7 +568,7 @@ class PyreLanguageServer:
                     "filePath": str(document_path),
                     "count": len(raw_result),
                     "response": raw_result,
-                    "duration_ms": duration_ms(start_time, end_time),
+                    "duration_ms": overall_duration,
                     "overlay_update_duration": overlay_update_duration,
                     "definition_request_duration": definition_request_duration,
                     "server_state_open_documents_count": len(
