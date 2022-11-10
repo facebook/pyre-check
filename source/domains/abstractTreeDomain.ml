@@ -672,7 +672,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
               (* Fields are special - they should be excluded from [*]
                  accesses unconditionally. *)
               match key with
-              | Label.Field _ -> Element.bottom, None
+              | Label.Field _ -> ancestors_accumulator, tree_accumulator
               | _ ->
                   let ancestors_result, subtree =
                     read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree

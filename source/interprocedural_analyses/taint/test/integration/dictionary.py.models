@@ -2743,6 +2743,31 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.dictionary_keys_and_any_index_bug",
+    "tito": [
+      {
+        "port": "formal(arg)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 510, "start": 25, "end": 28 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.dictionary_nested_assignment_1",
     "sources": [
       {
