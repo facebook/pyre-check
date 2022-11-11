@@ -162,14 +162,16 @@ class PyreLanguageServer:
                 " has been reached."
             )
 
-    async def update_overlay_if_needed(self, document_path: Path) -> None:
+    async def update_overlay_if_needed(self, document_path: Path) -> float:
         """
         Send an overlay update to the daemon if three conditions are met:
         - unsaved changes support is enabled
         - a document is listed in `server_state.opened_documents`
         - the OpenedDocumentState says the overlay overlay may be stale
 
+        Returns the time taken to run the update.
         """
+        update_timer = timer.Timer()
         if (
             self.get_language_server_features().unsaved_changes.is_enabled()
             and document_path in self.server_state.opened_documents
@@ -200,6 +202,7 @@ class PyreLanguageServer:
             LOG.info(
                 f"Error: Document path: {str(document_path)} not in server state opened documents"
             )
+        return update_timer.stop_in_millisecond()
 
     def sample_source_code(
         self,
@@ -481,9 +484,7 @@ class PyreLanguageServer:
         layers of handling.
         """
         overall_timer = timer.Timer()
-        overlay_update_timer = timer.Timer()
-        await self.update_overlay_if_needed(document_path)
-        overlay_update_duration = overlay_update_timer.stop_in_millisecond()
+        overlay_update_duration = await self.update_overlay_if_needed(document_path)
         query_timer = timer.Timer()
         raw_result = await self.handler.get_definition_locations(
             path=document_path,
