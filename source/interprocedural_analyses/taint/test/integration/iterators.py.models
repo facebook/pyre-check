@@ -1,0 +1,750 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 17,
+    "start": 15,
+    "end": 22,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 14,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 17,
+              "start": 15,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|2|formal(arg):9fb810fcb5d2eeb48c45ea2ef1d34f8a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 36,
+    "start": 15,
+    "end": 23,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bad" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 34, "start": 23, "end": 62 } ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 34,
+              "start": 31,
+              "end": 45
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 36,
+              "start": 15,
+              "end": 23
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bad" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 10,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|10|formal(arg):f9eb0d4c83d6478c6a334e2232c51aea"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 16,
+    "start": 15,
+    "end": 22,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 14,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 16,
+              "start": 15,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|1|formal(arg):d05543be977855c410f43e3888780c52"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 32,
+    "start": 15,
+    "end": 16,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 31, "start": 23, "end": 37 } ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 31,
+              "start": 23,
+              "end": 37
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 32,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 8,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|8|formal(arg):9f89dc2409f7794161a5c599920bc557"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 22,
+    "start": 15,
+    "end": 23,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "bad" }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 20,
+              "start": 24,
+              "end": 38
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 22,
+              "start": 15,
+              "end": 23
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bad" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|4|formal(arg):bb6e1ef02fb40eb20e54ce438673d704"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 12,
+    "start": 15,
+    "end": 35,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 11,
+              "start": 16,
+              "end": 30
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 12,
+              "start": 15,
+              "end": 35
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|0|formal(arg):37b7f28cdf0f906e194c2ab7d2546cff"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 35,
+    "start": 15,
+    "end": 16,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 34, "start": 23, "end": 62 } ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 34,
+              "start": 31,
+              "end": 45
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 35,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 9,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|9|formal(arg):aa49ce631003573f6daef0b113def145"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 29,
+    "start": 15,
+    "end": 28,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 28,
+              "start": 9,
+              "end": 23
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 29,
+              "start": 15,
+              "end": 28
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 7,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|7|formal(arg):17dceb2d6396c4db47770bcd588ce3a7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "iterators.test_next_iter",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 18,
+    "start": 15,
+    "end": 22,
+    "filename": "iterators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 14,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 18,
+              "start": 15,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "iterators.test_next_iter:5002:0:Call|_test_sink|3|formal(arg):0fea1ee6185e8f70d1c1e9828f067304"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "iterators.CustomGetItem.__getitem__",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 52,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "iterators.CustomIter.__iter__",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "iterators.py",
+              "line": 42,
+              "start": 21,
+              "end": 35
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "next",
+    "tito": [
+      {
+        "port": "formal(__default)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(__i)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}

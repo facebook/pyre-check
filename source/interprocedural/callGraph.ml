@@ -1264,32 +1264,42 @@ let resolve_callee_from_defining_expression
       | _ -> None)
 
 
+(* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
+ * This may or may not be sound depending on the analysis performed. *)
 let transform_special_calls ~resolution { Call.callee; arguments } =
-  match callee, arguments with
-  | ( {
-        Node.value =
-          Expression.Name
-            (Name.Attribute
-              {
-                base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
-                attribute = "partial";
-                _;
-              });
-        _;
-      },
+  let attribute_access base method_name =
+    {
+      Node.value =
+        Expression.Name (Name.Attribute { base; attribute = method_name; special = true });
+      location = Node.location callee;
+    }
+  in
+  match Node.value callee, arguments with
+  | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
+      (* Only handle `iter` with a single argument here. *)
+      Some { Call.callee = attribute_access value "__iter__"; arguments = [] }
+  | Name (Name.Identifier "next"), [{ Call.Argument.value; _ }] ->
+      (* Only handle `next` with a single argument here. *)
+      Some { Call.callee = attribute_access value "__next__"; arguments = [] }
+  | Name (Name.Identifier "anext"), [{ Call.Argument.value; _ }] ->
+      (* Only handle `anext` with a single argument here. *)
+      Some { Call.callee = attribute_access value "__anext__"; arguments = [] }
+  | ( Expression.Name
+        (Name.Attribute
+          {
+            base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
+            attribute = "partial";
+            _;
+          }),
       { Call.Argument.value = actual_callable; _ } :: actual_arguments ) ->
       Some { Call.callee = actual_callable; arguments = actual_arguments }
-  | ( {
-        Node.value =
-          Name
-            (Name.Attribute
-              {
-                base = { Node.value = Expression.Name (Name.Identifier "multiprocessing"); _ };
-                attribute = "Process";
-                _;
-              });
-        _;
-      },
+  | ( Expression.Name
+        (Name.Attribute
+          {
+            base = { Node.value = Expression.Name (Name.Identifier "multiprocessing"); _ };
+            attribute = "Process";
+            _;
+          }),
       [
         { Call.Argument.value = process_callee; name = Some { Node.value = "$parameter$target"; _ } };
         {
@@ -1309,7 +1319,10 @@ let transform_special_calls ~resolution { Call.callee; arguments } =
 let redirect_special_calls ~resolution call =
   match transform_special_calls ~resolution call with
   | Some call -> call
-  | None -> Annotated.Call.redirect_special_calls ~resolution call
+  | None ->
+      (* Rewrite certain calls using the same logic used in the type checker.
+       * This should be sound for most analyses. *)
+      Annotated.Call.redirect_special_calls ~resolution call
 
 
 let resolve_recognized_callees

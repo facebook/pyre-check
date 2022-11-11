@@ -498,6 +498,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           Reversible, SupportsInt, SupportsFloat, SupportsAbs, SupportsLenAndGetItem,
           SupportsComplex, SupportsRound, IO, BinaryIO, Union, final, TypeGuard,
           ItemsView, KeysView, ValuesView, ByteString, Optional, AnyStr, Type, Text,
+          SupportsIter, SupportsNext,
         )
         from pyre_extensions import Add, Multiply, Divide
         from typing_extensions import Literal
@@ -865,6 +866,25 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def callable(__o: object) -> bool: ...
 
         def any(__iterable: Iterable[object]) -> bool: ...
+
+        _SupportsNextT = TypeVar("_SupportsNextT", bound=SupportsNext[Any], covariant=True)
+
+        class _GetItemIterable(Protocol[_T_co]):
+          def __getitem__(self, __i: int) -> _T_co: ...
+
+        @overload
+        def iter(__iterable: SupportsIter[_SupportsNextT]) -> _SupportsNextT: ...
+        @overload
+        def iter(__iterable: _GetItemIterable[_T]) -> Iterator[_T]: ...
+        @overload
+        def iter(__function: Callable[[], _T | None], __sentinel: None) -> Iterator[_T]: ...
+        @overload
+        def iter(__function: Callable[[], _T], __sentinel: object) -> Iterator[_T]: ...
+
+        @overload
+        def next(__i: SupportsNext[_T]) -> _T: ...
+        @overload
+        def next(__i: SupportsNext[_T], __default: _VT) -> _T | _VT: ...
 
         if sys.version_info >= (3,):
           class _Writer(Protocol):
@@ -1238,6 +1258,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class SupportsLenAndGetItem(Protocol[_T_co]):
           def __len__(self) -> int: ...
           def __getitem__(self, __k: int) -> _T_co: ...
+
+        class SupportsIter(Protocol[_T_co]):
+          def __iter__(self) -> _T_co: ...
+
+        class SupportsNext(Protocol[_T_co]):
+          def __next__(self) -> _T_co: ...
       |}
     );
     "asyncio/coroutines.pyi", {|

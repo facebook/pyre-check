@@ -1,0 +1,11 @@
+@generated
+Call dependencies
+iterators.$toplevel (fun) -> []
+iterators.test_custom_getitem (fun) -> [_test_sink (fun) object::__init__ (method) object::__new__ (method)]
+iterators.test_custom_iter (fun) -> [_test_sink (fun) iterators.CustomIter::__iter__ (method) object::__init__ (method) object::__new__ (method) typing.Iterator::__next__ (method)]
+iterators.test_next_iter (fun) -> [_test_sink (fun) _test_source (fun) dict::__getitem__ (method) list::__iter__ (method) next (fun) typing.Iterable::__iter__ (method) typing.Iterator::__next__ (method)]
+iterators.CustomGetItem::$class_toplevel (method) -> []
+iterators.CustomGetItem::__getitem__ (method) -> [_test_source (fun)]
+iterators.CustomGetItem::__len__ (method) -> []
+iterators.CustomIter::$class_toplevel (method) -> []
+iterators.CustomIter::__iter__ (method) -> [_test_source (fun) list::__iter__ (method)]

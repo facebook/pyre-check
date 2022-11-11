@@ -30,6 +30,7 @@ let test_find_globals context =
         !&"_T4";
         !&"_T5";
         !&"_Self";
+        !&"_SupportsNextT";
         !&"NotImplemented";
         !&"...";
         !&"__debug__";
