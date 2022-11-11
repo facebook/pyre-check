@@ -368,15 +368,25 @@ def print_model(
     )
 
 
-def get_issues(callable: str) -> List[Dict[str, Any]]:
-    """Get all issues within the given callable."""
+def get_issues(callable: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Get all issues.
+    If a callable is provided, only return issues within it.
+    """
     directory = _assert_loaded()
 
+    if callable is None:
+        callables = directory.index_.issues.items()
+    else:
+        positions = directory.index_.issues.get(callable, [])
+        callables = [(callable, positions)]
+
     issues = []
-    for position in directory.index_.issues.get(callable, []):
-        message = json.loads(_read(position))
-        assert message["kind"] == "issue"
-        issues.append(message["data"])
+    for _, issue_positions in callables:
+        for issue_position in issue_positions:
+            message = json.loads(_read(issue_position))
+            assert message["kind"] == "issue"
+            issues.append(message["data"])
 
     return issues
 
