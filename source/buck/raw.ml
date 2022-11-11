@@ -149,7 +149,7 @@ let create ?(additional_log_size = 0) () =
     command :: arguments
     |> Core.List.map ~f:(Format.sprintf "'%s'")
     |> Core.String.concat ~sep:" "
-    |> Log.debug "Running buck command: buck %s";
+    |> Log.debug "Running buck command: buck1 %s";
     (* Preserve the last several lines of Buck log for error reporting purpose. *)
     let log_buffer = BoundedQueue.create additional_log_size in
     (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
