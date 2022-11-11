@@ -374,7 +374,9 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
         hover_request = code_navigation_request.HoverRequest(
-            path=path, overlay_id=self._get_overlay_id(path), position=position
+            path=path,
+            overlay_id=self._get_overlay_id(path),
+            position=position,
         )
         response = await code_navigation_request.async_handle_hover_request(
             self.socket_path,
@@ -390,7 +392,9 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
-            path=path, overlay_id=self._get_overlay_id(path), position=position
+            path=path,
+            overlay_id=self._get_overlay_id(path),
+            position=position,
         )
         response = await code_navigation_request.async_handle_definition_request(
             self.socket_path,

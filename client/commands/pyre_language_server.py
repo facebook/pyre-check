@@ -243,6 +243,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        document_path = document_path.resolve()
         self.server_state.opened_documents[document_path] = OpenedDocumentState(
             code=parameters.text_document.text,
             is_dirty=False,
@@ -261,6 +262,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        document_path = document_path.resolve()
         try:
             del self.server_state.opened_documents[document_path]
             LOG.info(f"File closed: {document_path}")
@@ -277,7 +279,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-
+        document_path = document_path.resolve()
         if document_path not in self.server_state.opened_documents:
             return
 
@@ -329,6 +331,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        document_path = document_path.resolve()
 
         if document_path not in self.server_state.opened_documents:
             return
@@ -374,6 +377,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        document_path = document_path.resolve()
         type_coverage_timer = timer.Timer()
         server_status_before = self.server_state.server_last_status.value
         response = await self.handler.get_type_coverage(path=document_path)
@@ -418,6 +422,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        document_path = document_path.resolve()
 
         if document_path not in self.server_state.opened_documents:
             await lsp.write_json_rpc(
@@ -524,6 +529,7 @@ class PyreLanguageServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        document_path = document_path.resolve()
         if document_path not in self.server_state.opened_documents:
             return await lsp.write_json_rpc(
                 self.output_channel,
