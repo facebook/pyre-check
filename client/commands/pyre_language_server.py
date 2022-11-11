@@ -495,6 +495,18 @@ class PyreLanguageServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         if document_path not in self.server_state.opened_documents:
+            return await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=lsp.LspLocation.cached_schema().dump([], many=True),
+                ),
+            )
+        server_status_before = self.server_state.server_last_status.value
+        shadow_mode = self.get_language_server_features().definition.is_shadow()
+        # In shadow mode, we need to return an empty response immediately
+        if shadow_mode:
             await lsp.write_json_rpc(
                 self.output_channel,
                 json_rpc.SuccessResponse(
@@ -503,92 +515,75 @@ class PyreLanguageServer:
                     result=lsp.LspLocation.cached_schema().dump([], many=True),
                 ),
             )
+        # Regardless of the mode, we want to get the actual result
+        result_with_durations = await self._get_definition_result(
+            document_path=document_path,
+            position=parameters.position,
+        )
+        result = result_with_durations.result
+        if isinstance(result, DaemonQueryFailure):
+            error_message = result.error_message
+            output_result = []
         else:
-            server_status_before = self.server_state.server_last_status.value
-            shadow_mode = self.get_language_server_features().definition.is_shadow()
-            # In shadow mode, we need to return an empty response immediately
-            if shadow_mode:
-                await lsp.write_json_rpc(
-                    self.output_channel,
-                    json_rpc.SuccessResponse(
-                        id=request_id,
-                        activity_key=activity_key,
-                        result=lsp.LspLocation.cached_schema().dump([], many=True),
-                    ),
-                )
-            # Regardless of the mode, we want to get the actual result
-            result_with_durations = await self._get_definition_result(
-                document_path=document_path,
-                position=parameters.position,
+            error_message = "None"
+            output_result = result
+        # Unless we are in shadow mode, we send the response as output
+        if not shadow_mode:
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=output_result,
+                ),
             )
-            result = result_with_durations.result
-            if isinstance(result, DaemonQueryFailure):
-                error_message = result.error_message
-                output_result = []
+        # Regardless of the mode, we gather telemetry
+        downsample_rate = 100
+        if random.randrange(0, downsample_rate) == 0:
+            if document_path not in self.server_state.opened_documents:
+                source_code_context = f"Error: Document path: {document_path} could not be found in opened documents structure"
             else:
-                error_message = "None"
-                output_result = result
-            # Unless we are in shadow mode, we send the response as output
-            if not shadow_mode:
-                await lsp.write_json_rpc(
-                    self.output_channel,
-                    json_rpc.SuccessResponse(
-                        id=request_id,
-                        activity_key=activity_key,
-                        result=output_result,
-                    ),
+                source_code_context = await SourceCodeContext.from_source_and_position(
+                    self.server_state.opened_documents[document_path].code,
+                    parameters.position,
                 )
-            # Regardless of the mode, we gather telemetry
-            downsample_rate = 100
-            if random.randrange(0, downsample_rate) == 0:
-                if document_path not in self.server_state.opened_documents:
-                    source_code_context = f"Error: Document path: {document_path} could not be found in opened documents structure"
-                else:
-                    source_code_context = (
-                        await SourceCodeContext.from_source_and_position(
-                            self.server_state.opened_documents[document_path].code,
-                            parameters.position,
-                        )
-                    )
-                if source_code_context is None:
-                    source_code_context = f"""
-                    ERROR: Position specified by parameters: {parameters.position} is an illegal position.
-                    Check if the position contains negative numbers or if it is
-                    larger than the bounds of the file path: {document_path}
-                    """
-                    LOG.warning(source_code_context)
+            if source_code_context is None:
+                source_code_context = f"""
+                ERROR: Position specified by parameters: {parameters.position} is an illegal position.
+                Check if the position contains negative numbers or if it is
+                larger than the bounds of the file path: {document_path}
+                """
+                LOG.warning(source_code_context)
 
-                LOG.debug(
-                    f"Logging file contents to scuba near requested line: {source_code_context} for definition request position: {parameters.position}"
-                )
-            else:
-                source_code_context = "Skipping logging context to scuba"
-                LOG.debug(f"{source_code_context} for request id: {request_id}")
-            await self.write_telemetry(
-                {
-                    "type": "LSP",
-                    "operation": "definition",
-                    "filePath": str(document_path),
-                    "count": len(output_result),
-                    "response": output_result,
-                    "duration_ms": result_with_durations.overall_duration,
-                    "overlay_update_duration": result_with_durations.overlay_update_duration,
-                    "query_duration": result_with_durations.query_duration,
-                    "server_state_open_documents_count": len(
-                        self.server_state.opened_documents
-                    ),
-                    "server_status_before": str(server_status_before),
-                    "server_status_after": self.server_state.server_last_status.value,
-                    "server_state_start_status": self.server_state.server_last_status.value,
-                    "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
-                    "error_message": str(error_message),
-                    "is_dirty": self.server_state.opened_documents[
-                        document_path
-                    ].is_dirty,
-                    "truncated_file_contents": str(source_code_context),
-                },
-                activity_key,
+            LOG.debug(
+                f"Logging file contents to scuba near requested line: {source_code_context} for definition request position: {parameters.position}"
             )
+        else:
+            source_code_context = "Skipping logging context to scuba"
+            LOG.debug(f"{source_code_context} for request id: {request_id}")
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "definition",
+                "filePath": str(document_path),
+                "count": len(output_result),
+                "response": output_result,
+                "duration_ms": result_with_durations.overall_duration,
+                "overlay_update_duration": result_with_durations.overlay_update_duration,
+                "query_duration": result_with_durations.query_duration,
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "server_status_before": str(server_status_before),
+                "server_status_after": self.server_state.server_last_status.value,
+                "server_state_start_status": self.server_state.server_last_status.value,
+                "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
+                "error_message": str(error_message),
+                "is_dirty": self.server_state.opened_documents[document_path].is_dirty,
+                "truncated_file_contents": str(source_code_context),
+            },
+            activity_key,
+        )
         if not self.daemon_manager.is_task_running():
             await self._try_restart_pyre_daemon()
 
