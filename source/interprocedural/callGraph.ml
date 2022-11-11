@@ -416,7 +416,9 @@ module CallCallees = struct
       | "typing.Mapping"
       | "typing.MutableMapping"
       | "TypedDictionary"
-      | "NonTotalTypedDictionary" ->
+      | "NonTotalTypedDictionary"
+      | "collections.OrderedDict"
+      | "collections.defaultdict" ->
           true
       | _ -> false
     in

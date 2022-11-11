@@ -112,6 +112,56 @@ def dict_get_default():
     sink(d.get("a", {0: source()})[1])  # This is NOT an issue.
 
 
+def ordereddict_popitem():
+    d = collections.OrderedDict()
+    d["a"] = {"bad": source(), "good": ""}
+    e = d.popitem()
+    sink(e["bad"])  # This is an issue.
+    sink(e["good"])  # This is NOT an issue.
+
+
+def defaultdict_constructor():
+    d = collections.defaultdict(lambda: source())
+    sink(d["a"])  # This is an issue.
+
+    def factory():
+        return {"bad": source(), "good": ""}
+
+    d = collections.defaultdict(factory)
+    sink(d["a"])  # This is an issue.
+    sink(d["a"]["good"])  # This is NOT an issue.
+    sink(d["a"]["bad"])  # This is an issue.
+
+    d = collections.defaultdict(str, {"bad": source(), "good": ""})
+    sink(d["bad"])  # This is an issue.
+    sink(d["good"])  # This is an issue (false positive).
+
+    d = collections.defaultdict(dict, {"bad": {"bad": source()}})
+    sink(d["good"]["good"])  # This is an issue (false positive).
+    sink(d["good"]["bad"])  # This is an issue (false positive).
+    sink(d["bad"]["good"])  # This is an issue (false positive).
+    sink(d["bad"]["bad"])  # This is an issue.
+
+    d = collections.defaultdict(str, {source(): ""})
+    sink(d.keys())  # This is an issue.
+    sink(d[x])  # This is NOT an issue.
+
+    d = collections.defaultdict(str, {(source(), 0): ""})
+    for key in d.keys():
+        sink(key[0])  # This is an issue.
+        sink(key[1])  # This is NOT an issue.
+
+    d = collections.defaultdict(str, bad=source())
+    sink(d["bad"])  # This is an issue.
+    sink(d["good"])  # This is an issue (false positive)
+
+    d = collections.defaultdict(bad={"bad": source()})
+    sink(d["good"]["good"])  # This is NOT an issue.
+    sink(d["good"]["bad"])  # This is an issue (false positive).
+    sink(d["bad"]["good"])  # This is NOT an issue.
+    sink(d["bad"]["bad"])  # This is an issue.
+
+
 def list_constructor(i: int):
     l = list([0, source()])
     sink(l[0])  # This is an issue (false positive).
