@@ -201,6 +201,35 @@ class PyreLanguageServer:
                 f"Error: Document path: {str(document_path)} not in server state opened documents"
             )
 
+    async def sample_source_code(
+        self,
+        document_path: Path,
+        position: lsp.LspPosition,
+    ) -> Optional[str]:
+        downsample_rate = 100
+        if random.randrange(0, downsample_rate) != 0:
+            LOG.debug("Skipping file content sampling.")
+            return None
+        if document_path not in self.server_state.opened_documents:
+            source_code_context = f"Error: Document path: {document_path} could not be found in opened documents structure"
+        else:
+            source_code_context = await SourceCodeContext.from_source_and_position(
+                self.server_state.opened_documents[document_path].code,
+                position,
+            )
+        if source_code_context is None:
+            source_code_context = f"""
+            ERROR: Position specified by parameters: {position} is an illegal position.
+            Check if the position contains negative numbers or if it is
+            larger than the bounds of the file path: {document_path}
+            """
+            LOG.warning(source_code_context)
+        LOG.debug(
+            f"Logging file contents to scuba near requested line: {source_code_context}"
+            f" for definition request position: {position}"
+        )
+        return source_code_context
+
     async def process_open_request(
         self,
         parameters: lsp.DidOpenTextDocumentParameters,
@@ -537,30 +566,10 @@ class PyreLanguageServer:
                     result=output_result,
                 ),
             )
-        # Regardless of the mode, we gather telemetry
-        downsample_rate = 100
-        if random.randrange(0, downsample_rate) == 0:
-            if document_path not in self.server_state.opened_documents:
-                source_code_context = f"Error: Document path: {document_path} could not be found in opened documents structure"
-            else:
-                source_code_context = await SourceCodeContext.from_source_and_position(
-                    self.server_state.opened_documents[document_path].code,
-                    parameters.position,
-                )
-            if source_code_context is None:
-                source_code_context = f"""
-                ERROR: Position specified by parameters: {parameters.position} is an illegal position.
-                Check if the position contains negative numbers or if it is
-                larger than the bounds of the file path: {document_path}
-                """
-                LOG.warning(source_code_context)
-
-            LOG.debug(
-                f"Logging file contents to scuba near requested line: {source_code_context} for definition request position: {parameters.position}"
-            )
-        else:
-            source_code_context = "Skipping logging context to scuba"
-            LOG.debug(f"{source_code_context} for request id: {request_id}")
+        source_code_if_sampled = await self.sample_source_code(
+            document_path,
+            parameters.position,
+        )
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -580,7 +589,7 @@ class PyreLanguageServer:
                 "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                 "error_message": str(error_message),
                 "is_dirty": self.server_state.opened_documents[document_path].is_dirty,
-                "truncated_file_contents": str(source_code_context),
+                "truncated_file_contents": source_code_if_sampled,
             },
             activity_key,
         )
