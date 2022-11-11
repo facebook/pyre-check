@@ -55,7 +55,7 @@ module type FUNCTION_CONTEXT = sig
 
   val get_callee_model : Interprocedural.Target.t -> Model.t option
 
-  val triggered_sinks : ForwardAnalysis.triggered_sinks
+  val triggered_sinks : Issue.TriggeredSinkLocationMap.t
 
   val caller_class_interval : Interprocedural.ClassIntervalSet.t
 end
@@ -338,18 +338,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         arguments
     in
     let triggered_taint =
-      match Hashtbl.find FunctionContext.triggered_sinks call_location with
-      | Some items ->
-          List.fold
-            items
-            ~f:(fun state (root, sink) ->
-              let new_taint =
-                BackwardTaint.singleton CallInfo.declaration sink Frame.initial
-                |> BackwardState.Tree.create_leaf
-              in
-              BackwardState.assign ~root ~path:[] new_taint state)
-            ~init:BackwardState.bottom
-      | None -> BackwardState.bottom
+      Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location:call_location
     in
     let taint_model =
       TaintProfiler.track_model_fetch

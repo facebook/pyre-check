@@ -21,6 +21,6 @@ val run
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->
-  triggered_sinks:ForwardAnalysis.triggered_sinks ->
+  triggered_sinks:Issue.TriggeredSinkLocationMap.t ->
   unit ->
   Model.Backward.t

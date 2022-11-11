@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
 open Ast
 open Statement
 open Domains
@@ -92,8 +91,30 @@ val to_json
 
 val to_error : taint_configuration:TaintConfiguration.Heap.t -> t -> Error.t
 
-module TriggeredSinks : sig
-  type t = String.Hash_set.t
+(* A set of triggered sink kinds. *)
+module TriggeredSinkHashSet : sig
+  type t
+
+  val create : unit -> t
+
+  val is_empty : t -> bool
+
+  val mem : t -> Sinks.partial_sink -> bool
+
+  val add : t -> Sinks.partial_sink -> unit
+end
+
+(* A map from locations to a backward taint of triggered sinks.
+ * This is used to store triggered sinks found in the forward analysis,
+ * and propagate them up in the backward analysis. *)
+module TriggeredSinkLocationMap : sig
+  type t
+
+  val create : unit -> t
+
+  val add : t -> location:Location.t -> taint:BackwardState.t -> unit
+
+  val get : t -> location:Location.t -> BackwardState.t
 end
 
 (* Accumulate flows and generate issues. *)
@@ -102,6 +123,8 @@ module Candidates : sig
 
   val create : unit -> t
 
+  (* Check for issues in flows from the `source_tree` to the `sink_tree`, updating
+   * issue `candidates`. *)
   val check_flow
     :  t ->
     location:Location.WithModule.t ->
@@ -110,11 +133,14 @@ module Candidates : sig
     sink_tree:BackwardState.Tree.t ->
     unit
 
-  (* Will modify the triggered_sinks data structure, adding the newly triggered sinks. *)
+  (* Check for issues for combined source rules.
+   * For flows where both sources are present, this adds the flow to issue `candidates`.
+   * If only one source is present, this creates a triggered sink in `triggered_sinks_for_call`.
+   *)
   val check_triggered_flows
     :  t ->
     taint_configuration:TaintConfiguration.Heap.t ->
-    triggered_sinks:TriggeredSinks.t ->
+    triggered_sinks_for_call:TriggeredSinkHashSet.t ->
     location:Location.WithModule.t ->
     sink_handle:SinkHandle.t ->
     source_tree:ForwardState.Tree.t ->

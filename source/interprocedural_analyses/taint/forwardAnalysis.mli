@@ -9,8 +9,6 @@ open Ast
 open Analysis
 open Statement
 
-type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
-
 val run
   :  ?profiler:TaintProfiler.t ->
   taint_configuration:TaintConfiguration.Heap.t ->
@@ -24,4 +22,4 @@ val run
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->
   unit ->
-  Model.Forward.t * Issue.t list * triggered_sinks
+  Model.Forward.t * Issue.t list * Issue.TriggeredSinkLocationMap.t

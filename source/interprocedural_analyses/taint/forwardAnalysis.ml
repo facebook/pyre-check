@@ -40,9 +40,6 @@ open Ast
 open Expression
 open Pyre
 open Domains
-
-type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
-
 module CallGraph = Interprocedural.CallGraph
 module CallResolution = Interprocedural.CallResolution
 
@@ -67,7 +64,7 @@ module type FUNCTION_CONTEXT = sig
 
   val existing_model : Model.t
 
-  val triggered_sinks : triggered_sinks
+  val triggered_sinks_to_propagate : Issue.TriggeredSinkLocationMap.t
 
   val caller_class_interval : Interprocedural.ClassIntervalSet.t
 end
@@ -208,10 +205,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     GlobalModel.get_sinks global_model |> List.iter ~f:check
 
 
-  let check_triggered_flows ~triggered_sinks ~sink_handle ~location ~source_tree ~sink_tree =
+  let check_triggered_flows ~triggered_sinks_for_call ~sink_handle ~location ~source_tree ~sink_tree
+    =
     Issue.Candidates.check_triggered_flows
       candidates
-      ~triggered_sinks
+      ~triggered_sinks_for_call
       ~sink_handle
       ~location
       ~source_tree
@@ -223,6 +221,36 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       candidates
       ~taint_configuration:FunctionContext.taint_configuration
       ~define:FunctionContext.definition
+
+
+  (* Store all triggered sinks seen in `triggered_sinks_to_propagate` to propagate
+   * them up in the backward analysis. *)
+  let store_triggered_sinks_to_propagate ~call_location ~triggered_sinks_for_call ~sink_taint =
+    if not (Issue.TriggeredSinkHashSet.is_empty triggered_sinks_for_call) then
+      let add_sink ~root sink sofar =
+        match Sinks.extract_partial_sink sink with
+        | Some sink when Issue.TriggeredSinkHashSet.mem triggered_sinks_for_call sink ->
+            let taint =
+              BackwardTaint.singleton
+                CallInfo.declaration
+                (Sinks.TriggeredPartialSink sink)
+                Frame.initial
+              |> BackwardState.Tree.create_leaf
+            in
+            BackwardState.assign ~root ~path:[] taint BackwardState.bottom
+            |> BackwardState.join sofar
+        | _ -> sofar
+      in
+      let add_taint (root, taint) sofar =
+        BackwardState.Tree.fold BackwardTaint.kind taint ~f:(add_sink ~root) ~init:sofar
+      in
+      let triggered_sinks =
+        BackwardState.fold BackwardState.KeyValue sink_taint ~init:BackwardState.bottom ~f:add_taint
+      in
+      Issue.TriggeredSinkLocationMap.add
+        FunctionContext.triggered_sinks_to_propagate
+        ~location:call_location
+        ~taint:triggered_sinks
 
 
   let return_sink ~resolution ~return_location =
@@ -250,10 +278,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     taint
     |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
     |> BackwardState.Tree.add_via_features via_features_to_attach
-
-
-  let add_triggered_sinks ~location ~triggered_sinks:new_triggered_sinks =
-    Hashtbl.set FunctionContext.triggered_sinks ~key:location ~data:new_triggered_sinks
 
 
   let store_taint ?(weak = false) ~root ~path taint { taint = state_taint } =
@@ -305,7 +329,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ?(apply_tito = true)
       ~resolution
       ~is_result_used
-      ~triggered_sinks
+      ~triggered_sinks_for_call
       ~call_location
       ~self
       ~self_taint
@@ -470,17 +494,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         else
           TaintInTaintOutEffects.empty
       in
-      (* Compute triggered partial sinks, if any. *)
-      let () =
-        List.iter sink_trees ~f:(fun { Issue.SinkTreeWithHandle.sink_tree; handle } ->
-            check_triggered_flows
-              ~taint_configuration:FunctionContext.taint_configuration
-              ~triggered_sinks
-              ~sink_handle:handle
-              ~location
-              ~source_tree:argument_taint
-              ~sink_tree)
-      in
 
       (* Add features to arguments. *)
       let state =
@@ -506,9 +519,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               store_taint ~root ~path taint state
         | None -> state
       in
+
       let () =
         List.iter sink_trees ~f:(fun { Issue.SinkTreeWithHandle.sink_tree; handle } ->
-            check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree)
+            (* Check for issues. *)
+            check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree;
+            (* Check for issues for combined source rules. *)
+            check_triggered_flows
+              ~taint_configuration:FunctionContext.taint_configuration
+              ~triggered_sinks_for_call
+              ~sink_handle:handle
+              ~location
+              ~source_tree:argument_taint
+              ~sink_tree;
+            ())
       in
       tito_effects, state
     in
@@ -536,25 +560,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ForwardState.Tree.empty
     in
     let tito_taint = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
-    (if not (Hash_set.is_empty triggered_sinks) then
-       let add_sink (key, taint) roots_and_sinks =
-         let add roots_and_sinks sink =
-           match Sinks.extract_partial_sink sink with
-           | Some sink ->
-               if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
-                 (key, Sinks.TriggeredPartialSink sink) :: roots_and_sinks
-               else
-                 roots_and_sinks
-           | None -> roots_and_sinks
-         in
-         BackwardTaint.kinds
-           (BackwardState.Tree.collapse ~breadcrumbs:(Features.issue_broadening_set ()) taint)
-         |> List.fold ~f:add ~init:roots_and_sinks
-       in
-       let triggered_sinks =
-         BackwardState.fold BackwardState.KeyValue backward.sink_taint ~init:[] ~f:add_sink
-       in
-       add_triggered_sinks ~location:call_location ~triggered_sinks);
+    let () =
+      store_triggered_sinks_to_propagate
+        ~call_location
+        ~triggered_sinks_for_call
+        ~sink_taint:backward.sink_taint
+    in
     let apply_tito_side_effects tito_effects state =
       (* We also have to consider the cases when the updated parameter has a global model, in which
          case we need to capture the flow. *)
@@ -645,7 +656,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let apply_constructor_targets
       ~resolution
       ~is_result_used
-      ~triggered_sinks
+      ~triggered_sinks_for_call
       ~call_location
       ~callee
       ~callee_taint
@@ -670,7 +681,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             apply_call_target
               ~resolution
               ~is_result_used:true
-              ~triggered_sinks
+              ~triggered_sinks_for_call
               ~call_location
               ~self:(Some callee)
               ~self_taint:callee_taint
@@ -698,7 +709,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             apply_call_target
               ~resolution
               ~is_result_used
-              ~triggered_sinks
+              ~triggered_sinks_for_call
               ~call_location
               ~self:(Some call_expression)
               ~self_taint:(Some new_return_taint)
@@ -736,9 +747,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         unresolved;
       }
     =
-    (* We keep a table of kind -> set of triggered labels across all targets,
-     * and merge triggered sinks at the end. *)
-    let triggered_sinks = String.Hash_set.create () in
+    (* Set of sinks of combined source rules triggered (i.e, a source flowed to
+     * a partial sink) for the current call expression. *)
+    let triggered_sinks_for_call = Issue.TriggeredSinkHashSet.create () in
 
     (* Extract the implicit self, if any *)
     let self =
@@ -760,7 +771,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~apply_tito
              ~resolution
              ~is_result_used
-             ~triggered_sinks
+             ~triggered_sinks_for_call
              ~call_location
              ~self
              ~self_taint
@@ -801,7 +812,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             apply_constructor_targets
               ~resolution
               ~is_result_used
-              ~triggered_sinks
+              ~triggered_sinks_for_call
               ~call_location
               ~callee
               ~callee_taint
@@ -2666,7 +2677,7 @@ let run
 
     let existing_model = existing_model
 
-    let triggered_sinks = Location.Table.create ()
+    let triggered_sinks_to_propagate = Issue.TriggeredSinkLocationMap.create ()
 
     let caller_class_interval =
       Interprocedural.ClassIntervalSetGraph.SharedMemory.of_definition
@@ -2732,4 +2743,4 @@ let run
     ~normals:["callable", Interprocedural.Target.show_pretty callable]
     ~timer
     ();
-  model, issues, FunctionContext.triggered_sinks
+  model, issues, FunctionContext.triggered_sinks_to_propagate
