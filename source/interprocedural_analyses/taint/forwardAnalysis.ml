@@ -1112,7 +1112,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
       let analyze_function_call
           (function_call_taints, state)
-          ( { CallGraph.HigherOrderParameter.index; call_targets },
+          ( { CallGraph.HigherOrderParameter.index; call_targets; unresolved },
             ({ Node.location = argument_location; _ } as argument) )
         =
         (* Simulate `$result_fn = fn( *all, **all)`. *)
@@ -1152,7 +1152,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~callee_taint:(Some callee_taint)
             ~arguments_taint
             ~state
-            (CallGraph.CallCallees.create ~call_targets ())
+            (CallGraph.CallCallees.create ~call_targets ~unresolved ())
         in
         let taint = ForwardState.Tree.add_local_breadcrumb (Features.lambda ()) taint in
         (* Join result_fn taint from both if and else branches. *)

@@ -1,0 +1,5 @@
+@generated
+Call dependencies
+lambda.$toplevel (fun) -> []
+lambda.test_filter_lambda (fun) -> [_test_sink (fun) _test_source (fun) filter::__init__ (method) list::__getitem__ (method) list::__init__ (method) object::__new__ (method)]
+lambda.test_map_lambda (fun) -> [_test_sink (fun) _test_source (fun) dict::__getitem__ (method) list::__getitem__ (method) list::__init__ (method) map::__init__ (method) object::__new__ (method)]

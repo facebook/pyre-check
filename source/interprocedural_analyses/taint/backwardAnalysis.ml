@@ -1031,7 +1031,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let all_taint, if_branch_state =
       let analyze_function_call
           (all_taint, state)
-          ( { CallGraph.HigherOrderParameter.call_targets; _ },
+          ( { CallGraph.HigherOrderParameter.call_targets; index = _; unresolved },
             ({ Node.location = argument_location; _ } as argument),
             argument_taint )
         =
@@ -1063,7 +1063,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~arguments
             ~call_taint:argument_taint
             ~state
-            (CallGraph.CallCallees.create ~call_targets ())
+            (CallGraph.CallCallees.create ~call_targets ~unresolved ())
         in
         let state =
           analyze_callee

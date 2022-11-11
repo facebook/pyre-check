@@ -66,6 +66,9 @@ module HigherOrderParameter : sig
   type t = {
     index: int;
     call_targets: CallTarget.t list;
+    (* True if at least one callee could not be resolved.
+     * Usually indicates missing type information at the call site. *)
+    unresolved: bool;
   }
   [@@deriving eq, show]
 end
