@@ -14,9 +14,12 @@ val extract_constant_name : Expression.t -> string option
 (* Evaluates to whether the provided expression is a superclass of define. *)
 val is_super : resolution:Resolution.t -> define:Statement.Define.t Node.t -> Expression.t -> bool
 
-(* Check whether `successor` extends `predecessor`. Returns false on untracked types. *)
+(* Check whether `successor` extends `predecessor`.
+ * Returns false on untracked types.
+ * Returns `reflexive` if `predecessor` and `successor` are equal. *)
 val is_transitive_successor_ignoring_untracked
   :  GlobalResolution.t ->
+  reflexive:bool ->
   predecessor:string ->
   successor:string ->
   bool

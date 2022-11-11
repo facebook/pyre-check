@@ -34,17 +34,22 @@ let extract_constant_name { Node.value = expression; _ } =
   | _ -> None
 
 
-(* Check whether `successor` extends `predecessor`. Returns false on untracked types. *)
-let is_transitive_successor_ignoring_untracked global_resolution ~predecessor ~successor =
-  try GlobalResolution.is_transitive_successor global_resolution ~predecessor ~successor with
-  | Analysis.ClassHierarchy.Untracked untracked_type ->
-      Log.warning
-        "Found untracked type `%s` when checking whether `%s` is a subclass of `%s`. This could \
-         lead to false negatives."
-        untracked_type
-        successor
-        predecessor;
-      false
+(* Check whether `successor` extends `predecessor`.
+ * Returns false on untracked types.
+ * Returns `reflexive` if `predecessor` and `successor` are equal. *)
+let is_transitive_successor_ignoring_untracked global_resolution ~reflexive ~predecessor ~successor =
+  if String.equal predecessor successor then
+    reflexive
+  else
+    try GlobalResolution.is_transitive_successor global_resolution ~predecessor ~successor with
+    | Analysis.ClassHierarchy.Untracked untracked_type ->
+        Log.warning
+          "Found untracked type `%s` when checking whether `%s` is a subclass of `%s`. This could \
+           lead to false negatives."
+          untracked_type
+          successor
+          predecessor;
+        false
 
 
 (* Evaluates to whether the provided expression is a superclass of define. *)
@@ -66,6 +71,7 @@ let is_super ~resolution ~define expression =
             >>| (fun class_name ->
                   is_transitive_successor_ignoring_untracked
                     (Resolution.global_resolution resolution)
+                    ~reflexive:false
                     ~predecessor:class_name
                     ~successor:parent_name)
             |> Option.value ~default:false

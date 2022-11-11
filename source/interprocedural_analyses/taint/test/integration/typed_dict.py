@@ -22,7 +22,25 @@ def test_typed_dict_setitem():
 def test_typed_dict_constructor():
     d = SimpleTypedDict(foo=0, bar=_test_source())
     _test_sink(d["bar"])  # This is an issue.
-    # TODO(T137160019): handle typed dict construction precisely.
+    _test_sink(d["foo"])  # This is NOT an issue.
+
+    d = SimpleTypedDict(foo=0, bar={"a": _test_source()})
+    _test_sink(d["bar"]["a"])  # This is an issue.
+    _test_sink(d["bar"]["b"])  # This is NOT an issue.
+    _test_sink(d["foo"]["a"])  # This is NOT an issue.
+    _test_sink(d["foo"]["b"])  # This is NOT an issue.
+
+    d = SimpleTypedDict({"foo": 0, "bar": _test_source()})
+    _test_sink(d["bar"])  # This is an issue.
+    _test_sink(d["foo"])  # This is an issue (false positive).
+
+    d = SimpleTypedDict({_test_source(): 0})
+    _test_sink(d.keys())  # This is an issue.
+    _test_sink(d["foo"])  # This is NOT an issue.
+    _test_sink(d["bar"])  # This is NOT an issue.
+
+    d = SimpleTypedDict([("foo", 0), ("bar", _test_source())])
+    _test_sink(d["bar"])  # This is an issue.
     _test_sink(d["foo"])  # This is an issue (false positive).
 
 
