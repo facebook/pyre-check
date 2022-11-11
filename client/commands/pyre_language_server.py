@@ -81,7 +81,7 @@ class SourceCodeContext:
     MAX_LINES_BEFORE_OR_AFTER: ClassVar[int] = 2500
 
     @staticmethod
-    async def from_source_and_position(
+    def from_source_and_position(
         source: str,
         position: lsp.LspPosition,
         max_lines_before_or_after: int = MAX_LINES_BEFORE_OR_AFTER,
@@ -201,7 +201,7 @@ class PyreLanguageServer:
                 f"Error: Document path: {str(document_path)} not in server state opened documents"
             )
 
-    async def sample_source_code(
+    def sample_source_code(
         self,
         document_path: Path,
         position: lsp.LspPosition,
@@ -213,7 +213,7 @@ class PyreLanguageServer:
         if document_path not in self.server_state.opened_documents:
             source_code_context = f"Error: Document path: {document_path} could not be found in opened documents structure"
         else:
-            source_code_context = await SourceCodeContext.from_source_and_position(
+            source_code_context = SourceCodeContext.from_source_and_position(
                 self.server_state.opened_documents[document_path].code,
                 position,
             )
@@ -566,7 +566,7 @@ class PyreLanguageServer:
                     result=output_result,
                 ),
             )
-        source_code_if_sampled = await self.sample_source_code(
+        source_code_if_sampled = self.sample_source_code(
             document_path,
             parameters.position,
         )

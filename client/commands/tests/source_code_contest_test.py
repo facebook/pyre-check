@@ -13,9 +13,9 @@ from ..pyre_language_server import SourceCodeContext
 
 
 class SourceCodeContextTest(testslide.TestCase):
-    async def test_source_code_context_for_position(self) -> None:
+    def test_source_code_context_for_position(self) -> None:
         self.assertEqual(
-            await SourceCodeContext.from_source_and_position(
+            SourceCodeContext.from_source_and_position(
                 source="\n".join(f"line {i}" for i in range(1, 10)),
                 position=lsp.LspPosition(line=2, character=5),
             ),
@@ -23,7 +23,7 @@ class SourceCodeContextTest(testslide.TestCase):
         )
 
         self.assertEqual(
-            await SourceCodeContext.from_source_and_position(
+            SourceCodeContext.from_source_and_position(
                 source="\n".join(f"line {i}" for i in range(1, 10)),
                 position=lsp.LspPosition(line=2, character=5),
                 max_lines_before_or_after=2,
@@ -32,7 +32,7 @@ class SourceCodeContextTest(testslide.TestCase):
         )
 
         self.assertEqual(
-            await SourceCodeContext.from_source_and_position(
+            SourceCodeContext.from_source_and_position(
                 source="\n".join(f"line {i}" for i in range(1, 10)),
                 position=lsp.LspPosition(line=2, character=5),
                 max_lines_before_or_after=3000,
@@ -41,7 +41,7 @@ class SourceCodeContextTest(testslide.TestCase):
         )
 
         self.assertEqual(
-            await SourceCodeContext.from_source_and_position(
+            SourceCodeContext.from_source_and_position(
                 source="\n".join(f"line {i}" for i in range(1, 10)),
                 position=lsp.LspPosition(line=50, character=5),
             ),
