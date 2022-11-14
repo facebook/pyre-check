@@ -212,11 +212,7 @@ let process_request
   | Request.Query query_text ->
       let response =
         Response.Query
-          (Query.parse_and_process_request
-             ~build_system
-             ~environment:overlaid_environment
-             query_text
-             None)
+          (Query.parse_and_process_request ~build_system ~overlaid_environment query_text None)
       in
       Lwt.return (state, response)
   | Request.QueryWithOverlay { query_text; overlay_id } ->
@@ -224,7 +220,7 @@ let process_request
         Response.Query
           (Query.parse_and_process_request
              ~build_system
-             ~environment:overlaid_environment
+             ~overlaid_environment
              query_text
              overlay_id)
       in

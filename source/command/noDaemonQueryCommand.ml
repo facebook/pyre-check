@@ -136,10 +136,10 @@ let get_environment configuration no_validation_on_class_lookup_failure =
 
 
 let perform_query ~configuration ~build_system ~query ~no_validation_on_class_lookup_failure () =
-  let environment = get_environment configuration no_validation_on_class_lookup_failure in
+  let overlaid_environment = get_environment configuration no_validation_on_class_lookup_failure in
   let query_response =
     (* This query does not support overlay logic *)
-    Server.Query.parse_and_process_request ~environment ~build_system query None
+    Server.Query.parse_and_process_request ~overlaid_environment ~build_system query None
   in
   Server.Response.to_yojson (Server.Response.Query query_response)
 

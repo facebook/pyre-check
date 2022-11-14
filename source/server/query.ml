@@ -567,17 +567,17 @@ let parse_request query =
 
 
 module InlineDecorators = struct
-  let inline_decorators ~environment ~decorators_to_skip function_reference =
+  let inline_decorators ~type_environment ~decorators_to_skip function_reference =
     let define =
       GlobalResolution.define
-        (TypeEnvironment.ReadOnly.global_resolution environment)
+        (TypeEnvironment.ReadOnly.global_resolution type_environment)
         function_reference
     in
     match define with
     | Some define -> (
         let get_source =
           AstEnvironment.ReadOnly.get_processed_source
-            (TypeEnvironment.ReadOnly.ast_environment environment)
+            (TypeEnvironment.ReadOnly.ast_environment type_environment)
         in
         let define_with_inlining =
           InlineDecorator.inline_decorators_for_define
@@ -596,13 +596,13 @@ module InlineDecorators = struct
           (Format.asprintf "Could not find function `%s`" (Reference.show function_reference))
 end
 
-let rec process_request ~environment ~build_system request =
+let rec process_request ~type_environment ~build_system request =
   let process_request () =
     let configuration =
-      TypeEnvironment.ReadOnly.controls environment |> EnvironmentControls.configuration
+      TypeEnvironment.ReadOnly.controls type_environment |> EnvironmentControls.configuration
     in
-    let module_tracker = TypeEnvironment.ReadOnly.module_tracker environment in
-    let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+    let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
     let resolution =
       TypeCheck.resolution
@@ -744,7 +744,8 @@ let rec process_request ~environment ~build_system request =
              ~default:
                (Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
-    | Batch requests -> Batch (List.map ~f:(process_request ~environment ~build_system) requests)
+    | Batch requests ->
+        Batch (List.map ~f:(process_request ~type_environment ~build_system) requests)
     | Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
         Single
@@ -783,7 +784,7 @@ let rec process_request ~environment ~build_system request =
               find_module_name module_or_class_name, filter
           in
           let defines =
-            let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+            let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
             module_name
             >>= AstEnvironment.ReadOnly.get_processed_source ast_environment
             >>| Analysis.FunctionDefinition.collect_defines
@@ -839,7 +840,7 @@ let rec process_request ~environment ~build_system request =
                    { Base.callee; locations = List.map locations ~f:instantiate })
             |> fun callees -> { Base.caller; callees }
           in
-          let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+          let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
           AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
           >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false
           >>| List.map ~f:callees
@@ -887,7 +888,7 @@ let rec process_request ~environment ~build_system request =
               if has_valid_suffix path then
                 match
                   LocationBasedLookupProcessor.find_expression_level_coverage_for_path
-                    ~type_environment:environment
+                    ~type_environment
                     ~build_system
                     path
                 with
@@ -910,7 +911,7 @@ let rec process_request ~environment ~build_system request =
         module_of_path path
         >>| (fun module_reference ->
               LocationBasedLookup.hover_info_for_position
-                ~type_environment:environment
+                ~type_environment
                 ~module_reference
                 position)
         >>| (fun hover_info ->
@@ -920,7 +921,7 @@ let rec process_request ~environment ~build_system request =
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
     | InlineDecorators { function_reference; decorators_to_skip } ->
         InlineDecorators.inline_decorators
-          ~environment
+          ~type_environment
           ~decorators_to_skip:(Reference.Set.of_list decorators_to_skip)
           function_reference
     | IsCompatibleWith (left, right) ->
@@ -1011,7 +1012,7 @@ let rec process_request ~environment ~build_system request =
                               Interprocedural.FetchCallables.from_qualifiers
                                 ~scheduler
                                 ~configuration
-                                ~environment
+                                ~environment:type_environment
                                 ~include_unit_tests:false
                                 ~qualifiers
                             in
@@ -1023,13 +1024,13 @@ let rec process_request ~environment ~build_system request =
                             initial_callables)
                       in
                       let qualifiers =
-                        Analysis.TypeEnvironment.ReadOnly.module_tracker environment
+                        Analysis.TypeEnvironment.ReadOnly.module_tracker type_environment
                         |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
                       in
                       let class_hierarchy_graph =
                         Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
                           ~scheduler
-                          ~environment
+                          ~environment:type_environment
                           ~qualifiers
                       in
                       TaintModelQuery.ModelQuery.generate_models_from_queries
@@ -1038,7 +1039,7 @@ let rec process_request ~environment ~build_system request =
                           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
                              class_hierarchy_graph)
                         ~scheduler
-                        ~environment
+                        ~environment:type_environment
                         ~source_sink_filter:None
                         ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
                         ~stubs:
@@ -1105,7 +1106,7 @@ let rec process_request ~environment ~build_system request =
                separate symbol resolution from location finding logic. *)
             let raw_source =
               AstEnvironment.ReadOnly.get_raw_source
-                (TypeEnvironment.ReadOnly.ast_environment environment)
+                (TypeEnvironment.ReadOnly.ast_environment type_environment)
                 module_reference
             in
             match raw_source with
@@ -1117,7 +1118,7 @@ let rec process_request ~environment ~build_system request =
                      error.message)
             | _ ->
                 LocationBasedLookup.location_of_definition
-                  ~type_environment:environment
+                  ~type_environment
                   ~module_reference
                   position
                 >>= instantiate_range
@@ -1183,7 +1184,7 @@ let rec process_request ~environment ~build_system request =
           module_of_path path
           >>= fun module_reference ->
           LocationBasedLookup.find_narrowest_spanning_symbol
-            ~type_environment:environment
+            ~type_environment
             ~module_reference
             position
         in
@@ -1211,12 +1212,12 @@ let rec process_request ~environment ~build_system request =
             Single (Base.FoundReferences []))
     | ReferencesUsedByFile path ->
         if
-          TypeEnvironment.ReadOnly.controls environment
+          TypeEnvironment.ReadOnly.controls type_environment
           |> EnvironmentControls.no_validation_on_class_lookup_failure
         then
           let resolved_types =
             LocationBasedLookupProcessor.find_all_resolved_types_for_path
-              ~type_environment:environment
+              ~type_environment
               ~build_system
               path
           in
@@ -1294,7 +1295,7 @@ let rec process_request ~environment ~build_system request =
         let find_resolved_types path =
           match
             LocationBasedLookupProcessor.find_all_resolved_types_for_path
-              ~type_environment:environment
+              ~type_environment
               ~build_system
               path
           with
@@ -1372,11 +1373,11 @@ let rec process_request ~environment ~build_system request =
            (Hash_set.to_list trace |> String.concat ~sep:", "))
 
 
-let parse_and_process_request ~environment ~build_system request overlay_id =
-  let environment =
+let parse_and_process_request ~overlaid_environment ~build_system request overlay_id =
+  let type_environment =
     match overlay_id with
     | Some overlay_id -> (
-        let overlay_environment = OverlaidEnvironment.overlay environment overlay_id in
+        let overlay_environment = OverlaidEnvironment.overlay overlaid_environment overlay_id in
         match overlay_environment with
         | Some env -> ErrorsEnvironment.ReadOnly.type_environment env
         | None ->
@@ -1384,9 +1385,11 @@ let parse_and_process_request ~environment ~build_system request overlay_id =
               "No valid overlay found for overlay_id: %s. Using the base environment to serve the \
                request instead."
               overlay_id;
-            ErrorsEnvironment.ReadOnly.type_environment (OverlaidEnvironment.root environment))
-    | None -> OverlaidEnvironment.root environment |> ErrorsEnvironment.ReadOnly.type_environment
+            ErrorsEnvironment.ReadOnly.type_environment
+              (OverlaidEnvironment.root overlaid_environment))
+    | None ->
+        OverlaidEnvironment.root overlaid_environment |> ErrorsEnvironment.ReadOnly.type_environment
   in
   match parse_request request with
   | Result.Error reason -> Response.Error reason
-  | Result.Ok request -> process_request ~environment ~build_system request
+  | Result.Ok request -> process_request ~type_environment ~build_system request
