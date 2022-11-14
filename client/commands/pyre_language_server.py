@@ -198,10 +198,6 @@ class PyreLanguageServer:
                         is_dirty=current_is_dirty_state,
                         pyre_code_updated=True,
                     )
-        else:
-            LOG.info(
-                f"Error: Document path: {str(document_path)} not in server state opened documents"
-            )
         return update_timer.stop_in_millisecond()
 
     def sample_source_code(
