@@ -887,7 +887,7 @@ let rec process_request ~environment ~build_system request =
               if has_valid_suffix path then
                 match
                   LocationBasedLookupProcessor.find_expression_level_coverage_for_path
-                    ~environment
+                    ~type_environment:environment
                     ~build_system
                     path
                 with
@@ -1216,7 +1216,7 @@ let rec process_request ~environment ~build_system request =
         then
           let resolved_types =
             LocationBasedLookupProcessor.find_all_resolved_types_for_path
-              ~environment
+              ~type_environment:environment
               ~build_system
               path
           in
@@ -1294,7 +1294,7 @@ let rec process_request ~environment ~build_system request =
         let find_resolved_types path =
           match
             LocationBasedLookupProcessor.find_all_resolved_types_for_path
-              ~environment
+              ~type_environment:environment
               ~build_system
               path
           with
