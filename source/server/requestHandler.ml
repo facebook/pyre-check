@@ -41,9 +41,14 @@ let instantiate_errors_with_build_system ~build_system ~configuration ~module_tr
 let process_display_type_error_request
     ~configuration
     ~state:{ ServerState.overlaid_environment; build_system; _ }
+    ?overlay_id
     paths
   =
-  let errors_environment = OverlaidEnvironment.root overlaid_environment in
+  let errors_environment =
+    overlay_id
+    >>= OverlaidEnvironment.overlay overlaid_environment
+    |> Option.value ~default:(OverlaidEnvironment.root overlaid_environment)
+  in
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
   let modules =
     match paths with
@@ -204,6 +209,9 @@ let process_request
   match request with
   | Request.DisplayTypeError paths ->
       let response = process_display_type_error_request ~configuration ~state paths in
+      Lwt.return (state, response)
+  | Request.GetOverlayTypeErrors { overlay_id; path } ->
+      let response = process_display_type_error_request ~configuration ~state ~overlay_id [path] in
       Lwt.return (state, response)
   | Request.IncrementalUpdate paths ->
       let open Lwt.Infix in
