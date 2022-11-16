@@ -2825,6 +2825,19 @@ let test_call_graph_of_define context =
       ]
     ();
   assert_call_graph_of_define
+    ~source:
+      {|
+      class Test:
+        def __setattr__(self, name: str, value):
+          return
+
+      def foo(obj: Test):
+        obj.attribute = "value"
+    |}
+    ~define_name:"test.foo"
+    ~expected:[] (* TODO(T137969662): We should see a call to `Test.__setattr__` *)
+    ();
+  assert_call_graph_of_define
     ~object_targets:[Target.Object "test.x"]
     ~source:{|
       x = "x"
