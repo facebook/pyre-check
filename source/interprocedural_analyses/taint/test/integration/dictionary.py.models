@@ -2072,36 +2072,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "dict.update",
-    "tito": [
-      {
-        "port": "formal(**kw)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(__m)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "dictionary.MyDict.__setitem__",
     "tito": [
       {
@@ -3677,6 +3647,36 @@
       {
         "port": "formal(__key)",
         "tito": { "sources": "All", "sinks": "All" }
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "typing.MutableMapping.update",
+    "tito": [
+      {
+        "port": "formal(**kw)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(__m)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+            ],
+            "tito": null
+          }
+        ]
       }
     ]
   }
