@@ -160,7 +160,7 @@ let populate_for_modules ~scheduler environment qualifiers =
           (Scheduler.Policy.fixed_chunk_count
              ~minimum_chunks_per_worker:1
              ~minimum_chunk_size:100
-             ~preferred_chunks_per_worker:5
+             ~preferred_chunks_per_worker:1
              ())
         ~initial:[]
         ~map
