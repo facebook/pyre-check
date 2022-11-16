@@ -115,8 +115,27 @@ module Label = struct
 
   let compare : t -> t -> int = compare
 
+  let escape string =
+    let of_string string = List.init (String.length string) (String.get string) in
+    let mem char string = String.index_opt string char |> Option.is_some in
+    let chars = of_string "\\'[].*" in
+    let need_escape = List.exists (fun char -> mem char string) chars in
+    if need_escape then
+      let tail = of_string string in
+      let rec escape acc tail =
+        match tail with
+        | hd :: tl when hd == '\\' || hd == '\'' -> (escape [@tailcall]) (hd :: '\\' :: acc) tl
+        | hd :: tl -> (escape [@tailcall]) (hd :: acc) tl
+        | [] -> List.rev acc
+      in
+      let string = escape [] tail |> Base.String.of_char_list in
+      Format.sprintf "'%s'" string
+    else
+      string
+
+
   let pp formatter = function
-    | Index name -> Format.fprintf formatter "[%s]" name
+    | Index name -> Format.fprintf formatter "[%s]" (escape name)
     | Field name -> Format.fprintf formatter ".%s" name
     | AnyIndex -> Format.fprintf formatter "[*]"
 
