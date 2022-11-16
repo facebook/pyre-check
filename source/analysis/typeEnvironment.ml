@@ -140,6 +140,8 @@ let populate_for_definitions ~scheduler environment defines =
 let populate_for_modules ~scheduler environment qualifiers =
   Profiling.track_shared_memory_usage ~name:"Before legacy type check" ();
   let all_defines =
+    let timer = Timer.start () in
+    Log.info "Collecting all definitions...";
     let unannotated_global_environment =
       global_environment environment
       |> AnnotatedGlobalEnvironment.read_only
@@ -151,19 +153,23 @@ let populate_for_modules ~scheduler environment qualifiers =
             unannotated_global_environment
             qualifier)
     in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:
-        (Scheduler.Policy.fixed_chunk_count
-           ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:100
-           ~preferred_chunks_per_worker:5
-           ())
-      ~initial:[]
-      ~map
-      ~reduce:List.append
-      ~inputs:qualifiers
-      ()
+    let defines =
+      Scheduler.map_reduce
+        scheduler
+        ~policy:
+          (Scheduler.Policy.fixed_chunk_count
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:100
+             ~preferred_chunks_per_worker:5
+             ())
+        ~initial:[]
+        ~map
+        ~reduce:List.append
+        ~inputs:qualifiers
+        ()
+    in
+    Statistics.performance ~name:"collected definitions" ~timer ();
+    defines
   in
   populate_for_definitions ~scheduler environment all_defines;
   Statistics.event

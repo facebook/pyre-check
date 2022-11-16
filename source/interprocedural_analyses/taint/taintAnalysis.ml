@@ -104,6 +104,7 @@ let parse_and_save_decorators_to_skip
 (** Perform a full type check and build a type environment. *)
 let type_check ~scheduler ~configuration ~cache =
   Cache.type_environment cache (fun () ->
+      Log.info "Starting type checking...";
       let configuration =
         (* In order to get an accurate call graph and type information, we need to ensure that we
            schedule a type check for external files. *)
