@@ -164,6 +164,81 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "taint_in_taint_out.issue_join_tito_collapse_test_3",
+    "callable_line": 456,
+    "code": 5002,
+    "line": 460,
+    "start": 15,
+    "end": 28,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 458, "start": 34, "end": 35 } ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 457,
+              "start": 14,
+              "end": 28
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_in_taint_out.py",
+              "line": 460,
+              "start": 15,
+              "end": 28
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.issue_join_tito_collapse_test_3:5002:0:Call|_test_sink|0|formal(arg):86e09dfb758836f619bfdb14cb6011b1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
     "callable_line": 483,
     "code": 5002,
@@ -1731,7 +1806,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "[a]": 2 },
+                "return_paths": { "[a][b]": 2, "[a]": 2 },
                 "length": 2,
                 "kind": "LocalReturn"
               }
@@ -1759,7 +1834,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 1 },
+                "return_paths": { "[foo]": 2, "": 1 },
                 "length": 2,
                 "kind": "LocalReturn"
               }

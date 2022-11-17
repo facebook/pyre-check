@@ -520,6 +520,10 @@ module type TAINT_DOMAIN = sig
     t
 
   val add_extra_traces : extra_traces:ExtraTraceFirstHop.Set.t -> t -> t
+
+  val transform_on_sink : t -> t
+
+  val transform_on_hoist : t -> t
 end
 
 module type KIND_ARG = sig
@@ -1244,6 +1248,11 @@ end = struct
           call_info, local_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
+
+
+  let transform_on_sink = Fn.id
+
+  let transform_on_hoist = Fn.id
 end
 
 module ForwardTaint = MakeTaint (struct

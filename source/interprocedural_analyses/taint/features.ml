@@ -435,6 +435,17 @@ module CollapseDepth = struct
   let approximate _ = 0
 
   let transform_on_widening_collapse _ = 0
+
+  let transform_on_sink = function
+    | 0 -> 0
+    | _ -> bottom
+
+
+  let transform_on_hoist collapse_depth =
+    if is_bottom collapse_depth then
+      bottom
+    else
+      0
 end
 
 module ReturnAccessPath = struct

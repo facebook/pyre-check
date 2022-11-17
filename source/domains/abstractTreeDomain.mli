@@ -15,6 +15,10 @@ module type ELEMENT = sig
   include AbstractDomainCore.S
 
   val transform_on_widening_collapse : t -> t
+
+  val transform_on_sink : t -> t
+
+  val transform_on_hoist : t -> t
 end
 
 module Label : sig

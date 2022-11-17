@@ -2059,6 +2059,10 @@ module TreeOfStringSets = struct
         include StringSet
 
         let transform_on_widening_collapse = Fn.id
+
+        let transform_on_sink = Fn.id
+
+        let transform_on_hoist = Fn.id
       end)
       ()
 
