@@ -458,7 +458,7 @@ class PartialConfiguration:
 
             return partial_configuration
         except json.JSONDecodeError as error:
-            raise exceptions.InvalidConfiguration(f"Invalid JSON file: {error}")
+            raise exceptions.InvalidConfiguration("Invalid JSON file") from error
 
     @staticmethod
     def from_file(path: Path) -> "PartialConfiguration":
@@ -466,7 +466,9 @@ class PartialConfiguration:
             contents = path.read_text(encoding="utf-8")
             return PartialConfiguration.from_string(contents)
         except OSError as error:
-            raise exceptions.InvalidConfiguration(f"Error when reading {path}: {error}")
+            raise exceptions.InvalidConfiguration(
+                f"Error when reading {path}"
+            ) from error
 
     def expand_relative_paths(self, root: str) -> "PartialConfiguration":
         unwatched_dependency = self.unwatched_dependency
@@ -520,7 +522,7 @@ def merge_partial_configurations(
         # pyre-ignore[16]: Pyre does not understand `dataclass_merge`
         return PartialConfiguration.merge(base, override)
     except dataclasses_merge.DataclassMergeError as error:
-        raise exceptions.InvalidConfiguration(str(error))
+        raise exceptions.InvalidConfiguration(str(error)) from None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -840,6 +842,7 @@ class Configuration:
         binary = self.get_binary_respecting_override()
         if binary is None:
             return None
+        # lint-ignore: NoUnsafeExecRule
         status = subprocess.run(
             [binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
         )
