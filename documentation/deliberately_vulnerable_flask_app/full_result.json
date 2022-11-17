@@ -22,6 +22,17 @@
     "define": "app.definite_pt"
   },
   {
+    "line": 66,
+    "column": 35,
+    "stop_line": 66,
+    "stop_column": 42,
+    "path": "app.py",
+    "code": 6064,
+    "name": "Environment variable or import injection may result in RCE",
+    "description": "Environment variable or import injection may result in RCE [6064]: Data from [UserControlled] source(s) may reach [ExecImportSink] sink(s)",
+    "define": "app.user_data_to_getattr_tp"
+  },
+  {
     "line": 23,
     "column": 19,
     "stop_line": 23,
