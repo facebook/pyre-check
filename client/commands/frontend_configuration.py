@@ -125,6 +125,10 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def get_buck_bxl_builder(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def get_other_critical_files(self) -> List[str]:
         raise NotImplementedError()
 
@@ -239,6 +243,9 @@ class OpenSource(Base):
 
     def get_buck_isolation_prefix(self) -> Optional[str]:
         return self.configuration.isolation_prefix
+
+    def get_buck_bxl_builder(self) -> Optional[str]:
+        return self.configuration.bxl_builder
 
     def get_other_critical_files(self) -> List[str]:
         return list(self.configuration.other_critical_files)

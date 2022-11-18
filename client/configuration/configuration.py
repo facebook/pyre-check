@@ -110,6 +110,7 @@ class PartialConfiguration:
         default=None,
         metadata={"merge_policy": platform_aware.PlatformAware.merge_optional},
     )
+    bxl_builder: Optional[str] = None
     only_check_paths: Sequence[str] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
@@ -398,6 +399,7 @@ class PartialConfiguration:
                     ),
                     "buck_mode",
                 ),
+                bxl_builder=ensure_option_type(configuration_json, "bxl_builder", str),
                 only_check_paths=ensure_string_list(
                     configuration_json, "only_check_paths"
                 ),
@@ -532,6 +534,7 @@ class Configuration:
 
     binary: Optional[str] = None
     buck_mode: Optional[platform_aware.PlatformAware[str]] = None
+    bxl_builder: Optional[str] = None
     only_check_paths: Sequence[str] = field(default_factory=list)
     enable_readonly_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(default_factory=list)
@@ -579,6 +582,7 @@ class Configuration:
             ),
             binary=partial_configuration.binary,
             buck_mode=partial_configuration.buck_mode,
+            bxl_builder=partial_configuration.bxl_builder,
             only_check_paths=[
                 expand_global_root(path, global_root=str(project_root))
                 for path in only_check_paths
@@ -648,6 +652,7 @@ class Configuration:
         """
         binary = self.binary
         buck_mode = self.buck_mode
+        bxl_builder = self.bxl_builder
         isolation_prefix = self.isolation_prefix
         logger = self.logger
         number_of_workers = self.number_of_workers
@@ -667,6 +672,7 @@ class Configuration:
             "dot_pyre_directory": str(self.dot_pyre_directory),
             **({"binary": binary} if binary is not None else {}),
             **({"buck_mode": buck_mode.to_json()} if buck_mode is not None else {}),
+            **({"bxl_builder": bxl_builder} if bxl_builder is not None else {}),
             "only_check_paths": list(self.only_check_paths),
             **(
                 {"enable_readonly_analysis": self.enable_readonly_analysis}
