@@ -111,6 +111,7 @@ class ArgumentsTest(testslide.TestCase):
                 targets=["//foo:bar"],
                 mode="opt",
                 isolation_prefix=".lsp",
+                bxl_builder="//foo.bxl:build",
                 use_buck2=True,
             ).serialize(),
             {
@@ -120,6 +121,7 @@ class ArgumentsTest(testslide.TestCase):
                 "targets": ["//foo:bar"],
                 "mode": "opt",
                 "isolation_prefix": ".lsp",
+                "bxl_builder": "//foo.bxl:build",
                 "use_buck2": True,
             },
         )
@@ -426,9 +428,7 @@ class ArgumentsTest(testslide.TestCase):
             )
             setup.write_configuration_file(
                 root_path / "repo_root" / "buck_root",
-                {
-                    "targets": ["//ct:lavos"],
-                },
+                {"targets": ["//ct:lavos"], "bxl_builder": "//ct:robo"},
             )
             self.assertEqual(
                 get_source_path(
@@ -448,6 +448,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root=root_path / ".pyre" / "artifact_root",
                     checked_directory=root_path / "repo_root" / "buck_root",
                     targets=["//ct:lavos"],
+                    bxl_builder="//ct:robo",
                     use_buck2=True,
                 ),
             )
@@ -462,6 +463,7 @@ class ArgumentsTest(testslide.TestCase):
                 {
                     "buck_mode": "opt",
                     "isolation_prefix": ".lsp",
+                    "bxl_builder": "//ct:robo",
                 },
             )
             setup.write_configuration_file(
@@ -489,6 +491,7 @@ class ArgumentsTest(testslide.TestCase):
                     targets=["//ct:chrono"],
                     mode="opt",
                     isolation_prefix=".lsp",
+                    bxl_builder="//ct:robo",
                 ),
             )
 

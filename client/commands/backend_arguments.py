@@ -102,11 +102,13 @@ class BuckSourcePath:
     targets: Sequence[str] = dataclasses.field(default_factory=list)
     mode: Optional[str] = None
     isolation_prefix: Optional[str] = None
+    bxl_builder: Optional[str] = None
     use_buck2: bool = False
 
     def serialize(self) -> Dict[str, object]:
         mode = self.mode
         isolation_prefix = self.isolation_prefix
+        bxl_builder = self.bxl_builder
         return {
             "kind": "buck",
             "targets": self.targets,
@@ -116,6 +118,7 @@ class BuckSourcePath:
                 if isolation_prefix is None
                 else {"isolation_prefix": isolation_prefix}
             ),
+            **({} if bxl_builder is None else {"bxl_builder": bxl_builder}),
             "use_buck2": self.use_buck2,
             "source_root": str(self.source_root),
             "artifact_root": str(self.artifact_root),
@@ -307,6 +310,7 @@ def get_source_path(
             targets=targets,
             mode=buck_mode,
             isolation_prefix=configuration.get_buck_isolation_prefix(),
+            bxl_builder=configuration.get_buck_bxl_builder(),
             use_buck2=use_buck2,
         )
 
