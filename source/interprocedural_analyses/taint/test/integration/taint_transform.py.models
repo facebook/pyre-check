@@ -23,7 +23,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 460, "start": 23, "end": 28 } ],
             "call": {
               "position": {
@@ -58,7 +61,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -111,7 +116,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "length": 1,
                 "kind": "TransformX:SinkB"
@@ -133,7 +141,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_taint_with_transform_x",
@@ -161,7 +171,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.source_a" } ],
                 "length": 1,
                 "kind": "TransformX:SourceA"
@@ -202,7 +215,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -234,7 +249,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 435, "start": 32, "end": 37 },
               { "line": 436, "start": 24, "end": 28 }
@@ -268,7 +286,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -312,7 +332,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 448, "start": 39, "end": 44 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -343,7 +366,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:2" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -390,7 +415,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "length": 1,
                 "kind": "TransformX:SinkB"
@@ -412,7 +440,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.transform_x_sanitize_a_sink_b_taint",
@@ -456,7 +486,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 303, "start": 39, "end": 44 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -487,7 +520,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:2" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -519,7 +554,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 88, "start": 23, "end": 28 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -550,7 +588,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -582,7 +622,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 314, "start": 23, "end": 28 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -619,7 +662,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sanitize_a_sink_b_taint",
@@ -651,7 +696,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 290, "start": 23, "end": 28 },
               { "line": 291, "start": 35, "end": 39 }
@@ -685,7 +733,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -717,7 +767,10 @@
                 "kind": "TransformZ:TransformY@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 119, "start": 23, "end": 28 },
               { "line": 120, "start": 24, "end": 28 }
@@ -751,7 +804,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -783,7 +838,10 @@
                 "kind": "TransformY@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 221, "start": 23, "end": 28 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -800,7 +858,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "length": 1,
                 "kind": "TransformZ:SinkB"
@@ -822,7 +883,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_taint_with_transform_z",
@@ -864,7 +927,10 @@
                 "kind": "TransformZ:TransformY@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 203, "start": 34, "end": 39 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -895,7 +961,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:2" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -942,7 +1010,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "length": 1,
                 "kind": "TransformY:TransformZ:SinkB"
@@ -964,7 +1035,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_taint_with_transform_yz",
@@ -992,7 +1065,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.source_a" } ],
                 "length": 1,
                 "kind": "TransformX:SourceA"
@@ -1037,7 +1113,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sanitize_a_sink_b_taint",
@@ -1065,7 +1143,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.source_a" } ],
                 "length": 1,
                 "kind": "TransformY:TransformX:SourceA"
@@ -1090,7 +1171,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "length": 1,
                 "kind": "NotSource[SourceA]:TransformY:TransformZ:SinkB"
@@ -1112,7 +1196,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sanitize_a_to_y_to_z_to_b_taint",
@@ -1140,13 +1226,19 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.source_a" } ],
                 "length": 1,
                 "kind": "TransformZ@TransformY:SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 197, "start": 23, "end": 28 } ],
             "call": {
               "position": {
@@ -1183,7 +1275,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -1211,7 +1305,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.source_a" } ],
                 "length": 1,
                 "kind": "TransformY:SourceA"
@@ -1238,7 +1335,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "length": 1,
                 "kind": "TransformZ:SinkB"
@@ -1260,7 +1360,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_taint_with_transform_z",
@@ -1288,7 +1390,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:2" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.source_a" } ],
                 "length": 1,
                 "kind": "TransformZ:TransformY:SourceA"
@@ -1329,7 +1434,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:2" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_b",
@@ -1418,7 +1525,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.source_a" } ],
                 "length": 1,
                 "kind": "TransformY:TransformX:SourceA"
@@ -1443,7 +1553,10 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "tito" } ],
+                "features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "tito" }
+                ],
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
                 "length": 1,
                 "kind": "TransformY:TransformZ:SinkB"
@@ -1465,7 +1578,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "tito" } ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "taint_transform.sink_taint_with_transform_yz",
@@ -1570,7 +1685,10 @@
                 "kind": "NotSource[SourceA]:TransformY:TransformZ@SinkB"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 363, "start": 35, "end": 38 },
               { "line": 364, "start": 23, "end": 28 },
@@ -1664,7 +1782,10 @@
                 "kind": "TransformX@TransformY:ExtraTraceSink"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 270, "start": 35, "end": 38 },
               { "line": 271, "start": 34, "end": 39 }
@@ -1983,7 +2104,10 @@
                 "kind": "TransformY:TransformZ@SinkB"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 165, "start": 35, "end": 38 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -2012,7 +2136,10 @@
                 "kind": "TransformX@SinkB"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 125, "start": 24, "end": 27 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -2041,7 +2168,10 @@
                 "kind": "TransformY:TransformZ@SinkB"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 137, "start": 24, "end": 27 },
               { "line": 138, "start": 23, "end": 28 }
@@ -2073,7 +2203,10 @@
                 "kind": "TransformZ@SinkB"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 186, "start": 24, "end": 27 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -2146,7 +2279,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 471, "start": 32, "end": 37 },
               { "line": 472, "start": 24, "end": 28 }
@@ -2178,7 +2314,10 @@
                 "kind": "NotSink[SinkB]:TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 412, "start": 23, "end": 28 },
               { "line": 413, "start": 33, "end": 37 }
@@ -2235,7 +2374,10 @@
                 "kind": "TransformZ:TransformY@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 160, "start": 34, "end": 39 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -2264,7 +2406,10 @@
                 "kind": "TransformY@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 181, "start": 23, "end": 28 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -2293,7 +2438,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 37, "start": 23, "end": 28 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -2327,7 +2475,9 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "transform-tito-depth:1" },
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 47, "start": 31, "end": 36 } ],
             "origin": {
@@ -2357,7 +2507,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 57, "start": 36, "end": 41 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -2386,7 +2539,10 @@
                 "kind": "TransformY:TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 63, "start": 23, "end": 28 },
               { "line": 64, "start": 24, "end": 28 }
@@ -2428,7 +2584,10 @@
                 "kind": "TransformX@SourceA"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 238, "start": 34, "end": 35 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -2952,7 +3111,10 @@
                 "kind": "TransformX@TransformY:ExtraTraceSink"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 582, "start": 40, "end": 43 },
               { "line": 583, "start": 34, "end": 39 },
@@ -3075,7 +3237,10 @@
                 "kind": "TransformY@TransformZ:ExtraTraceSink"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 148, "start": 24, "end": 27 } ],
             "origin": {
               "filename": "taint_transform.py",
@@ -3187,7 +3352,10 @@
                 "kind": "TransformX@SinkB"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 324, "start": 24, "end": 27 },
               { "line": 325, "start": 34, "end": 39 }

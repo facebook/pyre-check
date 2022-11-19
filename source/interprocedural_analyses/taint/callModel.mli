@@ -91,3 +91,5 @@ val prune_extra_trace_sink
   :  sink_tree:BackwardState.Tree.t ->
   tito_tree:BackwardState.Tree.t ->
   BackwardState.Tree.t
+
+val transform_tito_depth_breadcrumb : BackwardTaint.t -> int

@@ -427,9 +427,9 @@ module type TAINT_DOMAIN = sig
 
   val call_info : CallInfo.t Abstract.Domain.part
 
-  val add_local_breadcrumb : Features.BreadcrumbInterned.t -> t -> t
+  val add_local_breadcrumb : ?add_on_tito:bool -> Features.BreadcrumbInterned.t -> t -> t
 
-  val add_local_breadcrumbs : Features.BreadcrumbSet.t -> t -> t
+  val add_local_breadcrumbs : ?add_on_tito:bool -> Features.BreadcrumbSet.t -> t -> t
 
   val add_local_first_index : Abstract.TreeDomain.Label.t -> t -> t
 
@@ -830,7 +830,7 @@ end = struct
     `List elements
 
 
-  let add_local_breadcrumbs breadcrumbs taint =
+  let add_local_breadcrumbs ?(add_on_tito = true) breadcrumbs taint =
     let apply_local_taint local_taint =
       let breadcrumbs =
         LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint
@@ -838,11 +838,16 @@ end = struct
       in
       LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb breadcrumbs local_taint
     in
-    transform LocalTaintDomain.Self Map ~f:apply_local_taint taint
+    let apply (call_info, local_taint) =
+      match call_info, add_on_tito with
+      | CallInfo.Tito, false -> call_info, local_taint
+      | _ -> call_info, apply_local_taint local_taint
+    in
+    Map.transform KeyValue Map ~f:apply taint
 
 
-  let add_local_breadcrumb breadcrumb taint =
-    add_local_breadcrumbs (Features.BreadcrumbSet.singleton breadcrumb) taint
+  let add_local_breadcrumb ?add_on_tito breadcrumb taint =
+    add_local_breadcrumbs ?add_on_tito (Features.BreadcrumbSet.singleton breadcrumb) taint
 
 
   let add_local_first_index index taint =
@@ -1340,16 +1345,16 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     |> collapse ~transform:Fn.id
 
 
-  let add_local_breadcrumb breadcrumb =
-    transform Taint.Self Map ~f:(Taint.add_local_breadcrumb breadcrumb)
+  let add_local_breadcrumb ?add_on_tito breadcrumb =
+    transform Taint.Self Map ~f:(Taint.add_local_breadcrumb ?add_on_tito breadcrumb)
 
 
-  let add_local_breadcrumbs breadcrumbs taint_tree =
+  let add_local_breadcrumbs ?(add_on_tito = true) breadcrumbs taint_tree =
     if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
     then
       taint_tree
     else
-      transform Taint.Self Map ~f:(Taint.add_local_breadcrumbs breadcrumbs) taint_tree
+      transform Taint.Self Map ~f:(Taint.add_local_breadcrumbs ~add_on_tito breadcrumbs) taint_tree
 
 
   let add_local_type_breadcrumbs ~resolution ~expression taint =

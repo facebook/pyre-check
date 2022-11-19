@@ -418,6 +418,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             if List.is_empty named_transforms then
               taint_to_propagate
             else
+              let breadcrumb = CallModel.transform_tito_depth_breadcrumb tito_taint in
+              let taint_to_propagate =
+                ForwardState.Tree.add_local_breadcrumb
+                  ~add_on_tito:false
+                  breadcrumb
+                  taint_to_propagate
+              in
               add_extra_traces
                 ~argument_access_path
                 ~named_transforms

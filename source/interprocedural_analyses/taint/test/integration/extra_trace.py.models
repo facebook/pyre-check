@@ -58,7 +58,11 @@
                 "kind": "TransformY@TestSink"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "via": "transform-tito-depth:1" },
+              { "via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 68, "start": 34, "end": 37 },
               { "line": 70, "start": 27, "end": 30 }
@@ -112,7 +116,11 @@
                 "kind": "TransformY:TransformX@TestSource"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "via": "transform-tito-depth:1" },
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 59, "start": 32, "end": 34 },
               { "line": 61, "start": 32, "end": 34 },
@@ -197,7 +205,9 @@
                 "kind": "TransformX@TestSink"
               }
             ],
-            "local_features": [ { "via": "tito" } ],
+            "local_features": [
+              { "via": "transform-tito-depth:1" }, { "via": "tito" }
+            ],
             "tito_positions": [ { "line": 83, "start": 26, "end": 29 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -230,7 +240,9 @@
                 "kind": "TransformX@TestSource"
               }
             ],
-            "local_features": [ { "via": "tito" } ],
+            "local_features": [
+              { "via": "transform-tito-depth:1" }, { "via": "tito" }
+            ],
             "tito_positions": [ { "line": 77, "start": 25, "end": 27 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -323,7 +335,10 @@
                 "kind": "TransformX:TransformY:TransformZ@TestSink"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 50, "start": 30, "end": 33 },
               { "line": 51, "start": 16, "end": 20 },
@@ -374,7 +389,10 @@
                 "kind": "TransformZ:TransformY:TransformX@TestSource"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 43, "start": 28, "end": 30 },
               { "line": 44, "start": 14, "end": 16 },
@@ -417,7 +435,10 @@
                 "kind": "TransformY:TransformX@TestSource"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:3" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 92, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -473,7 +494,10 @@
                 "kind": "TransformX@TransformY:ExtraTraceSink"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:2" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 88, "start": 42, "end": 45 } ],
             "origin": {
               "filename": "extra_trace.py",
@@ -619,7 +643,10 @@
                 "kind": "TransformY@TransformZ:ExtraTraceSink"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "transform-tito-depth:1" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [
               { "line": 26, "start": 16, "end": 19 },
               { "line": 27, "start": 23, "end": 27 },

@@ -345,3 +345,8 @@ let prune_extra_trace_sink ~sink_tree ~tito_tree =
       sink_path, BackwardTaint.bottom
   in
   BackwardState.Tree.transform BackwardState.Tree.Path Map ~f:remove_sink sink_tree
+
+
+let transform_tito_depth_breadcrumb tito_taint =
+  let length = BackwardTaint.fold TraceLength.Self ~f:min ~init:Int.max_value tito_taint in
+  Features.Breadcrumb.TransformTitoDepth (length + 1) |> Features.BreadcrumbInterned.intern
