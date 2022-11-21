@@ -9,6 +9,7 @@ module Buck : sig
   type t = {
     mode: string option;
     isolation_prefix: string option;
+    bxl_builder: string option;
     use_buck2: bool;
     targets: string list;
     (* This is the buck root of the source directory, i.e. output of `buck root`. *)

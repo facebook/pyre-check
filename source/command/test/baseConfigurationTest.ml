@@ -104,6 +104,7 @@ let test_json_parsing context =
             "targets": ["//my:target"],
             "mode": "@mode/opt",
             "isolation_prefix": "prefix",
+            "bxl_builder": "//my/builder.bxl:build",
             "use_buck2": true,
             "source_root": "/buck/root",
             "artifact_root": "/build/root"
@@ -120,6 +121,7 @@ let test_json_parsing context =
               Configuration.Buck.targets = ["//my:target"];
               mode = Some "@mode/opt";
               isolation_prefix = Some "prefix";
+              bxl_builder = Some "//my/builder.bxl:build";
               use_buck2 = true;
               source_root = PyrePath.create_absolute "/buck/root";
               artifact_root = PyrePath.create_absolute "/build/root";

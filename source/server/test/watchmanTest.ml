@@ -451,6 +451,7 @@ let test_filter_creation context =
             {
               Buck.mode = None;
               isolation_prefix = None;
+              bxl_builder = None;
               use_buck2 = false;
               targets = [];
               source_root = PyrePath.create_absolute "/source";

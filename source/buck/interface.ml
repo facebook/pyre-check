@@ -529,7 +529,9 @@ let do_create ?mode ?isolation_prefix ~use_buck2 raw =
 
 let create ?mode ?isolation_prefix raw = do_create ?mode ?isolation_prefix ~use_buck2:false raw
 
-let create_v2 ?mode ?isolation_prefix raw = do_create ?mode ?isolation_prefix ~use_buck2:true raw
+let create_v2 ?mode ?isolation_prefix ?bxl_builder:_ raw =
+  do_create ?mode ?isolation_prefix ~use_buck2:true raw
+
 
 let create_for_testing ~normalize_targets ~construct_build_map () =
   let query_owner_targets ~targets:_ _ =
