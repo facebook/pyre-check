@@ -265,6 +265,76 @@ module V2 = struct
                 Format.sprintf "%s%s" (Target.show target) source_database_suffix);
           ]
         |> Raw.build ?mode ?isolation_prefix raw
+
+
+  let build_map_key = "build_map"
+
+  let built_targets_key = "built_targets"
+
+  let dropped_targets_key = "dropped_targets"
+
+  module BuckBxlBuilderOutput = struct
+    module Conflict = struct
+      type t = {
+        conflict_with: string;
+        artifact_path: string;
+        preserved_source_path: string;
+        dropped_source_path: string;
+      }
+      [@@deriving sexp, compare, of_yojson { strict = false }]
+    end
+
+    type t = {
+      build_map: BuildMap.t;
+      targets: Target.t list;
+      conflicts: (Target.t * Conflict.t) list;
+    }
+  end
+
+  let parse_merged_sourcedb merged_sourcedb : BuckBxlBuilderOutput.t =
+    let open Yojson.Safe in
+    try
+      let build_map =
+        Util.member build_map_key merged_sourcedb
+        |> BuildMap.Partial.of_json_exn_ignoring_duplicates_no_dependency
+        |> BuildMap.create
+      in
+      let targets =
+        let target_of_json json = Util.to_string json |> Target.of_string in
+        Util.member built_targets_key merged_sourcedb |> Util.convert_each target_of_json
+      in
+      let conflicts =
+        let conflict_of_yojson json =
+          match BuckBxlBuilderOutput.Conflict.of_yojson json with
+          | Result.Ok conflict -> conflict
+          | Result.Error message ->
+              let message = Format.sprintf "Cannot parse conflict item: %s" message in
+              raise (JsonError message)
+        in
+        Util.member dropped_targets_key merged_sourcedb
+        |> Util.to_assoc
+        |> List.map ~f:(fun (target, conflict_json) ->
+               Target.of_string target, conflict_of_yojson conflict_json)
+      in
+      { BuckBxlBuilderOutput.build_map; targets; conflicts }
+    with
+    | Yojson.Json_error message
+    | Util.Type_error (message, _) ->
+        raise (JsonError message)
+
+
+  let parse_bxl_output bxl_output =
+    let open Yojson.Safe in
+    try
+      let merged_sourcedb_path =
+        from_string ~fname:"buck bxl output" bxl_output |> Util.member "db" |> Util.to_string
+      in
+      from_file merged_sourcedb_path |> parse_merged_sourcedb
+    with
+    | Yojson.Json_error message
+    | Util.Type_error (message, _)
+    | Sys_error message ->
+        raise (JsonError message)
 end
 
 let get_source_database_suffix { BuckOptions.use_buck2; _ } =

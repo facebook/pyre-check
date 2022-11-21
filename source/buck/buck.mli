@@ -103,6 +103,10 @@ module BuildMap : sig
         format. Raise an exception if the input JSON is malformed. *)
     val of_json_exn_ignoring_duplicates : Yojson.Safe.t -> t
 
+    (** Create a partial build map from a JSON. The JSON must conform to Buck's Python
+        source-db-no-deps format. Raise an exception if the input JSON is malformed. *)
+    val of_json_exn_ignoring_duplicates_no_dependency : Yojson.Safe.t -> t
+
     (** [filter ~f m] returns a new partial build map [m'] that contains all mappings in [m] except
         the ones on which [f ~key ~data] returns [false]. *)
     val filter : t -> f:(key:string -> data:string -> bool) -> t

@@ -62,6 +62,13 @@ module Partial = struct
     |> of_alist_ignoring_duplicates
 
 
+  let of_json_exn_ignoring_duplicates_no_dependency json =
+    let open Yojson.Safe.Util in
+    to_assoc json
+    |> List.map ~f:(fun (key, value) -> key, to_string value)
+    |> of_alist_ignoring_duplicates
+
+
   let filter = Hashtbl.filteri
 
   let merge ~resolve_conflict left right =
