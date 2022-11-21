@@ -67,9 +67,10 @@ exception
 type t = {
   query: ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t;
   build: ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t;
+  bxl: ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t;
 }
 
-let create_for_testing ~query ~build () = { query; build }
+let create_for_testing ~query ~build ~bxl () = { query; build; bxl }
 
 let isolation_prefix_to_buck_arguments = function
   | None
@@ -188,7 +189,8 @@ let create ?(additional_log_size = 0) () =
   let build ?mode ?isolation_prefix arguments =
     invoke_buck ?mode ?isolation_prefix ~command:"build" arguments
   in
-  { query; build }
+  let bxl ?mode:_ ?isolation_prefix:_ _ = failwith "BXL not supported in Buck1" in
+  { query; build; bxl }
 
 
 let create_v2 ?(additional_log_size = 0) () =
@@ -237,9 +239,14 @@ let create_v2 ?(additional_log_size = 0) () =
   let build ?mode ?isolation_prefix arguments =
     invoke_buck ?mode ?isolation_prefix ~command:"build" arguments
   in
-  { query; build }
+  let bxl ?mode ?isolation_prefix arguments =
+    invoke_buck ?mode ?isolation_prefix ~command:"bxl" arguments
+  in
+  { query; build; bxl }
 
 
 let query { query; _ } = query
 
 let build { build; _ } = build
+
+let bxl { bxl; _ } = bxl

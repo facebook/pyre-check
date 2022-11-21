@@ -317,11 +317,12 @@ module Raw : sig
       default, the size is set to 0, which means no additional log will be kept. *)
   val create_v2 : ?additional_log_size:int -> unit -> t
 
-  (** Create an instance of [Raw.t] from custom [query] and [build] behavior. Useful for unit
-      testing. *)
+  (** Create an instance of [Raw.t] from custom [query], [build], and [bxl] behavior. Useful for
+      unit testing. *)
   val create_for_testing
     :  query:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
     build:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
+    bxl:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
     unit ->
     t
 
@@ -338,6 +339,13 @@ module Raw : sig
       Note that mode and isolation prefix are intentionally required to be specified separately,
       since Buck interpret them a bit differently from the rest of the arguments. *)
   val build : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+
+  (** Shell out to `buck bxl` with the given cli arguments. Returns the content of stdout. If the
+      return code is not 0, raise [BuckError].
+
+      Note that mode and isolation prefix are intentionally required to be specified separately,
+      since Buck interpret them a bit differently from the rest of the arguments. *)
+  val bxl : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
 end
 
 (** This module contains high-level interfaces for invoking [buck] as an external tool. It relies on
