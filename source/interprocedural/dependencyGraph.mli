@@ -14,6 +14,13 @@ val dependencies : t -> Target.t -> Target.t list
 
 val to_target_graph : t -> TargetGraph.t
 
+module PruneMethod : sig
+  type t =
+    | None
+    | Internals
+    | Entrypoints of Target.t list
+end
+
 (** Represents a reversed dependency graph, i.e a mapping from callers to callees. *)
 module Reversed : sig
   type nonrec dependency_graph = t
@@ -40,7 +47,7 @@ module Reversed : sig
       belonging to dependencies. The prune operation restricts our callgraph to the subgraph
       reachable from the project callables. During this operation, we also return a list of pruned
       callables to analyze, i.e. we remove irrelevant dependencies from consideration. *)
-  val prune : t -> initial_callables:FetchCallables.t -> prune_result
+  val prune : t -> callables_to_analyze:Target.t list -> prune_result
 
   val to_target_graph : t -> TargetGraph.t
 
@@ -60,7 +67,7 @@ type whole_program_dependency_graph = {
     dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
     maps dependees to dependers. *)
 val build_whole_program_dependency_graph
-  :  prune:bool ->
+  :  prune:PruneMethod.t ->
   initial_callables:FetchCallables.t ->
   call_graph:CallGraph.WholeProgramCallGraph.t ->
   overrides:OverrideGraph.Heap.t ->

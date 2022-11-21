@@ -183,6 +183,9 @@ module Make (Analysis : ANALYSIS) = struct
       in
       let () = Target.Map.iteri ~f:add registry in
       objects
+
+
+    let fold ~init ~f = Target.Map.fold ~init ~f:(fun ~key ~data -> f ~target:key ~model:data)
   end
 
   module Epoch = struct

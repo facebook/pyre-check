@@ -213,6 +213,7 @@ module Mode = struct
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
     | SkipOverrides
+    | Entrypoint
   [@@deriving compare]
 
   let pp formatter = function
@@ -220,6 +221,7 @@ module Mode = struct
     | SkipAnalysis -> Format.fprintf formatter "SkipAnalysis"
     | SkipDecoratorWhenInlining -> Format.fprintf formatter "SkipDecoratorWhenInlining"
     | SkipOverrides -> Format.fprintf formatter "SkipOverrides"
+    | Entrypoint -> Format.fprintf formatter "Entrypoint"
 
 
   let show = Format.asprintf "%a" pp

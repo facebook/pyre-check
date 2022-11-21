@@ -1,0 +1,21 @@
+# common global mutators integration tests
+
+def list.append(self: TaintSink[MutationSink]): ...
+
+# global sources
+ModelQuery(
+  name = "get_all_globals",
+  find = "globals",
+  where = [
+    name.matches("entrypoint\..*"),
+  ],
+  model = [
+    GlobalModel(TaintSource[GlobalSource]),
+  ]
+)
+
+@Entrypoint
+def entrypoint.get_these(): ...
+
+@Entrypoint
+def entrypoint.MyClass.some_entrypoint_function(): ...

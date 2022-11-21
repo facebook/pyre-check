@@ -490,7 +490,6 @@ let test_prune_callables _ =
       ~callgraph
       ~overrides
       ~project_callables
-      ~external_callables
       ~expected_callables
       ~expected_dependencies
     =
@@ -515,16 +514,6 @@ let test_prune_callables _ =
     let project_callables =
       List.map ~f:(fun name -> name |> Reference.create |> Target.create_method) project_callables
     in
-    let external_callables =
-      List.map ~f:(fun name -> name |> Reference.create |> Target.create_method) external_callables
-    in
-    let initial_callables =
-      {
-        FetchCallables.internals = project_callables;
-        callables = List.rev_append project_callables external_callables;
-        stubs = [];
-      }
-    in
     let overrides = DependencyGraph.Reversed.from_overrides overrides in
     let dependencies =
       DependencyGraph.Reversed.from_call_graph callgraph
@@ -535,7 +524,7 @@ let test_prune_callables _ =
       callables_kept = actual_callables;
     }
       =
-      DependencyGraph.Reversed.prune dependencies ~initial_callables
+      DependencyGraph.Reversed.prune dependencies ~callables_to_analyze:project_callables
     in
     let actual_dependencies = DependencyGraph.Reversed.to_target_graph actual_dependencies in
     assert_equal
@@ -567,7 +556,6 @@ let test_prune_callables _ =
       ["a.foo", ["external.bar"]; "external.bar", []; "external.test.test_bar", ["external.bar"]]
     ~overrides:[]
     ~project_callables:["a.foo"]
-    ~external_callables:["external.bar"; "external.test.test_bar"]
     ~expected_callables:["a.foo"; "external.bar"]
     ~expected_dependencies:["a.foo", ["external.bar"]; "external.bar", []];
 
@@ -583,8 +571,6 @@ let test_prune_callables _ =
       ]
     ~overrides:[]
     ~project_callables:["a.foo"]
-    ~external_callables:
-      ["external.bar"; "external.baz"; "external.test.test_bar"; "external.test.test_baz"]
     ~expected_callables:["a.foo"; "external.bar"; "external.baz"]
     ~expected_dependencies:
       ["a.foo", ["external.bar"]; "external.bar", ["external.baz"]; "external.baz", []];
@@ -601,14 +587,6 @@ let test_prune_callables _ =
       ]
     ~overrides:["external.C.m", ["external.D"]; "external.D.m", []]
     ~project_callables:["a.foo"]
-    ~external_callables:
-      [
-        "external.bar";
-        "external.C.m";
-        "external.D.m";
-        "external.called_by_override";
-        "external.unrelated";
-      ]
     ~expected_callables:
       [
         "a.foo";
@@ -642,14 +620,6 @@ let test_prune_callables _ =
       ]
     ~overrides:[]
     ~project_callables:["a.foo"]
-    ~external_callables:
-      [
-        "external.bar";
-        "external.C.m";
-        "external.D.m";
-        "external.called_by_override";
-        "external.unrelated";
-      ]
     ~expected_callables:["a.foo"; "external.bar"; "external.C.m"]
     ~expected_dependencies:
       ["a.foo", ["external.bar"]; "external.bar", ["external.C.m"]; "external.C.m", []];
@@ -667,14 +637,6 @@ let test_prune_callables _ =
       ]
     ~overrides:["external.C.m", ["external.D"]; "external.D.m", ["external.E"]]
     ~project_callables:["a.foo"]
-    ~external_callables:
-      [
-        "external.C.m";
-        "external.D.m";
-        "external.E.m";
-        "external.called_by_override";
-        "external.unrelated";
-      ]
     ~expected_callables:
       [
         "a.foo";
@@ -711,8 +673,6 @@ let test_prune_callables _ =
       ]
     ~overrides:[]
     ~project_callables:["a.foo"]
-    ~external_callables:
-      ["external.a"; "external.b"; "external.c"; "external.d"; "external.e"; "external.f"]
     ~expected_callables:["a.foo"; "external.a"; "external.b"; "external.c"]
     ~expected_dependencies:
       [

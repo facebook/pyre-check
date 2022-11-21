@@ -1,0 +1,373 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "entrypoint.MyClass.some_entrypoint_function",
+    "callable_line": 12,
+    "code": 1006,
+    "line": 13,
+    "start": 8,
+    "end": 12,
+    "filename": "entrypoint.py",
+    "message": "[GlobalSource] to [MutationSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "kind": "GlobalSource"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 13,
+              "start": 8,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "kind": "MutationSink"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 13,
+              "start": 8,
+              "end": 12
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "list.append",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "entrypoint.MyClass.some_entrypoint_function:1006:0:Call|list.append|0|formal(self):6988a7f7d2b75856f079eb2f027c9e6e"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "entrypoint.immediate_examples",
+    "callable_line": 23,
+    "code": 1006,
+    "line": 24,
+    "start": 4,
+    "end": 8,
+    "filename": "entrypoint.py",
+    "message": "[GlobalSource] to [MutationSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "kind": "GlobalSource"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 24,
+              "start": 4,
+              "end": 8
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "kind": "MutationSink"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 24,
+              "start": 4,
+              "end": 8
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "list.append",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "entrypoint.immediate_examples:1006:0:Call|list.append|0|formal(self):1a80820aad20ce993316909733768819"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "entrypoint.leak_globals_by_passing_in",
+    "callable_line": 39,
+    "code": 1006,
+    "line": 40,
+    "start": 43,
+    "end": 47,
+    "filename": "entrypoint.py",
+    "message": "[GlobalSource] to [MutationSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "kind": "GlobalSource"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 40,
+              "start": 43,
+              "end": 47
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "length": 1,
+                "kind": "MutationSink"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "entrypoint.py",
+                "line": 40,
+                "start": 43,
+                "end": 47
+              },
+              "resolves_to": [
+                "entrypoint.transitive_call_with_globals_passed_in"
+              ],
+              "port": "formal(local_list)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "entrypoint.transitive_call_with_globals_passed_in",
+      "index": 0,
+      "parameter": "formal(local_list)"
+    },
+    "master_handle": "entrypoint.leak_globals_by_passing_in:1006:0:Call|entrypoint.transitive_call_with_globals_passed_in|0|formal(local_list):2b8114de01cd0df81a292f101b5fcb38"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "entrypoint.nested_run.do_the_thing",
+    "callable_line": 17,
+    "code": 1006,
+    "line": 18,
+    "start": 8,
+    "end": 12,
+    "filename": "entrypoint.py",
+    "message": "[GlobalSource] to [MutationSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "kind": "GlobalSource"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 18,
+              "start": 8,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "kind": "MutationSink"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 18,
+              "start": 8,
+              "end": 12
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "list.append",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "entrypoint.nested_run.do_the_thing:1006:0:Call|list.append|0|formal(self):3b81bd145990013cfa375115cf2fb488"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "entrypoint.transitive_call_accessing_globals",
+    "callable_line": 35,
+    "code": 1006,
+    "line": 36,
+    "start": 4,
+    "end": 8,
+    "filename": "entrypoint.py",
+    "message": "[GlobalSource] to [MutationSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "kind": "GlobalSource"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 36,
+              "start": 4,
+              "end": 8
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "kind": "MutationSink"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 36,
+              "start": 4,
+              "end": 8
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "list.append",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "entrypoint.transitive_call_accessing_globals:1006:0:Call|list.append|0|formal(self):d97e4430cb98460056488e8d0590fecb"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{entrypoint.glob}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "GlobalSource" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "entrypoint.transitive_call_with_globals_passed_in",
+    "sinks": [
+      {
+        "port": "formal(local_list)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "kind": "MutationSink"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 32,
+              "start": 4,
+              "end": 14
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "list.append",
+    "sinks": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          { "kinds": [ { "kind": "MutationSink" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}

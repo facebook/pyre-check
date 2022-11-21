@@ -42,6 +42,7 @@ module Mode : sig
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
     | SkipOverrides
+    | Entrypoint
   [@@deriving show, compare]
 end
 

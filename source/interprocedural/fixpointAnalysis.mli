@@ -151,6 +151,10 @@ module Make (Analysis : ANALYSIS) : sig
     val targets : t -> Target.t list
 
     val object_targets : t -> Target.HashSet.t
+
+    val fold : init:'a -> f:(target:Target.t -> model:Analysis.Model.t -> 'a -> 'a) -> t -> 'a
+
+    (* val get_targets_with_mode : mode:Analysis.Model.Mode.t -> t -> Target.t list *)
   end
 
   module Epoch : sig

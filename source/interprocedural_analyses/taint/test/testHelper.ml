@@ -782,9 +782,15 @@ let end_to_end_integration_test path context =
         ~context
         source
     in
+    let entrypoints = Registry.get_entrypoints initial_models in
+    let prune_method =
+      match entrypoints with
+      | [] -> Interprocedural.DependencyGraph.PruneMethod.Internals
+      | entrypoints -> Interprocedural.DependencyGraph.PruneMethod.Entrypoints entrypoints
+    in
     let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
       DependencyGraph.build_whole_program_dependency_graph
-        ~prune:true
+        ~prune:prune_method
         ~initial_callables
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap

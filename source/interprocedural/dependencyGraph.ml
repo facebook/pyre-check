@@ -26,6 +26,17 @@ let dependencies dependency_graph target =
 
 let to_target_graph = Fn.id
 
+module PruneMethod = struct
+  type t =
+    (* Do not perform pruning on the call graph *)
+    | None
+    (* Keep callables in the source path (as opposed to the search path) and all callables reachable
+       from them *)
+    | Internals
+    (* Prune the call graph based on a list of entrypoints found from the model file *)
+    | Entrypoints of Target.t list
+end
+
 (** Represents a reversed dependency graph, i.e a mapping from callers to callees. *)
 module Reversed = struct
   type nonrec dependency_graph = t
@@ -118,13 +129,12 @@ module Reversed = struct
     callables_kept: Target.t list;
   }
 
-  let prune reverse_dependency_graph ~initial_callables =
-    let internal_callables = FetchCallables.get_internals initial_callables in
+  let prune reverse_dependency_graph ~callables_to_analyze =
     (* We have an implicit edge from a method to the override it corresponds to during the analysis.
        During the pruning, we make the edges from the method to the override explicit to make sure
        the DFS captures the interesting overrides. *)
     let callables_to_keep =
-      depth_first_search reverse_dependency_graph internal_callables |> List.concat
+      depth_first_search reverse_dependency_graph callables_to_analyze |> List.concat
     in
     let reverse_dependency_graph =
       (* We only keep the keys which were in the original dependency graph to avoid introducing
@@ -165,15 +175,9 @@ let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~
   let reverse_dependency_graph =
     Reversed.from_call_graph call_graph |> Reversed.disjoint_union reverse_dependency_graph
   in
-  if not prune then
-    let dependency_graph = Reversed.reverse reverse_dependency_graph in
-    let callables_kept = FetchCallables.get_callables initial_callables in
-    let callables_to_analyze = List.rev_append override_targets callables_kept in
-    { dependency_graph; override_targets; callables_kept; callables_to_analyze }
-  else
-    let { Reversed.reverse_dependency_graph; callables_kept } =
-      Reversed.prune reverse_dependency_graph ~initial_callables
-    in
+  let create_dependency_graph_from_prune_result
+      { Reversed.reverse_dependency_graph; callables_kept }
+    =
     let dependency_graph = Reversed.reverse reverse_dependency_graph in
     (* Analyze callables in the reverse weak topological order. *)
     let initial_callable_set =
@@ -187,3 +191,17 @@ let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~
       |> List.rev
     in
     { dependency_graph; override_targets; callables_kept; callables_to_analyze }
+  in
+  match prune with
+  | PruneMethod.None ->
+      let dependency_graph = Reversed.reverse reverse_dependency_graph in
+      let callables_kept = FetchCallables.get_callables initial_callables in
+      let callables_to_analyze = List.rev_append override_targets callables_kept in
+      { dependency_graph; override_targets; callables_kept; callables_to_analyze }
+  | PruneMethod.Internals ->
+      let callables_to_analyze = FetchCallables.get_internals initial_callables in
+      Reversed.prune reverse_dependency_graph ~callables_to_analyze
+      |> create_dependency_graph_from_prune_result
+  | PruneMethod.Entrypoints entrypoints ->
+      Reversed.prune reverse_dependency_graph ~callables_to_analyze:entrypoints
+      |> create_dependency_graph_from_prune_result

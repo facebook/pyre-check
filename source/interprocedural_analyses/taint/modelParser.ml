@@ -2928,6 +2928,7 @@ let adjust_sanitize_and_modes_and_skipped_override
         Ok (sanitizers, Model.ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
     | "SkipOverrides" -> Ok (sanitizers, Model.ModeSet.add SkipOverrides modes, Some define_name)
     | "SkipObscure" -> Ok (sanitizers, Model.ModeSet.remove Obscure modes, skipped_override)
+    | "Entrypoint" -> Ok (sanitizers, Model.ModeSet.add Entrypoint modes, skipped_override)
     | _ -> Ok (sanitizers, modes, skipped_override)
   in
   List.fold_result
@@ -2967,6 +2968,7 @@ let create_model_from_signature
           | ["SkipAnalysis"]
           | ["SkipDecoratorWhenInlining"]
           | ["SkipOverrides"]
+          | ["Entrypoint"]
           | ["SkipObscure"] ->
               Either.first decorator
           | _ -> Either.Second decorator_expression)
@@ -3341,6 +3343,8 @@ let rec parse_statement
             Some (Either.Second (decorator_with_name "SkipAnalysis"))
           else if String.equal name "SkipOverrides" then
             Some (Either.Second (decorator_with_name "SkipOverrides"))
+          else if String.equal name "Entrypoint" then
+            Some (Either.Second (decorator_with_name "Entrypoint"))
           else
             None
         in

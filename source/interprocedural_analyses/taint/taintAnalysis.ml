@@ -441,6 +441,14 @@ let run_taint_analysis
     in
     Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 
+    let entrypoint_references = Registry.get_entrypoints initial_models in
+
+    let prune_method =
+      match entrypoint_references with
+      | [] -> Interprocedural.DependencyGraph.PruneMethod.Internals
+      | _ :: _ -> Interprocedural.DependencyGraph.PruneMethod.Entrypoints entrypoint_references
+    in
+
     Log.info "Computing dependencies...";
     let timer = Timer.start () in
     let {
@@ -451,7 +459,7 @@ let run_taint_analysis
     }
       =
       Interprocedural.DependencyGraph.build_whole_program_dependency_graph
-        ~prune:true
+        ~prune:prune_method
         ~initial_callables
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap
