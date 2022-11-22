@@ -48,7 +48,13 @@ val resolve_assertion : t -> asserted_expression:Expression.t -> t option
 
 val resolve_attribute_access : t -> base_type:Type.t -> attribute:string -> Type.t
 
-val partition_name : t -> name:Expression.Name.t -> Reference.t * Reference.t * Annotation.t option
+type partition_name_result_t = {
+  name: Reference.t;
+  attribute_path: Reference.t;
+  base_annotation: Annotation.t option;
+}
+
+val partition_name : t -> name:Expression.Name.t -> partition_name_result_t
 
 val has_nontemporary_annotation : reference:Reference.t -> t -> bool
 

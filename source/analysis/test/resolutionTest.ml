@@ -239,7 +239,9 @@ let test_partition_name context =
   in
   let assert_resolve_name expression (object_reference, attribute_path) =
     let name = Expression.create_name ~location:Location.any expression in
-    let test_reference, test_attribute_path, _ = Resolution.partition_name resolution ~name in
+    let { Resolution.name = test_reference; attribute_path = test_attribute_path; _ } =
+      Resolution.partition_name resolution ~name
+    in
     assert_equal
       (test_reference, test_attribute_path)
       (Reference.create object_reference, Reference.create attribute_path)
