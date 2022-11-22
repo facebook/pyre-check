@@ -972,6 +972,7 @@ def create_overridden_configuration(
     base_directory: Path,
     configuration: str,
 ) -> Configuration:
+    base_directory = base_directory.resolve()
     if arguments.local_configuration:
         LOG.warning(
             f"Local configuration provided but skipped due to overridden global configuration {base_directory / configuration}"
