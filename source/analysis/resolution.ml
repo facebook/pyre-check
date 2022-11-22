@@ -17,6 +17,7 @@ type t = {
   type_variables: Type.Variable.Set.t;
   resolve_expression: resolution:t -> Expression.t -> t * Annotation.t;
   resolve_statement: resolution:t -> Statement.t -> resolve_statement_result_t;
+  partition_name: resolution:t -> Expression.Name.t -> partition_name_result_t;
   parent: Reference.t option;
 }
 
@@ -27,13 +28,28 @@ and resolve_statement_result_t =
       errors: AnalysisError.t list;
     }
 
-let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ?parent () =
+and partition_name_result_t = {
+  name: Reference.t;
+  attribute_path: Reference.t;
+  base_annotation: Annotation.t option;
+}
+
+let create
+    ~global_resolution
+    ~annotation_store
+    ~resolve_expression
+    ~resolve_statement
+    ~partition_name
+    ?parent
+    ()
+  =
   {
     global_resolution;
     annotation_store;
     type_variables = Type.Variable.Set.empty;
     resolve_expression;
     resolve_statement;
+    partition_name;
     parent;
   }
 
@@ -99,40 +115,7 @@ let resolve_assertion ({ resolve_statement; _ } as resolution) ~asserted_express
   | Reachable { resolution; _ } -> Some resolution
 
 
-type partition_name_result_t = {
-  name: Reference.t;
-  attribute_path: Reference.t;
-  base_annotation: Annotation.t option;
-}
-
-let partition_name resolution ~name =
-  let identifiers = Reference.as_list (Expression.name_to_reference_exn name) in
-  match identifiers with
-  | [] ->
-      {
-        name = Reference.create_from_list identifiers;
-        attribute_path = Reference.create "";
-        base_annotation = None;
-      }
-  | head :: attributes ->
-      let rec partition_attribute base attribute_list =
-        let base_type = resolve_reference resolution base in
-        if Type.is_untyped base_type then
-          match attribute_list with
-          | [] -> Reference.create head, attributes, None
-          | attribute :: attribute_list ->
-              partition_attribute Reference.(attribute |> create |> combine base) attribute_list
-        else
-          base, attribute_list, Some (Annotation.create_mutable base_type)
-      in
-      partition_attribute (Reference.create head) attributes
-      |> fun (base, attributes, annotation) ->
-      {
-        name = base;
-        attribute_path = Reference.create_from_list attributes;
-        base_annotation = annotation;
-      }
-
+let partition_name ({ partition_name; _ } as resolution) = partition_name ~resolution
 
 let has_nontemporary_annotation ~reference resolution =
   Refinement.Store.has_nontemporary_annotation ~name:reference resolution.annotation_store
@@ -156,8 +139,14 @@ let refine_local ?(temporary = false) resolution ~reference ~annotation =
   }
 
 
-let set_local_with_attributes ~wipe_subtree ?(temporary = false) resolution ~name ~annotation =
-  let { name; attribute_path; base_annotation } = partition_name resolution ~name in
+let set_local_with_attributes
+    ~wipe_subtree
+    ?(temporary = false)
+    ({ partition_name; _ } as resolution)
+    ~name
+    ~annotation
+  =
+  let { name; attribute_path; base_annotation } = partition_name ~resolution name in
   {
     resolution with
     annotation_store =
@@ -188,9 +177,9 @@ let get_local ?(global_fallback = true) ~reference { annotation_store; global_re
 let get_local_with_attributes
     ?(global_fallback = true)
     ~name
-    ({ annotation_store; global_resolution; _ } as resolution)
+    ({ annotation_store; global_resolution; partition_name; _ } as resolution)
   =
-  let { name; attribute_path; _ } = partition_name resolution ~name in
+  let { name; attribute_path; _ } = partition_name ~resolution name in
   match Refinement.Store.get_annotation ~name ~attribute_path annotation_store with
   | Some _ as result -> result
   | None when global_fallback ->

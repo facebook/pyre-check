@@ -801,6 +801,42 @@ module State (Context : Context) = struct
     | { typed_dictionary_errors; _ } -> emit_typed_dictionary_errors ~errors typed_dictionary_errors
 
 
+  and partition_name ~resolution name =
+    let identifiers = Reference.as_list (Ast.Expression.name_to_reference_exn name) in
+    match identifiers with
+    | [] ->
+        {
+          Resolution.name = Reference.create_from_list identifiers;
+          attribute_path = Reference.create "";
+          base_annotation = None;
+        }
+    | head :: attributes ->
+        let rec partition_attribute base attribute_list =
+          let base_type =
+            base
+            |> Ast.Expression.from_reference ~location:Location.any
+            |> forward_expression ~resolution
+            |> (fun { Resolved.resolved; resolved_annotation; _ } ->
+                 Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation)
+            |> Annotation.annotation
+          in
+          if Type.is_untyped base_type then
+            match attribute_list with
+            | [] -> Reference.create head, attributes, None
+            | attribute :: attribute_list ->
+                partition_attribute Reference.(attribute |> create |> combine base) attribute_list
+          else
+            base, attribute_list, Some (Annotation.create_mutable base_type)
+        in
+        partition_attribute (Reference.create head) attributes
+        |> fun (base, attributes, annotation) ->
+        {
+          Resolution.name = base;
+          attribute_path = Reference.create_from_list attributes;
+          base_annotation = annotation;
+        }
+
+
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
   and forward_expression ~resolution { Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
@@ -6328,7 +6364,13 @@ let resolution
     | Unreachable -> Resolution.Unreachable
     | Value resolution -> Resolution.Reachable { resolution; errors }
   in
-  Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
+  Resolution.create
+    ~global_resolution
+    ~annotation_store
+    ~resolve_expression
+    ~resolve_statement
+    ~partition_name:State.partition_name
+    ()
 
 
 let resolution_with_key ~global_resolution ~local_annotations ~parent ~statement_key context =

@@ -240,7 +240,7 @@ let test_partition_name context =
   let assert_resolve_name expression (object_reference, attribute_path) =
     let name = Expression.create_name ~location:Location.any expression in
     let { Resolution.name = test_reference; attribute_path = test_attribute_path; _ } =
-      Resolution.partition_name resolution ~name
+      Resolution.partition_name resolution name
     in
     assert_equal
       (test_reference, test_attribute_path)

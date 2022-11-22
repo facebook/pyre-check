@@ -16,11 +16,18 @@ type resolve_statement_result_t =
       errors: AnalysisError.t list;
     }
 
+type partition_name_result_t = {
+  name: Reference.t;
+  attribute_path: Reference.t;
+  base_annotation: Annotation.t option;
+}
+
 val create
   :  global_resolution:GlobalResolution.t ->
   annotation_store:Refinement.Store.t ->
   resolve_expression:(resolution:t -> Expression.t -> t * Annotation.t) ->
   resolve_statement:(resolution:t -> Statement.t -> resolve_statement_result_t) ->
+  partition_name:(resolution:t -> Expression.Name.t -> partition_name_result_t) ->
   ?parent:Reference.t ->
   unit ->
   t
@@ -48,13 +55,7 @@ val resolve_assertion : t -> asserted_expression:Expression.t -> t option
 
 val resolve_attribute_access : t -> base_type:Type.t -> attribute:string -> Type.t
 
-type partition_name_result_t = {
-  name: Reference.t;
-  attribute_path: Reference.t;
-  base_annotation: Annotation.t option;
-}
-
-val partition_name : t -> name:Expression.Name.t -> partition_name_result_t
+val partition_name : t -> Expression.Name.t -> partition_name_result_t
 
 val has_nontemporary_annotation : reference:Reference.t -> t -> bool
 
