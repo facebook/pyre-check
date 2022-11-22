@@ -103,6 +103,7 @@ module type S = sig
     f:'f ->
     t ->
     ('b, t) Core_kernel.Map.Poly.t
+    [@@warning "-3" (* TODO(T138025201) *)]
 
   val transform : 'a part -> ([ `Transform ], 'a, 'f, _) operation -> f:'f -> t -> t
 
@@ -175,6 +176,7 @@ module type BASE = sig
     f:'f ->
     t ->
     ('b, t) Core_kernel.Map.Poly.t
+    [@@warning "-3" (* TODO(T138025201) *)]
 
   val create : 'a part -> 'a -> t -> t
 

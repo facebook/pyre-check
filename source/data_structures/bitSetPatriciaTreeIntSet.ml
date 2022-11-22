@@ -8,6 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open Core_kernel
+module Sys = Stdlib.Sys
 
 module type CONFIG = sig
   val common_integers : int array
