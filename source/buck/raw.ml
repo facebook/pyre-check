@@ -64,10 +64,12 @@ exception
   }
 [@@deriving sexp_of]
 
+type buck_command = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+
 type t = {
-  query: ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t;
-  build: ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t;
-  bxl: ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t;
+  query: buck_command;
+  build: buck_command;
+  bxl: buck_command;
 }
 
 let create_for_testing ~query ~build ~bxl () = { query; build; bxl }

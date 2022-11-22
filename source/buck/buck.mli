@@ -321,35 +321,28 @@ module Raw : sig
       default, the size is set to 0, which means no additional log will be kept. *)
   val create_v2 : ?additional_log_size:int -> unit -> t
 
+  (** Utility type to represent the argument and return type for common command-line Buck
+      interaction.
+
+      Note that mode and isolation prefix are intentionally required to be specified separately,
+      since Buck interpret them a bit differently from the rest of the arguments. *)
+  type buck_command = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+
   (** Create an instance of [Raw.t] from custom [query], [build], and [bxl] behavior. Useful for
       unit testing. *)
-  val create_for_testing
-    :  query:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
-    build:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
-    bxl:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
-    unit ->
-    t
+  val create_for_testing : query:buck_command -> build:buck_command -> bxl:buck_command -> unit -> t
 
   (** Shell out to `buck query` with the given cli arguments. Returns the content of stdout. If the
-      return code is not 0, raise [BuckError].
-
-      Note that mode and isolation prefix are intentionally required to be specified separately,
-      since Buck interpret them a bit differently from the rest of the arguments. *)
-  val query : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+      return code is not 0, raise [BuckError]. *)
+  val query : t -> buck_command
 
   (** Shell out to `buck build` with the given cli arguments. Returns the content of stdout. If the
-      return code is not 0, raise [BuckError].
-
-      Note that mode and isolation prefix are intentionally required to be specified separately,
-      since Buck interpret them a bit differently from the rest of the arguments. *)
-  val build : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+      return code is not 0, raise [BuckError]. *)
+  val build : t -> buck_command
 
   (** Shell out to `buck bxl` with the given cli arguments. Returns the content of stdout. If the
-      return code is not 0, raise [BuckError].
-
-      Note that mode and isolation prefix are intentionally required to be specified separately,
-      since Buck interpret them a bit differently from the rest of the arguments. *)
-  val bxl : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+      return code is not 0, raise [BuckError]. *)
+  val bxl : t -> buck_command
 end
 
 (** This module contains high-level interfaces for invoking [buck] as an external tool. It relies on
