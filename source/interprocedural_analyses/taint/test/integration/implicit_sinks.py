@@ -59,3 +59,26 @@ def inline_issue_lhs_add_literal():
 def inline_issue_format_string_proper_tito():
     a, b, c = _test_source(), "", _test_source()
     f"<{a}{b}{c}>"
+
+
+def implicit_sink_before_source():
+    # TODO(T138308554): False negative of implicit sink declaration before use
+    a = "<{}>"
+    a.format(_test_source())
+
+
+def implicit_sink_before_parameter(y):
+    # TODO(T138308554): False negative, should back propagate y leads to implicit sink
+    a = "<{}>"
+    a.format(y)
+
+
+def format_wrapper(a, y):
+    # TODO(T138308718): False negative, most general solution needing conditional sinks
+    a.format(y)
+
+
+def conditional_literal_sink():
+    y = _test_source()
+    a = "<{}>"
+    format_wrapper(a, y)
