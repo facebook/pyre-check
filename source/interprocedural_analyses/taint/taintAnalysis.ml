@@ -389,6 +389,9 @@ let run_taint_analysis
           initial_callables)
     in
 
+    (* Save the cache here, in case there is a model verification error. *)
+    let () = Cache.save cache in
+
     let { ModelParser.models = initial_models; skip_overrides; _ } =
       initialize_models
         ~scheduler
@@ -485,6 +488,8 @@ let run_taint_analysis
       ~phase_name:"Purging shared memory"
       ~timer
       ();
+
+    let () = Cache.save cache in
 
     Log.info
       "Analysis fixpoint started for %d overrides and %d functions..."

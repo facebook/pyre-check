@@ -17,6 +17,8 @@ val load
   enabled:bool ->
   t
 
+val save : t -> unit
+
 val type_environment : t -> (unit -> TypeEnvironment.t) -> TypeEnvironment.t
 
 val class_hierarchy_graph : t -> (unit -> ClassHierarchyGraph.Heap.t) -> ClassHierarchyGraph.Heap.t

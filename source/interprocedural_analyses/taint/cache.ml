@@ -127,11 +127,12 @@ let initialize_shared_memory ~configuration =
     Error NotFound)
   else
     exception_to_error ~error:LoadError ~message:"loading cached state" ~f:(fun () ->
+        Log.info
+          "Loading cached state from `%s`"
+          (PyrePath.absolute (get_save_directory ~configuration));
         let _ = Memory.get_heap_handle configuration in
         Memory.load_shared_memory ~path:(PyrePath.absolute path) ~configuration;
-        Log.warning
-          "Cached state successfully loaded from `%s`."
-          (PyrePath.absolute (get_save_directory ~configuration));
+        Log.info "Cached state successfully loaded.";
         Ok ())
 
 
@@ -228,23 +229,26 @@ let save_shared_memory ~configuration =
       let path = get_shared_memory_save_path ~configuration in
       Log.info "Saving shared memory state to cache file...";
       ensure_save_directory_exists ~configuration;
+      Memory.SharedMemory.collect `aggressive;
       Memory.save_shared_memory ~path:(PyrePath.absolute path) ~configuration;
       Log.info "Saved shared memory state to cache file: `%s`" (PyrePath.absolute path);
       Ok ())
 
 
-let save_initial_callables ~configuration ~initial_callables =
+let save { save_cache; configuration; _ } =
+  if save_cache then
+    save_shared_memory ~configuration |> ignore
+
+
+let save_initial_callables ~initial_callables =
   exception_to_error ~error:() ~message:"saving initial callables to cache" ~f:(fun () ->
       Memory.SharedMemory.collect `aggressive;
       InitialCallablesSharedMemory.store initial_callables;
       Log.info "Saved initial callables to cache shared memory.";
-      (* Shared memory is saved to file after caching the callables to shared memory. The remaining
-         overrides and callgraph to be cached don't use shared memory and are saved as serialized
-         sexps to separate files. *)
-      save_shared_memory ~configuration)
+      Ok ())
 
 
-let initial_callables { cache; save_cache; configuration; _ } f =
+let initial_callables { cache; save_cache; _ } f =
   let initial_callables =
     match cache with
     | Ok _ -> load_initial_callables () |> Result.ok
@@ -255,7 +259,7 @@ let initial_callables { cache; save_cache; configuration; _ } f =
   | None ->
       let callables = f () in
       if save_cache then
-        save_initial_callables ~configuration ~initial_callables:callables |> ignore_result;
+        save_initial_callables ~initial_callables:callables |> ignore_result;
       callables
 
 
@@ -266,16 +270,14 @@ let load_overrides () =
       Ok override_graph)
 
 
-let save_overrides ~configuration ~overrides =
+let save_overrides ~overrides =
   exception_to_error ~error:() ~message:"saving overrides to cache" ~f:(fun () ->
       OverrideGraphSharedMemory.store overrides;
       Log.info "Saved overrides to cache shared memory.";
-      (* Now that we have cached everything in shared memory, save it to a file. *)
-      Memory.SharedMemory.collect `aggressive;
-      save_shared_memory ~configuration)
+      Ok ())
 
 
-let override_graph { cache; save_cache; configuration; _ } f =
+let override_graph { cache; save_cache; _ } f =
   let overrides =
     match cache with
     | Ok _ -> load_overrides () |> Result.ok
@@ -285,7 +287,7 @@ let override_graph { cache; save_cache; configuration; _ } f =
   | Some overrides -> overrides
   | None ->
       let overrides = f () in
-      if save_cache then save_overrides ~configuration ~overrides |> ignore_result;
+      if save_cache then save_overrides ~overrides |> ignore_result;
       overrides
 
 
