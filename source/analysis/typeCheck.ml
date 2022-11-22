@@ -808,7 +808,7 @@ module State (Context : Context) = struct
     | { typed_dictionary_errors; _ } -> emit_typed_dictionary_errors ~errors typed_dictionary_errors
 
 
-  and forward_reference ~resolution ~location ~errors reference =
+  and forward_reference ?(check_errors = true) ~resolution ~location ~errors reference =
     let global_resolution = Resolution.global_resolution resolution in
     let reference = GlobalResolution.legacy_resolve_exports global_resolution ~reference in
     let annotation =
@@ -851,31 +851,35 @@ module State (Context : Context) = struct
           resolved_annotation = Some annotation;
           base = None;
         }
-    | None -> (
-        match GlobalResolution.module_exists global_resolution reference with
-        | false when not (GlobalResolution.is_suppressed_module global_resolution reference) ->
-            let errors =
-              match Reference.prefix reference with
-              | Some qualifier when not (Reference.is_empty qualifier) ->
-                  if GlobalResolution.module_exists global_resolution qualifier then
-                    let origin =
-                      let module_tracker = GlobalResolution.module_tracker global_resolution in
-                      match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
-                      | Some module_path -> Error.ExplicitModule module_path
-                      | None -> Error.ImplicitModule qualifier
-                    in
-                    emit_error
-                      ~errors
-                      ~location
-                      ~kind:
-                        (Error.UndefinedAttribute
-                           { attribute = Reference.last reference; origin = Error.Module origin })
-                  else
-                    errors
-              | _ -> errors
-            in
-            { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None }
-        | _ -> { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None })
+    | None ->
+        let errors =
+          if
+            check_errors
+            && (not (GlobalResolution.module_exists global_resolution reference))
+            && not (GlobalResolution.is_suppressed_module global_resolution reference)
+          then
+            match Reference.prefix reference with
+            | Some qualifier when not (Reference.is_empty qualifier) ->
+                if GlobalResolution.module_exists global_resolution qualifier then
+                  let origin =
+                    let module_tracker = GlobalResolution.module_tracker global_resolution in
+                    match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
+                    | Some module_path -> Error.ExplicitModule module_path
+                    | None -> Error.ImplicitModule qualifier
+                  in
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.UndefinedAttribute
+                         { attribute = Reference.last reference; origin = Error.Module origin })
+                else
+                  errors
+            | _ -> errors
+          else
+            errors
+        in
+        { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None }
 
 
   and partition_name ~resolution name =
@@ -895,7 +899,12 @@ module State (Context : Context) = struct
               Option.is_some (Reference.single base)
               || is_toplevel_module_reference ~global_resolution base
             then
-              forward_reference ~resolution ~location:Location.any ~errors:[] base
+              forward_reference
+                ~resolution
+                ~location:Location.any
+                ~check_errors:false
+                ~errors:[]
+                base
               |> (fun { Resolved.resolved; resolved_annotation; _ } ->
                    Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation)
               |> Annotation.annotation
