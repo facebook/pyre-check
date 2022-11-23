@@ -200,9 +200,25 @@ let same_module_compare
       _;
     }
   =
-  let extensions = Configuration.Analysis.extension_suffixes configuration in
+  (* Stub file always takes precedence *)
+  let stub_priority _ =
+    match left_is_stub, right_is_stub with
+    | true, false -> -1
+    | false, true -> 1
+    | _, _ -> 0
+  in
+  (* Priority based on priority number. Smaller int means higher priority. *)
+  let number_priority _ = Int.compare left_priority right_priority in
+  (* Package takes precedence over file module with the same name *)
+  let is_init_priority _ =
+    match left_is_init, right_is_init with
+    | true, false -> -1
+    | false, true -> 1
+    | _, _ -> 0
+  in
+  (* prioritize extensions in the order listed in the configuration. *)
   let extension_priority _ =
-    (* If all else, equal, prioritize extensions in the order listed in the configuration. *)
+    let extensions = Configuration.Analysis.extension_suffixes configuration in
     let find_extension_index path =
       let extensions =
         if Option.is_some (List.find extensions ~f:(String.equal ".py")) then
@@ -223,20 +239,22 @@ let same_module_compare
     | Some left, Some right -> left - right
     | _ -> 0
   in
-  (* Stub file always takes precedence *)
-  match left_is_stub, right_is_stub with
-  | true, false -> -1
-  | false, true -> 1
-  | _, _ -> (
-      (* Smaller int means higher priority *)
-      match Int.compare left_priority right_priority with
-      | 0 -> (
-          (* Package takes precedence over file module with the same name *)
-          match left_is_init, right_is_init with
-          | true, false -> -1
-          | false, true -> 1
-          | _, _ -> extension_priority ())
-      | _ as result -> result)
+  (* Prioritize the file `b.py` within a directory `a` over `a.b.py` if importing as `a.b`. Note:
+     files with multiple dots are not valid in vanilla python. *)
+  let file_path_priority _ =
+    let is_slash char = Char.equal char (Char.of_string "/") in
+    String.count right_path ~f:is_slash - String.count left_path ~f:is_slash
+  in
+  let priority_order =
+    [stub_priority; number_priority; is_init_priority; extension_priority; file_path_priority]
+  in
+  (* Return the first nonzero comparison *)
+  Option.value
+    (List.find_map priority_order ~f:(fun priority_function ->
+         match priority_function () with
+         | 0 -> None
+         | n -> Some n))
+    ~default:0
 
 
 let is_stub { is_stub; _ } = is_stub

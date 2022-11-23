@@ -855,13 +855,13 @@ let test_initialization context =
     assert_module_path
       (lookup_exn tracker (Reference.create "a.b.special"))
       ~search_root:local_root
-      ~relative:"a.b.special"
+      ~relative:"a/b.special"
       ~is_stub:false
       ~is_external:false
       ~is_init:false;
     ()
   in
-  run_tracker_tests true
+  run_lazy_and_nonlazy ~f:run_tracker_tests
 
 
 let test_priority context =
@@ -872,9 +872,9 @@ let test_priority context =
   let external_root1 =
     bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
-  let external_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
+  let external_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"; "a/b.py"] in
   List.iter ~f:(create_file external_root0) external_paths0;
-  let external_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"] in
+  let external_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"; "a.b.py"] in
   List.iter ~f:(create_file external_root1) external_paths1;
   let local_paths = ["a.py"; "b.pyi"; "c.py"; "d.py"; "e.pyi"; "f.py"; "g.pyi"] in
   List.iter ~f:(create_file local_root) local_paths;
@@ -1416,6 +1416,14 @@ let test_update_new_files context =
         { handle = "a.py"; operation = FileOperation.Add };
       ]
     ~expected:[];
+  (* Test updating conflicting files - ignore based on precedence. *)
+  assert_incremental
+    [
+      { handle = "conflict/a.py"; operation = FileOperation.LeftAlone };
+      { handle = "conflict.a.py"; operation = FileOperation.Add };
+    ]
+    ~external_setups:[{ handle = "conflict/a.py"; operation = FileOperation.Add }]
+    ~expected:[Event.create_new_explicit ~is_external:true "conflict/a.py"];
   ()
 
 
