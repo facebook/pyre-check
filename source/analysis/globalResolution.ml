@@ -449,7 +449,7 @@ let signature_select ~global_resolution:({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
 
 
-let legacy_resolve_exports ({ dependency; _ } as resolution) ~reference =
+let legacy_resolve_exports ({ dependency; _ } as resolution) reference =
   UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
     ?dependency
     (unannotated_global_environment resolution)

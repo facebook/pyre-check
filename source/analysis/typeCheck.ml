@@ -808,40 +808,41 @@ module State (Context : Context) = struct
     | { typed_dictionary_errors; _ } -> emit_typed_dictionary_errors ~errors typed_dictionary_errors
 
 
-  and forward_reference ?(check_errors = true) ~resolution ~location ~errors reference =
+  and resolve_reference_annotation ~resolution reference =
+    let local_annotation = Resolution.get_local resolution ~reference in
+    match local_annotation, Reference.prefix reference with
+    | Some annotation, _ -> Some annotation
+    | None, Some qualifier -> (
+        (* Fallback to use a __getattr__ callable as defined by PEP 484. *)
+        let getattr =
+          Resolution.get_local
+            resolution
+            ~reference:(Reference.create ~prefix:qualifier "__getattr__")
+          >>| Annotation.annotation
+        in
+        let correct_getattr_arity signature =
+          Type.Callable.Overload.parameters signature
+          >>| (fun parameters -> List.length parameters == 1)
+          |> Option.value ~default:false
+        in
+        let create_annotation signature =
+          Annotation.create_immutable
+            ~original:(Some Type.Top)
+            (Type.Callable.Overload.return_annotation signature)
+        in
+        match getattr with
+        | Some (Callable { overloads = [signature]; _ }) when correct_getattr_arity signature ->
+            Some (create_annotation signature)
+        | Some (Callable { implementation = signature; _ }) when correct_getattr_arity signature ->
+            Some (create_annotation signature)
+        | _ -> None)
+    | _ -> None
+
+
+  and forward_reference ~resolution ~location ~errors reference =
     let global_resolution = Resolution.global_resolution resolution in
-    let reference = GlobalResolution.legacy_resolve_exports global_resolution ~reference in
-    let annotation =
-      let local_annotation = Resolution.get_local resolution ~reference in
-      match local_annotation, Reference.prefix reference with
-      | Some annotation, _ -> Some annotation
-      | None, Some qualifier -> (
-          (* Fallback to use a __getattr__ callable as defined by PEP 484. *)
-          let getattr =
-            Resolution.get_local
-              resolution
-              ~reference:(Reference.create ~prefix:qualifier "__getattr__")
-            >>| Annotation.annotation
-          in
-          let correct_getattr_arity signature =
-            Type.Callable.Overload.parameters signature
-            >>| (fun parameters -> List.length parameters == 1)
-            |> Option.value ~default:false
-          in
-          let create_annotation signature =
-            Annotation.create_immutable
-              ~original:(Some Type.Top)
-              (Type.Callable.Overload.return_annotation signature)
-          in
-          match getattr with
-          | Some (Callable { overloads = [signature]; _ }) when correct_getattr_arity signature ->
-              Some (create_annotation signature)
-          | Some (Callable { implementation = signature; _ }) when correct_getattr_arity signature
-            ->
-              Some (create_annotation signature)
-          | _ -> None)
-      | _ -> None
-    in
+    let reference = GlobalResolution.legacy_resolve_exports global_resolution reference in
+    let annotation = resolve_reference_annotation ~resolution reference in
     match annotation with
     | Some annotation ->
         {
@@ -854,8 +855,7 @@ module State (Context : Context) = struct
     | None ->
         let errors =
           if
-            check_errors
-            && (not (GlobalResolution.module_exists global_resolution reference))
+            (not (GlobalResolution.module_exists global_resolution reference))
             && not (GlobalResolution.is_suppressed_module global_resolution reference)
           then
             match Reference.prefix reference with
@@ -908,10 +908,11 @@ module State (Context : Context) = struct
         in
         let rec partition_attribute base attribute_list =
           let base_type =
-            forward_reference ~resolution ~location:Location.any ~check_errors:false ~errors:[] base
-            |> (fun { Resolved.resolved; resolved_annotation; _ } ->
-                 Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation)
-            |> Annotation.annotation
+            base
+            |> GlobalResolution.legacy_resolve_exports global_resolution
+            |> resolve_reference_annotation ~resolution
+            >>| Annotation.annotation
+            |> Option.value ~default:Type.Top
           in
           if Type.is_untyped base_type then
             match attribute_list with

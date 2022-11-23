@@ -64,7 +64,7 @@ val check_invalid_type_parameters
 
 val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
 
-val legacy_resolve_exports : t -> reference:Reference.t -> Reference.t
+val legacy_resolve_exports : t -> Reference.t -> Reference.t
 
 val resolve_exports
   :  t ->

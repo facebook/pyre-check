@@ -340,9 +340,7 @@ let test_resolve_exports context =
     let resolution =
       ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
     in
-    let reference =
-      GlobalResolution.legacy_resolve_exports resolution ~reference:(Reference.create name)
-    in
+    let reference = GlobalResolution.legacy_resolve_exports resolution (Reference.create name) in
     assert_equal ~printer:Reference.show ~cmp:Reference.equal (Reference.create expected) reference
   in
   assert_resolve ~sources:[] "a.b" "a.b";
