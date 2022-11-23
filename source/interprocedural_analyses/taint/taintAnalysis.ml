@@ -201,7 +201,7 @@ let parse_models_and_queries_from_configuration
       (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module Analysis.TypeCheck.DummyContext)
   in
-  let { ModelParser.models = user_models; errors; skip_overrides; queries } =
+  let ({ ModelParser.errors; _ } as parse_result) =
     ModelParser.get_model_sources ~paths:taint_model_paths
     |> parse_models_and_queries_from_sources
          ~taint_configuration
@@ -211,14 +211,8 @@ let parse_models_and_queries_from_configuration
          ~callables
          ~stubs
   in
-  ModelVerificationError.verify_models_and_dsl errors verify_models;
-  let class_models = ClassModels.infer ~environment ~user_models in
-  {
-    ModelParser.models = Registry.merge ~join:Model.join_user_models user_models class_models;
-    queries;
-    skip_overrides;
-    errors;
-  }
+  let () = ModelVerificationError.verify_models_and_dsl errors verify_models in
+  parse_result
 
 
 let initialize_models
@@ -284,6 +278,11 @@ let initialize_models
           ~timer
           ();
         models
+  in
+
+  let models =
+    ClassModels.infer ~environment ~user_models:models
+    |> Registry.merge ~join:Model.join_user_models models
   in
 
   let models =
