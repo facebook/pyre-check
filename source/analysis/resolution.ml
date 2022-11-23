@@ -17,7 +17,6 @@ type t = {
   type_variables: Type.Variable.Set.t;
   resolve_expression: resolution:t -> Expression.t -> t * Annotation.t;
   resolve_statement: resolution:t -> Statement.t -> resolve_statement_result_t;
-  partition_name: resolution:t -> Expression.Name.t -> partition_name_result_t;
   parent: Reference.t option;
 }
 
@@ -28,28 +27,13 @@ and resolve_statement_result_t =
       errors: AnalysisError.t list;
     }
 
-and partition_name_result_t = {
-  name: Reference.t;
-  attribute_path: Reference.t;
-  base_annotation: Annotation.t option;
-}
-
-let create
-    ~global_resolution
-    ~annotation_store
-    ~resolve_expression
-    ~resolve_statement
-    ~partition_name
-    ?parent
-    ()
-  =
+let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ?parent () =
   {
     global_resolution;
     annotation_store;
     type_variables = Type.Variable.Set.empty;
     resolve_expression;
     resolve_statement;
-    partition_name;
     parent;
   }
 
@@ -115,8 +99,6 @@ let resolve_assertion ({ resolve_statement; _ } as resolution) ~asserted_express
   | Reachable { resolution; _ } -> Some resolution
 
 
-let partition_name ({ partition_name; _ } as resolution) = partition_name ~resolution
-
 let has_nontemporary_annotation ~reference resolution =
   Refinement.Store.has_nontemporary_annotation ~name:reference resolution.annotation_store
 
@@ -142,11 +124,12 @@ let refine_local ?(temporary = false) resolution ~reference ~annotation =
 let set_local_with_attributes
     ~wipe_subtree
     ?(temporary = false)
-    ({ partition_name; _ } as resolution)
+    resolution
     ~name
+    ~attribute_path
+    ~base_annotation
     ~annotation
   =
-  let { name; attribute_path; base_annotation } = partition_name ~resolution name in
   {
     resolution with
     annotation_store =
@@ -156,7 +139,7 @@ let set_local_with_attributes
            ~wipe_subtree
            ~name
            ~attribute_path
-           ~base:base_annotation
+           ~base_annotation
            ~annotation;
   }
 
@@ -177,9 +160,9 @@ let get_local ?(global_fallback = true) ~reference { annotation_store; global_re
 let get_local_with_attributes
     ?(global_fallback = true)
     ~name
-    ({ annotation_store; global_resolution; partition_name; _ } as resolution)
+    ~attribute_path
+    { annotation_store; global_resolution; _ }
   =
-  let { name; attribute_path; _ } = partition_name ~resolution name in
   match Refinement.Store.get_annotation ~name ~attribute_path annotation_store with
   | Some _ as result -> result
   | None when global_fallback ->

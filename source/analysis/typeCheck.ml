@@ -786,16 +786,17 @@ module State (Context : Context) = struct
         { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None }
 
 
+  type partition_name_result_t = {
+    name: Reference.t;
+    attribute_path: Reference.t;
+    base_annotation: Annotation.t option;
+  }
+
   let partition_name ~resolution name =
     let global_resolution = Resolution.global_resolution resolution in
     let reference = Ast.Expression.name_to_reference_exn name in
     match Reference.as_list reference with
-    | [] ->
-        {
-          Resolution.name = Reference.empty;
-          attribute_path = Reference.empty;
-          base_annotation = None;
-        }
+    | [] -> { name = Reference.empty; attribute_path = Reference.empty; base_annotation = None }
     | head :: tail ->
         let base, attribute_list =
           match GlobalResolution.resolve_exports global_resolution reference with
@@ -829,7 +830,7 @@ module State (Context : Context) = struct
         partition_attribute base attribute_list
         |> fun (base, attributes, annotation) ->
         {
-          Resolution.name = base;
+          name = base;
           attribute_path = Reference.create_from_list attributes;
           base_annotation = annotation;
         }
@@ -1231,9 +1232,15 @@ module State (Context : Context) = struct
                 let local_override =
                   reference
                   >>= fun reference ->
+                  let { name; attribute_path; _ } =
+                    partition_name
+                      ~resolution
+                      (create_name_from_reference ~location:Location.any reference)
+                  in
                   Resolution.get_local_with_attributes
                     resolution
-                    ~name:(create_name_from_reference ~location:Location.any reference)
+                    ~name
+                    ~attribute_path
                     ~global_fallback:(Type.is_meta (Annotation.annotation global_annotation))
                 in
                 match local_override with
@@ -3218,8 +3225,14 @@ module State (Context : Context) = struct
     in
     let is_temporary_refinement name =
       let rec refinable_annotation name =
+        let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
         match
-          Resolution.get_local_with_attributes ~global_fallback:false ~name resolution, name
+          ( Resolution.get_local_with_attributes
+              ~global_fallback:false
+              ~name:partitioned_name
+              ~attribute_path
+              resolution,
+            name )
         with
         | Some local_annotation, _ -> Some local_annotation
         | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
@@ -3248,7 +3261,15 @@ module State (Context : Context) = struct
       Option.is_none (refinable_annotation name)
     in
     let rec existing_annotation name =
-      match Resolution.get_local_with_attributes ~global_fallback:true ~name resolution, name with
+      let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
+      match
+        ( Resolution.get_local_with_attributes
+            ~global_fallback:true
+            ~name:partitioned_name
+            ~attribute_path
+            resolution,
+          name )
+      with
       | Some annotation, _ -> Some annotation
       | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
           let attribute =
@@ -3271,10 +3292,15 @@ module State (Context : Context) = struct
       | _ -> None
     in
     let refine_local ~name annotation =
+      let { name = partitioned_name; attribute_path; base_annotation } =
+        partition_name ~resolution name
+      in
       Resolution.refine_local_with_attributes
         ~temporary:(is_temporary_refinement name)
         resolution
-        ~name
+        ~name:partitioned_name
+        ~attribute_path
+        ~base_annotation
         ~annotation
     in
     match Node.value test with
@@ -3431,7 +3457,10 @@ module State (Context : Context) = struct
                  ~right:mismatched_type
         in
         let resolve ~name =
-          match Resolution.get_local_with_attributes resolution ~name with
+          let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
+          match
+            Resolution.get_local_with_attributes resolution ~name:partitioned_name ~attribute_path
+          with
           | Some { annotation = previous_annotation; _ } ->
               let { not_consistent_with_boundary; _ } =
                 partition previous_annotation ~boundary:mismatched_type
@@ -3613,8 +3642,13 @@ module State (Context : Context) = struct
             ~source:resolved
         with
         | Some [element_type] -> (
+            let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
             let annotation =
-              Resolution.get_local_with_attributes ~global_fallback:false ~name resolution
+              Resolution.get_local_with_attributes
+                ~global_fallback:false
+                ~name:partitioned_name
+                ~attribute_path
+                resolution
             in
             match annotation with
             | Some previous ->
@@ -3664,8 +3698,13 @@ module State (Context : Context) = struct
           right = { Node.value = Name name; _ };
         }
       when is_simple_name name -> (
+        let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
         let annotation =
-          Resolution.get_local_with_attributes ~global_fallback:false ~name resolution
+          Resolution.get_local_with_attributes
+            ~global_fallback:false
+            ~name:partitioned_name
+            ~attribute_path
+            resolution
         in
         match annotation with
         | Some annotation -> (
@@ -3689,7 +3728,10 @@ module State (Context : Context) = struct
         }
       when is_simple_name name ->
         let resolution =
-          match Resolution.get_local_with_attributes resolution ~name with
+          let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
+          match
+            Resolution.get_local_with_attributes resolution ~name:partitioned_name ~attribute_path
+          with
           | Some
               {
                 Annotation.annotation =
@@ -4653,10 +4695,15 @@ module State (Context : Context) = struct
                           when not
                                  (Annotated.Attribute.property attribute
                                  || Option.is_some (find_getattr parent)) ->
+                            let { name; attribute_path; base_annotation } =
+                              partition_name ~resolution name
+                            in
                             Resolution.new_local_with_attributes
                               ~temporary:(is_not_local || Annotated.Attribute.defined attribute)
                               resolution
                               ~name
+                              ~attribute_path
+                              ~base_annotation
                               ~annotation
                         | _ -> resolution)
                     | _ -> resolution
@@ -6377,13 +6424,7 @@ let resolution
     | Unreachable -> Resolution.Unreachable
     | Value resolution -> Resolution.Reachable { resolution; errors }
   in
-  Resolution.create
-    ~global_resolution
-    ~annotation_store
-    ~resolve_expression
-    ~resolve_statement
-    ~partition_name:State.partition_name
-    ()
+  Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
 
 
 let resolution_with_key ~global_resolution ~local_annotations ~parent ~statement_key context =

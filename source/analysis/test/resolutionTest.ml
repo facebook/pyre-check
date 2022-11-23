@@ -15,20 +15,26 @@ open Test
 open WeakenMutableLiterals
 
 let test_new_and_refine context =
-  let create_name = Expression.create_name ~location:Location.any in
   let assert_local ~name ~expected resolution =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
       (Resolution.get_local ~reference:!&name resolution >>| Annotation.annotation)
   in
-  let assert_local_with_attributes ?(global_fallback = true) ~name ~expected resolution =
+  let assert_local_with_attributes
+      ?(global_fallback = true)
+      ~name
+      ~attribute_path
+      ~expected
+      resolution
+    =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
       (Resolution.get_local_with_attributes
          ~global_fallback
-         ~name:(Expression.create_name ~location:Location.any name)
+         ~name:!&name
+         ~attribute_path:!&attribute_path
          resolution
       >>| Annotation.annotation)
   in
@@ -44,40 +50,52 @@ let test_new_and_refine context =
   in
   assert_local ~name:"local" ~expected:(Some "object") resolution;
   (* create an attribute `local.x.y` and make sure the type is right, also refine it *)
-  assert_local_with_attributes ~name:"local.x.y" ~expected:None resolution;
+  assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:None resolution;
   let resolution =
     Resolution.new_local_with_attributes
       resolution
-      ~name:(create_name "local.x.y")
+      ~name:!&"local"
+      ~attribute_path:!&"x.y"
+      ~base_annotation:None
       ~annotation:(Annotation.create_mutable Type.object_primitive)
   in
-  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "object") resolution;
+  assert_local_with_attributes
+    ~name:"local"
+    ~attribute_path:"x.y"
+    ~expected:(Some "object")
+    resolution;
   (* Make sure we can refine `local.x.y` *)
   let resolution =
     Resolution.refine_local_with_attributes
       resolution
-      ~name:(create_name "local.x.y")
+      ~name:!&"local"
+      ~attribute_path:!&"x.y"
+      ~base_annotation:None
       ~annotation:(Annotation.create_mutable Type.integer)
   in
-  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "int") resolution;
+  assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:(Some "int") resolution;
   (* refine `local.x` and make sure it refines, and doesn't destroy `local.x.y` *)
   let resolution =
     Resolution.refine_local_with_attributes
       resolution
-      ~name:(create_name "local.x")
+      ~name:!&"local"
+      ~attribute_path:!&"x"
+      ~base_annotation:None
       ~annotation:(Annotation.create_mutable Type.float)
   in
-  assert_local_with_attributes ~name:"local.x" ~expected:(Some "float") resolution;
-  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "int") resolution;
+  assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "float") resolution;
+  assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:(Some "int") resolution;
   (* bind a new type to `local.x`. This should destroy `local.x.y` *)
   let resolution =
     Resolution.new_local_with_attributes
       resolution
-      ~name:(create_name "local.x")
+      ~name:!&"local"
+      ~attribute_path:!&"x"
+      ~base_annotation:None
       ~annotation:(Annotation.create_mutable Type.integer)
   in
-  assert_local_with_attributes ~name:"local.x" ~expected:(Some "int") resolution;
-  assert_local_with_attributes ~name:"local.x.y" ~expected:None resolution;
+  assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "int") resolution;
+  assert_local_with_attributes ~name:"local" ~attribute_path:"x.y" ~expected:None resolution;
   (* refine `local`. This should not destroy `local.x`. *)
   let resolution =
     Resolution.refine_local
@@ -86,7 +104,7 @@ let test_new_and_refine context =
       ~annotation:(Annotation.create_mutable Type.float)
   in
   assert_local ~name:"local" ~expected:(Some "float") resolution;
-  assert_local_with_attributes ~name:"local.x" ~expected:(Some "int") resolution;
+  assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:(Some "int") resolution;
   (* bind a new type to `local`. This should destroy `local.x`. *)
   let resolution =
     Resolution.new_local
@@ -95,7 +113,7 @@ let test_new_and_refine context =
       ~annotation:(Annotation.create_mutable Type.integer)
   in
   assert_local ~name:"local" ~expected:(Some "int") resolution;
-  assert_local_with_attributes ~name:"local.x" ~expected:None resolution;
+  assert_local_with_attributes ~name:"local" ~attribute_path:"x" ~expected:None resolution;
   ()
 
 
@@ -210,45 +228,6 @@ let test_parse_reference context =
   assert_parse_reference "test.MyType" Type.integer;
   assert_parse_reference "test.Foo" (Type.Primitive "test.Foo");
   assert_parse_reference "typing.List" (Type.Primitive "list")
-
-
-let test_partition_name context =
-  let resolution =
-    make_resolution
-      ~context
-      {|
-      from dataclasses import dataclass
-      from typing import Optional, Final
-      @dataclass(frozen=True)
-      class InnerFrozenDataClass():
-        x: Optional[int]
-      @dataclass(frozen=True)
-      class FrozenDataClass():
-        inner: InnerFrozenDataClass
-      @dataclass
-      class UnfrozenDataClass():
-        inner: InnerFrozenDataClass
-      def foo() -> None:
-        unfrozen_dataclass: Final[UnfrozenDataClass] = ...
-        frozen_dataclass: Final[FrozenDataClass] = ...
-        if unfrozen_dataclass.inner.x is not None:
-          reveal_type(unfrozen_dataclass.inner.x)
-        if frozen_dataclass.inner.x is not None:
-          reveal_type(frozen_dataclass.inner.x)
-    |}
-  in
-  let assert_resolve_name expression (object_reference, attribute_path) =
-    let name = Expression.create_name ~location:Location.any expression in
-    let { Resolution.name = test_reference; attribute_path = test_attribute_path; _ } =
-      Resolution.partition_name resolution name
-    in
-    assert_equal
-      (test_reference, test_attribute_path)
-      (Reference.create object_reference, Reference.create attribute_path)
-  in
-  assert_resolve_name "unfrozen_dataclass.inner.x" ("unfrozen_dataclass", "inner.x");
-  assert_resolve_name "frozen_dataclass.inner.x" ("frozen_dataclass", "inner.x");
-  assert_resolve_name "a.b.c" ("a", "b.c")
 
 
 let test_resolve_literal context =
@@ -1639,7 +1618,6 @@ let () =
          "parse_annotation_no_validation_on_class_lookup_failure"
          >:: test_parse_annotation_for_no_validation_on_class_lookup_failure_environment;
          "parse_reference" >:: test_parse_reference;
-         "partition_name" >:: test_partition_name;
          "resolve_literal" >:: test_resolve_literal;
          "resolve_exports" >:: test_resolve_exports;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;

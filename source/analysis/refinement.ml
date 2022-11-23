@@ -270,14 +270,14 @@ module Store = struct
       ?(wipe_subtree = false)
       ~name
       ~attribute_path
-      ~base
+      ~base_annotation
       ~annotation
       store
     =
     let set_unit_annotation unit =
       unit
       |> Unit.set_annotation ~wipe_subtree ~attribute_path ~annotation
-      |> Unit.set_base_if_none ~base
+      |> Unit.set_base_if_none ~base:base_annotation
     in
     map_over_name ~temporary ~name ~f:set_unit_annotation store
 

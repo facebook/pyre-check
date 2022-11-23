@@ -68,7 +68,7 @@ module Store : sig
     ?wipe_subtree:bool ->
     name:Reference.t ->
     attribute_path:Reference.t ->
-    base:Annotation.t option ->
+    base_annotation:Annotation.t option ->
     annotation:Annotation.t ->
     t ->
     t
