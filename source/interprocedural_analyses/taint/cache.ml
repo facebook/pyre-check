@@ -211,8 +211,9 @@ let type_environment { cache; save_cache; scheduler; configuration } f =
 
 let load_initial_callables () =
   exception_to_error ~error:LoadError ~message:"loading initial callables from cache" ~f:(fun () ->
+      Log.info "Loading initial callables from cache...";
       let initial_callables = InitialCallablesSharedMemory.load () in
-      Log.info "Loaded cached initial callables.";
+      Log.info "Loaded initial callables from cache.";
       Ok initial_callables)
 
 
@@ -265,8 +266,9 @@ let initial_callables { cache; save_cache; _ } f =
 
 let load_overrides () =
   exception_to_error ~error:LoadError ~message:"loading overrides from cache" ~f:(fun () ->
+      Log.info "Loading overrides from cache...";
       let override_graph = OverrideGraphSharedMemory.load () in
-      Log.info "Loaded overrides.";
+      Log.info "Loaded overrides from cache.";
       Ok override_graph)
 
 
@@ -296,8 +298,9 @@ let load_class_hierarchy_graph () =
     ~error:LoadError
     ~message:"loading class hierarchy graph from cache"
     ~f:(fun () ->
+      Log.info "Loading class hierarchy graph from cache...";
       let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load () in
-      Log.info "Loaded class hierarchy graph.";
+      Log.info "Loaded class hierarchy graph from cache.";
       Ok class_hierarchy_graph)
 
 

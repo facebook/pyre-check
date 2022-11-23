@@ -341,6 +341,7 @@ let run_taint_analysis
     let class_hierarchy_graph =
       Cache.class_hierarchy_graph cache (fun () ->
           let timer = Timer.start () in
+          let () = Log.info "Computing class hierarchy graph..." in
           let class_hierarchy_graph =
             Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
               ~scheduler
@@ -357,6 +358,7 @@ let run_taint_analysis
 
     let class_interval_graph =
       let timer = Timer.start () in
+      let () = Log.info "Computing class intervals..." in
       let class_interval_graph =
         Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
         |> Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap
@@ -372,6 +374,7 @@ let run_taint_analysis
     let initial_callables =
       Cache.initial_callables cache (fun () ->
           let timer = Timer.start () in
+          let () = Log.info "Fetching initial callables to analyze..." in
           let initial_callables =
             Interprocedural.FetchCallables.from_qualifiers
               ~scheduler
@@ -410,7 +413,6 @@ let run_taint_analysis
       |> Analysis.TypeEnvironment.ReadOnly.module_tracker
     in
 
-    Log.info "Computing overrides...";
     let timer = Timer.start () in
     let {
       Interprocedural.OverrideGraph.override_graph_heap;
@@ -419,15 +421,24 @@ let run_taint_analysis
     }
       =
       Cache.override_graph cache (fun () ->
-          Interprocedural.OverrideGraph.build_whole_program_overrides
-            ~scheduler
-            ~environment:(Analysis.TypeEnvironment.read_only environment)
-            ~include_unit_tests:false
-            ~skip_overrides
-            ~maximum_overrides:(TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
-            ~qualifiers)
+          Log.info "Computing overrides...";
+          let overrides =
+            Interprocedural.OverrideGraph.build_whole_program_overrides
+              ~scheduler
+              ~environment:(Analysis.TypeEnvironment.read_only environment)
+              ~include_unit_tests:false
+              ~skip_overrides
+              ~maximum_overrides:
+                (TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
+              ~qualifiers
+          in
+          Statistics.performance
+            ~name:"Overrides computed"
+            ~phase_name:"Computing overrides"
+            ~timer
+            ();
+          overrides)
     in
-    Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
 
     Log.info "Building call graph...";
     let timer = Timer.start () in
