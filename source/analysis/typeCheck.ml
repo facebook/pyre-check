@@ -712,6 +712,129 @@ module State (Context : Context) = struct
     |> Option.is_some
 
 
+  let resolve_reference_annotation ~resolution reference =
+    let local_annotation = Resolution.get_local resolution ~reference in
+    match local_annotation, Reference.prefix reference with
+    | Some annotation, _ -> Some annotation
+    | None, Some qualifier -> (
+        (* Fallback to use a __getattr__ callable as defined by PEP 484. *)
+        let getattr =
+          Resolution.get_local
+            resolution
+            ~reference:(Reference.create ~prefix:qualifier "__getattr__")
+          >>| Annotation.annotation
+        in
+        let correct_getattr_arity signature =
+          Type.Callable.Overload.parameters signature
+          >>| (fun parameters -> List.length parameters == 1)
+          |> Option.value ~default:false
+        in
+        let create_annotation signature =
+          Annotation.create_immutable
+            ~original:(Some Type.Top)
+            (Type.Callable.Overload.return_annotation signature)
+        in
+        match getattr with
+        | Some (Callable { overloads = [signature]; _ }) when correct_getattr_arity signature ->
+            Some (create_annotation signature)
+        | Some (Callable { implementation = signature; _ }) when correct_getattr_arity signature ->
+            Some (create_annotation signature)
+        | _ -> None)
+    | _ -> None
+
+
+  let forward_reference ~resolution ~location ~errors reference =
+    let global_resolution = Resolution.global_resolution resolution in
+    let reference = GlobalResolution.legacy_resolve_exports global_resolution reference in
+    let annotation = resolve_reference_annotation ~resolution reference in
+    match annotation with
+    | Some annotation ->
+        {
+          Resolved.resolution;
+          errors;
+          resolved = Annotation.annotation annotation;
+          resolved_annotation = Some annotation;
+          base = None;
+        }
+    | None ->
+        let errors =
+          if
+            (not (GlobalResolution.module_exists global_resolution reference))
+            && not (GlobalResolution.is_suppressed_module global_resolution reference)
+          then
+            match Reference.prefix reference with
+            | Some qualifier when not (Reference.is_empty qualifier) ->
+                if GlobalResolution.module_exists global_resolution qualifier then
+                  let origin =
+                    let module_tracker = GlobalResolution.module_tracker global_resolution in
+                    match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
+                    | Some module_path -> Error.ExplicitModule module_path
+                    | None -> Error.ImplicitModule qualifier
+                  in
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.UndefinedAttribute
+                         { attribute = Reference.last reference; origin = Error.Module origin })
+                else
+                  errors
+            | _ -> errors
+          else
+            errors
+        in
+        { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None }
+
+
+  let partition_name ~resolution name =
+    let global_resolution = Resolution.global_resolution resolution in
+    let reference = Ast.Expression.name_to_reference_exn name in
+    match Reference.as_list reference with
+    | [] ->
+        {
+          Resolution.name = Reference.empty;
+          attribute_path = Reference.empty;
+          base_annotation = None;
+        }
+    | head :: tail ->
+        let base, attribute_list =
+          match GlobalResolution.resolve_exports global_resolution reference with
+          | Some (UnannotatedGlobalEnvironment.ResolvedReference.Module _) -> reference, []
+          | Some
+              (UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub
+                { stub_module; remaining }) ->
+              stub_module, remaining
+          | Some
+              (UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
+                { from; name; remaining; _ }) ->
+              Reference.create ~prefix:from name, remaining
+          | None -> Reference.create head, tail
+        in
+        let rec partition_attribute base attribute_list =
+          let base_type =
+            base
+            |> GlobalResolution.legacy_resolve_exports global_resolution
+            |> resolve_reference_annotation ~resolution
+            >>| Annotation.annotation
+            |> Option.value ~default:Type.Top
+          in
+          if Type.is_untyped base_type then
+            match attribute_list with
+            | [] -> Reference.create head, tail, None
+            | attribute :: attribute_list ->
+                partition_attribute Reference.(attribute |> create |> combine base) attribute_list
+          else
+            base, attribute_list, Some (Annotation.create_mutable base_type)
+        in
+        partition_attribute base attribute_list
+        |> fun (base, attributes, annotation) ->
+        {
+          Resolution.name = base;
+          attribute_path = Reference.create_from_list attributes;
+          base_annotation = annotation;
+        }
+
+
   let rec validate_return expression ~resolution ~errors ~location ~actual ~is_implicit =
     let global_resolution = Resolution.global_resolution resolution in
     let { Node.location = define_location; value = define } = Context.define in
@@ -806,129 +929,6 @@ module State (Context : Context) = struct
     | { resolved = actual; typed_dictionary_errors = [] } ->
         check_incompatible_return actual errors |> check_missing_return actual
     | { typed_dictionary_errors; _ } -> emit_typed_dictionary_errors ~errors typed_dictionary_errors
-
-
-  and resolve_reference_annotation ~resolution reference =
-    let local_annotation = Resolution.get_local resolution ~reference in
-    match local_annotation, Reference.prefix reference with
-    | Some annotation, _ -> Some annotation
-    | None, Some qualifier -> (
-        (* Fallback to use a __getattr__ callable as defined by PEP 484. *)
-        let getattr =
-          Resolution.get_local
-            resolution
-            ~reference:(Reference.create ~prefix:qualifier "__getattr__")
-          >>| Annotation.annotation
-        in
-        let correct_getattr_arity signature =
-          Type.Callable.Overload.parameters signature
-          >>| (fun parameters -> List.length parameters == 1)
-          |> Option.value ~default:false
-        in
-        let create_annotation signature =
-          Annotation.create_immutable
-            ~original:(Some Type.Top)
-            (Type.Callable.Overload.return_annotation signature)
-        in
-        match getattr with
-        | Some (Callable { overloads = [signature]; _ }) when correct_getattr_arity signature ->
-            Some (create_annotation signature)
-        | Some (Callable { implementation = signature; _ }) when correct_getattr_arity signature ->
-            Some (create_annotation signature)
-        | _ -> None)
-    | _ -> None
-
-
-  and forward_reference ~resolution ~location ~errors reference =
-    let global_resolution = Resolution.global_resolution resolution in
-    let reference = GlobalResolution.legacy_resolve_exports global_resolution reference in
-    let annotation = resolve_reference_annotation ~resolution reference in
-    match annotation with
-    | Some annotation ->
-        {
-          Resolved.resolution;
-          errors;
-          resolved = Annotation.annotation annotation;
-          resolved_annotation = Some annotation;
-          base = None;
-        }
-    | None ->
-        let errors =
-          if
-            (not (GlobalResolution.module_exists global_resolution reference))
-            && not (GlobalResolution.is_suppressed_module global_resolution reference)
-          then
-            match Reference.prefix reference with
-            | Some qualifier when not (Reference.is_empty qualifier) ->
-                if GlobalResolution.module_exists global_resolution qualifier then
-                  let origin =
-                    let module_tracker = GlobalResolution.module_tracker global_resolution in
-                    match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
-                    | Some module_path -> Error.ExplicitModule module_path
-                    | None -> Error.ImplicitModule qualifier
-                  in
-                  emit_error
-                    ~errors
-                    ~location
-                    ~kind:
-                      (Error.UndefinedAttribute
-                         { attribute = Reference.last reference; origin = Error.Module origin })
-                else
-                  errors
-            | _ -> errors
-          else
-            errors
-        in
-        { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None }
-
-
-  and partition_name ~resolution name =
-    let global_resolution = Resolution.global_resolution resolution in
-    let reference = Ast.Expression.name_to_reference_exn name in
-    match Reference.as_list reference with
-    | [] ->
-        {
-          Resolution.name = Reference.empty;
-          attribute_path = Reference.empty;
-          base_annotation = None;
-        }
-    | head :: tail ->
-        let base, attribute_list =
-          match GlobalResolution.resolve_exports global_resolution reference with
-          | Some (UnannotatedGlobalEnvironment.ResolvedReference.Module _) -> reference, []
-          | Some
-              (UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub
-                { stub_module; remaining }) ->
-              stub_module, remaining
-          | Some
-              (UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
-                { from; name; remaining; _ }) ->
-              Reference.create ~prefix:from name, remaining
-          | None -> Reference.create head, tail
-        in
-        let rec partition_attribute base attribute_list =
-          let base_type =
-            base
-            |> GlobalResolution.legacy_resolve_exports global_resolution
-            |> resolve_reference_annotation ~resolution
-            >>| Annotation.annotation
-            |> Option.value ~default:Type.Top
-          in
-          if Type.is_untyped base_type then
-            match attribute_list with
-            | [] -> Reference.create head, tail, None
-            | attribute :: attribute_list ->
-                partition_attribute Reference.(attribute |> create |> combine base) attribute_list
-          else
-            base, attribute_list, Some (Annotation.create_mutable base_type)
-        in
-        partition_attribute base attribute_list
-        |> fun (base, attributes, annotation) ->
-        {
-          Resolution.name = base;
-          attribute_path = Reference.create_from_list attributes;
-          base_annotation = annotation;
-        }
 
 
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
