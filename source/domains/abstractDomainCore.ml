@@ -5,6 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* This file is shared between pyre and zoncolan, and they use different
+ * version of Core/Core_kernel. Because Core_kernel is being deprecated,
+ * building this file may or may not trigger a deprecation warning (-3).
+ * Let's suppress it until pyre catches up with zoncolan.
+ * See T138025201
+ *)
+[@@@warning "-3"]
+
 (* Constructors of this type are used to select parts of composed abstract domains. E.g., a Set
    domain will add an Element: element constructor for the element type of the set, thereby allowing
    folding, partitioning, and transforming the abstract domains by Elements. Similarly, a Map domain
@@ -103,7 +111,6 @@ module type S = sig
     f:'f ->
     t ->
     ('b, t) Core_kernel.Map.Poly.t
-    [@@warning "-3" (* TODO(T138025201) *)]
 
   val transform : 'a part -> ([ `Transform ], 'a, 'f, _) operation -> f:'f -> t -> t
 
@@ -176,7 +183,6 @@ module type BASE = sig
     f:'f ->
     t ->
     ('b, t) Core_kernel.Map.Poly.t
-    [@@warning "-3" (* TODO(T138025201) *)]
 
   val create : 'a part -> 'a -> t -> t
 
