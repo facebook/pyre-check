@@ -884,42 +884,44 @@ module State (Context : Context) = struct
 
   and partition_name ~resolution name =
     let global_resolution = Resolution.global_resolution resolution in
-    let identifiers = Reference.as_list (Ast.Expression.name_to_reference_exn name) in
-    match identifiers with
+    let reference = Ast.Expression.name_to_reference_exn name in
+    match Reference.as_list reference with
     | [] ->
         {
-          Resolution.name = Reference.create_from_list identifiers;
-          attribute_path = Reference.create "";
+          Resolution.name = Reference.empty;
+          attribute_path = Reference.empty;
           base_annotation = None;
         }
-    | head :: attributes ->
+    | head :: tail ->
+        let base, attribute_list =
+          match GlobalResolution.resolve_exports global_resolution reference with
+          | Some (UnannotatedGlobalEnvironment.ResolvedReference.Module _) -> reference, []
+          | Some
+              (UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub
+                { stub_module; remaining }) ->
+              stub_module, remaining
+          | Some
+              (UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
+                { from; name; remaining; _ }) ->
+              Reference.create ~prefix:from name, remaining
+          | None -> Reference.create head, tail
+        in
         let rec partition_attribute base attribute_list =
           let base_type =
-            if
-              Option.is_some (Reference.single base)
-              || is_toplevel_module_reference ~global_resolution base
-            then
-              forward_reference
-                ~resolution
-                ~location:Location.any
-                ~check_errors:false
-                ~errors:[]
-                base
-              |> (fun { Resolved.resolved; resolved_annotation; _ } ->
-                   Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation)
-              |> Annotation.annotation
-            else
-              Type.Top
+            forward_reference ~resolution ~location:Location.any ~check_errors:false ~errors:[] base
+            |> (fun { Resolved.resolved; resolved_annotation; _ } ->
+                 Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation)
+            |> Annotation.annotation
           in
           if Type.is_untyped base_type then
             match attribute_list with
-            | [] -> Reference.create head, attributes, None
+            | [] -> Reference.create head, tail, None
             | attribute :: attribute_list ->
                 partition_attribute Reference.(attribute |> create |> combine base) attribute_list
           else
             base, attribute_list, Some (Annotation.create_mutable base_type)
         in
-        partition_attribute (Reference.create head) attributes
+        partition_attribute base attribute_list
         |> fun (base, attributes, annotation) ->
         {
           Resolution.name = base;
