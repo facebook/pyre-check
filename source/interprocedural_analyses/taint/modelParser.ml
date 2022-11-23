@@ -3577,13 +3577,14 @@ let rec parse_statement
             match value with
             | Expression.List items -> List.map items ~f:parse_constraint |> all
             | _ -> parse_constraint expression >>| List.return)
-            >>| fun model_sources -> model_sources, location
-        | None -> Ok ([], location)
+            >>| fun model_sources -> Some (model_sources, location)
+        | None -> Ok None
       in
       let parse_output_models_clause ~name ~path expression =
         match parse_model_sources ~name ~path expression with
         | Error error -> Error [error]
-        | Ok (model_strings, location) -> (
+        | Ok None -> Ok []
+        | Ok (Some (model_strings, location)) -> (
             model_strings
             |> Parser.parse
             >>| Source.create
