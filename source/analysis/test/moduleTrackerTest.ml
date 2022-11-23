@@ -783,7 +783,8 @@ let test_initialization context =
           TestFiles.File "e.py";
           TestFiles.File "f.first";
           TestFiles.File "a.special";
-          TestFiles.File "b.special";
+          TestFiles.Directory { relative = "a"; children = [TestFiles.File "b.special"] };
+          TestFiles.File "a.b.special";
         ]
       ~external_tree:
         [
@@ -852,15 +853,15 @@ let test_initialization context =
       ~is_external:false
       ~is_init:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "b.special"))
+      (lookup_exn tracker (Reference.create "a.b.special"))
       ~search_root:local_root
-      ~relative:"b.special"
+      ~relative:"a.b.special"
       ~is_stub:false
       ~is_external:false
       ~is_init:false;
     ()
   in
-  run_lazy_and_nonlazy ~f:run_tracker_tests
+  run_tracker_tests true
 
 
 let test_priority context =

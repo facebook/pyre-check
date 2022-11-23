@@ -253,46 +253,19 @@ module ModulePaths = struct
       Reference.this_and_all_parents qualifier |> Cache.KeySet.of_list |> Cache.remove_batch cache
 
 
-    (* Determine the qualifier corresponding to the directory where a matching python module would
-       live, assuming that it is not `__init__.py`. This logic is not a simple Reference.prefix for
-       two reasons. (1) We need to handle the empty reference, which serves as its own parent since
-       `builtins.pyi` lives in a root directory. (2) To handle custom extension import logic (e.g. a
-       repository where a thrift client can be imported by importing `client.thrift` rather than
-       just `client`), we need to check whether the parent requires dropping the last *two*
-       identifiers from the qualifier rather than just one. *)
-    let find_parent_qualifier { Configuration.Analysis.extensions; _ } qualifier =
-      let include_suffix =
-        match Reference.as_list qualifier |> List.last with
-        | None -> false
-        | Some qualifier_suffix ->
-            let matches_and_include
-                { Configuration.Extension.suffix; include_suffix_in_module_qualifier }
-              =
-              include_suffix_in_module_qualifier && String.equal ("." ^ qualifier_suffix) suffix
-            in
-            List.exists extensions ~f:matches_and_include
-      in
-      if include_suffix then
-        Reference.prefix qualifier >>= Reference.prefix |> Option.value ~default:Reference.empty
-      else
-        Reference.prefix qualifier |> Option.value ~default:Reference.empty
-
-
-    (* Given a qualifier, find all ModulePath.t values for that qualifier (across all search roots) *)
+    (* Given a qualifier, find all ModulePath.t values for that qualifier (across all search roots).
+       Note: we try all possible parent directories to support python files with multiple dots in
+       them. *)
     let find_module_paths ~lazy_finder:({ configuration; _ } as lazy_finder) qualifier =
-      let non_init_files =
-        find_parent_qualifier configuration qualifier
-        |> find_module_paths_inside_directories_all_search_paths lazy_finder
-        |> (fun map -> Reference.Map.Tree.find map qualifier)
-        |> Option.value ~default:[]
+      let files =
+        Reference.this_and_all_parents qualifier
+        |> List.map ~f:(fun parent_qualifier ->
+               find_module_paths_inside_directories_all_search_paths lazy_finder parent_qualifier
+               |> (fun map -> Reference.Map.Tree.find map qualifier)
+               |> Option.value ~default:[])
+        |> Caml.List.flatten
       in
-      let init_files =
-        find_module_paths_inside_directories_all_search_paths lazy_finder qualifier
-        |> fun map -> Reference.Map.Tree.find map qualifier |> Option.value ~default:[]
-      in
-      List.sort
-        (List.append init_files non_init_files)
-        ~compare:(ModulePath.same_module_compare ~configuration)
+      List.sort files ~compare:(ModulePath.same_module_compare ~configuration)
 
 
     let find_submodule_paths ~lazy_finder qualifier =
