@@ -420,7 +420,7 @@ let get_initial_models ~context =
   let global_resolution =
     Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_resolution
   in
-  let { ModelParser.models; errors; _ } =
+  let { ModelParser.ParseResult.models; errors; _ } =
     ModelParser.parse
       ~resolution:
         (TypeCheck.resolution
@@ -551,7 +551,7 @@ let initialize
     match models_source with
     | None -> Registry.empty, Ast.Reference.Set.empty
     | Some source ->
-        let { ModelParser.models; errors; skip_overrides; queries = rules } =
+        let { ModelParser.ParseResult.models; errors; skip_overrides; queries } =
           ModelParser.parse
             ~resolution
             ~source:(Test.trim_extra_indentation source)
@@ -569,7 +569,7 @@ let initialize
           (List.is_empty errors);
 
         let models_result =
-          TaintModelQuery.ModelQuery.apply_all_rules
+          TaintModelQuery.ModelQuery.apply_all_queries
             ~resolution
             ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph:
@@ -579,7 +579,7 @@ let initialize
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~callables:(List.rev_append stubs callables)
             ~stubs:(Target.HashSet.of_list stubs)
-            ~rules
+            ~queries
         in
         let models_and_names, errors = fst models_result, snd models_result in
         (match taint_configuration.dump_model_query_results_path, expected_dump_string with

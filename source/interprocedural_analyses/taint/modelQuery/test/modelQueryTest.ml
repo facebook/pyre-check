@@ -19,10 +19,10 @@ end
 
 open Taint.ModelParser.Internal.ModelQuery
 
-type query_rule_element = ModelParser.AnnotationKind.t * ModelParser.TaintAnnotation.t
+type query_element = ModelParser.AnnotationKind.t * ModelParser.TaintAnnotation.t
 [@@deriving show, equal]
 
-let test_apply_rule context =
+let test_apply_query context =
   let source ?subkind name =
     let source =
       match subkind with
@@ -35,28 +35,28 @@ let test_apply_rule context =
     let sink = Sinks.NamedSink name in
     ModelParser.TaintAnnotation.from_sink sink
   in
-  let assert_applied_rules ~source ~rule ~callable ~expected =
+  let assert_applied_queries ~source ~query ~callable ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = Analysis.GlobalResolution.create global_environment in
     let actual =
-      TaintModelQuery.ModelQuery.apply_callable_query_rule
-        ~verbose:false
-        ~resolution
-        ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
-        ~rule
-        ~callable
+      query
+      |> TaintModelQuery.ModelQuery.apply_callable_query
+           ~verbose:false
+           ~resolution
+           ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
+           ~callable
       |> String.Map.data
       |> List.concat
     in
     assert_equal
-      ~cmp:(List.equal equal_query_rule_element)
-      ~printer:(List.to_string ~f:show_query_rule_element)
+      ~cmp:(List.equal equal_query_element)
+      ~printer:(List.to_string ~f:show_query_element)
       expected
       actual
   in
-  let assert_applied_rules_for_attribute ~source ~rule ~name ~annotation ~expected =
+  let assert_applied_queries_for_attribute ~source ~query ~name ~annotation ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -73,13 +73,13 @@ let test_apply_rule context =
       | _ -> None
     in
     let actual =
-      TaintModelQuery.ModelQuery.apply_attribute_query_rule
-        ~verbose:false
-        ~resolution
-        ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
-        ~rule
-        ~variable_metadata:
-          { name = Ast.Reference.create name; type_annotation = annotation_expression }
+      query
+      |> TaintModelQuery.ModelQuery.apply_attribute_query
+           ~verbose:false
+           ~resolution
+           ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
+           ~variable_metadata:
+             { name = Ast.Reference.create name; type_annotation = annotation_expression }
       |> String.Map.data
       |> List.concat
     in
@@ -89,17 +89,17 @@ let test_apply_rule context =
       expected
       actual
   in
-  let assert_applied_rules_for_globals ~source ~rule ~name ~expected =
+  let assert_applied_queries_for_globals ~source ~query ~name ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = Analysis.GlobalResolution.create global_environment in
     let actual =
-      TaintModelQuery.ModelQuery.GlobalVariableQueries.apply_global_query_rule
-        ~verbose:false
-        ~resolution
-        ~rule
-        ~variable_metadata:{ name = Ast.Reference.create name; type_annotation = None }
+      query
+      |> TaintModelQuery.ModelQuery.GlobalVariableQueries.apply_global_query
+           ~verbose:false
+           ~resolution
+           ~variable_metadata:{ name = Ast.Reference.create name; type_annotation = None }
       |> String.Map.data
       |> List.concat
     in
@@ -109,49 +109,49 @@ let test_apply_rule context =
       expected
       actual
   in
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(): ...
       |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(): ...
       |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Equals "foo")];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [NameConstraint (Equals "foo")];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(): ...
       |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Equals "test.foo")];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [NameConstraint (Equals "test.foo")];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -159,43 +159,43 @@ let test_apply_rule context =
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
 
   (* Test multiple constraints. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(): ...
       def barfoo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
             NameConstraint (Matches (Re2.create_exn "bar"));
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(): ...
       def barfoo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
             NameConstraint (Matches (Re2.create_exn "bar"));
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -203,36 +203,36 @@ let test_apply_rule context =
     ~expected:[];
 
   (* Method vs. callable productions. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
 
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -240,22 +240,22 @@ let test_apply_rule context =
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
 
   (* Multiple productions. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(x: int): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ReturnTaint [TaintAnnotation (source "Test")];
-            NamedParameterTaint { name = "x"; taint = [TaintAnnotation (source "Test")] };
+            Return [TaintAnnotation (source "Test")];
+            NamedParameter { name = "x"; taint = [TaintAnnotation (source "Test")] };
           ];
-        rule_kind = MethodModel;
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -269,19 +269,18 @@ let test_apply_rule context =
           source "Test" );
       ];
   (* All parameter taint. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
-          [AllParametersTaint { excludes = []; taint = [TaintAnnotation (source "Test")] }];
-        rule_kind = MethodModel;
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [AllParameters { excludes = []; taint = [TaintAnnotation (source "Test")] }];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -297,19 +296,18 @@ let test_apply_rule context =
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
-          [AllParametersTaint { excludes = ["x"]; taint = [TaintAnnotation (source "Test")] }];
-        rule_kind = MethodModel;
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [AllParameters { excludes = ["x"]; taint = [TaintAnnotation (source "Test")] }];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -321,19 +319,18 @@ let test_apply_rule context =
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
-          [AllParametersTaint { excludes = ["y"]; taint = [TaintAnnotation (source "Test")] }];
-        rule_kind = MethodModel;
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [AllParameters { excludes = ["y"]; taint = [TaintAnnotation (source "Test")] }];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -347,25 +344,25 @@ let test_apply_rule context =
       ];
 
   (* Parameter taint. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [NameConstraint (Matches (Re2.create_exn "x"))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = MethodModel;
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -377,25 +374,25 @@ let test_apply_rule context =
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [Not (NameConstraint (Matches (Re2.create_exn "y")))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = MethodModel;
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -407,29 +404,29 @@ let test_apply_rule context =
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where =
                   [
                     ParameterConstraint.AnnotationConstraint
-                      (AnnotationNameConstraint (Matches (Re2.create_exn "int")));
+                      (NameConstraint (Matches (Re2.create_exn "int")));
                   ];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = MethodModel;
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -441,30 +438,26 @@ let test_apply_rule context =
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where =
-                  [
-                    Not
-                      (ParameterConstraint.AnnotationConstraint
-                         (AnnotationNameConstraint (Equals "int")));
-                  ];
+                  [Not (ParameterConstraint.AnnotationConstraint (NameConstraint (Equals "int")))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = MethodModel;
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -476,27 +469,27 @@ let test_apply_rule context =
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       from typing import Annotated
       class C:
         def foo(x: int, y: Annotated[str, "foo"]): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = MethodModel;
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -508,24 +501,24 @@ let test_apply_rule context =
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [NameConstraint (Matches (Re2.create_exn "x"))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -537,24 +530,24 @@ let test_apply_rule context =
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [Not (NameConstraint (Matches (Re2.create_exn "y")))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -566,28 +559,28 @@ let test_apply_rule context =
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where =
                   [
                     ParameterConstraint.AnnotationConstraint
-                      (AnnotationNameConstraint (Matches (Re2.create_exn "int")));
+                      (NameConstraint (Matches (Re2.create_exn "int")));
                   ];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -599,29 +592,25 @@ let test_apply_rule context =
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where =
-                  [
-                    Not
-                      (ParameterConstraint.AnnotationConstraint
-                         (AnnotationNameConstraint (Equals "int")));
-                  ];
+                  [Not (ParameterConstraint.AnnotationConstraint (NameConstraint (Equals "int")))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -633,26 +622,26 @@ let test_apply_rule context =
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       from typing import Annotated
       def foo(x: int, y: Annotated[str, "foo"]): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -664,24 +653,24 @@ let test_apply_rule context =
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(x, y): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [ParameterConstraint.IndexConstraint 0];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -693,24 +682,24 @@ let test_apply_rule context =
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(x, y): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions =
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [ParameterConstraint.IndexConstraint 1];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -722,17 +711,17 @@ let test_apply_rule context =
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(x, y): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions = [ParameterTaint { where = []; taint = [TaintAnnotation (source "Test")] }];
-        rule_kind = FunctionModel;
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [Parameter { where = []; taint = [TaintAnnotation (source "Test")] }];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -750,98 +739,98 @@ let test_apply_rule context =
       ];
 
   (* Annotated returns. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        from typing import Annotated
        def foo(x: int, y: str) -> Annotated[int, "annotation"]: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint IsAnnotatedTypeConstraint];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint IsAnnotatedTypeConstraint];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(x: int, y: str) -> int: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint IsAnnotatedTypeConstraint];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint IsAnnotatedTypeConstraint];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(x: int, y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint IsAnnotatedTypeConstraint];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint IsAnnotatedTypeConstraint];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(x: typing.Annotated[int, "annotation"], y: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, "annotation"], c: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
   (* Any of. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, "annotation"], c: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyOf
               [
@@ -849,22 +838,22 @@ let test_apply_rule context =
                 ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b, c: str) -> typing.Annotated[int, "annotation"]: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyOf
               [
@@ -872,25 +861,25 @@ let test_apply_rule context =
                 ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions =
+        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        models =
           [
-            PositionalParameterTaint
+            PositionalParameter
               {
                 index = 1;
                 taint =
@@ -900,7 +889,7 @@ let test_apply_rule context =
                   ];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -913,18 +902,18 @@ let test_apply_rule context =
           source ~subkind:"A" "Dynamic" );
       ];
   (* Case where we don't match. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions =
+        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        models =
           [
-            PositionalParameterTaint
+            PositionalParameter
               {
                 index = 0;
                 taint =
@@ -934,23 +923,23 @@ let test_apply_rule context =
                   ];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   (* All of. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def foo(a: typing.Annotated[int, "annotation"])-> typing.Annotated[int, "annotation"]: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AllOf
               [
@@ -958,23 +947,23 @@ let test_apply_rule context =
                 ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
   (* Some cases where we don't match with "AllOf". *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a: typing.Annotated[int, "annotation"]): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AllOf
               [
@@ -982,22 +971,22 @@ let test_apply_rule context =
                 ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a) -> typing.Annotated[int, "annotation"]): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AllOf
               [
@@ -1005,26 +994,26 @@ let test_apply_rule context =
                 ReturnConstraint IsAnnotatedTypeConstraint;
               ];
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   (* Named parameters + parametric sources from annotation. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions =
+        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        models =
           [
-            NamedParameterTaint
+            NamedParameter
               {
                 name = "b";
                 taint =
@@ -1034,7 +1023,7 @@ let test_apply_rule context =
                   ];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -1047,18 +1036,18 @@ let test_apply_rule context =
           source ~subkind:"A" "Dynamic" );
       ];
   (* All parameters taint + parametric source from annotation. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions =
+        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        models =
           [
-            AllParametersTaint
+            AllParameters
               {
                 excludes = [];
                 taint =
@@ -1068,7 +1057,7 @@ let test_apply_rule context =
                   ];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -1081,48 +1070,48 @@ let test_apply_rule context =
           source ~subkind:"A" "Dynamic" );
       ];
   (* Returned taint + parametric source from annotation. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint IsAnnotatedTypeConstraint];
-        productions =
+        where = [ReturnConstraint IsAnnotatedTypeConstraint];
+        models =
           [
-            ReturnTaint
+            Return
               [
                 ParametricSourceFromAnnotation { source_pattern = "DynamicSource"; kind = "Dynamic" };
               ];
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source ~subkind:"B" "Dynamic"];
   (* Named parameters + parametric sinks from annotation. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSink(BSink)], c: str): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions =
+        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        models =
           [
-            NamedParameterTaint
+            NamedParameter
               {
                 name = "b";
                 taint =
                   [ParametricSinkFromAnnotation { sink_pattern = "DynamicSink"; kind = "Dynamic" }];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -1136,24 +1125,24 @@ let test_apply_rule context =
             (Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" }) );
       ];
   (* Type annotation constraint for callables *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        productions =
+        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
                 where = [AnnotationConstraint IsAnnotatedTypeConstraint];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -1165,29 +1154,28 @@ let test_apply_rule context =
                { position = 1; name = "b"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyParameterConstraint
-              (AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str"))));
+              (AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "str"))));
           ];
-        productions =
+        models =
           [
-            ParameterTaint
+            Parameter
               {
-                where =
-                  [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
+                where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "str")))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -1203,25 +1191,24 @@ let test_apply_rule context =
                { position = 2; name = "c"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
-          [AnyParameterConstraint (AnnotationConstraint (AnnotationNameConstraint (Equals "int")))];
-        productions =
+        where = [AnyParameterConstraint (AnnotationConstraint (NameConstraint (Equals "int")))];
+        models =
           [
-            ParameterTaint
+            Parameter
               {
-                where = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
+                where = [AnnotationConstraint (NameConstraint (Equals "int"))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
-        rule_kind = FunctionModel;
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -1233,101 +1220,101 @@ let test_apply_rule context =
                { position = 3; name = "d"; positional_only = false }),
           source "Test" );
       ];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo() -> int: ...
        def bar() -> str: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint (NameConstraint (Equals "int"))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo() -> int: ...
        def bar() -> str: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint (NameConstraint (Equals "int"))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo() -> str: ...
        def bar() -> List[str]: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "str")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo() -> str: ...
        def bar() -> typing.List[str]: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "str")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo() -> typing.Annotated[str, "foo"]: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint IsAnnotatedTypeConstraint];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint IsAnnotatedTypeConstraint];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
        def foo() -> typing.Annotated[str, "foo"]: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "foo")))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "foo")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
@@ -1335,7 +1322,7 @@ let test_apply_rule context =
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
 
   (* Decorator names. *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1350,23 +1337,23 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1381,23 +1368,23 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1412,23 +1399,23 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        from flask import Flask
@@ -1436,11 +1423,11 @@ let test_apply_rule context =
        @app.route('/')
        def foo(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               {
@@ -1448,14 +1435,14 @@ let test_apply_rule context =
                 arguments_constraint = None;
               };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1470,23 +1457,23 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1501,23 +1488,23 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               { name_constraint = Equals "test.d1"; arguments_constraint = None };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1532,11 +1519,11 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               {
@@ -1552,14 +1539,14 @@ let test_apply_rule context =
                        ]);
               };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1574,11 +1561,11 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               {
@@ -1594,14 +1581,14 @@ let test_apply_rule context =
                        ]);
               };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1616,11 +1603,11 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               {
@@ -1637,14 +1624,14 @@ let test_apply_rule context =
                        ]);
               };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1659,11 +1646,11 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               {
@@ -1680,14 +1667,14 @@ let test_apply_rule context =
                        ]);
               };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1702,11 +1689,11 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               {
@@ -1730,14 +1717,14 @@ let test_apply_rule context =
                        ]);
               };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1752,11 +1739,11 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               {
@@ -1780,14 +1767,14 @@ let test_apply_rule context =
                        ]);
               };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def d1(c): ...
@@ -1802,11 +1789,11 @@ let test_apply_rule context =
        @d2
        def baz(a): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             AnyDecoratorConstraint
               {
@@ -1830,15 +1817,15 @@ let test_apply_rule context =
                        ]);
               };
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
 
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class C:
@@ -1848,19 +1835,19 @@ let test_apply_rule context =
       class DC:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class C:
@@ -1870,20 +1857,20 @@ let test_apply_rule context =
       class DC:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[];
 
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class C:
@@ -1893,19 +1880,19 @@ let test_apply_rule context =
       class DC:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       @d1
@@ -1918,24 +1905,24 @@ let test_apply_rule context =
       class C:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             ClassConstraint
-              (DecoratorSatisfies
+              (DecoratorConstraint
                  { name_constraint = Matches (Re2.create_exn "d2"); arguments_constraint = None });
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       @d1
@@ -1948,24 +1935,24 @@ let test_apply_rule context =
       class C:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             ClassConstraint
-              (DecoratorSatisfies
+              (DecoratorConstraint
                  { name_constraint = Matches (Re2.create_exn "4"); arguments_constraint = None });
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       @d1
@@ -1979,14 +1966,14 @@ let test_apply_rule context =
       class C:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             ClassConstraint
-              (DecoratorSatisfies
+              (DecoratorConstraint
                  {
                    name_constraint = Equals "test.d1";
                    arguments_constraint =
@@ -2000,14 +1987,14 @@ let test_apply_rule context =
                           ]);
                  });
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       @d1
@@ -2021,14 +2008,14 @@ let test_apply_rule context =
       class C:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             ClassConstraint
-              (DecoratorSatisfies
+              (DecoratorConstraint
                  {
                    name_constraint = Matches (Re2.create_exn "d1");
                    arguments_constraint =
@@ -2042,8 +2029,8 @@ let test_apply_rule context =
                           ]);
                  });
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
@@ -2051,80 +2038,80 @@ let test_apply_rule context =
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
 
   (* Test attribute models. *)
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:{|
       class C:
         x: ...
       class D(C):
         y: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:{|
       class C:
         x: ...
       class D(C):
         y: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
-        productions = [AttributeTaint [TaintAnnotation (sink "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
+        models = [Attribute [TaintAnnotation (sink "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[sink "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:{|
       class C:
         x: ...
       class D(C):
         y: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:{|
       class C:
         x: ...
       class D(C):
         y: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
@@ -2132,27 +2119,27 @@ let test_apply_rule context =
     ~annotation:None
     ~expected:[source "Test"];
   ();
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:{|
       class C:
         x: ...
       class D(C):
         y: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class C:
@@ -2162,58 +2149,58 @@ let test_apply_rule context =
       class E:
         z: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.E.z"
     ~annotation:None
     ~expected:[];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:{|
       class C:
         x: int
         y: str
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [AnnotationConstraint (NameConstraint (Equals "int"))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:(Some "int")
     ~expected:[source "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:{|
       class C:
         x: int
         y: str
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [AnnotationConstraint (NameConstraint (Equals "int"))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.y"
     ~annotation:(Some "str")
     ~expected:[];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class Foo1:
@@ -2227,20 +2214,20 @@ let test_apply_rule context =
         y: Foo2
         z: Bar
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:(Some "typing.Type[Foo1]")
     ~expected:[source "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class Foo1:
@@ -2254,20 +2241,20 @@ let test_apply_rule context =
         y: Foo2
         z: Bar
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.y"
     ~annotation:(Some "typing.Type[Foo2]")
     ~expected:[source "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class Foo1:
@@ -2281,20 +2268,20 @@ let test_apply_rule context =
         y: Foo2
         z: Bar
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.z"
     ~annotation:(Some "typing.Type[Bar]")
     ~expected:[];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       from typing import Annotated
@@ -2302,20 +2289,20 @@ let test_apply_rule context =
         x: int
         y: Annotated[str, "foo"]
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnnotationConstraint IsAnnotatedTypeConstraint];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [AnnotationConstraint IsAnnotatedTypeConstraint];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:(Some "int")
     ~expected:[];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       from typing import Annotated
@@ -2323,13 +2310,13 @@ let test_apply_rule context =
         x: int
         y: Annotated[str, "foo"]
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [AnnotationConstraint IsAnnotatedTypeConstraint];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [AnnotationConstraint IsAnnotatedTypeConstraint];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
@@ -2338,67 +2325,67 @@ let test_apply_rule context =
     ~expected:[source "Test"];
 
   (* Test 'Not' clause *)
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(): ...
       def barfoo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
             Not (NameConstraint (Matches (Re2.create_exn "bar")));
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:{|
       def foo(): ...
       def barfoo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
             Not (NameConstraint (Matches (Re2.create_exn "bar")));
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
        def bar(b): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class C:
@@ -2408,23 +2395,23 @@ let test_apply_rule context =
       class DC:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
-            ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
-            Not (ClassConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
+            ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")));
+            Not (ClassConstraint (NameConstraint (Matches (Re2.create_exn "D"))));
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class C:
@@ -2434,41 +2421,41 @@ let test_apply_rule context =
       class DC:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query =
+        where =
           [
-            ClassConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
-            Not (ClassConstraint (NameSatisfies (Matches (Re2.create_exn "D"))));
+            ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")));
+            Not (ClassConstraint (NameConstraint (Matches (Re2.create_exn "D"))));
           ];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
        def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
        def bar(b): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = FunctionModel;
+        where = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class C:
@@ -2478,20 +2465,20 @@ let test_apply_rule context =
       class E:
         z: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class C:
@@ -2501,20 +2488,20 @@ let test_apply_rule context =
       class E:
         z: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class C:
@@ -2524,13 +2511,13 @@ let test_apply_rule context =
       class E:
         z: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
@@ -2539,7 +2526,7 @@ let test_apply_rule context =
     ~expected:[source "Test"];
 
   (* Test transitive extends *)
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class C:
@@ -2549,20 +2536,20 @@ let test_apply_rule context =
       class E(D):
         z: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.E.z"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class C:
@@ -2572,20 +2559,20 @@ let test_apply_rule context =
       class E(D):
         z: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_rules_for_attribute
+  assert_applied_queries_for_attribute
     ~source:
       {|
       class C:
@@ -2595,20 +2582,20 @@ let test_apply_rule context =
       class E(D):
         z: ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
-        productions = [AttributeTaint [TaintAnnotation (source "Test")]];
-        rule_kind = AttributeModel;
+        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class A:
@@ -2620,19 +2607,19 @@ let test_apply_rule context =
       class D:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        where = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class A:
@@ -2644,19 +2631,19 @@ let test_apply_rule context =
       class D:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        where = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class A:
@@ -2668,19 +2655,19 @@ let test_apply_rule context =
       class D:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        where = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_rules
+  assert_applied_queries
     ~source:
       {|
       class A:
@@ -2692,61 +2679,61 @@ let test_apply_rule context =
       class D:
         def foo(): ...
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
-        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
-        rule_kind = MethodModel;
+        where = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
-  assert_applied_rules_for_globals
+  assert_applied_queries_for_globals
     ~source:{|
       foo = []
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_foo";
-        query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        productions = [GlobalTaint [TaintAnnotation (source "Test")]];
-        rule_kind = GlobalModel;
+        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [Global [TaintAnnotation (source "Test")]];
+        find = Global;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.foo"
     ~expected:[source "Test"];
-  assert_applied_rules_for_globals
+  assert_applied_queries_for_globals
     ~source:{|
       foo, bar = [], {}
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_bar";
-        query = [NameConstraint (Matches (Re2.create_exn "bar"))];
-        productions = [GlobalTaint [TaintAnnotation (source "Test")]];
-        rule_kind = GlobalModel;
+        where = [NameConstraint (Matches (Re2.create_exn "bar"))];
+        models = [Global [TaintAnnotation (source "Test")]];
+        find = Global;
         expected_models = [];
         unexpected_models = [];
       }
     ~name:"test.bar"
     ~expected:[source "Test"];
-  assert_applied_rules_for_globals
+  assert_applied_queries_for_globals
     ~source:{|
       foo = []
      |}
-    ~rule:
+    ~query:
       {
         location = Ast.Location.any;
         name = "get_baz";
-        query = [NameConstraint (Matches (Re2.create_exn "baz"))];
-        productions = [GlobalTaint [TaintAnnotation (source "Test")]];
-        rule_kind = GlobalModel;
+        where = [NameConstraint (Matches (Re2.create_exn "baz"))];
+        models = [Global [TaintAnnotation (source "Test")]];
+        find = Global;
         expected_models = [];
         unexpected_models = [];
       }
@@ -2755,4 +2742,4 @@ let test_apply_rule context =
   ()
 
 
-let () = "modelQuery" >::: ["apply_rule" >:: test_apply_rule] |> Test.run
+let () = "modelQuery" >::: ["apply_query" >:: test_apply_query] |> Test.run

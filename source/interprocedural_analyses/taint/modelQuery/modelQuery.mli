@@ -41,11 +41,11 @@ module GlobalVariableQueries : sig
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
     variable_metadata list
 
-  val apply_global_query_rule
+  val apply_global_query
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
-    rule:Taint.ModelParser.Internal.ModelQuery.rule ->
     variable_metadata:variable_metadata ->
+    Taint.ModelParser.Internal.ModelQuery.t ->
     Taint.ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
 end
 
@@ -60,30 +60,30 @@ module DumpModelQueryResults : sig
     string
 end
 
-val apply_callable_query_rule
+val apply_callable_query
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-  rule:Taint.ModelParser.Internal.ModelQuery.rule ->
   callable:Interprocedural.Target.t ->
+  Taint.ModelParser.Internal.ModelQuery.t ->
   (Taint.ModelParser.Internal.AnnotationKind.t * Taint.ModelParser.Internal.TaintAnnotation.t) list
   Core.String.Map.t
 
-val apply_attribute_query_rule
+val apply_attribute_query
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-  rule:Taint.ModelParser.Internal.ModelQuery.rule ->
   variable_metadata:variable_metadata ->
+  Taint.ModelParser.Internal.ModelQuery.t ->
   Taint.ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
 
-val apply_all_rules
+val apply_all_queries
   :  resolution:Analysis.Resolution.t ->
   scheduler:Scheduler.t ->
   taint_configuration:Taint.TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   source_sink_filter:Taint.SourceSinkFilter.t option ->
-  rules:Taint.ModelParser.Internal.ModelQuery.rule list ->
+  queries:Taint.ModelParser.Internal.ModelQuery.t list ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
@@ -97,5 +97,5 @@ val generate_models_from_queries
   source_sink_filter:Taint.SourceSinkFilter.t option ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
-  Taint.ModelParser.Internal.ModelQuery.rule list ->
+  Taint.ModelParser.Internal.ModelQuery.t list ->
   ModelQueryRegistryMap.t * Taint.ModelVerificationError.t list

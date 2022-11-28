@@ -67,7 +67,7 @@ module ModelQueryRegistryMap = struct
     merge_all_registries ~model_join (get_models model_query_map)
 
 
-  let check_expected_and_unexpected_model_errors ~models_and_names ~rules =
+  let check_expected_and_unexpected_model_errors ~models_and_names ~queries =
     let find_expected_and_unexpected_model_errors ~expect ~actual_models ~name ~location ~models =
       let registry_contains_model registry ~target ~model =
         (* TODO T127682824: Deal with the case of joined models *)
@@ -113,7 +113,7 @@ module ModelQueryRegistryMap = struct
         ~models:unexpected_models
     in
     let expected_and_unexpected_model_errors =
-      rules
+      queries
       |> List.map ~f:(fun { ModelQuery.name; location; expected_models; unexpected_models; _ } ->
              let actual_models = Option.value (get models_and_names name) ~default:Registry.empty in
              let expected_model_errors =
@@ -132,9 +132,9 @@ module ModelQueryRegistryMap = struct
     expected_and_unexpected_model_errors
 
 
-  let check_errors ~models_and_names ~rules =
+  let check_errors ~models_and_names ~queries =
     let model_query_names =
-      List.map rules ~f:(fun rule -> rule.Taint.ModelParser.Internal.ModelQuery.name)
+      List.map queries ~f:(fun query -> query.Taint.ModelParser.Internal.ModelQuery.name)
     in
     let errors =
       List.filter_map model_query_names ~f:(fun model_query_name ->
@@ -257,8 +257,8 @@ let is_ancestor ~resolution ~is_transitive ancestor_class child_class =
 
 let matches_name_constraint ~name_constraint =
   match name_constraint with
-  | ModelQuery.Equals string -> String.equal string
-  | ModelQuery.Matches pattern -> Re2.matches pattern
+  | ModelQuery.NameConstraint.Equals string -> String.equal string
+  | ModelQuery.NameConstraint.Matches pattern -> Re2.matches pattern
 
 
 let matches_decorator_constraint ~name_constraint ~arguments_constraint decorator =
@@ -321,7 +321,7 @@ let matches_decorator_constraint ~name_constraint ~arguments_constraint decorato
 let matches_annotation_constraint ~annotation_constraint ~annotation =
   let open Expression in
   match annotation_constraint, annotation with
-  | ( ModelQuery.IsAnnotatedTypeConstraint,
+  | ( ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint,
       {
         Node.value =
           Expression.Call
@@ -343,7 +343,7 @@ let matches_annotation_constraint ~annotation_constraint ~annotation =
         _;
       } ) ->
       true
-  | ModelQuery.AnnotationNameConstraint name_constraint, annotation_expression ->
+  | ModelQuery.AnnotationConstraint.NameConstraint name_constraint, annotation_expression ->
       matches_name_constraint ~name_constraint (Expression.show annotation_expression)
   | _ -> false
 
@@ -401,11 +401,11 @@ let rec find_children ~class_hierarchy_graph ~is_transitive class_name =
 
 let rec class_matches_constraint ~resolution ~name class_constraint =
   match class_constraint with
-  | ModelQuery.ClassConstraint.NameSatisfies name_constraint ->
+  | ModelQuery.ClassConstraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint name
   | ModelQuery.ClassConstraint.Extends { class_name; is_transitive } ->
       is_ancestor ~resolution ~is_transitive class_name name
-  | ModelQuery.ClassConstraint.DecoratorSatisfies { name_constraint; arguments_constraint } ->
+  | ModelQuery.ClassConstraint.DecoratorConstraint { name_constraint; arguments_constraint } ->
       class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint name
   | ModelQuery.ClassConstraint.AnyOf constraints ->
       List.exists constraints ~f:(class_matches_constraint ~resolution ~name)
@@ -437,7 +437,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~class_hierarch
         callable_type)
   in
   match query_constraint with
-  | ModelQuery.AnyDecoratorConstraint { name_constraint; arguments_constraint } -> (
+  | ModelQuery.Constraint.AnyDecoratorConstraint { name_constraint; arguments_constraint } -> (
       match get_callable_type () with
       | Some
           {
@@ -452,9 +452,9 @@ let rec callable_matches_constraint query_constraint ~resolution ~class_hierarch
           List.exists decorators ~f:(fun decorator ->
               matches_decorator_constraint ~name_constraint ~arguments_constraint decorator)
       | _ -> false)
-  | ModelQuery.NameConstraint name_constraint ->
+  | ModelQuery.Constraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint (Target.external_name callable)
-  | ModelQuery.ReturnConstraint annotation_constraint -> (
+  | ModelQuery.Constraint.ReturnConstraint annotation_constraint -> (
       let callable_type = get_callable_type () in
       match callable_type with
       | Some
@@ -470,7 +470,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~class_hierarch
           >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
           |> Option.value ~default:false
       | _ -> false)
-  | ModelQuery.AnyParameterConstraint parameter_constraint -> (
+  | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint -> (
       let callable_type = get_callable_type () in
       match callable_type with
       | Some
@@ -483,30 +483,33 @@ let rec callable_matches_constraint query_constraint ~resolution ~class_hierarch
           |> List.exists ~f:(fun parameter ->
                  normalized_parameter_matches_constraint ~resolution ~parameter parameter_constraint)
       | _ -> false)
-  | ModelQuery.AnyOf constraints ->
+  | ModelQuery.Constraint.AnyOf constraints ->
       List.exists
         constraints
         ~f:(callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable)
-  | ModelQuery.AllOf constraints ->
+  | ModelQuery.Constraint.AllOf constraints ->
       List.for_all
         constraints
         ~f:(callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable)
-  | ModelQuery.Not query_constraint ->
+  | ModelQuery.Constraint.Not query_constraint ->
       not
         (callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable query_constraint)
-  | ModelQuery.ClassConstraint (NameSatisfies name_constraint) ->
+  | ModelQuery.Constraint.ClassConstraint (NameConstraint name_constraint) ->
       Target.class_name callable
       >>| matches_name_constraint ~name_constraint
       |> Option.value ~default:false
-  | ModelQuery.ClassConstraint (Extends { class_name; is_transitive }) ->
+  | ModelQuery.Constraint.ClassConstraint
+      (ModelQuery.ClassConstraint.Extends { class_name; is_transitive }) ->
       Target.class_name callable
       >>| is_ancestor ~resolution ~is_transitive class_name
       |> Option.value ~default:false
-  | ModelQuery.ClassConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
+  | ModelQuery.Constraint.ClassConstraint
+      (DecoratorConstraint { name_constraint; arguments_constraint }) ->
       Target.class_name callable
       >>| class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
       |> Option.value ~default:false
-  | ModelQuery.ClassConstraint (AnyChildSatisfies { class_constraint; is_transitive }) ->
+  | ModelQuery.Constraint.ClassConstraint (AnyChildConstraint { class_constraint; is_transitive })
+    ->
       Target.class_name callable
       >>| class_matches_any_child_constraint
             ~resolution
@@ -517,7 +520,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~class_hierarch
   | _ -> failwith "impossible case"
 
 
-let apply_callable_productions ~resolution ~productions ~callable =
+let apply_callable_models ~resolution ~models ~callable =
   let definition = Target.get_module_and_definition ~resolution callable in
   match definition with
   | None -> []
@@ -631,9 +634,9 @@ let apply_callable_productions ~resolution ~productions ~callable =
           | _ -> taint_annotation
         in
         match production with
-        | ModelQuery.TaintAnnotation taint_annotation ->
+        | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation ->
             Some (update_placeholder_via_features taint_annotation)
-        | ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind } ->
+        | ModelQuery.QueryTaintAnnotation.ParametricSourceFromAnnotation { source_pattern; kind } ->
             get_subkind_from_annotation ~pattern:source_pattern annotation
             >>| fun subkind ->
             ModelParser.TaintAnnotation.Source
@@ -641,7 +644,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 source = Sources.ParametricSource { source_name = kind; subkind };
                 features = ModelParser.TaintFeatures.empty;
               }
-        | ModelQuery.ParametricSinkFromAnnotation { sink_pattern; kind } ->
+        | ModelQuery.QueryTaintAnnotation.ParametricSinkFromAnnotation { sink_pattern; kind } ->
             get_subkind_from_annotation ~pattern:sink_pattern annotation
             >>| fun subkind ->
             ModelParser.TaintAnnotation.Sink
@@ -651,12 +654,12 @@ let apply_callable_productions ~resolution ~productions ~callable =
               }
       in
       let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
-      let apply_production = function
-        | ModelQuery.ReturnTaint productions ->
+      let apply_model = function
+        | ModelQuery.Model.Return productions ->
             List.filter_map productions ~f:(fun production ->
                 production_to_taint return_annotation ~production
                 >>| fun taint -> ModelParser.AnnotationKind.ReturnAnnotation, taint)
-        | ModelQuery.NamedParameterTaint { name; taint = productions } -> (
+        | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
             let parameter =
               List.find_map
                 normalized_parameters
@@ -676,7 +679,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                     production_to_taint annotation ~production
                     >>| fun taint -> ModelParser.AnnotationKind.ParameterAnnotation parameter, taint)
             | None -> [])
-        | ModelQuery.PositionalParameterTaint { index; taint = productions } -> (
+        | ModelQuery.Model.PositionalParameter { index; taint = productions } -> (
             let parameter =
               List.find_map
                 normalized_parameters
@@ -692,7 +695,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                     production_to_taint annotation ~production
                     >>| fun taint -> ModelParser.AnnotationKind.ParameterAnnotation parameter, taint)
             | None -> [])
-        | ModelQuery.AllParametersTaint { excludes; taint } ->
+        | ModelQuery.Model.AllParameters { excludes; taint } ->
             let apply_parameter_production
                 ( (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }),
                   production )
@@ -708,7 +711,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
-        | ModelQuery.ParameterTaint { where; taint; _ } ->
+        | ModelQuery.Model.Parameter { where; taint; _ } ->
             let apply_parameter_production
                 ( ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
                   parameter),
@@ -727,23 +730,23 @@ let apply_callable_productions ~resolution ~productions ~callable =
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
-        | ModelQuery.AttributeTaint _ -> failwith "impossible case"
-        | ModelQuery.GlobalTaint _ -> failwith "impossible case"
+        | ModelQuery.Model.Attribute _ -> failwith "impossible case"
+        | ModelQuery.Model.Global _ -> failwith "impossible case"
       in
-      List.concat_map productions ~f:apply_production
+      List.concat_map models ~f:apply_model
 
 
-let apply_callable_query_rule
+let apply_callable_query
     ~verbose
     ~resolution
     ~class_hierarchy_graph
-    ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
     ~callable
+    { ModelQuery.find; where; models; name = query_name; _ }
   =
   let kind_matches =
-    match callable, rule_kind with
-    | Target.Function _, ModelQuery.FunctionModel
-    | Target.Method _, ModelQuery.MethodModel ->
+    match callable, find with
+    | Target.Function _, ModelQuery.FindKind.Function
+    | Target.Method _, ModelQuery.FindKind.Method ->
         true
     | _ -> false
   in
@@ -752,18 +755,18 @@ let apply_callable_query_rule
     kind_matches
     && List.for_all
          ~f:(callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable)
-         query
+         where
   then begin
     if verbose then
       Log.info
-        "Target `%a` matches all constraints for the model query rule %s."
+        "Target `%a` matches all constraints for the model query `%s`."
         Target.pp_pretty
         callable
-        rule_name;
+        query_name;
     String.Map.set
       String.Map.empty
-      ~key:rule_name
-      ~data:(apply_callable_productions ~resolution ~productions ~callable)
+      ~key:query_name
+      ~data:(apply_callable_models ~resolution ~models ~callable)
   end
   else
     String.Map.empty
@@ -777,40 +780,42 @@ let rec attribute_matches_constraint
   =
   let attribute_class_name = Reference.prefix name >>| Reference.show in
   match query_constraint with
-  | ModelQuery.NameConstraint name_constraint ->
+  | ModelQuery.Constraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint (Reference.show name)
-  | ModelQuery.AnnotationConstraint annotation_constraint ->
+  | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       annotation
       >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
       |> Option.value ~default:false
-  | ModelQuery.AnyOf constraints ->
+  | ModelQuery.Constraint.AnyOf constraints ->
       List.exists
         constraints
         ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~variable_metadata)
-  | ModelQuery.AllOf constraints ->
+  | ModelQuery.Constraint.AllOf constraints ->
       List.for_all
         constraints
         ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~variable_metadata)
-  | ModelQuery.Not query_constraint ->
+  | ModelQuery.Constraint.Not query_constraint ->
       not
         (attribute_matches_constraint
            ~resolution
            ~class_hierarchy_graph
            ~variable_metadata
            query_constraint)
-  | ModelQuery.ClassConstraint (NameSatisfies name_constraint) ->
+  | ModelQuery.Constraint.ClassConstraint (NameConstraint name_constraint) ->
       attribute_class_name
       >>| matches_name_constraint ~name_constraint
       |> Option.value ~default:false
-  | ModelQuery.ClassConstraint (Extends { class_name; is_transitive }) ->
+  | ModelQuery.Constraint.ClassConstraint (Extends { class_name; is_transitive }) ->
       attribute_class_name
       >>| is_ancestor ~resolution ~is_transitive class_name
       |> Option.value ~default:false
-  | ModelQuery.ClassConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
+  | ModelQuery.Constraint.ClassConstraint
+      (DecoratorConstraint { name_constraint; arguments_constraint }) ->
       attribute_class_name
       >>| class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
       |> Option.value ~default:false
-  | ModelQuery.ClassConstraint (AnyChildSatisfies { class_constraint; is_transitive }) ->
+  | ModelQuery.Constraint.ClassConstraint (AnyChildConstraint { class_constraint; is_transitive })
+    ->
       attribute_class_name
       >>| class_matches_any_child_constraint
             ~resolution
@@ -821,28 +826,28 @@ let rec attribute_matches_constraint
   | _ -> failwith "impossible case"
 
 
-let apply_attribute_productions ~productions =
+let apply_attribute_models ~models =
   let production_to_taint = function
-    | ModelQuery.TaintAnnotation taint_annotation -> Some taint_annotation
+    | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
     | _ -> None
   in
-  let apply_production = function
-    | ModelQuery.AttributeTaint productions -> List.filter_map productions ~f:production_to_taint
+  let apply_model = function
+    | ModelQuery.Model.Attribute productions -> List.filter_map productions ~f:production_to_taint
     | _ -> failwith "impossible case"
   in
-  List.concat_map productions ~f:apply_production
+  List.concat_map models ~f:apply_model
 
 
-let apply_attribute_query_rule
+let apply_attribute_query
     ~verbose
     ~resolution
     ~class_hierarchy_graph
-    ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
     ~variable_metadata:({ name; _ } as variable_metadata)
+    { ModelQuery.find; where; models; name = query_name; _ }
   =
   let kind_matches =
-    match rule_kind with
-    | ModelQuery.AttributeModel -> true
+    match find with
+    | ModelQuery.FindKind.Attribute -> true
     | _ -> false
   in
 
@@ -850,14 +855,14 @@ let apply_attribute_query_rule
     kind_matches
     && List.for_all
          ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~variable_metadata)
-         query
+         where
   then begin
     if verbose then
       Log.info
-        "Attribute `%s` matches all constraints for the model query rule %s."
+        "Attribute `%s` matches all constraints for the model query `%s`."
         (Reference.show name)
-        rule_name;
-    String.Map.set String.Map.empty ~key:rule_name ~data:(apply_attribute_productions ~productions)
+        query_name;
+    String.Map.set String.Map.empty ~key:query_name ~data:(apply_attribute_models ~models)
   end
   else
     String.Map.empty
@@ -927,85 +932,85 @@ module GlobalVariableQueries = struct
       ~variable_metadata:({ name; type_annotation = annotation } as variable_metadata)
     =
     match query_constraint with
-    | ModelQuery.NameConstraint name_constraint ->
+    | ModelQuery.Constraint.NameConstraint name_constraint ->
         matches_name_constraint ~name_constraint (Reference.show name)
-    | ModelQuery.AnnotationConstraint annotation_constraint ->
+    | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
         annotation
         >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
         |> Option.value ~default:false
-    | ModelQuery.AnyOf constraints ->
+    | ModelQuery.Constraint.AnyOf constraints ->
         List.exists constraints ~f:(global_matches_constraint ~resolution ~variable_metadata)
-    | ModelQuery.AllOf constraints ->
+    | ModelQuery.Constraint.AllOf constraints ->
         List.for_all constraints ~f:(global_matches_constraint ~resolution ~variable_metadata)
-    | ModelQuery.Not query_constraint ->
+    | ModelQuery.Constraint.Not query_constraint ->
         not (global_matches_constraint ~resolution ~variable_metadata query_constraint)
     | _ -> false
 
 
-  let apply_global_productions ~productions =
+  let apply_global_models ~models =
     let production_to_taint = function
-      | ModelQuery.TaintAnnotation taint_annotation -> Some taint_annotation
+      | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
       | _ -> None
     in
-    let apply_production = function
-      | ModelQuery.GlobalTaint productions -> List.filter_map productions ~f:production_to_taint
+    let apply_model = function
+      | ModelQuery.Model.Global productions -> List.filter_map productions ~f:production_to_taint
       | _ -> []
     in
-    List.concat_map productions ~f:apply_production
+    List.concat_map models ~f:apply_model
 
 
-  let apply_global_query_rule
+  let apply_global_query
       ~verbose
       ~resolution
-      ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
       ~variable_metadata:({ name; _ } as variable_metadata)
+      { ModelQuery.find; where; models; name = query_name; _ }
     =
     let kind_matches =
-      match rule_kind with
-      | ModelQuery.GlobalModel -> true
+      match find with
+      | ModelQuery.FindKind.Global -> true
       | _ -> false
     in
     if
       kind_matches
-      && List.for_all ~f:(global_matches_constraint ~resolution ~variable_metadata) query
+      && List.for_all ~f:(global_matches_constraint ~resolution ~variable_metadata) where
     then begin
       if verbose then
         Log.info
-          "Global `%s` matches all constraints for the model query rule %s."
+          "Global `%s` matches all constraints for the model query `%s`."
           (Reference.show name)
-          rule_name;
-      String.Map.set String.Map.empty ~key:rule_name ~data:(apply_global_productions ~productions)
+          query_name;
+      String.Map.set String.Map.empty ~key:query_name ~data:(apply_global_models ~models)
     end
     else
       String.Map.empty
 end
 
-let apply_all_rules
+let apply_all_queries
     ~resolution
     ~scheduler
     ~taint_configuration
     ~class_hierarchy_graph
     ~source_sink_filter
-    ~rules
+    ~queries
     ~callables
     ~stubs
     ~environment
   =
   let global_resolution = Resolution.global_resolution resolution in
-  if List.length rules > 0 then
-    let attribute_rules, global_rules, callable_rules =
+  if List.length queries > 0 then
+    let attribute_queries, global_queries, callable_queries =
       List.partition3_map
-        ~f:(fun rule ->
-          match rule with
-          | { ModelQuery.rule_kind = ModelQuery.AttributeModel; _ } -> `Fst rule
-          | { ModelQuery.rule_kind = ModelQuery.GlobalModel; _ } -> `Snd rule
-          | _ -> `Trd rule)
-        rules
+        ~f:(fun query ->
+          match query.ModelQuery.find with
+          | ModelQuery.FindKind.Attribute -> `Fst query
+          | ModelQuery.FindKind.Global -> `Snd query
+          | _ -> `Trd query)
+        queries
     in
-    let apply_rules models_and_names target ~rules ~apply_query_rule ~model_from_annotation =
+    let apply_queries models_and_names target ~queries ~apply_query ~model_from_annotation =
       let taint_to_model_and_names =
-        rules
-        |> List.map ~f:apply_query_rule
+        queries
+        |> List.map ~f:apply_query
         |> List.reduce ~f:(fun left right ->
                String.Map.merge left right ~f:(fun ~key:_ -> function
                  | `Both (taint_annotations_left, taint_annotations_right) ->
@@ -1029,7 +1034,7 @@ let apply_all_rules
     let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
 
     (* Generate models for functions and methods. *)
-    let apply_rules_for_callable models_and_names callable =
+    let apply_queries_for_callable models_and_names callable =
       let callable_model_from_annotation ~taint_to_model =
         ModelParser.create_callable_model_from_annotations
           ~resolution
@@ -1038,15 +1043,14 @@ let apply_all_rules
           ~is_obscure:(Hash_set.mem stubs callable)
           taint_to_model
       in
-      apply_rules
-        ~rules:callable_rules
-        ~apply_query_rule:(fun rule ->
-          apply_callable_query_rule
-            ~verbose
-            ~resolution:global_resolution
-            ~class_hierarchy_graph
-            ~rule
-            ~callable)
+      apply_queries
+        ~queries:callable_queries
+        ~apply_query:
+          (apply_callable_query
+             ~verbose
+             ~resolution:global_resolution
+             ~class_hierarchy_graph
+             ~callable)
         ~model_from_annotation:callable_model_from_annotation
         models_and_names
         callable
@@ -1067,13 +1071,13 @@ let apply_all_rules
              ())
         ~initial:ModelQueryRegistryMap.empty
         ~map:(fun models_and_names callables ->
-          List.fold callables ~init:models_and_names ~f:apply_rules_for_callable)
+          List.fold callables ~init:models_and_names ~f:apply_queries_for_callable)
         ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
         ~inputs:callables
         ()
     in
     (* Generate models for attributes. *)
-    let apply_rules_for_attribute models_and_names ({ name; _ } as variable_metadata) =
+    let apply_queries_for_attribute models_and_names ({ name; _ } as variable_metadata) =
       let attribute_model_from_annotation ~taint_to_model =
         ModelParser.create_attribute_model_from_annotations
           ~resolution
@@ -1082,21 +1086,20 @@ let apply_all_rules
           taint_to_model
       in
       let attribute = Target.create_object name in
-      apply_rules
-        ~rules:attribute_rules
-        ~apply_query_rule:(fun rule ->
-          apply_attribute_query_rule
-            ~verbose
-            ~resolution:global_resolution
-            ~class_hierarchy_graph
-            ~rule
-            ~variable_metadata)
+      apply_queries
+        ~queries:attribute_queries
+        ~apply_query:
+          (apply_attribute_query
+             ~verbose
+             ~resolution:global_resolution
+             ~class_hierarchy_graph
+             ~variable_metadata)
         ~model_from_annotation:attribute_model_from_annotation
         models_and_names
         attribute
     in
     let attribute_models =
-      if not (List.is_empty attribute_rules) then
+      if not (List.is_empty attribute_queries) then
         let all_classes =
           TypeEnvironment.ReadOnly.global_resolution environment
           |> GlobalResolution.unannotated_global_environment
@@ -1115,7 +1118,7 @@ let apply_all_rules
                ())
           ~initial:ModelQueryRegistryMap.empty
           ~map:(fun models_and_names attributes ->
-            List.fold attributes ~init:models_and_names ~f:apply_rules_for_attribute)
+            List.fold attributes ~init:models_and_names ~f:apply_queries_for_attribute)
           ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
           ~inputs:attributes
           ()
@@ -1123,7 +1126,7 @@ let apply_all_rules
         ModelQueryRegistryMap.empty
     in
     (* Generate models for globals. *)
-    let apply_rules_for_globals models_and_names ({ name; _ } as variable_metadata) =
+    let apply_queries_for_globals models_and_names ({ name; _ } as variable_metadata) =
       let global_model_from_annotation ~taint_to_model =
         ModelParser.create_attribute_model_from_annotations
           ~resolution
@@ -1132,14 +1135,13 @@ let apply_all_rules
           taint_to_model
       in
       let global = Target.create_object name in
-      apply_rules
-        ~rules:global_rules
-        ~apply_query_rule:(fun rule ->
-          GlobalVariableQueries.apply_global_query_rule
-            ~verbose
-            ~resolution:global_resolution
-            ~rule
-            ~variable_metadata)
+      apply_queries
+        ~queries:global_queries
+        ~apply_query:
+          (GlobalVariableQueries.apply_global_query
+             ~verbose
+             ~resolution:global_resolution
+             ~variable_metadata)
         ~model_from_annotation:global_model_from_annotation
         models_and_names
         global
@@ -1154,7 +1156,7 @@ let apply_all_rules
              ())
         ~initial:ModelQueryRegistryMap.empty
         ~map:(fun models_and_names globals ->
-          List.fold globals ~init:models_and_names ~f:apply_rules_for_globals)
+          List.fold globals ~init:models_and_names ~f:apply_queries_for_globals)
         ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
         ~inputs:(GlobalVariableQueries.get_globals_and_annotations ~environment)
         ()
@@ -1167,8 +1169,8 @@ let apply_all_rules
       |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models global_models
     in
     ( models_and_names,
-      ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~models_and_names ~rules
-      @ ModelQueryRegistryMap.check_errors ~models_and_names ~rules )
+      ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~models_and_names ~queries
+      @ ModelQueryRegistryMap.check_errors ~models_and_names ~queries )
   else
     ModelQueryRegistryMap.empty, []
 
@@ -1196,13 +1198,13 @@ let generate_models_from_queries
            | Target.Method _ as callable -> Some callable
            | _ -> None)
   in
-  apply_all_rules
+  apply_all_queries
     ~resolution
     ~scheduler
     ~taint_configuration
     ~class_hierarchy_graph
     ~source_sink_filter
-    ~rules:queries
+    ~queries
     ~callables
     ~stubs
     ~environment

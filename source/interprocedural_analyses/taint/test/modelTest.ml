@@ -94,7 +94,7 @@ let set_up_environment
     TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
   in
 
-  let ({ ModelParser.errors; skip_overrides; _ } as parse_result) =
+  let ({ ModelParser.ParseResult.errors; skip_overrides; _ } as parse_result) =
     ModelParser.parse
       ~resolution
       ~source
@@ -125,7 +125,7 @@ let assert_model
     ~expect
     ()
   =
-  let { ModelParser.models; _ }, type_environment, taint_configuration, skip_overrides =
+  let { ModelParser.ParseResult.models; _ }, type_environment, taint_configuration, skip_overrides =
     set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context ~model_source ()
   in
   begin
@@ -198,7 +198,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ~callables:None
       ~stubs:(Target.HashSet.create ())
       ()
-    |> fun { ModelParser.errors; _ } ->
+    |> fun { ModelParser.ParseResult.errors; _ } ->
     if List.is_empty errors then
       "no failure"
     else if List.length errors = 1 then
@@ -213,12 +213,12 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
-  let { ModelParser.queries; _ }, _, _, _ =
+  let { ModelParser.ParseResult.queries; _ }, _, _, _ =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   assert_equal
-    ~cmp:(List.equal ModelParser.Internal.ModelQuery.equal_rule)
-    ~printer:(List.to_string ~f:ModelParser.Internal.ModelQuery.show_rule)
+    ~cmp:(List.equal ModelParser.Internal.ModelQuery.equal)
+    ~printer:(List.to_string ~f:ModelParser.Internal.ModelQuery.show)
     queries
     expect
 
@@ -4477,11 +4477,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4508,11 +4508,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4539,15 +4539,15 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query =
+          where =
             [
               NameConstraint (Matches (Re2.create_exn "foo"));
               NameConstraint (Matches (Re2.create_exn "bar"));
             ];
-          rule_kind = FunctionModel;
-          productions =
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4574,11 +4574,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4606,11 +4606,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [NameConstraint (Equals "test.foo")];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Equals "test.foo")];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4638,11 +4638,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4670,11 +4670,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
-          query = [ReturnConstraint IsAnnotatedTypeConstraint];
-          rule_kind = FunctionModel;
-          productions =
+          where = [ReturnConstraint IsAnnotatedTypeConstraint];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4701,11 +4701,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
-          query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-          rule_kind = FunctionModel;
-          productions =
+          where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4735,7 +4735,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "foo_finders";
-          query =
+          where =
             [
               AnyOf
                 [
@@ -4743,10 +4743,10 @@ let test_query_parsing context =
                   ReturnConstraint IsAnnotatedTypeConstraint;
                 ];
             ];
-          rule_kind = FunctionModel;
-          productions =
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4776,7 +4776,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "foo_finders";
-          query =
+          where =
             [
               AllOf
                 [
@@ -4784,10 +4784,10 @@ let test_query_parsing context =
                   ReturnConstraint IsAnnotatedTypeConstraint;
                 ];
             ];
-          rule_kind = FunctionModel;
-          productions =
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -4815,11 +4815,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              AllParametersTaint
+              AllParameters
                 {
                   excludes = [];
                   taint =
@@ -4850,11 +4850,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              AllParametersTaint
+              AllParameters
                 {
                   excludes = ["self"];
                   taint =
@@ -4885,11 +4885,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              AllParametersTaint
+              AllParameters
                 {
                   excludes = ["self"; "other"];
                   taint =
@@ -4924,11 +4924,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
           name = "foo_finders";
-          query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-          rule_kind = FunctionModel;
-          productions =
+          where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+          find = Function;
+          models =
             [
-              AllParametersTaint
+              AllParameters
                 {
                   excludes = [];
                   taint =
@@ -4963,11 +4963,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
           name = "foo_finders";
-          query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-          rule_kind = FunctionModel;
-          productions =
+          where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+          find = Function;
+          models =
             [
-              AllParametersTaint
+              AllParameters
                 {
                   excludes = [];
                   taint =
@@ -4997,11 +4997,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ClassConstraint (NameSatisfies (Equals "Foo"))];
-          rule_kind = MethodModel;
-          productions =
+          where = [ClassConstraint (NameConstraint (Equals "Foo"))];
+          find = Method;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5029,11 +5029,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = false })];
-          rule_kind = MethodModel;
-          productions =
+          where = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = false })];
+          find = Method;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5061,11 +5061,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = false })];
-          rule_kind = MethodModel;
-          productions =
+          where = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = false })];
+          find = Method;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5092,11 +5092,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = true })];
-          rule_kind = MethodModel;
-          productions =
+          where = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = true })];
+          find = Method;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5123,11 +5123,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query = [ClassConstraint (NameSatisfies (Matches (Re2.create_exn "Foo.*")))];
-          rule_kind = MethodModel;
-          productions =
+          where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "Foo.*")))];
+          find = Method;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5155,19 +5155,19 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query =
+          where =
             [
               ClassConstraint
-                (DecoratorSatisfies
+                (DecoratorConstraint
                    {
                      name_constraint = Matches (Re2.create_exn "foo.*");
                      arguments_constraint = None;
                    });
             ];
-          rule_kind = MethodModel;
-          productions =
+          find = Method;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5196,15 +5196,15 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          query =
+          where =
             [
               AnyDecoratorConstraint
                 { name_constraint = Matches (Re2.create_exn "foo"); arguments_constraint = None };
             ];
-          rule_kind = MethodModel;
-          productions =
+          find = Method;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5245,7 +5245,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 19; column = 1 } };
           name = "get_POST_annotated_sources";
-          query =
+          where =
             [
               AnyDecoratorConstraint
                 {
@@ -5253,10 +5253,10 @@ let test_query_parsing context =
                   arguments_constraint = None;
                 };
             ];
-          rule_kind = FunctionModel;
-          productions =
+          find = Function;
+          models =
             [
-              ParameterTaint
+              Parameter
                 {
                   where =
                     [
@@ -5266,9 +5266,9 @@ let test_query_parsing context =
                              ParameterConstraint.NameConstraint (Matches (Re2.create_exn "self"));
                              ParameterConstraint.NameConstraint (Matches (Re2.create_exn "cls"));
                              ParameterConstraint.AnnotationConstraint
-                               (AnnotationNameConstraint (Matches (Re2.create_exn "IGWSGIRequest")));
+                               (NameConstraint (Matches (Re2.create_exn "IGWSGIRequest")));
                              ParameterConstraint.AnnotationConstraint
-                               (AnnotationNameConstraint (Matches (Re2.create_exn "HttpRequest")));
+                               (NameConstraint (Matches (Re2.create_exn "HttpRequest")));
                            ]);
                     ];
                   taint =
@@ -5286,7 +5286,7 @@ let test_query_parsing context =
 
   (* Expected models *)
   let create_expected_model ?source ?rules ~model_source function_name =
-    let { Taint.ModelParser.models; _ }, _, _, _ =
+    let { Taint.ModelParser.ParseResult.models; _ }, _, _, _ =
       set_up_environment ?source ?rules ~context ~model_source ()
     in
     let model = Option.value_exn (Registry.get models (List.hd_exn (Registry.targets models))) in
@@ -5316,11 +5316,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "get_foo";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5358,11 +5358,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "get_foo";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5404,11 +5404,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 14; column = 1 } };
           name = "get_foo";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = FunctionModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
             [
-              ReturnTaint
+              Return
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5485,15 +5485,15 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 26; column = 1 } };
           name = "get_parent_of_d1_decorator_sources";
-          query =
+          where =
             [
               ClassConstraint
-                (ClassConstraint.AnyChildSatisfies
+                (ClassConstraint.AnyChildConstraint
                    {
                      class_constraint =
                        ClassConstraint.AllOf
                          [
-                           ClassConstraint.DecoratorSatisfies
+                           ClassConstraint.DecoratorConstraint
                              {
                                name_constraint = Matches (Re2.create_exn "d1");
                                arguments_constraint = None;
@@ -5501,18 +5501,18 @@ let test_query_parsing context =
                            ClassConstraint.AnyOf
                              [
                                ClassConstraint.Not
-                                 (ClassConstraint.NameSatisfies (Matches (Re2.create_exn "Foo")));
-                               ClassConstraint.NameSatisfies (Matches (Re2.create_exn "Baz"));
+                                 (ClassConstraint.NameConstraint (Matches (Re2.create_exn "Foo")));
+                               ClassConstraint.NameConstraint (Matches (Re2.create_exn "Baz"));
                              ];
                          ];
                      is_transitive = false;
                    });
               NameConstraint (Matches (Re2.create_exn "\\.__init__$"));
             ];
-          rule_kind = MethodModel;
-          productions =
+          find = Method;
+          models =
             [
-              ParameterTaint
+              Parameter
                 {
                   where =
                     [
@@ -5579,15 +5579,15 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 26; column = 1 } };
           name = "get_parent_of_d1_decorator_transitive_sources";
-          query =
+          where =
             [
               ClassConstraint
-                (ClassConstraint.AnyChildSatisfies
+                (ClassConstraint.AnyChildConstraint
                    {
                      class_constraint =
                        ClassConstraint.AllOf
                          [
-                           ClassConstraint.DecoratorSatisfies
+                           ClassConstraint.DecoratorConstraint
                              {
                                name_constraint = Matches (Re2.create_exn "d1");
                                arguments_constraint = None;
@@ -5595,18 +5595,18 @@ let test_query_parsing context =
                            ClassConstraint.AnyOf
                              [
                                ClassConstraint.Not
-                                 (ClassConstraint.NameSatisfies (Matches (Re2.create_exn "Foo")));
-                               ClassConstraint.NameSatisfies (Matches (Re2.create_exn "Baz"));
+                                 (ClassConstraint.NameConstraint (Matches (Re2.create_exn "Foo")));
+                               ClassConstraint.NameConstraint (Matches (Re2.create_exn "Baz"));
                              ];
                          ];
                      is_transitive = true;
                    });
               NameConstraint (Matches (Re2.create_exn "\\.__init__$"));
             ];
-          rule_kind = MethodModel;
-          productions =
+          find = Method;
+          models =
             [
-              ParameterTaint
+              Parameter
                 {
                   where =
                     [
@@ -5641,11 +5641,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = GlobalModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Global;
+          models =
             [
-              GlobalTaint
+              Global
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
@@ -5672,11 +5672,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
-          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
-          rule_kind = GlobalModel;
-          productions =
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Global;
+          models =
             [
-              GlobalTaint
+              Global
                 [
                   TaintAnnotation
                     (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));

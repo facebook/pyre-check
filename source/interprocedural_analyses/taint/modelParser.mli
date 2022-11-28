@@ -109,24 +109,17 @@ module Internal : sig
   end
 
   module ModelQuery : sig
-    type name_constraint =
-      | Equals of string
-      | Matches of Re2.t
-    [@@deriving equal, show]
-
-    type annotation_constraint =
-      | IsAnnotatedTypeConstraint
-      | AnnotationNameConstraint of name_constraint
-    [@@deriving equal, show]
-
-    module ParameterConstraint : sig
+    module NameConstraint : sig
       type t =
-        | AnnotationConstraint of annotation_constraint
-        | NameConstraint of name_constraint
-        | IndexConstraint of int
-        | AnyOf of t list
-        | AllOf of t list
-        | Not of t
+        | Equals of string
+        | Matches of Re2.t
+      [@@deriving equal, show]
+    end
+
+    module AnnotationConstraint : sig
+      type t =
+        | IsAnnotatedTypeConstraint
+        | NameConstraint of NameConstraint.t
       [@@deriving equal, show]
     end
 
@@ -137,9 +130,20 @@ module Internal : sig
       [@@deriving equal, show]
     end
 
+    module ParameterConstraint : sig
+      type t =
+        | AnnotationConstraint of AnnotationConstraint.t
+        | NameConstraint of NameConstraint.t
+        | IndexConstraint of int
+        | AnyOf of t list
+        | AllOf of t list
+        | Not of t
+      [@@deriving equal, show]
+    end
+
     module DecoratorConstraint : sig
       type t = {
-        name_constraint: name_constraint;
+        name_constraint: NameConstraint.t;
         arguments_constraint: ArgumentsConstraint.t option;
       }
       [@@deriving equal, show]
@@ -147,80 +151,90 @@ module Internal : sig
 
     module ClassConstraint : sig
       type t =
-        | NameSatisfies of name_constraint
+        | NameConstraint of NameConstraint.t
         | Extends of {
             class_name: string;
             is_transitive: bool;
           }
-        | DecoratorSatisfies of DecoratorConstraint.t
+        | DecoratorConstraint of DecoratorConstraint.t
         | AnyOf of t list
         | AllOf of t list
         | Not of t
-        | AnyChildSatisfies of {
+        | AnyChildConstraint of {
             class_constraint: t;
             is_transitive: bool;
           }
       [@@deriving equal, show]
     end
 
-    type model_constraint =
-      | NameConstraint of name_constraint
-      | AnnotationConstraint of annotation_constraint
-      | ReturnConstraint of annotation_constraint
-      | AnyParameterConstraint of ParameterConstraint.t
-      | AnyOf of model_constraint list
-      | AllOf of model_constraint list
-      | ClassConstraint of ClassConstraint.t
-      | AnyDecoratorConstraint of DecoratorConstraint.t
-      | Not of model_constraint
-    [@@deriving equal, show]
+    (* An arbitrary constraint for functions, methods, attributes or globals. *)
+    module Constraint : sig
+      type t =
+        | NameConstraint of NameConstraint.t
+        | AnnotationConstraint of AnnotationConstraint.t
+        | ReturnConstraint of AnnotationConstraint.t
+        | AnyParameterConstraint of ParameterConstraint.t
+        | AnyOf of t list
+        | AllOf of t list
+        | ClassConstraint of ClassConstraint.t
+        | AnyDecoratorConstraint of DecoratorConstraint.t
+        | Not of t
+      [@@deriving equal, show]
+    end
 
-    type kind =
-      | FunctionModel
-      | MethodModel
-      | AttributeModel
-      | GlobalModel
-    [@@deriving show, equal]
+    module FindKind : sig
+      type t =
+        | Function
+        | Method
+        | Attribute
+        | Global
+      [@@deriving show, equal]
+    end
 
-    type produced_taint =
-      | TaintAnnotation of TaintAnnotation.t
-      | ParametricSourceFromAnnotation of {
-          source_pattern: string;
-          kind: string;
-        }
-      | ParametricSinkFromAnnotation of {
-          sink_pattern: string;
-          kind: string;
-        }
-    [@@deriving show, equal]
+    module QueryTaintAnnotation : sig
+      type t =
+        | TaintAnnotation of TaintAnnotation.t
+        | ParametricSourceFromAnnotation of {
+            source_pattern: string;
+            kind: string;
+          }
+        | ParametricSinkFromAnnotation of {
+            sink_pattern: string;
+            kind: string;
+          }
+      [@@deriving show, equal]
+    end
 
-    type production =
-      | AllParametersTaint of {
-          excludes: string list;
-          taint: produced_taint list;
-        }
-      | NamedParameterTaint of {
-          name: string;
-          taint: produced_taint list;
-        }
-      | PositionalParameterTaint of {
-          index: int;
-          taint: produced_taint list;
-        }
-      | ParameterTaint of {
-          where: ParameterConstraint.t list;
-          taint: produced_taint list;
-        }
-      | ReturnTaint of produced_taint list
-      | AttributeTaint of produced_taint list
-      | GlobalTaint of produced_taint list
-    [@@deriving show, equal]
+    module Model : sig
+      type t =
+        | AllParameters of {
+            excludes: string list;
+            taint: QueryTaintAnnotation.t list;
+          }
+        | NamedParameter of {
+            name: string;
+            taint: QueryTaintAnnotation.t list;
+          }
+        | PositionalParameter of {
+            index: int;
+            taint: QueryTaintAnnotation.t list;
+          }
+        | Parameter of {
+            where: ParameterConstraint.t list;
+            taint: QueryTaintAnnotation.t list;
+          }
+        | Return of QueryTaintAnnotation.t list
+        | Attribute of QueryTaintAnnotation.t list
+        | Global of QueryTaintAnnotation.t list
+      [@@deriving show, equal]
+    end
 
-    type rule = {
+    (* `ModelQuery.t` represents a ModelQuery() statement. *)
+    type t = {
       location: Ast.Location.t;
-      query: model_constraint list;
-      productions: production list;
-      rule_kind: kind;
+      where: Constraint.t list;
+      models: Model.t list;
+      find: FindKind.t;
       name: string;
       expected_models: ExpectedModel.t list;
       unexpected_models: ExpectedModel.t list;
@@ -231,12 +245,14 @@ end
 
 val get_model_sources : paths:PyrePath.t list -> (PyrePath.t * string) list
 
-type parse_result = {
-  models: Registry.t;
-  queries: Internal.ModelQuery.rule list;
-  skip_overrides: Ast.Reference.Set.t;
-  errors: ModelVerificationError.t list;
-}
+module ParseResult : sig
+  type t = {
+    models: Registry.t;
+    queries: Internal.ModelQuery.t list;
+    skip_overrides: Ast.Reference.Set.t;
+    errors: ModelVerificationError.t list;
+  }
+end
 
 val parse
   :  resolution:Analysis.Resolution.t ->
@@ -247,7 +263,7 @@ val parse
   callables:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->
   unit ->
-  parse_result
+  ParseResult.t
 
 val verify_model_syntax : path:PyrePath.t -> source:string -> unit
 

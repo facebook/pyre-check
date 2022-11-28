@@ -962,7 +962,7 @@ let rec process_request ~type_environment ~build_system request =
                   ~callables:None
                   ~stubs:(Interprocedural.Target.HashSet.create ())
                   ()
-                |> fun { Taint.ModelParser.queries; errors; _ } ->
+                |> fun { Taint.ModelParser.ParseResult.queries; errors; _ } ->
                 if List.is_empty errors then
                   Ok
                     (List.filter queries ~f:(fun rule ->
@@ -1339,7 +1339,7 @@ let rec process_request ~type_environment ~build_system request =
                 ~callables:None
                 ~stubs:(Interprocedural.Target.HashSet.create ())
                 ()
-              |> fun { Taint.ModelParser.errors; _ } -> errors
+              |> fun { Taint.ModelParser.ParseResult.errors; _ } -> errors
             in
             List.concat_map sources ~f:model_errors
           in
