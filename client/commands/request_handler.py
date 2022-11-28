@@ -417,7 +417,16 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
     async def update_overlay(
         self,
         path: Path,
-        process_id: int,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
-        raise NotImplementedError()
+        overlay_id = self._get_overlay_id(path)
+        if overlay_id is None:
+            raise AssertionError(
+                "Unsaved changes should always be enabled when updating overlays."
+            )
+        local_update = code_navigation_request.LocalUpdate(
+            overlay_id=overlay_id, path=path, content=code
+        )
+        return await code_navigation_request.async_handle_local_update(
+            self.socket_path, local_update
+        )

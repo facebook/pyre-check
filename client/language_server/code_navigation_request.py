@@ -113,6 +113,23 @@ class LocationOfDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     definitions: List[DefinitionResponse]
 
 
+@dataclasses.dataclass(frozen=True)
+class LocalUpdate:
+    path: Path
+    content: str
+    overlay_id: str
+
+    def to_json(self) -> List[object]:
+        return [
+            "LocalUpdate",
+            {
+                "module": ["OfPath", f"{self.path}"],
+                "content": self.content,
+                "overlay_id": self.overlay_id,
+            },
+        ]
+
+
 def invalid_response(response: str) -> ErrorResponse:
     return ErrorResponse(message=f"Invalid response {response} to hover request.")
 
@@ -182,3 +199,13 @@ async def async_handle_definition_request(
         expected_response_kind="LocationOfDefinition",
         response_type=LocationOfDefinitionResponse,
     )
+
+
+async def async_handle_local_update(
+    socket_path: Path, local_update: LocalUpdate
+) -> str | daemon_connection.DaemonConnectionFailure:
+    raw_command = json.dumps(["Command", local_update.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_command
+    )
+    return response

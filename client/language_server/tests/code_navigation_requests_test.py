@@ -164,3 +164,21 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 ]
             ),
         )
+
+    def test_local_update_json(self) -> None:
+        local_update = code_navigation_request.LocalUpdate(
+            path=Path("/a/b.py"),
+            content="def foo() -> int: pass\n",
+            overlay_id="/a/b.py 1234",
+        )
+        self.assertEqual(
+            local_update.to_json(),
+            [
+                "LocalUpdate",
+                {
+                    "module": ["OfPath", "/a/b.py"],
+                    "content": "def foo() -> int: pass\n",
+                    "overlay_id": "/a/b.py 1234",
+                },
+            ],
+        )
