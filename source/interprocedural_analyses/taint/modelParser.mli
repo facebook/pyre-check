@@ -252,6 +252,10 @@ module ParseResult : sig
     skip_overrides: Ast.Reference.Set.t;
     errors: ModelVerificationError.t list;
   }
+
+  val empty : t
+
+  val join : t -> t -> t
 end
 
 val parse

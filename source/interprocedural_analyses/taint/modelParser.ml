@@ -499,6 +499,31 @@ module ParseResult = struct
     skip_overrides: Reference.Set.t;
     errors: ModelVerificationError.t list;
   }
+
+  let empty =
+    { models = Registry.empty; queries = []; skip_overrides = Reference.Set.empty; errors = [] }
+
+
+  let join
+      {
+        models = models_left;
+        queries = queries_left;
+        skip_overrides = skip_overrides_left;
+        errors = errors_left;
+      }
+      {
+        models = models_right;
+        queries = queries_right;
+        skip_overrides = skip_overrides_right;
+        errors = errors_right;
+      }
+    =
+    {
+      models = Registry.merge ~join:Model.join_user_models models_left models_right;
+      queries = List.rev_append queries_right queries_left;
+      errors = List.rev_append errors_right errors_left;
+      skip_overrides = Set.union skip_overrides_left skip_overrides_right;
+    }
 end
 
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
