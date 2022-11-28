@@ -569,7 +569,7 @@ let initialize
           (List.is_empty errors);
 
         let models_result =
-          TaintModelQuery.ModelQuery.apply_all_queries
+          ModelQuery.apply_all_queries
             ~resolution
             ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph:
@@ -584,22 +584,18 @@ let initialize
         let models_and_names, errors = fst models_result, snd models_result in
         (match taint_configuration.dump_model_query_results_path, expected_dump_string with
         | Some path, Some expected_string ->
-            TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file_and_string
-              ~models_and_names
-              ~path
+            ModelQuery.DumpModelQueryResults.dump_to_file_and_string ~models_and_names ~path
             |> assert_equal ~cmp:String.equal ~printer:Fn.id expected_string
-        | Some path, None ->
-            TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
+        | Some path, None -> ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
         | None, Some expected_string ->
-            TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_string ~models_and_names
+            ModelQuery.DumpModelQueryResults.dump_to_string ~models_and_names
             |> assert_equal ~cmp:String.equal ~printer:Fn.id expected_string
         | None, None -> ());
         let verify = static_analysis_configuration.verify_models && verify_model_queries in
         ModelVerificationError.verify_models_and_dsl errors verify;
         let models =
           models_and_names
-          |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
-               ~model_join:Model.join_user_models
+          |> ModelQuery.ModelQueryRegistryMap.get_registry ~model_join:Model.join_user_models
           |> Registry.merge ~join:Model.join_user_models models
         in
         let models =

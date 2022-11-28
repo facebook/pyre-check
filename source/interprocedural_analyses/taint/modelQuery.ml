@@ -16,7 +16,8 @@ open Pyre
 open Ast
 open Analysis
 open Interprocedural
-open Taint
+
+(* In this file, `ModelQuery` refers to the module defined in `ModelParser`. *)
 module ModelQuery = ModelParser.Internal.ModelQuery
 
 module ModelParser = struct
@@ -133,9 +134,7 @@ module ModelQueryRegistryMap = struct
 
 
   let check_errors ~models_and_names ~queries =
-    let model_query_names =
-      List.map queries ~f:(fun query -> query.Taint.ModelParser.Internal.ModelQuery.name)
-    in
+    let model_query_names = List.map queries ~f:(fun query -> query.ModelQuery.name) in
     let errors =
       List.filter_map model_query_names ~f:(fun model_query_name ->
           let models = get models_and_names model_query_name in

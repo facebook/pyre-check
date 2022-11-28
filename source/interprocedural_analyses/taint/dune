@@ -17,5 +17,4 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
     ppx_sexp_message ppx_deriving_yojson))
- (libraries pyrelib.taint pyrelib.interprocedural pyrelib.taintModelQuery
-   pyrelib.server))
+ (libraries pyrelib.taint pyrelib.interprocedural pyrelib.server))

@@ -12,28 +12,25 @@ type variable_metadata = {
 [@@deriving show, compare]
 
 module ModelQueryRegistryMap : sig
-  type t = Taint.Registry.t Core.String.Map.t
+  type t = Registry.t Core.String.Map.t
 
   val empty : t
 
-  val set : t -> model_query_name:string -> models:Taint.Registry.t -> t
+  val set : t -> model_query_name:string -> models:Registry.t -> t
 
-  val get : t -> string -> Taint.Registry.t option
+  val get : t -> string -> Registry.t option
 
-  val merge : model_join:(Taint.Model.t -> Taint.Model.t -> Taint.Model.t) -> t -> t -> t
+  val merge : model_join:(Model.t -> Model.t -> Model.t) -> t -> t -> t
 
-  val to_alist : t -> (string * Taint.Registry.t) list
+  val to_alist : t -> (string * Registry.t) list
 
-  val mapi : t -> f:(model_query_name:string -> models:Taint.Registry.t -> Taint.Registry.t) -> t
+  val mapi : t -> f:(model_query_name:string -> models:Registry.t -> Registry.t) -> t
 
   val get_model_query_names : t -> string list
 
-  val get_models : t -> Taint.Registry.t list
+  val get_models : t -> Registry.t list
 
-  val get_registry
-    :  model_join:(Taint.Model.t -> Taint.Model.t -> Taint.Model.t) ->
-    t ->
-    Taint.Registry.t
+  val get_registry : model_join:(Model.t -> Model.t -> Model.t) -> t -> Registry.t
 end
 
 module GlobalVariableQueries : sig
@@ -45,8 +42,8 @@ module GlobalVariableQueries : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     variable_metadata:variable_metadata ->
-    Taint.ModelParser.Internal.ModelQuery.t ->
-    Taint.ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
+    ModelParser.Internal.ModelQuery.t ->
+    ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
 end
 
 module DumpModelQueryResults : sig
@@ -65,8 +62,8 @@ val apply_callable_query
   resolution:Analysis.GlobalResolution.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   callable:Interprocedural.Target.t ->
-  Taint.ModelParser.Internal.ModelQuery.t ->
-  (Taint.ModelParser.Internal.AnnotationKind.t * Taint.ModelParser.Internal.TaintAnnotation.t) list
+  ModelParser.Internal.ModelQuery.t ->
+  (ModelParser.Internal.AnnotationKind.t * ModelParser.Internal.TaintAnnotation.t) list
   Core.String.Map.t
 
 val apply_attribute_query
@@ -74,28 +71,28 @@ val apply_attribute_query
   resolution:Analysis.GlobalResolution.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   variable_metadata:variable_metadata ->
-  Taint.ModelParser.Internal.ModelQuery.t ->
-  Taint.ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
+  ModelParser.Internal.ModelQuery.t ->
+  ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
 
 val apply_all_queries
   :  resolution:Analysis.Resolution.t ->
   scheduler:Scheduler.t ->
-  taint_configuration:Taint.TaintConfiguration.SharedMemory.t ->
+  taint_configuration:TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-  source_sink_filter:Taint.SourceSinkFilter.t option ->
-  queries:Taint.ModelParser.Internal.ModelQuery.t list ->
+  source_sink_filter:SourceSinkFilter.t option ->
+  queries:ModelParser.Internal.ModelQuery.t list ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  ModelQueryRegistryMap.t * Taint.ModelVerificationError.t list
+  ModelQueryRegistryMap.t * ModelVerificationError.t list
 
 val generate_models_from_queries
-  :  taint_configuration:Taint.TaintConfiguration.SharedMemory.t ->
+  :  taint_configuration:TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  source_sink_filter:Taint.SourceSinkFilter.t option ->
+  source_sink_filter:SourceSinkFilter.t option ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
-  Taint.ModelParser.Internal.ModelQuery.t list ->
-  ModelQueryRegistryMap.t * Taint.ModelVerificationError.t list
+  ModelParser.Internal.ModelQuery.t list ->
+  ModelQueryRegistryMap.t * ModelVerificationError.t list

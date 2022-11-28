@@ -1033,7 +1033,7 @@ let rec process_request ~type_environment ~build_system request =
                           ~environment:type_environment
                           ~qualifiers
                       in
-                      TaintModelQuery.ModelQuery.generate_models_from_queries
+                      Taint.ModelQuery.generate_models_from_queries
                         ~taint_configuration:taint_configuration_shared_memory
                         ~class_hierarchy_graph:
                           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
@@ -1065,7 +1065,7 @@ let rec process_request ~type_environment ~build_system request =
                     in
                     let models =
                       models_and_names
-                      |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
+                      |> Taint.ModelQuery.ModelQueryRegistryMap.get_registry
                            ~model_join:Taint.Model.join_user_models
                       |> Taint.Registry.to_alist
                     in

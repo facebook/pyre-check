@@ -250,7 +250,7 @@ let initialize_models
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
         let models_and_names, errors =
-          TaintModelQuery.ModelQuery.generate_models_from_queries
+          ModelQuery.generate_models_from_queries
             ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph
             ~scheduler
@@ -262,15 +262,13 @@ let initialize_models
         in
         let () =
           match taint_configuration.dump_model_query_results_path with
-          | Some path ->
-              TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
+          | Some path -> ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
           | None -> ()
         in
         ModelVerificationError.verify_models_and_dsl errors static_analysis_configuration.verify_dsl;
         let models =
           models_and_names
-          |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
-               ~model_join:Model.join_user_models
+          |> ModelQuery.ModelQueryRegistryMap.get_registry ~model_join:Model.join_user_models
           |> Registry.merge ~join:Model.join_user_models models
         in
         Statistics.performance

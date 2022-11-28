@@ -5,14 +5,15 @@
  (preprocess
   (pps ppx_sexp_message ppx_deriving.show))
  (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis
-   pyrelib.interprocedural pyrelib.taint pyrelib.taintModelQuery))
+   pyrelib.interprocedural pyrelib.taint))
 
 (tests
  (names accessPathTest annotationParserTest configurationTest domainTest
    dumpModelQueryResultsTest integrationTest fixpointTest issueTest
    forwardAnalysisTest backwardAnalysisTest modelTest
    modelVerificationErrorTest missingFlowsTest modelVerifierTest
-   sanitizeTest sanitizeTransformTest sanitizeTransformSetTest)
+   sanitizeTest sanitizeTransformTest sanitizeTransformSetTest
+    modelQueryTest globalVariableModelQueryTest)
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))

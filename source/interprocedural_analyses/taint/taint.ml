@@ -27,6 +27,7 @@ module ForwardAnalysis = ForwardAnalysis
 module MissingFlow = MissingFlow
 module Model = Model
 module ModelParser = ModelParser
+module ModelQuery = ModelQuery
 module ModelVerifier = ModelVerifier
 module ModelVerificationError = ModelVerificationError
 module AnnotationParser = AnnotationParser
