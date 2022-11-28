@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module handles logic related to naming pyre projects and
+servers (which in turn impacts log locations and socket paths).
 """
 
 import enum
