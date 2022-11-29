@@ -25,7 +25,7 @@ let build ~interface ~source_root ~artifact_root targets =
   >>= fun normalized_targets ->
   Interface.construct_build_map interface ~source_root normalized_targets
   >>= fun ({ Interface.BuildResult.build_map; _ } as build_result) ->
-  Log.info "Constructing Python link-tree for type checking...";
+  Log.info "Constructing Python link-tree at %a for type checking ..." PyrePath.pp artifact_root;
   Artifacts.populate ~source_root ~artifact_root build_map
   >>= function
   | Result.Error message -> raise (LinkTreeConstructionError message)
