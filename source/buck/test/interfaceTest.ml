@@ -253,15 +253,6 @@ let test_parse_buck_build_output context =
   ()
 
 
-let assert_targets_equal ~context ~expected actual =
-  assert_equal
-    ~ctxt:context
-    ~cmp:[%compare.equal: Target.t list]
-    ~printer:(fun items -> [%sexp_of: Target.t list] items |> Sexp.to_string_hum)
-    (expected |> List.sort ~compare:[%compare: Target.t])
-    (actual |> List.sort ~compare:[%compare: Target.t])
-
-
 let assert_conflicts_equal ~context ~expected actual =
   let compare = [%compare: string * Interface.V2.BuckBxlBuilderOutput.Conflict.t] in
   assert_equal
@@ -275,20 +266,22 @@ let assert_conflicts_equal ~context ~expected actual =
 
 
 let test_parse_merged_sourcedb context =
-  let assert_parsed ~expected_build_map ~expected_targets ~expected_conflicts output =
+  let assert_parsed ~expected_build_map ~expected_target_count ~expected_conflicts output =
     let {
       Interface.V2.BuckBxlBuilderOutput.build_map = actual_build_map;
-      targets = actual_targets;
+      target_count = actual_target_count;
       conflicts = actual_conflicts;
     }
       =
       Yojson.Safe.from_string output |> Interface.V2.parse_merged_sourcedb
     in
     assert_mapping_equal ~context ~expected:expected_build_map (BuildMap.to_alist actual_build_map);
-    assert_targets_equal
-      ~context
-      ~expected:(List.map expected_targets ~f:Target.of_string)
-      actual_targets;
+    assert_equal
+      ~ctxt:context
+      ~cmp:Int.equal
+      ~printer:Int.to_string
+      expected_target_count
+      actual_target_count;
     assert_conflicts_equal
       ~context
       ~expected:expected_conflicts
@@ -310,9 +303,9 @@ let test_parse_merged_sourcedb context =
   assert_not_parsed {| { "build_map": {} } |};
 
   assert_parsed
-    {| { "build_map": {}, "built_targets": [], "dropped_targets": {} } |}
+    {| { "build_map": {}, "built_targets_count": 0, "dropped_targets": {} } |}
     ~expected_build_map:[]
-    ~expected_targets:[]
+    ~expected_target_count:0
     ~expected_conflicts:[];
   assert_parsed
     {| {
@@ -320,7 +313,7 @@ let test_parse_merged_sourcedb context =
            "a.py": "source/a.py",
            "b.py": "source/b.py"
          },
-         "built_targets": ["//targets:a", "//targets:b"],
+         "built_targets_count": 2,
          "dropped_targets": {
            "//targets:c": {
              "conflict_with": "//targets:a",
@@ -331,7 +324,7 @@ let test_parse_merged_sourcedb context =
          }
     } |}
     ~expected_build_map:["a.py", "source/a.py"; "b.py", "source/b.py"]
-    ~expected_targets:["//targets:a"; "//targets:b"]
+    ~expected_target_count:2
     ~expected_conflicts:
       [
         ( "//targets:c",
@@ -364,7 +357,7 @@ let test_parse_buck_bxl_output context =
   let malformed_path = PyrePath.create_relative ~root ~relative:"malformed.json" in
   File.create
     well_formed_path
-    ~content:{| { "build_map": {}, "built_targets": [], "dropped_targets": {} } |}
+    ~content:{| { "build_map": {}, "built_targets_count": 0, "dropped_targets": {} } |}
   |> File.write;
   File.create malformed_path ~content:{| { "derp": 42 } |} |> File.write;
   let nonexistent_path = PyrePath.create_relative ~root ~relative:"nonexistent.json" in

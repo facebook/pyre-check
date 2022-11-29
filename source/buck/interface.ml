@@ -269,7 +269,7 @@ module V2 = struct
 
   let build_map_key = "build_map"
 
-  let built_targets_key = "built_targets"
+  let built_targets_count_key = "built_targets_count"
 
   let dropped_targets_key = "dropped_targets"
 
@@ -286,7 +286,7 @@ module V2 = struct
 
     type t = {
       build_map: BuildMap.t;
-      targets: Target.t list;
+      target_count: int;
       conflicts: (Target.t * Conflict.t) list;
     }
   end
@@ -299,10 +299,7 @@ module V2 = struct
         |> BuildMap.Partial.of_json_exn_ignoring_duplicates_no_dependency
         |> BuildMap.create
       in
-      let targets =
-        let target_of_json json = Util.to_string json |> Target.of_string in
-        Util.member built_targets_key merged_sourcedb |> Util.convert_each target_of_json
-      in
+      let target_count = Util.member built_targets_count_key merged_sourcedb |> Util.to_int in
       let conflicts =
         let conflict_of_yojson json =
           match BuckBxlBuilderOutput.Conflict.of_yojson json with
@@ -316,7 +313,7 @@ module V2 = struct
         |> List.map ~f:(fun (target, conflict_json) ->
                Target.of_string target, conflict_of_yojson conflict_json)
       in
-      { BuckBxlBuilderOutput.build_map; targets; conflicts }
+      { BuckBxlBuilderOutput.build_map; target_count; conflicts }
     with
     | Yojson.Json_error message
     | Util.Type_error (message, _) ->
