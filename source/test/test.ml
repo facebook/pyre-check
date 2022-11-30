@@ -2813,7 +2813,7 @@ let create_type_alias_table type_aliases =
 
 
 let mock_scheduler () =
-  Taint.ModelParser.ClassDefinitionsCache.invalidate ();
+  Taint.ModelVerifier.ClassDefinitionsCache.invalidate ();
   Scheduler.create_sequential ()
 
 

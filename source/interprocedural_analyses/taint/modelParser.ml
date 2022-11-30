@@ -25,8 +25,6 @@ open ModelParseResult
 
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 
-module ClassDefinitionsCache = ModelVerifier.ClassDefinitionsCache
-
 (* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
    $global which acts as the taint sink whenever attributes are marked as sinks. *)
 let attribute_symbolic_parameter = "$global"

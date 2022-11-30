@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module ClassDefinitionsCache : sig
-  val invalidate : unit -> unit
-end
-
 val get_model_sources : paths:PyrePath.t list -> (PyrePath.t * string) list
 
 val parse
