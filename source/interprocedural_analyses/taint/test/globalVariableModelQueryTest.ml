@@ -49,33 +49,36 @@ let test_find_globals context =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.build_type_environment project
     in
-    let is_uninteresting_global { Taint.ModelQuery.name = global_name; _ } =
+    let is_uninteresting_global { Taint.ModelQueryGeneration.name = global_name; _ } =
       not
         (List.exists uninteresting_globals_prefix ~f:(fun exclude_prefix ->
              Reference.is_prefix ~prefix:exclude_prefix global_name))
     in
     let actual =
-      Taint.ModelQuery.GlobalVariableQueries.get_globals_and_annotations
+      Taint.ModelQueryGeneration.GlobalVariableQueries.get_globals_and_annotations
         ~environment:type_environment
       |> List.filter ~f:is_uninteresting_global
     in
     let expected =
       List.map
         ~f:(fun (reference, annotation) ->
-          { Taint.ModelQuery.name = reference; type_annotation = annotation >>| Type.expression })
+          {
+            Taint.ModelQueryGeneration.name = reference;
+            type_annotation = annotation >>| Type.expression;
+          })
         expected
     in
     let variable_metadata_location_insensitive_equal left right =
-      Reference.equal left.Taint.ModelQuery.name right.Taint.ModelQuery.name
+      Reference.equal left.Taint.ModelQueryGeneration.name right.Taint.ModelQueryGeneration.name
       && Option.compare
            Expression.Expression.location_insensitive_compare
-           left.Taint.ModelQuery.type_annotation
-           right.Taint.ModelQuery.type_annotation
+           left.Taint.ModelQueryGeneration.type_annotation
+           right.Taint.ModelQueryGeneration.type_annotation
          = 0
     in
     assert_equal
       ~cmp:(List.equal variable_metadata_location_insensitive_equal)
-      ~printer:[%show: Taint.ModelQuery.variable_metadata list]
+      ~printer:[%show: Taint.ModelQueryGeneration.variable_metadata list]
       expected
       actual
   in

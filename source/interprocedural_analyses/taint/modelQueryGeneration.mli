@@ -42,8 +42,8 @@ module GlobalVariableQueries : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     variable_metadata:variable_metadata ->
-    ModelParser.Internal.ModelQuery.t ->
-    ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
+    ModelParseResult.ModelQuery.t ->
+    ModelParseResult.TaintAnnotation.t list Core.String.Map.t
 end
 
 module DumpModelQueryResults : sig
@@ -62,17 +62,16 @@ val apply_callable_query
   resolution:Analysis.GlobalResolution.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   callable:Interprocedural.Target.t ->
-  ModelParser.Internal.ModelQuery.t ->
-  (ModelParser.Internal.AnnotationKind.t * ModelParser.Internal.TaintAnnotation.t) list
-  Core.String.Map.t
+  ModelParseResult.ModelQuery.t ->
+  (ModelParseResult.AnnotationKind.t * ModelParseResult.TaintAnnotation.t) list Core.String.Map.t
 
 val apply_attribute_query
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   variable_metadata:variable_metadata ->
-  ModelParser.Internal.ModelQuery.t ->
-  ModelParser.Internal.TaintAnnotation.t list Core.String.Map.t
+  ModelParseResult.ModelQuery.t ->
+  ModelParseResult.TaintAnnotation.t list Core.String.Map.t
 
 val apply_all_queries
   :  resolution:Analysis.Resolution.t ->
@@ -80,7 +79,7 @@ val apply_all_queries
   taint_configuration:TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   source_sink_filter:SourceSinkFilter.t option ->
-  queries:ModelParser.Internal.ModelQuery.t list ->
+  queries:ModelParseResult.ModelQuery.t list ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
@@ -94,5 +93,5 @@ val generate_models_from_queries
   source_sink_filter:SourceSinkFilter.t option ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
-  ModelParser.Internal.ModelQuery.t list ->
+  ModelParseResult.ModelQuery.t list ->
   ModelQueryRegistryMap.t * ModelVerificationError.t list

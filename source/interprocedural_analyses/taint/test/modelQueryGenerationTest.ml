@@ -11,15 +11,9 @@ open Pyre
 open Test
 open Taint
 open Interprocedural
+module ModelQuery = ModelParseResult.ModelQuery
 
-module ModelParser = struct
-  include Taint.ModelParser
-  include Taint.ModelParser.Internal
-end
-
-open Taint.ModelParser.Internal.ModelQuery
-
-type query_element = ModelParser.AnnotationKind.t * ModelParser.TaintAnnotation.t
+type query_element = ModelParseResult.AnnotationKind.t * ModelParseResult.TaintAnnotation.t
 [@@deriving show, equal]
 
 let test_apply_query context =
@@ -29,11 +23,11 @@ let test_apply_query context =
       | None -> Sources.NamedSource name
       | Some subkind -> Sources.ParametricSource { source_name = name; subkind }
     in
-    ModelParser.TaintAnnotation.from_source source
+    ModelParseResult.TaintAnnotation.from_source source
   in
   let sink name =
     let sink = Sinks.NamedSink name in
-    ModelParser.TaintAnnotation.from_sink sink
+    ModelParseResult.TaintAnnotation.from_sink sink
   in
   let assert_applied_queries ~source ~query ~callable ~expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -42,7 +36,7 @@ let test_apply_query context =
     let resolution = Analysis.GlobalResolution.create global_environment in
     let actual =
       query
-      |> Taint.ModelQuery.apply_callable_query
+      |> Taint.ModelQueryGeneration.apply_callable_query
            ~verbose:false
            ~resolution
            ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
@@ -74,7 +68,7 @@ let test_apply_query context =
     in
     let actual =
       query
-      |> Taint.ModelQuery.apply_attribute_query
+      |> Taint.ModelQueryGeneration.apply_attribute_query
            ~verbose:false
            ~resolution
            ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
@@ -84,8 +78,8 @@ let test_apply_query context =
       |> List.concat
     in
     assert_equal
-      ~cmp:(List.equal ModelParser.TaintAnnotation.equal)
-      ~printer:(List.to_string ~f:ModelParser.TaintAnnotation.show)
+      ~cmp:(List.equal ModelParseResult.TaintAnnotation.equal)
+      ~printer:(List.to_string ~f:ModelParseResult.TaintAnnotation.show)
       expected
       actual
   in
@@ -96,7 +90,7 @@ let test_apply_query context =
     let resolution = Analysis.GlobalResolution.create global_environment in
     let actual =
       query
-      |> Taint.ModelQuery.GlobalVariableQueries.apply_global_query
+      |> Taint.ModelQueryGeneration.GlobalVariableQueries.apply_global_query
            ~verbose:false
            ~resolution
            ~variable_metadata:{ name = Ast.Reference.create name; type_annotation = None }
@@ -104,8 +98,8 @@ let test_apply_query context =
       |> List.concat
     in
     assert_equal
-      ~cmp:(List.equal ModelParser.TaintAnnotation.equal)
-      ~printer:(List.to_string ~f:ModelParser.TaintAnnotation.show)
+      ~cmp:(List.equal ModelParseResult.TaintAnnotation.equal)
+      ~printer:(List.to_string ~f:ModelParseResult.TaintAnnotation.show)
       expected
       actual
   in
@@ -124,7 +118,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
       def foo(): ...
@@ -156,7 +150,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
 
   (* Test multiple constraints. *)
   assert_applied_queries
@@ -179,7 +173,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
       def foo(): ...
@@ -237,7 +231,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
 
   (* Multiple productions. *)
   assert_applied_queries
@@ -262,8 +256,8 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ModelParser.AnnotationKind.ReturnAnnotation, source "Test";
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test";
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -287,11 +281,11 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
@@ -314,7 +308,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
@@ -337,7 +331,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -369,7 +363,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -399,7 +393,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -420,7 +414,7 @@ let test_apply_query context =
               {
                 where =
                   [
-                    ParameterConstraint.AnnotationConstraint
+                    ModelQuery.ParameterConstraint.AnnotationConstraint
                       (NameConstraint (Matches (Re2.create_exn "int")));
                   ];
                 taint = [TaintAnnotation (source "Test")];
@@ -433,7 +427,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -453,7 +447,11 @@ let test_apply_query context =
             Parameter
               {
                 where =
-                  [Not (ParameterConstraint.AnnotationConstraint (NameConstraint (Equals "int")))];
+                  [
+                    Not
+                      (ModelQuery.ParameterConstraint.AnnotationConstraint
+                         (NameConstraint (Equals "int")));
+                  ];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -464,7 +462,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
@@ -485,7 +483,8 @@ let test_apply_query context =
           [
             Parameter
               {
-                where = [ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
+                where =
+                  [ModelQuery.ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -496,7 +495,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
@@ -525,7 +524,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -554,7 +553,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -574,7 +573,7 @@ let test_apply_query context =
               {
                 where =
                   [
-                    ParameterConstraint.AnnotationConstraint
+                    ModelQuery.ParameterConstraint.AnnotationConstraint
                       (NameConstraint (Matches (Re2.create_exn "int")));
                   ];
                 taint = [TaintAnnotation (source "Test")];
@@ -587,7 +586,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -606,7 +605,11 @@ let test_apply_query context =
             Parameter
               {
                 where =
-                  [Not (ParameterConstraint.AnnotationConstraint (NameConstraint (Equals "int")))];
+                  [
+                    Not
+                      (ModelQuery.ParameterConstraint.AnnotationConstraint
+                         (NameConstraint (Equals "int")));
+                  ];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -617,7 +620,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
@@ -637,7 +640,8 @@ let test_apply_query context =
           [
             Parameter
               {
-                where = [ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
+                where =
+                  [ModelQuery.ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -648,7 +652,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
@@ -666,7 +670,7 @@ let test_apply_query context =
           [
             Parameter
               {
-                where = [ParameterConstraint.IndexConstraint 0];
+                where = [ModelQuery.ParameterConstraint.IndexConstraint 0];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -677,7 +681,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
@@ -695,7 +699,7 @@ let test_apply_query context =
           [
             Parameter
               {
-                where = [ParameterConstraint.IndexConstraint 1];
+                where = [ModelQuery.ParameterConstraint.IndexConstraint 1];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -706,7 +710,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
@@ -728,11 +732,11 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 0; name = "x"; positional_only = false }),
           source "Test" );
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "y"; positional_only = false }),
           source "Test" );
@@ -756,7 +760,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
        def foo(x: int, y: str) -> int: ...
@@ -804,7 +808,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, "annotation"], c: str): ...
@@ -820,7 +824,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   (* Any of. *)
   assert_applied_queries
     ~source:{|
@@ -844,7 +848,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
        def foo(a, b, c: str) -> typing.Annotated[int, "annotation"]: ...
@@ -867,7 +871,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
@@ -896,7 +900,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "b"; positional_only = false }),
           source ~subkind:"A" "Dynamic" );
@@ -953,7 +957,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   (* Some cases where we don't match with "AllOf". *)
   assert_applied_queries
     ~source:{|
@@ -1030,7 +1034,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "b"; positional_only = false }),
           source ~subkind:"A" "Dynamic" );
@@ -1064,7 +1068,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "b"; positional_only = false }),
           source ~subkind:"A" "Dynamic" );
@@ -1091,7 +1095,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source ~subkind:"B" "Dynamic"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source ~subkind:"B" "Dynamic"];
   (* Named parameters + parametric sinks from annotation. *)
   assert_applied_queries
     ~source:{|
@@ -1118,10 +1122,10 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "b"; positional_only = false }),
-          ModelParser.TaintAnnotation.from_sink
+          ModelParseResult.TaintAnnotation.from_sink
             (Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" }) );
       ];
   (* Type annotation constraint for callables *)
@@ -1149,7 +1153,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "b"; positional_only = false }),
           source "Test" );
@@ -1182,11 +1186,11 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 1; name = "b"; positional_only = false }),
           source "Test" );
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 2; name = "c"; positional_only = false }),
           source "Test" );
@@ -1215,7 +1219,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
-        ( ModelParser.AnnotationKind.ParameterAnnotation
+        ( ModelParseResult.AnnotationKind.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
                { position = 3; name = "d"; positional_only = false }),
           source "Test" );
@@ -1236,7 +1240,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
        def foo() -> int: ...
@@ -1270,7 +1274,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
        def foo() -> str: ...
@@ -1287,7 +1291,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
        def foo() -> typing.Annotated[str, "foo"]: ...
@@ -1303,7 +1307,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
        def foo() -> typing.Annotated[str, "foo"]: ...
@@ -1319,7 +1323,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
 
   (* Decorator names. *)
   assert_applied_queries
@@ -1352,7 +1356,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1414,7 +1418,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1441,7 +1445,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1472,7 +1476,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1503,7 +1507,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1530,7 +1534,7 @@ let test_apply_query context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ArgumentsConstraint.Contains
+                    (ModelQuery.ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name = None;
@@ -1572,7 +1576,7 @@ let test_apply_query context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ArgumentsConstraint.Contains
+                    (ModelQuery.ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name = None;
@@ -1587,7 +1591,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1614,7 +1618,7 @@ let test_apply_query context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ArgumentsConstraint.Contains
+                    (ModelQuery.ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1657,7 +1661,7 @@ let test_apply_query context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ArgumentsConstraint.Contains
+                    (ModelQuery.ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1673,7 +1677,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1700,7 +1704,7 @@ let test_apply_query context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ArgumentsConstraint.Contains
+                    (ModelQuery.ArgumentsConstraint.Contains
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1723,7 +1727,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1750,7 +1754,7 @@ let test_apply_query context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ArgumentsConstraint.Equals
+                    (ModelQuery.ArgumentsConstraint.Equals
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1800,7 +1804,7 @@ let test_apply_query context =
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
                   Some
-                    (ArgumentsConstraint.Equals
+                    (ModelQuery.ArgumentsConstraint.Equals
                        [
                          {
                            Ast.Expression.Call.Argument.name =
@@ -1823,7 +1827,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
 
   assert_applied_queries
     ~source:
@@ -1846,7 +1850,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1891,7 +1895,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1921,7 +1925,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -1978,7 +1982,7 @@ let test_apply_query context =
                    name_constraint = Equals "test.d1";
                    arguments_constraint =
                      Some
-                       (ArgumentsConstraint.Contains
+                       (ModelQuery.ArgumentsConstraint.Contains
                           [
                             {
                               Ast.Expression.Call.Argument.name = None;
@@ -2020,7 +2024,7 @@ let test_apply_query context =
                    name_constraint = Matches (Re2.create_exn "d1");
                    arguments_constraint =
                      Some
-                       (ArgumentsConstraint.Contains
+                       (ModelQuery.ArgumentsConstraint.Contains
                           [
                             {
                               Ast.Expression.Call.Argument.name = None;
@@ -2035,7 +2039,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
 
   (* Test attribute models. *)
   assert_applied_queries_for_attribute
@@ -2345,7 +2349,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:{|
       def foo(): ...
@@ -2410,7 +2414,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries
     ~source:
       {|
@@ -2454,7 +2458,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries_for_attribute
     ~source:
       {|
@@ -2690,7 +2694,7 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParser.AnnotationKind.ReturnAnnotation, source "Test"];
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
   assert_applied_queries_for_globals
     ~source:{|
       foo = []

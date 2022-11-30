@@ -962,11 +962,11 @@ let rec process_request ~type_environment ~build_system request =
                   ~callables:None
                   ~stubs:(Interprocedural.Target.HashSet.create ())
                   ()
-                |> fun { Taint.ModelParser.ParseResult.queries; errors; _ } ->
+                |> fun { Taint.ModelParseResult.queries; errors; _ } ->
                 if List.is_empty errors then
                   Ok
                     (List.filter queries ~f:(fun rule ->
-                         String.equal rule.Taint.ModelParser.Internal.ModelQuery.name query_name))
+                         String.equal rule.Taint.ModelParseResult.ModelQuery.name query_name))
                 else
                   Error errors
               in
@@ -1033,7 +1033,7 @@ let rec process_request ~type_environment ~build_system request =
                           ~environment:type_environment
                           ~qualifiers
                       in
-                      Taint.ModelQuery.generate_models_from_queries
+                      Taint.ModelQueryGeneration.generate_models_from_queries
                         ~taint_configuration:taint_configuration_shared_memory
                         ~class_hierarchy_graph:
                           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
@@ -1065,7 +1065,7 @@ let rec process_request ~type_environment ~build_system request =
                     in
                     let models =
                       models_and_names
-                      |> Taint.ModelQuery.ModelQueryRegistryMap.get_registry
+                      |> Taint.ModelQueryGeneration.ModelQueryRegistryMap.get_registry
                            ~model_join:Taint.Model.join_user_models
                       |> Taint.Registry.to_alist
                     in
@@ -1339,7 +1339,7 @@ let rec process_request ~type_environment ~build_system request =
                 ~callables:None
                 ~stubs:(Interprocedural.Target.HashSet.create ())
                 ()
-              |> fun { Taint.ModelParser.ParseResult.errors; _ } -> errors
+              |> fun { Taint.ModelParseResult.errors; _ } -> errors
             in
             List.concat_map sources ~f:model_errors
           in

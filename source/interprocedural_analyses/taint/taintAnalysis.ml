@@ -145,14 +145,14 @@ let parse_models_and_queries_from_sources
           ~callables
           ~stubs
           ()
-        |> ModelParser.ParseResult.join state)
+        |> ModelParseResult.join state)
   in
   Scheduler.map_reduce
     scheduler
     ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-    ~initial:ModelParser.ParseResult.empty
+    ~initial:ModelParseResult.empty
     ~map
-    ~reduce:ModelParser.ParseResult.join
+    ~reduce:ModelParseResult.join
     ~inputs:sources
     ()
 
@@ -173,7 +173,7 @@ let parse_models_and_queries_from_configuration
       (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module Analysis.TypeCheck.DummyContext)
   in
-  let ({ ModelParser.ParseResult.errors; _ } as parse_result) =
+  let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.get_model_sources ~paths:taint_model_paths
     |> parse_models_and_queries_from_sources
          ~taint_configuration
@@ -202,7 +202,7 @@ let initialize_models
 
   Log.info "Parsing taint models...";
   let timer = Timer.start () in
-  let { ModelParser.ParseResult.models; queries; skip_overrides; errors } =
+  let { ModelParseResult.models; queries; skip_overrides; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
       ~static_analysis_configuration
@@ -221,7 +221,7 @@ let initialize_models
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
         let models_and_names, errors =
-          ModelQuery.generate_models_from_queries
+          ModelQueryGeneration.generate_models_from_queries
             ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph
             ~scheduler
@@ -233,13 +233,15 @@ let initialize_models
         in
         let () =
           match taint_configuration.dump_model_query_results_path with
-          | Some path -> ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
+          | Some path ->
+              ModelQueryGeneration.DumpModelQueryResults.dump_to_file ~models_and_names ~path
           | None -> ()
         in
         ModelVerificationError.verify_models_and_dsl errors static_analysis_configuration.verify_dsl;
         let models =
           models_and_names
-          |> ModelQuery.ModelQueryRegistryMap.get_registry ~model_join:Model.join_user_models
+          |> ModelQueryGeneration.ModelQueryRegistryMap.get_registry
+               ~model_join:Model.join_user_models
           |> Registry.merge ~join:Model.join_user_models models
         in
         Statistics.performance
@@ -263,7 +265,7 @@ let initialize_models
       ~initial_models:models
   in
 
-  { ModelParser.ParseResult.models; skip_overrides; queries = []; errors }
+  { ModelParseResult.models; skip_overrides; queries = []; errors }
 
 
 (** Aggressively remove things we do not need anymore from the shared memory. *)
@@ -364,7 +366,7 @@ let run_taint_analysis
     (* Save the cache here, in case there is a model verification error. *)
     let () = Cache.save cache in
 
-    let { ModelParser.ParseResult.models = initial_models; skip_overrides; _ } =
+    let { ModelParseResult.models = initial_models; skip_overrides; _ } =
       initialize_models
         ~scheduler
         ~static_analysis_configuration

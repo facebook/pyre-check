@@ -94,7 +94,7 @@ let set_up_environment
     TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
   in
 
-  let ({ ModelParser.ParseResult.errors; skip_overrides; _ } as parse_result) =
+  let ({ ModelParseResult.errors; skip_overrides; _ } as parse_result) =
     ModelParser.parse
       ~resolution
       ~source
@@ -125,7 +125,7 @@ let assert_model
     ~expect
     ()
   =
-  let { ModelParser.ParseResult.models; _ }, type_environment, taint_configuration, skip_overrides =
+  let { ModelParseResult.models; _ }, type_environment, taint_configuration, skip_overrides =
     set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context ~model_source ()
   in
   begin
@@ -198,7 +198,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ~callables:None
       ~stubs:(Target.HashSet.create ())
       ()
-    |> fun { ModelParser.ParseResult.errors; _ } ->
+    |> fun { ModelParseResult.errors; _ } ->
     if List.is_empty errors then
       "no failure"
     else if List.length errors = 1 then
@@ -213,12 +213,12 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
-  let { ModelParser.ParseResult.queries; _ }, _, _, _ =
+  let { ModelParseResult.queries; _ }, _, _, _ =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   assert_equal
-    ~cmp:(List.equal ModelParser.Internal.ModelQuery.equal)
-    ~printer:(List.to_string ~f:ModelParser.Internal.ModelQuery.show)
+    ~cmp:(List.equal ModelParseResult.ModelQuery.equal)
+    ~printer:(List.to_string ~f:ModelParseResult.ModelQuery.show)
     queries
     expect
 
@@ -4459,8 +4459,7 @@ let test_filter_by_sinks context =
 
 
 let test_query_parsing context =
-  let open ModelParser.Internal.ModelQuery in
-  let module ModelParser = ModelParser.Internal in
+  let open ModelParseResult.ModelQuery in
   assert_queries
     ~context
     ~model_source:
@@ -4484,7 +4483,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4515,7 +4514,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4550,7 +4549,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4581,8 +4580,9 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
-                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -4613,8 +4613,9 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
-                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -4645,8 +4646,9 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
-                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -4677,7 +4679,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4708,7 +4710,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4749,7 +4751,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4790,7 +4792,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -4825,7 +4827,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                        (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -4860,7 +4862,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                        (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -4895,7 +4897,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                        (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -5004,8 +5006,9 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
-                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -5036,8 +5039,9 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
-                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -5068,7 +5072,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5099,7 +5103,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5130,8 +5134,9 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
-                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -5170,8 +5175,9 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
-                  TaintAnnotation (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                 ];
             ];
           expected_models = [];
@@ -5207,7 +5213,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5274,7 +5280,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                        (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
                     ];
                 };
             ];
@@ -5286,12 +5292,12 @@ let test_query_parsing context =
 
   (* Expected models *)
   let create_expected_model ?source ?rules ~model_source function_name =
-    let { Taint.ModelParser.ParseResult.models; _ }, _, _, _ =
+    let { Taint.ModelParseResult.models; _ }, _, _, _ =
       set_up_environment ?source ?rules ~context ~model_source ()
     in
     let model = Option.value_exn (Registry.get models (List.hd_exn (Registry.targets models))) in
     {
-      Taint.ModelParser.ExpectedModel.model;
+      Taint.ModelParseResult.ModelQuery.ExpectedModel.model;
       target = Target.create_function (Ast.Reference.create function_name);
       model_source;
     }
@@ -5323,7 +5329,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models =
@@ -5365,7 +5371,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5411,7 +5417,7 @@ let test_query_parsing context =
               Return
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models =
@@ -5522,7 +5528,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                        (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -5616,7 +5622,7 @@ let test_query_parsing context =
                   taint =
                     [
                       TaintAnnotation
-                        (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                        (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                     ];
                 };
             ];
@@ -5648,7 +5654,7 @@ let test_query_parsing context =
               Global
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];
@@ -5679,7 +5685,7 @@ let test_query_parsing context =
               Global
                 [
                   TaintAnnotation
-                    (ModelParser.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
             ];
           expected_models = [];

@@ -38,7 +38,7 @@ let assert_taint ?models ?models_source ~context source expect =
     models >>| Test.trim_extra_indentation |> Option.value ~default:TestHelper.initial_models_source
   in
   let initial_models =
-    let { ModelParser.ParseResult.models; errors; _ } =
+    let { ModelParseResult.models; errors; _ } =
       ModelParser.parse
         ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
         ~source:models
