@@ -1170,19 +1170,15 @@ let parse_find_clause ~path ({ Node.value; location } as expression) =
   | _ -> Error (model_verification_error ~path ~location (InvalidFindClauseType expression))
 
 
-let get_find_clause_as_string find_clause =
-  match find_clause with
-  | Ok ModelQuery.FindKind.Attribute -> "attributes"
-  | Ok ModelQuery.FindKind.Method -> "methods"
-  | Ok ModelQuery.FindKind.Function -> "functions"
-  | Ok ModelQuery.FindKind.Global -> "globals"
-  | _ -> "unsupported"
+let get_find_clause_as_string = function
+  | ModelQuery.FindKind.Attribute -> "attributes"
+  | ModelQuery.FindKind.Method -> "methods"
+  | ModelQuery.FindKind.Function -> "functions"
+  | ModelQuery.FindKind.Global -> "globals"
 
 
-let is_clause_kind ~expected_kinds kind =
-  match kind with
-  | Ok clause -> List.mem expected_kinds clause ~equal:ModelQuery.FindKind.equal
-  | _ -> false
+let is_clause_kind ~expected_kinds find_kind =
+  List.mem expected_kinds find_kind ~equal:ModelQuery.FindKind.equal
 
 
 let is_callable_clause_kind find_clause =
@@ -3207,41 +3203,9 @@ let rec parse_statement
                       ~stubs
                       parsed_signatures))
       in
-      let parse_model_query
-          ~name
-          ~find_clause
-          ~where_clause
-          ~model_clause
-          expected_models_clause
-          unexpected_models_clause
-        =
-        let convert_error_into_errors result =
-          match result with
-          | Ok result -> Ok result
-          | Error error -> Error [error]
-        in
-        let parsed_find_clause = convert_error_into_errors (parse_find_clause ~path find_clause) in
-        let is_object_target = not (is_callable_clause_kind parsed_find_clause) in
-        let parsed_expected_models_clause =
-          parse_output_models_clause ~name ~path expected_models_clause
-        in
-        let parsed_unexpected_models_clause =
-          parse_output_models_clause ~name ~path unexpected_models_clause
-        in
-        Ok
-          ( name,
-            parsed_find_clause,
-            convert_error_into_errors
-              (parse_where_clause ~path ~find_clause:parsed_find_clause where_clause),
-            convert_error_into_errors
-              (parse_model_clause
-                 ~path
-                 ~taint_configuration
-                 ~find_clause:parsed_find_clause
-                 ~is_object_target
-                 model_clause),
-            parsed_expected_models_clause,
-            parsed_unexpected_models_clause )
+      let as_result_error_list = function
+        | Ok result -> Ok result
+        | Error error -> Error [error]
       in
       let clauses =
         match arguments with
@@ -3257,71 +3221,62 @@ let rec parse_statement
              :: { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause }
                 :: { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause }
                    :: remaining_arguments ->
-            Ok (name, find_clause, where_clause, model_clause, remaining_arguments)
+            Ok ((name, find_clause, where_clause, model_clause), remaining_arguments)
         | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses arguments)]
       in
       let clauses =
         clauses
-        >>= fun (name, find_clause, where_clause, model_clause, remaining_arguments) ->
-        let expected_and_unexpected_models_clauses =
-          match remaining_arguments with
-          | [
-           {
-             Call.Argument.name = Some { Node.value = "expected_models"; _ };
-             value = expected_models_clause;
-           };
-          ] ->
-              Ok (Some expected_models_clause, None)
-          | [
-           {
-             Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
-             value = unexpected_models_clause;
-           };
-          ] ->
-              Ok (None, Some unexpected_models_clause)
-          | [
-           {
-             Call.Argument.name = Some { Node.value = "expected_models"; _ };
-             value = expected_models_clause;
-           };
-           {
-             Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
-             value = unexpected_models_clause;
-           };
-          ] ->
-              Ok (Some expected_models_clause, Some unexpected_models_clause)
-          | [] -> Ok (None, None)
-          | _ ->
-              Error (model_verification_error ~path ~location (InvalidModelQueryClauses arguments))
-        in
-        match expected_and_unexpected_models_clauses with
-        | Ok (expected_models_clause, unexpected_models_clause) ->
-            parse_model_query
-              ~name
-              ~find_clause
-              ~where_clause
-              ~model_clause
-              expected_models_clause
-              unexpected_models_clause
-        | Error error -> Error [error]
+        >>= fun (required_arguments, remaining_arguments) ->
+        match remaining_arguments with
+        | [
+         {
+           Call.Argument.name = Some { Node.value = "expected_models"; _ };
+           value = expected_models_clause;
+         };
+        ] ->
+            Ok (required_arguments, Some expected_models_clause, None)
+        | [
+         {
+           Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
+           value = unexpected_models_clause;
+         };
+        ] ->
+            Ok (required_arguments, None, Some unexpected_models_clause)
+        | [
+         {
+           Call.Argument.name = Some { Node.value = "expected_models"; _ };
+           value = expected_models_clause;
+         };
+         {
+           Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
+           value = unexpected_models_clause;
+         };
+        ] ->
+            Ok (required_arguments, Some expected_models_clause, Some unexpected_models_clause)
+        | [] -> Ok (required_arguments, None, None)
+        | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses arguments)]
       in
-
       clauses
-      >>= fun ( name,
-                find_clause,
-                where_clause,
-                model_clause,
+      >>= fun ( (name, find_clause, where_clause, model_clause),
                 expected_models_clause,
                 unexpected_models_clause ) ->
-      find_clause
+      parse_find_clause ~path find_clause
+      |> as_result_error_list
       >>= fun find ->
-      where_clause
+      parse_where_clause ~path ~find_clause:find where_clause
+      |> as_result_error_list
       >>= fun where ->
-      model_clause
+      parse_model_clause
+        ~path
+        ~taint_configuration
+        ~find_clause:find
+        ~is_object_target:(not (is_callable_clause_kind find))
+        model_clause
+      |> as_result_error_list
       >>= fun models ->
-      expected_models_clause
+      parse_output_models_clause ~name ~path expected_models_clause
       >>= fun expected_models ->
-      unexpected_models_clause
+      parse_output_models_clause ~name ~path unexpected_models_clause
       >>| fun unexpected_models ->
       [
         ParsedQuery
