@@ -1160,45 +1160,10 @@ let introduce_sanitize ~source_sink_filter ~root model annotations =
 let parse_find_clause ~path ({ Node.value; location } as expression) =
   match value with
   | Expression.Constant (Constant.String { StringLiteral.value; _ }) -> (
-      match value with
-      | "functions" -> Ok ModelQuery.FindKind.Function
-      | "methods" -> Ok ModelQuery.FindKind.Method
-      | "attributes" -> Ok ModelQuery.FindKind.Attribute
-      | "globals" -> Ok ModelQuery.FindKind.Global
-      | unsupported ->
-          Error (model_verification_error ~path ~location (UnsupportedFindClause unsupported)))
+      match ModelQuery.Find.from_string value with
+      | Some find -> Ok find
+      | None -> Error (model_verification_error ~path ~location (UnsupportedFindClause value)))
   | _ -> Error (model_verification_error ~path ~location (InvalidFindClauseType expression))
-
-
-let get_find_clause_as_string = function
-  | ModelQuery.FindKind.Attribute -> "attributes"
-  | ModelQuery.FindKind.Method -> "methods"
-  | ModelQuery.FindKind.Function -> "functions"
-  | ModelQuery.FindKind.Global -> "globals"
-
-
-let is_clause_kind ~expected_kinds find_kind =
-  List.mem expected_kinds find_kind ~equal:ModelQuery.FindKind.equal
-
-
-let is_callable_clause_kind find_clause =
-  is_clause_kind
-    find_clause
-    ~expected_kinds:[ModelQuery.FindKind.Method; ModelQuery.FindKind.Function]
-
-
-let is_global_clause_kind find_clause =
-  is_clause_kind find_clause ~expected_kinds:[ModelQuery.FindKind.Global]
-
-
-let is_attribute_clause_kind find_clause =
-  is_clause_kind find_clause ~expected_kinds:[ModelQuery.FindKind.Attribute]
-
-
-let is_class_member_clause_kind find_clause =
-  is_clause_kind
-    find_clause
-    ~expected_kinds:[ModelQuery.FindKind.Method; ModelQuery.FindKind.Attribute]
 
 
 let parse_name_constraint ~path ~location ({ Node.value; _ } as constraint_expression) =
@@ -1538,7 +1503,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
       ~path
       ~location
       (InvalidModelQueryWhereClause
-         { expression = callee; find_clause_kind = get_find_clause_as_string find_clause })
+         { expression = callee; find_clause_kind = ModelQuery.Find.show find_clause })
   in
   let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
     match value with
@@ -1567,7 +1532,8 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             } as callee;
           _;
         } ->
-        if not (is_attribute_clause_kind find_clause || is_global_clause_kind find_clause) then
+        if not (ModelQuery.Find.is_attribute find_clause || ModelQuery.Find.is_global find_clause)
+        then
           Error (invalid_model_query_where_clause ~path ~location callee)
         else
           parse_annotation_constraint ~path ~location constraint_expression
@@ -1578,7 +1544,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
           Call.callee = { Node.value = Expression.Name (Name.Identifier "Decorator"); _ } as callee;
           _;
         } ->
-        if not (is_callable_clause_kind find_clause) then
+        if not (ModelQuery.Find.is_callable find_clause) then
           Error (invalid_model_query_where_clause ~path ~location callee)
         else
           parse_decorator_constraint ~path ~location constraint_expression
@@ -1596,7 +1562,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             } as callee;
           _;
         } ->
-        if not (is_callable_clause_kind find_clause) then
+        if not (ModelQuery.Find.is_callable find_clause) then
           Error (invalid_model_query_where_clause ~path ~location callee)
         else
           parse_annotation_constraint ~path ~location constraint_expression
@@ -1628,7 +1594,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             } as callee;
           _;
         } -> (
-        match is_callable_clause_kind find_clause, parameter_constraint_kind with
+        match ModelQuery.Find.is_callable find_clause, parameter_constraint_kind with
         | true, "annotation" ->
             parse_annotation_constraint ~path ~location constraint_expression
             >>= fun parameter_constraint ->
@@ -1672,7 +1638,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             } as callee;
           arguments;
         } ->
-        if not (is_class_member_clause_kind find_clause) then
+        if not (ModelQuery.Find.is_class_member find_clause) then
           Error (invalid_model_query_where_clause ~path ~location callee)
         else
           let class_constraint =
@@ -1820,7 +1786,7 @@ let parse_model_clause
       ~path
       ~location
       (InvalidModelQueryModelClause
-         { expression = callee; find_clause_kind = get_find_clause_as_string find_clause })
+         { expression = callee; find_clause_kind = ModelQuery.Find.show find_clause })
   in
   let parse_model ({ Node.value; _ } as model_expression) =
     let parse_taint taint_expression =
@@ -1902,13 +1868,13 @@ let parse_model_clause
               Error (invalid_model_query_model_clause ~path ~location callee)
           in
           match identifier with
-          | "Returns" -> check_clause_kind is_callable_clause_kind
-          | "AttributeModel" -> check_clause_kind is_attribute_clause_kind
-          | "GlobalModel" -> check_clause_kind is_global_clause_kind
-          | "NamedParameter" -> check_clause_kind is_callable_clause_kind
-          | "PositionalParameter" -> check_clause_kind is_callable_clause_kind
-          | "AllParameters" -> check_clause_kind is_callable_clause_kind
-          | "Parameters" -> check_clause_kind is_callable_clause_kind
+          | "Returns" -> check_clause_kind ModelQuery.Find.is_callable
+          | "AttributeModel" -> check_clause_kind ModelQuery.Find.is_attribute
+          | "GlobalModel" -> check_clause_kind ModelQuery.Find.is_global
+          | "NamedParameter" -> check_clause_kind ModelQuery.Find.is_callable
+          | "PositionalParameter" -> check_clause_kind ModelQuery.Find.is_callable
+          | "AllParameters" -> check_clause_kind ModelQuery.Find.is_callable
+          | "Parameters" -> check_clause_kind ModelQuery.Find.is_callable
           | _ -> unexpected_model_expression ())
       | _ -> unexpected_model_expression ()
     in
@@ -3270,7 +3236,7 @@ let rec parse_statement
         ~path
         ~taint_configuration
         ~find_clause:find
-        ~is_object_target:(not (is_callable_clause_kind find))
+        ~is_object_target:(not (ModelQuery.Find.is_callable find))
         model_clause
       |> as_result_error_list
       >>= fun models ->

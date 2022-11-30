@@ -201,13 +201,23 @@ module ModelQuery : sig
     [@@deriving equal, show]
   end
 
-  module FindKind : sig
+  module Find : sig
     type t =
       | Function
       | Method
       | Attribute
       | Global
     [@@deriving show, equal]
+
+    val from_string : string -> t option
+
+    val is_callable : t -> bool
+
+    val is_global : t -> bool
+
+    val is_attribute : t -> bool
+
+    val is_class_member : t -> bool
   end
 
   module QueryTaintAnnotation : sig
@@ -269,7 +279,7 @@ module ModelQuery : sig
     location: Ast.Location.t;
     where: Constraint.t list;
     models: Model.t list;
-    find: FindKind.t;
+    find: Find.t;
     name: string;
     expected_models: ExpectedModel.t list;
     unexpected_models: ExpectedModel.t list;

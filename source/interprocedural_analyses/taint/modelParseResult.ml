@@ -389,13 +389,45 @@ module ModelQuery = struct
     [@@deriving equal, show]
   end
 
-  module FindKind = struct
+  module Find = struct
     type t =
       | Function
       | Method
       | Attribute
       | Global
-    [@@deriving show, equal]
+    [@@deriving equal]
+
+    let from_string = function
+      | "functions" -> Some Function
+      | "methods" -> Some Method
+      | "attributes" -> Some Attribute
+      | "globals" -> Some Global
+      | _ -> None
+
+
+    let pp formatter = function
+      | Attribute -> Format.fprintf formatter "attributes"
+      | Method -> Format.fprintf formatter "methods"
+      | Function -> Format.fprintf formatter "functions"
+      | Global -> Format.fprintf formatter "globals"
+
+
+    let show = Format.asprintf "%a" pp
+
+    let is_callable = function
+      | Function -> true
+      | Method -> true
+      | _ -> false
+
+
+    let is_global = equal Global
+
+    let is_attribute = equal Attribute
+
+    let is_class_member = function
+      | Method -> true
+      | Attribute -> true
+      | _ -> false
   end
 
   module QueryTaintAnnotation = struct
@@ -468,7 +500,7 @@ module ModelQuery = struct
     location: Ast.Location.t;
     where: Constraint.t list;
     models: Model.t list;
-    find: FindKind.t;
+    find: Find.t;
     name: string;
     expected_models: ExpectedModel.t list;
     unexpected_models: ExpectedModel.t list;

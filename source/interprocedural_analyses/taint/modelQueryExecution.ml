@@ -742,8 +742,8 @@ let apply_callable_query
   =
   let kind_matches =
     match callable, find with
-    | Target.Function _, ModelQuery.FindKind.Function
-    | Target.Method _, ModelQuery.FindKind.Method ->
+    | Target.Function _, ModelQuery.Find.Function
+    | Target.Method _, ModelQuery.Find.Method ->
         true
     | _ -> false
   in
@@ -803,13 +803,8 @@ let apply_attribute_query
     ~variable_metadata:({ VariableMetadata.name; _ } as variable_metadata)
     { ModelQuery.find; where; models; name = query_name; _ }
   =
-  let kind_matches =
-    match find with
-    | ModelQuery.FindKind.Attribute -> true
-    | _ -> false
-  in
   if
-    kind_matches
+    ModelQuery.Find.is_attribute find
     && List.for_all
          ~f:
            (matches_constraint
@@ -907,13 +902,8 @@ module GlobalVariableQueries = struct
       ~variable_metadata:({ VariableMetadata.name; _ } as variable_metadata)
       { ModelQuery.find; where; models; name = query_name; _ }
     =
-    let kind_matches =
-      match find with
-      | ModelQuery.FindKind.Global -> true
-      | _ -> false
-    in
     if
-      kind_matches
+      ModelQuery.Find.is_global find
       && List.for_all
            ~f:
              (matches_constraint
@@ -951,8 +941,8 @@ let apply_all_queries
       List.partition3_map
         ~f:(fun query ->
           match query.ModelQuery.find with
-          | ModelQuery.FindKind.Attribute -> `Fst query
-          | ModelQuery.FindKind.Global -> `Snd query
+          | ModelQuery.Find.Attribute -> `Fst query
+          | ModelQuery.Find.Global -> `Snd query
           | _ -> `Trd query)
         queries
     in
