@@ -13,7 +13,7 @@
    forwardAnalysisTest backwardAnalysisTest modelTest
    modelVerificationErrorTest missingFlowsTest modelVerifierTest
    sanitizeTest sanitizeTransformTest sanitizeTransformSetTest
-    modelQueryGenerationTest globalVariableModelQueryTest)
+    modelQueryExecutionTest globalVariableModelQueryTest)
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* ModelQuery: implements the logic that applies model queries to generate models.
+(* ModelQueryExecution: implements the logic that generates models from queries.
  *
  * A model query defines a taint to attach to a set of targets. Targets are defined
  * by a set of constraints (e.g, "find all functions starting with foo").

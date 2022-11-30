@@ -36,7 +36,7 @@ let test_apply_query context =
     let resolution = Analysis.GlobalResolution.create global_environment in
     let actual =
       query
-      |> Taint.ModelQueryGeneration.apply_callable_query
+      |> Taint.ModelQueryExecution.apply_callable_query
            ~verbose:false
            ~resolution
            ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
@@ -68,7 +68,7 @@ let test_apply_query context =
     in
     let actual =
       query
-      |> Taint.ModelQueryGeneration.apply_attribute_query
+      |> Taint.ModelQueryExecution.apply_attribute_query
            ~verbose:false
            ~resolution
            ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
@@ -90,7 +90,7 @@ let test_apply_query context =
     let resolution = Analysis.GlobalResolution.create global_environment in
     let actual =
       query
-      |> Taint.ModelQueryGeneration.GlobalVariableQueries.apply_global_query
+      |> Taint.ModelQueryExecution.GlobalVariableQueries.apply_global_query
            ~verbose:false
            ~resolution
            ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
