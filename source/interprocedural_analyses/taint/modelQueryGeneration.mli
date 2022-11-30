@@ -43,6 +43,7 @@ module GlobalVariableQueries : sig
   val apply_global_query
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
+    class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     variable_metadata:VariableMetadata.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list Core.String.Map.t

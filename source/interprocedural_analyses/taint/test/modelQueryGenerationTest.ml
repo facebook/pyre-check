@@ -93,6 +93,7 @@ let test_apply_query context =
       |> Taint.ModelQueryGeneration.GlobalVariableQueries.apply_global_query
            ~verbose:false
            ~resolution
+           ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
            ~variable_metadata:{ name = Ast.Reference.create name; type_annotation = None }
       |> String.Map.data
       |> List.concat
