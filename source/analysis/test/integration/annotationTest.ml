@@ -1844,6 +1844,26 @@ let test_check_literal_assignment context =
       "Incompatible variable type [9]: literal_string is declared to have type `Foo[str]` but is \
        used as type `Foo[typing_extensions.Literal['bar']]`.";
     ];
+  (* We should not sort the generic variables in alphabetical order. *)
+  assert_type_errors
+    {|
+      from typing import *
+
+      T = TypeVar("T", bound=int)
+      AU = TypeVar("AU")
+      X = TypeVar("X", bound=int)
+      AY = TypeVar("AY")
+
+      class Base(Generic[T, AU]):
+          pass
+
+      class Child(Base[X, AY]):
+          pass
+
+      class GrandChild(Child[T, AU]):
+          pass
+  |}
+    [];
   ()
 
 

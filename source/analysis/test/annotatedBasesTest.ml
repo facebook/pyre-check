@@ -132,6 +132,54 @@ let test_inferred_generic_base context =
                   (Type.Variable.Variadic.Tuple.create "test.Ts"));
            ]);
     ];
+  (* We should not sort the generic variables in alphabetical order. *)
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      from typing import Dict, TypeVar
+
+      A = TypeVar("A")
+      B = TypeVar("B")
+
+      class Foo(Dict[B, A]): ...
+    |}
+    [
+      Type.expression
+        (Type.parametric "typing.Generic" !![Type.variable "test.B"; Type.variable "test.A"]);
+    ];
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      from typing import Generic, TypeVar
+
+      A = TypeVar("A", bound=str)
+      B = TypeVar("B", bound=int)
+
+      class BaseAB(Generic[A, B]): ...
+      class BaseBA(Generic[B, A]): ...
+
+      class Foo(BaseAB[A, B], BaseBA[B, A]): ...
+    |}
+    [
+      Type.expression
+        (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"]);
+    ];
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      from typing import Dict, Generic, TypeVar
+
+      A = TypeVar("A", bound=str)
+      B = TypeVar("B", bound=int)
+
+      class BaseAB(Generic[A, B]): ...
+
+      class Foo(BaseAB[Dict[A, B], A]): ...
+    |}
+    [
+      Type.expression
+        (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"]);
+    ];
   ()
 
 

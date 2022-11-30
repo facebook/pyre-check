@@ -11,12 +11,24 @@ open Core
 open Ast
 open Pyre
 
+(* Note: We want to preserve order when deduplicating, so we can't use `List.dedup_and_sort`. This
+   is quadratic, but it should be fine given the small number of generic variables. *)
+let deduplicate ~equal xs =
+  let add_if_not_seen_so_far (seen, unique_items) x =
+    if List.mem seen x ~equal then
+      seen, unique_items
+    else
+      x :: seen, x :: unique_items
+  in
+  List.fold xs ~init:([], []) ~f:add_if_not_seen_so_far |> snd |> List.rev
+
+
 let find_propagated_type_variables bases ~parse_annotation =
   let find_type_variables base_expression =
     parse_annotation base_expression |> Type.Variable.all_free_variables
   in
   List.concat_map ~f:find_type_variables bases
-  |> List.dedup_and_sort ~compare:Type.Variable.compare
+  |> deduplicate ~equal:Type.Variable.equal
   |> List.map ~f:Type.Variable.to_parameter
 
 
