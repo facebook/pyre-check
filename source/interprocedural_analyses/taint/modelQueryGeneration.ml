@@ -18,11 +18,13 @@ open Analysis
 open Interprocedural
 open ModelParseResult
 
-type variable_metadata = {
-  name: Ast.Reference.t;
-  type_annotation: Ast.Expression.Expression.t option;
-}
-[@@deriving show, compare]
+module VariableMetadata = struct
+  type t = {
+    name: Ast.Reference.t;
+    type_annotation: Ast.Expression.Expression.t option;
+  }
+  [@@deriving show, compare]
+end
 
 module ModelQueryRegistryMap = struct
   type t = Registry.t String.Map.t
@@ -773,7 +775,8 @@ let rec attribute_matches_constraint
     query_constraint
     ~resolution
     ~class_hierarchy_graph
-    ~variable_metadata:({ name; type_annotation = annotation } as variable_metadata)
+    ~variable_metadata:
+      ({ VariableMetadata.name; type_annotation = annotation } as variable_metadata)
   =
   let attribute_class_name = Reference.prefix name >>| Reference.show in
   match query_constraint with
@@ -839,7 +842,7 @@ let apply_attribute_query
     ~verbose
     ~resolution
     ~class_hierarchy_graph
-    ~variable_metadata:({ name; _ } as variable_metadata)
+    ~variable_metadata:({ VariableMetadata.name; _ } as variable_metadata)
     { ModelQuery.find; where; models; name = query_name; _ }
   =
   let kind_matches =
@@ -891,7 +894,7 @@ let get_class_attributes ~global_resolution ~class_name =
          _;
         } ->
             {
-              name = Reference.create ~prefix:class_name_reference attribute_name;
+              VariableMetadata.name = Reference.create ~prefix:class_name_reference attribute_name;
               type_annotation = annotation;
             }
             :: accumulator
@@ -913,10 +916,10 @@ module GlobalVariableQueries = struct
           global_reference
       with
       | Some (SimpleAssign { explicit_annotation = Some _ as explicit_annotation; _ }) ->
-          Some { name = global_reference; type_annotation = explicit_annotation }
+          Some { VariableMetadata.name = global_reference; type_annotation = explicit_annotation }
       | Some (TupleAssign _)
       | Some (SimpleAssign _) ->
-          Some { name = global_reference; type_annotation = None }
+          Some { VariableMetadata.name = global_reference; type_annotation = None }
       | _ -> None
     in
     UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
@@ -926,7 +929,8 @@ module GlobalVariableQueries = struct
   let rec global_matches_constraint
       query_constraint
       ~resolution
-      ~variable_metadata:({ name; type_annotation = annotation } as variable_metadata)
+      ~variable_metadata:
+        ({ VariableMetadata.name; type_annotation = annotation } as variable_metadata)
     =
     match query_constraint with
     | ModelQuery.Constraint.NameConstraint name_constraint ->
@@ -959,7 +963,7 @@ module GlobalVariableQueries = struct
   let apply_global_query
       ~verbose
       ~resolution
-      ~variable_metadata:({ name; _ } as variable_metadata)
+      ~variable_metadata:({ VariableMetadata.name; _ } as variable_metadata)
       { ModelQuery.find; where; models; name = query_name; _ }
     =
     let kind_matches =
@@ -1074,7 +1078,10 @@ let apply_all_queries
         ()
     in
     (* Generate models for attributes. *)
-    let apply_queries_for_attribute models_and_names ({ name; _ } as variable_metadata) =
+    let apply_queries_for_attribute
+        models_and_names
+        ({ VariableMetadata.name; _ } as variable_metadata)
+      =
       let attribute_model_from_annotation ~taint_to_model =
         ModelParser.create_attribute_model_from_annotations
           ~resolution
@@ -1123,7 +1130,10 @@ let apply_all_queries
         ModelQueryRegistryMap.empty
     in
     (* Generate models for globals. *)
-    let apply_queries_for_globals models_and_names ({ name; _ } as variable_metadata) =
+    let apply_queries_for_globals
+        models_and_names
+        ({ VariableMetadata.name; _ } as variable_metadata)
+      =
       let global_model_from_annotation ~taint_to_model =
         ModelParser.create_attribute_model_from_annotations
           ~resolution

@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type variable_metadata = {
-  name: Ast.Reference.t;
-  type_annotation: Ast.Expression.Expression.t option;
-}
-[@@deriving show, compare]
+module VariableMetadata : sig
+  type t = {
+    name: Ast.Reference.t;
+    type_annotation: Ast.Expression.Expression.t option;
+  }
+  [@@deriving show, compare]
+end
 
 module ModelQueryRegistryMap : sig
   type t = Registry.t Core.String.Map.t
@@ -36,12 +38,12 @@ end
 module GlobalVariableQueries : sig
   val get_globals_and_annotations
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    variable_metadata list
+    VariableMetadata.t list
 
   val apply_global_query
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
-    variable_metadata:variable_metadata ->
+    variable_metadata:VariableMetadata.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list Core.String.Map.t
 end
@@ -69,7 +71,7 @@ val apply_attribute_query
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-  variable_metadata:variable_metadata ->
+  variable_metadata:VariableMetadata.t ->
   ModelParseResult.ModelQuery.t ->
   ModelParseResult.TaintAnnotation.t list Core.String.Map.t
 
