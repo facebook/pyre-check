@@ -2483,7 +2483,37 @@ module TreeOfStringSets = struct
              t)
            [AbstractTreeDomain.Label.Index "a"; AbstractTreeDomain.Label.Index "a"]
     in
-    assert_equal 1 !counter
+    assert_equal 1 !counter;
+    (* shape tests without "*" on mold *)
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["a1"]; "", ["b1"]])
+      (shape (parse_tree ["a", ["a1"]; "b", ["b1"]]) ~mold:(parse_tree ["a", ["m1"]]));
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["a1"]; "", ["b1"; "s1"]])
+      (shape (parse_tree ["*", ["s1"]; "a", ["a1"]; "b", ["b1"]]) ~mold:(parse_tree ["a", ["m1"]]));
+    (* shape tests with "*" on mold *)
+    assert_equal_trees
+      ~expected:(parse_tree ["*", ["a1"]])
+      (shape (parse_tree ["a", ["a1"]]) ~mold:(parse_tree ["*", ["m1"]]));
+    assert_equal_trees
+      ~expected:(parse_tree ["*", ["a1"; "b1"]])
+      (shape (parse_tree ["a", ["a1"]; "b", ["b1"]]) ~mold:(parse_tree ["*", ["m1"]]));
+    assert_equal_trees
+      ~expected:(parse_tree ["*", ["a1"]; "b", ["b1"]])
+      (shape (parse_tree ["a", ["a1"]; "b", ["b1"]]) ~mold:(parse_tree ["*", ["m1"]; "b", ["m2"]]));
+    assert_equal_trees
+      ~expected:(parse_tree ["a", ["a1"]; "b", ["b1"]])
+      (shape
+         (parse_tree ["a", ["a1"]; "b", ["b1"]])
+         ~mold:(parse_tree ["*", ["m1"]; "b", ["m2"]; "a", ["m3"]]));
+    assert_equal_trees
+      ~expected:(parse_tree ["*", ["s1"; "a1"]; "b", ["b1"]])
+      (shape
+         (parse_tree ["*", ["s1"]; "a", ["a1"]; "b", ["b1"]])
+         ~mold:(parse_tree ["*", ["m1"]; "b", ["m2"]]));
+    assert_equal_trees
+      ~expected:(parse_tree ["*", ["s1"; "a1"; "b1"]])
+      (shape (parse_tree ["*", ["s1"]; "a", ["a1"]; "b", ["b1"]]) ~mold:(parse_tree ["*", ["m1"]]))
 
 
   let test_context _ =

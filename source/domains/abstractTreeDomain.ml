@@ -984,12 +984,16 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       ~mold:{ element = _; children = mold_children }
     =
     let widen_depth = None in
+    let has_any_index_on_mold = mold_children |> LabelMap.mem Label.AnyIndex in
     let joined_element, left_children =
       let lift_dead_branches ~key ~data (lifted, result) =
-        match data with
-        | `Both (left, _mold) -> lifted, LabelMap.add ~key ~data:left result
-        | `Left left -> Element.join lifted (collapse ~transform ~widen_depth left), result
-        | `Right _ -> lifted, result
+        match key, data with
+        | _, `Both (left, _mold) -> lifted, LabelMap.add ~key ~data:left result
+        (* Don't lift left_tree's Index branches when AnyIndex branch is present on mold *)
+        | Label.Index _, `Left left when has_any_index_on_mold ->
+            lifted, LabelMap.add ~key ~data:left result
+        | _, `Left left -> Element.join lifted (collapse ~transform ~widen_depth left), result
+        | _, `Right _ -> lifted, result
       in
       LabelMap.fold2
         left_children
@@ -998,20 +1002,36 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
         ~f:lift_dead_branches
     in
     let { new_element; ancestors } = filter_by_ancestors ~ancestors ~element:joined_element in
-    let children = shape_children ~transform ancestors left_children ~mold:mold_children in
+    let children =
+      shape_children ~transform ancestors left_children ~mold:mold_children ~has_any_index_on_mold
+    in
     create_node_option new_element children
 
 
-  (* left_tree already contains only branches that are also in mold. *)
-  and shape_children ~transform ancestors left_children ~mold =
+  and shape_children ~transform ancestors left_children ~mold ~has_any_index_on_mold =
     let mold_branch ~key ~data result =
-      match data with
-      | `Both (left_tree, mold) -> (
-          match shape_tree ~transform ~ancestors left_tree ~mold with
-          | Some merged -> LabelMap.add result ~key ~data:merged
-          | None -> result)
-      | `Right _mold -> failwith "Invariant broken. Mold should not have more branches"
-      | `Left _ -> failwith "Invariant broken. Left branch should have been lifted"
+      let shape_child ~tree ~mold ~key result =
+        let update data = function
+          | Some existing -> existing |> join data |> Option.some
+          | None -> Some data
+        in
+        match shape_tree ~transform ~ancestors tree ~mold with
+        | Some merged -> LabelMap.update key (update merged) result
+        | None -> result
+      in
+      match key, data with
+      | _, `Both (left_tree, mold) -> shape_child ~tree:left_tree ~mold ~key result
+      (* left_tree may contain extra Index branches if AnyIndex is present on mold. *)
+      | Label.Index _, `Left left_tree when has_any_index_on_mold ->
+          shape_child
+            ~tree:left_tree
+            ~mold:(mold |> LabelMap.find Label.AnyIndex)
+            ~key:Label.AnyIndex
+            result
+      (* mold can have AnyIndex branch, even when left_tree doesn't have it *)
+      | Label.AnyIndex, `Right _mold -> result
+      | _, `Right _mold -> failwith "Invariant broken. Mold should not have more branches"
+      | _, `Left _ -> failwith "Invariant broken. Left branch should have been lifted"
     in
     LabelMap.fold2 left_children mold ~init:LabelMap.empty ~f:mold_branch
 
