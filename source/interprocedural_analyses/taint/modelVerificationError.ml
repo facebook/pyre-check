@@ -65,6 +65,7 @@ type kind =
     }
   | InvalidParameterExclude of Expression.t
   | InvalidIsTransitive of Expression.t
+  | InvalidIncludesSelf of Expression.t
   | InvalidModelQueryClauseArguments of {
       callee: Expression.t;
       arguments: Expression.Call.Argument.t list;
@@ -255,6 +256,10 @@ let description error =
         "The Extends and AnyChild `is_transitive` attribute must be either True or False, got: \
          `%s`."
         (Expression.show expression)
+  | InvalidIncludesSelf expression ->
+      Format.asprintf
+        "The Extends `includes_self` attribute must be either True or False, got: `%s`."
+        (Expression.show expression)
   | InvalidModelQueryClauseArguments { callee; arguments } ->
       Format.asprintf
         "Unsupported arguments for callee `%s`: `%s`."
@@ -435,6 +440,7 @@ let code { kind; _ } =
   | InvalidExpectedModelsClause _ -> 45
   | InvalidAnyChildClause _ -> 46
   | InvalidAccessPath _ -> 47
+  | InvalidIncludesSelf _ -> 13
 
 
 let display { kind = error; path; location } =

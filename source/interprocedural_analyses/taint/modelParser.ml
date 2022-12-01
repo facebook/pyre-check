@@ -1324,46 +1324,59 @@ let parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~argume
            (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
-let is_transitive
-    ~path
-    ~location
-    ({ Node.value = is_transitive_value; _ } as is_transitive_expression)
-  =
-  match is_transitive_value with
-  | Expression.Constant Constant.True -> Ok true
-  | Expression.Constant Constant.False -> Ok false
-  | _ ->
+let parse_bool expression =
+  match Node.value expression with
+  | Expression.Constant Constant.True -> Some true
+  | Expression.Constant Constant.False -> Some false
+  | _ -> None
+
+
+let parse_is_transitive ~path ~location is_transitive_expression =
+  match parse_bool is_transitive_expression with
+  | Some value -> Ok value
+  | None ->
       Error
         (model_verification_error ~path ~location (InvalidIsTransitive is_transitive_expression))
 
 
+let parse_includes_self ~path ~location includes_self_expression =
+  match parse_bool includes_self_expression with
+  | Some value -> Ok value
+  | None ->
+      Error
+        (model_verification_error ~path ~location (InvalidIncludesSelf includes_self_expression))
+
+
 let parse_class_extends_clause ~path ~location ~callee ~arguments =
+  let open Core.Result in
   match arguments with
-  | [
-   {
-     Call.Argument.value =
-       {
-         Node.value = Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
-         _;
-       };
-     _;
-   };
-  ] ->
-      Ok (ModelQuery.ClassConstraint.Extends { class_name; is_transitive = false })
-  | [
-   {
-     Call.Argument.value =
-       {
-         Node.value = Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
-         _;
-       };
-     _;
-   };
-   { Call.Argument.name = Some { Node.value = "is_transitive"; _ }; value };
-  ] ->
-      let open Core.Result in
-      is_transitive ~path ~location value
-      >>= fun is_transitive -> Ok (ModelQuery.ClassConstraint.Extends { class_name; is_transitive })
+  | {
+      Call.Argument.value =
+        {
+          Node.value = Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
+          _;
+        };
+      _;
+    }
+    :: remaining_arguments ->
+      let parse_optional_arguments sofar argument =
+        sofar
+        >>= fun (is_transitive, includes_self) ->
+        match argument with
+        | { Call.Argument.name = Some { Node.value = "is_transitive"; _ }; value } ->
+            parse_is_transitive ~path ~location value >>| fun value -> value, includes_self
+        | { Call.Argument.name = Some { Node.value = "includes_self"; _ }; value } ->
+            parse_includes_self ~path ~location value >>| fun value -> is_transitive, value
+        | _ ->
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidModelQueryClauseArguments { callee; arguments }))
+      in
+      List.fold ~f:parse_optional_arguments remaining_arguments ~init:(Ok (false, true))
+      >>| fun (is_transitive, includes_self) ->
+      ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self }
   | _ ->
       Error
         (model_verification_error
@@ -1483,7 +1496,7 @@ let parse_any_child_constraint ~path ~location ~callee ~arguments =
    { Call.Argument.value = constraint_expression; _ };
    { Call.Argument.name = Some { Node.value = "is_transitive"; _ }; value };
   ] ->
-      is_transitive ~path ~location value
+      parse_is_transitive ~path ~location value
       >>= fun is_transitive -> Ok (constraint_expression, is_transitive)
   | _ ->
       Error

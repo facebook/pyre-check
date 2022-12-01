@@ -2618,6 +2618,18 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
+        where = cls.extends("foo", includes_self=foobar),
+        model = ReturnModel(TaintSource[Test])
+      )
+    |}
+    ~expect:"The Extends `includes_self` attribute must be either True or False, got: `foobar`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
         where = cls.extends("foo", foobar),
         model = ReturnModel(TaintSource[Test])
       )
@@ -5032,7 +5044,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          where = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = false })];
+          where =
+            [
+              ClassConstraint
+                (Extends { class_name = "Foo"; is_transitive = false; includes_self = true });
+            ];
           find = Method;
           models =
             [
@@ -5065,7 +5081,11 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          where = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = false })];
+          where =
+            [
+              ClassConstraint
+                (Extends { class_name = "Foo"; is_transitive = false; includes_self = true });
+            ];
           find = Method;
           models =
             [
@@ -5096,7 +5116,81 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          where = [ClassConstraint (Extends { class_name = "Foo"; is_transitive = true })];
+          where =
+            [
+              ClassConstraint
+                (Extends { class_name = "Foo"; is_transitive = true; includes_self = true });
+            ];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
+     where = cls.extends("Foo", includes_self=True),
+     model = [Returns([TaintSource[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where =
+            [
+              ClassConstraint
+                (Extends { class_name = "Foo"; is_transitive = false; includes_self = true });
+            ];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
+     where = cls.extends("Foo", includes_self=False),
+     model = [Returns([TaintSource[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where =
+            [
+              ClassConstraint
+                (Extends { class_name = "Foo"; is_transitive = false; includes_self = false });
+            ];
           find = Method;
           models =
             [

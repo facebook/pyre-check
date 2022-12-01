@@ -2114,7 +2114,11 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = false; includes_self = true });
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2135,7 +2139,11 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = false; includes_self = true });
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2158,7 +2166,11 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = false })];
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = false; includes_self = true });
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2474,7 +2486,12 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        where =
+          [
+            Not
+              (ClassConstraint
+                 (Extends { class_name = "test.C"; is_transitive = false; includes_self = true }));
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2497,7 +2514,12 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        where =
+          [
+            Not
+              (ClassConstraint
+                 (Extends { class_name = "test.C"; is_transitive = false; includes_self = true }));
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2520,7 +2542,12 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [Not (ClassConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
+        where =
+          [
+            Not
+              (ClassConstraint
+                 (Extends { class_name = "test.C"; is_transitive = false; includes_self = true }));
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2545,7 +2572,11 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = true; includes_self = true });
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2568,7 +2599,11 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = true; includes_self = true });
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2591,7 +2626,11 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [ClassConstraint (Extends { class_name = "test.C"; is_transitive = true })];
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = true; includes_self = true });
+          ];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -2616,7 +2655,12 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        where =
+          [
+            Not
+              (ClassConstraint
+                 (Extends { class_name = "test.A"; is_transitive = true; includes_self = true }));
+          ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
         expected_models = [];
@@ -2640,7 +2684,12 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        where =
+          [
+            Not
+              (ClassConstraint
+                 (Extends { class_name = "test.A"; is_transitive = true; includes_self = true }));
+          ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
         expected_models = [];
@@ -2664,7 +2713,12 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        where =
+          [
+            Not
+              (ClassConstraint
+                 (Extends { class_name = "test.A"; is_transitive = true; includes_self = true }));
+          ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
         expected_models = [];
@@ -2688,7 +2742,12 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [Not (ClassConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
+        where =
+          [
+            Not
+              (ClassConstraint
+                 (Extends { class_name = "test.A"; is_transitive = true; includes_self = true }));
+          ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
         expected_models = [];
@@ -2696,6 +2755,258 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+
+  (* Test includes_self=False *)
+  assert_applied_queries_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E(D):
+        z: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = false; includes_self = false });
+          ];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~name:"test.C.x"
+    ~annotation:None
+    ~expected:[];
+  assert_applied_queries_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E(D):
+        z: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = false; includes_self = false });
+          ];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~name:"test.D.y"
+    ~annotation:None
+    ~expected:[source "Test"];
+  assert_applied_queries_for_attribute
+    ~source:
+      {|
+      class C:
+        x: ...
+      class D(C):
+        y: ...
+      class E(D):
+        z: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.C"; is_transitive = false; includes_self = false });
+          ];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~name:"test.E.z"
+    ~annotation:None
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.A"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.A"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+  assert_applied_queries
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.A"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+  assert_applied_queries
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.B"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.B"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (Extends { class_name = "test.B"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+
   assert_applied_queries_for_globals
     ~source:{|
       foo = []

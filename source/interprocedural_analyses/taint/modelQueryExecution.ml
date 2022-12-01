@@ -234,8 +234,10 @@ module SanitizedCallArgumentSet = Set.Make (struct
   let compare = sanitized_location_insensitive_compare
 end)
 
-let is_ancestor ~resolution ~is_transitive ancestor_class child_class =
-  if is_transitive then
+let is_ancestor ~resolution ~is_transitive ~includes_self ancestor_class child_class =
+  if String.equal ancestor_class child_class then
+    includes_self
+  else if is_transitive then
     try
       GlobalResolution.is_transitive_successor
         ~placeholder_subclass_extends_all:false
@@ -246,7 +248,7 @@ let is_ancestor ~resolution ~is_transitive ancestor_class child_class =
     | ClassHierarchy.Untracked _ -> false
   else
     let parents = GlobalResolution.immediate_parents ~resolution child_class in
-    List.mem (child_class :: parents) ancestor_class ~equal:String.equal
+    List.mem parents ancestor_class ~equal:String.equal
 
 
 let matches_name_constraint ~name_constraint =
@@ -405,8 +407,8 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name class_
       not (class_matches_constraint ~resolution ~name ~class_hierarchy_graph class_constraint)
   | ModelQuery.ClassConstraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint name
-  | ModelQuery.ClassConstraint.Extends { class_name; is_transitive } ->
-      is_ancestor ~resolution ~is_transitive class_name name
+  | ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self } ->
+      is_ancestor ~resolution ~is_transitive ~includes_self class_name name
   | ModelQuery.ClassConstraint.DecoratorConstraint { name_constraint; arguments_constraint } ->
       class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint name
   | ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive } ->

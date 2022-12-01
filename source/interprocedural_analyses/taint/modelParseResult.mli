@@ -174,6 +174,7 @@ module ModelQuery : sig
       | Extends of {
           class_name: string;
           is_transitive: bool;
+          includes_self: bool;
         }
       | DecoratorConstraint of DecoratorConstraint.t
       | AnyOf of t list

@@ -61,6 +61,7 @@ type kind =
     }
   | InvalidParameterExclude of Expression.t
   | InvalidIsTransitive of Expression.t
+  | InvalidIncludesSelf of Expression.t
   | InvalidModelQueryClauseArguments of {
       callee: Expression.t;
       arguments: Expression.Call.Argument.t list;
