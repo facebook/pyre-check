@@ -398,6 +398,7 @@ class PyreLanguageServer:
                 "server_status_before": str(server_status_before),
                 "server_status_after": self.server_state.server_last_status.value,
                 "server_state_start_status": self.server_state.server_last_status.value,
+                "coverage_type": self.get_language_server_features().type_coverage.value,
             },
             activity_key,
         )
