@@ -249,7 +249,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     async def launch_and_subscribe(
         self,
         server_options: pyre_server_options.PyreServerOptions,
-    ) -> state.ServerStatus:
+    ) -> None:
         project_identifier = server_options.project_identifier
         start_arguments = server_options.start_arguments
         socket_path = server_options.get_socket_path()
@@ -263,8 +263,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 connection_timer,
                 is_preexisting=True,
             )
-            # Unreachable code because _try_connect_and_subscribe may never terminate.
-            return state.ServerStatus.READY
         except connections.ConnectionFailure:
             pass
 
@@ -287,7 +285,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 connection_timer,
                 is_preexisting=False,
             )
-            return state.ServerStatus.READY
         elif isinstance(start_status, BuckStartFailure):
             # Buck start failures are intentionally not counted towards
             # `consecutive_start_failure` -- they happen far too often in practice
@@ -319,7 +316,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                 level=lsp.MessageType.INFO,
                 fallback_to_notification=False,
             )
-            return state.ServerStatus.NOT_CONNECTED
         elif isinstance(start_status, OtherStartFailure):
             self.server_state.consecutive_start_failure += 1
             if (
@@ -342,7 +338,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     level=lsp.MessageType.INFO,
                     fallback_to_notification=True,
                 )
-                return state.ServerStatus.NOT_CONNECTED
             else:
                 log_lsp_event._log_lsp_event(
                     remote_logging=self.remote_logging,
@@ -360,7 +355,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     level=lsp.MessageType.ERROR,
                     fallback_to_notification=True,
                 )
-                return state.ServerStatus.SUSPENDED
         else:
             raise RuntimeError("Impossible type for `start_status`")
 
