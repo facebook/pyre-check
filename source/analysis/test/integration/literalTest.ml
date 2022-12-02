@@ -359,8 +359,9 @@ let test_string_literal context =
         expect_literal_string(1)
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.LiteralString` but got `str`.";
+      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional only parameter \
+       expected `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` \
+       is used.";
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
        parameter expected `typing_extensions.LiteralString` but got \
        `typing_extensions.Literal[1]`.";
@@ -480,8 +481,9 @@ let test_string_literal context =
         connection_query(SQL + value, value)
     |}
     [
-      "Incompatible parameter type [6]: In call `connection_query`, for 1st positional only \
-       parameter expected `typing_extensions.LiteralString` but got `str`.";
+      "Non-literal string [62]: In call `connection_query`, for 1st positional only parameter \
+       expected `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` \
+       is used.";
     ];
   assert_type_errors
     {|
@@ -542,8 +544,9 @@ let test_pep_675 context =
         expect_literal_string(1)
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.LiteralString` but got `str`.";
+      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional only parameter \
+       expected `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` \
+       is used.";
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
        parameter expected `typing_extensions.LiteralString` but got \
        `typing_extensions.Literal[1]`.";
@@ -586,8 +589,9 @@ let test_pep_675 context =
         expect_literal_string(1)
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.LiteralString` but got `str`.";
+      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional only parameter \
+       expected `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` \
+       is used.";
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
        parameter expected `typing_extensions.LiteralString` but got \
        `typing_extensions.Literal[1]`.";

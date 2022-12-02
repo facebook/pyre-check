@@ -1683,7 +1683,7 @@ end = struct
           |> Option.value ~default:(create (Polynomial.create_from_operation (Product unpackable)))
           |> expand_unpackable
           |> Option.value ~default:Bottom
-          (* TODO (T98054916): Add a `ProductError` error. *)
+      (* TODO (T98054916): Add a `ProductError` error. *)
       | Operation (Divide (left_polynomial, right_polynomial)) ->
           apply_over_types
             ~operation:(Polynomial.divide ~compare_t:compare_type_t)
@@ -1931,6 +1931,16 @@ let is_optional_primitive = function
 
 let is_primitive = function
   | Primitive _ -> true
+  | _ -> false
+
+
+let is_primitive_string = function
+  | Primitive "str" -> true
+  | _ -> false
+
+
+let is_literal_string = function
+  | Literal (String _) -> true
   | _ -> false
 
 

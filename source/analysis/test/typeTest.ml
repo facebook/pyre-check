@@ -2123,6 +2123,16 @@ let test_is_none _ =
   assert_true (Type.is_none Type.NoneType)
 
 
+let test_is_literal_string _ =
+  assert_true (Type.is_primitive_string (Type.Primitive "str"));
+  assert_false (Type.is_literal_string (Type.Primitive "str"));
+  assert_false (Type.is_primitive_string (Type.Literal (String AnyLiteral)));
+  assert_true (Type.is_literal_string (Type.Literal (String AnyLiteral)));
+  assert_false (Type.is_primitive_string (Type.Literal (String (LiteralValue "foo"))));
+  assert_true (Type.is_literal_string (Type.Literal (String (LiteralValue "foo"))));
+  ()
+
+
 let test_is_type_alias _ =
   assert_true (Type.is_type_alias (Type.Primitive "typing_extensions.TypeAlias"));
   assert_false (Type.is_type_alias (Type.Primitive "typing.TypeAlias"));
@@ -6529,6 +6539,7 @@ let () =
          "is_not_instantiated" >:: test_is_not_instantiated;
          "is_meta" >:: test_is_meta;
          "is_none" >:: test_is_none;
+         "is_literal_string" >:: test_is_literal_string;
          "is_type_alias" >:: test_is_type_alias;
          "create_recursive_type" >:: test_create_recursive_type;
          "unfold_recursive_type" >:: test_unfold_recursive_type;

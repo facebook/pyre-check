@@ -139,7 +139,12 @@ let errors_from_not_found
                 Node.location mismatch )
             in
             let kind =
-              let normal = Error.IncompatibleParameterType { name; position; callee; mismatch } in
+              let normal =
+                if Type.is_primitive_string actual && Type.is_literal_string expected then
+                  Error.NonLiteralString { name; position; callee }
+                else
+                  Error.IncompatibleParameterType { name; position; callee; mismatch }
+              in
               let typed_dictionary_error
                   ~method_name
                   ~position

@@ -712,6 +712,10 @@ val is_optional_primitive : t -> bool
 
 val is_primitive : t -> bool
 
+val is_primitive_string : t -> bool
+
+val is_literal_string : t -> bool
+
 val is_top : t -> bool
 
 val is_tuple : t -> bool
