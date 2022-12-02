@@ -1931,6 +1931,27 @@ def good(divisor: int) -> Optional[int]:
     except ZeroDivisionError:
         print(f"Cannot divide {dividend} by 0")  # OK
 ```
+
+### 62: Non-literal string
+
+Pyre will error if you passs in a non-literal string into a function call that expects a LiteralString.
+
+```python
+def query_user(conn: Connection, user_id: str) -> User:
+    query = f"SELECT * FROM data WHERE user_id = {user_id}"
+    conn.execute(query)  # Error: Expected LiteralString, got str.
+    ...
+```
+
+```python
+def query_user(conn: Connection, user_id: str) -> User:
+    query = "SELECT * FROM data WHERE user_id = ?"
+    conn.execute(query, (user_id,))  # OK.
+
+```
+
+LiteralStrings are created either from an explicit string literal like "foo" or from combining multiple string literals or LiteralStrings. This is a security focused typing feature for safely calling  powerful APIs. See [PEP 675](https://peps.python.org/pep-0675/#appendix-b-limitations) for more details.
+
 ## Suppression
 It is not always possible to address all errors immediately – some code is too dynamic and should be refactored, other times it's *just not the right time* to deal with a type error. We do encourage people to keep their type check results clean at all times and provide mechanisms to suppress errors that cannot be immediately fixed.
 
