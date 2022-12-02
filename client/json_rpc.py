@@ -4,9 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains logic for handling the json rpc protocol, which
+is used for Language Server Protocol messages.
 """
-
 
 import abc
 import dataclasses
