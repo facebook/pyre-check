@@ -641,8 +641,7 @@ let test_pep_675 context =
         expect(x)
     |}
     [
-      (* TODO(T119366994): More examples where literal strings should be inferred *)
-      "Undefined import [21]: Could not find a name `Set` defined in module `typing`.";
+      (* TODO(T119366994): More examples where literal strings should be infered *)
       "Incompatible parameter type [6]: In call `expect`, for 1st positional only parameter \
        expected `Set[typing_extensions.LiteralString]` but got `Set[str]`.";
     ];

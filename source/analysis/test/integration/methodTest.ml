@@ -3417,7 +3417,6 @@ let test_fixpoint_threshold context =
           reveal_type(s)
     |}
     [
-      "Undefined import [21]: Could not find a name `Set` defined in module `typing`.";
       "Undefined or invalid type [11]: Annotation `Missing` is not defined as a type.";
       "Revealed type [-1]: Revealed type for `s` is `Set[Variable[_T]]`.";
     ];

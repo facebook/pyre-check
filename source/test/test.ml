@@ -1039,6 +1039,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Annotated = TypeAlias(object)
         List = TypeAlias(object)
         Dict = TypeAlias(object)
+        Set = TypeAlias(object)
         Optional: _SpecialForm = ...
         Union: _SpecialForm = ...
         Any = object()
