@@ -510,14 +510,12 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | Type.NoneType, _ -> impossible
     (* We have to consider both the variables' constraint and its full value against the union. *)
     | Type.Variable bound_variable, Type.Union union ->
-        solve_less_or_equal
-          order
-          ~constraints
-          ~left:(Type.Variable.Unary.upper_bound bound_variable)
-          ~right
-        @ List.concat_map
-            ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right)
-            union
+        List.concat_map ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right) union
+        @ solve_less_or_equal
+            order
+            ~constraints
+            ~left:(Type.Variable.Unary.upper_bound bound_variable)
+            ~right
     | Type.Variable bound_variable, _ ->
         solve_less_or_equal
           order

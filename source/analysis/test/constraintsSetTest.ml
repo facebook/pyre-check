@@ -486,6 +486,10 @@ let test_add_constraint context =
     ~left:"typing.Optional[typing.Tuple[C, C, typing.Callable[[C, C], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
     [["T", "C"]];
+  assert_add
+    ~left:"T_Unconstrained"
+    ~right:"typing.Optional[T_Unconstrained]"
+    [["T_Unconstrained", "T_Unconstrained"]; ["T_Unconstrained", "object"]];
 
   (* Bound => Bound *)
   assert_add ~left:"T_Bound_D" ~right:"T_Bound_C" [["T_Bound_C", "T_Bound_D"]];

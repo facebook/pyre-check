@@ -765,6 +765,21 @@ let test_check_variable_bindings context =
       "Invalid type parameters [24]: Type parameter `int` violates constraints on \
        `Variable[TBoundToINode (bound to test.INode)]` in generic type `NodeGetQuery`.";
     ];
+  (* Bug fix: Solve Optional[T (bound)] vs Optional[T (free)]. *)
+  assert_type_errors
+    {|
+      from typing import Generic, Optional, TypeVar
+
+      T = TypeVar("T")
+
+      class Foo(Generic[T]): ...
+
+      def create(x: Optional[T]) -> Foo[T]: ...
+
+      def main(x: T) -> Foo[T]:
+        return create(x)
+    |}
+    [];
   ()
 
 
