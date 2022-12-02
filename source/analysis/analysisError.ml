@@ -586,6 +586,11 @@ and kind =
   | MissingReturnAnnotation of missing_annotation
   | MutuallyRecursiveTypeVariables of Reference.t option
   | NotCallable of Type.t
+  | NonLiteralString of {
+      name: Identifier.t option;
+      position: int;
+      callee: Reference.t option;
+    }
   | PrivateProtocolProperty of {
       name: Identifier.t;
       parent: Type.t;
@@ -738,6 +743,7 @@ let code_of_kind = function
   | DuplicateTypeVariables _ -> 59
   | TupleConcatenationError _ -> 60
   | UninitializedLocal _ -> 61
+  | NonLiteralString _ -> 62
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -788,6 +794,7 @@ let name_of_kind = function
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | MutuallyRecursiveTypeVariables _ -> "Mutually recursive type variables"
   | NotCallable _ -> "Call error"
+  | NonLiteralString _ -> "Non-literal string"
   | PrivateProtocolProperty _ -> "Private protocol property"
   | ProhibitedAny _ -> "Prohibited any"
   | ReadOnlynessMismatch kind -> ReadOnly.name_of_kind kind
@@ -1051,6 +1058,22 @@ let rec messages ~concise ~signature location kind =
   let pp_type = pp_type ~concise in
   let pp_reference = pp_reference ~concise in
   let pp_identifier = Identifier.pp_sanitized in
+  let incompatible_parameter_target ~name ~position ~callee =
+    let parameter =
+      match name with
+      | Some name -> Format.asprintf "parameter `%a`" pp_identifier name
+      | _ -> "positional only parameter"
+    in
+    let callee =
+      match callee with
+      | Some callee -> Format.asprintf "call `%a`" pp_reference callee
+      | _ -> "anonymous call"
+    in
+    if concise then
+      Format.asprintf "For %s param" (ordinal position)
+    else
+      Format.asprintf "In %s, for %s %s" callee (ordinal position) parameter
+  in
   let kind = weaken_literals kind in
   let kind = simplify_kind kind in
   match kind with
@@ -1187,22 +1210,7 @@ let rec messages ~concise ~signature location kind =
         else
           []
       in
-      let target =
-        let parameter =
-          match name with
-          | Some name -> Format.asprintf "parameter `%a`" pp_identifier name
-          | _ -> "positional only parameter"
-        in
-        let callee =
-          match callee with
-          | Some callee -> Format.asprintf "call `%a`" pp_reference callee
-          | _ -> "anonymous call"
-        in
-        if concise then
-          Format.asprintf "For %s param" (ordinal position)
-        else
-          Format.asprintf "In %s, for %s %s" callee (ordinal position) parameter
-      in
+      let target = incompatible_parameter_target ~name ~position ~callee in
       match Option.map ~f:Reference.as_list callee with
       | Some ["int"; "__add__"]
       | Some ["int"; "__sub__"]
@@ -2206,6 +2214,17 @@ let rec messages ~concise ~signature location kind =
         | _ -> "anonymous call"
       in
       [Format.asprintf "Solving type variables for %s led to infinite recursion." callee]
+  | NonLiteralString { name; position; callee } ->
+      let target = incompatible_parameter_target ~name ~position ~callee in
+      [
+        Format.asprintf
+          "%s expected `LiteralString` but got `str`. Ensure only a string literal or a \
+           `LiteralString` is used."
+          target;
+        (* TODO(T139139062): Add documentation for new error 62 on using a string instead of literal
+           string *)
+        "See https://pyre-check.org/docs/errors/#62-Non-literal-string for more details.";
+      ]
   | NotCallable
       (Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ } as
       annotation) ->
@@ -2920,6 +2939,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | MutuallyRecursiveTypeVariables _
+  | NonLiteralString _
   | PrivateProtocolProperty _
   | ProhibitedAny _
   | TooManyArguments _
@@ -3064,6 +3084,11 @@ let join ~resolution left right =
     | MissingOverloadImplementation left, MissingOverloadImplementation right
       when Reference.equal left right ->
         MissingOverloadImplementation left
+    | NonLiteralString left, NonLiteralString right
+      when Option.equal Identifier.equal_sanitized left.name right.name
+           && left.position = right.position
+           && Option.equal Reference.equal_sanitized left.callee right.callee ->
+        NonLiteralString left
     | NotCallable left, NotCallable right ->
         NotCallable (GlobalResolution.join resolution left right)
     | ( ProhibitedAny { annotation_kind = annotation_kind_left; missing_annotation = left },
@@ -3407,6 +3432,7 @@ let join ~resolution left right =
     | MissingParameterAnnotation _, _
     | MissingReturnAnnotation _, _
     | MutuallyRecursiveTypeVariables _, _
+    | NonLiteralString _, _
     | NotCallable _, _
     | PrivateProtocolProperty _, _
     | ProhibitedAny _, _
@@ -3895,6 +3921,8 @@ let dequalify
     | MissingOverloadImplementation name -> MissingOverloadImplementation (dequalify_reference name)
     | MutuallyRecursiveTypeVariables callee ->
         MutuallyRecursiveTypeVariables (Option.map callee ~f:dequalify_reference)
+    | NonLiteralString ({ callee; _ } as parameter) ->
+        NonLiteralString { parameter with callee = Option.map callee ~f:dequalify_reference }
     | NotCallable annotation -> NotCallable (dequalify annotation)
     | PrivateProtocolProperty ({ parent; _ } as private_property) ->
         PrivateProtocolProperty { private_property with parent = dequalify parent }

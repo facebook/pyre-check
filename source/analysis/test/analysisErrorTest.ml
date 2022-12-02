@@ -974,6 +974,31 @@ let test_description _ =
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In anonymous call, for 1st \
      positional argument, expected `Mutable` but got `ReadOnly`.";
+  let incompatible_parameter_type_error =
+    Error.IncompatibleParameterType
+      {
+        name = Some "name";
+        position = 1;
+        callee = Some !&"callee";
+        mismatch =
+          {
+            Error.actual = Type.string;
+            expected = Type.Literal (String AnyLiteral);
+            due_to_invariance = false;
+          };
+      }
+  in
+  let non_string_literal_error =
+    Error.NonLiteralString { name = Some "name"; position = 1; callee = Some !&"callee" }
+  in
+  assert_messages
+    incompatible_parameter_type_error
+    "Incompatible parameter type [6]: In call `callee`, for 1st parameter `name` expected \
+     `typing_extensions.LiteralString` but got `str`.";
+  assert_messages
+    non_string_literal_error
+    "Non-literal string [62]: In call `callee`, for 1st parameter `name` expected `LiteralString` \
+     but got `str`. Ensure only a string literal or a `LiteralString` is used.";
   ()
 
 

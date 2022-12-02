@@ -393,6 +393,11 @@ and kind =
   | MissingReturnAnnotation of missing_annotation
   | MutuallyRecursiveTypeVariables of Reference.t option
   | NotCallable of Type.t
+  | NonLiteralString of {
+      name: Identifier.t option;
+      position: int;
+      callee: Reference.t option;
+    }
   | PrivateProtocolProperty of {
       name: Identifier.t;
       parent: Type.t;
