@@ -30,16 +30,23 @@ let test_apply_query context =
     ModelParseResult.TaintAnnotation.from_sink sink
   in
   let assert_applied_queries ~source ~query ~callable ~expected =
-    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
-    let resolution = Analysis.GlobalResolution.create global_environment in
+    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let class_hierarchy_graph =
+      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+        ~scheduler:(mock_scheduler ())
+        ~environment:type_environment
+        ~qualifiers:[Ast.Reference.create "test"]
+      |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
+    in
     let actual =
       query
       |> Taint.ModelQueryExecution.apply_callable_query
            ~verbose:false
-           ~resolution
-           ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
+           ~resolution:global_resolution
+           ~class_hierarchy_graph
            ~callable
       |> String.Map.data
       |> List.concat
@@ -51,10 +58,17 @@ let test_apply_query context =
       actual
   in
   let assert_applied_queries_for_attribute ~source ~query ~name ~annotation ~expected =
-    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
-    let resolution = Analysis.GlobalResolution.create global_environment in
+    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let class_hierarchy_graph =
+      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+        ~scheduler:(mock_scheduler ())
+        ~environment:type_environment
+        ~qualifiers:[Ast.Reference.create "test"]
+      |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
+    in
     let annotation_expression =
       annotation
       >>= fun annotation ->
@@ -70,8 +84,8 @@ let test_apply_query context =
       query
       |> Taint.ModelQueryExecution.apply_attribute_query
            ~verbose:false
-           ~resolution
-           ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
+           ~resolution:global_resolution
+           ~class_hierarchy_graph
            ~variable_metadata:
              { name = Ast.Reference.create name; type_annotation = annotation_expression }
       |> String.Map.data
@@ -84,16 +98,23 @@ let test_apply_query context =
       actual
   in
   let assert_applied_queries_for_globals ~source ~query ~name ~expected =
-    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
-    let resolution = Analysis.GlobalResolution.create global_environment in
+    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let class_hierarchy_graph =
+      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+        ~scheduler:(mock_scheduler ())
+        ~environment:type_environment
+        ~qualifiers:[Ast.Reference.create "test"]
+      |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
+    in
     let actual =
       query
       |> Taint.ModelQueryExecution.GlobalVariableQueries.apply_global_query
            ~verbose:false
-           ~resolution
-           ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
+           ~resolution:global_resolution
+           ~class_hierarchy_graph
            ~variable_metadata:{ name = Ast.Reference.create name; type_annotation = None }
       |> String.Map.data
       |> List.concat
@@ -3005,6 +3026,378 @@ let test_apply_query context =
         unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+
+  (* Test cls.any_child *)
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = false;
+                   includes_self = true;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = false;
+                   includes_self = true;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = false;
+                   includes_self = true;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = false;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = false;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = false;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = true;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = true;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = true;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_applied_queries
+    ~source:
+      {|
+      @decorator
+      class A:
+        def foo(): ...
+      class B(A):
+        def foo(): ...
+      @decorator
+      class C(B):
+        def foo(): ...
+      class D:
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            ClassConstraint
+              (AnyChildConstraint
+                 {
+                   class_constraint =
+                     DecoratorConstraint
+                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   is_transitive = true;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.AnnotationKind.ReturnAnnotation, source "Test"];
 
   assert_applied_queries_for_globals

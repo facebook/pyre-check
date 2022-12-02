@@ -1347,18 +1347,10 @@ let parse_includes_self ~path ~location includes_self_expression =
         (model_verification_error ~path ~location (InvalidIncludesSelf includes_self_expression))
 
 
-let parse_class_extends_clause ~path ~location ~callee ~arguments =
+let parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments =
   let open Core.Result in
   match arguments with
-  | {
-      Call.Argument.value =
-        {
-          Node.value = Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
-          _;
-        };
-      _;
-    }
-    :: remaining_arguments ->
+  | { Call.Argument.value = first_parameter; _ } :: remaining_arguments ->
       let parse_optional_arguments sofar argument =
         sofar
         >>= fun (is_transitive, includes_self) ->
@@ -1375,8 +1367,22 @@ let parse_class_extends_clause ~path ~location ~callee ~arguments =
                  (InvalidModelQueryClauseArguments { callee; arguments }))
       in
       List.fold ~f:parse_optional_arguments remaining_arguments ~init:(Ok (false, true))
-      >>| fun (is_transitive, includes_self) ->
-      ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self }
+      >>| fun (is_transitive, includes_self) -> first_parameter, is_transitive, includes_self
+  | _ ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (InvalidModelQueryClauseArguments { callee; arguments }))
+
+
+let parse_class_extends_clause ~path ~location ~callee ~arguments =
+  let open Core.Result in
+  parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments
+  >>= fun (first_parameter, is_transitive, includes_self) ->
+  match Node.value first_parameter with
+  | Expression.Constant (Constant.String { StringLiteral.value = class_name; _ }) ->
+      Ok (ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self })
   | _ ->
       Error
         (model_verification_error
@@ -1490,23 +1496,11 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
 
 let parse_any_child_constraint ~path ~location ~callee ~arguments =
   let open Core.Result in
-  (match arguments with
-  | [{ Call.Argument.value = constraint_expression; _ }] -> Ok (constraint_expression, false)
-  | [
-   { Call.Argument.value = constraint_expression; _ };
-   { Call.Argument.name = Some { Node.value = "is_transitive"; _ }; value };
-  ] ->
-      parse_is_transitive ~path ~location value
-      >>= fun is_transitive -> Ok (constraint_expression, is_transitive)
-  | _ ->
-      Error
-        (model_verification_error
-           ~path
-           ~location
-           (InvalidModelQueryClauseArguments { callee; arguments })))
-  >>= fun (constraint_expression, is_transitive) ->
+  parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments
+  >>= fun (constraint_expression, is_transitive, includes_self) ->
   parse_class_constraint ~path ~location constraint_expression
-  >>| fun class_constraint -> class_constraint, is_transitive
+  >>| fun class_constraint ->
+  ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive; includes_self }
 
 
 let parse_where_clause ~path ~find_clause ({ Node.value; location } as expression) =
@@ -1670,10 +1664,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
               parse_decorator_constraint ~path ~location constraint_expression
               >>| fun decorator_constraint ->
               ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint
-          | "any_child" ->
-              parse_any_child_constraint ~path ~location ~callee ~arguments
-              >>| fun (class_constraint, is_transitive) ->
-              ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive }
+          | "any_child" -> parse_any_child_constraint ~path ~location ~callee ~arguments
           | _ -> Error (model_verification_error ~path ~location (UnsupportedCallee callee))
         in
         class_constraint

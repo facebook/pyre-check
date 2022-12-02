@@ -378,21 +378,27 @@ let class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_c
   |> Option.value ~default:false
 
 
-let rec find_children ~class_hierarchy_graph ~is_transitive class_name =
+let rec find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name =
   let child_name_set = ClassHierarchyGraph.SharedMemory.get ~class_name class_hierarchy_graph in
   let child_name_set =
     if is_transitive then
       ClassHierarchyGraph.ClassNameSet.fold
-        (fun class_name set ->
-          set
-          |> ClassHierarchyGraph.ClassNameSet.union
-               (find_children ~class_hierarchy_graph ~is_transitive class_name))
+        (fun child_name set ->
+          ClassHierarchyGraph.ClassNameSet.union
+            set
+            (find_children ~class_hierarchy_graph ~is_transitive ~includes_self:false child_name))
         child_name_set
-        ClassHierarchyGraph.ClassNameSet.empty
+        child_name_set
     else
       child_name_set
   in
-  ClassHierarchyGraph.ClassNameSet.add class_name child_name_set
+  let child_name_set =
+    if includes_self then
+      ClassHierarchyGraph.ClassNameSet.add class_name child_name_set
+    else
+      child_name_set
+  in
+  child_name_set
 
 
 let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name class_constraint =
@@ -411,8 +417,9 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name class_
       is_ancestor ~resolution ~is_transitive ~includes_self class_name name
   | ModelQuery.ClassConstraint.DecoratorConstraint { name_constraint; arguments_constraint } ->
       class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint name
-  | ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive } ->
-      find_children ~class_hierarchy_graph ~is_transitive name
+  | ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive; includes_self }
+    ->
+      find_children ~class_hierarchy_graph ~is_transitive ~includes_self name
       |> ClassHierarchyGraph.ClassNameSet.exists (fun name ->
              class_matches_constraint ~resolution ~name ~class_hierarchy_graph class_constraint)
 

@@ -181,9 +181,6 @@ module SharedMemory = struct
 
   type t = Handle
 
-  (** Return the current classes and children in shared memory. Only exposed for tests. *)
-  let get_for_testing_only () = Handle
-
   let add Handle ~class_name ~class_name_set = add class_name class_name_set
 
   let get Handle ~class_name = get class_name |> Option.value ~default:ClassNameSet.empty

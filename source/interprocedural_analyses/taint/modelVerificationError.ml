@@ -258,7 +258,8 @@ let description error =
         (Expression.show expression)
   | InvalidIncludesSelf expression ->
       Format.asprintf
-        "The Extends `includes_self` attribute must be either True or False, got: `%s`."
+        "The Extends and AnyChild `includes_self` attribute must be either True or False, got: \
+         `%s`."
         (Expression.show expression)
   | InvalidModelQueryClauseArguments { callee; arguments } ->
       Format.asprintf

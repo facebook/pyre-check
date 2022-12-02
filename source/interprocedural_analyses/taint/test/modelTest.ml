@@ -219,8 +219,8 @@ let assert_queries ?source ?rules ~context ~model_source ~expect () =
   assert_equal
     ~cmp:(List.equal ModelParseResult.ModelQuery.equal)
     ~printer:(List.to_string ~f:ModelParseResult.ModelQuery.show)
-    queries
     expect
+    queries
 
 
 let test_source_models context =
@@ -2622,7 +2622,9 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"The Extends `includes_self` attribute must be either True or False, got: `foobar`."
+    ~expect:
+      "The Extends and AnyChild `includes_self` attribute must be either True or False, got: \
+       `foobar`."
     ();
   assert_invalid_model
     ~model_source:
@@ -5606,6 +5608,7 @@ let test_query_parsing context =
                              ];
                          ];
                      is_transitive = false;
+                     includes_self = true;
                    });
               NameConstraint (Matches (Re2.create_exn "\\.__init__$"));
             ];
@@ -5662,7 +5665,8 @@ let test_query_parsing context =
               cls.matches("Baz")
             )
           ),
-          is_transitive=True
+          is_transitive=True,
+          includes_self=False
         ),
         name.matches("\.__init__$")
       ],
@@ -5677,7 +5681,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
-          location = { start = { line = 2; column = 0 }; stop = { line = 26; column = 1 } };
+          location = { start = { line = 2; column = 0 }; stop = { line = 27; column = 1 } };
           name = "get_parent_of_d1_decorator_transitive_sources";
           where =
             [
@@ -5700,6 +5704,7 @@ let test_query_parsing context =
                              ];
                          ];
                      is_transitive = true;
+                     includes_self = false;
                    });
               NameConstraint (Matches (Re2.create_exn "\\.__init__$"));
             ];

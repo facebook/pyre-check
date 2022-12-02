@@ -53,8 +53,5 @@ module SharedMemory : sig
 
   val from_heap : Heap.t -> t
 
-  (** Return the current classes and children in shared memory. Only exposed for tests. *)
-  val get_for_testing_only : unit -> t
-
   val get : t -> class_name:class_name -> ClassNameSet.t
 end
