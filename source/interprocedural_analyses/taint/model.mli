@@ -43,7 +43,9 @@ module Mode : sig
     | SkipDecoratorWhenInlining
     | SkipOverrides
     | Entrypoint
-  [@@deriving show, compare]
+  [@@deriving show, compare, equal]
+
+  val from_string : string -> t option
 end
 
 module ModeSet : sig
@@ -52,6 +54,8 @@ module ModeSet : sig
   val singleton : Mode.t -> t
 
   val empty : t
+
+  val equal : t -> t -> bool
 
   val is_empty : t -> bool
 

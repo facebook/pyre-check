@@ -8,9 +8,17 @@ from typing import List
 glob: List[int] = []
 
 
+def MyEntrypoint(f):
+    return lambda: f()
+
+
 class MyClass:
     def some_entrypoint_function():
-        glob.append()
+        glob.append(1)
+
+    @MyEntrypoint
+    def method_entrypoint_with_decorator():
+        glob.append(1)
 
 
 def nested_run():
@@ -42,6 +50,19 @@ def leak_globals_by_passing_in():
 
 def leak_globals_by_transitive_call():
     transitive_call_accessing_globals()
+
+
+@MyEntrypoint
+def function_entrypoint_with_decorator():
+    glob.append(1)
+
+
+def entrypoint_into_lambda():
+    @MyEntrypoint
+    def lambda_entrypoint_with_decorator():
+        glob.append(1)
+
+    lambda_entrypoint_with_decorator()
 
 
 def get_these():

@@ -2,10 +2,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "entrypoint.MyClass.some_entrypoint_function",
-    "callable_line": 12,
+    "callable": "entrypoint.MyClass.method_entrypoint_with_decorator",
+    "callable_line": 20,
     "code": 1006,
-    "line": 13,
+    "line": 21,
     "start": 8,
     "end": 12,
     "filename": "entrypoint.py",
@@ -25,7 +25,7 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 13,
+              "line": 21,
               "start": 8,
               "end": 12
             }
@@ -46,7 +46,72 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 13,
+              "line": 21,
+              "start": 8,
+              "end": 12
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "list.append",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "entrypoint.MyClass.method_entrypoint_with_decorator:1006:0:Call|list.append|0|formal(self):8e793619461ac67177f94029ef1bb0ed"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "entrypoint.MyClass.some_entrypoint_function",
+    "callable_line": 16,
+    "code": 1006,
+    "line": 17,
+    "start": 8,
+    "end": 12,
+    "filename": "entrypoint.py",
+    "message": "[GlobalSource] to [MutationSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "kind": "GlobalSource"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 17,
+              "start": 8,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "kind": "MutationSink"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 17,
               "start": 8,
               "end": 12
             }
@@ -67,10 +132,71 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "entrypoint.immediate_examples",
-    "callable_line": 23,
+    "callable": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
+    "callable_line": 62,
     "code": 1006,
-    "line": 24,
+    "line": 63,
+    "start": 8,
+    "end": 12,
+    "filename": "entrypoint.py",
+    "message": "[GlobalSource] to [MutationSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "kind": "GlobalSource"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 63,
+              "start": 8,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "kind": "MutationSink"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 63,
+              "start": 8,
+              "end": 12
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "list.append",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator:1006:0:Call|list.append|0|formal(self):637b92eedd0fb9335a84d9aa16386318"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "entrypoint.function_entrypoint_with_decorator",
+    "callable_line": 56,
+    "code": 1006,
+    "line": 57,
     "start": 4,
     "end": 8,
     "filename": "entrypoint.py",
@@ -88,7 +214,7 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 24,
+              "line": 57,
               "start": 4,
               "end": 8
             }
@@ -107,7 +233,68 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 24,
+              "line": 57,
+              "start": 4,
+              "end": 8
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "list.append",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "entrypoint.function_entrypoint_with_decorator:1006:0:Call|list.append|0|formal(self):353e68bf34f919da08cf5375909ae8b4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "entrypoint.immediate_examples",
+    "callable_line": 31,
+    "code": 1006,
+    "line": 32,
+    "start": 4,
+    "end": 8,
+    "filename": "entrypoint.py",
+    "message": "[GlobalSource] to [MutationSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "kind": "GlobalSource"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 32,
+              "start": 4,
+              "end": 8
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "list.append" } ],
+                "kind": "MutationSink"
+              }
+            ],
+            "origin": {
+              "filename": "entrypoint.py",
+              "line": 32,
               "start": 4,
               "end": 8
             }
@@ -129,9 +316,9 @@
   "kind": "issue",
   "data": {
     "callable": "entrypoint.leak_globals_by_passing_in",
-    "callable_line": 39,
+    "callable_line": 47,
     "code": 1006,
-    "line": 40,
+    "line": 48,
     "start": 43,
     "end": 47,
     "filename": "entrypoint.py",
@@ -149,7 +336,7 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 40,
+              "line": 48,
               "start": 43,
               "end": 47
             }
@@ -170,7 +357,7 @@
             "call": {
               "position": {
                 "filename": "entrypoint.py",
-                "line": 40,
+                "line": 48,
                 "start": 43,
                 "end": 47
               },
@@ -197,9 +384,9 @@
   "kind": "issue",
   "data": {
     "callable": "entrypoint.nested_run.do_the_thing",
-    "callable_line": 17,
+    "callable_line": 25,
     "code": 1006,
-    "line": 18,
+    "line": 26,
     "start": 8,
     "end": 12,
     "filename": "entrypoint.py",
@@ -217,7 +404,7 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 18,
+              "line": 26,
               "start": 8,
               "end": 12
             }
@@ -236,7 +423,7 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 18,
+              "line": 26,
               "start": 8,
               "end": 12
             }
@@ -258,9 +445,9 @@
   "kind": "issue",
   "data": {
     "callable": "entrypoint.transitive_call_accessing_globals",
-    "callable_line": 35,
+    "callable_line": 43,
     "code": 1006,
-    "line": 36,
+    "line": 44,
     "start": 4,
     "end": 8,
     "filename": "entrypoint.py",
@@ -278,7 +465,7 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 36,
+              "line": 44,
               "start": 4,
               "end": 8
             }
@@ -297,7 +484,7 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 36,
+              "line": 44,
               "start": 4,
               "end": 8
             }
@@ -346,7 +533,7 @@
             ],
             "origin": {
               "filename": "entrypoint.py",
-              "line": 32,
+              "line": 40,
               "start": 4,
               "end": 14
             }

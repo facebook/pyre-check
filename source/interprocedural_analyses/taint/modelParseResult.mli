@@ -124,6 +124,7 @@ module ModelAnnotation : sig
   type t =
     | ParameterAnnotation of AccessPath.Root.t * TaintAnnotation.t
     | ReturnAnnotation of TaintAnnotation.t
+    | ModeAnnotation of Model.ModeSet.t
   [@@deriving show, equal]
 end
 
@@ -273,6 +274,7 @@ module ModelQuery : sig
       | Return of QueryTaintAnnotation.t list
       | Attribute of QueryTaintAnnotation.t list
       | Global of QueryTaintAnnotation.t list
+      | Modes of Model.ModeSet.t
     [@@deriving show, equal]
   end
 

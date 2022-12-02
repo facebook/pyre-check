@@ -736,6 +736,7 @@ let apply_callable_models
         in
         List.cartesian_product normalized_parameters taint
         |> List.filter_map ~f:apply_parameter_production
+    | ModelQuery.Model.Modes modes -> [ModelParseResult.ModelAnnotation.ModeAnnotation modes]
     | ModelQuery.Model.Attribute _ -> failwith "impossible case"
     | ModelQuery.Model.Global _ -> failwith "impossible case"
   in

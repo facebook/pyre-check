@@ -1893,6 +1893,40 @@ let parse_model_clause
         >>= fun () -> parse_taint taint >>| fun taint -> ModelQuery.Model.Global taint
     | Expression.Call
         {
+          Call.callee = { Node.value = Name (Name.Identifier "Modes"); _ } as callee;
+          arguments =
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Expression.List (_ :: _ as mode_list); location };
+                _;
+              };
+            ];
+        } ->
+        let parse_mode mode =
+          match mode with
+          | { Node.value = Expression.Name (Name.Identifier mode_name); location } -> (
+              match Model.Mode.from_string mode_name with
+              | Some mode -> Ok mode
+              | None ->
+                  Error (model_verification_error ~path ~location (InvalidModelQueryMode mode_name))
+              )
+          | _ -> Error (model_verification_error ~path ~location (UnexpectedModelExpression mode))
+        in
+        check_find ~callee ModelQuery.Find.is_callable
+        >>= fun () ->
+        List.map ~f:parse_mode mode_list
+        |> Result.all
+        >>| fun modes ->
+        let mode_set =
+          List.fold_left
+            ~init:Model.ModeSet.empty
+            ~f:(fun mode_set mode -> Model.ModeSet.add mode mode_set)
+            modes
+        in
+        ModelQuery.Model.Modes mode_set
+    | Expression.Call
+        {
           Call.callee = { Node.value = Name (Name.Identifier "NamedParameter"); _ } as callee;
           arguments =
             [
@@ -2169,6 +2203,8 @@ let add_taint_annotation_to_model
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.Sanitize annotations ->
           Ok (introduce_sanitize ~source_sink_filter ~root model annotations))
+  | ModelAnnotation.ModeAnnotation model_query_modes ->
+      Ok { model with modes = Model.ModeSet.join model_query_modes model.modes }
 
 
 let parse_return_taint

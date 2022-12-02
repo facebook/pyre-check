@@ -19,3 +19,26 @@ def entrypoint.get_these(): ...
 
 @Entrypoint
 def entrypoint.MyClass.some_entrypoint_function(): ...
+
+
+ModelQuery(
+  name = "get_entrypoint_functions",
+  find = "functions",
+  where = [
+    Decorator(name.equals("entrypoint.MyEntrypoint")),
+  ],
+  model = [
+    Modes([Entrypoint])
+  ]
+)
+
+ModelQuery(
+  name = "get_entrypoint_methods",
+  find = "methods",
+  where = [
+    Decorator(name.equals("entrypoint.MyEntrypoint")),
+  ],
+  model = [
+    Modes([Entrypoint])
+  ]
+)

@@ -2594,6 +2594,78 @@ let test_invalid_models context =
       "`type_annotation.is_annotated_type` is not a valid constraint for model queries with find \
        clause of kind `methods`."
     ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "valid_model",
+        find = "methods",
+        where = name.equals("hello"),
+        model = Modes([Entrypoint])
+      )
+    |}
+    ~expect:"no failure"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "valid_model",
+        find = "functions",
+        where = name.equals("hello"),
+        model = Modes([Entrypoint])
+      )
+    |}
+    ~expect:"no failure"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = name.equals("hello"),
+        model = Modes()
+      )
+    |}
+    ~expect:"Unexpected model expression: `Modes()`"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "globals",
+        where = name.equals("hello"),
+        model = Modes([Entrypoint])
+      )
+    |}
+    ~expect:"`Modes` is not a valid model for model queries with find clause of kind `globals`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = annotation.equals(""),
+        model = Modes([Entrypoint])
+      )
+    |}
+    ~expect:"Unsupported callee: annotation.equals"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.equals("hello"),
+        model = Modes([ThisModeDoesntExist])
+      )
+    |}
+    ~expect:"`ThisModeDoesntExist` is not a valid mode for a model."
+    ();
 
   assert_invalid_model
     ~model_source:

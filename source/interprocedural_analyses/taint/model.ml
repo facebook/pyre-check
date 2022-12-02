@@ -214,7 +214,7 @@ module Mode = struct
     | SkipDecoratorWhenInlining
     | SkipOverrides
     | Entrypoint
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let pp formatter = function
     | Obscure -> Format.fprintf formatter "Obscure"
@@ -227,6 +227,14 @@ module Mode = struct
   let show = Format.asprintf "%a" pp
 
   let to_json mode = `String (show mode)
+
+  let from_string = function
+    | "Obscure" -> Some Obscure
+    | "SkipAnalysis" -> Some SkipAnalysis
+    | "SkipDecoratorWhenInlining" -> Some SkipDecoratorWhenInlining
+    | "SkipOverrides" -> Some SkipOverrides
+    | "Entrypoint" -> Some Entrypoint
+    | _ -> None
 end
 
 module ModeSet = struct
