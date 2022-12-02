@@ -3190,7 +3190,7 @@ let rec parse_statement
                 :: { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause }
                    :: remaining_arguments ->
             Ok ((name, find_clause, where_clause, model_clause), remaining_arguments)
-        | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses arguments)]
+        | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses statement)]
       in
       let clauses =
         clauses
@@ -3222,7 +3222,7 @@ let rec parse_statement
         ] ->
             Ok (required_arguments, Some expected_models_clause, Some unexpected_models_clause)
         | [] -> Ok (required_arguments, None, None)
-        | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses arguments)]
+        | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses statement)]
       in
       clauses
       >>= fun ( (name, find_clause, where_clause, model_clause),

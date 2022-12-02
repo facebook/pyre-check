@@ -50,7 +50,7 @@ type kind =
       name: Reference.t;
       actual_name: Reference.t;
     }
-  | InvalidModelQueryClauses of Expression.Call.Argument.t list
+  | InvalidModelQueryClauses of Statement.t
   | InvalidModelQueryWhereClause of {
       expression: Expression.t;
       find_clause_kind: string;

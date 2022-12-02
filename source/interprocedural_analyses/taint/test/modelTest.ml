@@ -2221,8 +2221,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments at `{ Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+      {|The model query arguments for `ModelQuery(find = "functions", where = name.matches("foo"), model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2234,8 +2233,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+      {|The model query arguments for `ModelQuery(name = "invalid_model", where = name.matches("foo"), model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2247,8 +2245,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+      {|The model query arguments for `ModelQuery(name = "invalid_model", find = "functions", model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2260,7 +2257,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+      {|The model query arguments for `ModelQuery(name = "invalid_model", find = "functions", where = name.matches("foo"))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~source:{|
@@ -2636,9 +2633,7 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "Unsupported arguments for callee `cls.extends`: `{ Expression.Call.Argument.name = None; \
-       value = \"foo\" }, { Expression.Call.Argument.name = None; value = foobar }`."
+    ~expect:"Unsupported arguments for `cls.extends`: `cls.extends(\"foo\", foobar)`."
     ();
   assert_invalid_model
     ~model_source:
@@ -2651,9 +2646,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      "Unsupported arguments for callee `cls.matches`: `{ Expression.Call.Argument.name = None; \
-       value = \"foo\" }, { Expression.Call.Argument.name = (Some is_transitive); value = foobar \
-       }`."
+      "Unsupported arguments for `cls.matches`: `cls.matches(\"foo\", is_transitive = foobar)`."
     ();
   assert_invalid_model
     ~model_source:
@@ -2677,10 +2670,7 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "Unsupported arguments for callee `name.matches`: `{ Expression.Call.Argument.name = None; \
-       value = foobar }, { Expression.Call.Argument.name = None; value = 1 }, { \
-       Expression.Call.Argument.name = None; value = 2 }`."
+    ~expect:"Unsupported arguments for `name.matches`: `name.matches(foobar, 1, 2)`."
     ();
   assert_invalid_model
     ~model_source:
@@ -2692,10 +2682,7 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "Unsupported arguments for callee `name.equals`: `{ Expression.Call.Argument.name = None; \
-       value = foobar }, { Expression.Call.Argument.name = None; value = 1 }, { \
-       Expression.Call.Argument.name = None; value = 2 }`."
+    ~expect:"Unsupported arguments for `name.equals`: `name.equals(foobar, 1, 2)`."
     ();
 
   assert_valid_model
@@ -3386,8 +3373,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some fnid); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+      {|The model query arguments for `ModelQuery(name = "invalid_model", fnid = "functions", where = name.matches("foo"), model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -3401,8 +3387,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+      {|The model query arguments for `ModelQuery(name = "invalid_model", find = "functions", find = "functions", where = name.matches("foo"), model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
 
   (* Test expected_models and unexpected_models clauses *)
@@ -3423,10 +3408,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }, { Expression.Call.Argument.name = (Some expected_models);
-  value = ["def test.food() -> TaintSource[Test]: ..."] }, { Expression.Call.Argument.name = (Some expected_models);
-  value = ["def test.food() -> TaintSource[Test]: ..."] }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+      {|The model query arguments for `ModelQuery(name = "invalid_model", find = "functions", where = name.matches("foo"), model = Returns(TaintSource[Test]), expected_models = ["def test.food() -> TaintSource[Test]: ..."], expected_models = ["def test.food() -> TaintSource[Test]: ..."])` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~source:{|
@@ -3676,8 +3658,7 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|Unsupported arguments for callee `name.matches`: `{ Expression.Call.Argument.name = None; value = a }, { Expression.Call.Argument.name = None; value = b }`.|}
+    ~expect:{|Unsupported arguments for `name.matches`: `name.matches(a, b)`.|}
     ();
   assert_invalid_model
     ~model_source:
