@@ -518,12 +518,17 @@ let test_string_literal context =
         xs: list[Literal[str]]
         y4 = s.join(xs)
         reveal_type(y4)
+
+        y5 = "".join([literal_string])
+        reveal_type(y5)
     |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.LiteralString`.";
       "Revealed type [-1]: Revealed type for `y2` is `str`.";
       "Revealed type [-1]: Revealed type for `y3` is `typing_extensions.LiteralString`.";
       "Revealed type [-1]: Revealed type for `y4` is `str`.";
+      (* TODO(T104028144): Correctly infer list of literal string. *)
+      "Revealed type [-1]: Revealed type for `y5` is `str`.";
     ];
   ()
 
@@ -596,6 +601,82 @@ let test_pep_675 context =
        parameter expected `typing_extensions.LiteralString` but got \
        `typing_extensions.Literal[1]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from typing_extensions import LiteralString
+
+      def expect(s: Tuple[LiteralString]) -> None: ...
+
+      def foo(literal_string: LiteralString) -> None:
+        x = (literal_string,)
+        expect(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import List
+      from typing_extensions import LiteralString
+
+      def expect(s: List[LiteralString]) -> None: ...
+
+      def foo(literal_string: LiteralString) -> None:
+        x = [literal_string]
+        expect(x)
+    |}
+    [
+      (* TODO(T119366994): More examples where literal strings should be inferred *)
+      "Incompatible parameter type [6]: In call `expect`, for 1st positional only parameter \
+       expected `List[typing_extensions.LiteralString]` but got `List[str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Set
+      from typing_extensions import LiteralString
+
+      def expect(s: Set[LiteralString]) -> None: ...
+
+      def foo(literal_string: LiteralString) -> None:
+        x = set(literal_string)
+        expect(x)
+    |}
+    [
+      (* TODO(T119366994): More examples where literal strings should be inferred *)
+      "Undefined import [21]: Could not find a name `Set` defined in module `typing`.";
+      "Incompatible parameter type [6]: In call `expect`, for 1st positional only parameter \
+       expected `Set[typing_extensions.LiteralString]` but got `Set[str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Dict
+      from typing_extensions import LiteralString
+
+      def expect1(s: Dict[LiteralString, LiteralString]) -> None: ...
+      def expect2(s: Dict[str, LiteralString]) -> None: ...
+      def expect3(s: Dict[LiteralString, str]) -> None: ...
+
+      def foo(string: str, literal_string: LiteralString) -> None:
+        dict1 = {literal_string : literal_string}
+        expect1(dict1)
+
+        dict2 = {string: literal_string}
+        expect2(dict2)
+
+        dict3 = {literal_string: string}
+        expect3(dict3)
+
+    |}
+    [
+      (* TODO(T119366994): More examples where literal strings should be inferred *)
+      "Incompatible parameter type [6]: In call `expect1`, for 1st positional only parameter \
+       expected `Dict[typing_extensions.LiteralString, typing_extensions.LiteralString]` but got \
+       `Dict[str, str]`.";
+      "Incompatible parameter type [6]: In call `expect2`, for 1st positional only parameter \
+       expected `Dict[str, typing_extensions.LiteralString]` but got `Dict[str, str]`.";
+      "Incompatible parameter type [6]: In call `expect3`, for 1st positional only parameter \
+       expected `Dict[typing_extensions.LiteralString, str]` but got `Dict[str, str]`.";
+    ];
+
   ()
 
 
