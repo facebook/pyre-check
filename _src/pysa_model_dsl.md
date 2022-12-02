@@ -553,6 +553,21 @@ ModelQuery(
 
 This query will model `C.x`, `D.y` and `E.z`.
 
+If you do not want to match on the class itself, you can use the `includes_self` flag.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_transitive_subclassOf_C",
+  find = "attributes",
+  where = cls.extends("C", is_transitive=True, includes_self=False),
+  ...
+)
+```
+
+This query will model `D.y` and `E.z`.
+
 ### `cls.decorator` clause
 
 The `cls.decorator` clause is used to specify constraints on a class decorator, so you can choose to model entities on classes only if the class it is part of has the specified decorator.
@@ -570,7 +585,7 @@ ModelQuery(
       name.matches("d1"),
       arguments.contains(2)
     ),
-    name.matches("\.__init__$)
+    name.matches("\.__init__$")
   ],
   model = [
     Parameters(TaintSource[Test], where=[
@@ -604,7 +619,7 @@ will result in a model for `def Foo.__init__(b: TaintSource[Test])`.
 
 The `cls.any_child` clause is used to model entities when any child of the current class meets the specified constraints.
 
-The arguments for this clause are any combination of valid class constraints (`cls.equals`, `cls.matches`, `cls.extends`, `cls.decorator`) and logical clauses (`AnyOf`, `AllOf`, `Not`), along with an optional `is_transitive` clause.
+The arguments for this clause are any combination of valid class constraints (`cls.equals`, `cls.matches`, `cls.extends`, `cls.decorator`) and logical clauses (`AnyOf`, `AllOf`, `Not`), along with the optional `is_transitive` and `includes_self` clauses.
 
 Example:
 
@@ -619,7 +634,7 @@ ModelQuery(
         arguments.contains(2)
       )
     ),
-    name.matches("\.__init__$)
+    name.matches("\.__init__$")
   ],
   model = [
     Parameters(TaintSource[Test], where=[
@@ -664,7 +679,7 @@ ModelQuery(
       ),
       is_transitive=True
     ),
-    name.matches("\.__init__$)
+    name.matches("\.__init__$")
   ],
   ...
 )
@@ -672,6 +687,30 @@ ModelQuery(
 
 This query will model `Foo.__init__`, `Bar.__init__` and `Baz.__init__`.
 
+If you would like to model all subclasses of a class excluding itself, you can use the `includes_self` flag.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_transitive_parent_of_d1_decorator_sources",
+  find = "attributes",
+  where = [
+    cls.any_child(
+      cls.decorator(
+        name.matches("d1"),
+        arguments.contains(2)
+      ),
+      is_transitive=True,
+      includes_self=False
+    ),
+    name.matches("\.__init__$")
+  ],
+  ...
+)
+```
+
+This query will model `Foo.__init__`, `Bar.__init__` but NOT `Baz.__init__`.
 
 ### `Not` clauses
 
