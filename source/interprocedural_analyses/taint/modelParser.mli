@@ -32,7 +32,7 @@ val create_callable_model_from_annotations
   callable:Interprocedural.Target.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   is_obscure:bool ->
-  (ModelParseResult.AnnotationKind.t * ModelParseResult.TaintAnnotation.t) list ->
+  ModelParseResult.ModelAnnotation.t list ->
   (Model.t, ModelVerificationError.t) result
 
 (* Exposed for model queries. *)

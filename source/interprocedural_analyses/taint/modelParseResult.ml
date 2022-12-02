@@ -293,10 +293,10 @@ module TaintAnnotation = struct
   let show = Format.asprintf "%a" pp
 end
 
-module AnnotationKind = struct
+module ModelAnnotation = struct
   type t =
-    | ParameterAnnotation of AccessPath.Root.t
-    | ReturnAnnotation
+    | ParameterAnnotation of AccessPath.Root.t * TaintAnnotation.t
+    | ReturnAnnotation of TaintAnnotation.t
   [@@deriving show, equal]
 end
 

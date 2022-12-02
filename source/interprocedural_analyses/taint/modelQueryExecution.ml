@@ -668,7 +668,7 @@ let apply_callable_models
     | ModelQuery.Model.Return productions ->
         List.filter_map productions ~f:(fun production ->
             production_to_taint return_annotation ~production
-            >>| fun taint -> ModelParseResult.AnnotationKind.ReturnAnnotation, taint)
+            >>| fun taint -> ModelParseResult.ModelAnnotation.ReturnAnnotation taint)
     | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
         let parameter =
           List.find_map
@@ -686,7 +686,7 @@ let apply_callable_models
             List.filter_map productions ~f:(fun production ->
                 production_to_taint annotation ~production
                 >>| fun taint ->
-                ModelParseResult.AnnotationKind.ParameterAnnotation parameter, taint)
+                ModelParseResult.ModelAnnotation.ParameterAnnotation (parameter, taint))
         | None -> [])
     | ModelQuery.Model.PositionalParameter { index; taint = productions } -> (
         let parameter =
@@ -703,7 +703,7 @@ let apply_callable_models
             List.filter_map productions ~f:(fun production ->
                 production_to_taint annotation ~production
                 >>| fun taint ->
-                ModelParseResult.AnnotationKind.ParameterAnnotation parameter, taint)
+                ModelParseResult.ModelAnnotation.ParameterAnnotation (parameter, taint))
         | None -> [])
     | ModelQuery.Model.AllParameters { excludes; taint } ->
         let apply_parameter_production
@@ -717,7 +717,7 @@ let apply_callable_models
             None
           else
             production_to_taint annotation ~production
-            >>| fun taint -> ModelParseResult.AnnotationKind.ParameterAnnotation root, taint
+            >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
         in
         List.cartesian_product normalized_parameters taint
         |> List.filter_map ~f:apply_parameter_production
@@ -730,7 +730,7 @@ let apply_callable_models
           then
             let parameter, _, _ = parameter in
             production_to_taint annotation ~production ~parameter:(Some parameter)
-            >>| fun taint -> ModelParseResult.AnnotationKind.ParameterAnnotation root, taint
+            >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
           else
             None
         in

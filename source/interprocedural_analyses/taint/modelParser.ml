@@ -2064,7 +2064,7 @@ let parse_parameter_taint
         ~is_object_target
   |> Option.value ~default:(Ok [])
   |> Core.Result.map
-       ~f:(List.map ~f:(fun annotation -> annotation, AnnotationKind.ParameterAnnotation root))
+       ~f:(List.map ~f:(fun annotation -> ModelAnnotation.ParameterAnnotation (root, annotation)))
 
 
 let add_taint_annotation_to_model
@@ -2072,7 +2072,6 @@ let add_taint_annotation_to_model
     ~path
     ~location
     ~model_name
-    ~annotation_kind
     ~callable_annotation
     ~source_sink_filter
     model
@@ -2085,8 +2084,8 @@ let add_taint_annotation_to_model
       ~location
       (InvalidModelForTaint { model_name; error = error_message })
   in
-  match annotation_kind with
-  | AnnotationKind.ReturnAnnotation -> (
+  match annotation with
+  | ModelAnnotation.ReturnAnnotation annotation -> (
       let root = AccessPath.Root.LocalResult in
       match annotation with
       | TaintAnnotation.Sink { sink; features } ->
@@ -2121,7 +2120,7 @@ let add_taint_annotation_to_model
                (InvalidReturnAnnotation { model_name; annotation = "AddFeatureToArgument" }))
       | TaintAnnotation.Sanitize annotations ->
           Ok (introduce_sanitize ~source_sink_filter ~root model annotations))
-  | AnnotationKind.ParameterAnnotation root -> (
+  | ModelAnnotation.ParameterAnnotation (root, annotation) -> (
       match annotation with
       | TaintAnnotation.Sink { sink; features } ->
           let signature_breadcrumbs =
@@ -2192,7 +2191,7 @@ let parse_return_taint
     ~callable_parameter_names_to_positions
     ~is_object_target
     expression
-  |> map ~f:(List.map ~f:(fun annotation -> annotation, AnnotationKind.ReturnAnnotation))
+  |> map ~f:(List.map ~f:(fun annotation -> ModelAnnotation.ReturnAnnotation annotation))
 
 
 type parsed_signature = {
@@ -2646,16 +2645,12 @@ let create_model_from_signature
     annotations ()
     >>= fun annotations ->
     let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
-    List.fold_result
-      annotations
-      ~init:default_model
-      ~f:(fun accumulator (annotation, annotation_kind) ->
+    List.fold_result annotations ~init:default_model ~f:(fun accumulator annotation ->
         add_taint_annotation_to_model
           ~path
           ~location
           ~model_name:(Reference.show callable_name)
           ~resolution:(Resolution.global_resolution resolution)
-          ~annotation_kind
           ~callable_annotation
           ~source_sink_filter
           accumulator
@@ -2721,16 +2716,12 @@ let create_model_from_attribute
   >>= fun sink_taint ->
   Ok (List.rev_append source_taint sink_taint)
   >>= fun annotations ->
-  List.fold_result
-    annotations
-    ~init:Model.empty_model
-    ~f:(fun accumulator (annotation, annotation_kind) ->
+  List.fold_result annotations ~init:Model.empty_model ~f:(fun accumulator annotation ->
       add_taint_annotation_to_model
         ~path
         ~location
         ~model_name:(Reference.show name)
         ~resolution:(Resolution.global_resolution resolution)
-        ~annotation_kind
         ~callable_annotation:None
         ~source_sink_filter
         accumulator
@@ -3396,10 +3387,7 @@ let create_callable_model_from_annotations
             | _ -> None)
       >>= fun callable_annotation ->
       let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
-      List.fold
-        annotations
-        ~init:(Ok default_model)
-        ~f:(fun accumulator (annotation_kind, annotation) ->
+      List.fold annotations ~init:(Ok default_model) ~f:(fun accumulator model_annotation ->
           accumulator
           >>= fun accumulator ->
           add_taint_annotation_to_model
@@ -3407,11 +3395,10 @@ let create_callable_model_from_annotations
             ~location:Location.any
             ~model_name:"Model query"
             ~resolution:global_resolution
-            ~annotation_kind
             ~callable_annotation
             ~source_sink_filter
             accumulator
-            annotation)
+            model_annotation)
 
 
 let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filter annotations =
@@ -3420,33 +3407,33 @@ let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filte
   List.fold annotations ~init:(Ok Model.empty_model) ~f:(fun accumulator annotation ->
       accumulator
       >>= fun accumulator ->
-      let annotation_kind =
+      let model_annotation =
         match annotation with
-        | TaintAnnotation.Source _ -> Ok AnnotationKind.ReturnAnnotation
+        | TaintAnnotation.Source _ -> Ok (ModelAnnotation.ReturnAnnotation annotation)
         | TaintAnnotation.Sink _
         | TaintAnnotation.Tito _ ->
             Ok
-              (AnnotationKind.ParameterAnnotation
-                 (AccessPath.Root.PositionalParameter
-                    { position = 0; name = attribute_symbolic_parameter; positional_only = false }))
+              (ModelAnnotation.ParameterAnnotation
+                 ( AccessPath.Root.PositionalParameter
+                     { position = 0; name = attribute_symbolic_parameter; positional_only = false },
+                   annotation ))
         | _ ->
             Error
               (invalid_model_query_error
                  (InvalidAnnotationForAttributeModel
                     { name; annotation = TaintAnnotation.show annotation }))
       in
-      annotation_kind
-      >>= fun annotation_kind ->
+      model_annotation
+      >>= fun model_annotation ->
       add_taint_annotation_to_model
         ~path:None
         ~location:Location.any
         ~model_name:"Model query"
         ~resolution:global_resolution
-        ~annotation_kind
         ~callable_annotation:None
         ~source_sink_filter
         accumulator
-        annotation)
+        model_annotation)
 
 
 let verify_model_syntax ~path ~source =

@@ -120,10 +120,10 @@ module TaintAnnotation : sig
   val from_tito : Sinks.t -> t
 end
 
-module AnnotationKind : sig
+module ModelAnnotation : sig
   type t =
-    | ParameterAnnotation of AccessPath.Root.t
-    | ReturnAnnotation
+    | ParameterAnnotation of AccessPath.Root.t * TaintAnnotation.t
+    | ReturnAnnotation of TaintAnnotation.t
   [@@deriving show, equal]
 end
 

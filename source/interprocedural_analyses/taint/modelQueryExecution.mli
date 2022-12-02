@@ -66,7 +66,7 @@ val apply_callable_query
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   callable:Interprocedural.Target.t ->
   ModelParseResult.ModelQuery.t ->
-  (ModelParseResult.AnnotationKind.t * ModelParseResult.TaintAnnotation.t) list Core.String.Map.t
+  ModelParseResult.ModelAnnotation.t list Core.String.Map.t
 
 val apply_attribute_query
   :  verbose:bool ->
