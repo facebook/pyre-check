@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module contains logic for buck link-tree creation based on the source-db coming from buck
+   builds *)
 
 open Base
 
