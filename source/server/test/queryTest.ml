@@ -2046,7 +2046,6 @@ let test_handle_query_pysa context =
                 "dict.add_key": [],
                 "str.substr": [],
                 "str.lower": [],
-                "str.format": [],
                 "test.foo": []
             }
         }

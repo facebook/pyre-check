@@ -501,7 +501,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           SupportsIter, SupportsNext,
         )
         from pyre_extensions import Add, Multiply, Divide
-        from typing_extensions import Literal
+        from typing_extensions import Literal, LiteralString
 
         _T = TypeVar('_T')
         _T_co = TypeVar('_T_co', covariant=True)
@@ -682,7 +682,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __init__(self, o: object = ...) -> None: ...
           @overload
           def __init__(self, o: bytes, encoding: str = ..., errors: str = ...) -> None: ...
-          def format(self, *args) -> str: pass
+          @overload
+          def format(self: LiteralString, *args: LiteralString, **kwargs: LiteralString) -> LiteralString: ...
+          @overload
+          def format(self, *args: object, **kwargs: object) -> str: ...  # type: ignore[misc]
           def lower(self) -> str: pass
           def upper(self) -> str: ...
           def substr(self, index: int) -> str: pass
@@ -701,6 +704,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __add__(self: Literal[str], other: Literal[str]) -> Literal[str]: ...
           @overload
           def __add__(self, other: str) -> str: ...
+          @overload
+          def __mod__(self: LiteralString, __x: LiteralString | tuple[LiteralString, ...]) -> LiteralString: ...
+          @overload
+          def __mod__(self, __x: Any) -> str: ...  # type: ignore[misc]
 
           def __pos__(self) -> float: ...
           def __repr__(self) -> float: ...
