@@ -55,6 +55,7 @@ let test_json_parsing context =
       no_verify = false;
       verify_dsl = false;
       check_invariants = false;
+      limit_entrypoints = false;
     }
   in
 

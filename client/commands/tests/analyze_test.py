@@ -65,6 +65,7 @@ class ArgumentTest(testslide.TestCase):
                 taint_model_paths=["/taint/models"],
                 use_cache=True,
                 check_invariants=True,
+                limit_entrypoints=True,
             ),
             [
                 ("log_path", "/log"),
@@ -98,6 +99,7 @@ class ArgumentTest(testslide.TestCase):
                 ("taint_model_paths", ["/taint/models"]),
                 ("use_cache", True),
                 ("check_invariants", True),
+                ("limit_entrypoints", True),
             ],
         )
 
@@ -165,6 +167,7 @@ class ArgumentTest(testslide.TestCase):
                         taint_models_path=[str(root_path / "taint_models")],
                         use_cache=True,
                         check_invariants=True,
+                        limit_entrypoints=True,
                     ),
                 ),
                 Arguments(
@@ -222,5 +225,6 @@ class ArgumentTest(testslide.TestCase):
                     taint_model_paths=[str(root_path / "taint_models")],
                     use_cache=True,
                     check_invariants=True,
+                    limit_entrypoints=True,
                 ),
             )

@@ -532,6 +532,7 @@ module StaticAnalysis = struct
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
     check_invariants: bool;
+    limit_entrypoints: bool;
   }
 
   let create
@@ -562,6 +563,7 @@ module StaticAnalysis = struct
       ?maximum_trace_length
       ?maximum_tito_depth
       ?(check_invariants = false)
+      ?(limit_entrypoints = false)
       ()
     =
     {
@@ -592,5 +594,6 @@ module StaticAnalysis = struct
       maximum_trace_length;
       maximum_tito_depth;
       check_invariants;
+      limit_entrypoints;
     }
 end

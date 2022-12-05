@@ -499,6 +499,12 @@ def pyre(
     default=False,
     help="Perform additional assertions about analysis invariants.",
 )
+@click.option(
+    "--limit-entrypoints",
+    is_flag=True,
+    default=False,
+    help="Only analyze functions within the call graph of entrypoint models.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -531,6 +537,7 @@ def analyze(
     maximum_trace_length: Optional[int],
     maximum_tito_depth: Optional[int],
     check_invariants: bool,
+    limit_entrypoints: bool,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -585,6 +592,7 @@ def analyze(
             taint_models_path=list(taint_models_path),
             use_cache=use_cache,
             check_invariants=check_invariants,
+            limit_entrypoints=limit_entrypoints,
         ),
     )
 

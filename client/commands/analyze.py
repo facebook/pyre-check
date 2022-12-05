@@ -71,6 +71,7 @@ class Arguments:
     taint_model_paths: Sequence[str] = dataclasses.field(default_factory=list)
     use_cache: bool = False
     check_invariants: bool = False
+    limit_entrypoints: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         dump_call_graph = self.dump_call_graph
@@ -190,6 +191,7 @@ class Arguments:
             "taint_model_paths": self.taint_model_paths,
             "use_cache": self.use_cache,
             "check_invariants": self.check_invariants,
+            "limit_entrypoints": self.limit_entrypoints,
         }
 
 
@@ -291,6 +293,7 @@ def create_analyze_arguments(
         taint_model_paths=taint_models_path,
         use_cache=analyze_arguments.use_cache,
         check_invariants=analyze_arguments.check_invariants,
+        limit_entrypoints=analyze_arguments.limit_entrypoints,
     )
 
 

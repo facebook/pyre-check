@@ -286,6 +286,7 @@ class AnalyzeArguments:
     taint_models_path: List[str] = field(default_factory=list)
     use_cache: bool = False
     check_invariants: bool = False
+    limit_entrypoints: bool = False
 
 
 @dataclass(frozen=True)

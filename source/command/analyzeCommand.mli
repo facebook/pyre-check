@@ -47,6 +47,7 @@ module AnalyzeConfiguration : sig
     taint_model_paths: PyrePath.t list;
     use_cache: bool;
     check_invariants: bool;
+    limit_entrypoints: bool;
   }
   [@@deriving sexp, compare, hash]
 

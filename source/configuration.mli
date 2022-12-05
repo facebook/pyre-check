@@ -247,6 +247,7 @@ module StaticAnalysis : sig
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
     check_invariants: bool;
+    limit_entrypoints: bool;
   }
 
   val create
@@ -277,6 +278,7 @@ module StaticAnalysis : sig
     ?maximum_trace_length:int ->
     ?maximum_tito_depth:int ->
     ?check_invariants:bool ->
+    ?limit_entrypoints:bool ->
     unit ->
     t
 end

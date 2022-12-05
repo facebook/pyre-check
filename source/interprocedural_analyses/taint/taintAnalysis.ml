@@ -283,6 +283,7 @@ let run_taint_analysis
          repository_root;
          inline_decorators;
          use_cache;
+         limit_entrypoints;
          _;
        } as static_analysis_configuration)
     ~build_system
@@ -426,12 +427,12 @@ let run_taint_analysis
     in
     Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 
-    let entrypoint_references = Registry.get_entrypoints initial_models in
-
     let prune_method =
-      match entrypoint_references with
-      | [] -> Interprocedural.DependencyGraph.PruneMethod.Internals
-      | _ :: _ -> Interprocedural.DependencyGraph.PruneMethod.Entrypoints entrypoint_references
+      if limit_entrypoints then
+        let entrypoint_references = Registry.get_entrypoints initial_models in
+        Interprocedural.DependencyGraph.PruneMethod.Entrypoints entrypoint_references
+      else
+        Interprocedural.DependencyGraph.PruneMethod.Internals
     in
 
     Log.info "Computing dependencies...";
