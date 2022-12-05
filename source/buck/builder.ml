@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module exposes the top-level build functions (full build and incremental build) relied on in
+   the buck BuildSystem implementation *)
 
 open Base
 
