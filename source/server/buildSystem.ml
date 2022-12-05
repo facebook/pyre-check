@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* In Pyre, a BuildSystem is an interface that handles the relationship between source code and the
+   actual Python code Pyre should analyze.
+
+   The typical build system is just an identity mapping - we analyze the source directories and
+   search path as-is. But Pyre also supports using the Buck build system which can handle remapping
+   source locations as well as generating code (e.g. thrift, stubs generated from C++ sources, etc.) *)
 
 open Base
 
