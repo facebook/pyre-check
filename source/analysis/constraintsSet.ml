@@ -5,7 +5,33 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Module for adding and solving constraints of the form type A <: type B. For example, a function
+   call results in a set of constraints of the form `argument_type_i <: parameter_type_i` (hence the
+   awkward name for the module: `constraintsSet`). We solve for any free type variables in either A
+   or B.
+
+   The constraint-solving is mostly a "straightforward" implementation of type argument synthesis
+   from section 3 of:
+
+   Pierce, B. C., & Turner, D. N. (2000). Local type inference. ACM Transactions on Programming
+   Languages and Systems (TOPLAS), 22(1), 1-44.
+   https://www.cis.upenn.edu/~bcpierce/papers/lti-toplas.pdf
+
+   It is called "type argument synthesis" because, for generic functions f and g in `f(x) <: g(y)`,
+   the problem is that of synthesizing the type arguments for the generic type variables of f and g:
+   `f[type1](x) <: g[type2](x)`. Colloquially, we call this "type inference".
+
+   We need this because Python doesn't require (or allow) you to instantiate generic functions. So,
+   Pyre has to infer those types.
+
+   * For example, in `identity("hello")`, Pyre will infer that the generic function `identity` is
+   being used with `T = str`, i.e., `identity[str]("hello")`.
+
+   * For `identity(some_int)`, Pyre will infer that it is `identity[int](some_int)`.
+
+   Warning: This module has easily caused perf regressions and even infinite loops, since we solve
+   constraints recursively. Even small changes in the order of variants in the match statement can
+   lead to big perf changes. *)
 
 open Core
 open Ast
