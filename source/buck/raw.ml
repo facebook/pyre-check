@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module contains low-level logic for constructing buck queries, including how to switch
+   between buck1 and buck2 (which was needed to support gradual rollout of buck2). The actual
+   queries we use for Pyre can be found in `interface.ml` *)
 
 open Base
 
