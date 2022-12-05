@@ -84,7 +84,6 @@ let make_assert_functions context =
       T_Bound_D = typing.TypeVar('T_Bound_D', bound=D)
       T_Bound_Union = typing.TypeVar('T_Bound_Union', bound=typing.Union[int, str])
       T_Bound_Union_C_Q = typing.TypeVar('T_Bound_Union_C_Q', bound=typing.Union[C, Q])
-      T_Bound_Union = typing.TypeVar('T_Bound_Union', bound=typing.Union[int, str])
       T_C_Q = typing.TypeVar('T_C_Q', C, Q)
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
@@ -134,7 +133,6 @@ let make_assert_functions context =
           "T_Unconstrained";
           "T_Bound_C";
           "T_Bound_D";
-          "T_Bound_Union";
           "T_Bound_Union_C_Q";
           "T_Bound_Union";
           "T_C_Q";
@@ -490,6 +488,7 @@ let test_add_constraint context =
     ~left:"T_Unconstrained"
     ~right:"typing.Optional[T_Unconstrained]"
     [["T_Unconstrained", "T_Unconstrained"]; ["T_Unconstrained", "object"]];
+  assert_add ~left:"T_Bound_Union" ~right:"typing.Union[int, str]" [[]];
 
   (* Bound => Bound *)
   assert_add ~left:"T_Bound_D" ~right:"T_Bound_C" [["T_Bound_C", "T_Bound_D"]];

@@ -508,8 +508,21 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | Type.NoneType, Type.Union rights ->
         List.concat_map rights ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right)
     | Type.NoneType, _ -> impossible
-    (* We have to consider both the variables' constraint and its full value against the union. *)
     | Type.Variable bound_variable, Type.Union union ->
+        (* We have to consider two cases: (a) the `bound_variable <: each element of union` or (b)
+           `upper-bound of bound_variable <: union`.
+
+           We need to try (b) because type variables on the left-hand side may have upper bound as a
+           `Union`. e.g., `T (upper-bound int | str) <: int | str`. If we tried only (a), then we
+           would check `T (upper-bound int | str) <: int` and `T (upper-bound int | str) <: str`,
+           both of which would fail. So, we also need to check that the upper bound (int | str) <:
+           union.
+
+           Note: We must do (a) before (b). If we do (b) before (a), then, for type variables that
+           have no explicit upper bound, we would solve upper bound for unconstrained type variables
+           <: union. This is `object` <: union, which will bind any free type variable T in the
+           union as `object`. And, since we pick the first valid solution, we would ignore any
+           solution from the other approach (a) and return the confusing solution that `T = object`. *)
         List.concat_map ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right) union
         @ solve_less_or_equal
             order
