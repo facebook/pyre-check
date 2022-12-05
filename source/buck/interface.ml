@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module implements the logic to call out to buck as needed for classic Pyre daemons. The
+   primary action we take is to build source-db targets, which produces a json map from source paths
+   (mostly user-controlled source code, but also some buck-built generated code, for example thrift
+   stubs) to artifact paths. *)
 
 open Base
 
