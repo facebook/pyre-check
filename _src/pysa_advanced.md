@@ -567,6 +567,48 @@ def i(): ...
 These sanitizers are a lot cheaper and could save analysis time. However, these
 might introduce false positives, so we recommend to use the default sanitizers.
 
+## Filtering the call graph with `@Entrypoint`
+
+By default, Pysa will analyze the entire call graph of your program. This can lead to longer analysis times for larger programs, especially when you'd only like to perform analysis on specific parts of the program. This decorator will mark a specified function and the functions it calls as the only functions to be analyzed.
+
+Note: the flag `--limit-entrypoints` must be passed to `pyre analyze` for call graph filtering to occur, even if the `@Entrypoint` decorator is present. This allows for call graph filtering to be easily enabled or disabled without editing your `.pysa` files.
+
+If you have the following Python file:
+
+```python
+class MyClass:
+  def class_entrypoint():
+    taint_sink(taint_source())
+
+def my_bad_func_1():
+  taint_sink(taint_source())
+
+def my_bad_func_2():
+  taint_sink(taint_source())
+
+def func_entrypoint():
+  my_bad_func_1()
+
+def main():
+  func_entrypoint()
+  my_bad_func_2()
+  MyClass().class_entrypoint()
+
+main()
+```
+
+And the following `.pysa` file:
+
+```python
+@Entrypoint
+def my_file.MyClass.class_entrypoint(): ...
+
+@Entrypoint
+def func_entrypoint(): ...
+```
+
+Then issues will be found for taint in calls to `class_entrypoint` and `my_bad_func_1`, but not `my_bad_func_2`, since it isn't called by a function marked by an `@Entrypoint`.
+
 ## Taint In Taint Out Transforms
 
 Taint in taint out transforms can be used to capture more precise flows.
