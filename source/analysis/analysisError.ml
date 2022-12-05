@@ -2221,9 +2221,7 @@ let rec messages ~concise ~signature location kind =
           "%s expected `LiteralString` but got `str`. Ensure only a string literal or a \
            `LiteralString` is used."
           target;
-        (* TODO(T139139062): Add documentation for new error 62 on using a string instead of literal
-           string *)
-        "See https://pyre-check.org/docs/errors/#62-Non-literal-string for more details.";
+        "See https://pyre-check.org/docs/errors/#62-non-literal-string for more details.";
       ]
   | NotCallable
       (Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ } as
