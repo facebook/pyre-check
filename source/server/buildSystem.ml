@@ -145,11 +145,11 @@ module BuckBuildSystem = struct
     let update source_path_events =
       let incremental_builder =
         let should_renormalize paths =
-          let f { SourcePath.Event.path; _ } =
+          let is_buck_file { SourcePath.Event.path; _ } =
             let file_name = SourcePath.raw path |> PyrePath.last in
             String.equal file_name "TARGETS" || String.equal file_name "BUCK"
           in
-          List.exists paths ~f
+          List.exists paths ~f:is_buck_file
         in
         let should_reconstruct_build_map paths =
           let f path =
