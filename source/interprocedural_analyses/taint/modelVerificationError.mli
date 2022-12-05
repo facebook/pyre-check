@@ -141,7 +141,10 @@ type kind =
       models_clause: Expression.t;
     }
   | InvalidAnyChildClause of Expression.t
-  | InvalidModelQueryMode of string
+  | InvalidModelQueryMode of {
+      mode_name: string;
+      error: string;
+    }
 [@@deriving sexp, compare]
 
 type t = {

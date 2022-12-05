@@ -145,7 +145,10 @@ type kind =
       models_clause: Expression.t;
     }
   | InvalidAnyChildClause of Expression.t
-  | InvalidModelQueryMode of string
+  | InvalidModelQueryMode of {
+      mode_name: string;
+      error: string;
+    }
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -395,7 +398,7 @@ let description error =
         "`%s` is not a valid any_child clause. Constraints within any_child should be either class \
          constraints or any of `AnyOf`, `AllOf`, and `Not`."
         (Expression.show expression)
-  | InvalidModelQueryMode mode -> Format.asprintf "`%s` is not a valid mode for a model." mode
+  | InvalidModelQueryMode { mode_name; error } -> Format.asprintf "`%s`: %s" mode_name error
 
 
 let code { kind; _ } =

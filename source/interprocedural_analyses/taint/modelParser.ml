@@ -1907,10 +1907,20 @@ let parse_model_clause
           match mode with
           | { Node.value = Expression.Name (Name.Identifier mode_name); location } -> (
               match Model.Mode.from_string mode_name with
+              | Some Model.Mode.SkipDecoratorWhenInlining ->
+                  Error
+                    (model_verification_error
+                       ~path
+                       ~location
+                       (InvalidModelQueryMode
+                          { mode_name; error = "mode cannot be used in a model query" }))
               | Some mode -> Ok mode
               | None ->
-                  Error (model_verification_error ~path ~location (InvalidModelQueryMode mode_name))
-              )
+                  Error
+                    (model_verification_error
+                       ~path
+                       ~location
+                       (InvalidModelQueryMode { mode_name; error = "unknown mode" })))
           | _ -> Error (model_verification_error ~path ~location (UnexpectedModelExpression mode))
         in
         check_find ~callee ModelQuery.Find.is_callable

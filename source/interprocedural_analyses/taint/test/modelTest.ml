@@ -2611,6 +2611,18 @@ let test_invalid_models context =
       {|
       ModelQuery(
         name = "valid_model",
+        find = "methods",
+        where = name.equals("hello"),
+        model = Modes([Entrypoint, Obscure])
+      )
+    |}
+    ~expect:"no failure"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "valid_model",
         find = "functions",
         where = name.equals("hello"),
         model = Modes([Entrypoint])
@@ -2664,9 +2676,20 @@ let test_invalid_models context =
         model = Modes([ThisModeDoesntExist])
       )
     |}
-    ~expect:"`ThisModeDoesntExist` is not a valid mode for a model."
+    ~expect:"`ThisModeDoesntExist`: unknown mode"
     ();
-
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.equals("hello"),
+        model = Modes([SkipDecoratorWhenInlining])
+      )
+    |}
+    ~expect:"`SkipDecoratorWhenInlining`: mode cannot be used in a model query"
+    ();
   assert_invalid_model
     ~model_source:
       {|
