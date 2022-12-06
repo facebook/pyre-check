@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains filesystem-related utility code including:
+- validation of directory permissions and file existence
+- path expansion tools
+- file-lock handling code
 """
 
 
