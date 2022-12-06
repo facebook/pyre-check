@@ -2765,7 +2765,7 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"Unsupported arguments for `name.matches`: `name.matches(foobar, 1, 2)`."
+    ~expect:"`name.matches(foobar, 1, 2)` is not a valid name clause."
     ();
   assert_invalid_model
     ~model_source:
@@ -2777,7 +2777,7 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"Unsupported arguments for `name.equals`: `name.equals(foobar, 1, 2)`."
+    ~expect:"`name.equals(foobar, 1, 2)` is not a valid name clause."
     ();
 
   assert_valid_model
@@ -3753,7 +3753,7 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:{|Unsupported arguments for `name.matches`: `name.matches(a, b)`.|}
+    ~expect:{|`name.matches(a, b)` is not a valid name clause.|}
     ();
   assert_invalid_model
     ~model_source:

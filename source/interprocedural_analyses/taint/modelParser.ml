@@ -1181,93 +1181,66 @@ let parse_name_constraint ~path ~location ({ Node.value; _ } as constraint_expre
                     _;
                   });
             _;
-          } as callee;
-        arguments;
-      } -> (
-      match arguments with
-      | [
-       {
-         Call.Argument.value =
-           {
-             Node.value =
-               Expression.Constant (Constant.String { StringLiteral.value = name_constraint; _ });
-             _;
-           };
-         _;
-       };
-      ] -> (
-          match attribute with
-          | "matches" -> Ok (ModelQuery.NameConstraint.Matches (Re2.create_exn name_constraint))
-          | "equals" -> Ok (ModelQuery.NameConstraint.Equals name_constraint)
-          | _ -> failwith "impossible case")
-      | _ ->
-          Error
-            (model_verification_error
-               ~path
-               ~location
-               (InvalidModelQueryClauseArguments { callee; arguments })))
-  | _ -> Error (model_verification_error ~path ~location (InvalidNameClause constraint_expression))
-
-
-let parse_annotation_constraint ~path ~location ({ Node.value; _ } as constraint_expression) =
-  match value with
-  | Expression.Call
-      {
-        Call.callee =
-          {
-            Node.value =
-              Expression.Name
-                (Name.Attribute
-                  { attribute = ("equals" | "matches" | "is_annotated_type") as attribute; _ });
-            _;
-          } as callee;
-        arguments;
-      } -> (
-      match attribute, arguments with
-      | ( "equals",
-          [
-            {
-              Call.Argument.value =
-                {
-                  Node.value =
-                    Expression.Constant (Constant.String { StringLiteral.value = type_name; _ });
-                  _;
-                };
-              _;
-            };
-          ] ) ->
-          Ok
-            (ModelQuery.AnnotationConstraint.NameConstraint
-               (ModelQuery.NameConstraint.Equals type_name))
-      | ( "matches",
+          };
+        arguments =
           [
             {
               Call.Argument.value =
                 {
                   Node.value =
                     Expression.Constant
-                      (Constant.String { StringLiteral.value = type_name_pattern; _ });
+                      (Constant.String { StringLiteral.value = name_constraint; _ });
                   _;
                 };
               _;
             };
-          ] ) ->
-          Ok
-            (ModelQuery.AnnotationConstraint.NameConstraint
-               (ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern)))
-      | "is_annotated_type", [] -> Ok ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint
-      | _ ->
-          Error
-            (model_verification_error
-               ~path
-               ~location
-               (InvalidModelQueryClauseArguments { callee; arguments })))
+          ];
+      } -> (
+      match attribute with
+      | "matches" -> Ok (ModelQuery.NameConstraint.Matches (Re2.create_exn name_constraint))
+      | "equals" -> Ok (ModelQuery.NameConstraint.Equals name_constraint)
+      | _ -> failwith "impossible case")
+  | _ -> Error (model_verification_error ~path ~location (InvalidNameClause constraint_expression))
+
+
+let parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments =
+  match attribute, arguments with
+  | ( "equals",
+      [
+        {
+          Call.Argument.value =
+            {
+              Node.value =
+                Expression.Constant (Constant.String { StringLiteral.value = type_name; _ });
+              _;
+            };
+          _;
+        };
+      ] ) ->
+      Ok
+        (ModelQuery.AnnotationConstraint.NameConstraint (ModelQuery.NameConstraint.Equals type_name))
+  | ( "matches",
+      [
+        {
+          Call.Argument.value =
+            {
+              Node.value =
+                Expression.Constant (Constant.String { StringLiteral.value = type_name_pattern; _ });
+              _;
+            };
+          _;
+        };
+      ] ) ->
+      Ok
+        (ModelQuery.AnnotationConstraint.NameConstraint
+           (ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern)))
+  | "is_annotated_type", [] -> Ok ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint
   | _ ->
       Error
         (model_verification_error
            ~path
            ~location
-           (InvalidTypeAnnotationClause constraint_expression))
+           (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
 let parse_arguments_constraint ~path ~location ({ Node.value; _ } as constraint_expression) =
@@ -1391,103 +1364,79 @@ let parse_class_extends_clause ~path ~location ~callee ~arguments =
            (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
-let parse_decorator_constraint ~path ~location ({ Node.value; _ } as constraint_expression) =
+let parse_decorator_constraint ~path ~location ~callee ~arguments =
   let open Core.Result in
-  match value with
-  | Expression.Call { Call.callee = { Node.value = Expression.Name _; _ } as callee; arguments }
-    -> (
-      match arguments with
-      | [{ Call.Argument.name = None; Call.Argument.value = decorator_name_constraint }] ->
-          parse_name_constraint ~path ~location decorator_name_constraint
-          >>= fun name_constraint ->
-          Ok { ModelQuery.DecoratorConstraint.name_constraint; arguments_constraint = None }
-      | [
-       { Call.Argument.name = None; value = first_constraint };
-       { Call.Argument.name = None; value = second_constraint };
-      ] -> (
-          match
-            ( parse_name_constraint ~path ~location first_constraint,
-              parse_arguments_constraint ~path ~location second_constraint )
-          with
-          | Ok name_constraint, Ok arguments_constraint ->
-              Ok
-                {
-                  ModelQuery.DecoratorConstraint.name_constraint;
-                  arguments_constraint = Some arguments_constraint;
-                }
-          | _ ->
-              parse_name_constraint ~path ~location second_constraint
-              >>= fun name_constraint ->
-              parse_arguments_constraint ~path ~location first_constraint
-              >>= fun arguments_constraint ->
-              Ok
-                {
-                  ModelQuery.DecoratorConstraint.name_constraint;
-                  arguments_constraint = Some arguments_constraint;
-                })
+  match arguments with
+  | [{ Call.Argument.name = None; Call.Argument.value = decorator_name_constraint }] ->
+      parse_name_constraint ~path ~location decorator_name_constraint
+      >>= fun name_constraint ->
+      Ok { ModelQuery.DecoratorConstraint.name_constraint; arguments_constraint = None }
+  | [
+   { Call.Argument.name = None; value = first_constraint };
+   { Call.Argument.name = None; value = second_constraint };
+  ] -> (
+      match
+        ( parse_name_constraint ~path ~location first_constraint,
+          parse_arguments_constraint ~path ~location second_constraint )
+      with
+      | Ok name_constraint, Ok arguments_constraint ->
+          Ok
+            {
+              ModelQuery.DecoratorConstraint.name_constraint;
+              arguments_constraint = Some arguments_constraint;
+            }
       | _ ->
-          Error
-            (model_verification_error
-               ~path
-               ~location
-               (InvalidModelQueryClauseArguments { callee; arguments })))
+          parse_name_constraint ~path ~location second_constraint
+          >>= fun name_constraint ->
+          parse_arguments_constraint ~path ~location first_constraint
+          >>= fun arguments_constraint ->
+          Ok
+            {
+              ModelQuery.DecoratorConstraint.name_constraint;
+              arguments_constraint = Some arguments_constraint;
+            })
   | _ ->
       Error
-        (model_verification_error ~path ~location (InvalidDecoratorClause constraint_expression))
+        (model_verification_error
+           ~path
+           ~location
+           (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
 let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_expression) =
   let open Core.Result in
-  match value with
-  (* TODO(T128522530): Rename `parent` to `cls` - need both being accepted to migrate *)
+  (match value with
   | Expression.Call
-      {
-        Call.callee =
-          {
-            Node.value =
-              Expression.Name
-                (Name.Attribute
-                  { base = { Node.value = Name (Name.Identifier "cls"); _ }; attribute; _ });
-            _;
-          } as callee;
-        arguments;
-      } -> (
-      match attribute with
-      | "equals"
-      | "matches" ->
-          parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
-      | "extends" -> parse_class_extends_clause ~path ~location ~callee ~arguments
-      | "decorator" ->
-          parse_decorator_constraint ~path ~location constraint_expression
-          >>= fun decorator_constraint ->
-          Ok (ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint)
-      | _ ->
-          Error
-            (model_verification_error ~path ~location (InvalidAnyChildClause constraint_expression))
-      )
-  | Expression.Call
-      {
-        Call.callee = { Node.value = Expression.Name (Name.Identifier "AnyOf"); _ };
-        arguments = constraints;
-      } ->
-      List.map constraints ~f:(fun { Call.Argument.value; _ } ->
+      { Call.callee = { Node.value = Expression.Name callee_name; _ } as callee; arguments } ->
+      Ok (callee, callee_name, arguments)
+  | _ ->
+      Error (model_verification_error ~path ~location (InvalidAnyChildClause constraint_expression)))
+  >>= fun (callee, callee_name, arguments) ->
+  (match Ast.Expression.name_to_identifiers callee_name with
+  | Some reference -> Ok reference
+  | None ->
+      Error (model_verification_error ~path ~location (InvalidAnyChildClause constraint_expression)))
+  >>= fun callee_reference ->
+  match callee_reference, arguments with
+  | ["cls"; ("equals" as attribute)], _
+  | ["cls"; ("matches" as attribute)], _ ->
+      parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
+  | ["cls"; "extends"], _ -> parse_class_extends_clause ~path ~location ~callee ~arguments
+  | ["cls"; "decorator"], _ ->
+      parse_decorator_constraint ~path ~location ~callee ~arguments
+      >>= fun decorator_constraint ->
+      Ok (ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint)
+  | ["AnyOf"], _ ->
+      List.map arguments ~f:(fun { Call.Argument.value; _ } ->
           parse_class_constraint ~path ~location value)
       |> all
       >>| fun constraints -> ModelQuery.ClassConstraint.AnyOf constraints
-  | Expression.Call
-      {
-        Call.callee = { Node.value = Expression.Name (Name.Identifier "AllOf"); _ };
-        arguments = constraints;
-      } ->
-      List.map constraints ~f:(fun { Call.Argument.value; _ } ->
+  | ["AllOf"], _ ->
+      List.map arguments ~f:(fun { Call.Argument.value; _ } ->
           parse_class_constraint ~path ~location value)
       |> all
       >>| fun constraints -> ModelQuery.ClassConstraint.AllOf constraints
-  | Expression.Call
-      {
-        Call.callee = { Node.value = Expression.Name (Name.Identifier "Not"); _ };
-        arguments = [{ Call.Argument.value; _ }];
-      } ->
+  | ["Not"], [{ Call.Argument.value; _ }] ->
       parse_class_constraint ~path ~location value
       >>= fun model_constraint -> Ok (ModelQuery.ClassConstraint.Not model_constraint)
   | _ ->
@@ -1525,133 +1474,59 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
       Error (invalid_model_query_where_clause ~path ~location callee)
   in
   let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
-    match value with
+    (match value with
     | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute { base = { Node.value = Name (Name.Identifier "name"); _ }; _ });
-              _;
-            };
-          _;
-        } ->
+        { Call.callee = { Node.value = Expression.Name callee_name; _ } as callee; arguments } ->
+        Ok (callee, callee_name, arguments)
+    | _ ->
+        Error
+          (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression)))
+    >>= fun (callee, callee_name, arguments) ->
+    (match Ast.Expression.name_to_identifiers callee_name with
+    | Some reference -> Ok reference
+    | None -> Error (model_verification_error ~path ~location (UnsupportedCallee callee)))
+    >>= fun callee_reference ->
+    match callee_reference, arguments with
+    | ["name"; _], _ ->
         parse_name_constraint ~path ~location constraint_expression
         >>= fun name_constraint -> Ok (ModelQuery.Constraint.NameConstraint name_constraint)
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    { base = { Node.value = Name (Name.Identifier "type_annotation"); _ }; _ });
-              _;
-            } as callee;
-          _;
-        } ->
+    | ["type_annotation"; attribute], _ ->
         check_find_in ~callee [ModelQuery.Find.Attribute; ModelQuery.Find.Global]
         >>= fun () ->
-        parse_annotation_constraint ~path ~location constraint_expression
+        parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments
         >>= fun annotation_constraint ->
         Ok (ModelQuery.Constraint.AnnotationConstraint annotation_constraint)
-    | Expression.Call
-        {
-          Call.callee = { Node.value = Expression.Name (Name.Identifier "Decorator"); _ } as callee;
-          _;
-        } ->
+    | ["Decorator"], _ ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
-        parse_decorator_constraint ~path ~location constraint_expression
+        parse_decorator_constraint ~path ~location ~callee ~arguments
         >>= fun decorator_constraint ->
         Ok (ModelQuery.Constraint.AnyDecoratorConstraint decorator_constraint)
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    { base = { Node.value = Name (Name.Identifier "return_annotation"); _ }; _ });
-              _;
-            } as callee;
-          _;
-        } ->
+    | ["return_annotation"; attribute], _ ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
-        parse_annotation_constraint ~path ~location constraint_expression
+        parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments
         >>= fun annotation_constraint ->
         Ok (ModelQuery.Constraint.ReturnConstraint annotation_constraint)
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    {
-                      base =
-                        {
-                          Node.value =
-                            Name
-                              (Name.Attribute
-                                {
-                                  base = { Node.value = Name (Name.Identifier "any_parameter"); _ };
-                                  attribute = "annotation";
-                                  _;
-                                });
-                          _;
-                        };
-                      _;
-                    });
-              _;
-            } as callee;
-          _;
-        } ->
+    | ["any_parameter"; "annotation"; attribute], _ ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
-        parse_annotation_constraint ~path ~location constraint_expression
-        >>= fun parameter_constraint ->
-        Ok
-          (ModelQuery.Constraint.AnyParameterConstraint
-             (ModelQuery.ParameterConstraint.AnnotationConstraint parameter_constraint))
-    | Expression.Call
-        {
-          Call.callee = { Node.value = Expression.Name (Name.Identifier "AnyOf"); _ };
-          arguments = constraints;
-        } ->
-        List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
+        parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments
+        >>| fun parameter_constraint ->
+        ModelQuery.Constraint.AnyParameterConstraint
+          (ModelQuery.ParameterConstraint.AnnotationConstraint parameter_constraint)
+    | ["AnyOf"], _ ->
+        List.map arguments ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
         |> all
         >>| fun constraints -> ModelQuery.Constraint.AnyOf constraints
-    | Expression.Call
-        {
-          Call.callee = { Node.value = Expression.Name (Name.Identifier "AllOf"); _ };
-          arguments = constraints;
-        } ->
-        List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
+    | ["AllOf"], _ ->
+        List.map arguments ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
         |> all
         >>| fun constraints -> ModelQuery.Constraint.AllOf constraints
-    | Expression.Call
-        {
-          Call.callee = { Node.value = Expression.Name (Name.Identifier "Not"); _ };
-          arguments = [{ Call.Argument.value; _ }];
-        } ->
+    | ["Not"], [{ Call.Argument.value; _ }] ->
         parse_constraint value
-        >>= fun model_constraint -> Ok (ModelQuery.Constraint.Not model_constraint)
-    (* TODO(T128522530): Rename `parent` to `cls` - need both being accepted to migrate *)
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    { base = { Node.value = Name (Name.Identifier "cls"); _ }; attribute; _ });
-              _;
-            } as callee;
-          arguments;
-        } ->
+        >>| fun model_constraint -> ModelQuery.Constraint.Not model_constraint
+    | ["cls"; attribute], _ ->
         check_find ~callee ModelQuery.Find.is_class_member
         >>= fun () ->
         let class_constraint =
@@ -1661,7 +1536,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
               parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
           | "extends" -> parse_class_extends_clause ~path ~location ~callee ~arguments
           | "decorator" ->
-              parse_decorator_constraint ~path ~location constraint_expression
+              parse_decorator_constraint ~path ~location ~callee ~arguments
               >>| fun decorator_constraint ->
               ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint
           | "any_child" -> parse_any_child_constraint ~path ~location ~callee ~arguments
@@ -1669,11 +1544,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         in
         class_constraint
         >>| fun class_constraint -> ModelQuery.Constraint.ClassConstraint class_constraint
-    | Expression.Call { Call.callee; arguments = _ } ->
-        Error (model_verification_error ~path ~location (UnsupportedCallee callee))
-    | _ ->
-        Error
-          (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression))
+    | _ -> Error (model_verification_error ~path ~location (UnsupportedCallee callee))
   in
   match value with
   | Expression.List items -> List.map items ~f:parse_constraint |> all
@@ -1683,100 +1554,53 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
 let parse_parameter_where_clause ~path ({ Node.value; location } as expression) =
   let open Core.Result in
   let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
-    match value with
+    (match value with
     | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute { base = { Node.value = Name (Name.Identifier "name"); _ }; _ });
-              _;
-            };
-          _;
-        } ->
+        { Call.callee = { Node.value = Expression.Name callee_name; _ } as callee; arguments } ->
+        Ok (callee, callee_name, arguments)
+    | _ ->
+        Error
+          (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression)))
+    >>= fun (callee, callee_name, arguments) ->
+    (match Ast.Expression.name_to_identifiers callee_name with
+    | Some reference -> Ok reference
+    | None ->
+        Error
+          (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression)))
+    >>= fun callee_reference ->
+    match callee_reference, arguments with
+    | ["name"; _], _ ->
         parse_name_constraint ~path ~location constraint_expression
-        >>= fun name_constraint ->
-        Ok (ModelQuery.ParameterConstraint.NameConstraint name_constraint)
-    | Expression.Call
-        {
-          Call.callee = { Node.value = Expression.Name (Name.Identifier "AnyOf"); _ };
-          arguments = constraints;
-        } ->
-        List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
+        >>| fun name_constraint -> ModelQuery.ParameterConstraint.NameConstraint name_constraint
+    | ["AnyOf"], _ ->
+        List.map arguments ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
         |> all
         >>| fun constraints -> ModelQuery.ParameterConstraint.AnyOf constraints
-    | Expression.Call
-        {
-          Call.callee = { Node.value = Expression.Name (Name.Identifier "AllOf"); _ };
-          arguments = constraints;
-        } ->
-        List.map constraints ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
+    | ["AllOf"], _ ->
+        List.map arguments ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
         |> all
         >>| fun constraints -> ModelQuery.ParameterConstraint.AllOf constraints
-    | Expression.Call
-        {
-          Call.callee = { Node.value = Expression.Name (Name.Identifier "Not"); _ };
-          arguments = [{ Call.Argument.value; _ }];
-        } ->
+    | ["Not"], [{ Call.Argument.value; _ }] ->
         parse_constraint value
-        >>= fun query_constraint -> Ok (ModelQuery.ParameterConstraint.Not query_constraint)
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    { base = { Node.value = Name (Name.Identifier "type_annotation"); _ }; _ });
-              _;
-            };
-          _;
-        } ->
-        parse_annotation_constraint ~path ~location constraint_expression
-        >>= fun annotation_constraint ->
-        Ok (ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint)
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    {
-                      base = { Node.value = Name (Name.Identifier "index"); _ };
-                      attribute = "equals" as attribute;
-                      _;
-                    });
-              _;
-            } as callee;
-          arguments;
-        } -> (
-        match attribute, arguments with
-        | ( "equals",
-            [
-              {
-                Call.Argument.value =
-                  { Node.value = Expression.Constant (Constant.Integer index); _ };
-                _;
-              };
-            ] ) ->
-            Ok (ModelQuery.ParameterConstraint.IndexConstraint index)
-        | _ ->
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (InvalidModelQueryClauseArguments { callee; arguments })))
-    | Expression.Call { Call.callee; _ } ->
+        >>| fun query_constraint -> ModelQuery.ParameterConstraint.Not query_constraint
+    | ["type_annotation"; attribute], _ ->
+        parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments
+        >>| fun annotation_constraint ->
+        ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint
+    | ( ["index"; "equals"],
+        [
+          {
+            Call.Argument.value = { Node.value = Expression.Constant (Constant.Integer index); _ };
+            _;
+          };
+        ] ) ->
+        Ok (ModelQuery.ParameterConstraint.IndexConstraint index)
+    | _ ->
         Error
           (model_verification_error
              ~path
              ~location
              (InvalidModelQueryWhereClause { expression = callee; find_clause_kind = "parameters" }))
-    | _ ->
-        Error
-          (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression))
   in
   match value with
   | Expression.List items -> List.map items ~f:parse_constraint |> all
