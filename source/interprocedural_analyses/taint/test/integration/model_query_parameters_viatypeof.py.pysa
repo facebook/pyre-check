@@ -11,6 +11,6 @@ ModelQuery(
 ModelQuery(
   name = "get_test2_sinks",
   find="methods",
-  where=[cls.matches("Test2_C")],
+  where=[cls.name.matches("Test2_C")],
   model=Parameters(TaintSink[Test, ViaTypeOf], where=[Not(name.matches("self"))])
 )

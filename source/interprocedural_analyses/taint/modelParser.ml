@@ -1422,8 +1422,11 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
       Error (model_verification_error ~path ~location (UnsupportedClassConstraintCallee callee)))
   >>= fun callee_reference ->
   match callee_reference, arguments with
+  (* TODO(T139061519): Deprecate `cls.equals` in favor of `cls.name.equals`. *)
   | ["cls"; ("equals" as attribute)], _
-  | ["cls"; ("matches" as attribute)], _ ->
+  | ["cls"; ("matches" as attribute)], _
+  | ["cls"; "name"; ("equals" as attribute)], _
+  | ["cls"; "name"; ("matches" as attribute)], _ ->
       parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
   | ["cls"; "extends"], _ -> parse_class_extends_clause ~path ~location ~callee ~arguments
   | ["cls"; "decorator"], _ ->

@@ -2404,7 +2404,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          cls.matches("foo"),
+          cls.name.matches("foo"),
           any_parameter.annotation.is_annotated_type()
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2421,7 +2421,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          cls.matches("foo"),
+          cls.name.matches("foo"),
           any_parameter.annotation.equals("int")
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2438,7 +2438,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          cls.matches("foo"),
+          cls.name.matches("foo"),
           any_parameter.annotation.matches("int")
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2455,7 +2455,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          cls.matches("foo"),
+          cls.name.matches("foo"),
           return_annotation.equals("int")
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2472,7 +2472,7 @@ let test_invalid_models context =
         name = "invalid_model",
         find = "attributes",
         where = AnyOf(
-          cls.matches("foo"),
+          cls.name.matches("foo"),
           return_annotation.matches("str")
         ),
         model = AttributeModel(TaintSource[Test])
@@ -2502,12 +2502,12 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "functions",
-        where = cls.matches("foo"),
+        where = cls.name.matches("foo"),
         model = Returns(TaintSource[Test])
       )
     |}
     ~expect:
-      "`cls.matches` is not a valid constraint for model queries with find clause of kind \
+      "`cls.name.matches` is not a valid constraint for model queries with find clause of kind \
        `functions`."
     ();
   assert_invalid_model
@@ -2736,12 +2736,13 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
-        where = cls.matches("foo", is_transitive=foobar),
+        where = cls.name.matches("foo", is_transitive=foobar),
         model = ReturnModel(TaintSource[Test])
       )
     |}
     ~expect:
-      "Unsupported arguments for `cls.matches`: `cls.matches(\"foo\", is_transitive = foobar)`."
+      "Unsupported arguments for `cls.name.matches`: `cls.name.matches(\"foo\", is_transitive = \
+       foobar)`."
     ();
   assert_invalid_model
     ~model_source:
@@ -3669,7 +3670,7 @@ Unexpected statement: `food(y)`
             cls.any_child(
               AnyOf(
                 cls.decorator(arguments.contains("1"), name.matches("d")),
-                cls.matches("A")
+                cls.name.matches("A")
               )
             )
         ],
@@ -5080,7 +5081,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = cls.equals("Foo"),
+     where = cls.name.equals("Foo"),
      model = [Returns([TaintSource[Test], TaintSink[Test]])]
     )
   |}
@@ -5290,7 +5291,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = cls.matches("Foo.*"),
+     where = cls.name.matches("Foo.*"),
      model = [Returns([TaintSource[Test], TaintSink[Test]])]
     )
   |}
@@ -5642,8 +5643,8 @@ let test_query_parsing context =
               name.matches("d1")
             ),
             AnyOf(
-              Not(cls.matches("Foo")),
-              cls.matches("Baz")
+              Not(cls.name.matches("Foo")),
+              cls.name.matches("Baz")
             )
           ),
           is_transitive=False
@@ -5737,8 +5738,8 @@ let test_query_parsing context =
               name.matches("d1")
             ),
             AnyOf(
-              Not(cls.matches("Foo")),
-              cls.matches("Baz")
+              Not(cls.name.matches("Foo")),
+              cls.name.matches("Baz")
             )
           ),
           is_transitive=True,

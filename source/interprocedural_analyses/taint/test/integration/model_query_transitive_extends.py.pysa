@@ -5,7 +5,7 @@ ModelQuery(
   name = "get_model_query_transitive_extends_Test1_sources",
   find = "attributes",
   where = [
-    cls.matches("Test1_"),
+    cls.name.matches("Test1_"),
     cls.extends("model_query_transitive_extends.Test1_C", is_transitive=True)
   ],
   model = [
@@ -17,7 +17,7 @@ ModelQuery(
   name = "get_model_query_transitive_extends_Test2_sources",
   find = "methods",
   where = [
-    cls.matches("Test2_"),
+    cls.name.matches("Test2_"),
     Not(cls.extends("model_query_transitive_extends.Test2_C", is_transitive=True))
   ],
   model = [

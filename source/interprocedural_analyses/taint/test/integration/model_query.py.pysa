@@ -53,7 +53,7 @@ ModelQuery(
 ModelQuery(
   name = "get_Base_child_sources",
   find = "methods",
-  where = [cls.equals("model_query.Base")],
+  where = [cls.name.equals("model_query.Base")],
   model = [
     Parameters(TaintSource[Test], where=index.equals(0)),
   ]
@@ -91,7 +91,7 @@ ModelQuery(
 ModelQuery(
   name = "get_AttributeTestClass3_SinkA",
   find = "attributes",
-  where = [cls.equals("model_query.AttributeTestClass3")],
+  where = [cls.name.equals("model_query.AttributeTestClass3")],
   model = [
     AttributeModel(TaintSink[SinkA])
   ]
@@ -104,7 +104,7 @@ def model_query.alarm_5(source: TaintSource[Test]): ...
 ModelQuery(
   name = "get_AttributeTestClass4_SourceC",
   find = "attributes",
-  where = [cls.equals("model_query.AttributeTestClass4")],
+  where = [cls.name.equals("model_query.AttributeTestClass4")],
   model = [
     AttributeModel(TaintSource[SourceC])
   ]
@@ -126,7 +126,7 @@ ModelQuery(
 ModelQuery(
   name = "get_NonExistentClass_sources",
   find = "attributes",
-  where = [cls.equals("NonExistentClass")],
+  where = [cls.name.equals("NonExistentClass")],
   model = [
     AttributeModel(TaintSource[Test])
   ]
@@ -146,7 +146,7 @@ ModelQuery(
   find = "methods",
   where = [
     AllOf(
-      cls.matches(".*ClassTest3_Alarm1.*"),
+      cls.name.matches(".*ClassTest3_Alarm1.*"),
       name.matches(".*method1.*")
     )
   ],
@@ -169,7 +169,7 @@ ModelQuery(
   name = "get_method_test1_SourceB",
   find = "methods",
   where = [
-    cls.matches("model_query.ClassTest1"),
+    cls.name.matches("model_query.ClassTest1"),
     name.matches("method_test1"),
     Not(name.matches("noalarm"))
   ],
@@ -183,7 +183,7 @@ ModelQuery(
   name = "get_ClassTest2_SourceC",
   find = "methods",
   where = [
-    cls.matches("ClassTest2"),
+    cls.name.matches("ClassTest2"),
     Not(cls.extends("model_query.NoAlarmClass"))
   ],
   model = [
