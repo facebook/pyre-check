@@ -456,4 +456,4 @@ $ pyre query "batch(less_or_equal(int, str), join(int, str))"
 ```
 
 ### Caching
-Pyre rechecks each file when queried to generate the location-type mapping, caching results for re-queries of the same file. If you anticipate a large codemod where significant portions of the codebase will be queried, you may increase incremental performance by starting a temporary server with the flag: `pyre --store-type-check-resolution start`.
+Pyre rechecks each file when queried to generate the location-type mapping, caching results for re-queries of the same file. If you anticipate a large codemod where significant portions of the codebase will be queried, you may increase incremental performance by starting a temporary server with the flag: `pyre start --store-type-check-resolution`.
