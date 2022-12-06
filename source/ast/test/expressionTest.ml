@@ -574,6 +574,43 @@ let test_name_to_identifiers _ =
     None
 
 
+let test_name_to_reference _ =
+  let assert_name_to_reference name reference =
+    assert_equal ~cmp:(Option.equal Reference.equal) reference (name_to_reference name)
+  in
+  assert_name_to_reference (Name.Identifier "a") (Some !&"a");
+  assert_name_to_reference
+    (Name.Attribute
+       {
+         base =
+           ~+(Expression.Name
+                (Name.Attribute
+                   {
+                     base = ~+(Expression.Name (Name.Identifier "a"));
+                     attribute = "b";
+                     special = false;
+                   }));
+         attribute = "c";
+         special = false;
+       })
+    (Some !&"a.b.c");
+  assert_name_to_reference
+    (Name.Attribute
+       {
+         base =
+           ~+(Expression.Name
+                (Name.Attribute
+                   {
+                     base = ~+(Expression.Constant (Constant.Integer 1));
+                     attribute = "b";
+                     special = false;
+                   }));
+         attribute = "c";
+         special = false;
+       })
+    None
+
+
 let test_name_equals _ =
   let create_base name = Node.create_with_default_location (Expression.Name name) in
   let assert_name_equals name expression = assert_true (name_is ~name (create_base expression)) in
@@ -1021,6 +1058,7 @@ let () =
          "exists_in_list" >:: test_exists_in_list;
          "create_name" >:: test_create_name;
          "name_to_identifiers" >:: test_name_to_identifiers;
+         "name_to_reference" >:: test_name_to_reference;
          "name_equals" >:: test_name_equals;
          "arguments_location" >:: test_arguments_location;
          "default_folder" >:: test_default_folder;

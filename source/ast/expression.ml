@@ -2269,17 +2269,7 @@ let name_to_identifiers name =
   collect (Some []) (Name name)
 
 
-let name_to_reference name =
-  let rec get_reversed_identifiers = function
-    | Name.Identifier identifier -> Some [identifier]
-    | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
-        match get_reversed_identifiers base with
-        | Some sofar -> Some (attribute :: sofar)
-        | None -> None)
-    | _ -> None
-  in
-  get_reversed_identifiers name >>| List.rev >>| Reference.create_from_list
-
+let name_to_reference name = name_to_identifiers name >>| Reference.create_from_list
 
 let name_to_reference_exn name =
   match name_to_reference name with
