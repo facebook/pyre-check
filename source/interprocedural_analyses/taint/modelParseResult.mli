@@ -172,6 +172,7 @@ module ModelQuery : sig
   module ClassConstraint : sig
     type t =
       | NameConstraint of NameConstraint.t
+      | FullyQualifiedNameConstraint of NameConstraint.t
       | Extends of {
           class_name: string;
           is_transitive: bool;
@@ -193,6 +194,7 @@ module ModelQuery : sig
   module Constraint : sig
     type t =
       | NameConstraint of NameConstraint.t
+      | FullyQualifiedNameConstraint of NameConstraint.t
       | AnnotationConstraint of AnnotationConstraint.t
       | ReturnConstraint of AnnotationConstraint.t
       | AnyParameterConstraint of ParameterConstraint.t

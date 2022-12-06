@@ -411,7 +411,9 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name class_
         ~f:(class_matches_constraint ~resolution ~class_hierarchy_graph ~name)
   | ModelQuery.ClassConstraint.Not class_constraint ->
       not (class_matches_constraint ~resolution ~name ~class_hierarchy_graph class_constraint)
-  | ModelQuery.ClassConstraint.NameConstraint name_constraint ->
+  | ModelQuery.ClassConstraint.NameConstraint name_constraint
+  | ModelQuery.ClassConstraint.FullyQualifiedNameConstraint name_constraint ->
+      (* TODO(T139061519): For `NameConstraint`, this should not use the fully qualified name. *)
       matches_name_constraint ~name_constraint name
   | ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self } ->
       is_ancestor ~resolution ~is_transitive ~includes_self class_name name
@@ -512,7 +514,9 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       List.for_all constraints ~f:(matches_constraint ~resolution ~class_hierarchy_graph value)
   | ModelQuery.Constraint.Not query_constraint ->
       not (matches_constraint ~resolution ~class_hierarchy_graph value query_constraint)
-  | ModelQuery.Constraint.NameConstraint name_constraint ->
+  | ModelQuery.Constraint.NameConstraint name_constraint
+  | ModelQuery.Constraint.FullyQualifiedNameConstraint name_constraint ->
+      (* TODO(T139061519): For `NameConstraint`, this should not use the fully qualified name. *)
       matches_name_constraint ~name_constraint (Modelable.name value)
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value

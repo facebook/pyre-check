@@ -2740,9 +2740,7 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:
-      "Unsupported arguments for `cls.name.matches`: `cls.name.matches(\"foo\", is_transitive = \
-       foobar)`."
+    ~expect:{|`cls.name.matches("foo", is_transitive = foobar)` is not a valid name clause.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2754,7 +2752,7 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"`name.foo(\"foo\")` is not a valid name clause."
+    ~expect:{|`name.foo("foo")` is not a valid name clause.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -4589,7 +4587,38 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "functions",
-     where = name.matches("foo"),
+     where = fully_qualified_name.matches("foo"),
+     model = Returns(TaintSource[Test])
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where = [FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "functions",
+     where = name.equals("foo"),
      model = [Returns(TaintSource[Test])]
     )
   |}
@@ -4598,7 +4627,38 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          where = [NameConstraint (Equals "foo")];
+          find = Function;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "functions",
+     where = fully_qualified_name.equals("test.foo"),
+     model = Returns(TaintSource[Test])
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where = [FullyQualifiedNameConstraint (Equals "test.foo")];
           find = Function;
           models =
             [
@@ -4688,7 +4748,7 @@ let test_query_parsing context =
     ModelQuery(
      name = "get_foo",
      find = "functions",
-     where = name.equals("test.foo"),
+     where = fully_qualified_name.equals("test.foo"),
      model = [Returns([TaintSource[Test], TaintSink[Test]])]
     )
   |}
@@ -4697,7 +4757,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
-          where = [NameConstraint (Equals "test.foo")];
+          where = [FullyQualifiedNameConstraint (Equals "test.foo")];
           find = Function;
           models =
             [
@@ -5091,6 +5151,39 @@ let test_query_parsing context =
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           where = [ClassConstraint (NameConstraint (Equals "Foo"))];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
+     where = cls.fully_qualified_name.equals("test.Foo"),
+     model = [Returns([TaintSource[Test], TaintSink[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where = [ClassConstraint (FullyQualifiedNameConstraint (Equals "test.Foo"))];
           find = Method;
           models =
             [

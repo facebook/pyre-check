@@ -37,7 +37,7 @@ ModelQuery(
       type_annotation.equals("str"),
       type_annotation.equals("int"),
     ),
-    name.matches("model_query_global_variable.*")
+    fully_qualified_name.matches("model_query_global_variable.*")
   ],
   model = [
     GlobalModel(TaintSource[SelectIntAndStr]),
@@ -58,7 +58,7 @@ ModelQuery(
   find = "globals",
   where = [
     type_annotation.equals("typing.Any"),
-    name.matches("model_query_global_variable.*")
+    fully_qualified_name.matches("model_query_global_variable.*")
   ],
   model = [
     GlobalModel(TaintSource[SelectAny]),
@@ -70,7 +70,7 @@ ModelQuery(
   find = "functions",
   where = [
     return_annotation.matches("typing.Any"),
-    name.matches("model_query_global_variable.*")
+    fully_qualified_name.matches("model_query_global_variable.*")
   ],
   model = [
     Returns(TaintSource[SelectAny])

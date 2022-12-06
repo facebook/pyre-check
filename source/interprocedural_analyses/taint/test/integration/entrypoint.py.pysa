@@ -7,7 +7,7 @@ ModelQuery(
   name = "get_all_globals",
   find = "globals",
   where = [
-    name.matches("entrypoint\..*"),
+    fully_qualified_name.matches("entrypoint\..*"),
   ],
   model = [
     GlobalModel(TaintSource[GlobalSource]),
