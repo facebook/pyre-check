@@ -2664,7 +2664,7 @@ let test_invalid_models context =
         model = Modes([Entrypoint])
       )
     |}
-    ~expect:"Unsupported callee: annotation.equals"
+    ~expect:"Unsupported callee for constraint: `annotation.equals`"
     ();
   assert_invalid_model
     ~model_source:
@@ -3651,7 +3651,7 @@ Unexpected statement: `food(y)`
       )
     |}
     ~expect:
-      {|`Decorator(arguments.contains("1"), name.matches("d"))` is not a valid any_child clause. Constraints within any_child should be either class constraints or any of `AnyOf`, `AllOf`, and `Not`.|}
+      {|Unsupported callee for class constraint: `Decorator(arguments.contains("1"), name.matches("d"))`|}
     ();
   assert_valid_model
     ~source:{|

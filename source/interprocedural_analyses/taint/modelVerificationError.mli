@@ -103,7 +103,6 @@ type kind =
   | InvalidIdentifier of Expression.t
   | ClassBodyNotEllipsis of string
   | DefineBodyNotEllipsis of string
-  | UnsupportedCallee of Expression.t
   | UnexpectedTaintAnnotation of string
   | UnexpectedModelExpression of Expression.t
   | UnsupportedFindClause of string
@@ -113,6 +112,9 @@ type kind =
       annotation: string;
     }
   | UnsupportedConstraint of Expression.t
+  | UnsupportedConstraintCallee of Expression.t
+  | UnsupportedClassConstraint of Expression.t
+  | UnsupportedClassConstraintCallee of Expression.t
   | InvalidModelForTaint of {
       model_name: string;
       error: string;
@@ -140,7 +142,6 @@ type kind =
       model_query_name: string;
       models_clause: Expression.t;
     }
-  | InvalidAnyChildClause of Expression.t
   | InvalidModelQueryMode of {
       mode_name: string;
       error: string;

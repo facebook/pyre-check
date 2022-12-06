@@ -1410,12 +1410,16 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
       { Call.callee = { Node.value = Expression.Name callee_name; _ } as callee; arguments } ->
       Ok (callee, callee_name, arguments)
   | _ ->
-      Error (model_verification_error ~path ~location (InvalidAnyChildClause constraint_expression)))
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (UnsupportedClassConstraint constraint_expression)))
   >>= fun (callee, callee_name, arguments) ->
   (match Ast.Expression.name_to_identifiers callee_name with
   | Some reference -> Ok reference
   | None ->
-      Error (model_verification_error ~path ~location (InvalidAnyChildClause constraint_expression)))
+      Error (model_verification_error ~path ~location (UnsupportedClassConstraintCallee callee)))
   >>= fun callee_reference ->
   match callee_reference, arguments with
   | ["cls"; ("equals" as attribute)], _
@@ -1426,6 +1430,13 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
       parse_decorator_constraint ~path ~location ~callee ~arguments
       >>= fun decorator_constraint ->
       Ok (ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint)
+  | ["cls"; "any_child"], _ ->
+      parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments
+      >>= fun (constraint_expression, is_transitive, includes_self) ->
+      parse_class_constraint ~path ~location constraint_expression
+      >>| fun class_constraint ->
+      ModelQuery.ClassConstraint.AnyChildConstraint
+        { class_constraint; is_transitive; includes_self }
   | ["AnyOf"], _ ->
       List.map arguments ~f:(fun { Call.Argument.value; _ } ->
           parse_class_constraint ~path ~location value)
@@ -1440,16 +1451,11 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
       parse_class_constraint ~path ~location value
       >>= fun model_constraint -> Ok (ModelQuery.ClassConstraint.Not model_constraint)
   | _ ->
-      Error (model_verification_error ~path ~location (InvalidAnyChildClause constraint_expression))
-
-
-let parse_any_child_constraint ~path ~location ~callee ~arguments =
-  let open Core.Result in
-  parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments
-  >>= fun (constraint_expression, is_transitive, includes_self) ->
-  parse_class_constraint ~path ~location constraint_expression
-  >>| fun class_constraint ->
-  ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive; includes_self }
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (UnsupportedClassConstraintCallee constraint_expression))
 
 
 let parse_where_clause ~path ~find_clause ({ Node.value; location } as expression) =
@@ -1484,7 +1490,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
     >>= fun (callee, callee_name, arguments) ->
     (match Ast.Expression.name_to_identifiers callee_name with
     | Some reference -> Ok reference
-    | None -> Error (model_verification_error ~path ~location (UnsupportedCallee callee)))
+    | None -> Error (model_verification_error ~path ~location (UnsupportedConstraintCallee callee)))
     >>= fun callee_reference ->
     match callee_reference, arguments with
     | ["name"; _], _ ->
@@ -1515,6 +1521,11 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         >>| fun parameter_constraint ->
         ModelQuery.Constraint.AnyParameterConstraint
           (ModelQuery.ParameterConstraint.AnnotationConstraint parameter_constraint)
+    | "cls" :: _, _ ->
+        check_find ~callee ModelQuery.Find.is_class_member
+        >>= fun () ->
+        parse_class_constraint ~path ~location constraint_expression
+        >>| fun class_constraint -> ModelQuery.Constraint.ClassConstraint class_constraint
     | ["AnyOf"], _ ->
         List.map arguments ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
         |> all
@@ -1526,25 +1537,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
     | ["Not"], [{ Call.Argument.value; _ }] ->
         parse_constraint value
         >>| fun model_constraint -> ModelQuery.Constraint.Not model_constraint
-    | ["cls"; attribute], _ ->
-        check_find ~callee ModelQuery.Find.is_class_member
-        >>= fun () ->
-        let class_constraint =
-          match attribute with
-          | "equals"
-          | "matches" ->
-              parse_class_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
-          | "extends" -> parse_class_extends_clause ~path ~location ~callee ~arguments
-          | "decorator" ->
-              parse_decorator_constraint ~path ~location ~callee ~arguments
-              >>| fun decorator_constraint ->
-              ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint
-          | "any_child" -> parse_any_child_constraint ~path ~location ~callee ~arguments
-          | _ -> Error (model_verification_error ~path ~location (UnsupportedCallee callee))
-        in
-        class_constraint
-        >>| fun class_constraint -> ModelQuery.Constraint.ClassConstraint class_constraint
-    | _ -> Error (model_verification_error ~path ~location (UnsupportedCallee callee))
+    | _ -> Error (model_verification_error ~path ~location (UnsupportedConstraintCallee callee))
   in
   match value with
   | Expression.List items -> List.map items ~f:parse_constraint |> all

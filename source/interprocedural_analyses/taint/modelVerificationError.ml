@@ -107,7 +107,6 @@ type kind =
   | InvalidIdentifier of Expression.t
   | ClassBodyNotEllipsis of string
   | DefineBodyNotEllipsis of string
-  | UnsupportedCallee of Expression.t
   | UnexpectedTaintAnnotation of string
   | UnexpectedModelExpression of Expression.t
   | UnsupportedFindClause of string
@@ -117,6 +116,9 @@ type kind =
       annotation: string;
     }
   | UnsupportedConstraint of Expression.t
+  | UnsupportedConstraintCallee of Expression.t
+  | UnsupportedClassConstraint of Expression.t
+  | UnsupportedClassConstraintCallee of Expression.t
   | InvalidModelForTaint of {
       model_name: string;
       error: string;
@@ -144,7 +146,6 @@ type kind =
       model_query_name: string;
       models_clause: Expression.t;
     }
-  | InvalidAnyChildClause of Expression.t
   | InvalidModelQueryMode of {
       mode_name: string;
       error: string;
@@ -344,8 +345,15 @@ let description error =
   | UnexpectedTaintAnnotation taint_annotation ->
       Format.sprintf "Unexpected taint annotation `%s`" taint_annotation
   | UnsupportedConstraint constraint_name ->
-      Format.sprintf "Unsupported constraint: %s" (Expression.show constraint_name)
-  | UnsupportedCallee callee -> Format.sprintf "Unsupported callee: %s" (Expression.show callee)
+      Format.sprintf "Unsupported constraint expression: `%s`" (Expression.show constraint_name)
+  | UnsupportedConstraintCallee callee ->
+      Format.sprintf "Unsupported callee for constraint: `%s`" (Expression.show callee)
+  | UnsupportedClassConstraint constraint_name ->
+      Format.sprintf
+        "Unsupported class constraint expression: `%s`"
+        (Expression.show constraint_name)
+  | UnsupportedClassConstraintCallee callee ->
+      Format.sprintf "Unsupported callee for class constraint: `%s`" (Expression.show callee)
   | UnsupportedFindClause clause -> Format.sprintf "Unsupported find clause `%s`" clause
   | UnexpectedModelExpression expression ->
       Format.sprintf "Unexpected model expression: `%s`" (Expression.show expression)
@@ -393,11 +401,6 @@ let description error =
         \   The clause should be a list of syntactically correct model strings."
         model_query_name
         (Expression.show models_clause)
-  | InvalidAnyChildClause expression ->
-      Format.asprintf
-        "`%s` is not a valid any_child clause. Constraints within any_child should be either class \
-         constraints or any of `AnyOf`, `AllOf`, and `Not`."
-        (Expression.show expression)
   | InvalidModelQueryMode { mode_name; error } -> Format.asprintf "`%s`: %s" mode_name error
 
 
@@ -431,7 +434,7 @@ let code { kind; _ } =
   | InvalidArgumentsClause _ -> 26
   | InvalidTypeAnnotationClause _ -> 27
   | MissingSymbol _ -> 28
-  | UnsupportedCallee _ -> 29
+  | UnsupportedConstraintCallee _ -> 29
   | UnexpectedTaintAnnotation _ -> 30
   | UnexpectedModelExpression _ -> 31
   | UnsupportedFindClause _ -> 32
@@ -448,10 +451,11 @@ let code { kind; _ } =
   | UnexpectedModelsArePresent _ -> 43
   | ModelQueryInExpectedModelsClause _ -> 44
   | InvalidExpectedModelsClause _ -> 45
-  | InvalidAnyChildClause _ -> 46
+  | UnsupportedClassConstraint _ -> 46
   | InvalidAccessPath _ -> 47
-  | InvalidIncludesSelf _ -> 13
   | InvalidModelQueryMode _ -> 48
+  | InvalidIncludesSelf _ -> 49
+  | UnsupportedClassConstraintCallee _ -> 50
 
 
 let display { kind = error; path; location } =
