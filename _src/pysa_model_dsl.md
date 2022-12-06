@@ -352,11 +352,11 @@ ModelQuery(
     AnyOf(
       AllOf(
         cls.extends("a.b"),
-        cls.matches("Foo"),
+        cls.name.matches("Foo"),
       ),
       AllOf(
         cls.extends("c.d"),
-        cls.matches("Bar")
+        cls.name.matches("Bar")
       )
     )
   ],
@@ -477,11 +477,11 @@ ModelQuery(
 )
 ```
 
-### `cls.equals` clause
+### `cls.name.equals` clause
 
 You may use the `cls` clause to specify predicates on the class. This predicate can only be used when the find clause specifies methods or attributes.
 
-The `cls.equals` clause is used to model entities when the class's fully qualified name is an exact match for the specified string.
+The `cls.name.equals` clause is used to model entities when the class's fully qualified name is an exact match for the specified string.
 
 Example:
 
@@ -489,14 +489,14 @@ Example:
 ModelQuery(
   name = "get_childOf_foo_Bar",
   find = "methods",
-  where = cls.equals("foo.Bar"),
+  where = cls.name.equals("foo.Bar"),
   ...
 )
 ```
 
-### `cls.matches` clause
+### `cls.name.matches` clause
 
-The `cls.matches` clause is used to model entities when the class's fully qualified name matches the provided regex.
+The `cls.name.matches` clause is used to model entities when the class's fully qualified name matches the provided regex.
 
 Example:
 
@@ -504,7 +504,7 @@ Example:
 ModelQuery(
   name = "get_childOf_Foo",
   find = "methods",
-  where = cls.matches(".*Foo.*"),
+  where = cls.name.matches(".*Foo.*"),
   ...
 )
 ```
@@ -619,7 +619,7 @@ will result in a model for `def Foo.__init__(b: TaintSource[Test])`.
 
 The `cls.any_child` clause is used to model entities when any child of the current class meets the specified constraints.
 
-The arguments for this clause are any combination of valid class constraints (`cls.equals`, `cls.matches`, `cls.extends`, `cls.decorator`) and logical clauses (`AnyOf`, `AllOf`, `Not`), along with the optional `is_transitive` and `includes_self` clauses.
+The arguments for this clause are any combination of valid class constraints (`cls.name.equals`, `cls.name.matches`, `cls.extends`, `cls.decorator`) and logical clauses (`AnyOf`, `AllOf`, `Not`), along with the optional `is_transitive` and `includes_self` clauses.
 
 Example:
 
@@ -725,7 +725,7 @@ ModelQuery(
   where = [
     Not(
       name.matches("foo.*"),
-      cls.matches("testing.unittest.UnitTest"),
+      cls.name.matches("testing.unittest.UnitTest"),
     )
   ],
   model = ...
@@ -906,11 +906,11 @@ ModelQuery(
           AnyOf(
             AllOf(
               cls.extends("a.b"),
-              cls.matches("Foo"),
+              cls.name.matches("Foo"),
             ),
             AllOf(
               cls.extends("c.d"),
-              cls.matches("Bar")
+              cls.name.matches("Bar")
             )
           )
         )
