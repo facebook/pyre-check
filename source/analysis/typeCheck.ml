@@ -4132,35 +4132,6 @@ module State (Context : Context) = struct
                 let check_errors ~name_reference errors resolved =
                   match reference with
                   | Some reference ->
-                      let modifying_read_only_error =
-                        let is_locally_initialized =
-                          name_reference
-                          >>| (fun reference ->
-                                Resolution.has_nontemporary_annotation ~reference resolution)
-                          |> Option.value ~default:false
-                        in
-                        match attribute, original_annotation with
-                        | None, _ when is_locally_initialized || not explicit ->
-                            Option.some_if
-                              (Annotation.is_final target_annotation)
-                              (AnalysisError.FinalAttribute reference)
-                        | None, _ -> None
-                        | Some _, Some _ ->
-                            (* We presume assignments to annotated targets are valid re: Finality *)
-                            None
-                        | Some (attribute, _), None -> (
-                            let open AnnotatedAttribute in
-                            match
-                              visibility attribute, property attribute, initialized attribute
-                            with
-                            | ReadOnly _, false, OnlyOnInstance when Define.is_constructor define ->
-                                None
-                            | ReadOnly _, false, OnClass when Define.is_class_toplevel define ->
-                                None
-                            | ReadOnly _, false, _ -> Some (AnalysisError.FinalAttribute reference)
-                            | ReadOnly _, true, _ -> Some (ReadOnly reference)
-                            | _ -> None)
-                      in
                       let check_assignment_compatibility errors =
                         let is_valid_enumeration_assignment =
                           let parent_annotation =
@@ -4370,12 +4341,43 @@ module State (Context : Context) = struct
                         | _ -> errors
                       in
                       let errors =
+                        let modifying_read_only_error =
+                          let is_locally_initialized =
+                            name_reference
+                            >>| (fun reference ->
+                                  Resolution.has_nontemporary_annotation ~reference resolution)
+                            |> Option.value ~default:false
+                          in
+                          match attribute, original_annotation with
+                          | None, _ when is_locally_initialized || not explicit ->
+                              Option.some_if
+                                (Annotation.is_final target_annotation)
+                                (AnalysisError.FinalAttribute reference)
+                          | None, _ -> None
+                          | Some _, Some _ ->
+                              (* We presume assignments to annotated targets are valid re: Finality *)
+                              None
+                          | Some (attribute, _), None -> (
+                              let open AnnotatedAttribute in
+                              match
+                                visibility attribute, property attribute, initialized attribute
+                              with
+                              | ReadOnly _, false, OnlyOnInstance when Define.is_constructor define
+                                ->
+                                  None
+                              | ReadOnly _, false, OnClass when Define.is_class_toplevel define ->
+                                  None
+                              | ReadOnly _, false, _ ->
+                                  Some (AnalysisError.FinalAttribute reference)
+                              | ReadOnly _, true, _ -> Some (ReadOnly reference)
+                              | _ -> None)
+                        in
                         match modifying_read_only_error with
                         | Some error ->
                             emit_error ~errors ~location ~kind:(Error.InvalidAssignment error)
                         | None ->
-                            (* We don't check compatibility when we're already erroring about Final
-                               reassingment *)
+                            (* Check compatibility only when we're not already erroring about Final
+                               reassignment. *)
                             check_assignment_compatibility errors
                       in
                       check_assign_class_variable_on_instance errors
