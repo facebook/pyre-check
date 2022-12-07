@@ -6436,7 +6436,7 @@ let test_class_data_from_type _ =
            accessed_through_readonly = false;
          };
        ]);
-
+  (* ReadOnly types. *)
   assert_resolved_class
     (Type.ReadOnly.create Type.integer)
     (Some
@@ -6445,7 +6445,46 @@ let test_class_data_from_type _ =
            instantiated = Type.integer;
            accessed_through_class = false;
            class_name = "int";
+           accessed_through_readonly = true;
+         };
+       ]);
+  assert_resolved_class
+    (Type.union [Type.ReadOnly.create Type.integer; Type.list Type.integer])
+    (Some
+       [
+         {
+           instantiated = Type.list Type.integer;
+           accessed_through_class = false;
+           class_name = "list";
            accessed_through_readonly = false;
+         };
+         {
+           instantiated = Type.integer;
+           accessed_through_class = false;
+           class_name = "int";
+           accessed_through_readonly = true;
+         };
+       ]);
+  assert_resolved_class
+    (Type.meta (Type.ReadOnly.create Type.integer))
+    (Some
+       [
+         {
+           instantiated = Type.integer;
+           accessed_through_class = true;
+           class_name = "int";
+           accessed_through_readonly = true;
+         };
+       ]);
+  assert_resolved_class
+    (Type.ReadOnly.create (Type.meta Type.integer))
+    (Some
+       [
+         {
+           instantiated = Type.integer;
+           accessed_through_class = true;
+           class_name = "int";
+           accessed_through_readonly = true;
          };
        ]);
   ()

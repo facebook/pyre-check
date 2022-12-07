@@ -6590,7 +6590,7 @@ let to_yojson annotation = `String (show annotation)
    attributes, global location, etc. Also return the instantiated type `List[int]` since that is
    also needed for attribute lookup. *)
 let class_data_from_type type_ =
-  let rec extract_class_data ~meta original_type =
+  let rec extract_class_data ~meta ~accessed_through_readonly original_type =
     let type_ =
       match original_type with
       (* Variables return their upper bound because we need to take the least informative type in
@@ -6613,8 +6613,7 @@ let class_data_from_type type_ =
             {
               instantiated = original_type;
               accessed_through_class = meta;
-              (* TODO(T130377746): Compute actual value. *)
-              accessed_through_readonly = false;
+              accessed_through_readonly;
               class_name = "typing.Optional";
             };
           ]
@@ -6626,12 +6625,12 @@ let class_data_from_type type_ =
           | Some sofar, Some optional -> Some (optional :: sofar)
           | _ -> None
         in
-        List.map ~f:(extract_class_data ~meta) types
+        List.map ~f:(extract_class_data ~meta ~accessed_through_readonly) types
         |> List.fold ~init:(Some []) ~f:flatten_optional
         >>| List.concat
         >>| List.rev
     | RecursiveType ({ name; body } as recursive_type) ->
-        extract_class_data ~meta body
+        extract_class_data ~meta ~accessed_through_readonly body
         (* Filter out the recursive type name itself since it's not a valid class name.
 
            Removing the inner occurrences of the recursive type is fine because of induction. If the
@@ -6646,11 +6645,11 @@ let class_data_from_type type_ =
                       ~recursive_type
                       instantiated;
                 })
-    | ReadOnly type_ -> extract_class_data ~meta type_
+    | ReadOnly type_ -> extract_class_data ~meta ~accessed_through_readonly:true type_
     | type_ when is_meta type_ ->
         (* Metaclasses return accessed_through_class=true since they allow looking up only class
            attribute, etc. *)
-        single_parameter type_ |> extract_class_data ~meta:true
+        single_parameter type_ |> extract_class_data ~meta:true ~accessed_through_readonly
     | _ -> (
         match split type_ |> fst |> primitive_name with
         | Some class_name ->
@@ -6659,14 +6658,13 @@ let class_data_from_type type_ =
                 {
                   instantiated = original_type;
                   accessed_through_class = meta;
-                  (* TODO(T130377746): Compute actual value. *)
-                  accessed_through_readonly = false;
+                  accessed_through_readonly;
                   class_name;
                 };
               ]
         | None -> None)
   in
-  extract_class_data ~meta:false type_
+  extract_class_data ~meta:false ~accessed_through_readonly:false type_
 
 
 let callable_name = function
