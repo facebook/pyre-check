@@ -1434,12 +1434,19 @@ def stop(context: click.Context, flavor: Optional[str]) -> int:
     Signals the Pyre server to stop.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
     flavor_choice = (
         identifiers.PyreFlavor(flavor) if flavor is not None else CLASSIC_FLAVOR
     )
+    if flavor_choice == identifiers.PyreFlavor.CODE_NAVIGATION:
+        configuration = configuration_module.create_overridden_configuration(
+            command_argument,
+            Path(".").resolve(),
+            find_directories.CODENAV_CONFIGURATION_FILE,
+        )
+    else:
+        configuration = configuration_module.create_configuration(
+            command_argument, Path(".")
+        )
     start_logging_to_directory(configuration.log_directory, flavor_choice)
     return commands.stop.run(configuration, flavor_choice)
 
