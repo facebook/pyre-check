@@ -295,7 +295,7 @@ let attribute_from_class_name
 
 
 let attribute_from_annotation ?special_method resolution ~parent:annotation ~name =
-  match Type.resolve_class annotation with
+  match Type.class_data_from_type annotation with
   | None -> None
   | Some [] -> None
   | Some [{ instantiated; accessed_through_class; class_name }] ->

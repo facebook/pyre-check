@@ -237,7 +237,7 @@ module DefaultBuilder : Builder = struct
         match resolved_base with
         | Type.Union [Type.NoneType; base]
         | Type.Union [base; Type.NoneType] -> (
-            Type.resolve_class base
+            Type.class_data_from_type base
             |> function
             | Some [{ instantiated; accessed_through_class; class_name }] -> (
                 let attribute =

@@ -294,7 +294,7 @@ let produce_alias empty_stub_environment global_name ~dependency =
                 annotation ->
         let alias_name = Reference.show alias_reference in
         let is_directly_recursive =
-          Type.resolve_class annotation
+          Type.class_data_from_type annotation
           >>| List.exists ~f:(fun { Type.class_name; _ } -> Identifier.equal class_name alias_name)
           |> Option.value ~default:true
         in

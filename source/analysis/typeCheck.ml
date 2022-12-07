@@ -1124,7 +1124,9 @@ module State (Context : Context) = struct
           >>= fun { ClassSummary.qualifier; _ } ->
           ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
         in
-        match Type.resolve_class resolved_base >>| List.map ~f:find_attribute >>= Option.all with
+        match
+          Type.class_data_from_type resolved_base >>| List.map ~f:find_attribute >>= Option.all
+        with
         | None ->
             let errors =
               if has_default then
@@ -2617,8 +2619,8 @@ module State (Context : Context) = struct
         in
         let { Resolved.resolution; resolved; errors; _ } = forward_expression ~resolution right in
         let resolution, errors, resolved =
-          (* We should really error here if resolve_class fails *)
-          Type.resolve_class resolved
+          (* We should really error here if class_data_from_type fails *)
+          Type.class_data_from_type resolved
           >>| List.fold ~f:resolve_in_call ~init:(resolution, errors, Type.Bottom)
           |> Option.value ~default:(resolution, errors, Type.Bottom)
         in
@@ -4103,7 +4105,7 @@ module State (Context : Context) = struct
                 in
                 let find_getattr parent =
                   let attribute =
-                    match Type.resolve_class parent with
+                    match Type.class_data_from_type parent with
                     | Some [{ instantiated; class_name; _ }] ->
                         GlobalResolution.attribute_from_class_name
                           class_name
@@ -4455,7 +4457,7 @@ module State (Context : Context) = struct
                   in
                   let parent_class =
                     match resolved_base with
-                    | `Attribute (_, base_type) -> Type.resolve_class base_type
+                    | `Attribute (_, base_type) -> Type.class_data_from_type base_type
                     | _ -> None
                   in
                   match name, parent_class with

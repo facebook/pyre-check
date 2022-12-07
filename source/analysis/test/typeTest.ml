@@ -6299,12 +6299,12 @@ let test_resolve_getitem_callee _ =
   ()
 
 
-let test_resolve_class _ =
+let test_class_data_from_type _ =
   let assert_resolved_class annotation expected =
     assert_equal
       ~printer:(fun x -> [%sexp_of: Type.class_data list option] x |> Sexp.to_string_hum)
       expected
-      (Type.resolve_class annotation)
+      (Type.class_data_from_type annotation)
   in
   assert_resolved_class Type.Any (Some []);
   assert_resolved_class
@@ -6590,7 +6590,7 @@ let () =
          "subtract_polynomials" >:: test_subtract_polynomials;
          "multiply_polynomial" >:: test_multiply_polynomial;
          "divide_polynomial" >:: test_divide_polynomial;
-         "resolve_class" >:: test_resolve_class;
+         "class_data_from_type" >:: test_class_data_from_type;
          "show" >:: test_show;
          "is_truthy" >:: test_is_truthy;
          "is_falsy" >:: test_is_falsy;

@@ -6585,20 +6585,20 @@ let contains_prohibited_any annotation =
 
 let to_yojson annotation = `String (show annotation)
 
-(* `resolve_class` is used to extract a class name (like "list") from a type (or classes from a
-   union) so that we can get its attributes, global location, etc. It also returns the instantiated
-   type `List[int]` since that is also needed for attribute lookup. *)
-let resolve_class annotation =
-  let rec extract ~meta original_annotation =
-    let annotation =
-      match original_annotation with
+(* Extract a class name (like "list") from a type (or classes from a union) so that we can get its
+   attributes, global location, etc. Also return the instantiated type `List[int]` since that is
+   also needed for attribute lookup. *)
+let class_data_from_type type_ =
+  let rec extract_class_data ~meta original_type =
+    let type_ =
+      match original_type with
       (* Variables return their upper bound because we need to take the least informative type in
          their interval. Otherwise, we might access an attribute that doesn't exist on the actual
          type. *)
       | Variable variable -> Variable.Unary.upper_bound variable
-      | _ -> original_annotation
+      | _ -> original_type
     in
-    match annotation with
+    match type_ with
     | Top
     | Bottom
     | Any ->
@@ -6610,12 +6610,12 @@ let resolve_class annotation =
         Some
           [
             {
-              instantiated = original_annotation;
+              instantiated = original_type;
               accessed_through_class = meta;
               class_name = "typing.Optional";
             };
           ]
-    | Union annotations ->
+    | Union types ->
         (* Unions return the list of member classes because an attribute lookup has to be supported
            by all members of the union. *)
         let flatten_optional sofar optional =
@@ -6623,12 +6623,12 @@ let resolve_class annotation =
           | Some sofar, Some optional -> Some (optional :: sofar)
           | _ -> None
         in
-        List.map ~f:(extract ~meta) annotations
+        List.map ~f:(extract_class_data ~meta) types
         |> List.fold ~init:(Some []) ~f:flatten_optional
         >>| List.concat
         >>| List.rev
     | RecursiveType ({ name; body } as recursive_type) ->
-        extract ~meta body
+        extract_class_data ~meta body
         (* Filter out the recursive type name itself since it's not a valid class name.
 
            Removing the inner occurrences of the recursive type is fine because of induction. If the
@@ -6643,18 +6643,18 @@ let resolve_class annotation =
                       ~recursive_type
                       instantiated;
                 })
-    | ReadOnly annotation -> extract ~meta annotation
-    | annotation when is_meta annotation ->
+    | ReadOnly type_ -> extract_class_data ~meta type_
+    | type_ when is_meta type_ ->
         (* Metaclasses return accessed_through_class=true since they allow looking up only class
            attribute, etc. *)
-        single_parameter annotation |> extract ~meta:true
+        single_parameter type_ |> extract_class_data ~meta:true
     | _ -> (
-        match split annotation |> fst |> primitive_name with
+        match split type_ |> fst |> primitive_name with
         | Some class_name ->
-            Some [{ instantiated = original_annotation; accessed_through_class = meta; class_name }]
+            Some [{ instantiated = original_type; accessed_through_class = meta; class_name }]
         | None -> None)
   in
-  extract ~meta:false annotation
+  extract_class_data ~meta:false type_
 
 
 let callable_name = function
