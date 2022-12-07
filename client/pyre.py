@@ -31,6 +31,7 @@ from . import (
     commands,
     configuration as configuration_module,
     filesystem,
+    find_directories,
     identifiers,
     log,
 )
@@ -1260,6 +1261,14 @@ def servers_stop(context: click.Context) -> int:
     hidden=True,
     help="Use lazy module tracking. This is experimental and cannot power full checks.",
 )
+@click.option(
+    "--flavor",
+    type=click.Choice(identifiers.PyreFlavor.server_flavor_choices()),
+    help=(
+        "Flavor of the pyre server to stop."
+        "This is used to disambiguate paths and log handling."
+    ),
+)
 @click.pass_context
 def start(
     context: click.Context,
@@ -1269,20 +1278,33 @@ def start(
     wait_on_initialization: bool,
     skip_initial_type_check: bool,
     use_lazy_module_tracking: bool,
+    flavor: Optional[str],
 ) -> int:
     """
     Starts a pyre server as a daemon_socket.
     """
-    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
+    flavor_choice = (
+        identifiers.PyreFlavor(flavor) if flavor is not None else CLASSIC_FLAVOR
     )
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    if flavor_choice == identifiers.PyreFlavor.CODE_NAVIGATION:
+        base_directory = Path(".").resolve()
+        configuration = configuration_module.create_overridden_configuration(
+            command_argument,
+            base_directory,
+            find_directories.CODENAV_CONFIGURATION_FILE,
+        )
+    else:
+        configuration = configuration_module.create_configuration(
+            command_argument, Path(".")
+        )
     _check_open_source_version(configuration)
-    start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
+    start_logging_to_directory(configuration.log_directory, flavor_choice)
     return commands.start.run(
         configuration,
         command_arguments.StartArguments.create(
             command_argument=command_argument,
+            flavor=flavor_choice,
             no_watchman=no_watchman,
             store_type_check_resolution=store_type_check_resolution,
             terminal=terminal,
@@ -1400,7 +1422,7 @@ def coverage(
 @pyre.command()
 @click.option(
     "--flavor",
-    type=click.Choice(identifiers.PyreFlavor.stop_choices()),
+    type=click.Choice(identifiers.PyreFlavor.server_flavor_choices()),
     help=(
         "Flavor of the pyre server to stop."
         "This is used to disambiguate paths and log handling."

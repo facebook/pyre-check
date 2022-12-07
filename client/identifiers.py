@@ -62,7 +62,7 @@ class PyreFlavor(enum.Enum):
         ]
 
     @staticmethod
-    def stop_choices() -> List[str]:
+    def server_flavor_choices() -> List[str]:
         return [
             PyreFlavor.CLASSIC.value,
             PyreFlavor.CODE_NAVIGATION.value,

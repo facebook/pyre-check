@@ -515,7 +515,16 @@ def run_start(
     with backend_arguments.temporary_argument_file(
         server_arguments
     ) as argument_file_path:
-        server_command = [str(binary_location), "newserver", str(argument_file_path)]
+        server_subcommand = (
+            "newserver"
+            if start_arguments.flavor != identifiers.PyreFlavor.CODE_NAVIGATION
+            else "code-navigation"
+        )
+        server_command = [
+            str(binary_location),
+            server_subcommand,
+            str(argument_file_path),
+        ]
         server_environment = {
             **os.environ,
             # This is to make sure that backend server shares the socket root
