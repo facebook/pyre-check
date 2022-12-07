@@ -209,7 +209,7 @@ let make_assert_functions context =
         | Some attributes -> Some attributes
         | None -> (
             match Type.class_data_from_type annotation with
-            | Some [{ instantiated; accessed_through_class; class_name }] ->
+            | Some [{ instantiated; accessed_through_class; class_name; _ }] ->
                 GlobalResolution.attributes
                   ~transitive:true
                   ~resolution

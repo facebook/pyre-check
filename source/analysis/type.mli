@@ -383,6 +383,7 @@ end
 type class_data = {
   instantiated: t;
   accessed_through_class: bool;
+  accessed_through_readonly: bool;
   class_name: Primitive.t;
 }
 [@@deriving sexp]

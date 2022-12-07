@@ -1707,6 +1707,7 @@ let _ = show (* shadowed below *)
 type class_data = {
   instantiated: t;
   accessed_through_class: bool;
+  accessed_through_readonly: bool;
   class_name: Primitive.t;
 }
 [@@deriving sexp]
@@ -6612,6 +6613,8 @@ let class_data_from_type type_ =
             {
               instantiated = original_type;
               accessed_through_class = meta;
+              (* TODO(T130377746): Compute actual value. *)
+              accessed_through_readonly = false;
               class_name = "typing.Optional";
             };
           ]
@@ -6651,7 +6654,16 @@ let class_data_from_type type_ =
     | _ -> (
         match split type_ |> fst |> primitive_name with
         | Some class_name ->
-            Some [{ instantiated = original_type; accessed_through_class = meta; class_name }]
+            Some
+              [
+                {
+                  instantiated = original_type;
+                  accessed_through_class = meta;
+                  (* TODO(T130377746): Compute actual value. *)
+                  accessed_through_readonly = false;
+                  class_name;
+                };
+              ]
         | None -> None)
   in
   extract_class_data ~meta:false type_

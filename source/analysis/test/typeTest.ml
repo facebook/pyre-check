@@ -6309,7 +6309,15 @@ let test_class_data_from_type _ =
   assert_resolved_class Type.Any (Some []);
   assert_resolved_class
     (Type.meta Type.integer)
-    (Some [{ instantiated = Type.integer; accessed_through_class = true; class_name = "int" }]);
+    (Some
+       [
+         {
+           instantiated = Type.integer;
+           accessed_through_class = true;
+           class_name = "int";
+           accessed_through_readonly = false;
+         };
+       ]);
   assert_resolved_class
     (Type.optional Type.integer)
     (Some
@@ -6318,14 +6326,25 @@ let test_class_data_from_type _ =
            instantiated = Type.optional Type.integer;
            accessed_through_class = false;
            class_name = "typing.Optional";
+           accessed_through_readonly = false;
          };
        ]);
   assert_resolved_class
     (Type.union [Type.integer; Type.string])
     (Some
        [
-         { instantiated = Type.integer; accessed_through_class = false; class_name = "int" };
-         { instantiated = Type.string; accessed_through_class = false; class_name = "str" };
+         {
+           instantiated = Type.integer;
+           accessed_through_class = false;
+           class_name = "int";
+           accessed_through_readonly = false;
+         };
+         {
+           instantiated = Type.string;
+           accessed_through_class = false;
+           class_name = "str";
+           accessed_through_readonly = false;
+         };
        ]);
   assert_resolved_class
     (Type.union [Type.Primitive "Foo"; Type.list Type.integer])
@@ -6335,8 +6354,14 @@ let test_class_data_from_type _ =
            instantiated = Type.list Type.integer;
            accessed_through_class = false;
            class_name = "list";
+           accessed_through_readonly = false;
          };
-         { instantiated = Type.Primitive "Foo"; accessed_through_class = false; class_name = "Foo" };
+         {
+           instantiated = Type.Primitive "Foo";
+           accessed_through_class = false;
+           class_name = "Foo";
+           accessed_through_readonly = false;
+         };
        ]);
   assert_resolved_class
     (Type.union [Type.Primitive "Foo"; Type.list Type.integer])
@@ -6346,8 +6371,14 @@ let test_class_data_from_type _ =
            instantiated = Type.list Type.integer;
            accessed_through_class = false;
            class_name = "list";
+           accessed_through_readonly = false;
          };
-         { instantiated = Type.Primitive "Foo"; accessed_through_class = false; class_name = "Foo" };
+         {
+           instantiated = Type.Primitive "Foo";
+           accessed_through_class = false;
+           class_name = "Foo";
+           accessed_through_readonly = false;
+         };
        ]);
   let tree_annotation =
     Type.RecursiveType.create
@@ -6359,11 +6390,17 @@ let test_class_data_from_type _ =
     tree_annotation
     (Some
        [
-         { instantiated = Type.integer; accessed_through_class = false; class_name = "int" };
+         {
+           instantiated = Type.integer;
+           accessed_through_class = false;
+           class_name = "int";
+           accessed_through_readonly = false;
+         };
          {
            instantiated = Type.tuple [Type.Primitive "Foo"; tree_annotation];
            accessed_through_class = false;
            class_name = "tuple";
+           accessed_through_readonly = false;
          };
        ]);
   let recursive_list =
@@ -6380,6 +6417,7 @@ let test_class_data_from_type _ =
            instantiated = Type.list (Type.union [Type.integer; recursive_list]);
            accessed_through_class = false;
            class_name = "list";
+           accessed_through_readonly = false;
          };
        ]);
   (* TODO(T44784951): We should forbid defining a directly recursive type like this. This regression
@@ -6389,11 +6427,27 @@ let test_class_data_from_type _ =
   in
   assert_resolved_class
     directly_recursive_type
-    (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
+    (Some
+       [
+         {
+           instantiated = Type.integer;
+           accessed_through_class = false;
+           class_name = "int";
+           accessed_through_readonly = false;
+         };
+       ]);
 
   assert_resolved_class
     (Type.ReadOnly.create Type.integer)
-    (Some [{ instantiated = Type.integer; accessed_through_class = false; class_name = "int" }]);
+    (Some
+       [
+         {
+           instantiated = Type.integer;
+           accessed_through_class = false;
+           class_name = "int";
+           accessed_through_readonly = false;
+         };
+       ]);
   ()
 
 

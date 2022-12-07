@@ -239,7 +239,7 @@ module DefaultBuilder : Builder = struct
         | Type.Union [base; Type.NoneType] -> (
             Type.class_data_from_type base
             |> function
-            | Some [{ instantiated; accessed_through_class; class_name }] -> (
+            | Some [{ instantiated; accessed_through_class; class_name; _ }] -> (
                 let attribute =
                   GlobalResolution.attribute_from_class_name
                     class_name

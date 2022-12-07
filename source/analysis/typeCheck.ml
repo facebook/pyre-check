@@ -1081,7 +1081,8 @@ module State (Context : Context) = struct
       let name = Name.Attribute { base; special; attribute } in
       let reference = name_to_reference name in
       let access_as_attribute () =
-        let find_attribute ({ Type.instantiated; accessed_through_class; class_name } as class_data)
+        let find_attribute
+            ({ Type.instantiated; accessed_through_class; class_name; _ } as class_data)
           =
           let name = attribute in
           match
@@ -2387,7 +2388,7 @@ module State (Context : Context) = struct
         { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn as operator } ->
         let resolve_in_call
             (resolution, errors, joined_annotation)
-            { Type.instantiated; class_name; accessed_through_class }
+            { Type.instantiated; class_name; accessed_through_class; _ }
           =
           let resolve_method
               ?(accessed_through_class = false)
@@ -4530,7 +4531,8 @@ module State (Context : Context) = struct
                       else
                         errors, true
                   | ( Name.Attribute { attribute; _ },
-                      Some ({ Type.instantiated; accessed_through_class; class_name } :: _) ) -> (
+                      Some ({ Type.instantiated; accessed_through_class; class_name; _ } :: _) )
+                    -> (
                       (* Instance *)
                       let reference = Reference.create attribute in
                       let attribute =

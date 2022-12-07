@@ -2405,7 +2405,7 @@ class base class_metadata_environment dependency =
       in
       let attribute class_type ~assumptions ~name =
         resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name } ->
+        >>= fun { instantiated; accessed_through_class; class_name; _ } ->
         self#attribute
           ~assumptions
           ~transitive:true
@@ -2418,7 +2418,7 @@ class base class_metadata_environment dependency =
       in
       let all_attributes class_type ~assumptions =
         resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name } ->
+        >>= fun { instantiated; accessed_through_class; class_name; _ } ->
         self#all_attributes
           ~assumptions
           ~transitive:true
@@ -3464,7 +3464,7 @@ class base class_metadata_environment dependency =
               Type.Callable { callable with implementation; overloads }
           | Parametric { name = "type"; parameters = [Single meta_parameter] }, "__call__", "type"
             when accessed_via_metaclass ->
-              let get_constructor { Type.instantiated; accessed_through_class; class_name } =
+              let get_constructor { Type.instantiated; accessed_through_class; class_name; _ } =
                 if accessed_through_class then (* Type[Type[X]] is invalid *)
                   None
                 else
@@ -3589,7 +3589,7 @@ class base class_metadata_environment dependency =
                 in
 
                 let get_descriptor_method
-                    { Type.instantiated; accessed_through_class; class_name }
+                    { Type.instantiated; accessed_through_class; class_name; _ }
                     ~kind
                   =
                   if accessed_through_class then
@@ -4343,7 +4343,7 @@ class base class_metadata_environment dependency =
                     }
                   in
                   let resolve_attribute_access ?special_method base ~attribute_name =
-                    let access { Type.instantiated; accessed_through_class; class_name } =
+                    let access { Type.instantiated; accessed_through_class; class_name; _ } =
                       self#attribute
                         ~assumptions
                         ~transitive:true
