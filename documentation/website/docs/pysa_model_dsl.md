@@ -381,9 +381,12 @@ ModelQuery(
 
 ### `Decorator` clauses
 
-`Decorator` clauses are used to find callables decorated with decorators that match a pattern. The syntax for using this clause is `Decorator(<name clause>, [<arguments clause>])`.
+`Decorator` clauses are used to find callables decorated with decorators that match a pattern. This clause takes decorator clauses as arguments.
 
-The first argument to `Decorator` should be a name clause, which is used to match the name of a decorator. The supported name clauses are the same as the ones discussed above for model query constraints, i.e. `name.matches("pattern")`, which will match when the decorator matches the regex pattern specified as a string, and `name.equals("foo.bar.d1")` which will match when the fully-qualified name of the decorator equals the specified string exactly.
+#### Decorator `name` clauses
+
+The `name` decorator clause is used to match name fully qualified name of a decorator.
+The supported name clauses are the same as the ones discussed above for model query constraints, i.e. `name.matches("pattern")`, which will match when the decorator matches the regex pattern specified as a string, and `name.equals("foo.bar.d1")` which will match when the fully-qualified name of the decorator equals the specified string exactly.
 
 For example, if you wanted to find all functions which are decorated by `@app.route()`, a decorator imported from `my_module`, you can write:
 
@@ -405,8 +408,9 @@ ModelQuery(
 )
 ```
 
+#### Decorator `arguments` clauses
 
-The second argument to `Decorator` is an optional arguments clause, which is used to match on the arguments provided to the decorator. The supported arguments clauses are `arguments.contains(...)`, which will match when the arguments specified are a subset of the decorator's arguments, and `arguments.equals(...)`, which will match when the decorator has the specified arguments exactly.
+The `arguments` clauses is used to match on the arguments provided to the decorator. The supported arguments clauses are `arguments.contains(...)`, which will match when the arguments specified are a subset of the decorator's arguments, and `arguments.equals(...)`, which will match when the decorator has the specified arguments exactly.
 
 `arguments.contains()` supports both positional and keyword arguments. For positional arguments, the list of positonal arguments supplied to the `arguments.contains()` clause must be a prefix of the list of positional arguments on the actual decorator, i.e. the value of the argument at each position should be the same. For example, with the following Python code:
 ```python
@@ -491,6 +495,11 @@ ModelQuery(
   ...
 )
 ```
+
+#### Decorator `Not`, `AllOf` and `AnyOf` clauses
+
+The `Not`, `AllOf` and `AnyOf` clauses can be used in decorators clauses in the same way as they are in the main `where` clause of the model query.
+
 
 ### `cls.fully_qualified_name.equals` clause
 
