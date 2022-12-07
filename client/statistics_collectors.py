@@ -50,24 +50,6 @@ class ModuleAnnotationData:
     annotated_attributes: List[CodeRange]
 
 
-@dataclasses.dataclass(frozen=True)
-class ModuleSuppressionData:
-    code: Dict[ErrorCode, List[LineNumber]]
-    no_code: List[LineNumber]
-
-
-class ModuleMode(str, Enum):
-    UNSAFE = "UNSAFE"
-    STRICT = "STRICT"
-    IGNORE_ALL = "IGNORE_ALL"
-
-
-@dataclasses.dataclass(frozen=True)
-class ModuleStrictData:
-    mode: ModuleMode
-    explicit_comment_line: Optional[LineNumber]
-
-
 class FunctionAnnotationKind(Enum):
     NOT_ANNOTATED = 0
     PARTIALLY_ANNOTATED = 1
@@ -340,6 +322,12 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
         }
 
 
+@dataclasses.dataclass(frozen=True)
+class ModuleSuppressionData:
+    code: Dict[ErrorCode, List[LineNumber]]
+    no_code: List[LineNumber]
+
+
 class SuppressionCountCollector(StatisticsCollector):
     METADATA_DEPENDENCIES = (PositionProvider,)
 
@@ -396,6 +384,18 @@ class IgnoreCountCollector(SuppressionCountCollector):
 class TypeIgnoreCountCollector(SuppressionCountCollector):
     def __init__(self) -> None:
         super().__init__(r".*# *type: ignore")
+
+
+class ModuleMode(str, Enum):
+    UNSAFE = "UNSAFE"
+    STRICT = "STRICT"
+    IGNORE_ALL = "IGNORE_ALL"
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleStrictData:
+    mode: ModuleMode
+    explicit_comment_line: Optional[LineNumber]
 
 
 class StrictCountCollector(StatisticsCollector):
