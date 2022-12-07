@@ -660,13 +660,13 @@ let test_attribute_from_class_name context =
           pass
       |}
   in
-  let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
-    let instantiated, accessed_through_class =
-      if Type.is_meta parent_instantiated_type then
-        Type.single_parameter parent_instantiated_type, true
-      else
-        parent_instantiated_type, false
-    in
+  let assert_attribute
+      ?(accessed_through_class = false)
+      ~parent
+      ~instantiated
+      ~attribute_name
+      expected_attribute
+    =
     let actual_attribute =
       GlobalResolution.attribute_from_class_name
         parent
@@ -723,131 +723,123 @@ let test_attribute_from_class_name context =
   in
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.Primitive "test.Attributes")
+    ~instantiated:(Type.Primitive "test.Attributes")
     ~attribute_name:"bar"
-    ~expected_attribute:
-      (create_expected_attribute
-         "bar"
-         ~uninstantiated_annotation:
-           "typing.Callable('test.Attributes.bar')[[Named(self, test.Attributes)], int]"
-         "BoundMethod[typing.Callable('test.Attributes.bar')[[Named(self, test.Attributes)], int], \
-          test.Attributes]");
+    (create_expected_attribute
+       "bar"
+       ~uninstantiated_annotation:
+         "typing.Callable('test.Attributes.bar')[[Named(self, test.Attributes)], int]"
+       "BoundMethod[typing.Callable('test.Attributes.bar')[[Named(self, test.Attributes)], int], \
+        test.Attributes]");
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.Primitive "test.Attributes")
+    ~instantiated:(Type.Primitive "test.Attributes")
     ~attribute_name:"baz"
-    ~expected_attribute:
-      (create_expected_attribute
-         "baz"
-         ~uninstantiated_annotation:
-           "typing.Callable('test.Attributes.baz')[[Named(self, test.Attributes), Named(x, int)], \
-            int]"
-         "BoundMethod[typing.Callable('test.Attributes.baz')[[Named(self, test.Attributes), \
-          Named(x, int)], int], test.Attributes]");
+    (create_expected_attribute
+       "baz"
+       ~uninstantiated_annotation:
+         "typing.Callable('test.Attributes.baz')[[Named(self, test.Attributes), Named(x, int)], \
+          int]"
+       "BoundMethod[typing.Callable('test.Attributes.baz')[[Named(self, test.Attributes), Named(x, \
+        int)], int], test.Attributes]");
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.meta (Type.Primitive "test.Attributes"))
+    ~instantiated:(Type.Primitive "test.Attributes")
     ~attribute_name:"implicit"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~parent:"test.Metaclass"
-         ~uninstantiated_annotation:
-           "typing.Callable('test.Metaclass.implicit')[[Named(cls, test.Metaclass)], int]"
-         "implicit"
-         "BoundMethod[typing.Callable('test.Metaclass.implicit')[[Named(cls, test.Metaclass)], \
-          int], typing.Type[test.Attributes]]");
+    ~accessed_through_class:true
+    (create_expected_attribute
+       ~parent:"test.Metaclass"
+       ~uninstantiated_annotation:
+         "typing.Callable('test.Metaclass.implicit')[[Named(cls, test.Metaclass)], int]"
+       "implicit"
+       "BoundMethod[typing.Callable('test.Metaclass.implicit')[[Named(cls, test.Metaclass)], int], \
+        typing.Type[test.Attributes]]");
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.meta (Type.Primitive "test.Attributes"))
+    ~instantiated:(Type.Primitive "test.Attributes")
     ~attribute_name:"property"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~initialized:OnlyOnInstance
-         ~property:true
-         ~visibility:(ReadOnly Unrefinable)
-         "property"
-         "str");
+    ~accessed_through_class:true
+    (create_expected_attribute
+       ~initialized:OnlyOnInstance
+       ~property:true
+       ~visibility:(ReadOnly Unrefinable)
+       "property"
+       "str");
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.Primitive "Nonsense")
+    ~instantiated:(Type.Primitive "Nonsense")
     ~attribute_name:"property"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~property:true
-         ~initialized:OnlyOnInstance
-         ~visibility:(ReadOnly Unrefinable)
-         "property"
-         "str");
+    (create_expected_attribute
+       ~property:true
+       ~initialized:OnlyOnInstance
+       ~visibility:(ReadOnly Unrefinable)
+       "property"
+       "str");
   assert_attribute
     ~parent:"test.DC"
-    ~parent_instantiated_type:(Type.Primitive "test.DC")
+    ~instantiated:(Type.Primitive "test.DC")
     ~attribute_name:"x"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~parent:"test.DC"
-         ~visibility:ReadWrite
-         ~initialized:OnlyOnInstance
-         ~uninstantiated_annotation:"int"
-         "x"
-         "int");
+    (create_expected_attribute
+       ~parent:"test.DC"
+       ~visibility:ReadWrite
+       ~initialized:OnlyOnInstance
+       ~uninstantiated_annotation:"int"
+       "x"
+       "int");
   assert_attribute
     ~parent:"test.DC"
-    ~parent_instantiated_type:(Type.Primitive "test.DC")
+    ~instantiated:(Type.Primitive "test.DC")
     ~attribute_name:"inherited"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~parent:"test.Parent"
-         ~visibility:ReadWrite
-         ~initialized:OnlyOnInstance
-         ~uninstantiated_annotation:"int"
-         "inherited"
-         "int");
+    (create_expected_attribute
+       ~parent:"test.Parent"
+       ~visibility:ReadWrite
+       ~initialized:OnlyOnInstance
+       ~uninstantiated_annotation:"int"
+       "inherited"
+       "int");
   assert_attribute
     ~parent:"test.NT"
-    ~parent_instantiated_type:(Type.Primitive "test.NT")
+    ~instantiated:(Type.Primitive "test.NT")
     ~attribute_name:"x"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~parent:"test.NT"
-         ~visibility:(ReadOnly (Refinable { overridable = false }))
-         ~initialized:OnlyOnInstance
-         ~uninstantiated_annotation:"int"
-         "x"
-         "int");
+    (create_expected_attribute
+       ~parent:"test.NT"
+       ~visibility:(ReadOnly (Refinable { overridable = false }))
+       ~initialized:OnlyOnInstance
+       ~uninstantiated_annotation:"int"
+       "x"
+       "int");
   assert_attribute
     ~parent:"test.Prot"
-    ~parent_instantiated_type:(Type.Primitive "test.Prot")
+    ~instantiated:(Type.Primitive "test.Prot")
     ~attribute_name:"method"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~parent:"test.Prot"
-         ~visibility:ReadWrite
-         ~uninstantiated_annotation:
-           "typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], str]"
-         "method"
-         "BoundMethod[typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], \
-          str], test.Prot]");
+    (create_expected_attribute
+       ~parent:"test.Prot"
+       ~visibility:ReadWrite
+       ~uninstantiated_annotation:
+         "typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], str]"
+       "method"
+       "BoundMethod[typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], \
+        str], test.Prot]");
   (* This is still not great, since the signature of ExplicitProtChild.method is probably actually
      [[ExplicitProtChild, int], str] not [[Prot, int], str] as this would suggest, but until
      typeshed is fixed to explicitly re-list all of the methods inherited from protocol parents *)
   assert_attribute
     ~parent:"test.Prot"
-    ~parent_instantiated_type:(Type.Primitive "test.ExplicitProtChild")
+    ~instantiated:(Type.Primitive "test.ExplicitProtChild")
     ~attribute_name:"method"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~parent:"test.Prot"
-         ~visibility:ReadWrite
-         ~callable_name:(Reference.create "test.Prot.method")
-         "method"
-         ~uninstantiated_annotation:
-           "typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], str]"
-         "BoundMethod[typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], \
-          str], test.ExplicitProtChild]");
+    (create_expected_attribute
+       ~parent:"test.Prot"
+       ~visibility:ReadWrite
+       ~callable_name:(Reference.create "test.Prot.method")
+       "method"
+       ~uninstantiated_annotation:
+         "typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], str]"
+       "BoundMethod[typing.Callable(test.Prot.method)[[Named(self, test.Prot), Named(x, int)], \
+        str], test.ExplicitProtChild]");
   let tself = Type.variable "TSelf" in
   assert_attribute
     ~parent:"BoundMethod"
-    ~parent_instantiated_type:
+    ~instantiated:
       (Type.parametric
          "BoundMethod"
          [
@@ -865,25 +857,23 @@ let test_attribute_from_class_name context =
            Single Type.integer;
          ])
     ~attribute_name:"__call__"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~parent:"typing.Callable"
-         ~visibility:ReadWrite
-         ~initialized:OnClass
-         ~uninstantiated_annotation:"object"
-         "__call__"
-         "typing.Callable[[Named(x, str)], int]");
+    (create_expected_attribute
+       ~parent:"typing.Callable"
+       ~visibility:ReadWrite
+       ~initialized:OnClass
+       ~uninstantiated_annotation:"object"
+       "__call__"
+       "typing.Callable[[Named(x, str)], int]");
   assert_attribute
     ~parent:"test.ChildOfPlaceholderStub"
-    ~parent_instantiated_type:(Type.Primitive "test.ChildOfPlaceholderStub")
+    ~instantiated:(Type.Primitive "test.ChildOfPlaceholderStub")
     ~attribute_name:"__getattr__"
-    ~expected_attribute:
-      (create_expected_attribute
-         ~parent:"test.ChildOfPlaceholderStub"
-         ~visibility:ReadWrite
-         ~uninstantiated_annotation:"typing.Callable[..., typing.Any]"
-         "__getattr__"
-         "BoundMethod[typing.Callable[..., typing.Any], test.ChildOfPlaceholderStub]");
+    (create_expected_attribute
+       ~parent:"test.ChildOfPlaceholderStub"
+       ~visibility:ReadWrite
+       ~uninstantiated_annotation:"typing.Callable[..., typing.Any]"
+       "__getattr__"
+       "BoundMethod[typing.Callable[..., typing.Any], test.ChildOfPlaceholderStub]");
   ()
 
 
