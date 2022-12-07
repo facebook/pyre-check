@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module defines a suite of libcst visitors that discover annotation
+information and typing-related comments in code, and can thereby produce
+various code statistics (counts of annotations, annotated functions, fixmes,
+etc).
 """
 
 
