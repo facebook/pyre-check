@@ -932,6 +932,14 @@ let test_attribute_from_annotation context =
         tuple[Variable[_T_co](covariant)]), Named(a, typing.List[Variable[_T_co](covariant)])], \
         typing.Tuple[Variable[_T_co](covariant), ...]], typing.Tuple[Variable[_T_co](covariant), \
         ...]]");
+  assert_attribute
+    ~source:{|
+      class Foo:
+        x: str
+    |}
+    ~parent:"pyre_extensions.ReadOnly[test.Foo]"
+    ~name:"x"
+    (Some "pyre_extensions.ReadOnly[str]");
   ()
 
 

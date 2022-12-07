@@ -300,12 +300,13 @@ let attribute_from_annotation ?special_method resolution ~parent:annotation ~nam
   match Type.class_data_from_type annotation with
   | None -> None
   | Some [] -> None
-  | Some [{ instantiated; accessed_through_class; class_name; _ }] ->
+  | Some [{ instantiated; accessed_through_class; class_name; accessed_through_readonly }] ->
       attribute_from_class_name
         ~resolution
         ~transitive:true
         ~instantiated
         ~accessed_through_class
+        ~accessed_through_readonly
         ~name
         ?special_method
         class_name
