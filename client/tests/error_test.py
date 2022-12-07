@@ -8,13 +8,10 @@
 import unittest
 from pathlib import Path
 from typing import Any, Dict
-from unittest.mock import patch
 
-from .. import __name__ as client
 from ..error import (
     Error,
     ErrorParsingFailure,
-    LegacyError,
     ModelVerificationError,
     TaintConfigurationError,
 )
@@ -115,40 +112,6 @@ class ErrorTest(unittest.TestCase):
                 description="Some description",
                 concise_description="Some concise description",
             ),
-        )
-
-    def test_repr(self) -> None:
-        error = LegacyError.create(self.fake_error)
-
-        with patch("{}.terminal.is_capable".format(client), return_value=True):
-            self.assertEqual(
-                repr(error),
-                "\x1b[31mc.py\x1b[0m:\x1b[33m4\x1b[0m:\x1b[33m11\x1b[0m Fake error",
-            )
-
-        with patch("{}.terminal.is_capable".format(client), return_value=False):
-            self.assertEqual(repr(error), "c.py:4:11 Fake error")
-
-    def test_key_with_color(self) -> None:
-        error = LegacyError.create(self.fake_error)
-
-        self.assertEqual(
-            error._key_with_color(),
-            "\x1b[31mc.py\x1b[0m:\x1b[33m4\x1b[0m:\x1b[33m11\x1b[0m",
-        )
-
-    def test_long_description(self) -> None:
-        error = LegacyError.create(self.fake_error)
-        self.assertEqual(error.error.long_description, "")
-
-        error_with_long_description = self.fake_error
-        error_with_long_description[
-            "long_description"
-        ] = "Fake error.\nAnd this is why this is an error."
-        error = LegacyError.create(error_with_long_description)
-        self.assertEqual(
-            error.error.long_description,
-            "Fake error.\nAnd this is why this is an error.",
         )
 
     def test_taint_configuration_error_parsing(self) -> None:

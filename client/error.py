@@ -15,14 +15,12 @@ import dataclasses
 import json
 import logging
 import os
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 import click
 
-from . import command_arguments, log, terminal
-from .log import Color, Format
+from . import command_arguments, log
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -140,93 +138,6 @@ class Error:
             "helpUri": "https://www.pyre-check.org",
             "help": {"text": self.name},
         }
-
-
-class LegacyError:
-    error: Error
-    ignore_error: bool = False
-
-    def __init__(
-        self,
-        error: Error,
-        ignore_error: bool,
-    ) -> None:
-        self.error = error
-        self.ignore_error = ignore_error
-
-    @staticmethod
-    def create(
-        error: Dict[str, Any],
-        ignore_error: bool = False,
-    ) -> "LegacyError":
-        return LegacyError(
-            error=Error.from_json(error),
-            ignore_error=ignore_error or error.get("ignore_error", False),
-        )
-
-    def with_path(self, path: str) -> "LegacyError":
-        return LegacyError(
-            error=dataclasses.replace(self.error, path=path),
-            ignore_error=self.ignore_error,
-        )
-
-    def __repr__(self) -> str:
-        if terminal.is_capable(file=sys.stdout):
-            key = self._key_with_color()
-        else:
-            key = self.__key()
-        return key + " " + self.error.description
-
-    def __key(self) -> str:
-        return f"{self.error.path}:{self.error.line}:{self.error.column}"
-
-    def _key_with_color(self) -> str:
-        return (
-            Color.RED
-            + str(self.error.path)
-            + Format.CLEAR
-            + ":"
-            + Color.YELLOW
-            + str(self.error.line)
-            + Format.CLEAR
-            + ":"
-            + Color.YELLOW
-            + str(self.error.column)
-            + Format.CLEAR
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, LegacyError):
-            return False
-        return self.__key() == other.__key()
-
-    def __lt__(self, other: object) -> bool:
-        if not isinstance(other, LegacyError):
-            return False
-        return self.__key() < other.__key()
-
-    def __hash__(self) -> int:
-        return hash(self.__key())
-
-    def is_ignored(self) -> bool:
-        return self.ignore_error
-
-    def to_json(self) -> Dict[str, Any]:
-        error_mapping = self.error.to_json()
-        error_mapping["ignore_error"] = self.ignore_error
-        return error_mapping
-
-    def to_text(self) -> str:
-        path = click.style(str(self.error.path), fg="red")
-        line = click.style(str(self.error.line), fg="yellow")
-        column = click.style(str(self.error.column), fg="yellow")
-        return f"{path}:{line}:{column} {self.error.description}"
-
-    def to_sarif(self) -> Dict[str, Any]:
-        return self.error.to_sarif()
-
-    def get_sarif_rule(self) -> Dict[str, Any]:
-        return self.error.get_sarif_rule()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -402,7 +313,6 @@ class ModelVerificationError:
 def errors_to_sarif(
     errors: Union[
         Sequence[Error],
-        Sequence[LegacyError],
         Sequence[TaintConfigurationError],
         Sequence[ModelVerificationError],
     ]
@@ -432,7 +342,6 @@ def errors_to_sarif(
 def print_errors(
     errors: Union[
         Sequence[Error],
-        Sequence[LegacyError],
         Sequence[TaintConfigurationError],
         Sequence[ModelVerificationError],
     ],
