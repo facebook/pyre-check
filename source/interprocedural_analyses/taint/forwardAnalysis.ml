@@ -2042,106 +2042,95 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~init:ForwardState.Tree.empty
         ~f:add_matching_source_kind
     in
-    match nested_expressions with
-    | [] -> value_taint, state
-    | _ ->
-        let analyze_stringify_callee
-            (taint_to_join, state_to_join)
-            ~call_target
-            ~call_location
-            ~base
-            ~base_taint
-            ~base_state
-          =
-          let callees = CallGraph.CallCallees.create ~call_targets:[call_target] () in
-          let callee =
-            let callee_from_method_name method_name =
-              {
-                Node.value =
-                  Expression.Name
-                    (Name.Attribute { base; attribute = method_name; special = false });
-                location = call_location;
-              }
-            in
-            match call_target.target with
-            | Interprocedural.Target.Method { method_name; _ } ->
-                callee_from_method_name method_name
-            | Override { method_name; _ } -> callee_from_method_name method_name
-            | Function { name; _ } ->
-                { Node.value = Name (Name.Identifier name); location = call_location }
-            | Object _ -> failwith "callees should be either methods or functions"
-          in
-          let new_taint, new_state =
-            apply_callees_with_arguments_taint
-              ~resolution
-              ~is_result_used:true
-              ~call_location
-              ~arguments:[]
-              ~self_taint:(Some base_taint)
-              ~callee_taint:None
-              ~arguments_taint:[]
-              ~state:base_state
-              ~callee
-              callees
-          in
-          ForwardState.Tree.join taint_to_join new_taint, join state_to_join new_state
+    let analyze_stringify_callee
+        (taint_to_join, state_to_join)
+        ~call_target
+        ~call_location
+        ~base
+        ~base_taint
+        ~base_state
+      =
+      let callees = CallGraph.CallCallees.create ~call_targets:[call_target] () in
+      let callee =
+        let callee_from_method_name method_name =
+          {
+            Node.value =
+              Expression.Name (Name.Attribute { base; attribute = method_name; special = false });
+            location = call_location;
+          }
         in
-        let analyze_nested_expression
-            (taint, state)
-            ({ Node.location = expression_location; _ } as expression)
-          =
-          let base_taint, base_state =
-            analyze_expression ~resolution ~state ~is_result_used:true ~expression
-            |>> ForwardState.Tree.transform
-                  Features.TitoPositionSet.Element
-                  Add
-                  ~f:expression_location
-            |>> ForwardState.Tree.add_local_breadcrumb (Features.tito ())
-          in
-          match get_format_string_callees ~location:expression_location with
-          | Some { CallGraph.FormatStringCallees.call_targets } ->
-              List.fold
-                call_targets
-                ~init:(taint, { taint = ForwardState.empty })
-                ~f:(fun (taint_to_join, state_to_join) call_target ->
-                  analyze_stringify_callee
-                    (taint_to_join, state_to_join)
-                    ~call_target
-                    ~call_location:expression_location
-                    ~base:expression
-                    ~base_taint
-                    ~base_state)
-          | None -> ForwardState.Tree.join taint base_taint, base_state
-        in
-        let taint, state =
+        match call_target.target with
+        | Interprocedural.Target.Method { method_name; _ } -> callee_from_method_name method_name
+        | Override { method_name; _ } -> callee_from_method_name method_name
+        | Function { name; _ } ->
+            { Node.value = Name (Name.Identifier name); location = call_location }
+        | Object _ -> failwith "callees should be either methods or functions"
+      in
+      let new_taint, new_state =
+        apply_callees_with_arguments_taint
+          ~resolution
+          ~is_result_used:true
+          ~call_location
+          ~arguments:[]
+          ~self_taint:(Some base_taint)
+          ~callee_taint:None
+          ~arguments_taint:[]
+          ~state:base_state
+          ~callee
+          callees
+      in
+      ForwardState.Tree.join taint_to_join new_taint, join state_to_join new_state
+    in
+    let analyze_nested_expression
+        (taint, state)
+        ({ Node.location = expression_location; _ } as expression)
+      =
+      let base_taint, base_state =
+        analyze_expression ~resolution ~state ~is_result_used:true ~expression
+        |>> ForwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:expression_location
+        |>> ForwardState.Tree.add_local_breadcrumb (Features.tito ())
+      in
+      match get_format_string_callees ~location:expression_location with
+      | Some { CallGraph.FormatStringCallees.call_targets } ->
           List.fold
-            nested_expressions
-            ~f:analyze_nested_expression
-            ~init:(ForwardState.Tree.empty, state)
-          |>> ForwardState.Tree.add_local_breadcrumbs breadcrumbs
-          |>> ForwardState.Tree.join value_taint
-        in
-        (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
-        let () =
-          let literal_string_sinks =
-            FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks
-          in
-          (* We try to be a bit clever about bailing out early and not computing the matches. *)
-          if (not (List.is_empty literal_string_sinks)) && not (ForwardState.Tree.is_bottom taint)
-          then
-            List.iter literal_string_sinks ~f:(fun { TaintConfiguration.sink_kind; pattern } ->
-                if Re2.matches pattern value then
-                  let sink_tree =
-                    BackwardTaint.singleton (CallInfo.Origin location) sink_kind Frame.initial
-                    |> BackwardState.Tree.create_leaf
-                  in
-                  check_flow
-                    ~location
-                    ~sink_handle:(Issue.SinkHandle.LiteralStringSink sink_kind)
-                    ~source_tree:taint
-                    ~sink_tree)
-        in
-        taint, state
+            call_targets
+            ~init:(taint, { taint = ForwardState.empty })
+            ~f:(fun (taint_to_join, state_to_join) call_target ->
+              analyze_stringify_callee
+                (taint_to_join, state_to_join)
+                ~call_target
+                ~call_location:expression_location
+                ~base:expression
+                ~base_taint
+                ~base_state)
+      | None -> ForwardState.Tree.join taint base_taint, base_state
+    in
+    let taint, state =
+      List.fold
+        nested_expressions
+        ~f:analyze_nested_expression
+        ~init:(ForwardState.Tree.empty, state)
+      |>> ForwardState.Tree.add_local_breadcrumbs breadcrumbs
+      |>> ForwardState.Tree.join value_taint
+    in
+    (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
+    let literal_string_sinks =
+      FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks
+    in
+    (* We try to be a bit clever about bailing out early and not computing the matches. *)
+    if (not (List.is_empty literal_string_sinks)) && not (ForwardState.Tree.is_bottom taint) then
+      List.iter literal_string_sinks ~f:(fun { TaintConfiguration.sink_kind; pattern } ->
+          if Re2.matches pattern value then
+            let sink_tree =
+              BackwardTaint.singleton (CallInfo.Origin location) sink_kind Frame.initial
+              |> BackwardState.Tree.create_leaf
+            in
+            check_flow
+              ~location
+              ~sink_handle:(Issue.SinkHandle.LiteralStringSink sink_kind)
+              ~source_tree:taint
+              ~sink_tree);
+    taint, state
 
 
   and analyze_expression
