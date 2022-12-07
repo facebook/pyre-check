@@ -3704,43 +3704,7 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:"`foo` is not a valid name clause."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
-      ModelQuery(
-        name = "invalid_model",
-        find = "functions",
-        where = Decorator(name.matches("a"), name.matches("b")),
-        model = Returns(TaintSource[Test])
-      )
-    |}
-    ~expect:"`name.matches(\"a\")` is not a valid arguments clause."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
-      ModelQuery(
-        name = "invalid_model",
-        find = "functions",
-        where = Decorator(arguments.contains("a")),
-        model = Returns(TaintSource[Test])
-      )
-    |}
-    ~expect:"`arguments.contains(\"a\")` is not a valid name clause."
-    ();
-  assert_invalid_model
-    ~model_source:
-      {|
-      ModelQuery(
-        name = "invalid_model",
-        find = "functions",
-        where = Decorator(arguments.contains("a"), arguments.contains("b")),
-        model = Returns(TaintSource[Test])
-      )
-    |}
-    ~expect:"`arguments.contains(\"b\")` is not a valid name clause."
+    ~expect:"Unsupported decorator constraint expression: `foo`"
     ();
   assert_invalid_model
     ~model_source:
@@ -3764,7 +3728,7 @@ Unexpected statement: `food(y)`
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:{|`arguments.equals(1, 2)` is not a valid name clause.|}
+    ~expect:{|`name.equals(a, b)` is not a valid name clause.|}
     ();
 
   (* We error starting on the first decorator. *)
@@ -5429,11 +5393,7 @@ let test_query_parsing context =
           where =
             [
               ClassConstraint
-                (DecoratorConstraint
-                   {
-                     name_constraint = Matches (Re2.create_exn "foo.*");
-                     arguments_constraint = None;
-                   });
+                (DecoratorConstraint (NameConstraint (Matches (Re2.create_exn "foo.*"))));
             ];
           find = Method;
           models =
@@ -5468,10 +5428,139 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "foo")))];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
+     where = Decorator(name.matches("foo"), name.matches("bar")),
+     model = [Returns([TaintSource[Test]])],
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
           where =
             [
               AnyDecoratorConstraint
-                { name_constraint = Matches (Re2.create_exn "foo"); arguments_constraint = None };
+                (AllOf
+                   [
+                     NameConstraint (Matches (Re2.create_exn "foo"));
+                     NameConstraint (Matches (Re2.create_exn "bar"));
+                   ]);
+            ];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
+     where = Decorator(arguments.contains(1)),
+     model = [Returns([TaintSource[Test]])],
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where =
+            [
+              AnyDecoratorConstraint
+                (ArgumentsConstraint
+                   (Contains
+                      [
+                        {
+                          Ast.Expression.Call.Argument.name = None;
+                          value =
+                            Ast.Node.create_with_default_location
+                              (Ast.Expression.Expression.Constant
+                                 (Ast.Expression.Constant.Integer 1));
+                        };
+                      ]));
+            ];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
+     where = Decorator(arguments.contains(1), name.equals("foo")),
+     model = [Returns([TaintSource[Test]])],
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where =
+            [
+              AnyDecoratorConstraint
+                (AllOf
+                   [
+                     ArgumentsConstraint
+                       (Contains
+                          [
+                            {
+                              Ast.Expression.Call.Argument.name = None;
+                              value =
+                                Ast.Node.create_with_default_location
+                                  (Ast.Expression.Expression.Constant
+                                     (Ast.Expression.Constant.Integer 1));
+                            };
+                          ]);
+                     NameConstraint (Equals "foo");
+                   ]);
             ];
           find = Method;
           models =
@@ -5517,14 +5606,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 19; column = 1 } };
           name = "get_POST_annotated_sources";
-          where =
-            [
-              AnyDecoratorConstraint
-                {
-                  name_constraint = Matches (Re2.create_exn "api_view");
-                  arguments_constraint = None;
-                };
-            ];
+          where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "api_view")))];
           find = Function;
           models =
             [
@@ -5766,10 +5848,7 @@ let test_query_parsing context =
                        ClassConstraint.AllOf
                          [
                            ClassConstraint.DecoratorConstraint
-                             {
-                               name_constraint = Matches (Re2.create_exn "d1");
-                               arguments_constraint = None;
-                             };
+                             (NameConstraint (Matches (Re2.create_exn "d1")));
                            ClassConstraint.AnyOf
                              [
                                ClassConstraint.Not
@@ -5862,10 +5941,7 @@ let test_query_parsing context =
                        ClassConstraint.AllOf
                          [
                            ClassConstraint.DecoratorConstraint
-                             {
-                               name_constraint = Matches (Re2.create_exn "d1");
-                               arguments_constraint = None;
-                             };
+                             (NameConstraint (Matches (Re2.create_exn "d1")));
                            ClassConstraint.AnyOf
                              [
                                ClassConstraint.Not

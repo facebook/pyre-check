@@ -335,7 +335,21 @@ module ModelQuery = struct
     type t =
       | Equals of Ast.Expression.Call.Argument.t list
       | Contains of Ast.Expression.Call.Argument.t list
-    [@@deriving equal, show]
+    [@@deriving show]
+
+    let argument_list_equal left right =
+      List.equal
+        (fun left right ->
+          Int.equal 0 (Ast.Expression.Call.Argument.location_insensitive_compare left right))
+        left
+        right
+
+
+    let equal left right =
+      match left, right with
+      | Equals left, Equals right -> argument_list_equal left right
+      | Contains left, Contains right -> argument_list_equal left right
+      | _ -> false
   end
 
   module ParameterConstraint = struct
@@ -350,11 +364,17 @@ module ModelQuery = struct
   end
 
   module DecoratorConstraint = struct
-    type t = {
-      name_constraint: NameConstraint.t;
-      arguments_constraint: ArgumentsConstraint.t option;
-    }
+    type t =
+      | NameConstraint of NameConstraint.t
+      | ArgumentsConstraint of ArgumentsConstraint.t
+      | AnyOf of t list
+      | AllOf of t list
+      | Not of t
     [@@deriving equal, show]
+
+    let all_of = function
+      | [decorator_constraint] -> decorator_constraint
+      | decorator_constraints -> AllOf decorator_constraints
   end
 
   module ClassConstraint = struct

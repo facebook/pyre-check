@@ -257,61 +257,65 @@ let matches_name_constraint ~name_constraint =
   | ModelQuery.NameConstraint.Matches pattern -> Re2.matches pattern
 
 
-let matches_decorator_constraint ~name_constraint ~arguments_constraint decorator =
-  let decorator_name_matches { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } =
-    matches_name_constraint ~name_constraint (Reference.show decorator_name)
-  in
-  let decorator_arguments_matches { Statement.Decorator.arguments = decorator_arguments; _ } =
-    let split_arguments =
-      List.partition_tf ~f:(fun { Expression.Call.Argument.name; _ } ->
-          match name with
-          | None -> true
-          | _ -> false)
-    in
-    let positional_arguments_equal left right =
-      List.equal (fun l r -> Int.equal (sanitized_location_insensitive_compare l r) 0) left right
-    in
-    match arguments_constraint, decorator_arguments with
-    | None, _ -> true
-    | Some (ModelQuery.ArgumentsConstraint.Contains constraint_arguments), None ->
-        List.is_empty constraint_arguments
-    | Some (ModelQuery.ArgumentsConstraint.Contains constraint_arguments), Some arguments ->
-        let constraint_positional_arguments, constraint_keyword_arguments =
-          split_arguments constraint_arguments
-        in
-        let decorator_positional_arguments, decorator_keyword_arguments =
-          split_arguments arguments
-        in
-        List.length constraint_positional_arguments <= List.length decorator_positional_arguments
-        && positional_arguments_equal
-             constraint_positional_arguments
-             (List.take
-                decorator_positional_arguments
-                (List.length constraint_positional_arguments))
-        && SanitizedCallArgumentSet.is_subset
-             (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
-             ~of_:(SanitizedCallArgumentSet.of_list decorator_keyword_arguments)
-    | Some (ModelQuery.ArgumentsConstraint.Equals constraint_arguments), None ->
-        List.is_empty constraint_arguments
-    | Some (ModelQuery.ArgumentsConstraint.Equals constraint_arguments), Some arguments ->
-        let constraint_positional_arguments, constraint_keyword_arguments =
-          split_arguments constraint_arguments
-        in
-        let decorator_positional_arguments, decorator_keyword_arguments =
-          split_arguments arguments
-        in
-        (* Since equality comparison is more costly, check the lists are the same lengths first. *)
-        Int.equal
-          (List.length constraint_positional_arguments)
-          (List.length decorator_positional_arguments)
-        && positional_arguments_equal constraint_positional_arguments decorator_positional_arguments
-        && SanitizedCallArgumentSet.equal
-             (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
-             (SanitizedCallArgumentSet.of_list decorator_keyword_arguments)
-  in
-  match Statement.Decorator.from_expression decorator with
-  | None -> false
-  | Some decorator -> decorator_name_matches decorator && decorator_arguments_matches decorator
+let rec matches_decorator_constraint ~decorator = function
+  | ModelQuery.DecoratorConstraint.AnyOf constraints ->
+      List.exists constraints ~f:(matches_decorator_constraint ~decorator)
+  | ModelQuery.DecoratorConstraint.AllOf constraints ->
+      List.for_all constraints ~f:(matches_decorator_constraint ~decorator)
+  | ModelQuery.DecoratorConstraint.Not decorator_constraint ->
+      not (matches_decorator_constraint ~decorator decorator_constraint)
+  | ModelQuery.DecoratorConstraint.NameConstraint name_constraint ->
+      let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
+      matches_name_constraint ~name_constraint (Reference.show decorator_name)
+  | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
+      let { Statement.Decorator.arguments = decorator_arguments; _ } = decorator in
+      let split_arguments =
+        List.partition_tf ~f:(fun { Expression.Call.Argument.name; _ } ->
+            match name with
+            | None -> true
+            | _ -> false)
+      in
+      let positional_arguments_equal left right =
+        List.equal (fun l r -> Int.equal (sanitized_location_insensitive_compare l r) 0) left right
+      in
+      match arguments_constraint, decorator_arguments with
+      | ModelQuery.ArgumentsConstraint.Contains constraint_arguments, None ->
+          List.is_empty constraint_arguments
+      | ModelQuery.ArgumentsConstraint.Contains constraint_arguments, Some arguments ->
+          let constraint_positional_arguments, constraint_keyword_arguments =
+            split_arguments constraint_arguments
+          in
+          let decorator_positional_arguments, decorator_keyword_arguments =
+            split_arguments arguments
+          in
+          List.length constraint_positional_arguments <= List.length decorator_positional_arguments
+          && positional_arguments_equal
+               constraint_positional_arguments
+               (List.take
+                  decorator_positional_arguments
+                  (List.length constraint_positional_arguments))
+          && SanitizedCallArgumentSet.is_subset
+               (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
+               ~of_:(SanitizedCallArgumentSet.of_list decorator_keyword_arguments)
+      | ModelQuery.ArgumentsConstraint.Equals constraint_arguments, None ->
+          List.is_empty constraint_arguments
+      | ModelQuery.ArgumentsConstraint.Equals constraint_arguments, Some arguments ->
+          let constraint_positional_arguments, constraint_keyword_arguments =
+            split_arguments constraint_arguments
+          in
+          let decorator_positional_arguments, decorator_keyword_arguments =
+            split_arguments arguments
+          in
+          (* Since equality comparison is more costly, check the lists are the same lengths first. *)
+          Int.equal
+            (List.length constraint_positional_arguments)
+            (List.length decorator_positional_arguments)
+          && positional_arguments_equal
+               constraint_positional_arguments
+               decorator_positional_arguments
+          && SanitizedCallArgumentSet.equal
+               (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
+               (SanitizedCallArgumentSet.of_list decorator_keyword_arguments))
 
 
 let matches_annotation_constraint ~annotation_constraint annotation =
@@ -368,13 +372,14 @@ let rec normalized_parameter_matches_constraint
       List.for_all constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
 
 
-let class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint class_name
-  =
+let class_matches_decorator_constraint ~resolution ~decorator_constraint class_name =
   GlobalResolution.class_summary resolution (Type.Primitive class_name)
   >>| Node.value
   >>| (fun { decorators; _ } ->
         List.exists decorators ~f:(fun decorator ->
-            matches_decorator_constraint ~name_constraint ~arguments_constraint decorator))
+            Statement.Decorator.from_expression decorator
+            >>| (fun decorator -> matches_decorator_constraint ~decorator decorator_constraint)
+            |> Option.value ~default:false))
   |> Option.value ~default:false
 
 
@@ -401,8 +406,7 @@ let rec find_children ~class_hierarchy_graph ~is_transitive ~includes_self class
   child_name_set
 
 
-let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name class_constraint =
-  match class_constraint with
+let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name = function
   | ModelQuery.ClassConstraint.AnyOf constraints ->
       List.exists constraints ~f:(class_matches_constraint ~resolution ~class_hierarchy_graph ~name)
   | ModelQuery.ClassConstraint.AllOf constraints ->
@@ -417,8 +421,8 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name class_
       matches_name_constraint ~name_constraint name
   | ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self } ->
       is_ancestor ~resolution ~is_transitive ~includes_self class_name name
-  | ModelQuery.ClassConstraint.DecoratorConstraint { name_constraint; arguments_constraint } ->
-      class_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint name
+  | ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint ->
+      class_matches_decorator_constraint ~resolution ~decorator_constraint name
   | ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive; includes_self }
     ->
       find_children ~class_hierarchy_graph ~is_transitive ~includes_self name
@@ -532,9 +536,12 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       >>| List.exists ~f:(fun parameter ->
               normalized_parameter_matches_constraint ~resolution ~parameter parameter_constraint)
       |> Option.value ~default:false
-  | ModelQuery.Constraint.AnyDecoratorConstraint { name_constraint; arguments_constraint } ->
+  | ModelQuery.Constraint.AnyDecoratorConstraint decorator_constraint ->
       Modelable.decorators value
-      >>| List.exists ~f:(matches_decorator_constraint ~name_constraint ~arguments_constraint)
+      >>| List.exists ~f:(fun decorator ->
+              Statement.Decorator.from_expression decorator
+              >>| (fun decorator -> matches_decorator_constraint ~decorator decorator_constraint)
+              |> Option.value ~default:false)
       |> Option.value ~default:false
   | ModelQuery.Constraint.ClassConstraint class_constraint ->
       Modelable.class_name value

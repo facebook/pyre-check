@@ -1339,11 +1339,7 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where =
-          [
-            AnyDecoratorConstraint
-              { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
-          ];
+        where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1370,11 +1366,7 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where =
-          [
-            AnyDecoratorConstraint
-              { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
-          ];
+        where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1401,11 +1393,7 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where =
-          [
-            AnyDecoratorConstraint
-              { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
-          ];
+        where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1425,14 +1413,7 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where =
-          [
-            AnyDecoratorConstraint
-              {
-                name_constraint = Matches (Re2.create_exn "app.route");
-                arguments_constraint = None;
-              };
-          ];
+        where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "app.route")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1459,11 +1440,34 @@ let test_apply_query context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where =
-          [
-            AnyDecoratorConstraint
-              { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
-          ];
+        where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_applied_queries
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1
+       @d2
+       def baz(a): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where = [AnyDecoratorConstraint (NameConstraint (Equals "test.d1"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1493,49 +1497,18 @@ let test_apply_query context =
         where =
           [
             AnyDecoratorConstraint
-              { name_constraint = Equals "test.d1"; arguments_constraint = None };
-          ];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
-    ~source:
-      {|
-       def d1(c): ...
-       def d2(c): ...
-
-       @d1
-       def foo(a): ...
-       @d2
-       def bar(a): ...
-
-       @d1
-       @d2
-       def baz(a): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        where =
-          [
-            AnyDecoratorConstraint
-              {
-                name_constraint = Equals "test.d1";
-                arguments_constraint =
-                  Some
-                    (ModelQuery.ArgumentsConstraint.Contains
-                       [
-                         {
-                           Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                         };
-                       ]);
-              };
+              (AllOf
+                 [
+                   NameConstraint (Equals "test.d1");
+                   ArgumentsConstraint
+                     (ModelQuery.ArgumentsConstraint.Contains
+                        [
+                          {
+                            Ast.Expression.Call.Argument.name = None;
+                            value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                          };
+                        ]);
+                 ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1566,18 +1539,18 @@ let test_apply_query context =
         where =
           [
             AnyDecoratorConstraint
-              {
-                name_constraint = Equals "test.d1";
-                arguments_constraint =
-                  Some
-                    (ModelQuery.ArgumentsConstraint.Contains
-                       [
-                         {
-                           Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                         };
-                       ]);
-              };
+              (AllOf
+                 [
+                   NameConstraint (Equals "test.d1");
+                   ArgumentsConstraint
+                     (Contains
+                        [
+                          {
+                            Ast.Expression.Call.Argument.name = None;
+                            value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                          };
+                        ]);
+                 ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1608,19 +1581,19 @@ let test_apply_query context =
         where =
           [
             AnyDecoratorConstraint
-              {
-                name_constraint = Equals "test.d1";
-                arguments_constraint =
-                  Some
-                    (ModelQuery.ArgumentsConstraint.Contains
-                       [
-                         {
-                           Ast.Expression.Call.Argument.name =
-                             Some (Ast.Node.create_with_default_location "arg1");
-                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                         };
-                       ]);
-              };
+              (AllOf
+                 [
+                   NameConstraint (Equals "test.d1");
+                   ArgumentsConstraint
+                     (Contains
+                        [
+                          {
+                            Ast.Expression.Call.Argument.name =
+                              Some (Ast.Node.create_with_default_location "arg1");
+                            value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                          };
+                        ]);
+                 ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1651,19 +1624,19 @@ let test_apply_query context =
         where =
           [
             AnyDecoratorConstraint
-              {
-                name_constraint = Equals "test.d1";
-                arguments_constraint =
-                  Some
-                    (ModelQuery.ArgumentsConstraint.Contains
-                       [
-                         {
-                           Ast.Expression.Call.Argument.name =
-                             Some (Ast.Node.create_with_default_location "arg1");
-                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                         };
-                       ]);
-              };
+              (AllOf
+                 [
+                   NameConstraint (Equals "test.d1");
+                   ArgumentsConstraint
+                     (Contains
+                        [
+                          {
+                            Ast.Expression.Call.Argument.name =
+                              Some (Ast.Node.create_with_default_location "arg1");
+                            value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                          };
+                        ]);
+                 ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1694,26 +1667,26 @@ let test_apply_query context =
         where =
           [
             AnyDecoratorConstraint
-              {
-                name_constraint = Equals "test.d1";
-                arguments_constraint =
-                  Some
-                    (ModelQuery.ArgumentsConstraint.Contains
-                       [
-                         {
-                           Ast.Expression.Call.Argument.name =
-                             Some (Ast.Node.create_with_default_location "method");
-                           value =
-                             +Ast.Expression.(
-                                Expression.Constant
-                                  (Constant.String (Ast.Expression.StringLiteral.create "POST")));
-                         };
-                         {
-                           Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                         };
-                       ]);
-              };
+              (AllOf
+                 [
+                   NameConstraint (Equals "test.d1");
+                   ArgumentsConstraint
+                     (Contains
+                        [
+                          {
+                            Ast.Expression.Call.Argument.name =
+                              Some (Ast.Node.create_with_default_location "method");
+                            value =
+                              +Ast.Expression.(
+                                 Expression.Constant
+                                   (Constant.String (Ast.Expression.StringLiteral.create "POST")));
+                          };
+                          {
+                            Ast.Expression.Call.Argument.name = None;
+                            value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                          };
+                        ]);
+                 ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1744,26 +1717,26 @@ let test_apply_query context =
         where =
           [
             AnyDecoratorConstraint
-              {
-                name_constraint = Equals "test.d1";
-                arguments_constraint =
-                  Some
-                    (ModelQuery.ArgumentsConstraint.Equals
-                       [
-                         {
-                           Ast.Expression.Call.Argument.name =
-                             Some (Ast.Node.create_with_default_location "method");
-                           value =
-                             +Ast.Expression.(
-                                Expression.Constant
-                                  (Constant.String (Ast.Expression.StringLiteral.create "POST")));
-                         };
-                         {
-                           Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                         };
-                       ]);
-              };
+              (AllOf
+                 [
+                   NameConstraint (Equals "test.d1");
+                   ArgumentsConstraint
+                     (Equals
+                        [
+                          {
+                            Ast.Expression.Call.Argument.name =
+                              Some (Ast.Node.create_with_default_location "method");
+                            value =
+                              +Ast.Expression.(
+                                 Expression.Constant
+                                   (Constant.String (Ast.Expression.StringLiteral.create "POST")));
+                          };
+                          {
+                            Ast.Expression.Call.Argument.name = None;
+                            value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                          };
+                        ]);
+                 ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1794,26 +1767,26 @@ let test_apply_query context =
         where =
           [
             AnyDecoratorConstraint
-              {
-                name_constraint = Equals "test.d1";
-                arguments_constraint =
-                  Some
-                    (ModelQuery.ArgumentsConstraint.Equals
-                       [
-                         {
-                           Ast.Expression.Call.Argument.name =
-                             Some (Ast.Node.create_with_default_location "method");
-                           value =
-                             +Ast.Expression.(
-                                Expression.Constant
-                                  (Constant.String (Ast.Expression.StringLiteral.create "POST")));
-                         };
-                         {
-                           Ast.Expression.Call.Argument.name = None;
-                           value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                         };
-                       ]);
-              };
+              (AllOf
+                 [
+                   NameConstraint (Equals "test.d1");
+                   ArgumentsConstraint
+                     (Equals
+                        [
+                          {
+                            Ast.Expression.Call.Argument.name =
+                              Some (Ast.Node.create_with_default_location "method");
+                            value =
+                              +Ast.Expression.(
+                                 Expression.Constant
+                                   (Constant.String (Ast.Expression.StringLiteral.create "POST")));
+                          };
+                          {
+                            Ast.Expression.Call.Argument.name = None;
+                            value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                          };
+                        ]);
+                 ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1908,11 +1881,7 @@ let test_apply_query context =
         location = Ast.Location.any;
         name = "get_foo";
         where =
-          [
-            ClassConstraint
-              (DecoratorConstraint
-                 { name_constraint = Matches (Re2.create_exn "d2"); arguments_constraint = None });
-          ];
+          [ClassConstraint (DecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d2"))))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
         expected_models = [];
@@ -1938,11 +1907,7 @@ let test_apply_query context =
         location = Ast.Location.any;
         name = "get_foo";
         where =
-          [
-            ClassConstraint
-              (DecoratorConstraint
-                 { name_constraint = Matches (Re2.create_exn "4"); arguments_constraint = None });
-          ];
+          [ClassConstraint (DecoratorConstraint (NameConstraint (Matches (Re2.create_exn "4"))))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
         expected_models = [];
@@ -1972,18 +1937,18 @@ let test_apply_query context =
           [
             ClassConstraint
               (DecoratorConstraint
-                 {
-                   name_constraint = Equals "test.d1";
-                   arguments_constraint =
-                     Some
-                       (ModelQuery.ArgumentsConstraint.Contains
-                          [
-                            {
-                              Ast.Expression.Call.Argument.name = None;
-                              value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                            };
-                          ]);
-                 });
+                 (AllOf
+                    [
+                      NameConstraint (Equals "test.d1");
+                      ArgumentsConstraint
+                        (Contains
+                           [
+                             {
+                               Ast.Expression.Call.Argument.name = None;
+                               value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                             };
+                           ]);
+                    ]));
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
@@ -2014,18 +1979,18 @@ let test_apply_query context =
           [
             ClassConstraint
               (DecoratorConstraint
-                 {
-                   name_constraint = Matches (Re2.create_exn "d1");
-                   arguments_constraint =
-                     Some
-                       (ModelQuery.ArgumentsConstraint.Contains
-                          [
-                            {
-                              Ast.Expression.Call.Argument.name = None;
-                              value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
-                            };
-                          ]);
-                 });
+                 (AllOf
+                    [
+                      NameConstraint (Matches (Re2.create_exn "d1"));
+                      ArgumentsConstraint
+                        (Contains
+                           [
+                             {
+                               Ast.Expression.Call.Argument.name = None;
+                               value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                             };
+                           ]);
+                    ]));
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
@@ -3024,9 +2989,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = false;
                    includes_self = true;
                  });
@@ -3061,9 +3024,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = false;
                    includes_self = true;
                  });
@@ -3098,9 +3059,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = false;
                    includes_self = true;
                  });
@@ -3135,9 +3094,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = false;
                    includes_self = false;
                  });
@@ -3172,9 +3129,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = false;
                    includes_self = false;
                  });
@@ -3209,9 +3164,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = false;
                    includes_self = false;
                  });
@@ -3246,9 +3199,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = true;
                    includes_self = false;
                  });
@@ -3283,9 +3234,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = true;
                    includes_self = false;
                  });
@@ -3320,9 +3269,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = true;
                    includes_self = false;
                  });
@@ -3357,9 +3304,7 @@ let test_apply_query context =
             ClassConstraint
               (AnyChildConstraint
                  {
-                   class_constraint =
-                     DecoratorConstraint
-                       { name_constraint = Equals "decorator"; arguments_constraint = None };
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
                    is_transitive = true;
                    includes_self = false;
                  });

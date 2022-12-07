@@ -119,6 +119,8 @@ type kind =
   | UnsupportedConstraintCallee of Expression.t
   | UnsupportedClassConstraint of Expression.t
   | UnsupportedClassConstraintCallee of Expression.t
+  | UnsupportedDecoratorConstraint of Expression.t
+  | UnsupportedDecoratorConstraintCallee of Expression.t
   | InvalidModelForTaint of {
       model_name: string;
       error: string;
@@ -354,6 +356,12 @@ let description error =
         (Expression.show constraint_name)
   | UnsupportedClassConstraintCallee callee ->
       Format.sprintf "Unsupported callee for class constraint: `%s`" (Expression.show callee)
+  | UnsupportedDecoratorConstraint constraint_name ->
+      Format.sprintf
+        "Unsupported decorator constraint expression: `%s`"
+        (Expression.show constraint_name)
+  | UnsupportedDecoratorConstraintCallee callee ->
+      Format.sprintf "Unsupported callee for decorator constraint: `%s`" (Expression.show callee)
   | UnsupportedFindClause clause -> Format.sprintf "Unsupported find clause `%s`" clause
   | UnexpectedModelExpression expression ->
       Format.sprintf "Unexpected model expression: `%s`" (Expression.show expression)
@@ -456,6 +464,8 @@ let code { kind; _ } =
   | InvalidModelQueryMode _ -> 48
   | InvalidIncludesSelf _ -> 49
   | UnsupportedClassConstraintCallee _ -> 50
+  | UnsupportedDecoratorConstraint _ -> 51
+  | UnsupportedDecoratorConstraintCallee _ -> 52
 
 
 let display { kind = error; path; location } =

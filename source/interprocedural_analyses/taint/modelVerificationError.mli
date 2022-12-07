@@ -115,6 +115,8 @@ type kind =
   | UnsupportedConstraintCallee of Expression.t
   | UnsupportedClassConstraint of Expression.t
   | UnsupportedClassConstraintCallee of Expression.t
+  | UnsupportedDecoratorConstraint of Expression.t
+  | UnsupportedDecoratorConstraintCallee of Expression.t
   | InvalidModelForTaint of {
       model_name: string;
       error: string;

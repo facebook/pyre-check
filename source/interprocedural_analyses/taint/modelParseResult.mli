@@ -162,11 +162,15 @@ module ModelQuery : sig
   end
 
   module DecoratorConstraint : sig
-    type t = {
-      name_constraint: NameConstraint.t;
-      arguments_constraint: ArgumentsConstraint.t option;
-    }
+    type t =
+      | NameConstraint of NameConstraint.t
+      | ArgumentsConstraint of ArgumentsConstraint.t
+      | AnyOf of t list
+      | AllOf of t list
+      | Not of t
     [@@deriving equal, show]
+
+    val all_of : t list -> t
   end
 
   module ClassConstraint : sig
