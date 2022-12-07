@@ -85,6 +85,7 @@ let make_assert_functions context =
       T_Bound_Union = typing.TypeVar('T_Bound_Union', bound=typing.Union[int, str])
       T_Bound_Union_C_Q = typing.TypeVar('T_Bound_Union_C_Q', bound=typing.Union[C, Q])
       T_C_Q = typing.TypeVar('T_C_Q', C, Q)
+      T_Bound_ReadOnly = typing.TypeVar('T_Bound_ReadOnly', bound=pyre_extensions.ReadOnly[object])
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
       V = pyre_extensions.ParameterSpecification("V")
@@ -135,6 +136,7 @@ let make_assert_functions context =
           "T_Bound_D";
           "T_Bound_Union_C_Q";
           "T_Bound_Union";
+          "T_Bound_ReadOnly";
           "T_C_Q";
           "T_D_Q";
           "T_C_Q_int";
@@ -992,10 +994,13 @@ let test_add_constraint_type_variable_tuple context =
 
 let test_add_constraint_readonly context =
   let assert_add, _, _, _ = make_assert_functions context in
-  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" [[]];
-  assert_add ~left:"C" ~right:"pyre_extensions.ReadOnly[C]" [[]];
-  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" [];
+  assert_add ~left:"D" ~right:"pyre_extensions.ReadOnly[C]" [[]];
+  assert_add ~left:"pyre_extensions.ReadOnly[D]" ~right:"pyre_extensions.ReadOnly[C]" [[]];
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Unconstrained" [];
   assert_add ~left:"C" ~right:"pyre_extensions.ReadOnly[T_Unconstrained]" [["T_Unconstrained", "C"]];
+  (* TODO(T130377746): Allow binding to ReadOnly typevars. *)
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Bound_ReadOnly" [];
   ()
 
 

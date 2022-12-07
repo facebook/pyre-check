@@ -10,7 +10,6 @@ open IntegrationTest
 
 let test_ignore_readonly context =
   let assert_type_errors = assert_type_errors ~context ~enable_readonly_analysis:false in
-  (* The type checking analysis ignores `ReadOnly`. *)
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
@@ -20,7 +19,10 @@ let test_ignore_readonly context =
         z: ReadOnly[int] = y
         return z
     |}
-    [];
+    [
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+    ];
   (* The type checking analysis will check compatibility for the type wrapped by `ReadOnly`. *)
   assert_type_errors
     {|
@@ -30,7 +32,6 @@ let test_ignore_readonly context =
         y: str = x
     |}
     [
-      (* TODO(T130377746): Avoid mixing `ReadOnly` in type errors. *)
       "Incompatible variable type [9]: y is declared to have type `str` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
     ];
@@ -46,7 +47,14 @@ let test_ignore_readonly context =
         x: Literal[True] = always_true or False
         y: Literal[False] = always_false and True
     |}
-    [];
+    [
+      "Incompatible variable type [9]: x is declared to have type \
+       `typing_extensions.Literal[True]` but is used as type \
+       `pyre_extensions.ReadOnly[typing_extensions.Literal[True]]`.";
+      "Incompatible variable type [9]: y is declared to have type \
+       `typing_extensions.Literal[False]` but is used as type \
+       `pyre_extensions.ReadOnly[typing_extensions.Literal[False]]`.";
+    ];
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
@@ -60,52 +68,52 @@ let test_ignore_readonly context =
 
 let test_readonly_configuration_flag context =
   let assert_type_errors_including_readonly =
-    assert_type_errors ~context ~enable_readonly_analysis:true
+    assert_type_errors ~context ~enable_readonly_analysis:false
   in
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
       def main() -> None:
-        x: ReadOnly[int] = 42
+        x: ReadOnly[int]
         y = x
         z: int = y
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
+      "Incompatible variable type [9]: z is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
   (* Test readonly violations at the top level. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      x: ReadOnly[int] = 42
+      x: ReadOnly[int]
       y: int = x
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
   ()
 
 
 let test_assignment context =
   let assert_type_errors_including_readonly =
-    assert_type_errors ~context ~enable_readonly_analysis:true
+    assert_type_errors ~context ~enable_readonly_analysis:false
   in
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
       def main() -> None:
-        x: ReadOnly[int] = 42
+        x: ReadOnly[int]
         y = x
         z: int = y
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
+      "Incompatible variable type [9]: z is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -133,12 +141,13 @@ let test_assignment context =
       "Uninitialized attribute [13]: Attribute `some_attribute` is declared in class `Foo` to have \
        type `int` but is never initialized.";
     ];
+  (* TODO(T130377746): Infer that the attribute of a readonly variable is readonly. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
       class Foo:
-        mutable_attribute: int
+        mutable_attribute: int = 42
 
       def main() -> None:
         readonly_foo: ReadOnly[Foo]
@@ -147,12 +156,8 @@ let test_assignment context =
         x1: int = readonly_foo.mutable_attribute
         x2: int = mutable_foo.mutable_attribute
     |}
-    [
-      "Uninitialized attribute [13]: Attribute `mutable_attribute` is declared in class `Foo` to \
-       have type `int` but is never initialized.";
-      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-    ];
+    [];
+  (* TODO(T130377746): Infer that the attribute of a readonly variable is readonly. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -170,10 +175,7 @@ let test_assignment context =
         x1: int = readonly_foo.foo_attribute.bar_attribute
         x2: int = mutable_foo.foo_attribute.bar_attribute
     |}
-    [
-      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-    ];
+    [];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -189,11 +191,12 @@ let test_assignment context =
         x2: int = mutable_foo.readonly_attribute
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-      "ReadOnly violation - Incompatible variable type [3001]: x2 is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
+      "Incompatible variable type [9]: x1 is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible variable type [9]: x2 is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
+  (* TODO(T130377746): Emit error about assigning to readonly attribute. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -205,10 +208,8 @@ let test_assignment context =
         readonly_foo: ReadOnly[Foo]
         readonly_foo.some_attribute = 99
     |}
-    [
-      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
-       `some_attribute` since it is readonly";
-    ];
+    [];
+  (* TODO(T130377746): Emit error about assigning to readonly attribute. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -222,10 +223,7 @@ let test_assignment context =
         mutable_foo.readonly_attribute = 99
         mutable_foo.mutable_attribute = 99
     |}
-    [
-      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
-       `readonly_attribute` since it is readonly";
-    ];
+    [];
   (* Technically, reassigning to a variable doesn't mutate it. So, we don't emit an error in this
      case. *)
   assert_type_errors_including_readonly
@@ -242,7 +240,7 @@ let test_assignment context =
 
 let test_function_call context =
   let assert_type_errors_including_readonly =
-    assert_type_errors ~context ~enable_readonly_analysis:true
+    assert_type_errors ~context ~enable_readonly_analysis:false
   in
   assert_type_errors_including_readonly
     {|
@@ -251,15 +249,14 @@ let test_function_call context =
       def expect_mutable_and_readonly(x: int, y: ReadOnly[int]) -> ReadOnly[int]: ...
 
       def main() -> None:
-        x: ReadOnly[int] = 42
+        x: ReadOnly[int]
         y: int = expect_mutable_and_readonly(x, x)
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-      "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.expect_mutable_and_readonly`, for 1st positional argument, expected `Mutable` but got \
-       `ReadOnly`.";
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `expect_mutable_and_readonly`, for 1st positional \
+       only parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -271,10 +268,10 @@ let test_function_call context =
         y: int = foo(foo(x))
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.foo`, for 1st \
-       positional argument, expected `Mutable` but got `ReadOnly`.";
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -283,12 +280,12 @@ let test_function_call context =
       def expect_mutable(x: int) -> ReadOnly[int]: ...
 
       def main() -> None:
-        x: ReadOnly[int] = 42
+        x: ReadOnly[int]
         expect_mutable(x)
     |}
     [
-      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional argument, expected `Mutable` but got `ReadOnly`.";
+      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional only \
+       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -303,11 +300,10 @@ let test_function_call context =
         y: int = foo.return_readonly(x)
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-      "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.Foo.return_readonly`, for 1st positional argument, expected `Mutable` but got \
-       `ReadOnly`.";
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `Foo.return_readonly`, for 1st positional only \
+       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -324,13 +320,12 @@ let test_function_call context =
         y: int = return_foo(x).return_readonly(x)
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.return_foo`, for 1st \
-       positional argument, expected `Mutable` but got `ReadOnly`.";
-      "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.Foo.return_readonly`, for 1st positional argument, expected `Mutable` but got \
-       `ReadOnly`.";
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `return_foo`, for 1st positional only parameter \
+       expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `Foo.return_readonly`, for 1st positional only \
+       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -347,6 +342,7 @@ let test_function_call context =
         mutable_foo.expect_readonly_self(x)
     |}
     [];
+  (* TODO(T130377746): Emit error about calling mutable method on readonly object. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -361,11 +357,7 @@ let test_function_call context =
         readonly_foo.expect_mutable_self(x)
         mutable_foo.expect_mutable_self(x)
     |}
-    [
-      "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.Foo.expect_mutable_self`, for 0th positional argument, expected `Mutable` but got \
-       `ReadOnly`.";
-    ];
+    [];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -378,13 +370,10 @@ let test_function_call context =
         expect_positional_mutable_and_readonly(my_readonly, my_readonly)
     |}
     [
-      "ReadOnly - Revealed type [3004]: Revealed type for `x` is Mutable.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "ReadOnly - Revealed type [3004]: Revealed type for `y` is ReadOnly.";
       "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`.";
-      "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.expect_positional_mutable_and_readonly`, for 1st positional argument, expected \
-       `Mutable` but got `ReadOnly`.";
+      "Incompatible parameter type [6]: In call `expect_positional_mutable_and_readonly`, for 1st \
+       positional only parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -398,12 +387,10 @@ let test_function_call context =
         expect_keyword_only(y=my_mutable, x=my_readonly)
     |}
     [
-      "ReadOnly - Revealed type [3004]: Revealed type for `x` is Mutable.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "ReadOnly - Revealed type [3004]: Revealed type for `y` is ReadOnly.";
       "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`.";
-      "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.expect_keyword_only`, for argument `x`, expected `Mutable` but got `ReadOnly`.";
+      "Incompatible parameter type [6]: In call `expect_keyword_only`, for 2nd parameter `x` \
+       expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -416,10 +403,11 @@ let test_function_call context =
         expect_kwargs( **kwargs)
     |}
     [
-      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_kwargs`, for \
-       argument `x`, expected `Mutable` but got `ReadOnly`.";
-      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_kwargs`, for \
-       1st positional argument, expected `Mutable` but got `ReadOnly`.";
+      "Incompatible parameter type [6]: In call `expect_kwargs`, for 2nd parameter `x` expected \
+       `int` but got `pyre_extensions.ReadOnly[int]`.";
+      (* TODO(T130377746): Fix error message. *)
+      "Invalid argument [32]: Keyword argument `kwargs` has type `typing.Dict[str, \
+       pyre_extensions.ReadOnly[int]]` but must be a mapping with string keys.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -430,15 +418,15 @@ let test_function_call context =
         x: int = undefined(my_readonly)
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
   ()
 
 
 let test_await context =
   let assert_type_errors_including_readonly =
-    assert_type_errors ~context ~enable_readonly_analysis:true
+    assert_type_errors ~context ~enable_readonly_analysis:false
   in
   (* TODO(T130377746): This should have a readonly violation error. *)
   assert_type_errors_including_readonly
@@ -450,13 +438,16 @@ let test_await context =
       async def main() -> None:
         y: int = await return_readonly()
     |}
-    [];
+    [
+      "Incompatible awaitable type [12]: Expected an awaitable but got \
+       `typing.Coroutine[typing.Any, typing.Any, pyre_extensions.ReadOnly[int]]`.";
+    ];
   ()
 
 
 let test_parameters context =
   let assert_type_errors_including_readonly =
-    assert_type_errors ~context ~enable_readonly_analysis:true
+    assert_type_errors ~context ~enable_readonly_analysis:false
   in
   assert_type_errors_including_readonly
     {|
@@ -467,8 +458,8 @@ let test_parameters context =
         y2: ReadOnly[int] = my_mutable
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -488,12 +479,12 @@ let test_parameters context =
         y3: int = z
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-      "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
-      "ReadOnly violation - Incompatible variable type [3001]: y3 is declared to have readonlyness \
-       `Mutable` but is used as readonlyness `ReadOnly`.";
+      "Incompatible variable type [9]: y1 is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible variable type [9]: y2 is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible variable type [9]: y3 is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -504,10 +495,8 @@ let test_parameters context =
         reveal_type(kwargs)
     |}
     [
-      "ReadOnly - Revealed type [3004]: Revealed type for `args` is ReadOnly.";
       "Revealed type [-1]: Revealed type for `args` is \
        `typing.Tuple[pyre_extensions.ReadOnly[int], ...]`.";
-      "ReadOnly - Revealed type [3004]: Revealed type for `kwargs` is ReadOnly.";
       "Revealed type [-1]: Revealed type for `kwargs` is `typing.Dict[str, \
        pyre_extensions.ReadOnly[int]]`.";
     ];
@@ -524,8 +513,8 @@ let test_parameters context =
         pass
     |}
     [
-      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional argument, expected `Mutable` but got `ReadOnly`.";
+      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional only \
+       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   (* Don't consider `x` in scope for the default value of parameter `y`. We don't need to emit an
      error here, because the type checking analysis will. *)
@@ -546,7 +535,7 @@ let test_parameters context =
 
 let test_reveal_type context =
   let assert_type_errors_including_readonly =
-    assert_type_errors ~context ~enable_readonly_analysis:true
+    assert_type_errors ~context ~enable_readonly_analysis:false
   in
   assert_type_errors_including_readonly
     {|
@@ -559,9 +548,7 @@ let test_reveal_type context =
         reveal_type(y2)
     |}
     [
-      "ReadOnly - Revealed type [3004]: Revealed type for `y1` is ReadOnly.";
       "Revealed type [-1]: Revealed type for `y1` is `pyre_extensions.ReadOnly[int]`.";
-      "ReadOnly - Revealed type [3004]: Revealed type for `y2` is Mutable.";
       "Revealed type [-1]: Revealed type for `y2` is `int`.";
     ];
   ()
@@ -569,7 +556,7 @@ let test_reveal_type context =
 
 let test_format_string context =
   let assert_type_errors_including_readonly =
-    assert_type_errors ~context ~enable_readonly_analysis:true
+    assert_type_errors ~context ~enable_readonly_analysis:false
   in
   assert_type_errors_including_readonly
     {|
@@ -581,8 +568,8 @@ let test_format_string context =
         s = f"hello, {expect_mutable(my_readonly)}, {expect_mutable(my_mutable)}"
     |}
     [
-      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional argument, expected `Mutable` but got `ReadOnly`.";
+      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional only \
+       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   ()
 

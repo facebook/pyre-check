@@ -575,7 +575,7 @@ let test_less_or_equal context =
   assert_true (less_or_equal default ~left:(Type.list Type.integer) ~right:!!"typing.Sized");
 
   (* ReadOnly types. *)
-  assert_true (less_or_equal default ~left:(Type.ReadOnly.create Type.integer) ~right:Type.float);
+  assert_false (less_or_equal default ~left:(Type.ReadOnly.create Type.integer) ~right:Type.float);
   assert_true (less_or_equal default ~left:Type.integer ~right:(Type.ReadOnly.create Type.float));
   assert_true
     (less_or_equal
