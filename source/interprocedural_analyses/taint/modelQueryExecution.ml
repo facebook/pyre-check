@@ -152,16 +152,7 @@ module ModelQueryRegistryMap = struct
     errors
 end
 
-module DumpModelQueryResults : sig
-  val dump_to_string : models_and_names:ModelQueryRegistryMap.t -> string
-
-  val dump_to_file : models_and_names:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
-
-  val dump_to_file_and_string
-    :  models_and_names:ModelQueryRegistryMap.t ->
-    path:PyrePath.t ->
-    string
-end = struct
+module DumpModelQueryResults = struct
   let dump_to_string ~models_and_names =
     let model_to_json (callable, model) =
       `Assoc
