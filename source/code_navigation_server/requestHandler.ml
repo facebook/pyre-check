@@ -144,7 +144,7 @@ let with_broadcast_busy_checking ~subscriptions ~overlay_id f =
   Lwt.return result
 
 
-let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.environment }
+let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.environment; _ }
     : Response.t Lwt.t
   =
   let module_tracker =
@@ -165,6 +165,7 @@ let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.env
         in
         List.filter_map modules ~f:to_update
       in
+
       let%lwt () =
         match code_updates with
         | [] -> Lwt.return_unit
@@ -183,6 +184,44 @@ let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.env
       Lwt.return Response.Ok
 
 
+let handle_file_opened ~path ~content ~overlay_id ~subscriptions state : Response.t Lwt.t =
+  let%lwt response =
+    handle_local_update
+      ~module_:(Request.Module.OfPath path)
+      ~content
+      ~overlay_id
+      ~subscriptions
+      state
+  in
+  let () =
+    match response with
+    | Response.Error _ -> ()
+    | _ ->
+        let { State.open_files; _ } = state in
+        OpenFiles.open_file open_files ~path ~overlay_id
+  in
+  Lwt.return response
+
+
+let handle_file_closed ~path ~overlay_id ~subscriptions ({ State.open_files; _ } as state)
+    : Response.t Lwt.t
+  =
+  if OpenFiles.contains open_files ~path ~overlay_id then
+    let%lwt response =
+      handle_local_update
+        ~module_:(Request.Module.OfPath path)
+        ~content:None
+        ~overlay_id
+        ~subscriptions
+        state
+    in
+    match OpenFiles.close_file open_files ~path ~overlay_id with
+    | Result.Ok () -> Lwt.return response
+    | Result.Error error_kind -> Lwt.return (Response.Error error_kind)
+  else
+    Lwt.return (Response.Error (Response.ErrorKind.UntrackedFileClosed { path }))
+
+
 let get_raw_path { Request.FileUpdateEvent.path; _ } = PyrePath.create_absolute path
 
 let get_artifact_path_event_kind = function
@@ -199,7 +238,7 @@ let handle_file_update
     ~events
     ~subscriptions
     ~properties:{ Server.ServerProperties.critical_files; _ }
-    { State.environment }
+    { State.environment; _ }
   =
   match Server.CriticalFile.find critical_files ~within:(List.map events ~f:get_raw_path) with
   | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)
@@ -278,6 +317,18 @@ let handle_query
 
 let handle_command ~server:{ ServerInternal.state; subscriptions; properties } = function
   | Request.Command.Stop -> Lwt.return_error Server.Stop.Reason.ExplicitRequest
+  | Request.Command.FileOpened { path; content; overlay_id } ->
+      let f state =
+        let%lwt response = handle_file_opened ~path ~content ~overlay_id ~subscriptions state in
+        Lwt.return_ok response
+      in
+      Server.ExclusiveLock.read state ~f
+  | Request.Command.FileClosed { path; overlay_id } ->
+      let f state =
+        let%lwt response = handle_file_closed ~path ~overlay_id ~subscriptions state in
+        Lwt.return_ok response
+      in
+      Server.ExclusiveLock.read state ~f
   | Request.Command.LocalUpdate { module_; content; overlay_id } ->
       let f state =
         let%lwt response = handle_local_update ~module_ ~content ~overlay_id ~subscriptions state in

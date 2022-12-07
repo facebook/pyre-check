@@ -37,6 +37,26 @@ end
 
 (** {1 Server State}*)
 
+(** This module contains the state tracking open files in the code navigation server. *)
+module OpenFiles : sig
+  type t
+
+  (** Mark a file as opened in the open file state. *)
+  val open_file : t -> path:string -> overlay_id:string -> unit
+
+  (** Mark a file as closed in the open file state. *)
+  val close_file : t -> path:string -> overlay_id:string -> (unit, Response.ErrorKind.t) Result.t
+
+  (** Evaluates to the list of current open files. *)
+  val open_files : t -> string list
+
+  (** Returns true iff the open files currently tracks `overlay_id`. *)
+  val contains : t -> path:string -> overlay_id:string -> bool
+
+  (** Creates a new open files state object with no files marked as open. *)
+  val create : unit -> t
+end
+
 (** This module contains APIs that are relevant to the internal state of the code navigation server. *)
 module State : sig
   (** A type that represent the internal state of the server. *)
@@ -106,6 +126,35 @@ module Testing : sig
         | Stop
             (** A command that asks the server to stop. The server will shut itself down immediately
                 when this request gets processed. No response will be sent back to the client. *)
+        | FileOpened of {
+            path: string;
+            content: string option;
+            overlay_id: string;
+          }
+            (** A command that asks the server to create an overlay for a given module and mark a
+                file as tracked. [content] specifies the content of the source file corresponds to
+                the module.[content] being [None] indicates that contents of the source file should
+                match what was stored on the filesystem.
+
+                The server will send back a {!Response.Ok} response when the update succeeds, and a
+                new overlay with that ID will be created.
+
+                If the provided module is not covered by the code navigation server, the server will
+                respond with a {!Response.ErrorKind.ModuleNotTracked} error. We don't allow
+                specifying closed opened/closed files by name. *)
+        | FileClosed of {
+            path: string;
+            overlay_id: string;
+          }
+            (** A command that notifies the server that a previouly open file was closed. The server
+                will send back a {!Response.Ok} response when the update succeeds.
+
+                If the provided module is not covered by the code navigation server, the server will
+                respond with a {!Response.ErrorKind.ModuleNotTracked} error.
+
+                If closing a file that was not previously opened by a `{Command.FileOpened}`
+                command, the server will respond with a {!Response.ErrorKind.UntrackedFileClosed}
+                error. *)
         | LocalUpdate of {
             module_: Module.t;
             content: string option;
@@ -226,6 +275,9 @@ module Testing : sig
         | OverlayNotFound of { overlay_id: string }
             (** This error occurs when the client has requested info from an overlay whose id does
                 not exist within the server. *)
+        | UntrackedFileClosed of { path: string }
+            (** This error occurs when the client has send a command to close a file not tracked by
+                the server. *)
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 

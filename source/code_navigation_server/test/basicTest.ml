@@ -138,6 +138,56 @@ let test_get_type_errors_request context =
       ]
 
 
+let test_file_opened_and_closed_request context =
+  let project =
+    ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
+  in
+  let test_path =
+    let source_root = ScratchProject.source_root_of project in
+    PyrePath.append source_root ~element:"test.py" |> PyrePath.absolute
+  in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        assert_type_error_count ~module_name:"test" ~expected:1;
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.FileOpened
+                   {
+                     path = test_path;
+                     content = Some "reveal_type(43)\nreveal_type(44)";
+                     overlay_id = "foo";
+                   }))
+          ~expected:Response.Ok;
+        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command (Command.FileClosed { path = "/untracked/file.py"; overlay_id = "foo" }))
+          ~expected:
+            (Response.Error (Response.ErrorKind.UntrackedFileClosed { path = "/untracked/file.py" }));
+        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command (Command.FileClosed { path = test_path; overlay_id = "untracked overlay id" }))
+          ~expected:(Response.Error (Response.ErrorKind.UntrackedFileClosed { path = test_path }));
+        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        ScratchProject.ClientConnection.assert_response
+          ~request:Request.(Command (Command.FileClosed { path = test_path; overlay_id = "foo" }))
+          ~expected:Response.Ok;
+        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:1;
+        (* Now that foo is no longer tracked as an open file, this should error. *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:Request.(Command (Command.FileClosed { path = test_path; overlay_id = "foo" }))
+          ~expected:(Response.Error (Response.ErrorKind.UntrackedFileClosed { path = test_path }));
+      ]
+
+
 let test_local_update_request context =
   ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
   |> ScratchProject.test_server_with

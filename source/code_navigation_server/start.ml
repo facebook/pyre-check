@@ -130,7 +130,8 @@ let initialize_server_state environment_controls =
   let environment =
     Analysis.ErrorsEnvironment.create environment_controls |> Analysis.OverlaidEnvironment.create
   in
-  { State.environment }
+  let open_files = OpenFiles.create () in
+  { State.environment; open_files }
 
 
 (* The Event module allows the code navigation server to communicate events the client relies on

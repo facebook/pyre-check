@@ -16,7 +16,7 @@ module Module = struct
         (** Specify a module at the given file path. The path is expected to be absolute. Symlinks
             will not be followed.*)
     | OfName of string  (** Specify a module with a given dot-qualified name directly. *)
-  [@@deriving sexp, compare, yojson { strict = false }]
+  [@@deriving sexp, compare, yojson { strict = false }, hash]
 end
 
 module FileUpdateEvent = struct
@@ -37,6 +37,15 @@ end
 module Command = struct
   type t =
     | Stop
+    | FileOpened of {
+        path: string;
+        content: string option;
+        overlay_id: string;
+      }
+    | FileClosed of {
+        path: string;
+        overlay_id: string;
+      }
     | LocalUpdate of {
         module_: Module.t; [@key "module"]
         content: string option;
