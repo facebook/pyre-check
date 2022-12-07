@@ -622,6 +622,9 @@ let test_attribute_from_class_name context =
         from dataclasses import dataclass
         from placeholder_stub import StubParent
 
+        class SimpleClass:
+          some_attribute: str = "foo"
+
         class Metaclass:
           def implicit(cls) -> int:
             return 0
@@ -662,6 +665,7 @@ let test_attribute_from_class_name context =
   in
   let assert_attribute
       ?(accessed_through_class = false)
+      ?(accessed_through_readonly = false)
       ~parent
       ~instantiated
       ~attribute_name
@@ -672,6 +676,7 @@ let test_attribute_from_class_name context =
         parent
         ~transitive:true
         ~accessed_through_class
+        ~accessed_through_readonly
         ~resolution
         ~name:attribute_name
         ~instantiated
@@ -874,6 +879,16 @@ let test_attribute_from_class_name context =
        ~uninstantiated_annotation:"typing.Callable[..., typing.Any]"
        "__getattr__"
        "BoundMethod[typing.Callable[..., typing.Any], test.ChildOfPlaceholderStub]");
+  assert_attribute
+    ~parent:"test.SimpleClass"
+    ~instantiated:(Type.Primitive "test.SimpleClass")
+    ~attribute_name:"some_attribute"
+    ~accessed_through_readonly:true
+    (create_expected_attribute
+       ~parent:"test.SimpleClass"
+       ~uninstantiated_annotation:"str"
+       "some_attribute"
+       "pyre_extensions.ReadOnly[str]");
   ()
 
 

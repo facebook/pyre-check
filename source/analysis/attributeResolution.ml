@@ -3303,8 +3303,7 @@ class base class_metadata_environment dependency =
     method instantiate_attribute
         ~assumptions
         ~accessed_through_class
-        ~accessed_through_readonly:(* TODO(T130377746): Use the parameter value. *)
-          _
+        ~accessed_through_readonly
         ?instantiated
         ?(apply_descriptors = true)
         attribute =
@@ -3322,7 +3321,12 @@ class base class_metadata_environment dependency =
         | Attribute annotation -> Some annotation
         | Property _ -> None
       in
-
+      let annotation =
+        match annotation, accessed_through_readonly with
+        | Attribute annotation, true ->
+            UninstantiatedAnnotation.Attribute (Type.ReadOnly.create annotation)
+        | _ -> annotation
+      in
       let annotation =
         match instantiated with
         | None -> annotation
