@@ -1162,10 +1162,11 @@ let generate_models_from_queries
   in
   let callables =
     Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
-    |> List.filter_map ~f:(function
-           | Target.Function _ as callable -> Some callable
-           | Target.Method _ as callable -> Some callable
-           | _ -> None)
+    |> List.filter ~f:(function
+           | Target.Function _
+           | Target.Method _ ->
+               true
+           | _ -> false)
   in
   apply_all_queries
     ~resolution
