@@ -141,7 +141,6 @@ let test_assignment context =
       "Uninitialized attribute [13]: Attribute `some_attribute` is declared in class `Foo` to have \
        type `int` but is never initialized.";
     ];
-  (* TODO(T130377746): Infer that the attribute of a readonly variable is readonly. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -156,8 +155,10 @@ let test_assignment context =
         x1: int = readonly_foo.mutable_attribute
         x2: int = mutable_foo.mutable_attribute
     |}
-    [];
-  (* TODO(T130377746): Infer that the attribute of a readonly variable is readonly. *)
+    [
+      "Incompatible variable type [9]: x1 is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+    ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -175,7 +176,10 @@ let test_assignment context =
         x1: int = readonly_foo.foo_attribute.bar_attribute
         x2: int = mutable_foo.foo_attribute.bar_attribute
     |}
-    [];
+    [
+      "Incompatible variable type [9]: x1 is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+    ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -194,6 +198,27 @@ let test_assignment context =
       "Incompatible variable type [9]: x1 is declared to have type `int` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
       "Incompatible variable type [9]: x2 is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+    ];
+  (* Handle attribute types that have both `ReadOnly[...]` and `Type[...]`. *)
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Type
+
+      class Foo:
+        some_attribute: int = 42
+
+      def main() -> None:
+        readonly_type_foo: ReadOnly[Type[Foo]]
+        type_readonly_foo: Type[ReadOnly[Foo]]
+        x: int = readonly_type_foo.some_attribute
+        y: int = type_readonly_foo.some_attribute
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
     ];
   (* TODO(T130377746): Emit error about assigning to readonly attribute. *)

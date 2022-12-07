@@ -1082,7 +1082,8 @@ module State (Context : Context) = struct
       let reference = name_to_reference name in
       let access_as_attribute () =
         let find_attribute
-            ({ Type.instantiated; accessed_through_class; class_name; _ } as class_data)
+            ({ Type.instantiated; accessed_through_class; class_name; accessed_through_readonly } as
+            class_data)
           =
           let name = attribute in
           match
@@ -1090,6 +1091,7 @@ module State (Context : Context) = struct
               class_name
               ~transitive:true
               ~accessed_through_class
+              ~accessed_through_readonly
               ~special_method:special
               ~resolution:global_resolution
               ~name
