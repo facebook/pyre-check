@@ -553,7 +553,11 @@ let test_all_attributes context =
       (GlobalResolution.attributes ~resolution definition
       |> (fun a -> Option.value_exn a)
       |> List.map
-           ~f:(GlobalResolution.instantiate_attribute ~resolution ~accessed_through_class:false))
+           ~f:
+             (GlobalResolution.instantiate_attribute
+                ~resolution
+                ~accessed_through_class:false
+                ~accessed_through_readonly:false))
       attributes
   in
   let uninstantiated_constructor =

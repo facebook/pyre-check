@@ -239,6 +239,7 @@ let attribute_from_class_name
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)
     ?(accessed_through_class = false)
+    ?(accessed_through_readonly = false)
     ?(special_method = false)
     class_name
     ~name
@@ -277,6 +278,7 @@ let attribute_from_class_name
       ~instantiated
       ~transitive
       ~accessed_through_class
+      ~accessed_through_readonly
       ~special_method
       ~include_generated_attributes:true
       ?dependency

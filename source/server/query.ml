@@ -718,6 +718,7 @@ let rec process_request ~type_environment ~build_system request =
             GlobalResolution.instantiate_attribute
               ~resolution:global_resolution
               ~accessed_through_class:false
+              ~accessed_through_readonly:false
               attribute
           in
           let annotation =

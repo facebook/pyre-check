@@ -3240,7 +3240,8 @@ let assert_equivalent_attributes
          ~f:
            (GlobalResolution.instantiate_attribute
               ~resolution:global_resolution
-              ~accessed_through_class:false)
+              ~accessed_through_class:false
+              ~accessed_through_readonly:false)
   in
   assert_attribute_equal (attributes expected_equivalent_class_source) (attributes source)
 

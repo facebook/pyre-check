@@ -204,6 +204,7 @@ module AttributeReadOnly : sig
     ?dependency:DependencyKey.registered ->
     transitive:bool ->
     accessed_through_class:bool ->
+    accessed_through_readonly:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
     ?instantiated:Type.t ->
@@ -286,6 +287,7 @@ module AttributeReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     accessed_through_class:bool ->
+    accessed_through_readonly:bool ->
     ?instantiated:Type.t ->
     uninstantiated_attribute ->
     AnnotatedAttribute.instantiated

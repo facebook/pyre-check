@@ -6511,6 +6511,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                   GlobalResolution.instantiate_attribute
                     ~resolution:global_resolution
                     ~accessed_through_class:false
+                    ~accessed_through_readonly:false
                     ?instantiated:None
                     attribute
                   |> Annotated.Attribute.annotation
@@ -6748,6 +6749,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                     let annotation =
                       GlobalResolution.instantiate_attribute
                         ~accessed_through_class:false
+                        ~accessed_through_readonly:false
                         ~resolution:global_resolution
                         ?instantiated:None
                         attribute

@@ -2376,6 +2376,7 @@ class base class_metadata_environment dependency =
               ~assumptions
               ~transitive:false
               ~accessed_through_class:true
+              ~accessed_through_readonly:false
               ~include_generated_attributes:true
               ~instantiated:(Type.meta annotation)
               ~special_method:false
@@ -2405,11 +2406,12 @@ class base class_metadata_environment dependency =
       in
       let attribute class_type ~assumptions ~name =
         resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name; _ } ->
+        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
         self#attribute
           ~assumptions
           ~transitive:true
           ~accessed_through_class
+          ~accessed_through_readonly
           ~include_generated_attributes:true
           ?special_method:None
           ~attribute_name:name
@@ -2418,7 +2420,7 @@ class base class_metadata_environment dependency =
       in
       let all_attributes class_type ~assumptions =
         resolve class_type
-        >>= fun { instantiated; accessed_through_class; class_name; _ } ->
+        >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
         self#all_attributes
           ~assumptions
           ~transitive:true
@@ -2432,6 +2434,7 @@ class base class_metadata_environment dependency =
                    ~assumptions
                    ~instantiated
                    ~accessed_through_class
+                   ~accessed_through_readonly
                    ?apply_descriptors:None)
       in
 
@@ -2764,6 +2767,7 @@ class base class_metadata_environment dependency =
                 self#instantiate_attribute
                   ~assumptions
                   ~accessed_through_class:false
+                  ~accessed_through_readonly:false
                   ?instantiated:None
                   ?apply_descriptors:None
                   attribute
@@ -3069,7 +3073,8 @@ class base class_metadata_environment dependency =
                 (self#instantiate_attribute
                    ~assumptions
                    ?instantiated:None
-                   ~accessed_through_class:
+                   ~accessed_through_class:false
+                   ~accessed_through_readonly:
                      false
                      (* TODO(T65806273): Right now we're just ignoring `__set__`s on dataclass
                         attributes. This avoids needing to explicitly break the loop that would
@@ -3190,6 +3195,7 @@ class base class_metadata_environment dependency =
         ~assumptions
         ~transitive
         ~accessed_through_class
+        ~accessed_through_readonly
         ~include_generated_attributes
         ?(special_method = false)
         ?instantiated
@@ -3235,6 +3241,7 @@ class base class_metadata_environment dependency =
           >>| self#instantiate_attribute
                 ~assumptions
                 ~accessed_through_class
+                ~accessed_through_readonly
                 ?instantiated
                 ?apply_descriptors
 
@@ -3296,6 +3303,8 @@ class base class_metadata_environment dependency =
     method instantiate_attribute
         ~assumptions
         ~accessed_through_class
+        ~accessed_through_readonly:(* TODO(T130377746): Use the parameter value. *)
+          _
         ?instantiated
         ?(apply_descriptors = true)
         attribute =
@@ -3618,6 +3627,7 @@ class base class_metadata_environment dependency =
                             ~assumptions
                             ~transitive:true
                             ~accessed_through_class:true
+                            ~accessed_through_readonly:false
                             ~include_generated_attributes:true
                             ?special_method:None
                             ?instantiated:(Some instantiated)
@@ -4343,11 +4353,19 @@ class base class_metadata_environment dependency =
                     }
                   in
                   let resolve_attribute_access ?special_method base ~attribute_name =
-                    let access { Type.instantiated; accessed_through_class; class_name; _ } =
+                    let access
+                        {
+                          Type.instantiated;
+                          accessed_through_class;
+                          class_name;
+                          accessed_through_readonly;
+                        }
+                      =
                       self#attribute
                         ~assumptions
                         ~transitive:true
                         ~accessed_through_class
+                        ~accessed_through_readonly
                         ~include_generated_attributes:true
                         ?special_method
                         ~attribute_name
@@ -4693,6 +4711,7 @@ class base class_metadata_environment dependency =
               ~assumptions
               ~transitive:true
               ~accessed_through_class:false
+              ~accessed_through_readonly:false
               ~include_generated_attributes:true
               ?special_method:None
               ?instantiated:(Some return_annotation)

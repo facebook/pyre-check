@@ -195,6 +195,7 @@ val instantiate_attribute
   :  resolution:t ->
   ?instantiated:Type.t ->
   accessed_through_class:bool ->
+  accessed_through_readonly:bool ->
   AttributeResolution.uninstantiated_attribute ->
   AnnotatedAttribute.instantiated
 
@@ -204,6 +205,7 @@ val attribute_from_class_name
   :  resolution:t ->
   ?transitive:bool ->
   ?accessed_through_class:bool ->
+  ?accessed_through_readonly:bool ->
   ?special_method:bool ->
   Type.Primitive.t ->
   name:Identifier.t ->
