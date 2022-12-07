@@ -255,6 +255,19 @@ class MockRequestHandler(AbstractRequestHandler):
         # dummy result here- response not processed.
         return code
 
+    async def handle_file_opened(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[DaemonConnectionFailure, str]:
+        return "Ok"
+
+    async def handle_file_closed(
+        self,
+        path: Path,
+    ) -> Union[DaemonConnectionFailure, str]:
+        return "Ok"
+
 
 async def _create_server_for_request_test(
     opened_documents: Dict[Path, OpenedDocumentState],

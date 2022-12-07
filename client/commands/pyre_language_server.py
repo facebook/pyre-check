@@ -249,6 +249,9 @@ class PyreLanguageServer:
         # Attempt to trigger a background Pyre server start on each file open
         if not self.daemon_manager.is_task_running():
             await self._try_restart_pyre_daemon()
+        await self.handler.handle_file_opened(
+            document_path, parameters.text_document.text
+        )
 
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
@@ -262,6 +265,7 @@ class PyreLanguageServer:
         try:
             del self.server_state.opened_documents[document_path]
             LOG.info(f"File closed: {document_path}")
+            await self.handler.handle_file_closed(document_path)
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 

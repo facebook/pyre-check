@@ -182,3 +182,37 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 },
             ],
         )
+
+    def test_file_opened_json(self) -> None:
+        local_update = code_navigation_request.FileOpened(
+            path=Path("/a/b.py"),
+            content="def foo() -> int: pass\n",
+            overlay_id="/a/b.py 1234",
+        )
+        self.assertEqual(
+            local_update.to_json(),
+            [
+                "FileOpened",
+                {
+                    "path": "/a/b.py",
+                    "content": "def foo() -> int: pass\n",
+                    "overlay_id": "/a/b.py 1234",
+                },
+            ],
+        )
+
+    def test_file_closed_json(self) -> None:
+        local_update = code_navigation_request.FileClosed(
+            path=Path("/a/b.py"),
+            overlay_id="/a/b.py 1234",
+        )
+        self.assertEqual(
+            local_update.to_json(),
+            [
+                "FileClosed",
+                {
+                    "path": "/a/b.py",
+                    "overlay_id": "/a/b.py 1234",
+                },
+            ],
+        )

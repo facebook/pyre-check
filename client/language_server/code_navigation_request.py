@@ -130,6 +130,38 @@ class LocalUpdate:
         ]
 
 
+@dataclasses.dataclass(frozen=True)
+class FileOpened:
+    path: Path
+    content: str
+    overlay_id: str
+
+    def to_json(self) -> List[object]:
+        return [
+            "FileOpened",
+            {
+                "path": f"{self.path}",
+                "content": self.content,
+                "overlay_id": self.overlay_id,
+            },
+        ]
+
+
+@dataclasses.dataclass(frozen=True)
+class FileClosed:
+    path: Path
+    overlay_id: str
+
+    def to_json(self) -> List[object]:
+        return [
+            "FileClosed",
+            {
+                "path": f"{self.path}",
+                "overlay_id": self.overlay_id,
+            },
+        ]
+
+
 def invalid_response(response: str) -> ErrorResponse:
     return ErrorResponse(message=f"Invalid response {response} to hover request.")
 
@@ -205,6 +237,26 @@ async def async_handle_local_update(
     socket_path: Path, local_update: LocalUpdate
 ) -> str | daemon_connection.DaemonConnectionFailure:
     raw_command = json.dumps(["Command", local_update.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_command
+    )
+    return response
+
+
+async def async_handle_file_opened(
+    socket_path: Path, file_opened: FileOpened
+) -> str | daemon_connection.DaemonConnectionFailure:
+    raw_command = json.dumps(["Command", file_opened.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_command
+    )
+    return response
+
+
+async def async_handle_file_closed(
+    socket_path: Path, file_closed: FileClosed
+) -> str | daemon_connection.DaemonConnectionFailure:
+    raw_command = json.dumps(["Command", file_closed.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_command
     )

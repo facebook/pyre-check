@@ -195,6 +195,21 @@ class AbstractRequestHandler(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def handle_file_opened(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def handle_file_closed(
+        self,
+        path: Path,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def update_overlay(
         self,
         path: Path,
@@ -339,6 +354,20 @@ class PersistentRequestHandler(AbstractRequestHandler):
             ]
             return result
 
+    async def handle_file_opened(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return "Ok"
+
+    async def handle_file_closed(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return "Ok"
+
     async def update_overlay(
         self,
         path: Path,
@@ -429,4 +458,33 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         )
         return await code_navigation_request.async_handle_local_update(
             self.socket_path, local_update
+        )
+
+    async def handle_file_opened(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        overlay_id = self._get_overlay_id(path)
+        if overlay_id is None:
+            return "Ok"
+        file_opened = code_navigation_request.FileOpened(
+            overlay_id=overlay_id, path=path, content=code
+        )
+        return await code_navigation_request.async_handle_file_opened(
+            self.socket_path, file_opened
+        )
+
+    async def handle_file_closed(
+        self,
+        path: Path,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        overlay_id = self._get_overlay_id(path)
+        if overlay_id is None:
+            return "Ok"
+        file_closed = code_navigation_request.FileClosed(
+            overlay_id=overlay_id, path=path
+        )
+        return await code_navigation_request.async_handle_file_closed(
+            self.socket_path, file_closed
         )
