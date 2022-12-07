@@ -476,7 +476,7 @@ let test_is_protocol _ =
   ()
 
 
-let test_class_attributes context =
+let test_all_attributes context =
   let setup source =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
@@ -602,8 +602,16 @@ let test_class_attributes context =
       create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "second";
       create_simple_attribute ~parent:"test.foo" "third";
     ];
+  ()
 
-  (*(* Test 'attribute' *)*)
+
+let test_attribute_from_class_name context =
+  let setup source =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+    in
+    GlobalResolution.create global_environment
+  in
   let resolution =
     setup
       {|
@@ -875,7 +883,7 @@ let test_class_attributes context =
   ()
 
 
-let test_attribute_type context =
+let test_attribute_from_annotation context =
   let assert_attribute ?(source = "") ~parent ~name expected =
     let global_resolution =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -2201,7 +2209,9 @@ let test_refine context =
 let () =
   "class"
   >::: [
-         "attributes" >:: test_class_attributes;
+         "all_attributes" >:: test_all_attributes;
+         "attribute_from_class_name" >:: test_attribute_from_class_name;
+         "test_attribute_from_annotation" >:: test_attribute_from_annotation;
          "typed_dictionary_attributes" >:: test_typed_dictionary_attributes;
          "constraints" >:: test_constraints;
          "constructors" >:: test_constructors;
@@ -2213,7 +2223,6 @@ let () =
          "extract_type_parameter" >:: test_extract_type_parameter;
          "type_of_iteration_value" >:: test_type_of_iteration_value;
          "type_of_generator_send_and_return" >:: test_type_of_generator_send_and_return;
-         "test_attribute_from_annotation" >:: test_attribute_type;
          "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;
          "test_join" >:: test_join;
