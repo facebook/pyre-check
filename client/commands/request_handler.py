@@ -24,14 +24,14 @@ from libcst.metadata import CodeRange
 
 from .. import dataclasses_json_extensions as json_mixins
 
-from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
-
 from ..language_server import (
     code_navigation_request,
     daemon_connection,
     features,
     protocol as lsp,
 )
+
+from ..libcst_collectors import coverage_collector_for_module, CoveredAndUncoveredLines
 from . import daemon_query, expression_level_coverage, server_state as state, statistics
 
 LOG: logging.Logger = logging.getLogger(__name__)

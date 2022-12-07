@@ -21,8 +21,8 @@ import libcst as cst
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    libcst_collectors as collectors,
     log,
-    statistics_collectors as collectors,
 )
 from . import commands, frontend_configuration
 

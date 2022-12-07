@@ -27,7 +27,6 @@ import testslide
 from libcst.metadata import CodePosition, CodeRange
 
 from ... import error, identifiers, json_rpc
-from ...coverage_collector import CoveredAndUncoveredLines
 from ...language_server import connections, protocol as lsp
 from ...language_server.connections import (
     AsyncBytesWriter,
@@ -50,6 +49,7 @@ from ...language_server.features import (
     UnsavedChangesAvailability,
 )
 from ...language_server.protocol import SymbolKind
+from ...libcst_collectors import CoveredAndUncoveredLines
 from ...tests import setup
 from .. import backend_arguments, background, start, subscription
 from ..daemon_query import DaemonQueryFailure

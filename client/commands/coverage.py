@@ -18,7 +18,7 @@ from typing import Iterable, List, Optional
 from .. import (
     command_arguments,
     configuration as configuration_module,
-    coverage_collector as collector,
+    libcst_collectors as collectors,
     log,
 )
 from . import commands, frontend_configuration, statistics
@@ -37,11 +37,11 @@ def find_root_path(local_root: Optional[Path], working_directory: Path) -> Path:
 
 def collect_coverage_for_path(
     path: Path, working_directory: str, strict_default: bool
-) -> Optional[collector.FileCoverage]:
+) -> Optional[collectors.FileCoverage]:
     module = statistics.parse_path_to_module(path)
     relative_path = os.path.relpath(str(path), working_directory)
     return (
-        collector.collect_coverage_for_module(relative_path, module, strict_default)
+        collectors.collect_coverage_for_module(relative_path, module, strict_default)
         if module is not None
         else None
     )
@@ -49,8 +49,8 @@ def collect_coverage_for_path(
 
 def collect_coverage_for_paths(
     paths: Iterable[Path], working_directory: str, strict_default: bool
-) -> List[collector.FileCoverage]:
-    result: List[collector.FileCoverage] = []
+) -> List[collectors.FileCoverage]:
+    result: List[collectors.FileCoverage] = []
     for path in paths:
         coverage = collect_coverage_for_path(path, working_directory, strict_default)
         if coverage is not None:
@@ -58,7 +58,7 @@ def collect_coverage_for_paths(
     return result
 
 
-def _print_summary(data: List[collector.FileCoverage]) -> None:
+def _print_summary(data: List[collectors.FileCoverage]) -> None:
     for file_data in data:
         path = file_data.filepath
         covered_lines = len(file_data.covered_lines)
