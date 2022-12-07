@@ -4129,27 +4129,16 @@ module State (Context : Context) = struct
                       | _ -> None)
                   | _ -> None
                 in
-                let name_reference =
-                  match name with
-                  | Identifier identifier -> Reference.create identifier |> Option.some
-                  | Attribute _ as name when is_simple_name name ->
-                      name_to_reference_exn name |> Option.some
-                  | _ -> None
-                in
-                let is_global =
-                  name_reference
-                  >>| (fun reference -> Resolution.is_global resolution ~reference)
-                  |> Option.value ~default:false
-                in
-                let is_locally_initialized =
-                  match name_reference with
-                  | Some reference -> Resolution.has_nontemporary_annotation ~reference resolution
-                  | None -> false
-                in
-                let check_errors errors resolved =
+                let check_errors ~name_reference errors resolved =
                   match reference with
                   | Some reference ->
                       let modifying_read_only_error =
+                        let is_locally_initialized =
+                          name_reference
+                          >>| (fun reference ->
+                                Resolution.has_nontemporary_annotation ~reference resolution)
+                          |> Option.value ~default:false
+                        in
                         match attribute, original_annotation with
                         | None, _ when is_locally_initialized || not explicit ->
                             Option.some_if
@@ -4636,7 +4625,17 @@ module State (Context : Context) = struct
                       else
                         errors, true
                 in
-                let propagate_annotations ~errors ~is_valid_annotation ~resolved_value_weakened =
+                let propagate_annotations
+                    ~errors
+                    ~is_valid_annotation
+                    ~resolved_value_weakened
+                    name_reference
+                  =
+                  let is_global =
+                    name_reference
+                    >>| (fun reference -> Resolution.is_global resolution ~reference)
+                    |> Option.value ~default:false
+                  in
                   let is_not_local = is_global && not (Define.is_toplevel Context.define.value) in
                   let refine_annotation annotation refined =
                     GlobalResolution.refine ~global_resolution annotation refined
@@ -4729,18 +4728,30 @@ module State (Context : Context) = struct
                     ~resolved:resolved_value
                     ~expected
                 in
+                let name_reference =
+                  match name with
+                  | Identifier identifier -> Reference.create identifier |> Option.some
+                  | Attribute _ as name when is_simple_name name ->
+                      name_to_reference_exn name |> Option.some
+                  | _ -> None
+                in
                 match resolved_value_weakened with
                 | { resolved = resolved_value_weakened; typed_dictionary_errors = [] } ->
-                    let errors = check_errors errors resolved_value_weakened in
+                    let errors = check_errors ~name_reference errors resolved_value_weakened in
                     let errors, is_valid_annotation =
                       check_for_missing_annotations errors resolved_value_weakened
                     in
-                    propagate_annotations ~errors ~is_valid_annotation ~resolved_value_weakened
+                    propagate_annotations
+                      ~errors
+                      ~is_valid_annotation
+                      ~resolved_value_weakened
+                      name_reference
                 | { typed_dictionary_errors; _ } ->
                     propagate_annotations
                       ~errors:(emit_typed_dictionary_errors ~errors typed_dictionary_errors)
                       ~is_valid_annotation:false
                       ~resolved_value_weakened:Type.Top
+                      name_reference
               in
               let resolved_base =
                 match name with
