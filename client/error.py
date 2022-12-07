@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides client-side represetations for error types that
+originate in the daemon: the Error class represents a type error, while
+TaintConfigurationError and ModelVerificationError represent problems
+validating a Pysa run.
 """
 
 
