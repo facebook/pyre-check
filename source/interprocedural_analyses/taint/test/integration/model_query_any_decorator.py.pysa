@@ -3,7 +3,7 @@ ModelQuery(
   find = "functions",
   where = [
     name.matches("test1_"),
-    Decorator(name.equals("model_query_any_decorator.test1_d1"))
+    Decorator(fully_qualified_name.equals("model_query_any_decorator.test1_d1"))
   ],
   model = [
     Returns(TaintSource[Test])
@@ -27,7 +27,7 @@ ModelQuery(
   find = "functions",
   where = [
     name.matches("test3_"),
-    Decorator(name.equals("model_query_any_decorator.test3_d1"), arguments.contains(arg1, 2, arg3="Foo"))
+    Decorator(fully_qualified_name.equals("model_query_any_decorator.test3_d1"), arguments.contains(arg1, 2, arg3="Foo"))
   ],
   model = [
     Returns(TaintSource[Test])
@@ -39,7 +39,7 @@ ModelQuery(
   find = "functions",
   where = [
     name.matches("test4_"),
-    Decorator(name.equals("model_query_any_decorator.test4_d1"), arguments.equals(arg1, 2, arg3="Foo"))
+    Decorator(fully_qualified_name.equals("model_query_any_decorator.test4_d1"), arguments.equals(arg1, 2, arg3="Foo"))
   ],
   model = [
     Returns(TaintSource[Test])
@@ -52,7 +52,7 @@ ModelQuery(
   where = [
     name.matches("test5_"),
     Decorator(
-      name.equals("model_query_any_decorator.test5_d1"),
+      fully_qualified_name.equals("model_query_any_decorator.test5_d1"),
       arguments.contains(arg1, 2, arg3="Foo")
     )
   ],

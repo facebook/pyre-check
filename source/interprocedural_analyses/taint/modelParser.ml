@@ -1311,10 +1311,13 @@ let rec parse_decorator_constraint ~path ~location ({ Node.value; _ } as constra
       Error (model_verification_error ~path ~location (UnsupportedDecoratorConstraintCallee callee)))
   >>= fun callee_reference ->
   match callee_reference, arguments with
-  | ["name"; ("equals" as attribute)], _
-  | ["name"; ("matches" as attribute)], _ ->
+  | ["name"; (("equals" | "matches") as attribute)], _ ->
       parse_name_constraint ~path ~location ~constraint_expression ~attribute ~arguments
       >>| fun name_constraint -> ModelQuery.DecoratorConstraint.NameConstraint name_constraint
+  | ["fully_qualified_name"; (("equals" | "matches") as attribute)], _ ->
+      parse_name_constraint ~path ~location ~constraint_expression ~attribute ~arguments
+      >>| fun name_constraint ->
+      ModelQuery.DecoratorConstraint.FullyQualifiedNameConstraint name_constraint
   | ["arguments"; "contains"], _ ->
       Ok
         (ModelQuery.DecoratorConstraint.ArgumentsConstraint

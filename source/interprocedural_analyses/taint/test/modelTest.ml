@@ -2488,7 +2488,7 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "attributes",
-        where = Decorator(name.matches("app.route")),
+        where = Decorator(fully_qualified_name.matches("app.route")),
         model = AttributeModel(TaintSource[Test])
       )
     |}
@@ -5411,6 +5411,42 @@ let test_query_parsing context =
         };
       ]
     ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
+     where = cls.decorator(fully_qualified_name.matches("foo.*")),
+     model = [Returns([TaintSink[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where =
+            [
+              ClassConstraint
+                (DecoratorConstraint
+                   (FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo.*"))));
+            ];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_sink (Sinks.NamedSink "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
 
   assert_queries
     ~context
@@ -5429,6 +5465,38 @@ let test_query_parsing context =
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "foo")))];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
+     where = Decorator(fully_qualified_name.matches("foo")),
+     model = [Returns([TaintSource[Test]])],
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          where =
+            [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo")))];
           find = Method;
           models =
             [

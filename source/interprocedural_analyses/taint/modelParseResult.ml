@@ -366,6 +366,7 @@ module ModelQuery = struct
   module DecoratorConstraint = struct
     type t =
       | NameConstraint of NameConstraint.t
+      | FullyQualifiedNameConstraint of NameConstraint.t
       | ArgumentsConstraint of ArgumentsConstraint.t
       | AnyOf of t list
       | AllOf of t list

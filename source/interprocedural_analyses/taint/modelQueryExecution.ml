@@ -264,7 +264,9 @@ let rec matches_decorator_constraint ~decorator = function
       List.for_all constraints ~f:(matches_decorator_constraint ~decorator)
   | ModelQuery.DecoratorConstraint.Not decorator_constraint ->
       not (matches_decorator_constraint ~decorator decorator_constraint)
-  | ModelQuery.DecoratorConstraint.NameConstraint name_constraint ->
+  | ModelQuery.DecoratorConstraint.NameConstraint name_constraint
+  | ModelQuery.DecoratorConstraint.FullyQualifiedNameConstraint name_constraint ->
+      (* TODO(T139061519): For `NameConstraint`, this should not use the fully qualified name. *)
       let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
       matches_name_constraint ~name_constraint (Reference.show decorator_name)
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
