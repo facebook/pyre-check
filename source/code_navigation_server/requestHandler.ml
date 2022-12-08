@@ -85,15 +85,17 @@ let handle_get_type_errors ~module_ ~overlay_id { State.environment; _ } =
 
 let get_hover_content_for_module ~overlay ~position module_reference =
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
-  LocationBasedLookup.hover_info_for_position ~type_environment ~module_reference position
-  |> Option.map ~f:(fun value -> Response.HoverContent.{ kind = Kind.PlainText; value })
+  let hover_info =
+    LocationBasedLookup.hover_info_for_position ~type_environment ~module_reference position
+  in
+  Response.HoverContent.{ value = hover_info; docstring = None }
 
 
 let get_hover_in_overlay ~overlay ~position module_ =
   let open Result in
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
   get_modules ~module_tracker module_
-  >>| List.filter_map ~f:(get_hover_content_for_module ~overlay ~position)
+  >>| List.map ~f:(get_hover_content_for_module ~overlay ~position)
 
 
 let handle_hover ~module_ ~position ~overlay_id { State.environment; _ } =

@@ -352,7 +352,8 @@ let test_hover_request context =
               Query
                 (Query.Hover
                    { overlay_id = None; module_ = Module.OfName "test"; position = position 1 2 }))
-          ~expected:Response.(Hover { contents = [] });
+          ~expected:
+            Response.(Hover { contents = HoverContent.[{ value = None; docstring = None }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -361,7 +362,7 @@ let test_hover_request context =
                    { overlay_id = None; module_ = Module.OfName "test"; position = position 1 0 }))
           ~expected:
             Response.(
-              Hover { contents = HoverContent.[{ kind = Kind.PlainText; value = "float" }] });
+              Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -374,7 +375,7 @@ let test_hover_request context =
                    }))
           ~expected:
             Response.(
-              Hover { contents = HoverContent.[{ kind = Kind.PlainText; value = "float" }] });
+              Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(

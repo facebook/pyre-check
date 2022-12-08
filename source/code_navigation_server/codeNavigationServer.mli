@@ -290,8 +290,8 @@ module Testing : sig
       (** A type representing hovering text element. Roughly corresponds to LSP's [MarkupContent]
           structure. *)
       type t = {
-        kind: Kind.t;
-        value: string;
+        value: string option;
+        docstring: string option;
       }
       [@@deriving sexp, compare, yojson { strict = false }]
     end

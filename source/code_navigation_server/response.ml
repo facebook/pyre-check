@@ -24,8 +24,8 @@ module HoverContent = struct
   end
 
   type t = {
-    kind: Kind.t;
-    value: string;
+    value: string option;
+    docstring: string option;
   }
   [@@deriving sexp, compare, yojson { strict = false }]
 end
