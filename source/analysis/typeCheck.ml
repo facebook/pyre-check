@@ -4047,11 +4047,11 @@ module State (Context : Context) = struct
                         |> resolve_expression ~resolution )
                   | `Attribute ({ Name.Attribute.base; attribute; _ }, resolved) ->
                       let name = attribute in
-                      let parent, accessed_through_class =
-                        if Type.is_meta resolved then
-                          Type.single_parameter resolved, true
-                        else
-                          resolved, false
+                      let parent, accessed_through_class, accessed_through_readonly =
+                        match Type.ReadOnly.unpack_readonly resolved, Type.is_meta resolved with
+                        | Some resolved, _ -> resolved, false, true
+                        | None, true -> Type.single_parameter resolved, true, false
+                        | _ -> resolved, false, false
                       in
                       let parent_class_name = Type.split parent |> fst |> Type.primitive_name in
                       let reference =
@@ -4071,6 +4071,7 @@ module State (Context : Context) = struct
                               ~instantiated:parent
                               ~transitive:true
                               ~accessed_through_class
+                              ~accessed_through_readonly
                         >>| fun annotated -> annotated, attribute
                       in
                       let target_annotation =
@@ -4340,6 +4341,21 @@ module State (Context : Context) = struct
                               errors
                         | _ -> errors
                       in
+                      let check_assignment_to_readonly_type errors =
+                        let is_readonly_attribute =
+                          target_annotation |> Annotation.annotation |> Type.ReadOnly.is_readonly
+                        in
+                        match attribute with
+                        | Some (_, attribute_name)
+                          when is_readonly_attribute && not (Define.is_class_toplevel define) ->
+                            emit_error
+                              ~errors
+                              ~location
+                              ~kind:
+                                (Error.ReadOnlynessMismatch
+                                   (AssigningToReadOnlyAttribute { attribute_name }))
+                        | _ -> errors
+                      in
                       let errors =
                         let modifying_read_only_error =
                           let is_locally_initialized =
@@ -4386,6 +4402,7 @@ module State (Context : Context) = struct
                       |> check_nested_explicit_type_alias
                       |> check_enumeration_literal
                       |> check_previously_annotated
+                      |> check_assignment_to_readonly_type
                   | _ -> errors
                 in
                 let check_for_missing_annotations errors resolved =
@@ -4764,7 +4781,14 @@ module State (Context : Context) = struct
               in
               match resolved_base with
               | `Attribute (attribute, Type.Union types) ->
-                  (* Union[A,B].attr is valid iff A.attr and B.attr is valid *)
+                  (* Union[A,B].attr is valid iff A.attr and B.attr is valid
+
+                     TODO(T130377746): Use `Type.class_data_from_type` here to avoid duplicating the
+                     logic of how to figure out the attribute type for various types. Right now,
+                     we're duplicating some of the logic (for unions) but missing others. We're also
+                     hackily extracting `accessed_through_class` later on by checking if the
+                     top-level type is `Type[...]` instead of doing it for all possible elements of
+                     a union, etc. *)
                   let propagate (resolution, errors) t =
                     inner_assignment resolution errors (`Attribute (attribute, t))
                   in

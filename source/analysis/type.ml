@@ -3713,6 +3713,14 @@ module ReadOnly = struct
   let create = function
     | ReadOnly _ as type_ -> type_
     | type_ -> ReadOnly type_
+
+
+  let unpack_readonly = function
+    | ReadOnly type_ -> Some type_
+    | _ -> None
+
+
+  let is_readonly type_ = unpack_readonly type_ |> Option.is_some
 end
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =

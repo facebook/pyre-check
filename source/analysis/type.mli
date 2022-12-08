@@ -1123,6 +1123,10 @@ end
 
 module ReadOnly : sig
   val create : t -> t
+
+  val unpack_readonly : t -> t option
+
+  val is_readonly : t -> bool
 end
 
 val infer_transform : t -> t

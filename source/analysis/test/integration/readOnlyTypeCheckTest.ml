@@ -221,7 +221,6 @@ let test_assignment context =
       "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
     ];
-  (* TODO(T130377746): Emit error about assigning to readonly attribute. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -233,8 +232,10 @@ let test_assignment context =
         readonly_foo: ReadOnly[Foo]
         readonly_foo.some_attribute = 99
     |}
-    [];
-  (* TODO(T130377746): Emit error about assigning to readonly attribute. *)
+    [
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
+       `some_attribute` since it is readonly";
+    ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -247,6 +248,61 @@ let test_assignment context =
         mutable_foo: Foo
         mutable_foo.readonly_attribute = 99
         mutable_foo.mutable_attribute = 99
+    |}
+    [
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
+       `readonly_attribute` since it is readonly";
+    ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        readonly_attribute: ReadOnly[int] = 42
+        mutable_attribute: int = 42
+
+        def some_method(self) -> None:
+          self.readonly_attribute = 99
+          self.mutable_attribute = 99
+    |}
+    [
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
+       `readonly_attribute` since it is readonly";
+    ];
+  (* TODO(T130377746): Recognize attribute for `ReadOnly[Type[Foo]]` when it is the target of an
+     assignment. *)
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Type
+
+      class Foo:
+        some_attribute: int = 42
+
+      def main() -> None:
+        readonly_type_foo: ReadOnly[Type[Foo]]
+        readonly_type_foo.some_attribute = 99
+
+        type_readonly_foo: Type[ReadOnly[Foo]]
+        type_readonly_foo.some_attribute = 99
+    |}
+    [
+      "Undefined attribute [16]: `pyre_extensions.ReadOnly[Type[Foo]]` has no attribute \
+       `some_attribute`.";
+    ];
+  (* TODO(T130377746): Emit readonly violation error when assigning to attribute of
+     `Type[ReadOnly[Foo]]`. *)
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Type
+
+      class Foo:
+        some_attribute: int = 42
+
+      def main() -> None:
+        type_readonly_foo: Type[ReadOnly[Foo]]
+        type_readonly_foo.some_attribute = 99
     |}
     [];
   (* Technically, reassigning to a variable doesn't mutate it. So, we don't emit an error in this
