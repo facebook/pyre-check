@@ -2177,12 +2177,16 @@ module SignatureSelection = struct
         | Mismatches mismatches ->
             let mismatches =
               List.filter mismatches ~f:(function
-                  | Mismatch { Node.value = { position = 0; _ }; _ } ->
+                  | Mismatch { Node.value = { position = 0; actual; _ }; _ } ->
                       (* A mismatch on the 0th parameter, i.e., the `self` parameter, is a sign that
                          the explicit `self` annotation was wrong, since you wouldn't be able to
                          look up that method otherwise. We already error about invalid `self`
-                         annotations, so don't emit an error for every call of that method. *)
-                      false
+                         annotations, so don't emit an error for every call of that method.
+
+                         However, we preserve mismatches when the `self` argument is `ReadOnly`.
+                         This indicates that a mutating method was called on a readonly object,
+                         which should be surfaced at the method call site. *)
+                      Type.ReadOnly.is_readonly actual
                   | _ -> true)
             in
             Mismatches mismatches |> Option.some

@@ -62,7 +62,10 @@ let test_ignore_readonly context =
       def foo(s: ReadOnly[str]) -> None:
         y: str = s.capitalize()
     |}
-    [];
+    [
+      "Incompatible parameter type [6]: In call `str.capitalize`, for 0th positional only \
+       parameter expected `str` but got `pyre_extensions.ReadOnly[str]`.";
+    ];
   ()
 
 
@@ -423,7 +426,6 @@ let test_function_call context =
         mutable_foo.expect_readonly_self(x)
     |}
     [];
-  (* TODO(T130377746): Emit error about calling mutable method on readonly object. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -438,7 +440,36 @@ let test_function_call context =
         readonly_foo.expect_mutable_self(x)
         mutable_foo.expect_mutable_self(x)
     |}
-    [];
+    [
+      (* TODO(T130377746): Clarify that it is a mutating method call on a readonly object. *)
+      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 0th positional only \
+       parameter expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
+    ];
+  (* A method with readonly `self` can be called on either mutable or readonly objects. However, the
+     method itself cannot call other mutating methods. *)
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def expect_mutable_self(self, x: int) -> None: ...
+
+        def expect_readonly_self(self: ReadOnly["Foo"], x: int) -> None:
+          self.expect_mutable_self(x)
+
+
+      def main() -> None:
+        readonly_foo: ReadOnly[Foo]
+        mutable_foo: Foo
+        x: int
+        readonly_foo.expect_readonly_self(x)
+        mutable_foo.expect_readonly_self(x)
+    |}
+    [
+      (* TODO(T130377746): Clarify that it is a mutating method call on a readonly object. *)
+      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 0th positional only \
+       parameter expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
+    ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly

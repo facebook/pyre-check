@@ -1575,6 +1575,36 @@ let test_most_important_error_reason _ =
               (Node.create_with_default_location
                  { actual = Type.integer; expected = Type.string; name = Some "bar"; position = 1 });
           ]));
+  (* We preserve mismatches for the `self` parameter if it the given argument is readonly, since
+     that means we have called a mutating method on a readonly object. *)
+  assert_most_important_error_reason
+    ~arity_mismatch_reasons:
+      [
+        Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 {
+                   actual = Type.ReadOnly.create (Type.Primitive "Foo");
+                   expected = Type.Primitive "Foo";
+                   name = Some "self";
+                   position = 0;
+                 });
+          ];
+      ]
+    ~annotation_mismatch_reasons:[]
+    (Some
+       (Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 {
+                   actual = Type.ReadOnly.create (Type.Primitive "Foo");
+                   expected = Type.Primitive "Foo";
+                   name = Some "self";
+                   position = 0;
+                 });
+          ]));
   ()
 
 
