@@ -1025,6 +1025,57 @@ ModelQuery(
 )
 ```
 
+### Models for setting modes
+
+This model clause is different from the others in this section in the sense that it doesn't produce taint for the models it targets, but updates their models with specific modes to change their behavior with taint analysis.
+
+The available modes are:
+- [`Obscure`](pysa_advanced.md#obscure-models)
+  - Prevents a function or method from being marked as obscure
+- [`SkipAnalysis`](pysa_advanced.md#prevent-inferring-models-with-skipanalysis)
+  - Skips inference of the function or model targeted, and forces the use of user-defined models for taint flow
+- [`SkipOverrides`](pysa_advanced.md#ignoring-overrides)
+  - Prevents taint propagation from the targeted model into and from overridden methods on subclasses
+- [`Entrypoint`](pysa_advanced.md#filtering-the-call-graph-with-entrypoint)
+  - Specifies functions or methods to be used as entrypoints for analysis, so only transitive calls from that function are analyzed
+- [`SkipDecoratorWhenInlining`](pysa_advanced.md#prevent-inlining-decorators-with-skipdecoratorwheninlining)
+  - Prevents the selected decorator from being inlined during analysis
+  - Note: this mode will be a no-op, since model queries are generated after decorators are inlined
+
+For instance, instead of annotating each function separately, as in the following `.pysa` file:
+
+```python
+@Entrypoint
+def myfile.func1(): ...
+
+@Entrypoint
+def myfile.func2(): ...
+
+@Entrypoint
+def myfile.func3(): ...
+
+@Entrypoint
+def myfile.func4(): ...
+```
+One could instead use the following model query:
+
+```python
+ModelQuery(
+  name = "get_myfile_entrypoint_functions",
+  find = "functions",
+  where = [
+    name.matches("myfile\.func.*")
+  ],
+  model = [
+    Modes([Entrypoint])
+  ]
+)
+```
+
+The benefit is that any new functions that matches that name will also be considered entrypoints.
+
+Note that it is also possible to include multiple modes in a `Modes` model clause by extending the list (e.g `Modes([SkipOverrides, Obscure])`.
+
 ## Expected and Unexpected Models clauses
 
 The optional `expected_models` and `unexpected_models` clauses allow you to specify models that your ModelQuery should or should not generate the equivalent of. The models in these clauses should be syntactically correct Pysa models (see [this documentation](https://staticdocs.internalfb.com/pyre/docs/pysa-basics/#model-files) for a guide on how to write a Pysa model). If your query does not generate a model in `expected_models`, or if it generates a model in `unexpected_models`, an error will be raised.
