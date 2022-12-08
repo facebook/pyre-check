@@ -35,6 +35,37 @@ module ModelQueryRegistryMap : sig
   val get_registry : model_join:(Model.t -> Model.t -> Model.t) -> t -> Registry.t
 end
 
+module DumpModelQueryResults : sig
+  val dump_to_string : models_and_names:ModelQueryRegistryMap.t -> string
+
+  val dump_to_file : models_and_names:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
+
+  val dump_to_file_and_string
+    :  models_and_names:ModelQueryRegistryMap.t ->
+    path:PyrePath.t ->
+    string
+end
+
+module CallableQueries : sig
+  val apply_callable_query
+    :  verbose:bool ->
+    resolution:Analysis.GlobalResolution.t ->
+    class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
+    callable:Interprocedural.Target.t ->
+    ModelParseResult.ModelQuery.t ->
+    ModelParseResult.ModelAnnotation.t list Core.String.Map.t
+end
+
+module AttributeQueries : sig
+  val apply_attribute_query
+    :  verbose:bool ->
+    resolution:Analysis.GlobalResolution.t ->
+    class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
+    variable_metadata:VariableMetadata.t ->
+    ModelParseResult.ModelQuery.t ->
+    ModelParseResult.TaintAnnotation.t list Core.String.Map.t
+end
+
 module GlobalVariableQueries : sig
   val get_globals_and_annotations
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
@@ -48,33 +79,6 @@ module GlobalVariableQueries : sig
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list Core.String.Map.t
 end
-
-module DumpModelQueryResults : sig
-  val dump_to_string : models_and_names:ModelQueryRegistryMap.t -> string
-
-  val dump_to_file : models_and_names:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
-
-  val dump_to_file_and_string
-    :  models_and_names:ModelQueryRegistryMap.t ->
-    path:PyrePath.t ->
-    string
-end
-
-val apply_callable_query
-  :  verbose:bool ->
-  resolution:Analysis.GlobalResolution.t ->
-  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-  callable:Interprocedural.Target.t ->
-  ModelParseResult.ModelQuery.t ->
-  ModelParseResult.ModelAnnotation.t list Core.String.Map.t
-
-val apply_attribute_query
-  :  verbose:bool ->
-  resolution:Analysis.GlobalResolution.t ->
-  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-  variable_metadata:VariableMetadata.t ->
-  ModelParseResult.ModelQuery.t ->
-  ModelParseResult.TaintAnnotation.t list Core.String.Map.t
 
 val apply_all_queries
   :  resolution:Analysis.Resolution.t ->

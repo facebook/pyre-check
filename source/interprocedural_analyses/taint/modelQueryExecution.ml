@@ -543,301 +543,311 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       |> Option.value ~default:false
 
 
-let apply_callable_models
-    ~resolution
-    ~models
-    {
-      Node.value =
-        {
-          Statement.Define.signature =
-            { Statement.Define.Signature.parameters; return_annotation; _ };
-          _;
-        };
-      _;
-    }
-  =
-  let production_to_taint ?(parameter = None) ~production annotation =
-    let open Expression in
-    let get_subkind_from_annotation ~pattern annotation =
-      let get_annotation_of_type annotation =
-        match annotation >>| Node.value with
-        | Some (Expression.Call { Call.callee = { Node.value = callee; _ }; arguments }) -> (
-            match callee with
-            | Name
-                (Name.Attribute
+module CallableQueries = struct
+  let apply_callable_models
+      ~resolution
+      ~models
+      {
+        Node.value =
+          {
+            Statement.Define.signature =
+              { Statement.Define.Signature.parameters; return_annotation; _ };
+            _;
+          };
+        _;
+      }
+    =
+    let production_to_taint ?(parameter = None) ~production annotation =
+      let open Expression in
+      let get_subkind_from_annotation ~pattern annotation =
+        let get_annotation_of_type annotation =
+          match annotation >>| Node.value with
+          | Some (Expression.Call { Call.callee = { Node.value = callee; _ }; arguments }) -> (
+              match callee with
+              | Name
+                  (Name.Attribute
+                    {
+                      base =
+                        { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
+                      _;
+                    }) -> (
+                  match arguments with
+                  | [
+                   { Call.Argument.value = { Node.value = Expression.Tuple [_; annotation]; _ }; _ };
+                  ] ->
+                      Some annotation
+                  | _ -> None)
+              | _ -> None)
+          | _ -> None
+        in
+        match get_annotation_of_type annotation with
+        | Some
+            {
+              Node.value =
+                Expression.Call
                   {
-                    base = { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
-                    _;
-                  }) -> (
-                match arguments with
-                | [
-                 { Call.Argument.value = { Node.value = Expression.Tuple [_; annotation]; _ }; _ };
-                ] ->
-                    Some annotation
-                | _ -> None)
-            | _ -> None)
+                    Call.callee = { Node.value = Name (Name.Identifier callee_name); _ };
+                    arguments =
+                      [
+                        {
+                          Call.Argument.value = { Node.value = Name (Name.Identifier subkind); _ };
+                          _;
+                        };
+                      ];
+                  };
+              _;
+            } ->
+            if String.equal callee_name pattern then
+              Some subkind
+            else
+              None
         | _ -> None
       in
-      match get_annotation_of_type annotation with
-      | Some
-          {
-            Node.value =
-              Expression.Call
-                {
-                  Call.callee = { Node.value = Name (Name.Identifier callee_name); _ };
-                  arguments =
-                    [
-                      { Call.Argument.value = { Node.value = Name (Name.Identifier subkind); _ }; _ };
-                    ];
-                };
-            _;
-          } ->
-          if String.equal callee_name pattern then
-            Some subkind
-          else
-            None
+      let update_placeholder_via_feature ~actual_parameter =
+        (* If we see a via_feature on the $global attribute symbolic parameter in the taint for an
+           actual parameter, we replace it with the actual parameter. *)
+        let open Features in
+        function
+        | ViaFeature.ViaTypeOf
+            {
+              parameter =
+                AccessPath.Root.PositionalParameter
+                  { position = 0; name = "$global"; positional_only = false };
+              tag;
+            } ->
+            ViaFeature.ViaTypeOf { parameter = actual_parameter; tag }
+        | ViaFeature.ViaValueOf
+            {
+              parameter =
+                AccessPath.Root.PositionalParameter
+                  { position = 0; name = "$global"; positional_only = false };
+              tag;
+            } ->
+            ViaFeature.ViaValueOf { parameter = actual_parameter; tag }
+        | feature -> feature
+      in
+      let update_placeholder_via_features taint_annotation =
+        match parameter, taint_annotation with
+        | Some actual_parameter, ModelParseResult.TaintAnnotation.Source { source; features } ->
+            let via_features =
+              List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
+            in
+            ModelParseResult.TaintAnnotation.Source
+              { source; features = { features with via_features } }
+        | Some actual_parameter, ModelParseResult.TaintAnnotation.Sink { sink; features } ->
+            let via_features =
+              List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
+            in
+            ModelParseResult.TaintAnnotation.Sink
+              { sink; features = { features with via_features } }
+        | Some actual_parameter, ModelParseResult.TaintAnnotation.Tito { tito; features } ->
+            let via_features =
+              List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
+            in
+            ModelParseResult.TaintAnnotation.Tito
+              { tito; features = { features with via_features } }
+        | Some actual_parameter, ModelParseResult.TaintAnnotation.AddFeatureToArgument { features }
+          ->
+            let via_features =
+              List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
+            in
+            ModelParseResult.TaintAnnotation.AddFeatureToArgument
+              { features = { features with via_features } }
+        | _ -> taint_annotation
+      in
+      match production with
+      | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation ->
+          Some (update_placeholder_via_features taint_annotation)
+      | ModelQuery.QueryTaintAnnotation.ParametricSourceFromAnnotation { source_pattern; kind } ->
+          get_subkind_from_annotation ~pattern:source_pattern annotation
+          >>| fun subkind ->
+          ModelParseResult.TaintAnnotation.Source
+            {
+              source = Sources.ParametricSource { source_name = kind; subkind };
+              features = ModelParseResult.TaintFeatures.empty;
+            }
+      | ModelQuery.QueryTaintAnnotation.ParametricSinkFromAnnotation { sink_pattern; kind } ->
+          get_subkind_from_annotation ~pattern:sink_pattern annotation
+          >>| fun subkind ->
+          ModelParseResult.TaintAnnotation.Sink
+            {
+              sink = Sinks.ParametricSink { sink_name = kind; subkind };
+              features = ModelParseResult.TaintFeatures.empty;
+            }
+    in
+    let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+    let apply_model = function
+      | ModelQuery.Model.Return productions ->
+          List.filter_map productions ~f:(fun production ->
+              production_to_taint return_annotation ~production
+              >>| fun taint -> ModelParseResult.ModelAnnotation.ReturnAnnotation taint)
+      | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
+          let parameter =
+            List.find_map
+              normalized_parameters
+              ~f:(fun
+                   (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ })
+                 ->
+                if Identifier.equal_sanitized parameter_name name then
+                  Some (root, annotation)
+                else
+                  None)
+          in
+          match parameter with
+          | Some (parameter, annotation) ->
+              List.filter_map productions ~f:(fun production ->
+                  production_to_taint annotation ~production
+                  >>| fun taint ->
+                  ModelParseResult.ModelAnnotation.ParameterAnnotation (parameter, taint))
+          | None -> [])
+      | ModelQuery.Model.PositionalParameter { index; taint = productions } -> (
+          let parameter =
+            List.find_map
+              normalized_parameters
+              ~f:(fun (root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) ->
+                match root with
+                | AccessPath.Root.PositionalParameter { position; _ } when position = index ->
+                    Some (root, annotation)
+                | _ -> None)
+          in
+          match parameter with
+          | Some (parameter, annotation) ->
+              List.filter_map productions ~f:(fun production ->
+                  production_to_taint annotation ~production
+                  >>| fun taint ->
+                  ModelParseResult.ModelAnnotation.ParameterAnnotation (parameter, taint))
+          | None -> [])
+      | ModelQuery.Model.AllParameters { excludes; taint } ->
+          let apply_parameter_production
+              ( (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }),
+                production )
+            =
+            if
+              (not (List.is_empty excludes))
+              && List.mem excludes ~equal:String.equal (Identifier.sanitized parameter_name)
+            then
+              None
+            else
+              production_to_taint annotation ~production
+              >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
+          in
+          List.cartesian_product normalized_parameters taint
+          |> List.filter_map ~f:apply_parameter_production
+      | ModelQuery.Model.Parameter { where; taint; _ } ->
+          let apply_parameter_production
+              ( ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as parameter),
+                production )
+            =
+            if
+              List.for_all where ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
+            then
+              let parameter, _, _ = parameter in
+              production_to_taint annotation ~production ~parameter:(Some parameter)
+              >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
+            else
+              None
+          in
+          List.cartesian_product normalized_parameters taint
+          |> List.filter_map ~f:apply_parameter_production
+      | ModelQuery.Model.Modes modes -> [ModelParseResult.ModelAnnotation.ModeAnnotation modes]
+      | ModelQuery.Model.Attribute _ -> failwith "impossible case"
+      | ModelQuery.Model.Global _ -> failwith "impossible case"
+    in
+    List.concat_map models ~f:apply_model
+
+
+  let apply_callable_query
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~callable
+      { ModelQuery.find; where; models; name = query_name; _ }
+    =
+    let kind_matches =
+      match callable, find with
+      | Target.Function _, ModelQuery.Find.Function
+      | Target.Method _, ModelQuery.Find.Method ->
+          true
+      | _ -> false
+    in
+    let definition =
+      lazy
+        (let definition = Target.get_module_and_definition ~resolution callable >>| snd in
+         let () =
+           if Option.is_none definition then
+             Log.error "Could not find definition for callable: `%a`" Target.pp_pretty callable
+         in
+         definition)
+    in
+    if
+      kind_matches
+      && List.for_all
+           ~f:
+             (matches_constraint
+                ~resolution
+                ~class_hierarchy_graph
+                (Modelable.Callable { target = callable; definition }))
+           where
+    then
+      let () =
+        if verbose then
+          Log.info
+            "Target `%a` matches all constraints for the model query `%s`."
+            Target.pp_pretty
+            callable
+            query_name
+      in
+      let annotations =
+        Lazy.force definition
+        >>| apply_callable_models ~resolution ~models
+        |> Option.value ~default:[]
+      in
+      String.Map.set String.Map.empty ~key:query_name ~data:annotations
+    else
+      String.Map.empty
+end
+
+module AttributeQueries = struct
+  let apply_attribute_models ~models =
+    let production_to_taint = function
+      | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
       | _ -> None
     in
-    let update_placeholder_via_feature ~actual_parameter =
-      (* If we see a via_feature on the $global attribute symbolic parameter in the taint for an
-         actual parameter, we replace it with the actual parameter. *)
-      let open Features in
-      function
-      | ViaFeature.ViaTypeOf
-          {
-            parameter =
-              AccessPath.Root.PositionalParameter
-                { position = 0; name = "$global"; positional_only = false };
-            tag;
-          } ->
-          ViaFeature.ViaTypeOf { parameter = actual_parameter; tag }
-      | ViaFeature.ViaValueOf
-          {
-            parameter =
-              AccessPath.Root.PositionalParameter
-                { position = 0; name = "$global"; positional_only = false };
-            tag;
-          } ->
-          ViaFeature.ViaValueOf { parameter = actual_parameter; tag }
-      | feature -> feature
+    let apply_model = function
+      | ModelQuery.Model.Attribute productions -> List.filter_map productions ~f:production_to_taint
+      | _ -> failwith "impossible case"
     in
-    let update_placeholder_via_features taint_annotation =
-      match parameter, taint_annotation with
-      | Some actual_parameter, ModelParseResult.TaintAnnotation.Source { source; features } ->
-          let via_features =
-            List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
-          in
-          ModelParseResult.TaintAnnotation.Source
-            { source; features = { features with via_features } }
-      | Some actual_parameter, ModelParseResult.TaintAnnotation.Sink { sink; features } ->
-          let via_features =
-            List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
-          in
-          ModelParseResult.TaintAnnotation.Sink { sink; features = { features with via_features } }
-      | Some actual_parameter, ModelParseResult.TaintAnnotation.Tito { tito; features } ->
-          let via_features =
-            List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
-          in
-          ModelParseResult.TaintAnnotation.Tito { tito; features = { features with via_features } }
-      | Some actual_parameter, ModelParseResult.TaintAnnotation.AddFeatureToArgument { features } ->
-          let via_features =
-            List.map ~f:(update_placeholder_via_feature ~actual_parameter) features.via_features
-          in
-          ModelParseResult.TaintAnnotation.AddFeatureToArgument
-            { features = { features with via_features } }
-      | _ -> taint_annotation
-    in
-    match production with
-    | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation ->
-        Some (update_placeholder_via_features taint_annotation)
-    | ModelQuery.QueryTaintAnnotation.ParametricSourceFromAnnotation { source_pattern; kind } ->
-        get_subkind_from_annotation ~pattern:source_pattern annotation
-        >>| fun subkind ->
-        ModelParseResult.TaintAnnotation.Source
-          {
-            source = Sources.ParametricSource { source_name = kind; subkind };
-            features = ModelParseResult.TaintFeatures.empty;
-          }
-    | ModelQuery.QueryTaintAnnotation.ParametricSinkFromAnnotation { sink_pattern; kind } ->
-        get_subkind_from_annotation ~pattern:sink_pattern annotation
-        >>| fun subkind ->
-        ModelParseResult.TaintAnnotation.Sink
-          {
-            sink = Sinks.ParametricSink { sink_name = kind; subkind };
-            features = ModelParseResult.TaintFeatures.empty;
-          }
-  in
-  let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
-  let apply_model = function
-    | ModelQuery.Model.Return productions ->
-        List.filter_map productions ~f:(fun production ->
-            production_to_taint return_annotation ~production
-            >>| fun taint -> ModelParseResult.ModelAnnotation.ReturnAnnotation taint)
-    | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
-        let parameter =
-          List.find_map
-            normalized_parameters
-            ~f:(fun
-                 (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ })
-               ->
-              if Identifier.equal_sanitized parameter_name name then
-                Some (root, annotation)
-              else
-                None)
-        in
-        match parameter with
-        | Some (parameter, annotation) ->
-            List.filter_map productions ~f:(fun production ->
-                production_to_taint annotation ~production
-                >>| fun taint ->
-                ModelParseResult.ModelAnnotation.ParameterAnnotation (parameter, taint))
-        | None -> [])
-    | ModelQuery.Model.PositionalParameter { index; taint = productions } -> (
-        let parameter =
-          List.find_map
-            normalized_parameters
-            ~f:(fun (root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) ->
-              match root with
-              | AccessPath.Root.PositionalParameter { position; _ } when position = index ->
-                  Some (root, annotation)
-              | _ -> None)
-        in
-        match parameter with
-        | Some (parameter, annotation) ->
-            List.filter_map productions ~f:(fun production ->
-                production_to_taint annotation ~production
-                >>| fun taint ->
-                ModelParseResult.ModelAnnotation.ParameterAnnotation (parameter, taint))
-        | None -> [])
-    | ModelQuery.Model.AllParameters { excludes; taint } ->
-        let apply_parameter_production
-            ( (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }),
-              production )
-          =
-          if
-            (not (List.is_empty excludes))
-            && List.mem excludes ~equal:String.equal (Identifier.sanitized parameter_name)
-          then
-            None
-          else
-            production_to_taint annotation ~production
-            >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
-        in
-        List.cartesian_product normalized_parameters taint
-        |> List.filter_map ~f:apply_parameter_production
-    | ModelQuery.Model.Parameter { where; taint; _ } ->
-        let apply_parameter_production
-            ( ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as parameter),
-              production )
-          =
-          if List.for_all where ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
-          then
-            let parameter, _, _ = parameter in
-            production_to_taint annotation ~production ~parameter:(Some parameter)
-            >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
-          else
-            None
-        in
-        List.cartesian_product normalized_parameters taint
-        |> List.filter_map ~f:apply_parameter_production
-    | ModelQuery.Model.Modes modes -> [ModelParseResult.ModelAnnotation.ModeAnnotation modes]
-    | ModelQuery.Model.Attribute _ -> failwith "impossible case"
-    | ModelQuery.Model.Global _ -> failwith "impossible case"
-  in
-  List.concat_map models ~f:apply_model
+    List.concat_map models ~f:apply_model
 
 
-let apply_callable_query
-    ~verbose
-    ~resolution
-    ~class_hierarchy_graph
-    ~callable
-    { ModelQuery.find; where; models; name = query_name; _ }
-  =
-  let kind_matches =
-    match callable, find with
-    | Target.Function _, ModelQuery.Find.Function
-    | Target.Method _, ModelQuery.Find.Method ->
-        true
-    | _ -> false
-  in
-  let definition =
-    lazy
-      (let definition = Target.get_module_and_definition ~resolution callable >>| snd in
-       let () =
-         if Option.is_none definition then
-           Log.error "Could not find definition for callable: `%a`" Target.pp_pretty callable
-       in
-       definition)
-  in
-  if
-    kind_matches
-    && List.for_all
-         ~f:
-           (matches_constraint
-              ~resolution
-              ~class_hierarchy_graph
-              (Modelable.Callable { target = callable; definition }))
-         where
-  then
-    let () =
-      if verbose then
-        Log.info
-          "Target `%a` matches all constraints for the model query `%s`."
-          Target.pp_pretty
-          callable
-          query_name
-    in
-    let annotations =
-      Lazy.force definition
-      >>| apply_callable_models ~resolution ~models
-      |> Option.value ~default:[]
-    in
-    String.Map.set String.Map.empty ~key:query_name ~data:annotations
-  else
-    String.Map.empty
-
-
-let apply_attribute_models ~models =
-  let production_to_taint = function
-    | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
-    | _ -> None
-  in
-  let apply_model = function
-    | ModelQuery.Model.Attribute productions -> List.filter_map productions ~f:production_to_taint
-    | _ -> failwith "impossible case"
-  in
-  List.concat_map models ~f:apply_model
-
-
-let apply_attribute_query
-    ~verbose
-    ~resolution
-    ~class_hierarchy_graph
-    ~variable_metadata:({ VariableMetadata.name; _ } as variable_metadata)
-    { ModelQuery.find; where; models; name = query_name; _ }
-  =
-  if
-    ModelQuery.Find.is_attribute find
-    && List.for_all
-         ~f:
-           (matches_constraint
-              ~resolution
-              ~class_hierarchy_graph
-              (Modelable.Attribute variable_metadata))
-         where
-  then
-    let () =
-      if verbose then
-        Log.info
-          "Attribute `%s` matches all constraints for the model query `%s`."
-          (Reference.show name)
-          query_name
-    in
-    String.Map.set String.Map.empty ~key:query_name ~data:(apply_attribute_models ~models)
-  else
-    String.Map.empty
-
+  let apply_attribute_query
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~variable_metadata:({ VariableMetadata.name; _ } as variable_metadata)
+      { ModelQuery.find; where; models; name = query_name; _ }
+    =
+    if
+      ModelQuery.Find.is_attribute find
+      && List.for_all
+           ~f:
+             (matches_constraint
+                ~resolution
+                ~class_hierarchy_graph
+                (Modelable.Attribute variable_metadata))
+           where
+    then
+      let () =
+        if verbose then
+          Log.info
+            "Attribute `%s` matches all constraints for the model query `%s`."
+            (Reference.show name)
+            query_name
+      in
+      String.Map.set String.Map.empty ~key:query_name ~data:(apply_attribute_models ~models)
+    else
+      String.Map.empty
+end
 
 let get_class_attributes ~global_resolution ~class_name =
   let class_summary =
@@ -999,7 +1009,7 @@ let apply_all_queries
       apply_queries
         ~queries:callable_queries
         ~apply_query:
-          (apply_callable_query
+          (CallableQueries.apply_callable_query
              ~verbose
              ~resolution:global_resolution
              ~class_hierarchy_graph
@@ -1045,7 +1055,7 @@ let apply_all_queries
       apply_queries
         ~queries:attribute_queries
         ~apply_query:
-          (apply_attribute_query
+          (AttributeQueries.apply_attribute_query
              ~verbose
              ~resolution:global_resolution
              ~class_hierarchy_graph

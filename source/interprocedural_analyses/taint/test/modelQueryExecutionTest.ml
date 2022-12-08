@@ -42,7 +42,7 @@ let test_apply_query context =
     in
     let actual =
       query
-      |> Taint.ModelQueryExecution.apply_callable_query
+      |> Taint.ModelQueryExecution.CallableQueries.apply_callable_query
            ~verbose:false
            ~resolution:global_resolution
            ~class_hierarchy_graph
@@ -81,7 +81,7 @@ let test_apply_query context =
     in
     let actual =
       query
-      |> Taint.ModelQueryExecution.apply_attribute_query
+      |> Taint.ModelQueryExecution.AttributeQueries.apply_attribute_query
            ~verbose:false
            ~resolution:global_resolution
            ~class_hierarchy_graph
