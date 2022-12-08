@@ -1463,11 +1463,127 @@ let test_check_arguments_against_parameters context =
   ()
 
 
+let test_most_important_error_reason _ =
+  let open AttributeResolution in
+  let open SignatureSelectionTypes in
+  let assert_most_important_error_reason
+      ~arity_mismatch_reasons
+      ~annotation_mismatch_reasons
+      expected
+    =
+    assert_equal
+      ~printer:[%show: reason option]
+      ~cmp:[%compare.equal: reason option]
+      expected
+      (SignatureSelection.most_important_error_reason
+         ~arity_mismatch_reasons
+         annotation_mismatch_reasons)
+  in
+  assert_most_important_error_reason ~arity_mismatch_reasons:[] ~annotation_mismatch_reasons:[] None;
+  assert_most_important_error_reason
+    ~arity_mismatch_reasons:[]
+    ~annotation_mismatch_reasons:[UnexpectedKeyword "foo"]
+    (Some (UnexpectedKeyword "foo"));
+  (* `Mismatch` is less important than `UnexpectedKeyword`, but because it comes under `arity` it
+     takes precedence. *)
+  assert_most_important_error_reason
+    ~arity_mismatch_reasons:
+      [
+        Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "foo"; position = 1 });
+          ];
+      ]
+    ~annotation_mismatch_reasons:[UnexpectedKeyword "foo"]
+    (Some
+       (Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "foo"; position = 1 });
+          ]));
+  (* `UnexpectedKeyword` beats `Mismatch`. *)
+  assert_most_important_error_reason
+    ~arity_mismatch_reasons:
+      [
+        Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "foo"; position = 1 });
+          ];
+        UnexpectedKeyword "foo";
+      ]
+    ~annotation_mismatch_reasons:[]
+    (Some (UnexpectedKeyword "foo"));
+  (* We merge and sort `Mismatch`-es. *)
+  assert_most_important_error_reason
+    ~arity_mismatch_reasons:
+      [
+        Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "foo"; position = 2 });
+          ];
+        Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "bar"; position = 1 });
+          ];
+      ]
+    ~annotation_mismatch_reasons:[]
+    (Some
+       (Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "bar"; position = 1 });
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "foo"; position = 2 });
+          ]));
+  (* We filter out `TooManyArguments` when the number of expected arguments is -1 (i.e., the method
+     has no `self` parameter.). *)
+  assert_most_important_error_reason
+    ~arity_mismatch_reasons:
+      [TooManyArguments { expected = -1; provided = 1 }; UnexpectedKeyword "foo"]
+    ~annotation_mismatch_reasons:[]
+    (Some (UnexpectedKeyword "foo"));
+  (* We filter out mismatches on the 0th position, i.e., the argument for the `self` parameter. *)
+  assert_most_important_error_reason
+    ~arity_mismatch_reasons:
+      [
+        Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "bar"; position = 1 });
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "self"; position = 0 });
+          ];
+      ]
+    ~annotation_mismatch_reasons:[]
+    (Some
+       (Mismatches
+          [
+            Mismatch
+              (Node.create_with_default_location
+                 { actual = Type.integer; expected = Type.string; name = Some "bar"; position = 1 });
+          ]));
+  ()
+
+
 let () =
   "attributeResolution"
   >::: [
          "prepare_arguments" >:: test_prepare_arguments_for_signature_selection;
          "parameter_argument_mapping" >:: test_get_parameter_argument_mapping;
          "check_arguments_against_parameters" >:: test_check_arguments_against_parameters;
+         "most_important_error_reason" >:: test_most_important_error_reason;
        ]
   |> Test.run

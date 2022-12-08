@@ -2165,63 +2165,36 @@ module SignatureSelection = struct
             ])
 
 
-  (** Given a signature match for a callable, solve for any type variables and instantiate the
-      return annotation. *)
-  let instantiate_return_annotation
-      ?(skip_marking_escapees = false)
-      ~order
-      {
-        callable =
-          { implementation = { annotation = uninstantiated_return_annotation; _ }; _ } as callable;
-        constraints_set;
-        reasons = { arity; annotation; _ };
-        _;
-      }
-    =
+  let most_important_error_reason ~arity_mismatch_reasons annotation_mismatch_reasons =
     let open SignatureSelectionTypes in
-    let reverse_filter_out_self_argument_errors reasons =
-      let filter_too_many_arguments = function
-        (* These would come from methods lacking a self argument called on an instance *)
-        | TooManyArguments { expected; _ } -> not (Int.equal expected (-1))
-        | _ -> true
-      in
-      let filter_mismatches reason =
-        match reason with
+    let remove_self_argument_errors reasons =
+      let remove_self_related_errors = function
+        | TooManyArguments { expected; _ } when Int.equal expected (-1) ->
+            (* This arises when calling a method that lacks a `self` parameter. We already error
+               about that on the method definition, so don't repeat it for every call of that
+               method. *)
+            None
         | Mismatches mismatches ->
-            Mismatches
-              (List.filter mismatches ~f:(function
-                  | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
-                  | _ -> true))
-        | _ -> reason
+            let mismatches =
+              List.filter mismatches ~f:(function
+                  | Mismatch { Node.value = { position = 0; _ }; _ } ->
+                      (* A mismatch on the 0th parameter, i.e., the `self` parameter, is a sign that
+                         the explicit `self` annotation was wrong, since you wouldn't be able to
+                         look up that method otherwise. We already error about invalid `self`
+                         annotations, so don't emit an error for every call of that method. *)
+                      false
+                  | _ -> true)
+            in
+            Mismatches mismatches |> Option.some
+        | reason -> Some reason
       in
-      reasons |> List.rev_filter ~f:filter_too_many_arguments |> List.map ~f:filter_mismatches
-    in
-    let instantiated_return_annotation =
-      let local_free_variables = Type.Variable.all_free_variables (Type.Callable callable) in
-      let solution =
-        TypeOrder.OrderedConstraintsSet.solve
-          constraints_set
-          ~only_solve_for:local_free_variables
-          ~order
-        |> Option.value ~default:ConstraintsSet.Solution.empty
-      in
-      let instantiated =
-        ConstraintsSet.Solution.instantiate solution uninstantiated_return_annotation
-      in
-      if skip_marking_escapees then
-        instantiated
-      else
-        Type.Variable.mark_all_free_variables_as_escaped ~specific:local_free_variables instantiated
-        (* We need to do transformations of the form Union[T_escaped, int] => int in order to
-           properly handle some typeshed stubs which only sometimes bind type variables and expect
-           them to fall out in this way (see Mapping.get) *)
-        |> Type.Variable.collapse_all_escaped_variable_unions
+      List.rev_filter_map ~f:remove_self_related_errors reasons
     in
     match
-      ( reverse_filter_out_self_argument_errors arity,
-        reverse_filter_out_self_argument_errors annotation )
+      ( remove_self_argument_errors arity_mismatch_reasons,
+        remove_self_argument_errors annotation_mismatch_reasons )
     with
-    | [], [] -> Found { selected_return_annotation = instantiated_return_annotation }
+    | [], [] -> None
     | reason :: reasons, _
     | [], reason :: reasons ->
         let importance = function
@@ -2259,10 +2232,50 @@ module SignatureSelection = struct
               Mismatches (List.sort mismatches ~compare:compare_mismatches)
           | _ -> reason
         in
-        let reason =
-          Some (List.fold ~init:reason ~f:get_most_important reasons |> sort_mismatches)
-        in
-        NotFound { closest_return_annotation = instantiated_return_annotation; reason }
+        Some (List.fold ~init:reason ~f:get_most_important reasons |> sort_mismatches)
+
+
+  (** Given a signature match for a callable, solve for any type variables and instantiate the
+      return annotation. *)
+  let instantiate_return_annotation
+      ?(skip_marking_escapees = false)
+      ~order
+      {
+        callable =
+          { implementation = { annotation = uninstantiated_return_annotation; _ }; _ } as callable;
+        constraints_set;
+        reasons = { arity = arity_mismatch_reasons; annotation = annotation_mismatch_reasons; _ };
+        _;
+      }
+    =
+    let local_free_variables = Type.Variable.all_free_variables (Type.Callable callable) in
+    let solution =
+      TypeOrder.OrderedConstraintsSet.solve
+        constraints_set
+        ~only_solve_for:local_free_variables
+        ~order
+      |> Option.value ~default:ConstraintsSet.Solution.empty
+    in
+    let instantiated =
+      ConstraintsSet.Solution.instantiate solution uninstantiated_return_annotation
+    in
+    let instantiated_return_annotation =
+      if skip_marking_escapees then
+        instantiated
+      else
+        Type.Variable.mark_all_free_variables_as_escaped ~specific:local_free_variables instantiated
+        (* We need to do transformations of the form Union[T_escaped, int] => int in order to
+           properly handle some typeshed stubs which only sometimes bind type variables and expect
+           them to fall out in this way (see Mapping.get) *)
+        |> Type.Variable.collapse_all_escaped_variable_unions
+    in
+    match most_important_error_reason ~arity_mismatch_reasons annotation_mismatch_reasons with
+    | None ->
+        SignatureSelectionTypes.Found
+          { selected_return_annotation = instantiated_return_annotation }
+    | Some reason ->
+        NotFound
+          { closest_return_annotation = instantiated_return_annotation; reason = Some reason }
 
 
   let default_instantiated_return_annotation

@@ -147,6 +147,11 @@ module SignatureSelection : sig
     :  Type.Callable.t ->
     SignatureSelectionTypes.instantiated_return_annotation
 
+  val most_important_error_reason
+    :  arity_mismatch_reasons:SignatureSelectionTypes.reason list ->
+    SignatureSelectionTypes.reason list ->
+    SignatureSelectionTypes.reason option
+
   val instantiate_return_annotation
     :  ?skip_marking_escapees:bool ->
     order:ConstraintsSet.order ->
