@@ -120,11 +120,11 @@ class InitializeTest(unittest.TestCase):
             initialize.log, "get_yes_no_input"
         ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
             yes_no_input.side_effect = [True]
-            string_input.side_effect = ["//target/...", ""]
+            string_input.side_effect = ["fbcode//target/...", ""]
 
             self.assertEqual(
                 initialize._get_local_configuration(Path("/"), Path("/")),
-                {"targets": ["//target/..."]},
+                {"targets": ["fbcode//target/..."]},
             )
 
         with patch.object(
@@ -134,7 +134,7 @@ class InitializeTest(unittest.TestCase):
             string_input.side_effect = ["", ""]
             self.assertEqual(
                 initialize._get_local_configuration(Path("/project"), Path("/")),
-                {"targets": ["//project/..."]},
+                {"targets": ["fbcode//project/..."]},
             )
 
         with patch.object(
@@ -151,8 +151,8 @@ class InitializeTest(unittest.TestCase):
             initialize.log, "get_yes_no_input"
         ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
             yes_no_input.side_effect = [True]
-            string_input.side_effect = ["//target/...", "pyre"]
+            string_input.side_effect = ["fbcode//target/...", "pyre"]
             self.assertEqual(
                 initialize._get_local_configuration(Path("/"), Path("/")),
-                {"oncall": "pyre", "targets": ["//target/..."]},
+                {"oncall": "pyre", "targets": ["fbcode//target/..."]},
             )

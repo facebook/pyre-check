@@ -86,13 +86,13 @@ def _get_local_configuration(
     if using_targets:
         targets = log.get_input(
             "Which buck target(s) should pyre analyze?\n"
-            + "  Default: Analyze all targets under the configuration.\n"
-            + "  (Ex. `//target:a, //target/b/...`)\n"
+            + "  Default: Analyze all targets under the configuration (assume fbcode).\n"
+            + "  (Ex. `fbcode//target:a, fbsource//target/b/...`)\n"
         ).strip()
         if len(targets) == 0:
             if buck_root:
                 root = current_directory.relative_to(buck_root)
-                configuration["targets"] = [f"//{str(root)}/..."]
+                configuration["targets"] = [f"fbcode//{str(root)}/..."]
             else:
                 raise InitializationException(
                     "No `.buckconfig` found with which to create a default target."
