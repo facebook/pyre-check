@@ -63,7 +63,7 @@ module ModelQueryRegistryMap = struct
     merge_all_registries ~model_join (get_models model_query_map)
 
 
-  let check_expected_and_unexpected_model_errors ~models_and_names ~queries =
+  let check_expected_and_unexpected_model_errors ~registry_map ~queries =
     let find_expected_and_unexpected_model_errors ~expect ~actual_models ~name ~location ~models =
       let registry_contains_model registry ~target ~model =
         (* TODO T127682824: Deal with the case of joined models *)
@@ -111,7 +111,7 @@ module ModelQueryRegistryMap = struct
     let expected_and_unexpected_model_errors =
       queries
       |> List.map ~f:(fun { ModelQuery.name; location; expected_models; unexpected_models; _ } ->
-             let actual_models = Option.value (get models_and_names name) ~default:Registry.empty in
+             let actual_models = Option.value (get registry_map name) ~default:Registry.empty in
              let expected_model_errors =
                match expected_models with
                | [] -> []
@@ -128,11 +128,11 @@ module ModelQueryRegistryMap = struct
     expected_and_unexpected_model_errors
 
 
-  let check_errors ~models_and_names ~queries =
+  let check_errors ~registry_map ~queries =
     let model_query_names = List.map queries ~f:(fun query -> query.ModelQuery.name) in
     let errors =
       List.filter_map model_query_names ~f:(fun model_query_name ->
-          let models = get models_and_names model_query_name in
+          let models = get registry_map model_query_name in
           Statistics.log_model_query_outputs
             ~model_query_name
             ~generated_models_count:(Registry.size (Option.value models ~default:Registry.empty))
@@ -153,7 +153,7 @@ module ModelQueryRegistryMap = struct
 end
 
 module DumpModelQueryResults = struct
-  let dump_to_string ~models_and_names =
+  let dump_to_string ~registry_map =
     let model_to_json (callable, model) =
       `Assoc
         [
@@ -176,18 +176,18 @@ module DumpModelQueryResults = struct
       |> fun models_json ->
       `Assoc [(* TODO(T123305362) also include filenames *) model_query_name, models_json]
     in
-    `List (String.Map.data (String.Map.mapi models_and_names ~f:to_json))
+    `List (String.Map.data (String.Map.mapi registry_map ~f:to_json))
     |> Yojson.Safe.pretty_to_string
 
 
-  let dump_to_file ~models_and_names ~path =
+  let dump_to_file ~registry_map ~path =
     Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-    path |> File.create ~content:(dump_to_string ~models_and_names) |> File.write
+    path |> File.create ~content:(dump_to_string ~registry_map) |> File.write
 
 
-  let dump_to_file_and_string ~models_and_names ~path =
+  let dump_to_file_and_string ~registry_map ~path =
     Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-    let content = dump_to_string ~models_and_names in
+    let content = dump_to_string ~registry_map in
     path |> File.create ~content |> File.write;
     content
 end
@@ -970,7 +970,7 @@ let apply_all_queries
           | _ -> `Trd query)
         queries
     in
-    let apply_queries models_and_names target ~queries ~apply_query ~model_from_annotation =
+    let apply_queries registry_map target ~queries ~apply_query ~model_from_annotation =
       let taint_to_model_and_names =
         queries
         |> List.map ~f:apply_query
@@ -991,13 +991,13 @@ let apply_all_queries
                 "Error while executing model query: %s"
                 (ModelVerificationError.display error);
               Registry.empty)
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models models_and_names
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models registry_map
     in
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
 
     (* Generate models for functions and methods. *)
-    let apply_queries_for_callable models_and_names callable =
+    let apply_queries_for_callable registry_map callable =
       let callable_model_from_annotation ~taint_to_model =
         ModelParser.create_callable_model_from_annotations
           ~resolution
@@ -1015,7 +1015,7 @@ let apply_all_queries
              ~class_hierarchy_graph
              ~callable)
         ~model_from_annotation:callable_model_from_annotation
-        models_and_names
+        registry_map
         callable
     in
     let callables =
@@ -1033,16 +1033,14 @@ let apply_all_queries
              ~preferred_chunks_per_worker:1
              ())
         ~initial:ModelQueryRegistryMap.empty
-        ~map:(fun models_and_names callables ->
-          List.fold callables ~init:models_and_names ~f:apply_queries_for_callable)
+        ~map:(fun registry_map callables ->
+          List.fold callables ~init:registry_map ~f:apply_queries_for_callable)
         ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
         ~inputs:callables
         ()
     in
     (* Generate models for attributes. *)
-    let apply_queries_for_attribute
-        models_and_names
-        ({ VariableMetadata.name; _ } as variable_metadata)
+    let apply_queries_for_attribute registry_map ({ VariableMetadata.name; _ } as variable_metadata)
       =
       let attribute_model_from_annotation ~taint_to_model =
         ModelParser.create_attribute_model_from_annotations
@@ -1061,7 +1059,7 @@ let apply_all_queries
              ~class_hierarchy_graph
              ~variable_metadata)
         ~model_from_annotation:attribute_model_from_annotation
-        models_and_names
+        registry_map
         attribute
     in
     let attribute_models =
@@ -1083,8 +1081,8 @@ let apply_all_queries
                ~preferred_chunks_per_worker:1
                ())
           ~initial:ModelQueryRegistryMap.empty
-          ~map:(fun models_and_names attributes ->
-            List.fold attributes ~init:models_and_names ~f:apply_queries_for_attribute)
+          ~map:(fun registry_map attributes ->
+            List.fold attributes ~init:registry_map ~f:apply_queries_for_attribute)
           ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
           ~inputs:attributes
           ()
@@ -1092,10 +1090,7 @@ let apply_all_queries
         ModelQueryRegistryMap.empty
     in
     (* Generate models for globals. *)
-    let apply_queries_for_globals
-        models_and_names
-        ({ VariableMetadata.name; _ } as variable_metadata)
-      =
+    let apply_queries_for_globals registry_map ({ VariableMetadata.name; _ } as variable_metadata) =
       let global_model_from_annotation ~taint_to_model =
         ModelParser.create_attribute_model_from_annotations
           ~resolution
@@ -1113,7 +1108,7 @@ let apply_all_queries
              ~class_hierarchy_graph
              ~variable_metadata)
         ~model_from_annotation:global_model_from_annotation
-        models_and_names
+        registry_map
         global
     in
     let global_models =
@@ -1125,22 +1120,22 @@ let apply_all_queries
              ~preferred_chunks_per_worker:1
              ())
         ~initial:ModelQueryRegistryMap.empty
-        ~map:(fun models_and_names globals ->
-          List.fold globals ~init:models_and_names ~f:apply_queries_for_globals)
+        ~map:(fun registry_map globals ->
+          List.fold globals ~init:registry_map ~f:apply_queries_for_globals)
         ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
         ~inputs:(GlobalVariableQueries.get_globals_and_annotations ~environment)
         ()
     in
-    let models_and_names =
+    let registry_map =
       ModelQueryRegistryMap.merge
         ~model_join:Model.join_user_models
         callable_models
         attribute_models
       |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models global_models
     in
-    ( models_and_names,
-      ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~models_and_names ~queries
-      @ ModelQueryRegistryMap.check_errors ~models_and_names ~queries )
+    ( registry_map,
+      ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~registry_map ~queries
+      @ ModelQueryRegistryMap.check_errors ~registry_map ~queries )
   else
     ModelQueryRegistryMap.empty, []
 

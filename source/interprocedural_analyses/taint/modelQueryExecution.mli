@@ -14,7 +14,7 @@ module VariableMetadata : sig
 end
 
 module ModelQueryRegistryMap : sig
-  type t = Registry.t Core.String.Map.t
+  type t
 
   val empty : t
 
@@ -36,14 +36,11 @@ module ModelQueryRegistryMap : sig
 end
 
 module DumpModelQueryResults : sig
-  val dump_to_string : models_and_names:ModelQueryRegistryMap.t -> string
+  val dump_to_string : registry_map:ModelQueryRegistryMap.t -> string
 
-  val dump_to_file : models_and_names:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
+  val dump_to_file : registry_map:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
 
-  val dump_to_file_and_string
-    :  models_and_names:ModelQueryRegistryMap.t ->
-    path:PyrePath.t ->
-    string
+  val dump_to_file_and_string : registry_map:ModelQueryRegistryMap.t -> path:PyrePath.t -> string
 end
 
 module CallableQueries : sig

@@ -220,7 +220,7 @@ let initialize_models
     | _ ->
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
-        let models_and_names, errors =
+        let registry_map, errors =
           ModelQueryExecution.generate_models_from_queries
             ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph
@@ -233,13 +233,12 @@ let initialize_models
         in
         let () =
           match taint_configuration.dump_model_query_results_path with
-          | Some path ->
-              ModelQueryExecution.DumpModelQueryResults.dump_to_file ~models_and_names ~path
+          | Some path -> ModelQueryExecution.DumpModelQueryResults.dump_to_file ~registry_map ~path
           | None -> ()
         in
         ModelVerificationError.verify_models_and_dsl errors static_analysis_configuration.verify_dsl;
         let models =
-          models_and_names
+          registry_map
           |> ModelQueryExecution.ModelQueryRegistryMap.get_registry
                ~model_join:Model.join_user_models
           |> Registry.merge ~join:Model.join_user_models models
