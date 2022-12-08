@@ -169,9 +169,9 @@ module SignatureSelection : sig
     signature_match option
 end
 
-type uninstantiated
+type uninstantiated [@@deriving show]
 
-type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
+type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t [@@deriving show]
 
 module AttributeReadOnly : sig
   include Environment.ReadOnly

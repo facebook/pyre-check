@@ -60,7 +60,7 @@ module UninstantiatedAnnotation = struct
     self: Type.t option;
     value: Type.t option;
   }
-  [@@deriving compare]
+  [@@deriving compare, show]
 
   type kind =
     | Attribute of Type.t
@@ -68,18 +68,18 @@ module UninstantiatedAnnotation = struct
         getter: property_annotation;
         setter: property_annotation option;
       }
-  [@@deriving compare]
+  [@@deriving compare, show]
 
   type t = {
     accessed_via_metaclass: bool;
     kind: kind;
   }
-  [@@deriving compare]
+  [@@deriving compare, show]
 end
 
-type uninstantiated = UninstantiatedAnnotation.t
+type uninstantiated = UninstantiatedAnnotation.t [@@deriving show]
 
-type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
+type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t [@@deriving show]
 
 type resolved_define = {
   undecorated_signature: Type.Callable.t;
