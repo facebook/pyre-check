@@ -102,7 +102,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         )
 
     def test_hover_response(self) -> None:
-        response = {"contents": [{"kind": ["PlainText"], "value": "`int`"}]}
+        response = {"contents": [{"value": "int", "docstring": "test docstring"}]}
         self.assertEqual(
             code_navigation_request.parse_response(
                 response, response_type=code_navigation_request.HoverResponse
@@ -110,7 +110,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             code_navigation_request.HoverResponse(
                 contents=[
                     code_navigation_request.HoverContent(
-                        kind=["PlainText"], value="`int`"
+                        value="int", docstring="test docstring"
                     )
                 ]
             ),
@@ -118,7 +118,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
 
         # Note that there's a type error here in the TypedDict, but we happily parse it in our json_mixins, even
         # with the cached_schema().
-        response = {"contents": [{"kind": ["PlainText"], "value": 32}]}
+        response = {"contents": [{"value": 32, "docstring": None}]}
         self.assertEqual(
             code_navigation_request.parse_response(
                 response, response_type=code_navigation_request.HoverResponse
@@ -126,7 +126,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             code_navigation_request.HoverResponse(
                 contents=[
                     # pyre-ignore[6]: This is documenting a known type error, see comments in test above.
-                    code_navigation_request.HoverContent(kind=["PlainText"], value=32)
+                    code_navigation_request.HoverContent(value=32)
                 ]
             ),
         )

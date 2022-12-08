@@ -67,8 +67,8 @@ class ErrorResponse:
 
 @dataclasses.dataclass(frozen=True)
 class HoverContent(json_mixins.CamlCaseAndExcludeJsonMixin):
-    kind: List[str]
-    value: str
+    value: Optional[str]
+    docstring: Optional[str] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -199,7 +199,7 @@ def parse_raw_response(
 async def async_handle_hover_request(
     socket_path: Path,
     hover_request: HoverRequest,
-) -> Union[lsp.LspHoverResponse, ErrorResponse]:
+) -> Union[lsp.PyreHoverResponse, ErrorResponse]:
     raw_request = json.dumps(["Query", hover_request.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_request
@@ -211,8 +211,11 @@ async def async_handle_hover_request(
     )
     if isinstance(response, ErrorResponse):
         return response
-    return lsp.LspHoverResponse(
-        "\n".join(content.value for content in response.contents)
+    types = [content.value for content in response.contents]
+    types = filter(lambda value: value is not None, types)
+    return lsp.PyreHoverResponse(
+        "\n".join(str(content.value) for content in response.contents),
+        "\n".join(str(content.docstring) for content in response.contents),
     )
 
 

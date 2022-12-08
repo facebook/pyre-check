@@ -39,7 +39,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass(frozen=True)
 class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: lsp.LspHoverResponse
+    response: lsp.PyreHoverResponse
 
 
 @dataclasses.dataclass(frozen=True)
@@ -303,7 +303,7 @@ class PersistentRequestHandler(AbstractRequestHandler):
         if isinstance(daemon_response, daemon_query.DaemonQueryFailure):
             return daemon_response
         else:
-            return daemon_response.response
+            return daemon_response.response.to_lsp_hover_response()
 
     async def get_definition_locations(
         self,
@@ -411,8 +411,8 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
             self.socket_path,
             hover_request,
         )
-        if isinstance(response, lsp.LspHoverResponse):
-            return response
+        if isinstance(response, lsp.PyreHoverResponse):
+            return response.to_lsp_hover_response()
         return daemon_query.DaemonQueryFailure(response.message)
 
     async def get_definition_locations(

@@ -101,7 +101,7 @@ DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
 DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 DEFAULT_ENABLE_TELEMETRY: bool = False
-DEFAULT_FILE_CONTENTS: str = "```foo.Foo```"
+DEFAULT_FILE_CONTENTS: str = "```\nfoo.Foo\n```"
 
 
 def _create_server_options(
@@ -2190,7 +2190,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_hover(self) -> None:
-        json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
+        json_output = """{ "response": {"value": "foo.bar.Bar", "docstring": "test docstring"} }"""
         pyre_query_manager = PersistentRequestHandler(
             server_state=_create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
@@ -2210,7 +2210,9 @@ class RequestHandlerTest(testslide.TestCase):
 
         self.assertEqual(
             result,
-            lsp.LspHoverResponse(contents="```foo.bar.Bar```"),
+            lsp.LspHoverResponse(
+                contents="```\nfoo.bar.Bar\n```\ntest docstring",
+            ),
         )
         self.assertEqual(
             memory_bytes_writer.items(),

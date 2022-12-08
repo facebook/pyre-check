@@ -526,6 +526,21 @@ class LspHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class PyreHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+
+    value: Optional[str] = None
+    docstring: Optional[str] = None
+
+    def to_lsp_hover_response(self) -> LspHoverResponse:
+        lines = []
+        if self.value:
+            lines.append(f"```\n{self.value}\n```" if self.value else "")
+        if self.docstring:
+            lines.append(self.docstring)
+        return LspHoverResponse("\n".join(lines))
+
+
+@dataclasses.dataclass(frozen=True)
 class ReferencesParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     position: LspPosition
