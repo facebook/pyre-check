@@ -424,7 +424,7 @@ let test_partial_sink_converter _ =
          ~printer:(fun value -> value >>| Sinks.show |> Option.value ~default:"None")
          expected_sink
   in
-  assert_triggered_sinks
+  let configuration =
     {|
     {
       sources: [{ name: "A" }, { name: "B" }],
@@ -440,63 +440,24 @@ let test_partial_sink_converter _ =
       ]
     }
   |}
+  in
+  assert_triggered_sinks
+    configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
     ~source:(Sources.NamedSource "A")
     ~expected_sink:(Some (Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "cb" }));
   assert_triggered_sinks
-    {|
-    {
-      sources: [{ name: "A" }, { name: "B" }],
-      sinks: [],
-      combined_source_rules: [
-        {
-           name: "c rule",
-           sources: {"ca": "A", "cb": "B"},
-           partial_sink: "C",
-           code: 2001,
-           message_format: "some form"
-        }
-      ]
-    }
-  |}
+    configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
     ~source:(Sources.NamedSource "B")
     ~expected_sink:(Some (Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "ca" }));
   assert_triggered_sinks
-    {|
-    {
-      sources: [{ name: "A" }, { name: "B" }],
-      sinks: [],
-      combined_source_rules: [
-        {
-           name: "c rule",
-           sources: {"ca": "A", "cb": "B"},
-           partial_sink: "C",
-           code: 2001,
-           message_format: "some form"
-        }
-      ]
-    }
-  |}
+    configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
     ~source:(Sources.NamedSource "B")
     ~expected_sink:None;
   assert_triggered_sinks
-    {|
-    {
-      sources: [{ name: "A" }, { name: "B" }],
-      sinks: [],
-      combined_source_rules: [
-        {
-           name: "c rule",
-           sources: {"ca": "A", "cb": "B"},
-           partial_sink: "C",
-           code: 2001,
-           message_format: "some form"
-        }
-      ]
-    }
-  |}
+    configuration
     ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
     ~source:(Sources.NamedSource "A")
     ~expected_sink:None

@@ -267,7 +267,43 @@ module ModelConstraints = struct
     }
 end
 
-type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
+module PartialSinkConverter = struct
+  type t = (Sources.t list * Sinks.t) list String.Map.Tree.t
+
+  let add map ~first_sources ~first_sinks ~second_sources ~second_sinks =
+    let add map (first_sink, second_sink) =
+      (* Trigger second sink when the first sink matches a source, and vice versa. *)
+      String.Map.Tree.add_multi
+        map
+        ~key:(Sinks.show_partial_sink first_sink)
+        ~data:(first_sources, Sinks.TriggeredPartialSink second_sink)
+      |> String.Map.Tree.add_multi
+           ~key:(Sinks.show_partial_sink second_sink)
+           ~data:(second_sources, Sinks.TriggeredPartialSink first_sink)
+    in
+    List.cartesian_product first_sinks second_sinks |> List.fold ~f:add ~init:map
+
+
+  let merge left right =
+    String.Map.Tree.merge
+      ~f:
+        (fun ~key:_ -> function
+          | `Left value
+          | `Right value ->
+              Some value
+          | `Both (left, right) -> Some (left @ right))
+      left
+      right
+
+
+  let get_triggered_sink sink_to_sources ~partial_sink ~source =
+    match Sinks.show_partial_sink partial_sink |> String.Map.Tree.find sink_to_sources with
+    | Some source_and_sink_list ->
+        List.find source_and_sink_list ~f:(fun (supported_sources, _) ->
+            List.exists supported_sources ~f:(Sources.equal source))
+        >>| snd
+    | _ -> None
+end
 
 let filter_implicit_sources ~source_sink_filter { literal_strings } =
   {
@@ -301,7 +337,7 @@ module Heap = struct
     filtered_rule_codes: Rule.CodeSet.t option;
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
-    partial_sink_converter: partial_sink_converter;
+    partial_sink_converter: PartialSinkConverter.t;
     partial_sink_labels: string list String.Map.Tree.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
@@ -673,44 +709,6 @@ module Error = struct
       | Some path -> `String (PyrePath.absolute path)
     in
     `Assoc ["description", `String (show_kind kind); "path", path; "code", `Int (code kind)]
-end
-
-module PartialSinkConverter = struct
-  let mangle { Sinks.kind; label } = Format.sprintf "%s$%s" kind label
-
-  let add map ~first_sources ~first_sinks ~second_sources ~second_sinks =
-    let add map (first_sink, second_sink) =
-      (* Trigger second sink when the first sink matches a source, and vice versa. *)
-      String.Map.Tree.add_multi
-        map
-        ~key:(mangle first_sink)
-        ~data:(first_sources, Sinks.TriggeredPartialSink second_sink)
-      |> String.Map.Tree.add_multi
-           ~key:(mangle second_sink)
-           ~data:(second_sources, Sinks.TriggeredPartialSink first_sink)
-    in
-    List.cartesian_product first_sinks second_sinks |> List.fold ~f:add ~init:map
-
-
-  let merge left right =
-    String.Map.Tree.merge
-      ~f:
-        (fun ~key:_ -> function
-          | `Left value
-          | `Right value ->
-              Some value
-          | `Both (left, right) -> Some (left @ right))
-      left
-      right
-
-
-  let get_triggered_sink sink_to_sources ~partial_sink ~source =
-    match mangle partial_sink |> String.Map.Tree.find sink_to_sources with
-    | Some source_and_sink_list ->
-        List.find source_and_sink_list ~f:(fun (supported_sources, _) ->
-            List.exists supported_sources ~f:(Sources.equal source))
-        >>| snd
-    | _ -> None
 end
 
 (** Parse json files to create a taint configuration. *)

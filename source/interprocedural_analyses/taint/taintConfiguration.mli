@@ -42,7 +42,9 @@ module ModelConstraints : sig
   val default : t
 end
 
-type partial_sink_converter = (Sources.t list * Sinks.t) list String.Map.Tree.t
+module PartialSinkConverter : sig
+  type t
+end
 
 (** Taint configuration, stored in the ocaml heap. *)
 module Heap : sig
@@ -58,7 +60,7 @@ module Heap : sig
     filtered_rule_codes: Rule.CodeSet.t option;
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
-    partial_sink_converter: partial_sink_converter;
+    partial_sink_converter: PartialSinkConverter.t;
     partial_sink_labels: string list Core.String.Map.Tree.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
