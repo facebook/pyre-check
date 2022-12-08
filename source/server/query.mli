@@ -80,6 +80,12 @@ module Response : sig
     }
     [@@deriving sexp, compare, to_yojson]
 
+    type hover_info = {
+      value: string option;
+      docstring: string option;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
     type coverage_at_path = {
       path: string;
       total_expressions: int;
@@ -171,7 +177,7 @@ module Response : sig
       | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
       | Help of string
-      | HoverInfoForPosition of string
+      | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path
       | Success of string

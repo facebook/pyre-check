@@ -3484,6 +3484,31 @@ let test_resolve_type_for_symbol context =
   ()
 
 
+let test_hover_info_for_position context =
+  let assert_hover_info_for_position source expected =
+    let type_environment =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+      in
+      type_environment
+    in
+    let result =
+      LocationBasedLookup.hover_info_for_position
+        ~type_environment
+        ~module_reference:!&"test"
+        (find_indicator_position ~source "cursor")
+    in
+    assert_equal ~ctxt:context ~printer:[%show: string option] expected result
+  in
+  assert_hover_info_for_position
+    {|
+   test = 5
+   # ^- cursor
+  |}
+    (Some "typing_extensions.Literal[5]");
+  ()
+
+
 let () =
   "lookup"
   >::: [
@@ -3511,5 +3536,6 @@ let () =
          "lookup_expression" >:: test_lookup_expression;
          "coverage_gaps_in_module" >:: test_coverage_gaps_in_module;
          "resolve_type_for_symbol" >:: test_resolve_type_for_symbol;
+         "hover_info_for_position" >:: test_hover_info_for_position;
        ]
   |> Test.run

@@ -89,6 +89,12 @@ module Response = struct
     }
     [@@deriving sexp, compare, to_yojson]
 
+    type hover_info = {
+      value: string option;
+      docstring: string option;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
     type coverage_at_path = {
       path: string;
       total_expressions: int;
@@ -184,7 +190,7 @@ module Response = struct
       | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
       | Help of string
-      | HoverInfoForPosition of string
+      | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path
       | Success of string
@@ -287,7 +293,7 @@ module Response = struct
                   (Statement.show
                      (Statement.Statement.Define define |> Node.create_with_default_location)) );
             ]
-      | HoverInfoForPosition contents -> `Assoc ["contents", `String contents]
+      | HoverInfoForPosition hover_info -> hover_info_to_yojson hover_info
       | ReferenceTypesInPath referenceTypesInPath -> types_at_path_to_yojson referenceTypesInPath
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping ->
@@ -916,8 +922,7 @@ let rec process_request ~type_environment ~build_system request =
                 ~module_reference
                 position)
         >>| (fun hover_info ->
-              let hover_text = Option.value hover_info ~default:"" in
-              Single (Base.HoverInfoForPosition hover_text))
+              Single (Base.HoverInfoForPosition { value = hover_info; docstring = None }))
         |> Option.value
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
     | InlineDecorators { function_reference; decorators_to_skip } ->

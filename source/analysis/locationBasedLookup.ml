@@ -974,7 +974,7 @@ let hover_info_for_position ~type_environment ~module_reference position =
   let hover_contents =
     symbol_data
     >>= resolve_type_for_symbol ~type_environment
-    >>| fun type_ -> Format.asprintf "`%s`" (Type.show_concise type_)
+    >>| fun type_ -> Format.asprintf "%s" (Type.show_concise type_)
   in
   Log.log
     ~section:`Server

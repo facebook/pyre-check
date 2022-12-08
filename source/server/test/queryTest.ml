@@ -3118,13 +3118,13 @@ let test_hover context =
       ( "hover_info_for_position(path='foo.py', line=2, column=0)",
         {|
       {
-      "response": { "contents": "" }
+      "response": { "value": null, "docstring": null}
       }
     |} );
       ( "hover_info_for_position(path='foo.py', line=3, column=9)",
         {|
       {
-      "response": { "contents": "`int`" }
+      "response": { "value": "int", "docstring": null}
       }
     |} );
     ]
