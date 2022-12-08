@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides several mixin classes that extend
+`dataclasses_json.DataClassJsonMixin` with schema caching and specific
+configurations for translating between json field names and class field
+names.
 """
 
 
