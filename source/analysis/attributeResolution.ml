@@ -2179,6 +2179,23 @@ module SignatureSelection = struct
       }
     =
     let open SignatureSelectionTypes in
+    let reverse_filter_out_self_argument_errors reasons =
+      let filter_too_many_arguments = function
+        (* These would come from methods lacking a self argument called on an instance *)
+        | TooManyArguments { expected; _ } -> not (Int.equal expected (-1))
+        | _ -> true
+      in
+      let filter_mismatches reason =
+        match reason with
+        | Mismatches mismatches ->
+            Mismatches
+              (List.filter mismatches ~f:(function
+                  | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
+                  | _ -> true))
+        | _ -> reason
+      in
+      reasons |> List.rev_filter ~f:filter_too_many_arguments |> List.map ~f:filter_mismatches
+    in
     let instantiated_return_annotation =
       let local_free_variables = Type.Variable.all_free_variables (Type.Callable callable) in
       let solution =
@@ -2200,25 +2217,9 @@ module SignatureSelection = struct
            them to fall out in this way (see Mapping.get) *)
         |> Type.Variable.collapse_all_escaped_variable_unions
     in
-    let rev_filter_out_self_argument_errors reasons =
-      let filter_too_many_arguments = function
-        (* These would come from methods lacking a self argument called on an instance *)
-        | TooManyArguments { expected; _ } -> not (Int.equal expected (-1))
-        | _ -> true
-      in
-      let filter_mismatches reason =
-        match reason with
-        | Mismatches mismatches ->
-            Mismatches
-              (List.filter mismatches ~f:(function
-                  | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
-                  | _ -> true))
-        | _ -> reason
-      in
-      List.map (List.rev_filter ~f:filter_too_many_arguments reasons) ~f:filter_mismatches
-    in
     match
-      rev_filter_out_self_argument_errors arity, rev_filter_out_self_argument_errors annotation
+      ( reverse_filter_out_self_argument_errors arity,
+        reverse_filter_out_self_argument_errors annotation )
     with
     | [], [] -> Found { selected_return_annotation = instantiated_return_annotation }
     | reason :: reasons, _
