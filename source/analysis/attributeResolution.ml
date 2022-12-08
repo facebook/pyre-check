@@ -2411,7 +2411,7 @@ class base class_metadata_environment dependency =
 
     method full_order ~assumptions =
       let resolve class_type =
-        match Type.class_data_from_type class_type with
+        match Type.class_data_for_attribute_lookup class_type with
         | None -> None
         | Some [] -> None
         | Some [resolved] -> Some resolved
@@ -3501,7 +3501,7 @@ class base class_metadata_environment dependency =
                 else
                   Some (self#constructor ~assumptions class_name ~instantiated)
               in
-              Type.class_data_from_type meta_parameter
+              Type.class_data_for_attribute_lookup meta_parameter
               >>| List.map ~f:get_constructor
               >>= Option.all
               >>| Type.union
@@ -3687,11 +3687,11 @@ class base class_metadata_environment dependency =
                             `DescriptorNotACallable)
                 in
 
-                match Type.class_data_from_type annotation with
+                match Type.class_data_for_attribute_lookup annotation with
                 | None ->
                     (* This means we have a type that can't be `Type.split`, (most of) which aren't
                        descriptors, so we should be usually safe to just ignore. In general we
-                       should fix class_data_from_type to always return something. *)
+                       should fix class_data_for_attribute_lookup to always return something. *)
                     annotation, annotation
                 | Some elements ->
                     let collect x =
@@ -4410,7 +4410,7 @@ class base class_metadata_environment dependency =
                           List.fold tail ~init:head ~f:(TypeOrder.join order) |> Option.some
                       | [] -> None
                     in
-                    Type.class_data_from_type base
+                    Type.class_data_for_attribute_lookup base
                     >>| List.map ~f:access
                     >>= Option.all
                     >>| List.map ~f:AnnotatedAttribute.annotation

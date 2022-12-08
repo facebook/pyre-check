@@ -1128,7 +1128,9 @@ module State (Context : Context) = struct
           ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
         in
         match
-          Type.class_data_from_type resolved_base >>| List.map ~f:find_attribute >>= Option.all
+          Type.class_data_for_attribute_lookup resolved_base
+          >>| List.map ~f:find_attribute
+          >>= Option.all
         with
         | None ->
             let errors =
@@ -2622,8 +2624,8 @@ module State (Context : Context) = struct
         in
         let { Resolved.resolution; resolved; errors; _ } = forward_expression ~resolution right in
         let resolution, errors, resolved =
-          (* We should really error here if class_data_from_type fails *)
-          Type.class_data_from_type resolved
+          (* We should really error here if class_data_for_attribute_lookup fails *)
+          Type.class_data_for_attribute_lookup resolved
           >>| List.fold ~f:resolve_in_call ~init:(resolution, errors, Type.Bottom)
           |> Option.value ~default:(resolution, errors, Type.Bottom)
         in
@@ -4109,7 +4111,7 @@ module State (Context : Context) = struct
                 in
                 let find_getattr parent =
                   let attribute =
-                    match Type.class_data_from_type parent with
+                    match Type.class_data_for_attribute_lookup parent with
                     | Some [{ instantiated; class_name; _ }] ->
                         GlobalResolution.attribute_from_class_name
                           class_name
@@ -4468,7 +4470,7 @@ module State (Context : Context) = struct
                   in
                   let parent_class =
                     match resolved_base with
-                    | `Attribute (_, base_type) -> Type.class_data_from_type base_type
+                    | `Attribute (_, base_type) -> Type.class_data_for_attribute_lookup base_type
                     | _ -> None
                   in
                   match name, parent_class with
@@ -4783,12 +4785,12 @@ module State (Context : Context) = struct
               | `Attribute (attribute, Type.Union types) ->
                   (* Union[A,B].attr is valid iff A.attr and B.attr is valid
 
-                     TODO(T130377746): Use `Type.class_data_from_type` here to avoid duplicating the
-                     logic of how to figure out the attribute type for various types. Right now,
-                     we're duplicating some of the logic (for unions) but missing others. We're also
-                     hackily extracting `accessed_through_class` later on by checking if the
-                     top-level type is `Type[...]` instead of doing it for all possible elements of
-                     a union, etc. *)
+                     TODO(T130377746): Use `Type.class_data_for_attribute_lookup` here to avoid
+                     duplicating the logic of how to figure out the attribute type for various
+                     types. Right now, we're duplicating some of the logic (for unions) but missing
+                     others. We're also hackily extracting `accessed_through_class` later on by
+                     checking if the top-level type is `Type[...]` instead of doing it for all
+                     possible elements of a union, etc. *)
                   let propagate (resolution, errors) t =
                     inner_assignment resolution errors (`Attribute (attribute, t))
                   in

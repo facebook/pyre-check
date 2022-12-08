@@ -208,7 +208,7 @@ let make_assert_functions context =
         match attributes annotation ~assumptions with
         | Some attributes -> Some attributes
         | None -> (
-            match Type.class_data_from_type annotation with
+            match Type.class_data_for_attribute_lookup annotation with
             | Some [{ instantiated; accessed_through_class; class_name; accessed_through_readonly }]
               ->
                 GlobalResolution.attributes

@@ -380,14 +380,6 @@ module IntExpression : sig
   val create : t Polynomial.t -> t
 end
 
-type class_data = {
-  instantiated: t;
-  accessed_through_class: bool;
-  accessed_through_readonly: bool;
-  class_name: Primitive.t;
-}
-[@@deriving sexp]
-
 type type_t = t [@@deriving compare, eq, sexp, show]
 
 val polynomial_to_type : t Polynomial.t -> t
@@ -1135,7 +1127,15 @@ val contains_prohibited_any : t -> bool
 
 val to_yojson : t -> Yojson.Safe.t
 
-val class_data_from_type : t -> class_data list option
+type class_data_for_attribute_lookup = {
+  class_name: Primitive.t;
+  instantiated: t;
+  accessed_through_class: bool;
+  accessed_through_readonly: bool;
+}
+[@@deriving sexp]
+
+val class_data_for_attribute_lookup : t -> class_data_for_attribute_lookup list option
 
 (* Gives the name of either a Callable or BoundMethod[Callable, X] type *)
 val callable_name : t -> Reference.t option

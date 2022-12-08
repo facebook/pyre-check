@@ -1704,14 +1704,6 @@ end
 
 let _ = show (* shadowed below *)
 
-type class_data = {
-  instantiated: t;
-  accessed_through_class: bool;
-  accessed_through_readonly: bool;
-  class_name: Primitive.t;
-}
-[@@deriving sexp]
-
 let polynomial_to_type polynomial =
   match polynomial with
   | [] -> Literal (Integer 0)
@@ -6594,10 +6586,26 @@ let contains_prohibited_any annotation =
 
 let to_yojson annotation = `String (show annotation)
 
-(* Extract a class name (like "list") from a type (or classes from a union) so that we can get its
-   attributes, global location, etc. Also return the instantiated type `List[int]` since that is
-   also needed for attribute lookup. *)
-let class_data_from_type type_ =
+type class_data_for_attribute_lookup = {
+  class_name: Primitive.t;
+  instantiated: t;
+  accessed_through_class: bool;
+  accessed_through_readonly: bool;
+}
+[@@deriving sexp]
+
+(* Extract the class data needed to look up an attribute, potentially returning data for multiple
+   classes, e.g., for unions.
+
+   For example, on `Foo | list[Bar]`, this function will return class data for `Foo` and
+   `list[Bar]`. For complex types, such as `list[Bar]`, we need to return both the class name
+   (`list`) and its fully instantiated type (`list[Bar]`), since the latter is needed to instantiate
+   any generic attributes or methods, e.g., `my_list[0]` needs to be of type `Bar`.
+
+   A complication is that we need to track whether the class was wrapped by `Type[...]` or
+   `ReadOnly[...]`, since they affect the type of the attribute looked up, by making it `Type[X]` or
+   `ReadOnly[X]`, respectively. *)
+let class_data_for_attribute_lookup type_ =
   let rec extract_class_data ~meta ~accessed_through_readonly original_type =
     let type_ =
       match original_type with

@@ -6299,15 +6299,16 @@ let test_resolve_getitem_callee _ =
   ()
 
 
-let test_class_data_from_type _ =
-  let assert_resolved_class annotation expected =
+let test_class_data_for_attribute_lookup _ =
+  let assert_class_data annotation expected =
     assert_equal
-      ~printer:(fun x -> [%sexp_of: Type.class_data list option] x |> Sexp.to_string_hum)
+      ~printer:(fun x ->
+        [%sexp_of: Type.class_data_for_attribute_lookup list option] x |> Sexp.to_string_hum)
       expected
-      (Type.class_data_from_type annotation)
+      (Type.class_data_for_attribute_lookup annotation)
   in
-  assert_resolved_class Type.Any (Some []);
-  assert_resolved_class
+  assert_class_data Type.Any (Some []);
+  assert_class_data
     (Type.meta Type.integer)
     (Some
        [
@@ -6318,7 +6319,7 @@ let test_class_data_from_type _ =
            accessed_through_readonly = false;
          };
        ]);
-  assert_resolved_class
+  assert_class_data
     (Type.optional Type.integer)
     (Some
        [
@@ -6329,7 +6330,7 @@ let test_class_data_from_type _ =
            accessed_through_readonly = false;
          };
        ]);
-  assert_resolved_class
+  assert_class_data
     (Type.union [Type.integer; Type.string])
     (Some
        [
@@ -6346,7 +6347,7 @@ let test_class_data_from_type _ =
            accessed_through_readonly = false;
          };
        ]);
-  assert_resolved_class
+  assert_class_data
     (Type.union [Type.Primitive "Foo"; Type.list Type.integer])
     (Some
        [
@@ -6363,7 +6364,7 @@ let test_class_data_from_type _ =
            accessed_through_readonly = false;
          };
        ]);
-  assert_resolved_class
+  assert_class_data
     (Type.union [Type.Primitive "Foo"; Type.list Type.integer])
     (Some
        [
@@ -6386,7 +6387,7 @@ let test_class_data_from_type _ =
       ~body:(Type.union [Type.integer; Type.tuple [Type.Primitive "Foo"; Type.Primitive "Tree"]])
   in
 
-  assert_resolved_class
+  assert_class_data
     tree_annotation
     (Some
        [
@@ -6409,7 +6410,7 @@ let test_class_data_from_type _ =
       ~body:(Type.list (Type.union [Type.integer; Type.Primitive "RecursiveList"]))
   in
 
-  assert_resolved_class
+  assert_class_data
     recursive_list
     (Some
        [
@@ -6425,7 +6426,7 @@ let test_class_data_from_type _ =
   let directly_recursive_type =
     Type.RecursiveType.create ~name:"Tree" ~body:(Type.union [Type.integer; Type.Primitive "Tree"])
   in
-  assert_resolved_class
+  assert_class_data
     directly_recursive_type
     (Some
        [
@@ -6437,7 +6438,7 @@ let test_class_data_from_type _ =
          };
        ]);
   (* ReadOnly types. *)
-  assert_resolved_class
+  assert_class_data
     (Type.ReadOnly.create Type.integer)
     (Some
        [
@@ -6448,7 +6449,7 @@ let test_class_data_from_type _ =
            accessed_through_readonly = true;
          };
        ]);
-  assert_resolved_class
+  assert_class_data
     (Type.union [Type.ReadOnly.create Type.integer; Type.list Type.integer])
     (Some
        [
@@ -6465,7 +6466,7 @@ let test_class_data_from_type _ =
            accessed_through_readonly = true;
          };
        ]);
-  assert_resolved_class
+  assert_class_data
     (Type.meta (Type.ReadOnly.create Type.integer))
     (Some
        [
@@ -6476,7 +6477,7 @@ let test_class_data_from_type _ =
            accessed_through_readonly = true;
          };
        ]);
-  assert_resolved_class
+  assert_class_data
     (Type.ReadOnly.create (Type.meta Type.integer))
     (Some
        [
@@ -6683,7 +6684,7 @@ let () =
          "subtract_polynomials" >:: test_subtract_polynomials;
          "multiply_polynomial" >:: test_multiply_polynomial;
          "divide_polynomial" >:: test_divide_polynomial;
-         "class_data_from_type" >:: test_class_data_from_type;
+         "class_data_for_attribute_lookup" >:: test_class_data_for_attribute_lookup;
          "show" >:: test_show;
          "is_truthy" >:: test_is_truthy;
          "is_falsy" >:: test_is_falsy;
