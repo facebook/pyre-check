@@ -3596,11 +3596,21 @@ class base class_metadata_environment dependency =
                 in
                 let function_dunder_get callable =
                   if accessed_through_class then
-                    Type.Callable callable
+                    if accessed_through_readonly then
+                      Type.ReadOnly.create (Type.Callable callable)
+                    else
+                      Type.Callable callable
                   else
-                    Type.parametric "BoundMethod" [Single (Callable callable); Single instantiated]
+                    let bound_self_type =
+                      if accessed_through_readonly then
+                        Type.ReadOnly.create instantiated
+                      else
+                        instantiated
+                    in
+                    Type.parametric
+                      "BoundMethod"
+                      [Single (Callable callable); Single bound_self_type]
                 in
-
                 let get_descriptor_method
                     { Type.instantiated; accessed_through_class; class_name; _ }
                     ~kind

@@ -625,6 +625,8 @@ let test_attribute_from_class_name context =
         class SimpleClass:
           some_attribute: str = "foo"
 
+          def some_method(self, x: int) -> str: ...
+
         class Metaclass:
           def implicit(cls) -> int:
             return 0
@@ -889,6 +891,35 @@ let test_attribute_from_class_name context =
        ~uninstantiated_annotation:"str"
        "some_attribute"
        "pyre_extensions.ReadOnly[str]");
+  assert_attribute
+    ~parent:"test.SimpleClass"
+    ~instantiated:(Type.Primitive "test.SimpleClass")
+    ~attribute_name:"some_method"
+    ~accessed_through_readonly:true
+    (create_expected_attribute
+       "some_method"
+       ~parent:"test.SimpleClass"
+       ~uninstantiated_annotation:
+         "typing.Callable('test.SimpleClass.some_method')[[Named(self, test.SimpleClass), Named(x, \
+          int)], str]"
+       "BoundMethod[typing.Callable('test.SimpleClass.some_method')[[Named(self, \
+        test.SimpleClass), Named(x, int)], str], pyre_extensions.ReadOnly[test.SimpleClass]]");
+  (* A method looked up on the class will have its original Callable type regardless of whether it
+     was accessed through readonly. *)
+  assert_attribute
+    ~parent:"test.SimpleClass"
+    ~instantiated:(Type.Primitive "test.SimpleClass")
+    ~attribute_name:"some_method"
+    ~accessed_through_class:true
+    ~accessed_through_readonly:true
+    (create_expected_attribute
+       "some_method"
+       ~parent:"test.SimpleClass"
+       ~uninstantiated_annotation:
+         "typing.Callable('test.SimpleClass.some_method')[[Named(self, test.SimpleClass), Named(x, \
+          int)], str]"
+       "pyre_extensions.ReadOnly[typing.Callable('test.SimpleClass.some_method')[[Named(self, \
+        test.SimpleClass), Named(x, int)], str]]");
   ()
 
 
