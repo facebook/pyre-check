@@ -40,7 +40,7 @@ let assert_taint ?models ?models_source ~context source expect =
   let initial_models =
     let { ModelParseResult.models; errors; _ } =
       ModelParser.parse
-        ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
+        ~resolution:global_resolution
         ~source:models
         ~taint_configuration:TaintConfiguration.Heap.default
         ~source_sink_filter:None

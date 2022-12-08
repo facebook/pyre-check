@@ -8,7 +8,7 @@
 val get_model_sources : paths:PyrePath.t list -> (PyrePath.t * string) list
 
 val parse
-  :  resolution:Analysis.Resolution.t ->
+  :  resolution:Analysis.GlobalResolution.t ->
   ?path:PyrePath.t ->
   source:string ->
   taint_configuration:TaintConfiguration.Heap.t ->
@@ -28,7 +28,7 @@ val parse_access_path
 
 (* Exposed for model queries. *)
 val create_callable_model_from_annotations
-  :  resolution:Analysis.Resolution.t ->
+  :  resolution:Analysis.GlobalResolution.t ->
   callable:Interprocedural.Target.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   is_obscure:bool ->
@@ -37,7 +37,7 @@ val create_callable_model_from_annotations
 
 (* Exposed for model queries. *)
 val create_attribute_model_from_annotations
-  :  resolution:Analysis.Resolution.t ->
+  :  resolution:Analysis.GlobalResolution.t ->
   name:Ast.Reference.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   ModelParseResult.TaintAnnotation.t list ->

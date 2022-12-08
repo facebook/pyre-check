@@ -13,10 +13,13 @@ module ClassDefinitionsCache : sig
   val invalidate : unit -> unit
 end
 
-val class_summaries : resolution:Resolution.t -> Reference.t -> Statement.Class.t Node.t list option
+val class_summaries
+  :  resolution:GlobalResolution.t ->
+  Reference.t ->
+  Statement.Class.t Node.t list option
 
 val find_method_definitions
-  :  resolution:Resolution.t ->
+  :  resolution:GlobalResolution.t ->
   ?predicate:(Statement.Define.t -> bool) ->
   Reference.t ->
   Type.type_t Type.Callable.overload list
@@ -29,7 +32,7 @@ module Global : sig
   [@@deriving show]
 end
 
-val resolve_global : resolution:Resolution.t -> Reference.t -> Global.t option
+val resolve_global : resolution:GlobalResolution.t -> Reference.t -> Global.t option
 
 (* Exposed for testing. *)
 val demangle_class_attribute : string -> string
@@ -45,6 +48,6 @@ val verify_signature
 val verify_global
   :  path:PyrePath.t option ->
   location:Location.t ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   name:Reference.t ->
   (unit, ModelVerificationError.t) result

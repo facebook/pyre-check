@@ -342,7 +342,6 @@ let matches_annotation_constraint ~annotation_constraint annotation =
 
 
 let rec normalized_parameter_matches_constraint
-    ~resolution
     ~parameter:
       ((root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
       parameter)
@@ -358,11 +357,11 @@ let rec normalized_parameter_matches_constraint
       | AccessPath.Root.PositionalParameter { position; _ } when position = index -> true
       | _ -> false)
   | ModelQuery.ParameterConstraint.AnyOf constraints ->
-      List.exists constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
+      List.exists constraints ~f:(normalized_parameter_matches_constraint ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
-      not (normalized_parameter_matches_constraint ~resolution ~parameter query_constraint)
+      not (normalized_parameter_matches_constraint ~parameter query_constraint)
   | ModelQuery.ParameterConstraint.AllOf constraints ->
-      List.for_all constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
+      List.for_all constraints ~f:(normalized_parameter_matches_constraint ~parameter)
 
 
 let class_matches_decorator_constraint ~resolution ~decorator_constraint class_name =
@@ -527,7 +526,7 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       Modelable.parameters value
       >>| AccessPath.Root.normalize_parameters
       >>| List.exists ~f:(fun parameter ->
-              normalized_parameter_matches_constraint ~resolution ~parameter parameter_constraint)
+              normalized_parameter_matches_constraint ~parameter parameter_constraint)
       |> Option.value ~default:false
   | ModelQuery.Constraint.AnyDecoratorConstraint decorator_constraint ->
       Modelable.decorators value
@@ -545,7 +544,6 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
 
 module CallableQueries = struct
   let apply_callable_models
-      ~resolution
       ~models
       {
         Node.value =
@@ -738,9 +736,7 @@ module CallableQueries = struct
               ( ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as parameter),
                 production )
             =
-            if
-              List.for_all where ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
-            then
+            if List.for_all where ~f:(normalized_parameter_matches_constraint ~parameter) then
               let parameter, _, _ = parameter in
               production_to_taint annotation ~production ~parameter:(Some parameter)
               >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
@@ -798,9 +794,7 @@ module CallableQueries = struct
             query_name
       in
       let annotations =
-        Lazy.force definition
-        >>| apply_callable_models ~resolution ~models
-        |> Option.value ~default:[]
+        Lazy.force definition >>| apply_callable_models ~models |> Option.value ~default:[]
       in
       String.Map.set String.Map.empty ~key:query_name ~data:annotations
     else
@@ -849,9 +843,9 @@ module AttributeQueries = struct
       String.Map.empty
 end
 
-let get_class_attributes ~global_resolution ~class_name =
+let get_class_attributes ~resolution ~class_name =
   let class_summary =
-    GlobalResolution.class_summary global_resolution (Type.Primitive class_name) >>| Node.value
+    GlobalResolution.class_summary resolution (Type.Primitive class_name) >>| Node.value
   in
   match class_summary with
   | None -> []
@@ -885,10 +879,9 @@ let get_class_attributes ~global_resolution ~class_name =
 
 
 module GlobalVariableQueries = struct
-  let get_globals_and_annotations ~environment =
-    let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
+  let get_globals_and_annotations ~resolution =
     let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment global_resolution
+      GlobalResolution.unannotated_global_environment resolution
     in
     let variable_metadata_for_global global_reference =
       match
@@ -957,9 +950,7 @@ let apply_all_queries
     ~queries
     ~callables
     ~stubs
-    ~environment
   =
-  let global_resolution = Resolution.global_resolution resolution in
   if List.length queries > 0 then
     let attribute_queries, global_queries, callable_queries =
       List.partition3_map
@@ -1011,7 +1002,7 @@ let apply_all_queries
         ~apply_query:
           (CallableQueries.apply_callable_query
              ~verbose
-             ~resolution:global_resolution
+             ~resolution
              ~class_hierarchy_graph
              ~callable)
         ~model_from_annotation:callable_model_from_annotation
@@ -1055,7 +1046,7 @@ let apply_all_queries
         ~apply_query:
           (AttributeQueries.apply_attribute_query
              ~verbose
-             ~resolution:global_resolution
+             ~resolution
              ~class_hierarchy_graph
              ~variable_metadata)
         ~model_from_annotation:attribute_model_from_annotation
@@ -1065,13 +1056,13 @@ let apply_all_queries
     let attribute_models =
       if not (List.is_empty attribute_queries) then
         let all_classes =
-          TypeEnvironment.ReadOnly.global_resolution environment
+          resolution
           |> GlobalResolution.unannotated_global_environment
           |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
         in
         let attributes =
           List.concat_map all_classes ~f:(fun class_name ->
-              get_class_attributes ~global_resolution ~class_name)
+              get_class_attributes ~resolution ~class_name)
         in
         Scheduler.map_reduce
           scheduler
@@ -1104,7 +1095,7 @@ let apply_all_queries
         ~apply_query:
           (GlobalVariableQueries.apply_global_query
              ~verbose
-             ~resolution:global_resolution
+             ~resolution
              ~class_hierarchy_graph
              ~variable_metadata)
         ~model_from_annotation:global_model_from_annotation
@@ -1123,7 +1114,7 @@ let apply_all_queries
         ~map:(fun registry_map globals ->
           List.fold globals ~init:registry_map ~f:apply_queries_for_globals)
         ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
-        ~inputs:(GlobalVariableQueries.get_globals_and_annotations ~environment)
+        ~inputs:(GlobalVariableQueries.get_globals_and_annotations ~resolution)
         ()
     in
     let registry_map =
@@ -1144,18 +1135,12 @@ let generate_models_from_queries
     ~taint_configuration
     ~class_hierarchy_graph
     ~scheduler
-    ~environment
+    ~resolution
     ~source_sink_filter
     ~callables
     ~stubs
     queries
   =
-  let resolution =
-    Analysis.TypeCheck.resolution
-      (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module Analysis.TypeCheck.DummyContext)
-  in
   let callables =
     Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
     |> List.filter ~f:(function
@@ -1173,4 +1158,3 @@ let generate_models_from_queries
     ~queries
     ~callables
     ~stubs
-    ~environment

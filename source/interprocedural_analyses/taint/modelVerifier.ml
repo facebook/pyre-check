@@ -31,13 +31,12 @@ module ClassDefinitionsCache = DefinitionsCache (struct
 end)
 
 let containing_source ~resolution reference =
-  let global_resolution = Resolution.global_resolution resolution in
-  let ast_environment = GlobalResolution.ast_environment global_resolution in
+  let ast_environment = GlobalResolution.ast_environment resolution in
   let rec qualifier ~found ~lead ~tail =
     match tail with
     | head :: (_ :: _ as tail) ->
         let new_lead = Reference.create ~prefix:lead head in
-        if GlobalResolution.module_exists global_resolution new_lead then
+        if GlobalResolution.module_exists resolution new_lead then
           qualifier ~found:new_lead ~lead:new_lead ~tail
         else
           qualifier ~found ~lead:new_lead ~tail
@@ -74,9 +73,8 @@ let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
         _;
       } ->
         if Reference.equal define_name name && predicate define then
-          let global_resolution = Resolution.global_resolution resolution in
-          let parser = GlobalResolution.annotation_parser global_resolution in
-          let variables = GlobalResolution.variables global_resolution in
+          let parser = GlobalResolution.annotation_parser resolution in
+          let variables = GlobalResolution.variables resolution in
           Annotated.Define.Callable.create_overload_without_applying_decorators
             ~parser
             ~variables
@@ -104,9 +102,8 @@ end
 
 (* Resolve global symbols, ignoring decorators. *)
 let resolve_global ~resolution name =
-  let global_resolution = Resolution.global_resolution resolution in
   (* Resolve undecorated functions. *)
-  match GlobalResolution.global global_resolution name with
+  match GlobalResolution.global resolution name with
   | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
       Some (Global.Attribute (Type.Callable signature))
   | _ -> (
@@ -124,6 +121,13 @@ let resolve_global ~resolution name =
                   ()))
       | [] -> (
           (* Fall back for anything else. *)
+          let global_resolution = resolution in
+          let resolution =
+            Analysis.TypeCheck.resolution
+              global_resolution
+              (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+              (module Analysis.TypeCheck.DummyContext)
+          in
           let annotation =
             from_reference name ~location:Location.any
             |> Resolution.resolve_expression_to_annotation resolution
@@ -370,12 +374,11 @@ let verify_global ~path ~location ~resolution ~name =
            (ModelingCallableAsAttribute (Reference.show name)))
   | Some (Global.Attribute _)
   | None -> (
-      let global_resolution = Resolution.global_resolution resolution in
       let class_summary =
         Reference.prefix name
         >>| Reference.show
         >>| (fun class_name -> Type.Primitive class_name)
-        >>= GlobalResolution.class_summary global_resolution
+        >>= GlobalResolution.class_summary resolution
         >>| Node.value
       in
       match class_summary, global with

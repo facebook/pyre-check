@@ -89,14 +89,11 @@ let set_up_environment
       }
   in
   let source = Test.trim_extra_indentation model_source in
-  let resolution =
-    let global_resolution = ScratchProject.build_global_resolution project in
-    TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
-  in
+  let global_resolution = ScratchProject.build_global_resolution project in
 
   let ({ ModelParseResult.errors; skip_overrides; _ } as parse_result) =
     ModelParser.parse
-      ~resolution
+      ~resolution:global_resolution
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
@@ -174,7 +171,9 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
             |}
   in
   let sources = ("test.py", source) :: sources in
-  let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in
+  let global_resolution =
+    ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
+  in
   let taint_configuration =
     TaintConfiguration.Heap.
       {
@@ -190,7 +189,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
   let error_message =
     let path = path >>| PyrePath.create_absolute in
     ModelParser.parse
-      ~resolution
+      ~resolution:global_resolution
       ~taint_configuration
       ~source_sink_filter:None
       ?path

@@ -422,11 +422,7 @@ let get_initial_models ~context =
   in
   let { ModelParseResult.models; errors; _ } =
     ModelParser.parse
-      ~resolution:
-        (TypeCheck.resolution
-           global_resolution
-           (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-           (module TypeCheck.DummyContext))
+      ~resolution:global_resolution
       ~source:initial_models_source
       ~taint_configuration:TaintConfiguration.Heap.default
       ~source_sink_filter:None
@@ -522,12 +518,6 @@ let initialize
      failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
 
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
-  let resolution =
-    TypeCheck.resolution
-      global_resolution
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module TypeCheck.DummyContext)
-  in
   let initial_callables =
     FetchCallables.from_source
       ~configuration
@@ -553,7 +543,7 @@ let initialize
     | Some source ->
         let { ModelParseResult.models; errors; skip_overrides; queries } =
           ModelParser.parse
-            ~resolution
+            ~resolution:global_resolution
             ~source:(Test.trim_extra_indentation source)
             ~taint_configuration
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
@@ -570,12 +560,11 @@ let initialize
 
         let models_result =
           ModelQueryExecution.apply_all_queries
-            ~resolution
+            ~resolution:global_resolution
             ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph:
               (ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
             ~scheduler:(Test.mock_scheduler ())
-            ~environment:type_environment
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~callables:(List.rev_append stubs callables)
             ~stubs:(Target.HashSet.of_list stubs)

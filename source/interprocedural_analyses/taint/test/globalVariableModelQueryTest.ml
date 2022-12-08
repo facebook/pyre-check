@@ -49,6 +49,7 @@ let test_find_globals context =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.build_type_environment project
     in
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
     let is_uninteresting_global { Taint.ModelQueryExecution.VariableMetadata.name = global_name; _ }
       =
       not
@@ -57,7 +58,7 @@ let test_find_globals context =
     in
     let actual =
       Taint.ModelQueryExecution.GlobalVariableQueries.get_globals_and_annotations
-        ~environment:type_environment
+        ~resolution:global_resolution
       |> List.filter ~f:is_uninteresting_global
     in
     let expected =

@@ -65,7 +65,7 @@ end
 
 module GlobalVariableQueries : sig
   val get_globals_and_annotations
-    :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    :  resolution:Analysis.GlobalResolution.t ->
     VariableMetadata.t list
 
   val apply_global_query
@@ -78,7 +78,7 @@ module GlobalVariableQueries : sig
 end
 
 val apply_all_queries
-  :  resolution:Analysis.Resolution.t ->
+  :  resolution:Analysis.GlobalResolution.t ->
   scheduler:Scheduler.t ->
   taint_configuration:TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
@@ -86,14 +86,13 @@ val apply_all_queries
   queries:ModelParseResult.ModelQuery.t list ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
-  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   ModelQueryRegistryMap.t * ModelVerificationError.t list
 
 val generate_models_from_queries
   :  taint_configuration:TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   scheduler:Scheduler.t ->
-  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  resolution:Analysis.GlobalResolution.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->

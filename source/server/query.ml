@@ -951,11 +951,7 @@ let rec process_request ~type_environment ~build_system request =
               in
               let get_model_queries (path, source) =
                 Taint.ModelParser.parse
-                  ~resolution:
-                    (TypeCheck.resolution
-                       global_resolution
-                       (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-                       (module TypeCheck.DummyContext))
+                  ~resolution:global_resolution
                   ~path
                   ~source
                   ~taint_configuration
@@ -1040,7 +1036,7 @@ let rec process_request ~type_environment ~build_system request =
                           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
                              class_hierarchy_graph)
                         ~scheduler
-                        ~environment:type_environment
+                        ~resolution:global_resolution
                         ~source_sink_filter:None
                         ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
                         ~stubs:
@@ -1328,11 +1324,7 @@ let rec process_request ~type_environment ~build_system request =
           let get_model_errors sources =
             let model_errors (path, source) =
               Taint.ModelParser.parse
-                ~resolution:
-                  (TypeCheck.resolution
-                     global_resolution
-                     (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-                     (module TypeCheck.DummyContext))
+                ~resolution:global_resolution
                 ~path
                 ~source
                 ~taint_configuration

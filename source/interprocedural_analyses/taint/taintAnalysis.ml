@@ -162,17 +162,11 @@ let parse_models_and_queries_from_configuration
     ~static_analysis_configuration:
       { Configuration.StaticAnalysis.verify_models; configuration = { taint_model_paths; _ }; _ }
     ~taint_configuration
-    ~environment
+    ~resolution
     ~source_sink_filter
     ~callables
     ~stubs
   =
-  let resolution =
-    Analysis.TypeCheck.resolution
-      (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module Analysis.TypeCheck.DummyContext)
-  in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.get_model_sources ~paths:taint_model_paths
     |> parse_models_and_queries_from_sources
@@ -199,6 +193,7 @@ let initialize_models
   =
   let open TaintConfiguration.Heap in
   let stubs = Target.HashSet.of_list stubs in
+  let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
 
   Log.info "Parsing taint models...";
   let timer = Timer.start () in
@@ -207,7 +202,7 @@ let initialize_models
       ~scheduler
       ~static_analysis_configuration
       ~taint_configuration:taint_configuration_shared_memory
-      ~environment
+      ~resolution
       ~source_sink_filter:taint_configuration.source_sink_filter
       ~callables:(Some (Target.HashSet.of_list callables))
       ~stubs
@@ -225,7 +220,7 @@ let initialize_models
             ~taint_configuration:taint_configuration_shared_memory
             ~class_hierarchy_graph
             ~scheduler
-            ~environment
+            ~resolution
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~callables
             ~stubs

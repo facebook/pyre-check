@@ -2480,7 +2480,7 @@ let create_model_from_signature
           ~path
           ~location
           ~model_name:(Reference.show callable_name)
-          ~resolution:(Resolution.global_resolution resolution)
+          ~resolution
           ~callable_annotation
           ~source_sink_filter
           accumulator
@@ -2551,7 +2551,7 @@ let create_model_from_attribute
         ~path
         ~location
         ~model_name:(Reference.show name)
-        ~resolution:(Resolution.global_resolution resolution)
+        ~resolution
         ~callable_annotation:None
         ~source_sink_filter
         accumulator
@@ -2610,7 +2610,6 @@ let rec parse_statement
     statement
   =
   let open Core.Result in
-  let global_resolution = Resolution.global_resolution resolution in
   match statement with
   | {
    Node.value =
@@ -2627,8 +2626,8 @@ let rec parse_statement
   } ->
       let class_candidate =
         Reference.prefix name
-        |> Option.map ~f:(GlobalResolution.parse_reference global_resolution)
-        |> Option.bind ~f:(GlobalResolution.class_summary global_resolution)
+        |> Option.map ~f:(GlobalResolution.parse_reference resolution)
+        |> Option.bind ~f:(GlobalResolution.class_summary resolution)
       in
       let call_target =
         match class_candidate with
@@ -3193,8 +3192,7 @@ let create_callable_model_from_annotations
   =
   let open Core.Result in
   let open ModelVerifier in
-  let global_resolution = Resolution.global_resolution resolution in
-  match Target.get_module_and_definition ~resolution:global_resolution callable with
+  match Target.get_module_and_definition ~resolution callable with
   | None ->
       Error (invalid_model_query_error (NoCorrespondingCallable (Target.show_pretty callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
@@ -3224,7 +3222,7 @@ let create_callable_model_from_annotations
             ~path:None
             ~location:Location.any
             ~model_name:"Model query"
-            ~resolution:global_resolution
+            ~resolution
             ~callable_annotation
             ~source_sink_filter
             accumulator
@@ -3233,7 +3231,6 @@ let create_callable_model_from_annotations
 
 let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filter annotations =
   let open Core.Result in
-  let global_resolution = Resolution.global_resolution resolution in
   List.fold annotations ~init:(Ok Model.empty_model) ~f:(fun accumulator annotation ->
       accumulator
       >>= fun accumulator ->
@@ -3259,7 +3256,7 @@ let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filte
         ~path:None
         ~location:Location.any
         ~model_name:"Model query"
-        ~resolution:global_resolution
+        ~resolution
         ~callable_annotation:None
         ~source_sink_filter
         accumulator
