@@ -1061,8 +1061,8 @@ let rec messages ~concise ~signature location kind =
   let incompatible_parameter_target ~name ~position ~callee =
     let parameter =
       match name with
-      | Some name -> Format.asprintf "parameter `%a`" pp_identifier name
-      | _ -> "positional only parameter"
+      | Some name -> Format.asprintf "argument `%a`" pp_identifier name
+      | _ -> Format.asprintf "%s positional argument" (ordinal position)
     in
     let callee =
       match callee with
@@ -1070,9 +1070,9 @@ let rec messages ~concise ~signature location kind =
       | _ -> "anonymous call"
     in
     if concise then
-      Format.asprintf "For %s param" (ordinal position)
+      Format.asprintf "For %s argument" (ordinal position)
     else
-      Format.asprintf "In %s, for %s %s" callee (ordinal position) parameter
+      Format.asprintf "In %s, for %s," callee parameter
   in
   let kind = weaken_literals kind in
   let kind = simplify_kind kind in

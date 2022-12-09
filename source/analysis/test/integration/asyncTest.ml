@@ -300,7 +300,7 @@ let test_check_async context =
         any(xs)
     |}
     [
-      "Incompatible parameter type [6]: In call `any`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `any`, for 1st positional argument, expected \
        `Iterable[object]` but got `AsyncGenerator[int, typing.Any]`.";
     ];
   assert_type_errors

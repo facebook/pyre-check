@@ -26,7 +26,7 @@ let test_boolean_literal context =
         foo(False)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing_extensions.Literal[True]` but got `typing_extensions.Literal[False]`.";
     ];
   assert_type_errors
@@ -37,7 +37,7 @@ let test_boolean_literal context =
         foo(b)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing_extensions.Literal[True]` but got `bool`.";
     ]
 
@@ -118,7 +118,7 @@ let test_enumeration_literal context =
       foo(MyEnum.WORLD)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing_extensions.Literal[MyEnum.HELLO]` but got \
        `typing_extensions.Literal[MyEnum.WORLD]`.";
     ];
@@ -146,8 +146,8 @@ let test_enumeration_literal context =
       expects_string(A.ONE)
     |}
     [
-      "Incompatible parameter type [6]: In call `expects_string`, for 1st positional only \
-       parameter expected `str` but got `A`.";
+      "Incompatible parameter type [6]: In call `expects_string`, for 1st positional argument, \
+       expected `str` but got `A`.";
     ];
   assert_type_errors
     {|
@@ -359,11 +359,11 @@ let test_string_literal context =
         expect_literal_string(1)
     |}
     [
-      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional only parameter \
+      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional argument, \
        expected `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` \
        is used.";
-      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.LiteralString` but got \
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional \
+       argument, expected `typing_extensions.LiteralString` but got \
        `typing_extensions.Literal[1]`.";
     ];
   assert_type_errors
@@ -399,8 +399,8 @@ let test_string_literal context =
         return_literal_string(s)
     |}
     [
-      "Incompatible parameter type [6]: In call `return_literal_string`, for 1st positional only \
-       parameter expected `Variable[TLiteral (bound to typing_extensions.LiteralString)]` but got \
+      "Incompatible parameter type [6]: In call `return_literal_string`, for 1st positional \
+       argument, expected `Variable[TLiteral (bound to typing_extensions.LiteralString)]` but got \
        `str`.";
     ];
   assert_type_errors
@@ -481,9 +481,8 @@ let test_string_literal context =
         connection_query(SQL + value, value)
     |}
     [
-      "Non-literal string [62]: In call `connection_query`, for 1st positional only parameter \
-       expected `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` \
-       is used.";
+      "Non-literal string [62]: In call `connection_query`, for 1st positional argument, expected \
+       `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` is used.";
     ];
   assert_type_errors
     {|
@@ -549,11 +548,11 @@ let test_pep_675 context =
         expect_literal_string(1)
     |}
     [
-      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional only parameter \
+      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional argument, \
        expected `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` \
        is used.";
-      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.LiteralString` but got \
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional \
+       argument, expected `typing_extensions.LiteralString` but got \
        `typing_extensions.Literal[1]`.";
     ];
   assert_type_errors
@@ -594,11 +593,11 @@ let test_pep_675 context =
         expect_literal_string(1)
     |}
     [
-      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional only parameter \
+      "Non-literal string [62]: In call `expect_literal_string`, for 1st positional argument, \
        expected `LiteralString` but got `str`. Ensure only a string literal or a `LiteralString` \
        is used.";
-      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.LiteralString` but got \
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional \
+       argument, expected `typing_extensions.LiteralString` but got \
        `typing_extensions.Literal[1]`.";
     ];
   assert_type_errors
@@ -626,8 +625,8 @@ let test_pep_675 context =
     |}
     [
       (* TODO(T119366994): More examples where literal strings should be inferred *)
-      "Incompatible parameter type [6]: In call `expect`, for 1st positional only parameter \
-       expected `List[typing_extensions.LiteralString]` but got `List[str]`.";
+      "Incompatible parameter type [6]: In call `expect`, for 1st positional argument, expected \
+       `List[typing_extensions.LiteralString]` but got `List[str]`.";
     ];
   assert_type_errors
     {|
@@ -642,8 +641,8 @@ let test_pep_675 context =
     |}
     [
       (* TODO(T119366994): More examples where literal strings should be infered *)
-      "Incompatible parameter type [6]: In call `expect`, for 1st positional only parameter \
-       expected `Set[typing_extensions.LiteralString]` but got `Set[str]`.";
+      "Incompatible parameter type [6]: In call `expect`, for 1st positional argument, expected \
+       `Set[typing_extensions.LiteralString]` but got `Set[str]`.";
     ];
   assert_type_errors
     {|
@@ -667,13 +666,13 @@ let test_pep_675 context =
     |}
     [
       (* TODO(T119366994): More examples where literal strings should be inferred *)
-      "Incompatible parameter type [6]: In call `expect1`, for 1st positional only parameter \
-       expected `Dict[typing_extensions.LiteralString, typing_extensions.LiteralString]` but got \
-       `Dict[str, str]`.";
-      "Incompatible parameter type [6]: In call `expect2`, for 1st positional only parameter \
-       expected `Dict[str, typing_extensions.LiteralString]` but got `Dict[str, str]`.";
-      "Incompatible parameter type [6]: In call `expect3`, for 1st positional only parameter \
-       expected `Dict[typing_extensions.LiteralString, str]` but got `Dict[str, str]`.";
+      "Incompatible parameter type [6]: In call `expect1`, for 1st positional argument, expected \
+       `Dict[typing_extensions.LiteralString, typing_extensions.LiteralString]` but got `Dict[str, \
+       str]`.";
+      "Incompatible parameter type [6]: In call `expect2`, for 1st positional argument, expected \
+       `Dict[str, typing_extensions.LiteralString]` but got `Dict[str, str]`.";
+      "Incompatible parameter type [6]: In call `expect3`, for 1st positional argument, expected \
+       `Dict[typing_extensions.LiteralString, str]` but got `Dict[str, str]`.";
     ];
 
   ()

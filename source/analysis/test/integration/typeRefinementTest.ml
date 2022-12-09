@@ -998,7 +998,7 @@ let test_check_final_attribute_refinement context =
           expects_str(a.name)
     |}
     [
-      "Incompatible parameter type [6]: In call `expects_str`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `expects_str`, for 1st positional argument, \
        expected `str` but got `Optional[str]`.";
     ];
   assert_type_errors
@@ -1020,7 +1020,7 @@ let test_check_final_attribute_refinement context =
           expects_str(a.name)
     |}
     [
-      "Incompatible parameter type [6]: In call `expects_str`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `expects_str`, for 1st positional argument, \
        expected `str` but got `Optional[str]`.";
     ];
   assert_type_errors
@@ -1124,7 +1124,7 @@ let test_check_final_attribute_refinement context =
           expects_int(a.x)
     |}
     [
-      "Incompatible parameter type [6]: In call `expects_int`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `expects_int`, for 1st positional argument, \
        expected `int` but got `Union[int, str]`.";
     ];
   assert_type_errors

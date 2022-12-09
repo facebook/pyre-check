@@ -188,7 +188,7 @@ let test_check_assign context =
        incomplete, add an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
       "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
-       positional only parameter expected `Type[Variable[_T]]` but got `str`.";
+       positional argument, expected `Type[Variable[_T]]` but got `str`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.List[typing.Any]]`.";
     ];
   assert_type_errors

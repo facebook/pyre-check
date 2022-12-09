@@ -26,8 +26,8 @@ let test_check_bounded_variables context =
         x("7")
     |}
     [
-      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
-       expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -168,8 +168,8 @@ let test_check_unbounded_variables context =
         expects_string(input)
     |}
     [
-      "Incompatible parameter type [6]: In call `expects_string`, for 1st positional only \
-       parameter expected `str` but got `Variable[T]`.";
+      "Incompatible parameter type [6]: In call `expects_string`, for 1st positional argument, \
+       expected `str` but got `Variable[T]`.";
     ];
   assert_type_errors
     {|
@@ -225,7 +225,7 @@ let test_check_unbounded_variables context =
       "Revealed type [-1]: Revealed type for `test.Foo[float]()` is `Foo[float]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[str]()` is `Foo[str]`.";
       "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
-       positional only parameter expected `Type[Variable[X]]` but got `str`.";
+       positional argument, expected `Type[Variable[X]]` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -240,7 +240,7 @@ let test_check_unbounded_variables context =
         return Foo[int](1.2)
     |}
     [
-      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional argument, \
        expected `int` but got `float`.";
     ];
   assert_type_errors
@@ -277,8 +277,8 @@ let test_check_unbounded_variables context =
        is `Tuple[float, bool]`.";
       "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [\"1\"], [7])` is \
        `Tuple[str, int]`.";
-      "Incompatible parameter type [6]: In call `generic`, for 3rd positional only parameter \
-       expected `List[Variable[T2]]` but got `List[int]`.";
+      "Incompatible parameter type [6]: In call `generic`, for 3rd positional argument, expected \
+       `List[Variable[T2]]` but got `List[int]`.";
     ];
   assert_type_errors
     {|
@@ -445,7 +445,7 @@ let test_check_variable_bindings context =
         str_to_int(t)
     |}
     [
-      "Incompatible parameter type [6]: In call `str_to_int`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `str_to_int`, for 1st positional argument, \
        expected `str` but got `Variable[T (bound to int)]`.";
     ];
   assert_type_errors
@@ -471,7 +471,7 @@ let test_check_variable_bindings context =
         foo(x)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `Variable[T (bound to int)]` but got `str`.";
     ];
   assert_type_errors
@@ -499,8 +499,8 @@ let test_check_variable_bindings context =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got `int`.";
-      "Incompatible parameter type [6]: In call `f`, for 2nd positional only parameter expected \
-       `int` but got `None`.";
+      "Incompatible parameter type [6]: In call `f`, for 2nd positional argument, expected `int` \
+       but got `None`.";
     ];
   assert_type_errors
     {|
@@ -604,7 +604,7 @@ let test_check_variable_bindings context =
       "Revealed type [-1]: Revealed type for `test.Foo[test.C]()` is `Foo[C]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.D]()` is `Foo[D]`.";
       "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
-       positional only parameter expected `Type[Variable[X (bound to C)]]` but got `Type[int]`.";
+       positional argument, expected `Type[Variable[X (bound to C)]]` but got `Type[int]`.";
     ];
   assert_type_errors
     {|
@@ -628,8 +628,7 @@ let test_check_variable_bindings context =
       "Revealed type [-1]: Revealed type for `test.Foo[test.Mineral]()` is `Foo[Mineral]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.Fish]()` is `Foo[Animal]`.";
       "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
-       positional only parameter expected `Type[Variable[X <: [Mineral, Animal]]]` but got \
-       `Type[int]`.";
+       positional argument, expected `Type[Variable[X <: [Mineral, Animal]]]` but got `Type[int]`.";
     ];
   assert_type_errors
     {|
@@ -682,7 +681,7 @@ let test_check_variable_bindings context =
     [
       "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
       "Revealed type [-1]: Revealed type for `x.expect_self(y)` is `typing.Union[G[int], G[str]]`.";
-      "Incompatible parameter type [6]: In call `G.expect_self`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `G.expect_self`, for 1st positional argument, \
        expected `Variable[TSelf (bound to G[typing.Any])]` but got `bool`.";
     ];
   (* Same test as above but without an explicit type for `self`. *)
@@ -708,7 +707,7 @@ let test_check_variable_bindings context =
     [
       "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
       "Revealed type [-1]: Revealed type for `x.expect_self(y)` is `G[str]`.";
-      "Incompatible parameter type [6]: In call `G.expect_self`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `G.expect_self`, for 1st positional argument, \
        expected `Variable[TSelf (bound to G[typing.Any])]` but got `bool`.";
     ];
   (* This actually requires the input to be of the same type as `self`. *)
@@ -731,11 +730,11 @@ let test_check_variable_bindings context =
     |}
     [
       "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
-      "Incompatible parameter type [6]: In call `G.expect_same_type`, for 1st positional only \
-       parameter expected `G[int]` but got `G[str]`.";
+      "Incompatible parameter type [6]: In call `G.expect_same_type`, for 1st positional argument, \
+       expected `G[int]` but got `G[str]`.";
       "Revealed type [-1]: Revealed type for `x.expect_same_type(y)` is `G[int]`.";
-      "Incompatible parameter type [6]: In call `G.expect_same_type`, for 1st positional only \
-       parameter expected `G[int]` but got `bool`.";
+      "Incompatible parameter type [6]: In call `G.expect_same_type`, for 1st positional argument, \
+       expected `G[int]` but got `bool`.";
     ];
   (* Setting the bound as a parameter-less generic class `INode` replaces the parameters with Any.
      This is equivalent to writing `bound=INode[Any]`. *)
@@ -1068,8 +1067,8 @@ let test_unbound_variables context =
           foo([])
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `int` but got `List[Variable[_T]]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
+       but got `List[Variable[_T]]`.";
     ];
   assert_type_errors
     {|
@@ -1132,8 +1131,8 @@ let test_distinguish context =
         return f(1)
     |}
     [
-      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
-       expected `Variable[_T1]` but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
+       `Variable[_T1]` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -1264,7 +1263,7 @@ let test_integer_variables context =
         baz(y)
     |}
     [
-      "Incompatible parameter type [6]: In call `baz`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `baz`, for 1st positional argument, expected \
        `IntegerVariable[X]` but got `int`.";
     ];
   ()
@@ -1376,10 +1375,10 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `x` is `str`.";
       "Revealed type [-1]: Revealed type for `y` is `str`.";
-      "Incompatible parameter type [6]: In call `call_this_function`, for 2nd positional only \
-       parameter expected `int` but got `str`.";
-      "Incompatible parameter type [6]: In call `call_this_function`, for 2nd parameter `i` \
+      "Incompatible parameter type [6]: In call `call_this_function`, for 2nd positional argument, \
        expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `call_this_function`, for argument `i`, expected \
+       `int` but got `str`.";
     ];
   (* Interaction with overloads *)
   assert_type_errors
@@ -1411,8 +1410,8 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `x` is `str`.";
       "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Incompatible parameter type [6]: In call `call_this_function`, for 2nd positional only \
-       parameter expected `int` but got `float`.";
+      "Incompatible parameter type [6]: In call `call_this_function`, for 2nd positional argument, \
+       expected `int` but got `float`.";
     ];
   (* Example from PEP *)
   assert_type_errors
@@ -1439,7 +1438,7 @@ let test_callable_parameter_variadics context =
         call_n_times(valid, y="A", x=1)
     |}
     [
-      "Incompatible parameter type [6]: In call `call_n_times`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `call_n_times`, for 1st positional argument, \
        expected `typing.Callable[test.TParams, None]` but got `typing.Callable(invalid)[[Named(x, \
        int), Named(y, str)], int]`.";
       "Missing argument [20]: Call `call_n_times` expects argument in position 1.";
@@ -1485,10 +1484,10 @@ let test_callable_parameter_variadics context =
        test.P], Variable[R]]]`.";
       "Revealed type [-1]: Revealed type for `x.takes_int_str` is \
        `BoundMethod[typing.Callable[[Foo, Named(x, int), Named(y, str)], int], Foo]`.";
-      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
-       expected `int` but got `str`.";
-      "Incompatible parameter type [6]: In anonymous call, for 2nd positional only parameter \
-       expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
+       `int` but got `str`.";
+      "Incompatible parameter type [6]: In anonymous call, for 2nd positional argument, expected \
+       `str` but got `int`.";
     ];
   (* PyTorch style delegation pattern *)
   assert_type_errors
@@ -1534,8 +1533,8 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `x` is `bool`.";
       "Revealed type [-1]: Revealed type for `y` is `bool`.";
-      "Incompatible parameter type [6]: In call `Model.__call__`, for 2nd positional only \
-       parameter expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `Model.__call__`, for 2nd positional argument, \
+       expected `str` but got `int`.";
       "Revealed type [-1]: Revealed type for `z` is `str`.";
     ];
   assert_type_errors
@@ -1560,10 +1559,10 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `x.f.__call__` is `typing.Callable[[int, str], int]`.";
       "Missing argument [20]: Call `H.f` expects argument in position 1.";
-      "Incompatible parameter type [6]: In call `H.f`, for 1st positional only parameter expected \
-       `int` but got `str`.";
-      "Incompatible parameter type [6]: In call `H.f`, for 2nd positional only parameter expected \
-       `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `H.f`, for 1st positional argument, expected `int` \
+       but got `str`.";
+      "Incompatible parameter type [6]: In call `H.f`, for 2nd positional argument, expected `str` \
+       but got `int`.";
     ];
 
   assert_type_errors
@@ -1640,10 +1639,10 @@ let test_callable_parameter_variadics context =
         return foo
     |}
     [
-      "Incompatible parameter type [6]: In call `does_care_positional`, for 1st positional only \
-       parameter expected `int` but got `object`.";
-      "Incompatible parameter type [6]: In call `does_care_keywords`, for 1st positional only \
-       parameter expected `int` but got `object`.";
+      "Incompatible parameter type [6]: In call `does_care_positional`, for 1st positional \
+       argument, expected `int` but got `object`.";
+      "Incompatible parameter type [6]: In call `does_care_keywords`, for 1st positional argument, \
+       expected `int` but got `object`.";
     ];
   ()
 
@@ -2827,7 +2826,7 @@ let test_variadic_tuples context =
         foo(x)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing.Tuple[int, *test.Ts, str]` but got `Tuple[int]`.";
     ];
   (* We should be able to typecheck the body of a generic variadic function. *)
@@ -2849,7 +2848,7 @@ let test_variadic_tuples context =
      |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[*test.Ts]`.";
-      "Incompatible parameter type [6]: In call `remove_int`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `remove_int`, for 1st positional argument, \
        expected `typing.Tuple[int, *test.Ts]` but got `typing.Tuple[*test.Ts]`.";
     ];
   (* We should not infer Tuple[int|bool, str|bool] for Ts. That would surprise most users who would
@@ -2869,8 +2868,8 @@ let test_variadic_tuples context =
         expects_same_tuples(tuple1, tuple2)
      |}
     [
-      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional only \
-       parameter expected `typing.Tuple[*test.Ts]` but got `Tuple[bool, bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional \
+       argument, expected `typing.Tuple[*test.Ts]` but got `Tuple[bool, bool]`.";
     ];
   (* Length mismatch. *)
   assert_type_errors
@@ -2888,8 +2887,8 @@ let test_variadic_tuples context =
         expects_same_tuples(tuple1, shorter_tuple)
      |}
     [
-      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional only \
-       parameter expected `typing.Tuple[*test.Ts]` but got `Tuple[bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional \
+       argument, expected `typing.Tuple[*test.Ts]` but got `Tuple[bool]`.";
     ];
   assert_type_errors
     {|
@@ -2906,8 +2905,8 @@ let test_variadic_tuples context =
         expects_same_tuples(tuple1, shorter_tuple)
      |}
     [
-      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional only \
-       parameter expected `typing.Tuple[*test.Ts]` but got `Tuple[bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional \
+       argument, expected `typing.Tuple[*test.Ts]` but got `Tuple[bool]`.";
     ];
   assert_type_errors
     {|
@@ -2928,8 +2927,8 @@ let test_variadic_tuples context =
      |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[str, ...]]`.";
-      "Incompatible parameter type [6]: In call `add_int`, for 1st positional only parameter \
-       expected `typing.Tuple[str, ...]` but got `Tuple[int, str]`.";
+      "Incompatible parameter type [6]: In call `add_int`, for 1st positional argument, expected \
+       `typing.Tuple[str, ...]` but got `Tuple[int, str]`.";
     ];
   assert_type_errors
     {|
@@ -2966,7 +2965,7 @@ let test_variadic_tuples context =
      |}
     [
       "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing.Tuple[Variable[T], *Tuple[str, ...]]` but got `Tuple[int, str, int]`.";
     ];
   assert_type_errors
@@ -3012,7 +3011,7 @@ let test_variadic_tuples context =
     [
       "Incomplete type [37]: Type `typing.Tuple[*test.Ts, Variable[N (bound to int)]]` inferred \
        for `y_error` is incomplete, add an explicit annotation.";
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing.Tuple[Variable[N (bound to int)], *test.Ts]` but got `typing.Tuple[str, ...]`.";
       "Revealed type [-1]: Revealed type for `y_error` is `typing.Tuple[*Tuple[typing.Any, ...], \
        typing.Any]`.";
@@ -3035,7 +3034,7 @@ let test_variadic_tuples context =
     |}
     [
       "Revealed type [-1]: Revealed type for `y` is `Tuple[int]`.";
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `Tuple[Variable[N (bound to int)]]` but got `typing.Tuple[str, ...]`.";
     ];
   ()
@@ -3080,8 +3079,8 @@ let test_variadic_classes context =
         reveal_type(y)
      |}
     [
-      "Incompatible parameter type [6]: In call `expects_same_tensors`, for 2nd positional only \
-       parameter expected `Tensor[*test.Ts]` but got `Tensor[bool, bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_tensors`, for 2nd positional \
+       argument, expected `Tensor[*test.Ts]` but got `Tensor[bool, bool]`.";
       "Revealed type [-1]: Revealed type for `y` is `Tensor[int, str]`.";
     ];
   (* Length mismatch. *)
@@ -3102,8 +3101,8 @@ let test_variadic_classes context =
         expects_same_length(xs, ys)
      |}
     [
-      "Incompatible parameter type [6]: In call `expects_same_length`, for 2nd positional only \
-       parameter expected `Tensor[*test.Ts]` but got `Tensor[bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_length`, for 2nd positional \
+       argument, expected `Tensor[*test.Ts]` but got `Tensor[bool]`.";
     ];
   (* Tensor is covariant in its shape, since the shape is immutable. However, it is invariant in the
      unary datatype. *)
@@ -3130,7 +3129,7 @@ let test_variadic_classes context =
         foo(int_tensor)
      |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `Tensor[float, Base, Base]` but got `Tensor[int, Base, Base]`.";
     ];
   assert_type_errors
@@ -3169,8 +3168,8 @@ let test_variadic_classes context =
     [
       "Revealed type [-1]: Revealed type for `y` is `Tensor[typing_extensions.Literal[10], \
        typing_extensions.Literal[50]]`.";
-      "Incompatible parameter type [6]: In call `Linear.__call__`, for 1st positional only \
-       parameter expected `Tensor[*test.Ts, typing_extensions.Literal[20]]` but got \
+      "Incompatible parameter type [6]: In call `Linear.__call__`, for 1st positional argument, \
+       expected `Tensor[*test.Ts, typing_extensions.Literal[20]]` but got \
        `Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
     ];
   assert_type_errors
@@ -3255,7 +3254,7 @@ let test_variadic_classes context =
         expects_base(Tensor(1, (Child(), Child())))
      |}
     [
-      "Incompatible parameter type [6]: In call `expects_base`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `expects_base`, for 1st positional argument, \
        expected `Tensor[int, Base, Base]` but got `Tensor[int, Child, Child]`.";
     ];
   assert_type_errors
@@ -3347,7 +3346,7 @@ let test_variadic_classes context =
     [
       "Incomplete type [37]: Type `Tensor[int, *test.Ts]` inferred for `y` is incomplete, add an \
        explicit annotation.";
-      "Incompatible parameter type [6]: In call `strip_last`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `strip_last`, for 1st positional argument, \
        expected `Tensor[int, *test.Ts, int]` but got `Tensor[int, int, str]`.";
       "Revealed type [-1]: Revealed type for `y` is `Tensor[int, *Tuple[typing.Any, ...]]`.";
     ];
@@ -3506,8 +3505,8 @@ let test_variadic_callables context =
        	strip_int_parameter(no_leading_int)
      |}
     [
-      "Incompatible parameter type [6]: In call `strip_int_parameter`, for 1st positional only \
-       parameter expected `typing.Callable[[Variable(int, *test.Ts)], None]` but got \
+      "Incompatible parameter type [6]: In call `strip_int_parameter`, for 1st positional \
+       argument, expected `typing.Callable[[Variable(int, *test.Ts)], None]` but got \
        `typing.Callable(no_leading_int)[[Named(y, str), Named(z, bool)], None]`.";
     ];
   assert_type_errors
@@ -3699,7 +3698,7 @@ let test_self_type context =
     |}
     [
       "Revealed type [-1]: Revealed type for `y` is `ShapeProtocol`.";
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `ShapeProtocol` but got `BadReturnType`.";
     ];
   assert_type_errors
@@ -3784,11 +3783,11 @@ let test_self_type context =
       "Revealed type [-1]: Revealed type for `self` is `Variable[_Self_test_Container__ (bound to \
        Container[typing.Any])]`.";
       "Revealed type [-1]: Revealed type for `y` is `ChildContainer[str]`.";
-      "Incompatible parameter type [6]: In call `Container.set_value`, for 1st positional only \
-       parameter expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `Container.set_value`, for 1st positional \
+       argument, expected `str` but got `int`.";
       "Revealed type [-1]: Revealed type for `y2` is `ConcreteContainer`.";
-      "Incompatible parameter type [6]: In call `Container.set_value`, for 1st positional only \
-       parameter expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Container.set_value`, for 1st positional \
+       argument, expected `int` but got `str`.";
     ];
   (* Nested class using Self. *)
   assert_type_errors
@@ -3891,9 +3890,9 @@ let test_self_type context =
        `Merger` inconsistently. Parameter of type `Variable[_Self_test_BadOverriddenMerger__ \
        (bound to BadOverriddenMerger)]` is not a supertype of the overridden parameter \
        `Variable[_Self_test_Merger__ (bound to Merger)]`.";
-      "Incompatible parameter type [6]: In call `Merger.merge`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Merger.merge`, for 1st positional argument, \
        expected `Variable[_Self_test_Merger__ (bound to Merger)]` but got `int`.";
-      "Incompatible parameter type [6]: In call `Merger.merge`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Merger.merge`, for 1st positional argument, \
        expected `Variable[_Self_test_Merger__ (bound to Merger)]` but got `int`.";
     ];
   ()

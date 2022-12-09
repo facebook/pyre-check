@@ -288,7 +288,7 @@ let test_check_union context =
       f(x)
     |}
     [
-      "Incompatible parameter type [6]: In call `f`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `f`, for 1st positional argument, expected \
        `Union[Tuple[int, int], int, str]` but got `Union[None, int, str]`.";
     ];
   assert_type_errors

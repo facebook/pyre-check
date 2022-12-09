@@ -84,8 +84,8 @@ let test_check_typed_dictionaries context =
         a = foo(movie['name'])
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
+       but got `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -98,8 +98,8 @@ let test_check_typed_dictionaries context =
         a = foo(movie['yar'])
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
+       but got `str`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`.";
     ];
   assert_test_typed_dictionary
@@ -125,8 +125,8 @@ let test_check_typed_dictionaries context =
         a = foo(movie[key])
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
+       but got `str`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
       ^ "Expected one of ('name', 'year').";
     ];
@@ -142,8 +142,8 @@ let test_check_typed_dictionaries context =
         a = foo(movie[key])
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
+       but got `str`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
       ^ "Expected one of ('name', 'year').";
     ];
@@ -159,8 +159,8 @@ let test_check_typed_dictionaries context =
         a = foo(movie[key])
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
+       but got `str`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
       ^ "Expected one of ('name', 'year').";
     ];
@@ -189,7 +189,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       (* TODO(T37629490): Mention the differing keys. *)
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `Movie` but got `Actor`.";
     ];
   assert_test_typed_dictionary
@@ -252,7 +252,7 @@ let test_check_typed_dictionaries context =
         a = foo(baz)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `Mapping[str, A]` but got `Baz`.";
     ];
   assert_test_typed_dictionary
@@ -338,8 +338,8 @@ let test_check_typed_dictionaries context =
         foo(kwargs)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `Baz` but got `Dict[str, int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `Baz` \
+       but got `Dict[str, int]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -373,10 +373,10 @@ let test_check_typed_dictionaries context =
         return movie['year']
     |}
     [
-      "Incompatible parameter type [6]: In call `Movie.__init__`, for 1st parameter `name` \
-       expected `str` but got `int`.";
-      "Incompatible parameter type [6]: In call `Movie.__init__`, for 2nd parameter `year` \
-       expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Movie.__init__`, for argument `name`, expected \
+       `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `Movie.__init__`, for argument `year`, expected \
+       `int` but got `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -399,8 +399,8 @@ let test_check_typed_dictionaries context =
         return movie['year']
     |}
     [
-      "Incompatible parameter type [6]: In call `Movie.__init__`, for 1st positional only \
-       parameter expected `Movie` but got `str`.";
+      "Incompatible parameter type [6]: In call `Movie.__init__`, for 1st positional argument, \
+       expected `Movie` but got `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -613,7 +613,7 @@ let test_check_typed_dictionaries context =
     [
       "Revealed type [-1]: Revealed type for `v` is `str`.";
       "Incompatible parameter type [6]: In call `TypedDictionary.setdefault`, for 2nd positional \
-       only parameter expected `str` but got `int`.";
+       argument, expected `str` but got `int`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`.";
     ];
   assert_test_typed_dictionary
@@ -638,9 +638,9 @@ let test_check_typed_dictionaries context =
         movie.update(yar = "missing")
     |}
     [
-      "Incompatible parameter type [6]: In call `TypedDictionary.update`, for 1st parameter `name` \
+      "Incompatible parameter type [6]: In call `TypedDictionary.update`, for argument `name`, \
        expected `str` but got `int`.";
-      "Incompatible parameter type [6]: In call `TypedDictionary.update`, for 2nd parameter `year` \
+      "Incompatible parameter type [6]: In call `TypedDictionary.update`, for argument `year`, \
        expected `int` but got `str`.";
       "Unexpected keyword [28]: Unexpected keyword argument `yar` to call "
       ^ "`TypedDictionary.update`.";
@@ -655,8 +655,8 @@ let test_check_typed_dictionaries context =
       movie2.update(7)
     |}
     [
-      "Incompatible parameter type [6]: In call `TypedDictionary.update`, for 1st positional only \
-       parameter expected `Movie` but got `int`.";
+      "Incompatible parameter type [6]: In call `TypedDictionary.update`, for 1st positional \
+       argument, expected `Movie` but got `int`.";
     ];
   assert_test_typed_dictionary
     (* TODO(T37629490): We should handle the alias not being the same as the TypedDict name. *)
@@ -859,7 +859,7 @@ let test_check_typed_dictionaries context =
         foo({'name' : 'Blade Runner', x: y})
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `Movie` but got `Dict[str, Union[int, str]]`.";
     ];
   assert_test_typed_dictionary
@@ -1045,8 +1045,8 @@ let test_check_typed_dictionaries context =
      expects_has_field(d)
    |}
     [
-      "Incompatible parameter type [6]: In call `expects_has_field`, for 1st positional only \
-       parameter expected `HasField` but got `Bar`.";
+      "Incompatible parameter type [6]: In call `expects_has_field`, for 1st positional argument, \
+       expected `HasField` but got `Bar`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1181,8 +1181,8 @@ let test_check_typed_dictionary_inference context =
         expects_poppable(n)
     |}
     [
-      "Incompatible parameter type [6]: In call `expects_poppable`, for 1st positional only \
-       parameter expected `Poppable` but got `Total`.";
+      "Incompatible parameter type [6]: In call `expects_poppable`, for 1st positional argument, \
+       expected `Poppable` but got `Total`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1420,9 +1420,9 @@ let test_check_typed_dictionary_inheritance context =
       takes_child(non_child)
     |}
     [
-      "Incompatible parameter type [6]: In call `takes_child`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `takes_child`, for 1st positional argument, \
        expected `Child` but got `Base`.";
-      "Incompatible parameter type [6]: In call `takes_child`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `takes_child`, for 1st positional argument, \
        expected `Child` but got `NonChild`.";
     ];
   assert_test_typed_dictionary
@@ -1437,14 +1437,14 @@ let test_check_typed_dictionary_inheritance context =
       takes_grandchild(non_child)
     |}
     [
-      "Incompatible parameter type [6]: In call `takes_grandchild`, for 1st positional only \
-       parameter expected `GrandChild` but got `Base`.";
-      "Incompatible parameter type [6]: In call `takes_grandchild`, for 1st positional only \
-       parameter expected `GrandChild` but got `Child`.";
-      "Incompatible parameter type [6]: In call `takes_grandchild`, for 1st positional only \
-       parameter expected `GrandChild` but got `ExplicitChild`.";
-      "Incompatible parameter type [6]: In call `takes_grandchild`, for 1st positional only \
-       parameter expected `GrandChild` but got `NonChild`.";
+      "Incompatible parameter type [6]: In call `takes_grandchild`, for 1st positional argument, \
+       expected `GrandChild` but got `Base`.";
+      "Incompatible parameter type [6]: In call `takes_grandchild`, for 1st positional argument, \
+       expected `GrandChild` but got `Child`.";
+      "Incompatible parameter type [6]: In call `takes_grandchild`, for 1st positional argument, \
+       expected `GrandChild` but got `ExplicitChild`.";
+      "Incompatible parameter type [6]: In call `takes_grandchild`, for 1st positional argument, \
+       expected `GrandChild` but got `NonChild`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1458,12 +1458,12 @@ let test_check_typed_dictionary_inheritance context =
       takes_nonchild(non_child)
     |}
     [
-      "Incompatible parameter type [6]: In call `takes_nonchild`, for 1st positional only \
-       parameter expected `NonChild` but got `Base`.";
-      "Incompatible parameter type [6]: In call `takes_nonchild`, for 1st positional only \
-       parameter expected `NonChild` but got `Child`.";
-      "Incompatible parameter type [6]: In call `takes_nonchild`, for 1st positional only \
-       parameter expected `NonChild` but got `ExplicitChild`.";
+      "Incompatible parameter type [6]: In call `takes_nonchild`, for 1st positional argument, \
+       expected `NonChild` but got `Base`.";
+      "Incompatible parameter type [6]: In call `takes_nonchild`, for 1st positional argument, \
+       expected `NonChild` but got `Child`.";
+      "Incompatible parameter type [6]: In call `takes_nonchild`, for 1st positional argument, \
+       expected `NonChild` but got `ExplicitChild`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1855,8 +1855,8 @@ let test_check_typed_dictionary_in_alias context =
         xs: List[Child] = [child, child]
     |}
     [
-      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
-       expected `Child` but got `Base`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
+       `Child` but got `Base`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1895,7 +1895,7 @@ let test_check_typed_dictionary_in_alias context =
        `typing.Callable(G.__init__)[[Named(self, G[Child]), Named(x, Child)], None]`.";
       "Revealed type [-1]: Revealed type for `test.C.return_T` is \
        `typing.Callable(G.return_T)[[Named(self, G[Child])], Child]`.";
-      "Incompatible parameter type [6]: In call `G.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `G.__init__`, for 1st positional argument, \
        expected `Child` but got `Base`.";
       "Revealed type [-1]: Revealed type for `d` is `Base` (inferred: `Child`).";
       "Incompatible variable type [9]: d2 is declared to have type `GrandChild` but is used as \
@@ -1995,8 +1995,8 @@ let test_check_typed_dictionary_in_alias context =
       "Revealed type [-1]: Revealed type for `test.foo(1)` is `Child`.";
       "Incompatible variable type [9]: d is declared to have type `int` but is used as type \
        `Child`.";
-      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
-       expected `Child` but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
+       `Child` but got `int`.";
     ];
   ()
 

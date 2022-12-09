@@ -33,8 +33,8 @@ let test_check_tuple context =
         a.tuple_method(1.0)
     |}
     [
-      "Incompatible parameter type [6]: In call `tuple.tuple_method`, for 1st positional only \
-       parameter expected `int` but got `float`.";
+      "Incompatible parameter type [6]: In call `tuple.tuple_method`, for 1st positional argument, \
+       expected `int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -501,9 +501,9 @@ let test_tuple_literal_access context =
       func(1, *c)
     |}
     [
-      "Incompatible parameter type [6]: In call `func`, for 2nd positional only parameter expected \
+      "Incompatible parameter type [6]: In call `func`, for 2nd positional argument, expected \
        `bool` but got `str`.";
-      "Incompatible parameter type [6]: In call `func`, for 3rd positional only parameter expected \
+      "Incompatible parameter type [6]: In call `func`, for 3rd positional argument, expected \
        `str` but got `bool`.";
     ];
   assert_type_errors
@@ -751,7 +751,7 @@ let test_star_args context =
         expect_int( *list_of_string)
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_int`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `expect_int`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
   (* ParamSpec `P.args` should be treated as having type `Tuple[object, ...]`. *)
@@ -853,8 +853,8 @@ let test_star_args context =
         foo( *wrong)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `str` \
+       but got `int`.";
     ];
   assert_type_errors
     {|

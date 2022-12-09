@@ -63,8 +63,8 @@ let test_ignore_readonly context =
         y: str = s.capitalize()
     |}
     [
-      "Incompatible parameter type [6]: In call `str.capitalize`, for 0th positional only \
-       parameter expected `str` but got `pyre_extensions.ReadOnly[str]`.";
+      "Incompatible parameter type [6]: In call `str.capitalize`, for 0th positional argument, \
+       expected `str` but got `pyre_extensions.ReadOnly[str]`.";
     ];
   ()
 
@@ -340,7 +340,7 @@ let test_function_call context =
       "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
       "Incompatible parameter type [6]: In call `expect_mutable_and_readonly`, for 1st positional \
-       only parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -354,8 +354,8 @@ let test_function_call context =
     [
       "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `int` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
+       but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -368,8 +368,8 @@ let test_function_call context =
         expect_mutable(x)
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional only \
-       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional argument, \
+       expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -386,8 +386,8 @@ let test_function_call context =
     [
       "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible parameter type [6]: In call `Foo.return_readonly`, for 1st positional only \
-       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `Foo.return_readonly`, for 1st positional \
+       argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -406,10 +406,10 @@ let test_function_call context =
     [
       "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible parameter type [6]: In call `return_foo`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `return_foo`, for 1st positional argument, \
        expected `int` but got `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible parameter type [6]: In call `Foo.return_readonly`, for 1st positional only \
-       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `Foo.return_readonly`, for 1st positional \
+       argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -442,8 +442,8 @@ let test_function_call context =
     |}
     [
       (* TODO(T130377746): Clarify that it is a mutating method call on a readonly object. *)
-      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 0th positional only \
-       parameter expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
+      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 0th positional \
+       argument, expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
     ];
   (* A method with readonly `self` can be called on either mutable or readonly objects. However, the
      method itself cannot call other mutating methods. *)
@@ -467,8 +467,8 @@ let test_function_call context =
     |}
     [
       (* TODO(T130377746): Clarify that it is a mutating method call on a readonly object. *)
-      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 0th positional only \
-       parameter expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
+      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 0th positional \
+       argument, expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -485,7 +485,7 @@ let test_function_call context =
       "Revealed type [-1]: Revealed type for `x` is `int`.";
       "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`.";
       "Incompatible parameter type [6]: In call `expect_positional_mutable_and_readonly`, for 1st \
-       positional only parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -501,8 +501,8 @@ let test_function_call context =
     [
       "Revealed type [-1]: Revealed type for `x` is `int`.";
       "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible parameter type [6]: In call `expect_keyword_only`, for 2nd parameter `x` \
-       expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `expect_keyword_only`, for argument `x`, expected \
+       `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -515,9 +515,9 @@ let test_function_call context =
         expect_kwargs( **kwargs)
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_kwargs`, for 2nd parameter `x` expected \
-       `int` but got `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible parameter type [6]: In call `expect_kwargs`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `expect_kwargs`, for argument `x`, expected `int` \
+       but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `expect_kwargs`, for 1st positional argument, \
        expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
@@ -544,8 +544,8 @@ let test_function_call context =
         expect_mutable(readonly)
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional only \
-       parameter expected `object` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional argument, \
+       expected `object` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   ()
 
@@ -638,8 +638,8 @@ let test_parameters context =
         pass
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional only \
-       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional argument, \
+       expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   (* Don't consider `x` in scope for the default value of parameter `y`. We don't need to emit an
      error here, because the type checking analysis will. *)
@@ -693,8 +693,8 @@ let test_format_string context =
         s = f"hello, {expect_mutable(my_readonly)}, {expect_mutable(my_mutable)}"
     |}
     [
-      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional only \
-       parameter expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional argument, \
+       expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   ()
 

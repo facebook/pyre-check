@@ -20,7 +20,7 @@ let test_check_data_class context =
           b = Foo('a')
     |}
     [
-      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
   assert_type_errors

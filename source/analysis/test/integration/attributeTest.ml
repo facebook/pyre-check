@@ -171,8 +171,8 @@ let test_check_attributes context =
       "Incomplete type [37]: Type `typing.Dict[Variable[_KT], Variable[_VT]]` inferred for \
        `test.Foo.bar` is incomplete, add an explicit annotation.";
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has no type specified.";
-      "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional only \
-       parameter expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional argument, \
+       expected `str` but got `int`.";
     ];
   assert_type_errors
     {|

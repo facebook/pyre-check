@@ -274,8 +274,8 @@ let test_bound_method context =
     |}
     [
       "Revealed type [-1]: Revealed type for `c` is `bool`.";
-      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
-       expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
+       `str` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -290,8 +290,8 @@ let test_bound_method context =
     |}
     [
       "Revealed type [-1]: Revealed type for `c` is `Bar`.";
-      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
-       expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
+       `str` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -304,10 +304,10 @@ let test_bound_method context =
         foo(unknown, b)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `int` but got `unknown`.";
-      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
-       `str` but got `bool`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
+       but got `unknown`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional argument, expected `str` \
+       but got `bool`.";
     ];
   assert_type_errors
     {|
@@ -326,9 +326,9 @@ let test_bound_method context =
         foo(x, y, z)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional argument, expected \
        `typing.Tuple[*test.Ts]` but got `Tuple[int, int]`.";
-      "Incompatible parameter type [6]: In call `foo`, for 3rd positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 3rd positional argument, expected \
        `typing.Tuple[*test.Ts]` but got `str`.";
     ];
   ()

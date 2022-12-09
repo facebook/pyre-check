@@ -1147,7 +1147,7 @@ let test_check_refinement context =
         l.append('a')
     |}
     [
-      "Incompatible parameter type [6]: In call `list.append`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `list.append`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
   assert_type_errors
@@ -1160,7 +1160,7 @@ let test_check_refinement context =
     [
       "Incompatible variable type [9]: l is declared to have type `List[int]` "
       ^ "but is used as type `None`.";
-      "Incompatible parameter type [6]: In call `list.append`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `list.append`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
   assert_type_errors
@@ -1404,8 +1404,8 @@ let test_check_aliases context =
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `BAR` has no attribute `x`.";
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
-       `BAR` but got `FOO`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `BAR` \
+       but got `FOO`.";
     ];
 
   (* Locals are not aliases *)
@@ -1658,7 +1658,7 @@ let test_check_invalid_generic_inheritance context =
     [
       "Incompatible variable type [9]: y is declared to have type `Base[str]` but is used as type \
        `Base[int]`.";
-      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
       "Incompatible variable type [9]: x is declared to have type `Child[str]` but is used as type \
        `Child[int]`.";
@@ -1683,7 +1683,7 @@ let test_check_invalid_generic_inheritance context =
         PartialChild("hello", "world")
       |}
     [
-      "Incompatible parameter type [6]: In call `Base.__new__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Base.__new__`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
   assert_type_errors
@@ -1705,7 +1705,7 @@ let test_check_invalid_generic_inheritance context =
         y4: PartialChild[int] = PartialChild(0, "hello")
       |}
     [
-      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
       "Incompatible variable type [9]: y1 is declared to have type `PartialChild[str]` but is used \
        as type `PartialChild[typing_extensions.Literal['hello']]`.";
@@ -1713,7 +1713,7 @@ let test_check_invalid_generic_inheritance context =
        as type `PartialChild[int]`.";
       "Incompatible variable type [9]: y3 is declared to have type `PartialChild[str]` but is used \
        as type `PartialChild[int]`.";
-      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
       "Incompatible variable type [9]: y4 is declared to have type `PartialChild[int]` but is used \
        as type `PartialChild[str]`.";
@@ -1739,7 +1739,7 @@ let test_check_invalid_generic_inheritance context =
       |}
     [
       "Incompatible parameter type [6]: In call `PartialChildWithConstructor.__init__`, for 3rd \
-       positional only parameter expected `str` but got `int`.";
+       positional argument, expected `str` but got `int`.";
       "Incompatible variable type [9]: y3 is declared to have type \
        `PartialChildWithConstructor[str]` but is used as type `PartialChildWithConstructor[int]`.";
     ];
@@ -1770,7 +1770,7 @@ let test_check_invalid_generic_inheritance context =
     [
       "Revealed type [-1]: Revealed type for `y1.identity(0)` is `int`.";
       "Incompatible parameter type [6]: In call `TypeNotUsedInConstructor.identity`, for 1st \
-       positional only parameter expected `int` but got `str`.";
+       positional argument, expected `int` but got `str`.";
       "Revealed type [-1]: Revealed type for `y1.identity(\"hello\")` is `int`.";
     ];
   assert_type_errors
@@ -1808,12 +1808,12 @@ let test_check_invalid_generic_inheritance context =
        as type `Child[typing_extensions.Literal['hello'], typing_extensions.Literal[1]]`.";
       "Incompatible variable type [9]: y3 is declared to have type `PartialChild[str]` but is used \
        as type `PartialChild[typing_extensions.Literal['hello']]`.";
-      "Incompatible parameter type [6]: In call `Base.generic_method`, for 2nd positional only \
-       parameter expected `int` but got `str`.";
-      "Incompatible parameter type [6]: In call `Base.generic_method`, for 2nd positional only \
-       parameter expected `int` but got `str`.";
-      "Incompatible parameter type [6]: In call `Base.generic_method`, for 1st positional only \
-       parameter expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.generic_method`, for 2nd positional \
+       argument, expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.generic_method`, for 2nd positional \
+       argument, expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.generic_method`, for 1st positional \
+       argument, expected `int` but got `str`.";
     ];
   ()
 
@@ -2113,7 +2113,7 @@ let test_check_typevar_arithmetic context =
 
        Eventually, we would like this to work at least for polynomials of degree 1. See T70449275 *)
     [
-      "Incompatible parameter type [6]: In call `pop`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `pop`, for 1st positional argument, expected \
        `Vec[pyre_extensions.IntExpression[M + N]]` but got `Vec[int]`.";
     ];
   assert_default_type_errors
@@ -3609,10 +3609,10 @@ let test_check_compose context =
        inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
        attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
        Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing.Callable[[Variable[T]], Variable[T2]]` but got `Sequential[Linear[int, int], \
        Linear[int, int]]`.";
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing.Callable[[Variable[T]], Variable[T2]]` but got `pyre_extensions.Compose[Linear[int, \
        int], Linear[int, int]]`.";
       "Revealed type [-1]: Revealed type for `result` is `typing.Callable[[typing.Any], \
@@ -3791,7 +3791,7 @@ let test_check_product context =
     |}
     [
       "Revealed type [-1]: Revealed type for `result` is `typing_extensions.Literal[27]`.";
-      "Incompatible parameter type [6]: In call `cube`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `cube`, for 1st positional argument, expected \
        `Variable[N (bound to int)]` but got `str`.";
     ];
   assert_default_type_errors

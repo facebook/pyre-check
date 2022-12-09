@@ -993,12 +993,12 @@ let test_description _ =
   in
   assert_messages
     incompatible_parameter_type_error
-    "Incompatible parameter type [6]: In call `callee`, for 1st parameter `name` expected \
+    "Incompatible parameter type [6]: In call `callee`, for argument `name`, expected \
      `typing_extensions.LiteralString` but got `str`.";
   assert_messages
     non_string_literal_error
-    "Non-literal string [62]: In call `callee`, for 1st parameter `name` expected `LiteralString` \
-     but got `str`. Ensure only a string literal or a `LiteralString` is used.";
+    "Non-literal string [62]: In call `callee`, for argument `name`, expected `LiteralString` but \
+     got `str`. Ensure only a string literal or a `LiteralString` is used.";
   ()
 
 

@@ -322,7 +322,7 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Union[bool, int]` "
       ^ "but type `Any` is specified.";
-      "Incompatible parameter type [6]: In call `int_to_bool`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `int_to_bool`, for 1st positional argument, \
        expected `int` but got `Optional[int]`.";
     ];
   assert_type_errors

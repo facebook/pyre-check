@@ -363,8 +363,8 @@ let test_non_data_descriptors context =
       "Revealed type [-1]: Revealed type for `y` is `BoundMethod[typing.Callable[[Type[Host], int, \
        str], bool], Type[Host]]`.";
       "Revealed type [-1]: Revealed type for `z` is `bool`.";
-      "Incompatible parameter type [6]: In anonymous call, for 2nd positional only parameter \
-       expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 2nd positional argument, expected \
+       `str` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -599,7 +599,7 @@ let test_data_descriptors context =
     [
       (* TODO(T65806273): This should be accepted, but we're currently ignoring descriptors when
          building dataclass constructors for perf reasons *)
-      "Incompatible parameter type [6]: In call `DC.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `DC.__init__`, for 1st positional argument, \
        expected `Descriptor` but got `str`.";
     ];
   assert_type_errors

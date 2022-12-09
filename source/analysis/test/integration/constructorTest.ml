@@ -265,7 +265,7 @@ let test_check_init context =
       a = Foo("")
     |}
     [
-      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
   assert_type_errors
@@ -347,7 +347,7 @@ let test_check_init context =
       a: Foo = Foo("")
     |}
     [
-      "Incompatible parameter type [6]: In call `Foo.__new__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Foo.__new__`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
 
@@ -372,7 +372,7 @@ let test_check_init context =
       c: C = C("")
     |}
     [
-      "Incompatible parameter type [6]: In call `Super.__new__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Super.__new__`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
 
@@ -388,7 +388,7 @@ let test_check_init context =
       c: C = C("")
     |}
     [
-      "Incompatible parameter type [6]: In call `Super.__new__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Super.__new__`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
   assert_type_errors
@@ -402,8 +402,8 @@ let test_check_init context =
       c: C = C("")
     |}
     [
-      "Incompatible parameter type [6]: In call `Super.__init__`, for 1st positional only \
-       parameter expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Super.__init__`, for 1st positional argument, \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -512,7 +512,7 @@ let test_check_constructors context =
         return Foo('asdf')
     |}
     [
-      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
     ];
   assert_type_errors
@@ -526,9 +526,9 @@ let test_check_constructors context =
         Foo(1, 2)
     |}
     [
-      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional only parameter \
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
-      "Incompatible parameter type [6]: In call `Foo.__init__`, for 2nd positional only parameter \
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 2nd positional argument, \
        expected `Optional[str]` but got `int`.";
     ];
 
@@ -716,7 +716,7 @@ let test_check_constructors context =
           Foo.__init__(self, 'asdf')
     |}
     [
-      "Incompatible parameter type [6]: In call `Foo.__init__`, for 2nd positional only parameter \
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 2nd positional argument, \
        expected `int` but got `str`.";
     ];
 
@@ -731,8 +731,8 @@ let test_check_constructors context =
           super().foo('asdf')
     |}
     [
-      "Incompatible parameter type [6]: In call `Super.foo`, for 1st positional only parameter \
-       expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Super.foo`, for 1st positional argument, expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -744,8 +744,8 @@ let test_check_constructors context =
           super().__init__('asdf')
     |}
     [
-      "Incompatible parameter type [6]: In call `Super.__init__`, for 1st positional only \
-       parameter expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Super.__init__`, for 1st positional argument, \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -858,7 +858,7 @@ let test_check_constructors context =
       foo(Class)
     |}
     [
-      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing.Callable[[str], Class]` but got `Type[Class]`.";
     ];
   assert_type_errors
