@@ -15,7 +15,7 @@ module ModelQuery = ModelParseResult.ModelQuery
 
 type query_element = ModelParseResult.ModelAnnotation.t [@@deriving show, equal]
 
-let test_apply_query context =
+let test_generated_annotations context =
   let source ?subkind name =
     let source =
       match subkind with
@@ -28,7 +28,7 @@ let test_apply_query context =
     let sink = Sinks.NamedSink name in
     ModelParseResult.TaintAnnotation.from_sink sink
   in
-  let assert_applied_queries ~source ~query ~callable ~expected =
+  let assert_generated_annotations ~source ~query ~callable ~expected =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
@@ -41,14 +41,12 @@ let test_apply_query context =
       |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
     in
     let actual =
-      query
-      |> Taint.ModelQueryExecution.CallableQueries.apply_callable_query
-           ~verbose:false
-           ~resolution:global_resolution
-           ~class_hierarchy_graph
-           ~callable
-      |> String.Map.data
-      |> List.concat
+      Taint.ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
+        ~verbose:false
+        ~resolution:global_resolution
+        ~class_hierarchy_graph
+        ~target:callable
+        query
     in
     assert_equal
       ~cmp:(List.equal equal_query_element)
@@ -56,7 +54,7 @@ let test_apply_query context =
       expected
       actual
   in
-  let assert_applied_queries_for_attribute ~source ~query ~name ~annotation ~expected =
+  let assert_generated_annotations_for_attributes ~source ~query ~name ~annotation ~expected =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
@@ -80,15 +78,12 @@ let test_apply_query context =
       | _ -> None
     in
     let actual =
-      query
-      |> Taint.ModelQueryExecution.AttributeQueries.apply_attribute_query
-           ~verbose:false
-           ~resolution:global_resolution
-           ~class_hierarchy_graph
-           ~variable_metadata:
-             { name = Ast.Reference.create name; type_annotation = annotation_expression }
-      |> String.Map.data
-      |> List.concat
+      Taint.ModelQueryExecution.AttributeQueryExecutor.generate_annotations_from_query_on_target
+        ~verbose:false
+        ~resolution:global_resolution
+        ~class_hierarchy_graph
+        ~target:{ name = Ast.Reference.create name; type_annotation = annotation_expression }
+        query
     in
     assert_equal
       ~cmp:(List.equal ModelParseResult.TaintAnnotation.equal)
@@ -96,7 +91,7 @@ let test_apply_query context =
       expected
       actual
   in
-  let assert_applied_queries_for_globals ~source ~query ~name ~expected =
+  let assert_generated_annotations_for_globals ~source ~query ~name ~expected =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
@@ -109,14 +104,13 @@ let test_apply_query context =
       |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
     in
     let actual =
-      query
-      |> Taint.ModelQueryExecution.GlobalVariableQueries.apply_global_query
-           ~verbose:false
-           ~resolution:global_resolution
-           ~class_hierarchy_graph
-           ~variable_metadata:{ name = Ast.Reference.create name; type_annotation = None }
-      |> String.Map.data
-      |> List.concat
+      Taint.ModelQueryExecution.GlobalVariableQueryExecutor
+      .generate_annotations_from_query_on_target
+        ~verbose:false
+        ~resolution:global_resolution
+        ~class_hierarchy_graph
+        ~target:{ name = Ast.Reference.create name; type_annotation = None }
+        query
     in
     assert_equal
       ~cmp:(List.equal ModelParseResult.TaintAnnotation.equal)
@@ -124,7 +118,7 @@ let test_apply_query context =
       expected
       actual
   in
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(): ...
       |}
@@ -140,7 +134,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(): ...
       |}
@@ -156,7 +150,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(): ...
       |}
@@ -174,7 +168,7 @@ let test_apply_query context =
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Test multiple constraints. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(): ...
       def barfoo(): ...
@@ -195,7 +189,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(): ...
       def barfoo(): ...
@@ -218,7 +212,7 @@ let test_apply_query context =
     ~expected:[];
 
   (* Method vs. callable productions. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(): ...
@@ -236,7 +230,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
 
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(): ...
@@ -255,7 +249,7 @@ let test_apply_query context =
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Multiple productions. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(x: int): ...
@@ -283,7 +277,7 @@ let test_apply_query context =
             source "Test" );
       ];
   (* All parameter taint. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
@@ -308,7 +302,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
@@ -330,7 +324,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
@@ -354,7 +348,7 @@ let test_apply_query context =
       ];
 
   (* Parameter taint. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
@@ -383,7 +377,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
@@ -412,7 +406,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
@@ -445,7 +439,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       class C:
         def foo(x: int, y: str): ...
@@ -479,7 +473,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       from typing import Annotated
@@ -511,7 +505,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(x: int, y: str): ...
      |}
@@ -539,7 +533,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(x: int, y: str): ...
      |}
@@ -567,7 +561,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(x: int, y: str): ...
      |}
@@ -599,7 +593,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(x: int, y: str): ...
      |}
@@ -632,7 +626,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       from typing import Annotated
@@ -663,7 +657,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(x, y): ...
      |}
@@ -691,7 +685,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(x, y): ...
      |}
@@ -719,7 +713,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(x, y): ...
      |}
@@ -745,7 +739,7 @@ let test_apply_query context =
       ];
 
   (* Annotated returns. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        from typing import Annotated
@@ -763,7 +757,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(x: int, y: str) -> int: ...
      |}
@@ -779,7 +773,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(x: int, y: str): ...
      |}
@@ -795,7 +789,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(x: typing.Annotated[int, "annotation"], y: str): ...
      |}
@@ -811,7 +805,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[int, "annotation"], c: str): ...
      |}
@@ -828,7 +822,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Any of. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[int, "annotation"], c: str): ...
      |}
@@ -851,7 +845,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b, c: str) -> typing.Annotated[int, "annotation"]: ...
      |}
@@ -874,7 +868,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
      |}
@@ -907,7 +901,7 @@ let test_apply_query context =
             source ~subkind:"A" "Dynamic" );
       ];
   (* Case where we don't match. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
      |}
@@ -935,7 +929,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   (* All of. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def foo(a: typing.Annotated[int, "annotation"])-> typing.Annotated[int, "annotation"]: ...
@@ -960,7 +954,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Some cases where we don't match with "AllOf". *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a: typing.Annotated[int, "annotation"]): ...
      |}
@@ -983,7 +977,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a) -> typing.Annotated[int, "annotation"]): ...
      |}
@@ -1007,7 +1001,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   (* Named parameters + parametric sources from annotation. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
      |}
@@ -1040,7 +1034,7 @@ let test_apply_query context =
             source ~subkind:"A" "Dynamic" );
       ];
   (* All parameters taint + parametric source from annotation. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
      |}
@@ -1073,7 +1067,7 @@ let test_apply_query context =
             source ~subkind:"A" "Dynamic" );
       ];
   (* Returned taint + parametric source from annotation. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
      |}
@@ -1096,7 +1090,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source ~subkind:"B" "Dynamic")];
   (* Named parameters + parametric sinks from annotation. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[int, DynamicSink(BSink)], c: str): ...
      |}
@@ -1127,7 +1121,7 @@ let test_apply_query context =
               (Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" }) );
       ];
   (* Type annotation constraint for callables *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
      |}
@@ -1155,7 +1149,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 1; name = "b"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
      |}
@@ -1190,7 +1184,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 2; name = "c"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
      |}
@@ -1218,7 +1212,7 @@ let test_apply_query context =
           ( AccessPath.Root.PositionalParameter { position = 3; name = "d"; positional_only = false },
             source "Test" );
       ];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo() -> int: ...
        def bar() -> str: ...
@@ -1235,7 +1229,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo() -> int: ...
        def bar() -> str: ...
@@ -1252,7 +1246,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo() -> str: ...
        def bar() -> List[str]: ...
@@ -1269,7 +1263,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo() -> str: ...
        def bar() -> typing.List[str]: ...
@@ -1286,7 +1280,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo() -> typing.Annotated[str, "foo"]: ...
      |}
@@ -1302,7 +1296,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
        def foo() -> typing.Annotated[str, "foo"]: ...
      |}
@@ -1320,7 +1314,7 @@ let test_apply_query context =
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Decorator names. *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1347,7 +1341,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1374,7 +1368,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1401,7 +1395,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        from flask import Flask
@@ -1421,7 +1415,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1448,7 +1442,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1475,7 +1469,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1517,7 +1511,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1559,7 +1553,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1602,7 +1596,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1645,7 +1639,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1695,7 +1689,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1745,7 +1739,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def d1(c): ...
@@ -1796,7 +1790,7 @@ let test_apply_query context =
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class C:
@@ -1818,7 +1812,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class C:
@@ -1841,7 +1835,7 @@ let test_apply_query context =
     ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[];
 
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class C:
@@ -1863,7 +1857,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @d1
@@ -1889,7 +1883,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @d1
@@ -1915,7 +1909,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @d1
@@ -1957,7 +1951,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @d1
@@ -2001,7 +1995,7 @@ let test_apply_query context =
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Test attribute models. *)
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:{|
       class C:
         x: ...
@@ -2021,7 +2015,7 @@ let test_apply_query context =
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:{|
       class C:
         x: ...
@@ -2041,7 +2035,7 @@ let test_apply_query context =
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[sink "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:{|
       class C:
         x: ...
@@ -2061,7 +2055,7 @@ let test_apply_query context =
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:{|
       class C:
         x: ...
@@ -2086,7 +2080,7 @@ let test_apply_query context =
     ~annotation:None
     ~expected:[source "Test"];
   ();
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:{|
       class C:
         x: ...
@@ -2110,7 +2104,7 @@ let test_apply_query context =
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2137,7 +2131,7 @@ let test_apply_query context =
     ~name:"test.E.z"
     ~annotation:None
     ~expected:[];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:{|
       class C:
         x: int
@@ -2156,7 +2150,7 @@ let test_apply_query context =
     ~name:"test.C.x"
     ~annotation:(Some "int")
     ~expected:[source "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:{|
       class C:
         x: int
@@ -2175,7 +2169,7 @@ let test_apply_query context =
     ~name:"test.C.y"
     ~annotation:(Some "str")
     ~expected:[];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class Foo1:
@@ -2202,7 +2196,7 @@ let test_apply_query context =
     ~name:"test.C.x"
     ~annotation:(Some "typing.Type[Foo1]")
     ~expected:[source "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class Foo1:
@@ -2229,7 +2223,7 @@ let test_apply_query context =
     ~name:"test.C.y"
     ~annotation:(Some "typing.Type[Foo2]")
     ~expected:[source "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class Foo1:
@@ -2256,7 +2250,7 @@ let test_apply_query context =
     ~name:"test.C.z"
     ~annotation:(Some "typing.Type[Bar]")
     ~expected:[];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       from typing import Annotated
@@ -2277,7 +2271,7 @@ let test_apply_query context =
     ~name:"test.C.x"
     ~annotation:(Some "int")
     ~expected:[];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       from typing import Annotated
@@ -2300,7 +2294,7 @@ let test_apply_query context =
     ~expected:[source "Test"];
 
   (* Test 'Not' clause *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(): ...
       def barfoo(): ...
@@ -2321,7 +2315,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:{|
       def foo(): ...
       def barfoo(): ...
@@ -2342,7 +2336,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
@@ -2360,7 +2354,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class C:
@@ -2386,7 +2380,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class C:
@@ -2412,7 +2406,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
        def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
@@ -2430,7 +2424,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2458,7 +2452,7 @@ let test_apply_query context =
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2486,7 +2480,7 @@ let test_apply_query context =
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2516,7 +2510,7 @@ let test_apply_query context =
     ~expected:[source "Test"];
 
   (* Test transitive extends *)
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2543,7 +2537,7 @@ let test_apply_query context =
     ~name:"test.E.z"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2570,7 +2564,7 @@ let test_apply_query context =
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2597,7 +2591,7 @@ let test_apply_query context =
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2626,7 +2620,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2655,7 +2649,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2684,7 +2678,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2715,7 +2709,7 @@ let test_apply_query context =
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Test includes_self=False *)
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2742,7 +2736,7 @@ let test_apply_query context =
     ~name:"test.C.x"
     ~annotation:None
     ~expected:[];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2769,7 +2763,7 @@ let test_apply_query context =
     ~name:"test.D.y"
     ~annotation:None
     ~expected:[source "Test"];
-  assert_applied_queries_for_attribute
+  assert_generated_annotations_for_attributes
     ~source:
       {|
       class C:
@@ -2796,7 +2790,7 @@ let test_apply_query context =
     ~name:"test.E.z"
     ~annotation:None
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2824,7 +2818,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2852,7 +2846,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2880,7 +2874,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2908,7 +2902,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2936,7 +2930,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       class A:
@@ -2966,7 +2960,7 @@ let test_apply_query context =
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Test cls.any_child *)
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3001,7 +2995,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3036,7 +3030,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3071,7 +3065,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3106,7 +3100,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3141,7 +3135,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3176,7 +3170,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3211,7 +3205,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3246,7 +3240,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3281,7 +3275,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_applied_queries
+  assert_generated_annotations
     ~source:
       {|
       @decorator
@@ -3316,7 +3310,7 @@ let test_apply_query context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_applied_queries_for_globals
+  assert_generated_annotations_for_globals
     ~source:{|
       foo = []
      |}
@@ -3332,7 +3326,7 @@ let test_apply_query context =
       }
     ~name:"test.foo"
     ~expected:[source "Test"];
-  assert_applied_queries_for_globals
+  assert_generated_annotations_for_globals
     ~source:{|
       foo, bar = [], {}
      |}
@@ -3348,7 +3342,7 @@ let test_apply_query context =
       }
     ~name:"test.bar"
     ~expected:[source "Test"];
-  assert_applied_queries_for_globals
+  assert_generated_annotations_for_globals
     ~source:{|
       foo = []
      |}
@@ -3367,4 +3361,4 @@ let test_apply_query context =
   ()
 
 
-let () = "modelQuery" >::: ["apply_query" >:: test_apply_query] |> Test.run
+let () = "modelQuery" >::: ["generated_annotations" >:: test_generated_annotations] |> Test.run

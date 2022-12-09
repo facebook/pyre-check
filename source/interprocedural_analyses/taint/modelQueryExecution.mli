@@ -43,38 +43,36 @@ module DumpModelQueryResults : sig
   val dump_to_file_and_string : registry_map:ModelQueryRegistryMap.t -> path:PyrePath.t -> string
 end
 
-module CallableQueries : sig
-  val apply_callable_query
+module CallableQueryExecutor : sig
+  val generate_annotations_from_query_on_target
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    callable:Interprocedural.Target.t ->
+    target:Interprocedural.Target.t ->
     ModelParseResult.ModelQuery.t ->
-    ModelParseResult.ModelAnnotation.t list Core.String.Map.t
+    ModelParseResult.ModelAnnotation.t list
 end
 
-module AttributeQueries : sig
-  val apply_attribute_query
+module AttributeQueryExecutor : sig
+  val generate_annotations_from_query_on_target
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    variable_metadata:VariableMetadata.t ->
+    target:VariableMetadata.t ->
     ModelParseResult.ModelQuery.t ->
-    ModelParseResult.TaintAnnotation.t list Core.String.Map.t
+    ModelParseResult.TaintAnnotation.t list
 end
 
-module GlobalVariableQueries : sig
-  val get_globals_and_annotations
-    :  resolution:Analysis.GlobalResolution.t ->
-    VariableMetadata.t list
+val get_globals_and_annotations : resolution:Analysis.GlobalResolution.t -> VariableMetadata.t list
 
-  val apply_global_query
+module GlobalVariableQueryExecutor : sig
+  val generate_annotations_from_query_on_target
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    variable_metadata:VariableMetadata.t ->
+    target:VariableMetadata.t ->
     ModelParseResult.ModelQuery.t ->
-    ModelParseResult.TaintAnnotation.t list Core.String.Map.t
+    ModelParseResult.TaintAnnotation.t list
 end
 
 val apply_all_queries

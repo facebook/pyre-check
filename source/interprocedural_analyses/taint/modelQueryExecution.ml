@@ -26,6 +26,7 @@ module VariableMetadata = struct
   [@@deriving show, compare]
 end
 
+(* Represents the result of generating models from queries. *)
 module ModelQueryRegistryMap = struct
   type t = Registry.t String.Map.t
 
@@ -152,6 +153,7 @@ module ModelQueryRegistryMap = struct
     errors
 end
 
+(* Helper functions to dump generated models into a string or file. *)
 module DumpModelQueryResults = struct
   let dump_to_string ~registry_map =
     let model_to_json (callable, model) =
@@ -542,8 +544,175 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       |> Option.value ~default:false
 
 
-module CallableQueries = struct
-  let apply_callable_models
+(* Module interface that we need to provide for each type of query (callable, attribute and global). *)
+module type QUERY_KIND = sig
+  (* The target we want to model, with possibly additional information. *)
+  type target_information
+
+  (* The type of annotation produced by this type of query (e.g, `ModelAnnotation.t` for callables
+     and `TaintAnnotation.t` for attributes and globals). *)
+  type annotation
+
+  val get_target : target_information -> Target.t
+
+  val generate_annotations_from_query_on_target
+    :  verbose:bool ->
+    resolution:GlobalResolution.t ->
+    class_hierarchy_graph:ClassHierarchyGraph.SharedMemory.t ->
+    target:target_information ->
+    ModelQuery.t ->
+    annotation list
+
+  val generate_model_from_annotations
+    :  resolution:GlobalResolution.t ->
+    source_sink_filter:SourceSinkFilter.t option ->
+    stubs:Target.t Hash_set.t ->
+    target:target_information ->
+    annotation list ->
+    (Model.t, ModelVerificationError.t) result
+end
+
+(* Functor that implements the generic logic that generates models from queries. *)
+module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
+  include QueryKind
+
+  let generate_model_from_query_on_target
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~source_sink_filter
+      ~stubs
+      ~target
+      query
+    =
+    match
+      QueryKind.generate_annotations_from_query_on_target
+        ~verbose
+        ~resolution
+        ~class_hierarchy_graph
+        ~target
+        query
+    with
+    | [] -> Ok None
+    | annotations ->
+        QueryKind.generate_model_from_annotations
+          ~resolution
+          ~source_sink_filter
+          ~stubs
+          ~target
+          annotations
+        |> Result.map ~f:Option.some
+
+
+  let generate_models_from_query_on_targets
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~source_sink_filter
+      ~stubs
+      ~targets
+      query
+    =
+    let fold registry target =
+      match
+        generate_model_from_query_on_target
+          ~verbose
+          ~resolution
+          ~class_hierarchy_graph
+          ~source_sink_filter
+          ~stubs
+          ~target
+          query
+      with
+      | Ok (Some model) ->
+          Registry.add
+            registry
+            ~join:Model.join_user_models
+            ~target:(QueryKind.get_target target)
+            ~model
+      | Ok None -> registry
+      | Error error ->
+          let () =
+            Log.error "Error while executing model query: %s" (ModelVerificationError.display error)
+          in
+          registry
+    in
+    List.fold targets ~init:Registry.empty ~f:fold
+
+
+  let generate_models_from_queries_on_targets
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~source_sink_filter
+      ~stubs
+      ~targets
+      queries
+    =
+    let fold registry_map ({ ModelQuery.name = model_query_name; _ } as query) =
+      let registry =
+        generate_models_from_query_on_targets
+          ~verbose
+          ~resolution
+          ~class_hierarchy_graph
+          ~source_sink_filter
+          ~stubs
+          ~targets
+          query
+      in
+      if not (Registry.is_empty registry) then
+        ModelQueryRegistryMap.set registry_map ~model_query_name ~models:registry
+      else
+        registry_map
+    in
+    List.fold queries ~init:ModelQueryRegistryMap.empty ~f:fold
+
+
+  let generate_models_from_queries_on_targets_with_multiprocessing
+      ~verbose
+      ~resolution
+      ~scheduler
+      ~class_hierarchy_graph
+      ~source_sink_filter
+      ~stubs
+      ~targets
+      queries
+    =
+    let map registry_map targets =
+      generate_models_from_queries_on_targets
+        ~verbose
+        ~resolution
+        ~class_hierarchy_graph
+        ~source_sink_filter
+        ~stubs
+        ~targets
+        queries
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models registry_map
+    in
+    let reduce = ModelQueryRegistryMap.merge ~model_join:Model.join_user_models in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunk_size:500
+           ~preferred_chunks_per_worker:1
+           ())
+      ~initial:ModelQueryRegistryMap.empty
+      ~map
+      ~reduce
+      ~inputs:targets
+      ()
+end
+
+module CallableQueryExecutor = MakeQueryExecutor (struct
+  type target_information = Target.t
+
+  type annotation = ModelAnnotation.t
+
+  let get_target = Fn.id
+
+  (* Generate taint annotations from the `models` part of a given model query. *)
+  let generate_annotations_from_query_models
       ~models
       {
         Node.value =
@@ -752,11 +921,11 @@ module CallableQueries = struct
     List.concat_map models ~f:apply_model
 
 
-  let apply_callable_query
+  let generate_annotations_from_query_on_target
       ~verbose
       ~resolution
       ~class_hierarchy_graph
-      ~callable
+      ~target:callable
       { ModelQuery.find; where; models; name = query_name; _ }
     =
     let kind_matches =
@@ -793,16 +962,37 @@ module CallableQueries = struct
             callable
             query_name
       in
-      let annotations =
-        Lazy.force definition >>| apply_callable_models ~models |> Option.value ~default:[]
-      in
-      String.Map.set String.Map.empty ~key:query_name ~data:annotations
+      Lazy.force definition
+      >>| generate_annotations_from_query_models ~models
+      |> Option.value ~default:[]
     else
-      String.Map.empty
-end
+      []
 
-module AttributeQueries = struct
-  let apply_attribute_models ~models =
+
+  let generate_model_from_annotations
+      ~resolution
+      ~source_sink_filter
+      ~stubs
+      ~target:callable
+      annotations
+    =
+    ModelParser.create_callable_model_from_annotations
+      ~resolution
+      ~callable
+      ~source_sink_filter
+      ~is_obscure:(Hash_set.mem stubs callable)
+      annotations
+end)
+
+module AttributeQueryExecutor = MakeQueryExecutor (struct
+  type target_information = VariableMetadata.t
+
+  type annotation = TaintAnnotation.t
+
+  let get_target { VariableMetadata.name; _ } = Target.create_object name
+
+  (* Generate taint annotations from the `models` part of a given model query. *)
+  let generate_annotations_from_query_models ~models =
     let production_to_taint = function
       | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
       | _ -> None
@@ -814,11 +1004,11 @@ module AttributeQueries = struct
     List.concat_map models ~f:apply_model
 
 
-  let apply_attribute_query
+  let generate_annotations_from_query_on_target
       ~verbose
       ~resolution
       ~class_hierarchy_graph
-      ~variable_metadata:({ VariableMetadata.name; _ } as variable_metadata)
+      ~target:({ VariableMetadata.name; _ } as variable_metadata)
       { ModelQuery.find; where; models; name = query_name; _ }
     =
     if
@@ -838,12 +1028,26 @@ module AttributeQueries = struct
             (Reference.show name)
             query_name
       in
-      String.Map.set String.Map.empty ~key:query_name ~data:(apply_attribute_models ~models)
+      generate_annotations_from_query_models ~models
     else
-      String.Map.empty
-end
+      []
 
-let get_class_attributes ~resolution ~class_name =
+
+  let generate_model_from_annotations
+      ~resolution
+      ~source_sink_filter
+      ~stubs:_
+      ~target:{ VariableMetadata.name; _ }
+      annotations
+    =
+    ModelParser.create_attribute_model_from_annotations
+      ~resolution
+      ~name
+      ~source_sink_filter
+      annotations
+end)
+
+let get_class_attributes ~resolution class_name =
   let class_summary =
     GlobalResolution.class_summary resolution (Type.Primitive class_name) >>| Node.value
   in
@@ -878,29 +1082,34 @@ let get_class_attributes ~resolution ~class_name =
       Identifier.SerializableMap.fold get_name_and_annotation_from_attributes all_attributes []
 
 
-module GlobalVariableQueries = struct
-  let get_globals_and_annotations ~resolution =
-    let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment resolution
-    in
-    let variable_metadata_for_global global_reference =
-      match
-        UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-          unannotated_global_environment
-          global_reference
-      with
-      | Some (SimpleAssign { explicit_annotation = Some _ as explicit_annotation; _ }) ->
-          Some { VariableMetadata.name = global_reference; type_annotation = explicit_annotation }
-      | Some (TupleAssign _)
-      | Some (SimpleAssign _) ->
-          Some { VariableMetadata.name = global_reference; type_annotation = None }
-      | _ -> None
-    in
-    UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
-    |> List.filter_map ~f:variable_metadata_for_global
+let get_globals_and_annotations ~resolution =
+  let unannotated_global_environment = GlobalResolution.unannotated_global_environment resolution in
+  let variable_metadata_for_global global_reference =
+    match
+      UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+        unannotated_global_environment
+        global_reference
+    with
+    | Some (SimpleAssign { explicit_annotation = Some _ as explicit_annotation; _ }) ->
+        Some { VariableMetadata.name = global_reference; type_annotation = explicit_annotation }
+    | Some (TupleAssign _)
+    | Some (SimpleAssign _) ->
+        Some { VariableMetadata.name = global_reference; type_annotation = None }
+    | _ -> None
+  in
+  UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
+  |> List.filter_map ~f:variable_metadata_for_global
 
 
-  let apply_global_models ~models =
+module GlobalVariableQueryExecutor = MakeQueryExecutor (struct
+  type target_information = VariableMetadata.t
+
+  type annotation = TaintAnnotation.t
+
+  let get_target { VariableMetadata.name; _ } = Target.create_object name
+
+  (* Generate taint annotations from the `models` part of a given model query. *)
+  let generate_annotations_from_query_models ~models =
     let production_to_taint = function
       | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
       | _ -> None
@@ -912,11 +1121,11 @@ module GlobalVariableQueries = struct
     List.concat_map models ~f:apply_model
 
 
-  let apply_global_query
+  let generate_annotations_from_query_on_target
       ~verbose
       ~resolution
       ~class_hierarchy_graph
-      ~variable_metadata:({ VariableMetadata.name; _ } as variable_metadata)
+      ~target:({ VariableMetadata.name; _ } as variable_metadata)
       { ModelQuery.find; where; models; name = query_name; _ }
     =
     if
@@ -936,10 +1145,24 @@ module GlobalVariableQueries = struct
             (Reference.show name)
             query_name
       in
-      String.Map.set String.Map.empty ~key:query_name ~data:(apply_global_models ~models)
+      generate_annotations_from_query_models ~models
     else
-      String.Map.empty
-end
+      []
+
+
+  let generate_model_from_annotations
+      ~resolution
+      ~source_sink_filter
+      ~stubs:_
+      ~target:{ VariableMetadata.name; _ }
+      annotations
+    =
+    ModelParser.create_attribute_model_from_annotations
+      ~resolution
+      ~name
+      ~source_sink_filter
+      annotations
+end)
 
 let apply_all_queries
     ~resolution
@@ -951,184 +1174,92 @@ let apply_all_queries
     ~callables
     ~stubs
   =
-  if List.length queries > 0 then
-    let attribute_queries, global_queries, callable_queries =
-      List.partition3_map
-        ~f:(fun query ->
-          match query.ModelQuery.find with
-          | ModelQuery.Find.Attribute -> `Fst query
-          | ModelQuery.Find.Global -> `Snd query
-          | _ -> `Trd query)
-        queries
-    in
-    let apply_queries registry_map target ~queries ~apply_query ~model_from_annotation =
-      let taint_to_model_and_names =
-        queries
-        |> List.map ~f:apply_query
-        |> List.reduce ~f:(fun left right ->
-               String.Map.merge left right ~f:(fun ~key:_ -> function
-                 | `Both (taint_annotations_left, taint_annotations_right) ->
-                     Some (taint_annotations_left @ taint_annotations_right)
-                 | `Left taint_annotations
-                 | `Right taint_annotations ->
-                     Some taint_annotations))
-        |> Option.value ~default:String.Map.empty
-      in
-      String.Map.map taint_to_model_and_names ~f:(fun taint_to_model ->
-          match model_from_annotation ~taint_to_model with
-          | Ok model -> Registry.add Registry.empty ~join:Model.join_user_models ~target ~model
-          | Error error ->
-              Log.error
-                "Error while executing model query: %s"
-                (ModelVerificationError.display error);
-              Registry.empty)
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models registry_map
-    in
-    let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
-    let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
+  let attribute_queries, global_queries, callable_queries =
+    List.partition3_map
+      ~f:(fun query ->
+        match query.ModelQuery.find with
+        | ModelQuery.Find.Attribute -> `Fst query
+        | ModelQuery.Find.Global -> `Snd query
+        | _ -> `Trd query)
+      queries
+  in
+  let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
+  let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
 
-    (* Generate models for functions and methods. *)
-    let apply_queries_for_callable registry_map callable =
-      let callable_model_from_annotation ~taint_to_model =
-        ModelParser.create_callable_model_from_annotations
-          ~resolution
-          ~callable
-          ~source_sink_filter
-          ~is_obscure:(Hash_set.mem stubs callable)
-          taint_to_model
+  (* Generate models for functions and methods. *)
+  let registry_map =
+    if not (List.is_empty callable_queries) then
+      let () = Log.info "Generating models from callable model queries..." in
+      let callables =
+        List.filter callables ~f:(function
+            | Target.Function _
+            | Target.Method _ ->
+                true
+            | _ -> false)
       in
-      apply_queries
-        ~queries:callable_queries
-        ~apply_query:
-          (CallableQueries.apply_callable_query
-             ~verbose
-             ~resolution
-             ~class_hierarchy_graph
-             ~callable)
-        ~model_from_annotation:callable_model_from_annotation
-        registry_map
-        callable
-    in
-    let callables =
-      List.filter_map callables ~f:(function
-          | Target.Function _ as callable -> Some callable
-          | Target.Method _ as callable -> Some callable
-          | _ -> None)
-    in
-    let callable_models =
-      Scheduler.map_reduce
-        scheduler
-        ~policy:
-          (Scheduler.Policy.fixed_chunk_count
-             ~minimum_chunk_size:500
-             ~preferred_chunks_per_worker:1
-             ())
-        ~initial:ModelQueryRegistryMap.empty
-        ~map:(fun registry_map callables ->
-          List.fold callables ~init:registry_map ~f:apply_queries_for_callable)
-        ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
-        ~inputs:callables
-        ()
-    in
-    (* Generate models for attributes. *)
-    let apply_queries_for_attribute registry_map ({ VariableMetadata.name; _ } as variable_metadata)
-      =
-      let attribute_model_from_annotation ~taint_to_model =
-        ModelParser.create_attribute_model_from_annotations
-          ~resolution
-          ~name
-          ~source_sink_filter
-          taint_to_model
+      CallableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
+        ~verbose
+        ~resolution
+        ~scheduler
+        ~class_hierarchy_graph
+        ~source_sink_filter
+        ~stubs
+        ~targets:callables
+        callable_queries
+    else
+      ModelQueryRegistryMap.empty
+  in
+
+  (* Generate models for attributes. *)
+  let registry_map =
+    if not (List.is_empty attribute_queries) then
+      let () = Log.info "Generating models from attribute model queries..." in
+      let all_classes =
+        resolution
+        |> GlobalResolution.unannotated_global_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
       in
-      let attribute = Target.create_object name in
-      apply_queries
-        ~queries:attribute_queries
-        ~apply_query:
-          (AttributeQueries.apply_attribute_query
-             ~verbose
-             ~resolution
-             ~class_hierarchy_graph
-             ~variable_metadata)
-        ~model_from_annotation:attribute_model_from_annotation
-        registry_map
-        attribute
-    in
-    let attribute_models =
-      if not (List.is_empty attribute_queries) then
-        let all_classes =
-          resolution
-          |> GlobalResolution.unannotated_global_environment
-          |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
-        in
-        let attributes =
-          List.concat_map all_classes ~f:(fun class_name ->
-              get_class_attributes ~resolution ~class_name)
-        in
-        Scheduler.map_reduce
-          scheduler
-          ~policy:
-            (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunk_size:500
-               ~preferred_chunks_per_worker:1
-               ())
-          ~initial:ModelQueryRegistryMap.empty
-          ~map:(fun registry_map attributes ->
-            List.fold attributes ~init:registry_map ~f:apply_queries_for_attribute)
-          ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
-          ~inputs:attributes
-          ()
-      else
-        ModelQueryRegistryMap.empty
-    in
-    (* Generate models for globals. *)
-    let apply_queries_for_globals registry_map ({ VariableMetadata.name; _ } as variable_metadata) =
-      let global_model_from_annotation ~taint_to_model =
-        ModelParser.create_attribute_model_from_annotations
-          ~resolution
-          ~name
-          ~source_sink_filter
-          taint_to_model
-      in
-      let global = Target.create_object name in
-      apply_queries
-        ~queries:global_queries
-        ~apply_query:
-          (GlobalVariableQueries.apply_global_query
-             ~verbose
-             ~resolution
-             ~class_hierarchy_graph
-             ~variable_metadata)
-        ~model_from_annotation:global_model_from_annotation
-        registry_map
-        global
-    in
-    let global_models =
-      Scheduler.map_reduce
-        scheduler
-        ~policy:
-          (Scheduler.Policy.fixed_chunk_count
-             ~minimum_chunk_size:500
-             ~preferred_chunks_per_worker:1
-             ())
-        ~initial:ModelQueryRegistryMap.empty
-        ~map:(fun registry_map globals ->
-          List.fold globals ~init:registry_map ~f:apply_queries_for_globals)
-        ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
-        ~inputs:(GlobalVariableQueries.get_globals_and_annotations ~resolution)
-        ()
-    in
-    let registry_map =
-      ModelQueryRegistryMap.merge
-        ~model_join:Model.join_user_models
-        callable_models
-        attribute_models
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models global_models
-    in
-    ( registry_map,
-      ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~registry_map ~queries
-      @ ModelQueryRegistryMap.check_errors ~registry_map ~queries )
-  else
-    ModelQueryRegistryMap.empty, []
+      let attributes = List.concat_map all_classes ~f:(get_class_attributes ~resolution) in
+      AttributeQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
+        ~verbose
+        ~resolution
+        ~scheduler
+        ~class_hierarchy_graph
+        ~source_sink_filter
+        ~stubs
+        ~targets:attributes
+        attribute_queries
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models registry_map
+    else
+      registry_map
+  in
+
+  (* Generate models for globals. *)
+  let registry_map =
+    if not (List.is_empty global_queries) then
+      let () = Log.info "Generating models from global model queries..." in
+      let globals = get_globals_and_annotations ~resolution in
+      GlobalVariableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
+        ~verbose
+        ~resolution
+        ~scheduler
+        ~class_hierarchy_graph
+        ~source_sink_filter
+        ~stubs
+        ~targets:globals
+        global_queries
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models registry_map
+    else
+      registry_map
+  in
+
+  let errors =
+    List.rev_append
+      (ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~registry_map ~queries)
+      (ModelQueryRegistryMap.check_errors ~registry_map ~queries)
+  in
+
+  registry_map, errors
 
 
 let generate_models_from_queries

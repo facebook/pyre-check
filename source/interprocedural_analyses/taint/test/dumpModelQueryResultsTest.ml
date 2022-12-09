@@ -195,13 +195,6 @@ let test_dump_model_query_results context =
   {
     "get_Base_child_sources": [
       {
-        "callable": "test.Base.$class_toplevel",
-        "model": {
-          "kind": "model",
-          "data": { "callable": "test.Base.$class_toplevel" }
-        }
-      },
-      {
         "callable": "test.Base.baz",
         "model": {
           "kind": "model",
