@@ -132,9 +132,9 @@ type t = {
 module V1 = struct
   let build ~interface ~source_root ~artifact_root targets =
     let open Lwt.Infix in
-    Interface.normalize_targets interface targets
+    Interface.V1.normalize_targets interface targets
     >>= fun normalized_targets ->
-    Interface.construct_build_map interface normalized_targets
+    Interface.V1.construct_build_map interface normalized_targets
     >>= fun ({ Interface.BuildResult.build_map; _ } as build_result) ->
     Log.info "Constructing Python link-tree for type checking...";
     Artifacts.populate ~source_root ~artifact_root build_map
@@ -145,9 +145,9 @@ module V1 = struct
 
   let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
     let open Lwt.Infix in
-    Interface.normalize_targets interface targets
+    Interface.V1.normalize_targets interface targets
     >>= fun normalized_targets ->
-    Interface.construct_build_map interface normalized_targets
+    Interface.V1.construct_build_map interface normalized_targets
     >>= fun { Interface.BuildResult.targets; build_map } ->
     do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
     >>= fun changed_artifacts ->
@@ -162,7 +162,7 @@ module V1 = struct
       targets
     =
     let open Lwt.Infix in
-    Interface.construct_build_map interface targets
+    Interface.V1.construct_build_map interface targets
     >>= fun { Interface.BuildResult.targets; build_map } ->
     do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
     >>= fun changed_artifacts ->
@@ -193,10 +193,10 @@ module V1 = struct
   let compute_difference_from_changed_paths ~source_root ~interface ~targets changed_paths =
     let open Lwt.Infix in
     try
-      Interface.query_owner_targets interface ~targets changed_paths
+      Interface.V1.query_owner_targets interface ~targets changed_paths
       >>= fun query_output ->
       Log.info "Constructing local build map for changed files...";
-      match Interface.BuckChangedTargetsQueryOutput.to_build_map_batch query_output with
+      match Interface.V1.BuckChangedTargetsQueryOutput.to_build_map_batch query_output with
       | Result.Error _ as error -> Lwt.return error
       | Result.Ok build_map ->
           to_relative_paths ~root:source_root changed_paths
@@ -287,19 +287,19 @@ end
 module V2 = struct
   let build ~interface ~source_root ~artifact_root targets =
     let open Lwt.Infix in
-    Interface.construct_build_map interface targets
-    >>= fun ({ Interface.BuildResult.build_map; _ } as build_result) ->
+    Interface.V2.construct_build_map interface targets
+    >>= fun build_map ->
     Log.info "Constructing Python link-tree for type checking...";
     Artifacts.populate ~source_root ~artifact_root build_map
     >>= function
     | Result.Error message -> raise (LinkTreeConstructionError message)
-    | Result.Ok () -> Lwt.return build_result
+    | Result.Ok () -> Lwt.return { Interface.BuildResult.targets; build_map }
 
 
   let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
     let open Lwt.Infix in
-    Interface.construct_build_map interface targets
-    >>= fun { Interface.BuildResult.build_map; _ } ->
+    Interface.V2.construct_build_map interface targets
+    >>= fun build_map ->
     do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
     >>= fun changed_artifacts ->
     Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }

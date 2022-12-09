@@ -29,76 +29,78 @@ module BuildResult = struct
   }
 end
 
-module IncompatibleMergeItem = struct
-  type t = {
-    key: string;
-    left_value: string;
-    right_value: string;
-  }
-  [@@deriving sexp, compare]
-end
-
-exception FoundIncompatibleMergeItem of IncompatibleMergeItem.t
-
-let resolve_merge_conflict_by_name ~key left_value right_value =
-  if String.equal left_value right_value then
-    left_value
-  else
-    raise (FoundIncompatibleMergeItem { IncompatibleMergeItem.key; left_value; right_value })
-
-
-module BuckChangedTargetsQueryOutput = struct
-  type t = {
-    source_base_path: string;
-    artifact_base_path: string;
-    artifacts_to_sources: (string * string) list;
-  }
-  [@@deriving sexp, compare]
-
-  let to_partial_build_map { source_base_path; artifact_base_path; artifacts_to_sources } =
-    let to_build_mapping (artifact, source) =
-      Filename.concat artifact_base_path artifact, Filename.concat source_base_path source
-    in
-    match BuildMap.Partial.of_alist (List.map artifacts_to_sources ~f:to_build_mapping) with
-    | `Duplicate_key artifact ->
-        let message = Format.sprintf "Overlapping artifact file detected: %s" artifact in
-        Result.Error message
-    | `Ok partial_build_map -> Result.Ok partial_build_map
-
-
-  let to_build_map_batch outputs =
-    let rec merge ~sofar = function
-      | [] -> Result.Ok (BuildMap.create sofar)
-      | output :: rest -> (
-          match to_partial_build_map output with
-          | Result.Error _ as error -> error
-          | Result.Ok next_build_map -> (
-              try
-                let sofar =
-                  BuildMap.Partial.merge
-                    sofar
-                    next_build_map
-                    ~resolve_conflict:resolve_merge_conflict_by_name
-                in
-                merge ~sofar rest
-              with
-              | FoundIncompatibleMergeItem { IncompatibleMergeItem.key; _ } ->
-                  let message = Format.sprintf "Overlapping artifact file detected: %s" key in
-                  Result.Error message))
-    in
-    merge ~sofar:BuildMap.Partial.empty outputs
-end
-
-type t = {
-  normalize_targets: string list -> Target.t list Lwt.t;
-  (* NOTE(grievejia): This function is intentionally not exposed to downstream clients of the [Buck]
-     module, as we are still unsure whether to rely on it or not in the long term. *)
-  query_owner_targets:
-    targets:Target.t list -> PyrePath.t list -> BuckChangedTargetsQueryOutput.t list Lwt.t;
-  construct_build_map: Target.t list -> BuildResult.t Lwt.t;
-}
-
 module V1 = struct
+  module IncompatibleMergeItem = struct
+    type t = {
+      key: string;
+      left_value: string;
+      right_value: string;
+    }
+    [@@deriving sexp, compare]
+  end
+
+  exception FoundIncompatibleMergeItem of IncompatibleMergeItem.t
+
+  let resolve_merge_conflict_by_name ~key left_value right_value =
+    if String.equal left_value right_value then
+      left_value
+    else
+      raise (FoundIncompatibleMergeItem { IncompatibleMergeItem.key; left_value; right_value })
+
+
+  module BuckChangedTargetsQueryOutput = struct
+    type t = {
+      source_base_path: string;
+      artifact_base_path: string;
+      artifacts_to_sources: (string * string) list;
+    }
+    [@@deriving sexp, compare]
+
+    let to_partial_build_map { source_base_path; artifact_base_path; artifacts_to_sources } =
+      let to_build_mapping (artifact, source) =
+        Filename.concat artifact_base_path artifact, Filename.concat source_base_path source
+      in
+      match BuildMap.Partial.of_alist (List.map artifacts_to_sources ~f:to_build_mapping) with
+      | `Duplicate_key artifact ->
+          let message = Format.sprintf "Overlapping artifact file detected: %s" artifact in
+          Result.Error message
+      | `Ok partial_build_map -> Result.Ok partial_build_map
+
+
+    let to_build_map_batch outputs =
+      let rec merge ~sofar = function
+        | [] -> Result.Ok (BuildMap.create sofar)
+        | output :: rest -> (
+            match to_partial_build_map output with
+            | Result.Error _ as error -> error
+            | Result.Ok next_build_map -> (
+                try
+                  let sofar =
+                    BuildMap.Partial.merge
+                      sofar
+                      next_build_map
+                      ~resolve_conflict:resolve_merge_conflict_by_name
+                  in
+                  merge ~sofar rest
+                with
+                | FoundIncompatibleMergeItem { IncompatibleMergeItem.key; _ } ->
+                    let message = Format.sprintf "Overlapping artifact file detected: %s" key in
+                    Result.Error message))
+      in
+      merge ~sofar:BuildMap.Partial.empty outputs
+  end
+
+  type t = {
+    normalize_targets: string list -> Target.t list Lwt.t;
+    query_owner_targets:
+      targets:Target.t list -> PyrePath.t list -> BuckChangedTargetsQueryOutput.t list Lwt.t;
+    construct_build_map: Target.t list -> BuildResult.t Lwt.t;
+  }
+
+  let create_for_testing ~normalize_targets ~construct_build_map ~query_owner_targets () =
+    { normalize_targets; construct_build_map; query_owner_targets }
+
+
   let source_database_suffix = "#source-db"
 
   let query_buck_for_normalized_targets
@@ -399,9 +401,34 @@ module V1 = struct
     build_source_databases buck_options normalized_targets
     >>= fun target_and_source_database_paths ->
     load_and_merge_source_databases target_and_source_database_paths
+
+
+  let create ?mode ?isolation_prefix raw =
+    let buck_options = { BuckOptions.mode; isolation_prefix; raw } in
+    {
+      normalize_targets = normalize_targets_with_options buck_options;
+      query_owner_targets = query_owner_targets_with_options buck_options;
+      construct_build_map = construct_build_map_with_options buck_options;
+    }
+
+
+  let normalize_targets { normalize_targets; _ } target_specifications =
+    normalize_targets target_specifications
+
+
+  let query_owner_targets { query_owner_targets; _ } ~targets paths =
+    query_owner_targets ~targets paths
+
+
+  let construct_build_map { construct_build_map; _ } normalized_targets =
+    construct_build_map normalized_targets
 end
 
 module V2 = struct
+  type t = { construct_build_map: Target.t list -> BuildMap.t Lwt.t }
+
+  let create_for_testing ~construct_build_map () = { construct_build_map }
+
   let build_map_key = "build_map"
 
   let built_targets_count_key = "built_targets_count"
@@ -537,49 +564,17 @@ module V2 = struct
     let { BuckBxlBuilderOutput.build_map; target_count; conflicts } = parse_bxl_output output in
     warn_on_conflicts conflicts;
     Log.info "Loaded source databases for %d targets" target_count;
-    Lwt.return { BuildResult.build_map; targets }
+    Lwt.return build_map
+
+
+  let create ?mode ?isolation_prefix ?bxl_builder raw =
+    let buck_options = { BuckOptions.mode; isolation_prefix; raw } in
+    match bxl_builder with
+    | None -> failwith "BXL path is not set but it is required when using Buck2"
+    | Some bxl_builder ->
+        { construct_build_map = construct_build_map_with_options ~bxl_builder ~buck_options }
+
+
+  let construct_build_map { construct_build_map; _ } normalized_targets =
+    construct_build_map normalized_targets
 end
-
-let create ?mode ?isolation_prefix raw =
-  let buck_options = { BuckOptions.mode; isolation_prefix; raw } in
-  {
-    normalize_targets = V1.normalize_targets_with_options buck_options;
-    query_owner_targets = V1.query_owner_targets_with_options buck_options;
-    construct_build_map = V1.construct_build_map_with_options buck_options;
-  }
-
-
-let create_v2 ?mode ?isolation_prefix ?bxl_builder raw =
-  let buck_options = { BuckOptions.mode; isolation_prefix; raw } in
-  let normalize_targets targets =
-    (* Target normalization can always be handled in BXL builder *)
-    Lwt.return targets
-  in
-  let query_owner_targets ~targets:_ _ = failwith "Owner target query is not needed in Buck2" in
-  match bxl_builder with
-  | None -> failwith "BXL path is not set but it is required when using Buck2"
-  | Some bxl_builder ->
-      {
-        normalize_targets;
-        query_owner_targets;
-        construct_build_map = V2.construct_build_map_with_options ~bxl_builder ~buck_options;
-      }
-
-
-let create_for_testing ~normalize_targets ~construct_build_map () =
-  let query_owner_targets ~targets:_ _ =
-    failwith "`query_owner_targets` invoked but not implemented"
-  in
-  { normalize_targets; construct_build_map; query_owner_targets }
-
-
-let normalize_targets { normalize_targets; _ } target_specifications =
-  normalize_targets target_specifications
-
-
-let query_owner_targets { query_owner_targets; _ } ~targets paths =
-  query_owner_targets ~targets paths
-
-
-let construct_build_map { construct_build_map; _ } normalized_targets =
-  construct_build_map normalized_targets

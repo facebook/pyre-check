@@ -74,9 +74,9 @@ let test_parse_buck_changed_targets_query_output context =
     let actual = Interface.V1.parse_buck_changed_targets_query_output output in
     assert_equal
       ~ctxt:context
-      ~cmp:[%compare.equal: Interface.BuckChangedTargetsQueryOutput.t list]
+      ~cmp:[%compare.equal: Interface.V1.BuckChangedTargetsQueryOutput.t list]
       ~printer:(fun results ->
-        Sexp.to_string_hum ([%sexp_of: Interface.BuckChangedTargetsQueryOutput.t list] results))
+        Sexp.to_string_hum ([%sexp_of: Interface.V1.BuckChangedTargetsQueryOutput.t list] results))
       expected
       actual
   in
@@ -88,7 +88,7 @@ let test_parse_buck_changed_targets_query_output context =
     with
     | Interface.JsonError _ -> ()
   in
-  let module Output = Interface.BuckChangedTargetsQueryOutput in
+  let module Output = Interface.V1.BuckChangedTargetsQueryOutput in
   assert_parsed "{}" ~expected:[];
   assert_parsed
     {|
@@ -500,25 +500,25 @@ let test_merge_build_map_by_name context =
 let test_buck_changed_targets_to_build_map context =
   let assert_build_map ~expected changed_targets =
     let actual =
-      Interface.BuckChangedTargetsQueryOutput.to_build_map_batch changed_targets
+      Interface.V1.BuckChangedTargetsQueryOutput.to_build_map_batch changed_targets
       |> Result.ok_or_failwith
       |> BuildMap.to_alist
     in
     assert_mapping_equal ~context ~expected actual
   in
   let assert_no_build_map changed_targets =
-    match Interface.BuckChangedTargetsQueryOutput.to_build_map_batch changed_targets with
+    match Interface.V1.BuckChangedTargetsQueryOutput.to_build_map_batch changed_targets with
     | Result.Error _ -> ()
     | Result.Ok _ ->
         let message =
           Format.asprintf
             "Unexpected parsing success: %a"
             Sexp.pp
-            ([%sexp_of: Interface.BuckChangedTargetsQueryOutput.t list] changed_targets)
+            ([%sexp_of: Interface.V1.BuckChangedTargetsQueryOutput.t list] changed_targets)
         in
         assert_failure message
   in
-  let module Output = Interface.BuckChangedTargetsQueryOutput in
+  let module Output = Interface.V1.BuckChangedTargetsQueryOutput in
   assert_build_map
     [
       {

@@ -359,7 +359,14 @@ let test_buck_renormalize context =
             build_map = Buck.(BuildMap.(create (Partial.of_alist_exn ["foo.py", "foo.py"])));
           }
       in
-      Buck.Interface.create_for_testing ~normalize_targets ~construct_build_map ()
+      let query_owner_targets ~targets:_ _ =
+        failwith "`query_owner_targets` invoked but not implemented"
+      in
+      Buck.Interface.V1.create_for_testing
+        ~normalize_targets
+        ~construct_build_map
+        ~query_owner_targets
+        ()
     in
     let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
     let builder = Buck.Builder.create ~source_root ~artifact_root interface in
@@ -453,7 +460,14 @@ let test_buck_update context =
             build_map = Buck.(BuildMap.(create (Partial.of_alist_exn build_mappings)));
           }
       in
-      Buck.Interface.create_for_testing ~normalize_targets ~construct_build_map ()
+      let query_owner_targets ~targets:_ _ =
+        failwith "`query_owner_targets` invoked but not implemented"
+      in
+      Buck.Interface.V1.create_for_testing
+        ~normalize_targets
+        ~construct_build_map
+        ~query_owner_targets
+        ()
     in
     let builder = Buck.Builder.create ~source_root ~artifact_root interface in
     BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
@@ -543,7 +557,14 @@ let test_buck_update_without_rebuild context =
             build_map = Buck.(BuildMap.(create (Partial.of_alist_exn build_mappings)));
           }
       in
-      Buck.Interface.create_for_testing ~normalize_targets ~construct_build_map ()
+      let query_owner_targets ~targets:_ _ =
+        failwith "`query_owner_targets` invoked but not implemented"
+      in
+      Buck.Interface.V1.create_for_testing
+        ~normalize_targets
+        ~construct_build_map
+        ~query_owner_targets
+        ()
     in
     let builder = Buck.Builder.create ~source_root ~artifact_root interface in
     BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()

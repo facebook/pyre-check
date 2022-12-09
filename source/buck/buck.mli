@@ -359,8 +359,6 @@ end
     the {!module:Raw} module to provide the lower-level knowledge on how the [buck] executable
     should be invoked. *)
 module Interface : sig
-  type t
-
   (** Raised when [buck] returns malformed JSONs *)
   exception JsonError of string
 
@@ -373,42 +371,96 @@ module Interface : sig
     }
   end
 
-  (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
-      Interfaces created this way is only compatible with Buck1. *)
-  val create : ?mode:string -> ?isolation_prefix:string -> Raw.V1.t -> t
+  (** This module contains APIs specific to Buck1 *)
+  module V1 : sig
+    type t
 
-  (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
-      Interfaces created this way is only compatible with Buck2.*)
-  val create_v2 : ?mode:string -> ?isolation_prefix:string -> ?bxl_builder:string -> Raw.V2.t -> t
+    (** Create an instance of [t] from an instance of {!Raw.V1.t} and some buck options. Interfaces
+        created this way is only compatible with Buck1. *)
+    val create : ?mode:string -> ?isolation_prefix:string -> Raw.V1.t -> t
 
-  (** Create an instance of [Interface.t] from custom [normalize_targets] and [construct_build_map]
-      behavior. Useful for unit testing. *)
-  val create_for_testing
-    :  normalize_targets:(string list -> Target.t list Lwt.t) ->
-    construct_build_map:(Target.t list -> BuildResult.t Lwt.t) ->
-    unit ->
-    t
+    module BuckChangedTargetsQueryOutput : sig
+      type t = {
+        source_base_path: string;
+        artifact_base_path: string;
+        artifacts_to_sources: (string * string) list;
+      }
 
-  (** Given a list of buck target specifications (which may contain `...` or filter expression),
-      query [buck] and return the set of individual targets which will be built.
+      val to_partial_build_map : t -> (BuildMap.Partial.t, string) Result.t
 
-      May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
-      succeeds but its output cannot be parsed. *)
-  val normalize_targets : t -> string list -> Target.t list Lwt.t
+      val to_build_map_batch : t list -> (BuildMap.t, string) Result.t
+    end
 
-  (** Given a list of normalized Buck targets, invoke [buck] to construct the link tree as well as
-      source databases. It then loads all generated source databases, and merge all of them into a
-      single [BuildMap.t].
+    (** Create an instance of [t] from custom [normalize_targets], [construct_build_map], and
+        [query_owner_targets] behavior. Useful for unit testing. *)
+    val create_for_testing
+      :  normalize_targets:(string list -> Target.t list Lwt.t) ->
+      construct_build_map:(Target.t list -> BuildResult.t Lwt.t) ->
+      query_owner_targets:
+        (targets:Target.t list -> PyrePath.t list -> BuckChangedTargetsQueryOutput.t list Lwt.t) ->
+      unit ->
+      t
 
-      Source-db merging may not always succeed when merge conflict cannot be resolved (see
-      {!val:BuildMap.Partial.merge}). If it is deteced that the source-db for one target cannot be
-      merged into the build map due to unresolvable conflict, a warning will be printed and the
-      target will be dropped. If a target is dropped, it will not show up in the final target list
-      returned from this API (alongside with the build map).
+    (** Given a list of buck target specifications (which may contain `...` or filter expression),
+        query [buck] and return the set of individual targets which will be built.
 
-      May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
-      succeeds but its output cannot be parsed. *)
-  val construct_build_map : t -> Target.t list -> BuildResult.t Lwt.t
+        May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
+        succeeds but its output cannot be parsed. *)
+    val normalize_targets : t -> string list -> Target.t list Lwt.t
+
+    (** Given a list of normalized Buck targets, invoke [buck] to construct the link tree as well as
+        source databases. It then loads all generated source databases, and merge all of them into a
+        single [BuildMap.t].
+
+        Source-db merging may not always succeed when merge conflict cannot be resolved (see
+        {!val:BuildMap.Partial.merge}). If it is deteced that the source-db for one target cannot be
+        merged into the build map due to unresolvable conflict, a warning will be printed and the
+        target will be dropped. If a target is dropped, it will not show up in the final target list
+        returned from this API (alongside with the build map).
+
+        May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
+        succeeds but its output cannot be parsed. *)
+    val construct_build_map : t -> Target.t list -> BuildResult.t Lwt.t
+
+    (** Given a list of normalized Buck targets and a list of changed files, invoke [buck] to find
+        out what owner targets of those changed files are beneath the given normalized target list,
+        and finally return "local build map" for those owner targets in the form of
+        [BuckChangedTargetsQueryOutput.t].
+
+        May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
+        succeeds but its output cannot be parsed. *)
+    val query_owner_targets
+      :  t ->
+      targets:Target.t list ->
+      PyrePath.t list ->
+      BuckChangedTargetsQueryOutput.t list Lwt.t
+  end
+
+  (** This module contains APIs specific to Buck2 *)
+  module V2 : sig
+    type t
+
+    (** Create an instance of [t] from an instance of {!Raw.V2.t} and some buck options. Interfaces
+        created this way is only compatible with Buck2.*)
+    val create : ?mode:string -> ?isolation_prefix:string -> ?bxl_builder:string -> Raw.V2.t -> t
+
+    (** Create an instance of [t] from custom [construct_build_map] behavior. Useful for unit
+        testing. *)
+    val create_for_testing : construct_build_map:(Target.t list -> BuildMap.t Lwt.t) -> unit -> t
+
+    (** Given a list of normalized Buck targets, invoke [buck] to construct the link tree as well as
+        source databases. It then loads all generated source databases, and merge all of them into a
+        single [BuildMap.t].
+
+        Source-db merging may not always succeed when merge conflict cannot be resolved (see
+        {!val:BuildMap.Partial.merge}). If it is deteced that the source-db for one target cannot be
+        merged into the build map due to unresolvable conflict, a warning will be printed and the
+        target will be dropped.
+
+        May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
+        succeeds but its output cannot be parsed. *)
+    val construct_build_map : t -> Target.t list -> BuildMap.t Lwt.t
+  end
 end
 
 (** This module contains highest-level interfaces for [buck]-related logic. It relies on
@@ -425,11 +477,11 @@ module Builder : sig
 
   (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options.
       Builders created this way are only compatible with Buck1. *)
-  val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
+  val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.V1.t -> t
 
   (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options.
       Builders created with way are only compatible with Buck2. *)
-  val create_v2 : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
+  val create_v2 : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.V2.t -> t
 
   (** {1 Build} *)
 
