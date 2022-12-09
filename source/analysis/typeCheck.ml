@@ -193,17 +193,14 @@ let errors_from_not_found
                 Error.IncompatibleParameterType { name; position; callee; mismatch }
             in
             let kind =
-              match self_argument, callee >>| Reference.as_list with
-              | Some self_annotation, Some callee_reference_list
-                when is_operator (List.last_exn callee_reference_list) -> (
+              match self_argument, callee >>| Reference.last with
+              | Some self_annotation, Some callee_name when is_operator callee_name -> (
                   let is_uninverted = Option.equal Type.equal self_argument original_target in
                   let operator_symbol =
                     if is_uninverted then
-                      List.last_exn callee_reference_list |> operator_name_to_symbol
+                      operator_name_to_symbol callee_name
                     else
-                      List.last_exn callee_reference_list
-                      |> inverse_operator
-                      >>= operator_name_to_symbol
+                      callee_name |> inverse_operator >>= operator_name_to_symbol
                   in
                   match operator_symbol, callee_expression >>| Node.value with
                   | Some operator_name, Some (Expression.Name (Attribute { special = true; _ })) ->
@@ -216,7 +213,7 @@ let errors_from_not_found
                       Error.UnsupportedOperand
                         (Binary { operator_name; left_operand; right_operand })
                   | _ -> default_error)
-              | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
+              | Some (Type.Primitive _ as annotation), Some method_name ->
                   GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
                   >>= typed_dictionary_error ~mismatch ~method_name ~position
                   |> Option.value ~default:default_error
