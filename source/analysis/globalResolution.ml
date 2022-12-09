@@ -5,7 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* A GlobalResolution.t is a wrapper around all the environment layers prior
+ * to TypeEnvironment. It serves two purposes:
+ * (a) It abstracts the details of accessing lower environment layers into a single
+ *     interface representing all global-scope information for Pyre analysis
+ * (b) It allows callers to specify a `dependency` that will be used in all
+ *     environment accesses. This makes it easy to avoid forgetting to pass a
+ *     dependency in very complex logic like typeCheck.ml because the dependency
+ *     only needs to be specified once when we create the GlobalResolution.t.
+ *)
 
 open Core
 open Pyre
