@@ -68,28 +68,6 @@ exception
 
 type buck_command = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
 
-type t = {
-  query: buck_command;
-  build: buck_command;
-  bxl: buck_command;
-}
-
-let create_for_testing ~query ~build ~bxl () = { query; build; bxl }
-
-let isolation_prefix_to_buck_arguments = function
-  | None
-  | Some "" ->
-      []
-  | Some isolation_prefix -> ["--isolation_prefix"; isolation_prefix]
-
-
-let isolation_prefix_to_buck2_arguments = function
-  | None
-  | Some "" ->
-      []
-  | Some isolation_prefix -> ["--isolation-dir"; isolation_prefix]
-
-
 let mode_to_buck_arguments = function
   | None -> []
   | Some mode -> [mode]
@@ -147,110 +125,132 @@ let on_completion ~buck_command ~arguments ~log_buffer = function
           fail_with_error description)
 
 
-let create ?(additional_log_size = 0) () =
-  let buck1 = "buck1" in
-  let open Lwt.Infix in
-  let invoke_buck ?mode ?isolation_prefix ~command arguments =
-    command :: arguments
-    |> Core.List.map ~f:(Format.sprintf "'%s'")
-    |> Core.String.concat ~sep:" "
-    |> Log.debug "Running buck command: buck1 %s";
-    (* Preserve the last several lines of Buck log for error reporting purpose. *)
-    let log_buffer = BoundedQueue.create additional_log_size in
-    (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
-       operating system. Pass all the arguments via a temporary file instead. *)
-    Lwt_io.with_temp_file ~prefix:"buck_arguments_" (fun (filename, output_channel) ->
-        Lwt_io.write_lines output_channel (Lwt_stream.of_list arguments)
-        >>= fun () ->
-        Lwt_io.flush output_channel
-        >>= fun () ->
-        let arguments =
-          List.concat
-            [
-              isolation_prefix_to_buck_arguments isolation_prefix;
-              [command];
-              mode_to_buck_arguments mode;
-              [Format.sprintf "@%s" filename];
-            ]
-        in
-        let consume_stderr = consume_stderr ~log_buffer in
-        LwtSubprocess.run buck1 ~arguments ~consume_stderr)
-    >>= fun result ->
-    let arguments =
-      List.concat
-        [
-          isolation_prefix_to_buck_arguments isolation_prefix;
-          [command];
-          mode_to_buck_arguments mode;
-          arguments;
-        ]
+module V1 = struct
+  type t = {
+    query: buck_command;
+    build: buck_command;
+  }
+
+  let create_for_testing ~query ~build () = { query; build }
+
+  let isolation_prefix_to_buck_arguments = function
+    | None
+    | Some "" ->
+        []
+    | Some isolation_prefix -> ["--isolation_prefix"; isolation_prefix]
+
+
+  let create ?(additional_log_size = 0) () =
+    let buck1 = "buck1" in
+    let open Lwt.Infix in
+    let invoke_buck ?mode ?isolation_prefix ~command arguments =
+      command :: arguments
+      |> Core.List.map ~f:(Format.sprintf "'%s'")
+      |> Core.String.concat ~sep:" "
+      |> Log.debug "Running buck command: buck1 %s";
+      (* Preserve the last several lines of Buck log for error reporting purpose. *)
+      let log_buffer = BoundedQueue.create additional_log_size in
+      (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
+         operating system. Pass all the arguments via a temporary file instead. *)
+      Lwt_io.with_temp_file ~prefix:"buck_arguments_" (fun (filename, output_channel) ->
+          Lwt_io.write_lines output_channel (Lwt_stream.of_list arguments)
+          >>= fun () ->
+          Lwt_io.flush output_channel
+          >>= fun () ->
+          let arguments =
+            List.concat
+              [
+                isolation_prefix_to_buck_arguments isolation_prefix;
+                [command];
+                mode_to_buck_arguments mode;
+                [Format.sprintf "@%s" filename];
+              ]
+          in
+          let consume_stderr = consume_stderr ~log_buffer in
+          LwtSubprocess.run buck1 ~arguments ~consume_stderr)
+      >>= fun result ->
+      let arguments =
+        List.concat
+          [
+            isolation_prefix_to_buck_arguments isolation_prefix;
+            [command];
+            mode_to_buck_arguments mode;
+            arguments;
+          ]
+      in
+      on_completion ~buck_command:buck1 ~arguments ~log_buffer result
     in
-    on_completion ~buck_command:buck1 ~arguments ~log_buffer result
-  in
-  let query ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ~command:"query" arguments
-  in
-  let build ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ~command:"build" arguments
-  in
-  let bxl ?mode:_ ?isolation_prefix:_ _ = failwith "BXL not supported in Buck1" in
-  { query; build; bxl }
-
-
-let create_v2 ?(additional_log_size = 0) () =
-  let buck2 = "buck2" in
-  let open Lwt.Infix in
-  let invoke_buck ?mode ?isolation_prefix ~command arguments =
-    command :: arguments
-    |> Core.List.map ~f:(Format.sprintf "'%s'")
-    |> Core.String.concat ~sep:" "
-    |> Log.debug "Running buck2 command: buck2 %s";
-    (* Preserve the last several lines of Buck log for error reporting purpose. *)
-    let log_buffer = BoundedQueue.create additional_log_size in
-    (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
-       operating system. Pass all the arguments via a temporary file instead. *)
-    Lwt_io.with_temp_file ~prefix:"buck_arguments_" (fun (filename, output_channel) ->
-        Lwt_io.write_lines output_channel (Lwt_stream.of_list arguments)
-        >>= fun () ->
-        Lwt_io.flush output_channel
-        >>= fun () ->
-        let arguments =
-          List.concat
-            [
-              isolation_prefix_to_buck2_arguments isolation_prefix;
-              [command];
-              mode_to_buck_arguments mode;
-              [Format.sprintf "@%s" filename];
-            ]
-        in
-        let consume_stderr = consume_stderr ~log_buffer in
-        LwtSubprocess.run buck2 ~arguments ~consume_stderr)
-    >>= fun result ->
-    let arguments =
-      List.concat
-        [
-          isolation_prefix_to_buck2_arguments isolation_prefix;
-          [command];
-          mode_to_buck_arguments mode;
-          arguments;
-        ]
+    let query ?mode ?isolation_prefix arguments =
+      invoke_buck ?mode ?isolation_prefix ~command:"query" arguments
     in
-    on_completion ~buck_command:buck2 ~arguments ~log_buffer result
-  in
-  let query ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ~command:"uquery" arguments
-  in
-  let build ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ~command:"build" arguments
-  in
-  let bxl ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ~command:"bxl" arguments
-  in
-  { query; build; bxl }
+    let build ?mode ?isolation_prefix arguments =
+      invoke_buck ?mode ?isolation_prefix ~command:"build" arguments
+    in
+    { query; build }
 
 
-let query { query; _ } = query
+  let query { query; _ } = query
 
-let build { build; _ } = build
+  let build { build; _ } = build
+end
 
-let bxl { bxl; _ } = bxl
+module V2 = struct
+  type t = { bxl: buck_command }
+
+  let create_for_testing ~bxl () = { bxl }
+
+  let isolation_prefix_to_buck_arguments = function
+    | None
+    | Some "" ->
+        []
+    | Some isolation_prefix -> ["--isolation-dir"; isolation_prefix]
+
+
+  let create ?(additional_log_size = 0) () =
+    let buck2 = "buck2" in
+    let open Lwt.Infix in
+    let invoke_buck ?mode ?isolation_prefix ~command arguments =
+      command :: arguments
+      |> Core.List.map ~f:(Format.sprintf "'%s'")
+      |> Core.String.concat ~sep:" "
+      |> Log.debug "Running buck2 command: buck2 %s";
+      (* Preserve the last several lines of Buck log for error reporting purpose. *)
+      let log_buffer = BoundedQueue.create additional_log_size in
+      (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
+         operating system. Pass all the arguments via a temporary file instead. *)
+      Lwt_io.with_temp_file ~prefix:"buck_arguments_" (fun (filename, output_channel) ->
+          Lwt_io.write_lines output_channel (Lwt_stream.of_list arguments)
+          >>= fun () ->
+          Lwt_io.flush output_channel
+          >>= fun () ->
+          let arguments =
+            List.concat
+              [
+                isolation_prefix_to_buck_arguments isolation_prefix;
+                [command];
+                mode_to_buck_arguments mode;
+                [Format.sprintf "@%s" filename];
+              ]
+          in
+          let consume_stderr = consume_stderr ~log_buffer in
+          LwtSubprocess.run buck2 ~arguments ~consume_stderr)
+      >>= fun result ->
+      let arguments =
+        List.concat
+          [
+            isolation_prefix_to_buck_arguments isolation_prefix;
+            [command];
+            mode_to_buck_arguments mode;
+            arguments;
+          ]
+      in
+      on_completion ~buck_command:buck2 ~arguments ~log_buffer result
+    in
+    let bxl ?mode ?isolation_prefix arguments =
+      invoke_buck ?mode ?isolation_prefix ~command:"bxl" arguments
+    in
+    { bxl }
+
+
+  let bxl { bxl; _ } = bxl
+end

@@ -456,11 +456,11 @@ let get_initializer source_paths =
       let builder =
         match use_buck2 with
         | false ->
-            let raw = Buck.Raw.create ~additional_log_size:10 () in
+            let raw = Buck.Raw.V1.create ~additional_log_size:10 () in
             let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
             Buck.Builder.create ~source_root ~artifact_root interface
         | true ->
-            let raw = Buck.Raw.create_v2 ~additional_log_size:10 () in
+            let raw = Buck.Raw.V2.create ~additional_log_size:10 () in
             let interface = Buck.Interface.create_v2 ?mode ?isolation_prefix ?bxl_builder raw in
             Buck.Builder.create_v2 ~source_root ~artifact_root interface
       in

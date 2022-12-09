@@ -309,18 +309,6 @@ module Raw : sig
     }
   [@@deriving sexp_of]
 
-  type t
-
-  (** Create an instance of [Raw.t] based on system-installed Buck. The [additional_log_size]
-      parameter controls how many lines of Buck log to preserve when an {!BuckError} is raised. By
-      default, the size is set to 0, which means no additional log will be kept. *)
-  val create : ?additional_log_size:int -> unit -> t
-
-  (** Create an instance of [Raw.t] based on system-installed Buck2. The [additional_log_size]
-      parameter controls how many lines of Buck2 log to preserve when an {!BuckError} is raised. By
-      default, the size is set to 0, which means no additional log will be kept. *)
-  val create_v2 : ?additional_log_size:int -> unit -> t
-
   (** Utility type to represent the argument and return type for common command-line Buck
       interaction.
 
@@ -328,21 +316,43 @@ module Raw : sig
       since Buck interpret them a bit differently from the rest of the arguments. *)
   type buck_command = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
 
-  (** Create an instance of [Raw.t] from custom [query], [build], and [bxl] behavior. Useful for
-      unit testing. *)
-  val create_for_testing : query:buck_command -> build:buck_command -> bxl:buck_command -> unit -> t
+  (** This module contains APIs specific to Buck1 *)
+  module V1 : sig
+    type t
 
-  (** Shell out to `buck query` with the given cli arguments. Returns the content of stdout. If the
-      return code is not 0, raise [BuckError]. *)
-  val query : t -> buck_command
+    (** Create an instance of [t] based on system-installed Buck1. The [additional_log_size]
+        parameter controls how many lines of Buck log to preserve when an {!BuckError} is raised. By
+        default, the size is set to 0, which means no additional log will be kept. *)
+    val create : ?additional_log_size:int -> unit -> t
 
-  (** Shell out to `buck build` with the given cli arguments. Returns the content of stdout. If the
-      return code is not 0, raise [BuckError]. *)
-  val build : t -> buck_command
+    (** Create an instance of [t] from custom [query] and [build] behavior. Useful for unit testing. *)
+    val create_for_testing : query:buck_command -> build:buck_command -> unit -> t
 
-  (** Shell out to `buck bxl` with the given cli arguments. Returns the content of stdout. If the
-      return code is not 0, raise [BuckError]. *)
-  val bxl : t -> buck_command
+    (** Shell out to `buck1 query` with the given cli arguments. Returns the content of stdout. If
+        the return code is not 0, raise [BuckError]. *)
+    val query : t -> buck_command
+
+    (** Shell out to `buck1 build` with the given cli arguments. Returns the content of stdout. If
+        the return code is not 0, raise [BuckError]. *)
+    val build : t -> buck_command
+  end
+
+  (** This module contains APIs specific to Buck2 *)
+  module V2 : sig
+    type t
+
+    (** Create an instance of [t] based on system-installed Buck2. The [additional_log_size]
+        parameter controls how many lines of Buck2 log to preserve when an {!BuckError} is raised.
+        By default, the size is set to 0, which means no additional log will be kept. *)
+    val create : ?additional_log_size:int -> unit -> t
+
+    (** Create an instance of [t] from custom [bxl] behavior. Useful for unit testing. *)
+    val create_for_testing : bxl:buck_command -> unit -> t
+
+    (** Shell out to `buck2 bxl` with the given cli arguments. Returns the content of stdout. If the
+        return code is not 0, raise [BuckError]. *)
+    val bxl : t -> buck_command
+  end
 end
 
 (** This module contains high-level interfaces for invoking [buck] as an external tool. It relies on
@@ -365,11 +375,11 @@ module Interface : sig
 
   (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
       Interfaces created this way is only compatible with Buck1. *)
-  val create : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
+  val create : ?mode:string -> ?isolation_prefix:string -> Raw.V1.t -> t
 
   (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
       Interfaces created this way is only compatible with Buck2.*)
-  val create_v2 : ?mode:string -> ?isolation_prefix:string -> ?bxl_builder:string -> Raw.t -> t
+  val create_v2 : ?mode:string -> ?isolation_prefix:string -> ?bxl_builder:string -> Raw.V2.t -> t
 
   (** Create an instance of [Interface.t] from custom [normalize_targets] and [construct_build_map]
       behavior. Useful for unit testing. *)

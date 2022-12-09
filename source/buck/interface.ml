@@ -15,8 +15,8 @@ open Base
 exception JsonError of string
 
 module BuckOptions = struct
-  type t = {
-    raw: Raw.t;
+  type 'raw t = {
+    raw: 'raw;
     mode: string option;
     isolation_prefix: string option;
   }
@@ -158,7 +158,7 @@ module V1 = struct
             ];
             target_specifications;
           ]
-        |> Raw.query ?mode ?isolation_prefix raw
+        |> Raw.V1.query ?mode ?isolation_prefix raw
 
 
   let query_buck_for_changed_targets
@@ -193,7 +193,7 @@ module V1 = struct
                    paths. *)
                 ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
               ]
-            |> Raw.query ?mode ?isolation_prefix raw)
+            |> Raw.V1.query ?mode ?isolation_prefix raw)
 
 
   let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targets =
@@ -209,7 +209,7 @@ module V1 = struct
             List.map targets ~f:(fun target ->
                 Format.sprintf "%s%s" (Target.show target) source_database_suffix);
           ]
-        |> Raw.build ?mode ?isolation_prefix raw
+        |> Raw.V1.build ?mode ?isolation_prefix raw
 
 
   let parse_buck_normalized_targets_query_output query_output =
@@ -525,7 +525,7 @@ module V2 = struct
             List.bind targets ~f:(fun target ->
                 ["--target"; Format.sprintf "%s" (Target.show target)]);
           ]
-        |> Raw.bxl ?mode ?isolation_prefix raw
+        |> Raw.V2.bxl ?mode ?isolation_prefix raw
 
 
   let warn_on_conflict
