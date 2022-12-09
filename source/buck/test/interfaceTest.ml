@@ -15,7 +15,7 @@ module Target = Buck__Target
 
 let test_parse_buck_normalized_targets_query_output context =
   let assert_parsed ~expected output =
-    let actual = Interface.parse_buck_normalized_targets_query_output output in
+    let actual = Interface.V1.parse_buck_normalized_targets_query_output output in
     assert_equal
       ~ctxt:context
       ~cmp:[%compare.equal: string list]
@@ -25,7 +25,7 @@ let test_parse_buck_normalized_targets_query_output context =
   in
   let assert_not_parsed output =
     try
-      let _ = Interface.parse_buck_normalized_targets_query_output output in
+      let _ = Interface.V1.parse_buck_normalized_targets_query_output output in
       let message = Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
@@ -71,7 +71,7 @@ let test_parse_buck_normalized_targets_query_output context =
 
 let test_parse_buck_changed_targets_query_output context =
   let assert_parsed ~expected output =
-    let actual = Interface.parse_buck_changed_targets_query_output output in
+    let actual = Interface.V1.parse_buck_changed_targets_query_output output in
     assert_equal
       ~ctxt:context
       ~cmp:[%compare.equal: Interface.BuckChangedTargetsQueryOutput.t list]
@@ -82,7 +82,7 @@ let test_parse_buck_changed_targets_query_output context =
   in
   let assert_not_parsed output =
     try
-      let _ = Interface.parse_buck_changed_targets_query_output output in
+      let _ = Interface.V1.parse_buck_changed_targets_query_output output in
       let message = Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
@@ -215,11 +215,11 @@ let assert_mapping_equal ~context ~expected actual =
 
 let test_parse_buck_build_output context =
   let assert_parsed ~expected output =
-    Interface.parse_buck_build_output output |> assert_mapping_equal ~context ~expected
+    Interface.V1.parse_buck_build_output output |> assert_mapping_equal ~context ~expected
   in
   let assert_not_parsed output =
     try
-      let _ = Interface.parse_buck_build_output output in
+      let _ = Interface.V1.parse_buck_build_output output in
       let message = Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
@@ -289,7 +289,7 @@ let test_parse_merged_sourcedb context =
   in
   let assert_not_parsed output =
     try
-      let _ = Interface.parse_buck_build_output output in
+      let _ = Interface.V1.parse_buck_build_output output in
       let message = Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
@@ -374,7 +374,7 @@ let test_parse_buck_bxl_output context =
 let test_load_partial_build_map context =
   let assert_loaded ~expected input =
     Yojson.Safe.from_string input
-    |> Interface.load_partial_build_map_from_json
+    |> Interface.V1.load_partial_build_map_from_json
     |> BuildMap.Partial.to_alist
     |> assert_mapping_equal ~context ~expected
   in
@@ -428,7 +428,7 @@ let test_merge_build_map_by_name context =
     let actual_targets, actual_build_map =
       List.map target_and_build_maps ~f:(fun (target, build_map) ->
           Target.of_string target, BuildMap.Partial.of_alist_exn build_map)
-      |> Interface.(merge_build_maps ~resolve_conflict:resolve_merge_conflict_by_name)
+      |> Interface.(V1.merge_build_maps ~resolve_conflict:resolve_merge_conflict_by_name)
     in
     assert_equal
       ~ctxt:context
@@ -541,7 +541,7 @@ let test_merge_build_map_by_name_and_content context =
           in
           Target.of_string target, build_map)
       |> Interface.(
-           merge_build_maps
+           V1.merge_build_maps
              ~resolve_conflict:(resolve_merge_conflict_by_name_and_content ~source_root))
     in
     assert_equal
