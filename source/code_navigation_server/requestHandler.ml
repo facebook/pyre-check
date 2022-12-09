@@ -137,6 +137,55 @@ let handle_location_of_definition ~module_ ~position ~overlay_id { State.environ
   >>| fun definitions -> Response.(LocationOfDefinition { definitions })
 
 
+let handle_superclasses
+    ~class_:{ Request.ClassExpression.module_; qualified_name }
+    ~overlay_id
+    { State.environment; _ }
+  =
+  let open Result in
+  get_overlay ~environment overlay_id
+  >>= fun overlay ->
+  let global_resolution =
+    overlay
+    |> ErrorsEnvironment.ReadOnly.type_environment
+    |> TypeEnvironment.ReadOnly.global_resolution
+  in
+  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
+  let to_class_expression superclass =
+    (* TODO(T139769506): Instead of this hack where we assume `a.b.c` is a module when looking at
+       `a.b.c.D`, we need to either fix qualification or use the DefineNames shared memory table to
+       support nested classes etc. *)
+    let superclass_reference = Ast.Reference.create superclass in
+    match Ast.Reference.prefix superclass_reference with
+    | Some module_ ->
+        Some
+          {
+            Request.ClassExpression.module_ = Request.Module.OfName (Ast.Reference.show module_);
+            qualified_name = Ast.Reference.last superclass_reference;
+          }
+    | None -> None
+  in
+
+  get_modules ~module_tracker module_
+  >>= fun modules ->
+  (* `get_modules` is guaranteed to evaluate to a non-empty module. *)
+  let module_ = List.hd_exn modules in
+  let class_name =
+    Ast.Reference.combine module_ (Ast.Reference.create qualified_name) |> Ast.Reference.show
+  in
+  if not (GlobalResolution.class_exists global_resolution class_name) then
+    Response.ErrorKind.InvalidRequest
+      (Printf.sprintf "Class `%s` not found in the type environment." class_name)
+    |> Result.fail
+  else
+    let superclasses =
+      class_name
+      |> GlobalResolution.successors ~resolution:global_resolution
+      |> List.filter_map ~f:to_class_expression
+    in
+    Response.Superclasses { superclasses } |> Result.return
+
+
 let with_broadcast_busy_checking ~subscriptions ~overlay_id f =
   let%lwt () =
     Subscriptions.broadcast
@@ -319,6 +368,12 @@ let handle_query
           relative_local_root = PyrePath.get_relative_to_root ~root:project_root ~path:local_root;
         }
       |> Lwt.return
+  | Request.Query.Superclasses { class_; overlay_id } ->
+      let f state =
+        let response = handle_superclasses ~class_ ~overlay_id state |> response_from_result in
+        Lwt.return response
+      in
+      Server.ExclusiveLock.read state ~f
 
 
 let handle_command ~server:{ ServerInternal.state; subscriptions; properties } = function

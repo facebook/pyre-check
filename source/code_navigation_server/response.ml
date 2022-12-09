@@ -61,6 +61,7 @@ type t =
       global_root: string;
       relative_local_root: string option;
     }
+  | Superclasses of { superclasses: Request.ClassExpression.t list }
 [@@deriving sexp, compare, yojson { strict = false }]
 
 let to_string response = to_yojson response |> Yojson.Safe.to_string

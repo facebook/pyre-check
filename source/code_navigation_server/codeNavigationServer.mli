@@ -97,6 +97,14 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
+    module ClassExpression : sig
+      type t = {
+        module_: Module.t; [@key "module"]
+        qualified_name: string;
+      }
+      [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
     module FileUpdateEvent : sig
       module Kind : sig
         (** A helper type that help specifying the change associated with the event. *)
@@ -237,6 +245,14 @@ module Testing : sig
         | GetInfo
             (** A query that asks for server metadata, intended to be consumed by the `pyre servers`
                 command. *)
+        | Superclasses of {
+            class_: ClassExpression.t;
+            overlay_id: string option;
+          }
+            (** A query that asks the server to return the superclasses of a given class. The server
+                will send back a {!Response.Superclasses} response as result if a class matching the
+                fully qualified name is found. Only class names that are found in the type
+                environment will be included in the returned mapping. *)
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
@@ -360,6 +376,10 @@ module Testing : sig
         }
           (** The information provides in response to GetInfo queries. All fields must be present
               for the `pyre servers` command. *)
+      | Superclasses of { superclasses: Request.ClassExpression.t list }
+          (** Response for {!Request.Superclasses}. Does not return full types, instead opting to
+              return only the names of a given class' bases. Creates a mapping from each requested
+              class to its superclasses. *)
     [@@deriving sexp, compare, yojson { strict = false }]
   end
 
