@@ -86,6 +86,7 @@ let make_assert_functions context =
       T_Bound_Union_C_Q = typing.TypeVar('T_Bound_Union_C_Q', bound=typing.Union[C, Q])
       T_C_Q = typing.TypeVar('T_C_Q', C, Q)
       T_Bound_ReadOnly = typing.TypeVar('T_Bound_ReadOnly', bound=pyre_extensions.ReadOnly[object])
+      T_Bound_object = typing.TypeVar("T", object)
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
       V = pyre_extensions.ParameterSpecification("V")
@@ -137,6 +138,7 @@ let make_assert_functions context =
           "T_Bound_Union_C_Q";
           "T_Bound_Union";
           "T_Bound_ReadOnly";
+          "T_Bound_object";
           "T_C_Q";
           "T_D_Q";
           "T_C_Q_int";
@@ -999,10 +1001,23 @@ let test_add_constraint_readonly context =
   assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" [];
   assert_add ~left:"D" ~right:"pyre_extensions.ReadOnly[C]" [[]];
   assert_add ~left:"pyre_extensions.ReadOnly[D]" ~right:"pyre_extensions.ReadOnly[C]" [[]];
-  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Unconstrained" [];
+  assert_add
+    ~left:"pyre_extensions.ReadOnly[C]"
+    ~right:"T_Unconstrained"
+    [["T_Unconstrained", "pyre_extensions.ReadOnly[C]"]];
   assert_add ~left:"C" ~right:"pyre_extensions.ReadOnly[T_Unconstrained]" [["T_Unconstrained", "C"]];
-  (* TODO(T130377746): Allow binding to ReadOnly typevars. *)
-  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Bound_ReadOnly" [];
+  assert_add
+    ~left:"pyre_extensions.ReadOnly[C]"
+    ~right:"T_Bound_ReadOnly"
+    [["T_Bound_ReadOnly", "pyre_extensions.ReadOnly[C]"]];
+  assert_add
+    ~left:"T_Unconstrained"
+    ~right:"pyre_extensions.ReadOnly[C]"
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    [["T_Unconstrained", "pyre_extensions.ReadOnly[C]"]];
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Bound_object" [];
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"typing.Any" [[]];
+  assert_add ~left:"typing.Any" ~right:"pyre_extensions.ReadOnly[T]" [["T", "typing.Any"]];
   assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"object" [];
   assert_add ~left:"object" ~right:"pyre_extensions.ReadOnly[object]" [[]];
   assert_add_direct ~left:Type.Bottom ~right:(Type.ReadOnly.create (Type.Primitive "C")) [[]];

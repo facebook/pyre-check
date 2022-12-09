@@ -517,9 +517,8 @@ let test_function_call context =
     [
       "Incompatible parameter type [6]: In call `expect_kwargs`, for 2nd parameter `x` expected \
        `int` but got `pyre_extensions.ReadOnly[int]`.";
-      (* TODO(T130377746): Fix error message. *)
-      "Invalid argument [32]: Keyword argument `kwargs` has type `typing.Dict[str, \
-       pyre_extensions.ReadOnly[int]]` but must be a mapping with string keys.";
+      "Incompatible parameter type [6]: In call `expect_kwargs`, for 1st positional only parameter \
+       expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -555,7 +554,6 @@ let test_await context =
   let assert_type_errors_including_readonly =
     assert_type_errors ~context ~enable_readonly_analysis:false
   in
-  (* TODO(T130377746): This should have a readonly violation error. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -566,8 +564,8 @@ let test_await context =
         y: int = await return_readonly()
     |}
     [
-      "Incompatible awaitable type [12]: Expected an awaitable but got \
-       `typing.Coroutine[typing.Any, typing.Any, pyre_extensions.ReadOnly[int]]`.";
+      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
   ()
 
@@ -701,6 +699,60 @@ let test_format_string context =
   ()
 
 
+let test_generic_types context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Generic, List, TypeVar
+
+      T = TypeVar("T")
+
+      def identity(x: T) -> T: ...
+
+      def main(readonly: ReadOnly[int]) -> None:
+        y = identity(readonly)
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`."];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Generic, List, TypeVar
+
+      T = TypeVar("T")
+
+      class Foo(Generic[T]):
+        def get_element(self) -> T: ...
+
+      def main(foo: Foo[ReadOnly[int]]) -> None:
+        x = foo.get_element()
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import List
+
+      def main(xs: List[ReadOnly[int]]) -> None:
+        x = xs[0]
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import List
+
+      def main(xs: List[ReadOnly[int]]) -> None:
+        x = xs[0]
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -712,5 +764,6 @@ let () =
          "parameters" >:: test_parameters;
          "reveal_type" >:: test_reveal_type;
          "format_string" >:: test_format_string;
+         "generic_types" >:: test_generic_types;
        ]
   |> Test.run

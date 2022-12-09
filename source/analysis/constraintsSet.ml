@@ -458,9 +458,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         in
         solve_less_or_equal order ~constraints ~left ~right
     | _, Type.ParameterVariadicComponent _ -> impossible
-    | Type.ReadOnly left, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
-    | _, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
-    | Type.ReadOnly _, _ -> impossible
     | Type.Any, other -> [add_fallbacks other]
     | Type.Variable left_variable, Type.Variable right_variable
       when Type.Variable.Unary.is_free left_variable && Type.Variable.Unary.is_free right_variable
@@ -487,6 +484,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | bound, Type.Variable variable when Type.Variable.Unary.is_free variable ->
         let pair = Type.Variable.UnaryPair (variable, bound) in
         OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
+    | Type.ReadOnly left, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
+    | _, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
+    | Type.ReadOnly _, _ -> impossible
     | _, Type.Bottom
     | Type.Top, _ ->
         impossible
