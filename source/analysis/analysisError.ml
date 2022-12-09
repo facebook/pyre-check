@@ -501,6 +501,17 @@ module ReadOnly = struct
     | RevealedType _ -> "ReadOnly - Revealed type"
     | CallingMutatingMethodOnReadOnly _ ->
         "ReadOnly violation - Calling mutating method on readonly type"
+
+
+  let dequalify ~dequalify_type ~dequalify_reference = function
+    | CallingMutatingMethodOnReadOnly ({ self_argument_type; method_name; _ } as kind) ->
+        CallingMutatingMethodOnReadOnly
+          {
+            kind with
+            self_argument_type = dequalify_type self_argument_type;
+            method_name = dequalify_reference method_name;
+          }
+    | other -> other
 end
 
 type invalid_decoration =
@@ -4058,7 +4069,9 @@ let dequalify
           }
     | InvalidDecoration expression -> InvalidDecoration expression
     | TupleConcatenationError expressions -> TupleConcatenationError expressions
-    | ReadOnlynessMismatch _ -> kind
+    | ReadOnlynessMismatch mismatch ->
+        ReadOnlynessMismatch
+          (ReadOnly.dequalify ~dequalify_type:dequalify ~dequalify_reference mismatch)
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
