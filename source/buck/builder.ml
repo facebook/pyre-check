@@ -20,19 +20,6 @@ module IncrementalBuildResult = struct
   }
 end
 
-let build ~interface ~source_root ~artifact_root targets =
-  let open Lwt.Infix in
-  Interface.normalize_targets interface targets
-  >>= fun normalized_targets ->
-  Interface.construct_build_map interface normalized_targets
-  >>= fun ({ Interface.BuildResult.build_map; _ } as build_result) ->
-  Log.info "Constructing Python link-tree at %a for type checking ..." PyrePath.pp artifact_root;
-  Artifacts.populate ~source_root ~artifact_root build_map
-  >>= function
-  | Result.Error message -> raise (LinkTreeConstructionError message)
-  | Result.Ok () -> Lwt.return build_result
-
-
 let restore ~source_root ~artifact_root build_map =
   let open Lwt.Infix in
   Artifacts.populate ~source_root ~artifact_root build_map
@@ -71,150 +58,9 @@ let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_m
   update_artifacts ~source_root ~artifact_root difference
 
 
-let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
-  let open Lwt.Infix in
-  Interface.normalize_targets interface targets
-  >>= fun normalized_targets ->
-  Interface.construct_build_map interface normalized_targets
-  >>= fun { Interface.BuildResult.targets; build_map } ->
-  do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
-  >>= fun changed_artifacts ->
-  Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
-
-
-let incremental_build_with_normalized_targets
-    ~interface
-    ~source_root
-    ~artifact_root
-    ~old_build_map
-    targets
-  =
-  let open Lwt.Infix in
-  Interface.construct_build_map interface targets
-  >>= fun { Interface.BuildResult.targets; build_map } ->
-  do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
-  >>= fun changed_artifacts ->
-  Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
-
-
 let to_relative_path ~root path = PyrePath.get_relative_to_root ~root ~path
 
 let to_relative_paths ~root paths = List.filter_map paths ~f:(to_relative_path ~root)
-
-let compute_difference_from_removed_relative_paths ~build_map_index removed_paths =
-  List.concat_map removed_paths ~f:(BuildMap.Indexed.lookup_artifact build_map_index)
-  |> List.map ~f:(fun artifact -> artifact, BuildMap.Difference.Kind.Deleted)
-  (* This `of_alist_exn` won't raise because build map never hold duplicated artifact paths. *)
-  |> BuildMap.Difference.of_alist_exn
-
-
-let compute_difference_from_removed_paths ~source_root ~build_map_index removed_paths =
-  to_relative_paths ~root:source_root removed_paths
-  |> compute_difference_from_removed_relative_paths ~build_map_index
-
-
-let compute_difference_from_changed_relative_paths ~build_map_index changed_paths =
-  List.concat_map changed_paths ~f:(fun source_path ->
-      BuildMap.Indexed.lookup_artifact build_map_index source_path
-      |> List.map ~f:(fun artifact_path ->
-             artifact_path, BuildMap.Difference.Kind.Changed source_path))
-  (* This `of_alist_exn` won't raise because build map never hold duplicated artifact paths. *)
-  |> BuildMap.Difference.of_alist_exn
-
-
-let compute_difference_from_changed_paths ~source_root ~interface ~targets changed_paths =
-  let open Lwt.Infix in
-  try
-    Interface.query_owner_targets interface ~targets changed_paths
-    >>= fun query_output ->
-    Log.info "Constructing local build map for changed files...";
-    match Interface.BuckChangedTargetsQueryOutput.to_build_map_batch query_output with
-    | Result.Error _ as error -> Lwt.return error
-    | Result.Ok build_map ->
-        to_relative_paths ~root:source_root changed_paths
-        |> compute_difference_from_changed_relative_paths
-             ~build_map_index:(BuildMap.index build_map)
-        |> Lwt.return_ok
-  with
-  | Interface.JsonError message -> Lwt.return_error message
-  | Raw.BuckError { description; _ } ->
-      let message = Format.sprintf "Buck query failed: %s" description in
-      Lwt.return_error message
-
-
-let build_map_and_difference_from_paths
-    ~interface
-    ~source_root
-    ~old_build_map
-    ~old_build_map_index
-    ~changed_paths
-    ~removed_paths
-    targets
-  =
-  let open Lwt.Infix in
-  Log.info "Computing build map deltas from changed paths...";
-  compute_difference_from_changed_paths ~source_root ~interface ~targets changed_paths
-  >>= function
-  | Result.Error _ as error -> Lwt.return error
-  | Result.Ok difference_from_changed_paths -> (
-      Log.info "Computing build map deltas from removed paths...";
-      let difference_from_removed_paths =
-        compute_difference_from_removed_paths
-          ~source_root
-          ~build_map_index:old_build_map_index
-          removed_paths
-      in
-      Log.info "Merging build map deltas...";
-      match
-        BuildMap.Difference.merge difference_from_changed_paths difference_from_removed_paths
-      with
-      | Result.Error artifact_path ->
-          Format.sprintf "Conflicting source updates on artifact `%s`" artifact_path
-          |> Lwt.return_error
-      | Result.Ok difference -> (
-          Log.info "Updating old build map...";
-          match BuildMap.strict_apply_difference ~difference old_build_map with
-          | Result.Ok build_map -> Lwt.return_ok (build_map, difference)
-          | Result.Error artifact_path ->
-              Format.sprintf "Cannot determine source path for artifact `%s`" artifact_path
-              |> Lwt.return_error))
-
-
-let fast_incremental_build_with_normalized_targets
-    ~interface
-    ~source_root
-    ~artifact_root
-    ~old_build_map
-    ~old_build_map_index
-    ~changed_paths
-    ~removed_paths
-    targets
-  =
-  let open Lwt.Infix in
-  Log.info "Attempting to perform fast incremental rebuild...";
-  build_map_and_difference_from_paths
-    ~interface
-    ~source_root
-    ~old_build_map
-    ~old_build_map_index
-    ~changed_paths
-    ~removed_paths
-    targets
-  >>= function
-  | Result.Error message ->
-      Log.info "Fast incremental rebuild failed: %s. Falling back to the slow path..." message;
-      incremental_build_with_normalized_targets
-        ~interface
-        ~source_root
-        ~artifact_root
-        ~old_build_map
-        targets
-  | Result.Ok (build_map, difference) ->
-      let open Lwt.Infix in
-      update_artifacts ~source_root ~artifact_root difference
-      >>= fun changed_artifacts ->
-      Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
-
 
 let incremental_build_with_unchanged_build_map
     ~source_root
@@ -283,15 +129,191 @@ type t = {
   identifier: string;
 }
 
+module V1 = struct
+  let build ~interface ~source_root ~artifact_root targets =
+    let open Lwt.Infix in
+    Interface.normalize_targets interface targets
+    >>= fun normalized_targets ->
+    Interface.construct_build_map interface normalized_targets
+    >>= fun ({ Interface.BuildResult.build_map; _ } as build_result) ->
+    Log.info "Constructing Python link-tree for type checking...";
+    Artifacts.populate ~source_root ~artifact_root build_map
+    >>= function
+    | Result.Error message -> raise (LinkTreeConstructionError message)
+    | Result.Ok () -> Lwt.return build_result
+
+
+  let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
+    let open Lwt.Infix in
+    Interface.normalize_targets interface targets
+    >>= fun normalized_targets ->
+    Interface.construct_build_map interface normalized_targets
+    >>= fun { Interface.BuildResult.targets; build_map } ->
+    do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
+    >>= fun changed_artifacts ->
+    Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
+
+
+  let incremental_build_with_normalized_targets
+      ~interface
+      ~source_root
+      ~artifact_root
+      ~old_build_map
+      targets
+    =
+    let open Lwt.Infix in
+    Interface.construct_build_map interface targets
+    >>= fun { Interface.BuildResult.targets; build_map } ->
+    do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
+    >>= fun changed_artifacts ->
+    Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
+
+
+  let compute_difference_from_removed_relative_paths ~build_map_index removed_paths =
+    List.concat_map removed_paths ~f:(BuildMap.Indexed.lookup_artifact build_map_index)
+    |> List.map ~f:(fun artifact -> artifact, BuildMap.Difference.Kind.Deleted)
+    (* This `of_alist_exn` won't raise because build map never hold duplicated artifact paths. *)
+    |> BuildMap.Difference.of_alist_exn
+
+
+  let compute_difference_from_removed_paths ~source_root ~build_map_index removed_paths =
+    to_relative_paths ~root:source_root removed_paths
+    |> compute_difference_from_removed_relative_paths ~build_map_index
+
+
+  let compute_difference_from_changed_relative_paths ~build_map_index changed_paths =
+    List.concat_map changed_paths ~f:(fun source_path ->
+        BuildMap.Indexed.lookup_artifact build_map_index source_path
+        |> List.map ~f:(fun artifact_path ->
+               artifact_path, BuildMap.Difference.Kind.Changed source_path))
+    (* This `of_alist_exn` won't raise because build map never hold duplicated artifact paths. *)
+    |> BuildMap.Difference.of_alist_exn
+
+
+  let compute_difference_from_changed_paths ~source_root ~interface ~targets changed_paths =
+    let open Lwt.Infix in
+    try
+      Interface.query_owner_targets interface ~targets changed_paths
+      >>= fun query_output ->
+      Log.info "Constructing local build map for changed files...";
+      match Interface.BuckChangedTargetsQueryOutput.to_build_map_batch query_output with
+      | Result.Error _ as error -> Lwt.return error
+      | Result.Ok build_map ->
+          to_relative_paths ~root:source_root changed_paths
+          |> compute_difference_from_changed_relative_paths
+               ~build_map_index:(BuildMap.index build_map)
+          |> Lwt.return_ok
+    with
+    | Interface.JsonError message -> Lwt.return_error message
+    | Raw.BuckError { description; _ } ->
+        let message = Format.sprintf "Buck query failed: %s" description in
+        Lwt.return_error message
+
+
+  let build_map_and_difference_from_paths
+      ~interface
+      ~source_root
+      ~old_build_map
+      ~old_build_map_index
+      ~changed_paths
+      ~removed_paths
+      targets
+    =
+    let open Lwt.Infix in
+    Log.info "Computing build map deltas from changed paths...";
+    compute_difference_from_changed_paths ~source_root ~interface ~targets changed_paths
+    >>= function
+    | Result.Error _ as error -> Lwt.return error
+    | Result.Ok difference_from_changed_paths -> (
+        Log.info "Computing build map deltas from removed paths...";
+        let difference_from_removed_paths =
+          compute_difference_from_removed_paths
+            ~source_root
+            ~build_map_index:old_build_map_index
+            removed_paths
+        in
+        Log.info "Merging build map deltas...";
+        match
+          BuildMap.Difference.merge difference_from_changed_paths difference_from_removed_paths
+        with
+        | Result.Error artifact_path ->
+            Format.sprintf "Conflicting source updates on artifact `%s`" artifact_path
+            |> Lwt.return_error
+        | Result.Ok difference -> (
+            Log.info "Updating old build map...";
+            match BuildMap.strict_apply_difference ~difference old_build_map with
+            | Result.Ok build_map -> Lwt.return_ok (build_map, difference)
+            | Result.Error artifact_path ->
+                Format.sprintf "Cannot determine source path for artifact `%s`" artifact_path
+                |> Lwt.return_error))
+
+
+  let fast_incremental_build_with_normalized_targets
+      ~interface
+      ~source_root
+      ~artifact_root
+      ~old_build_map
+      ~old_build_map_index
+      ~changed_paths
+      ~removed_paths
+      targets
+    =
+    let open Lwt.Infix in
+    Log.info "Attempting to perform fast incremental rebuild...";
+    build_map_and_difference_from_paths
+      ~interface
+      ~source_root
+      ~old_build_map
+      ~old_build_map_index
+      ~changed_paths
+      ~removed_paths
+      targets
+    >>= function
+    | Result.Error message ->
+        Log.info "Fast incremental rebuild failed: %s. Falling back to the slow path..." message;
+        incremental_build_with_normalized_targets
+          ~interface
+          ~source_root
+          ~artifact_root
+          ~old_build_map
+          targets
+    | Result.Ok (build_map, difference) ->
+        let open Lwt.Infix in
+        update_artifacts ~source_root ~artifact_root difference
+        >>= fun changed_artifacts ->
+        Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
+end
+
+module V2 = struct
+  let build ~interface ~source_root ~artifact_root targets =
+    let open Lwt.Infix in
+    Interface.construct_build_map interface targets
+    >>= fun ({ Interface.BuildResult.build_map; _ } as build_result) ->
+    Log.info "Constructing Python link-tree for type checking...";
+    Artifacts.populate ~source_root ~artifact_root build_map
+    >>= function
+    | Result.Error message -> raise (LinkTreeConstructionError message)
+    | Result.Ok () -> Lwt.return build_result
+
+
+  let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
+    let open Lwt.Infix in
+    Interface.construct_build_map interface targets
+    >>= fun { Interface.BuildResult.build_map; _ } ->
+    do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
+    >>= fun changed_artifacts ->
+    Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
+end
+
 let create ~source_root ~artifact_root interface =
   {
-    build = build ~interface ~source_root ~artifact_root;
+    build = V1.build ~interface ~source_root ~artifact_root;
     restore = restore ~source_root ~artifact_root;
-    full_incremental_build = full_incremental_build ~interface ~source_root ~artifact_root;
+    full_incremental_build = V1.full_incremental_build ~interface ~source_root ~artifact_root;
     incremental_build_with_normalized_targets =
-      incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
+      V1.incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
     fast_incremental_build_with_normalized_targets =
-      fast_incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
+      V1.fast_incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
     incremental_build_with_unchanged_build_map =
       incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
     lookup_source = lookup_source ~source_root ~artifact_root;
@@ -308,27 +330,22 @@ let create_v2 ~source_root ~artifact_root interface =
       ~removed_paths:_
       targets
     =
-    (* TODO: The same query we relied on to optimize incremental build in Buck1 does not exist in
+    (* NOTE: The same query we relied on to optimize incremental build in Buck1 does not exist in
        Buck2. For now, fallback to a less optimized rebuild approach. *)
-    incremental_build_with_normalized_targets
-      ~interface
-      ~source_root
-      ~artifact_root
-      ~old_build_map
-      targets
+    V2.full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets
   in
   {
-    build = build ~interface ~source_root ~artifact_root;
+    build = V2.build ~interface ~source_root ~artifact_root;
     restore = restore ~source_root ~artifact_root;
-    full_incremental_build = full_incremental_build ~interface ~source_root ~artifact_root;
+    full_incremental_build = V2.full_incremental_build ~interface ~source_root ~artifact_root;
     incremental_build_with_normalized_targets =
-      incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
+      V2.full_incremental_build ~interface ~source_root ~artifact_root;
     fast_incremental_build_with_normalized_targets;
     incremental_build_with_unchanged_build_map =
       incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
     lookup_source = lookup_source ~source_root ~artifact_root;
     lookup_artifact = lookup_artifact ~source_root ~artifact_root;
-    identifier = "new_server_buck2";
+    identifier = "new_server_buck2_bxl";
   }
 
 

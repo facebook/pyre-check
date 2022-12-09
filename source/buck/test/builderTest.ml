@@ -190,7 +190,7 @@ let test_difference_from_removed_relative_paths context =
       BuildMap.Partial.of_alist_exn build_map |> BuildMap.create |> BuildMap.index
     in
     let actual =
-      Builder.compute_difference_from_removed_relative_paths ~build_map_index paths
+      Builder.V1.compute_difference_from_removed_relative_paths ~build_map_index paths
       |> BuildMap.Difference.to_alist
     in
     assert_difference_equal ~context ~expected actual
@@ -222,7 +222,7 @@ let test_difference_from_changed_relative_paths context =
       BuildMap.Partial.of_alist_exn build_map |> BuildMap.create |> BuildMap.index
     in
     let actual =
-      Builder.compute_difference_from_changed_relative_paths ~build_map_index paths
+      Builder.V1.compute_difference_from_changed_relative_paths ~build_map_index paths
       |> BuildMap.Difference.to_alist
     in
     assert_difference_equal ~context ~expected actual
