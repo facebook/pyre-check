@@ -75,24 +75,13 @@ module GlobalVariableQueryExecutor : sig
     ModelParseResult.TaintAnnotation.t list
 end
 
-val apply_all_queries
+val generate_models_from_queries
   :  resolution:Analysis.GlobalResolution.t ->
   scheduler:Scheduler.t ->
-  taint_configuration:TaintConfiguration.SharedMemory.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   source_sink_filter:SourceSinkFilter.t option ->
-  queries:ModelParseResult.ModelQuery.t list ->
-  callables:Interprocedural.Target.t list ->
-  stubs:Interprocedural.Target.HashSet.t ->
-  ModelQueryRegistryMap.t * ModelVerificationError.t list
-
-val generate_models_from_queries
-  :  taint_configuration:TaintConfiguration.SharedMemory.t ->
-  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-  scheduler:Scheduler.t ->
-  resolution:Analysis.GlobalResolution.t ->
-  source_sink_filter:SourceSinkFilter.t option ->
-  callables:Interprocedural.Target.t list ->
+  verbose:bool ->
+  callables_and_stubs:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
   ModelParseResult.ModelQuery.t list ->
   ModelQueryRegistryMap.t * ModelVerificationError.t list

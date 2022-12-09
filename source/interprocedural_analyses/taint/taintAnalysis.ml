@@ -188,15 +188,19 @@ let initialize_models
     ~taint_configuration_shared_memory
     ~class_hierarchy_graph
     ~environment
-    ~callables
-    ~stubs
+    ~initial_callables
   =
   let open TaintConfiguration.Heap in
-  let stubs = Target.HashSet.of_list stubs in
   let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
 
   Log.info "Parsing taint models...";
   let timer = Timer.start () in
+  let callables_hashset =
+    initial_callables |> Interprocedural.FetchCallables.get_callables |> Target.HashSet.of_list
+  in
+  let stubs_hashset =
+    initial_callables |> Interprocedural.FetchCallables.get_stubs |> Target.HashSet.of_list
+  in
   let { ModelParseResult.models; queries; skip_overrides; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
@@ -204,8 +208,8 @@ let initialize_models
       ~taint_configuration:taint_configuration_shared_memory
       ~resolution
       ~source_sink_filter:taint_configuration.source_sink_filter
-      ~callables:(Some (Target.HashSet.of_list callables))
-      ~stubs
+      ~callables:(Some callables_hashset)
+      ~stubs:stubs_hashset
   in
   Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
 
@@ -215,15 +219,16 @@ let initialize_models
     | _ ->
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
+        let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
         let registry_map, errors =
           ModelQueryExecution.generate_models_from_queries
-            ~taint_configuration:taint_configuration_shared_memory
-            ~class_hierarchy_graph
-            ~scheduler
             ~resolution
+            ~scheduler
+            ~class_hierarchy_graph
+            ~verbose
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-            ~callables
-            ~stubs
+            ~callables_and_stubs:(Interprocedural.FetchCallables.get_all initial_callables)
+            ~stubs:stubs_hashset
             queries
         in
         let () =
@@ -255,7 +260,7 @@ let initialize_models
     MissingFlow.add_obscure_models
       ~static_analysis_configuration
       ~environment
-      ~stubs
+      ~stubs:stubs_hashset
       ~initial_models:models
   in
 
@@ -370,8 +375,7 @@ let run_taint_analysis
         ~class_hierarchy_graph:
           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
         ~environment:(Analysis.TypeEnvironment.read_only environment)
-        ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
-        ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
+        ~initial_callables
     in
 
     let module_tracker =

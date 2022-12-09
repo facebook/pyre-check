@@ -951,9 +951,6 @@ let rec process_request ~type_environment ~build_system request =
           | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
           | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
           | Ok taint_configuration -> (
-              let taint_configuration_shared_memory =
-                Taint.TaintConfiguration.SharedMemory.from_heap taint_configuration
-              in
               let get_model_queries (path, source) =
                 Taint.ModelParser.parse
                   ~resolution:global_resolution
@@ -1036,14 +1033,15 @@ let rec process_request ~type_environment ~build_system request =
                           ~qualifiers
                       in
                       Taint.ModelQueryExecution.generate_models_from_queries
-                        ~taint_configuration:taint_configuration_shared_memory
+                        ~resolution:global_resolution
+                        ~scheduler
                         ~class_hierarchy_graph:
                           (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
                              class_hierarchy_graph)
-                        ~scheduler
-                        ~resolution:global_resolution
                         ~source_sink_filter:None
-                        ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
+                        ~verbose:false
+                        ~callables_and_stubs:
+                          (Interprocedural.FetchCallables.get_all initial_callables)
                         ~stubs:
                           (Interprocedural.Target.HashSet.of_list
                              (Interprocedural.FetchCallables.get_stubs initial_callables))

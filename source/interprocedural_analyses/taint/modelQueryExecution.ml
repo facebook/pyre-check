@@ -1164,15 +1164,15 @@ module GlobalVariableQueryExecutor = MakeQueryExecutor (struct
       annotations
 end)
 
-let apply_all_queries
+let generate_models_from_queries
     ~resolution
     ~scheduler
-    ~taint_configuration
     ~class_hierarchy_graph
     ~source_sink_filter
-    ~queries
-    ~callables
+    ~verbose
+    ~callables_and_stubs
     ~stubs
+    queries
   =
   let attribute_queries, global_queries, callable_queries =
     List.partition3_map
@@ -1183,20 +1183,11 @@ let apply_all_queries
         | _ -> `Trd query)
       queries
   in
-  let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
-  let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
 
   (* Generate models for functions and methods. *)
   let registry_map =
     if not (List.is_empty callable_queries) then
       let () = Log.info "Generating models from callable model queries..." in
-      let callables =
-        List.filter callables ~f:(function
-            | Target.Function _
-            | Target.Method _ ->
-                true
-            | _ -> false)
-      in
       CallableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~resolution
@@ -1204,7 +1195,7 @@ let apply_all_queries
         ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs
-        ~targets:callables
+        ~targets:callables_and_stubs
         callable_queries
     else
       ModelQueryRegistryMap.empty
@@ -1260,32 +1251,3 @@ let apply_all_queries
   in
 
   registry_map, errors
-
-
-let generate_models_from_queries
-    ~taint_configuration
-    ~class_hierarchy_graph
-    ~scheduler
-    ~resolution
-    ~source_sink_filter
-    ~callables
-    ~stubs
-    queries
-  =
-  let callables =
-    Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
-    |> List.filter ~f:(function
-           | Target.Function _
-           | Target.Method _ ->
-               true
-           | _ -> false)
-  in
-  apply_all_queries
-    ~resolution
-    ~scheduler
-    ~taint_configuration
-    ~class_hierarchy_graph
-    ~source_sink_filter
-    ~queries
-    ~callables
-    ~stubs

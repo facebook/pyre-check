@@ -559,16 +559,16 @@ let initialize
           (List.is_empty errors);
 
         let models_result =
-          ModelQueryExecution.apply_all_queries
+          ModelQueryExecution.generate_models_from_queries
             ~resolution:global_resolution
-            ~taint_configuration:taint_configuration_shared_memory
+            ~scheduler:(Test.mock_scheduler ())
             ~class_hierarchy_graph:
               (ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
-            ~scheduler:(Test.mock_scheduler ())
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-            ~callables:(List.rev_append stubs callables)
+            ~verbose:false
+            ~callables_and_stubs:(List.rev_append stubs callables)
             ~stubs:(Target.HashSet.of_list stubs)
-            ~queries
+            queries
         in
         let registry_map, errors = fst models_result, snd models_result in
         (match taint_configuration.dump_model_query_results_path, expected_dump_string with
