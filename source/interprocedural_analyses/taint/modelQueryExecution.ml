@@ -64,7 +64,7 @@ module ModelQueryRegistryMap = struct
     merge_all_registries ~model_join (get_models model_query_map)
 
 
-  let check_expected_and_unexpected_model_errors ~registry_map ~queries =
+  let check_expected_and_unexpected_model_errors ~model_query_results ~queries =
     let find_expected_and_unexpected_model_errors ~expect ~actual_models ~name ~location ~models =
       let registry_contains_model registry ~target ~model =
         (* TODO T127682824: Deal with the case of joined models *)
@@ -112,7 +112,9 @@ module ModelQueryRegistryMap = struct
     let expected_and_unexpected_model_errors =
       queries
       |> List.map ~f:(fun { ModelQuery.name; location; expected_models; unexpected_models; _ } ->
-             let actual_models = Option.value (get registry_map name) ~default:Registry.empty in
+             let actual_models =
+               Option.value (get model_query_results name) ~default:Registry.empty
+             in
              let expected_model_errors =
                match expected_models with
                | [] -> []
@@ -129,11 +131,11 @@ module ModelQueryRegistryMap = struct
     expected_and_unexpected_model_errors
 
 
-  let check_errors ~registry_map ~queries =
+  let check_errors ~model_query_results ~queries =
     let model_query_names = List.map queries ~f:(fun query -> query.ModelQuery.name) in
     let errors =
       List.filter_map model_query_names ~f:(fun model_query_name ->
-          let models = get registry_map model_query_name in
+          let models = get model_query_results model_query_name in
           Statistics.log_model_query_outputs
             ~model_query_name
             ~generated_models_count:(Registry.size (Option.value models ~default:Registry.empty))
@@ -155,7 +157,7 @@ end
 
 (* Helper functions to dump generated models into a string or file. *)
 module DumpModelQueryResults = struct
-  let dump_to_string ~registry_map =
+  let dump_to_string ~model_query_results =
     let model_to_json (callable, model) =
       `Assoc
         [
@@ -178,18 +180,18 @@ module DumpModelQueryResults = struct
       |> fun models_json ->
       `Assoc [(* TODO(T123305362) also include filenames *) model_query_name, models_json]
     in
-    `List (String.Map.data (String.Map.mapi registry_map ~f:to_json))
+    `List (String.Map.data (String.Map.mapi model_query_results ~f:to_json))
     |> Yojson.Safe.pretty_to_string
 
 
-  let dump_to_file ~registry_map ~path =
+  let dump_to_file ~model_query_results ~path =
     Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-    path |> File.create ~content:(dump_to_string ~registry_map) |> File.write
+    path |> File.create ~content:(dump_to_string ~model_query_results) |> File.write
 
 
-  let dump_to_file_and_string ~registry_map ~path =
+  let dump_to_file_and_string ~model_query_results ~path =
     Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-    let content = dump_to_string ~registry_map in
+    let content = dump_to_string ~model_query_results in
     path |> File.create ~content |> File.write;
     content
 end
@@ -649,7 +651,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~targets
       queries
     =
-    let fold registry_map ({ ModelQuery.name = model_query_name; _ } as query) =
+    let fold model_query_results ({ ModelQuery.name = model_query_name; _ } as query) =
       let registry =
         generate_models_from_query_on_targets
           ~verbose
@@ -661,9 +663,9 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           query
       in
       if not (Registry.is_empty registry) then
-        ModelQueryRegistryMap.set registry_map ~model_query_name ~models:registry
+        ModelQueryRegistryMap.set model_query_results ~model_query_name ~models:registry
       else
-        registry_map
+        model_query_results
     in
     List.fold queries ~init:ModelQueryRegistryMap.empty ~f:fold
 
@@ -678,7 +680,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~targets
       queries
     =
-    let map registry_map targets =
+    let map model_query_results targets =
       generate_models_from_queries_on_targets
         ~verbose
         ~resolution
@@ -687,7 +689,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         ~stubs
         ~targets
         queries
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models registry_map
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results
     in
     let reduce = ModelQueryRegistryMap.merge ~model_join:Model.join_user_models in
     Scheduler.map_reduce
@@ -1185,7 +1187,7 @@ let generate_models_from_queries
   in
 
   (* Generate models for functions and methods. *)
-  let registry_map =
+  let model_query_results =
     if not (List.is_empty callable_queries) then
       let () = Log.info "Generating models from callable model queries..." in
       CallableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
@@ -1202,7 +1204,7 @@ let generate_models_from_queries
   in
 
   (* Generate models for attributes. *)
-  let registry_map =
+  let model_query_results =
     if not (List.is_empty attribute_queries) then
       let () = Log.info "Generating models from attribute model queries..." in
       let all_classes =
@@ -1220,13 +1222,13 @@ let generate_models_from_queries
         ~stubs
         ~targets:attributes
         attribute_queries
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models registry_map
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results
     else
-      registry_map
+      model_query_results
   in
 
   (* Generate models for globals. *)
-  let registry_map =
+  let model_query_results =
     if not (List.is_empty global_queries) then
       let () = Log.info "Generating models from global model queries..." in
       let globals = get_globals_and_annotations ~resolution in
@@ -1239,15 +1241,17 @@ let generate_models_from_queries
         ~stubs
         ~targets:globals
         global_queries
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models registry_map
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results
     else
-      registry_map
+      model_query_results
   in
 
   let errors =
     List.rev_append
-      (ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~registry_map ~queries)
-      (ModelQueryRegistryMap.check_errors ~registry_map ~queries)
+      (ModelQueryRegistryMap.check_expected_and_unexpected_model_errors
+         ~model_query_results
+         ~queries)
+      (ModelQueryRegistryMap.check_errors ~model_query_results ~queries)
   in
 
-  registry_map, errors
+  model_query_results, errors

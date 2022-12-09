@@ -558,7 +558,7 @@ let initialize
              source)
           (List.is_empty errors);
 
-        let models_result =
+        let model_query_results, errors =
           ModelQueryExecution.generate_models_from_queries
             ~resolution:global_resolution
             ~scheduler:(Test.mock_scheduler ())
@@ -570,21 +570,22 @@ let initialize
             ~stubs:(Target.HashSet.of_list stubs)
             queries
         in
-        let registry_map, errors = fst models_result, snd models_result in
         (match taint_configuration.dump_model_query_results_path, expected_dump_string with
         | Some path, Some expected_string ->
-            ModelQueryExecution.DumpModelQueryResults.dump_to_file_and_string ~registry_map ~path
+            ModelQueryExecution.DumpModelQueryResults.dump_to_file_and_string
+              ~model_query_results
+              ~path
             |> assert_equal ~cmp:String.equal ~printer:Fn.id expected_string
         | Some path, None ->
-            ModelQueryExecution.DumpModelQueryResults.dump_to_file ~registry_map ~path
+            ModelQueryExecution.DumpModelQueryResults.dump_to_file ~model_query_results ~path
         | None, Some expected_string ->
-            ModelQueryExecution.DumpModelQueryResults.dump_to_string ~registry_map
+            ModelQueryExecution.DumpModelQueryResults.dump_to_string ~model_query_results
             |> assert_equal ~cmp:String.equal ~printer:Fn.id expected_string
         | None, None -> ());
         let verify = static_analysis_configuration.verify_models && verify_model_queries in
         ModelVerificationError.verify_models_and_dsl errors verify;
         let models =
-          registry_map
+          model_query_results
           |> ModelQueryExecution.ModelQueryRegistryMap.get_registry
                ~model_join:Model.join_user_models
           |> Registry.merge ~join:Model.join_user_models models

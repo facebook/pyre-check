@@ -36,11 +36,14 @@ module ModelQueryRegistryMap : sig
 end
 
 module DumpModelQueryResults : sig
-  val dump_to_string : registry_map:ModelQueryRegistryMap.t -> string
+  val dump_to_string : model_query_results:ModelQueryRegistryMap.t -> string
 
-  val dump_to_file : registry_map:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
+  val dump_to_file : model_query_results:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
 
-  val dump_to_file_and_string : registry_map:ModelQueryRegistryMap.t -> path:PyrePath.t -> string
+  val dump_to_file_and_string
+    :  model_query_results:ModelQueryRegistryMap.t ->
+    path:PyrePath.t ->
+    string
 end
 
 module CallableQueryExecutor : sig
