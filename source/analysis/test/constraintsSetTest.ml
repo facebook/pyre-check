@@ -995,7 +995,7 @@ let test_add_constraint_type_variable_tuple context =
 
 
 let test_add_constraint_readonly context =
-  let assert_add, _, _, _ = make_assert_functions context in
+  let assert_add, assert_add_direct, _, _ = make_assert_functions context in
   assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" [];
   assert_add ~left:"D" ~right:"pyre_extensions.ReadOnly[C]" [[]];
   assert_add ~left:"pyre_extensions.ReadOnly[D]" ~right:"pyre_extensions.ReadOnly[C]" [[]];
@@ -1005,6 +1005,9 @@ let test_add_constraint_readonly context =
   assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Bound_ReadOnly" [];
   assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"object" [];
   assert_add ~left:"object" ~right:"pyre_extensions.ReadOnly[object]" [[]];
+  assert_add_direct ~left:Type.Bottom ~right:(Type.ReadOnly.create (Type.Primitive "C")) [[]];
+  assert_add_direct ~left:(Type.ReadOnly.create (Type.Primitive "C")) ~right:Type.Bottom [];
+  assert_add_direct ~left:Type.Top ~right:(Type.ReadOnly.create Type.object_primitive) [[]];
   ()
 
 
