@@ -2081,8 +2081,7 @@ let test_join _ =
     "ParametricCallableToStr[int]"
     "typing.Callable[[int], typing.Union[int, str]]";
 
-  (* ReadOnly: The type checking analysis ignores `ReadOnly`, so we don't really care about the
-     precise `join`. We just preserve the `ReadOnly` wrapper if either type has it. *)
+  (* We just preserve the `ReadOnly` wrapper if either type has it. *)
   assert_join "pyre_extensions.ReadOnly[int]" "float" "pyre_extensions.ReadOnly[float]";
   assert_join
     "pyre_extensions.ReadOnly[int]"
@@ -2475,7 +2474,7 @@ let test_meet _ =
     "typing_extensions.Annotated[int]";
 
   (* ReadOnly. *)
-  assert_meet "pyre_extensions.ReadOnly[int]" "float" "pyre_extensions.ReadOnly[int]";
+  assert_meet "pyre_extensions.ReadOnly[int]" "float" "int";
   assert_meet
     "pyre_extensions.ReadOnly[int]"
     "pyre_extensions.ReadOnly[float]"

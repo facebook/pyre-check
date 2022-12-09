@@ -476,8 +476,9 @@ module OrderImplementation = struct
         | Type.ParameterVariadicComponent _, _
         | _, Type.ParameterVariadicComponent _ ->
             Type.Bottom
-        | Type.ReadOnly left, _ -> Type.ReadOnly.create (meet order left right)
-        | _, Type.ReadOnly right -> Type.ReadOnly.create (meet order left right)
+        | ReadOnly left, ReadOnly right -> Type.ReadOnly.create (meet order left right)
+        | ReadOnly left, _ -> meet order left right
+        | _, ReadOnly right -> meet order left right
         | (Type.Variable _ as variable), other
         | other, (Type.Variable _ as variable) ->
             if always_less_or_equal order ~left:variable ~right:other then
