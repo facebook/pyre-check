@@ -324,7 +324,7 @@ and kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleParameterType of {
-      name: Identifier.t option;
+      keyword_argument_name: Identifier.t option;
       position: int;
       callee: Reference.t option;
       mismatch: mismatch;

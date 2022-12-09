@@ -190,7 +190,8 @@ let errors_from_not_found
               if Type.is_primitive_string actual && Type.is_literal_string expected then
                 Error.NonLiteralString { name; position; callee }
               else
-                Error.IncompatibleParameterType { name; position; callee; mismatch }
+                Error.IncompatibleParameterType
+                  { keyword_argument_name = name; position; callee; mismatch }
             in
             let kind =
               match self_argument, callee >>| Reference.last with
@@ -2136,7 +2137,7 @@ module State (Context : Context) = struct
               ~kind:
                 (Error.IncompatibleParameterType
                    {
-                     name = None;
+                     keyword_argument_name = None;
                      position = 2;
                      callee = Some (Reference.create "isinstance");
                      mismatch =

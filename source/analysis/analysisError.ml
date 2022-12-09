@@ -517,7 +517,7 @@ and kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleParameterType of {
-      name: Identifier.t option;
+      keyword_argument_name: Identifier.t option;
       position: int;
       callee: Reference.t option;
       mismatch: mismatch;
@@ -1058,10 +1058,11 @@ let rec messages ~concise ~signature location kind =
   let pp_type = pp_type ~concise in
   let pp_reference = pp_reference ~concise in
   let pp_identifier = Identifier.pp_sanitized in
-  let incompatible_parameter_target ~name ~position ~callee =
+  let incompatible_parameter_target ~keyword_argument_name ~position ~callee =
     let parameter =
-      match name with
-      | Some name -> Format.asprintf "argument `%a`" pp_identifier name
+      match keyword_argument_name with
+      | Some keyword_argument_name ->
+          Format.asprintf "argument `%a`" pp_identifier keyword_argument_name
       | _ -> Format.asprintf "%s positional argument" (ordinal position)
     in
     let callee =
@@ -1203,14 +1204,19 @@ let rec messages ~concise ~signature location kind =
       | MisplacedOverloadDecorator ->
           ["The @overload decorator must be the topmost decorator if present."])
   | IncompatibleParameterType
-      { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } -> (
+      {
+        keyword_argument_name;
+        position;
+        callee;
+        mismatch = { actual; expected; due_to_invariance; _ };
+      } -> (
       let trace =
         if due_to_invariance then
           [Format.asprintf "This call might modify the type of the parameter."; invariance_message]
         else
           []
       in
-      let target = incompatible_parameter_target ~name ~position ~callee in
+      let target = incompatible_parameter_target ~keyword_argument_name ~position ~callee in
       match Option.map ~f:Reference.as_list callee with
       | Some ["int"; "__add__"]
       | Some ["int"; "__sub__"]
@@ -2215,7 +2221,7 @@ let rec messages ~concise ~signature location kind =
       in
       [Format.asprintf "Solving type variables for %s led to infinite recursion." callee]
   | NonLiteralString { name; position; callee } ->
-      let target = incompatible_parameter_target ~name ~position ~callee in
+      let target = incompatible_parameter_target ~keyword_argument_name:name ~position ~callee in
       [
         Format.asprintf
           "%s expected `LiteralString` but got `str`. Ensure only a string literal or a \
@@ -3139,11 +3145,27 @@ let join ~resolution left right =
                 right_annotation;
             qualify = left_qualify || right_qualify (* lol *);
           }
-    | IncompatibleParameterType left, IncompatibleParameterType right
-      when Option.equal Identifier.equal_sanitized left.name right.name
-           && left.position = right.position
-           && Option.equal Reference.equal_sanitized left.callee right.callee ->
-        let mismatch = join_mismatch left.mismatch right.mismatch in
+    | ( IncompatibleParameterType
+          ({
+             keyword_argument_name = left_keyword_argument_name;
+             position = left_position;
+             callee = left_callee;
+             mismatch = left_mismatch;
+           } as left),
+        IncompatibleParameterType
+          {
+            keyword_argument_name = right_keyword_argument_name;
+            position = right_position;
+            callee = right_callee;
+            mismatch = right_mismatch;
+          } )
+      when Option.equal
+             Identifier.equal_sanitized
+             left_keyword_argument_name
+             right_keyword_argument_name
+           && left_position = right_position
+           && Option.equal Reference.equal_sanitized left_callee right_callee ->
+        let mismatch = join_mismatch left_mismatch right_mismatch in
         IncompatibleParameterType { left with mismatch }
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         IncompatibleConstructorAnnotation (GlobalResolution.join resolution left right)

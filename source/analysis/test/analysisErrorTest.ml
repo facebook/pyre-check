@@ -272,7 +272,7 @@ let test_due_to_analysis_limitations _ =
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
        {
-         name = Some "";
+         keyword_argument_name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
@@ -280,7 +280,7 @@ let test_due_to_analysis_limitations _ =
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
        {
-         name = Some "";
+         keyword_argument_name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch = { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
@@ -288,7 +288,7 @@ let test_due_to_analysis_limitations _ =
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleParameterType
        {
-         name = Some "";
+         keyword_argument_name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch = { Error.actual = Type.string; expected = Type.Top; due_to_invariance = false };
@@ -296,7 +296,7 @@ let test_due_to_analysis_limitations _ =
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
        {
-         name = Some "";
+         keyword_argument_name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch =
@@ -380,7 +380,7 @@ let test_join context =
     (error
        (Error.IncompatibleParameterType
           {
-            name = Some "";
+            keyword_argument_name = Some "";
             position = 1;
             callee = Some !&"callee";
             mismatch =
@@ -389,7 +389,7 @@ let test_join context =
     (error
        (Error.IncompatibleParameterType
           {
-            name = Some "";
+            keyword_argument_name = Some "";
             position = 1;
             callee = Some !&"callee";
             mismatch =
@@ -398,7 +398,7 @@ let test_join context =
     (error
        (Error.IncompatibleParameterType
           {
-            name = Some "";
+            keyword_argument_name = Some "";
             position = 1;
             callee = Some !&"callee";
             mismatch =
@@ -977,7 +977,7 @@ let test_description _ =
   let incompatible_parameter_type_error =
     Error.IncompatibleParameterType
       {
-        name = Some "name";
+        keyword_argument_name = Some "name";
         position = 1;
         callee = Some !&"callee";
         mismatch =
