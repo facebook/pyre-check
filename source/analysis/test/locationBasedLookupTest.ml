@@ -3485,10 +3485,25 @@ let test_resolve_type_for_symbol context =
 
 
 let test_hover_info_for_position context =
-  let assert_hover_info_for_position source expected =
+  let default_external_sources =
+    [
+      ( "library.py",
+        {|
+          """module docstring"""
+          class Base:
+            @staticmethod
+            def return_str() -> str:
+                """Test"""
+                return "hello"
+    |}
+      );
+    ]
+  in
+  let assert_hover_info_for_position ?(external_sources = default_external_sources) source expected =
     let type_environment =
       let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+        ScratchProject.setup ~context ["test.py", source] ~external_sources
+        |> ScratchProject.build_type_environment
       in
       type_environment
     in
@@ -3559,6 +3574,40 @@ let test_hover_info_for_position context =
           x = 5
   |}
     { value = Some "() -> None"; docstring = None };
+  (* TODO(T139775850) support complex hover *)
+  assert_hover_info_for_position
+    {|
+      import library
+      library.Base.return_str()
+      #             ^- cursor
+  |}
+    { value = Some "() -> str"; docstring = None };
+  (* TODO(T139776124) support module docstrings *)
+  assert_hover_info_for_position
+    {|
+      import library
+      #       ^- cursor
+  |}
+    { value = None; docstring = None };
+  (* TODO(T139776113) docstrings for classes *)
+  assert_hover_info_for_position
+    {|
+   class Test:
+      """docstring"""
+      x = 5
+   Test
+   # ^- cursor
+  |}
+    { value = Some "Type[test.Test]"; docstring = None };
+  (* TODO(T139776639) move docstring into ast *)
+  assert_hover_info_for_position
+    {|
+   class Test:
+      """docstring"""
+   #      ^- cursor
+      x = 5
+  |}
+    { value = Some "typing_extensions.Literal['docstring']"; docstring = None };
   ()
 
 
