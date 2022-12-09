@@ -116,6 +116,8 @@ type signature_match = {
 [@@deriving compare, show]
 
 module SignatureSelection : sig
+  val reserved_position_for_self_argument : int
+
   val prepare_arguments_for_signature_selection
     :  self_argument:'argument_type option ->
     'argument_type Argument.t list ->

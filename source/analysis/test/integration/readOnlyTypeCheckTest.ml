@@ -63,8 +63,9 @@ let test_ignore_readonly context =
         y: str = s.capitalize()
     |}
     [
-      "Incompatible parameter type [6]: In call `str.capitalize`, for 0th positional argument, \
-       expected `str` but got `pyre_extensions.ReadOnly[str]`.";
+      "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+       `str.capitalize` may modify its object. Cannot call it on readonly expression `s` of type \
+       `pyre_extensions.ReadOnly[str]`.";
     ];
   ()
 
@@ -441,9 +442,9 @@ let test_function_call context =
         mutable_foo.expect_mutable_self(x)
     |}
     [
-      (* TODO(T130377746): Clarify that it is a mutating method call on a readonly object. *)
-      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 0th positional \
-       argument, expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
+      "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+       `test.Foo.expect_mutable_self` may modify its object. Cannot call it on readonly expression \
+       `readonly_foo` of type `pyre_extensions.ReadOnly[test.Foo]`.";
     ];
   (* A method with readonly `self` can be called on either mutable or readonly objects. However, the
      method itself cannot call other mutating methods. *)
@@ -466,9 +467,9 @@ let test_function_call context =
         mutable_foo.expect_readonly_self(x)
     |}
     [
-      (* TODO(T130377746): Clarify that it is a mutating method call on a readonly object. *)
-      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 0th positional \
-       argument, expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
+      "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+       `test.Foo.expect_mutable_self` may modify its object. Cannot call it on readonly expression \
+       `self` of type `pyre_extensions.ReadOnly[test.Foo]`.";
     ];
   assert_type_errors_including_readonly
     {|

@@ -1161,6 +1161,8 @@ let callable_call_special_cases
 
 
 module SignatureSelection = struct
+  let reserved_position_for_self_argument = 0
+
   let prepare_arguments_for_signature_selection ~self_argument arguments =
     let add_positions arguments =
       let add_index index { Argument.expression; kind; resolved } =
@@ -1177,7 +1179,12 @@ module SignatureSelection = struct
       let self_argument =
         self_argument
         >>| (fun resolved ->
-              { Argument.WithPosition.position = 0; expression = None; kind = Positional; resolved })
+              {
+                Argument.WithPosition.position = reserved_position_for_self_argument;
+                expression = None;
+                kind = Positional;
+                resolved;
+              })
         |> Option.to_list
       in
       self_argument @ labeled_arguments @ unlabeled_arguments

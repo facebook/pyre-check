@@ -99,6 +99,7 @@ let error_and_location_from_typed_dictionary_mismatch
 
 
 let errors_from_not_found
+    ?(callee_base_expression = None)
     ~callable
     ~self_argument
     ~reason
@@ -186,12 +187,25 @@ let errors_from_not_found
             let mismatch =
               Error.create_mismatch ~resolution:global_resolution ~actual ~expected ~covariant:true
             in
+            let is_mutating_method_on_readonly self_argument_type =
+              Int.equal
+                position
+                AttributeResolution.SignatureSelection.reserved_position_for_self_argument
+              && Type.ReadOnly.is_readonly self_argument_type
+            in
             let default_error =
-              if Type.is_primitive_string actual && Type.is_literal_string expected then
-                Error.NonLiteralString { name; position; callee }
-              else
-                Error.IncompatibleParameterType
-                  { keyword_argument_name = name; position; callee; mismatch }
+              match callee, self_argument, callee_base_expression with
+              | Some method_name, Some self_argument_type, Some self_argument
+                when is_mutating_method_on_readonly self_argument_type ->
+                  Error.ReadOnlynessMismatch
+                    (CallingMutatingMethodOnReadOnly
+                       { self_argument; self_argument_type; method_name })
+              | _ ->
+                  if Type.is_primitive_string actual && Type.is_literal_string expected then
+                    Error.NonLiteralString { name; position; callee }
+                  else
+                    Error.IncompatibleParameterType
+                      { keyword_argument_name = name; position; callee; mismatch }
             in
             let kind =
               match self_argument, callee >>| Reference.last with
@@ -624,6 +638,11 @@ module State (Context : Context) = struct
       | Attribute { expression; _ }
       | NonAttribute { expression; _ } ->
           expression
+
+
+    let base_expression = function
+      | Attribute { base = { expression; _ }; _ } -> Some expression
+      | NonAttribute _ -> None
   end
 
   module CallableApplicationData = struct
@@ -1616,6 +1635,7 @@ module State (Context : Context) = struct
                   ~global_resolution
                   ?original_target:target
                   ~callee_expression:(Callee.expression callee)
+                  ~callee_base_expression:(Callee.base_expression callee)
                   ~arguments:(Some arguments)
                   ()
               in
