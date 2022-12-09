@@ -55,6 +55,12 @@ type coverage_for_path = {
 
 type coverage_data_lookup = coverage_data Location.Table.t
 
+type hover_info = {
+  value: string option;
+  docstring: string option;
+}
+[@@deriving sexp, show, compare, yojson { strict = false }]
+
 (** This visitor stores the coverage data information for an expression on the key of its location.
 
     It special-case names such as named arguments or the names in comprehensions and generators.
@@ -679,11 +685,15 @@ let resolve ~resolution expression =
   | ClassHierarchy.Untracked _ -> None
 
 
-let look_up_local_definition ~resolution ~define_name ~statement_key identifier =
+let get_define_body ~resolution ~define_name =
   let unannotated_global_environment =
     Resolution.global_resolution resolution |> GlobalResolution.unannotated_global_environment
   in
   UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment define_name
+
+
+let look_up_local_definition ~resolution ~define_name ~statement_key identifier =
+  get_define_body ~resolution ~define_name
   >>| UninitializedLocalCheck.defined_locals_at_each_statement
   >>= (fun defined_locals_at_each_statement ->
         Map.find defined_locals_at_each_statement statement_key)
@@ -949,6 +959,30 @@ let get_expression_level_coverage coverage_data_lookup =
   { total_expressions; coverage_gaps = sorted_coverage_gap_by_locations }
 
 
+let find_docstring_for_symbol
+    ~type_environment
+    { symbol_with_definition; use_postcondition_info; cfg_data }
+  =
+  let get_docstring_from_define Define.{ body; _ } =
+    match body with
+    | { value = Statement.Expression { value = Constant (String { value; _ }); _ }; _ } :: _ ->
+        Some value
+    | _ -> None
+  in
+  match symbol_with_definition with
+  | Expression e -> (
+      match Node.value e with
+      | Expression.Name name ->
+          let resolution =
+            resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data
+          in
+          name_to_reference name
+          >>= fun define_name ->
+          get_define_body ~resolution ~define_name >>| Node.value >>= get_docstring_from_define
+      | _ -> None)
+  | TypeAnnotation _ -> None
+
+
 let resolve_type_for_symbol
     ~type_environment
     { symbol_with_definition; cfg_data; use_postcondition_info }
@@ -971,15 +1005,16 @@ let resolve_type_for_symbol
 
 let hover_info_for_position ~type_environment ~module_reference position =
   let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
-  let hover_contents =
+  let type_ =
     symbol_data
     >>= resolve_type_for_symbol ~type_environment
     >>| fun type_ -> Format.asprintf "%s" (Type.show_concise type_)
   in
+  let docstring = symbol_data >>= find_docstring_for_symbol ~type_environment in
   Log.log
     ~section:`Server
     "Hover info for symbol at position `%s:%s`: %s"
     (Reference.show module_reference)
     ([%show: Location.position] position)
-    (Option.value hover_contents ~default:"<EMPTY>");
-  hover_contents
+    (Option.value type_ ~default:"<EMPTY>");
+  { value = type_; docstring }

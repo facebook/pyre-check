@@ -921,8 +921,7 @@ let rec process_request ~type_environment ~build_system request =
                 ~type_environment
                 ~module_reference
                 position)
-        >>| (fun hover_info ->
-              Single (Base.HoverInfoForPosition { value = hover_info; docstring = None }))
+        >>| (fun { value; docstring } -> Single (Base.HoverInfoForPosition { value; docstring }))
         |> Option.value
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
     | InlineDecorators { function_reference; decorators_to_skip } ->

@@ -45,6 +45,12 @@ type coverage_for_path = {
 }
 [@@deriving compare, sexp, show, hash, to_yojson]
 
+type hover_info = {
+  value: string option;
+  docstring: string option;
+}
+[@@deriving sexp, show, compare, yojson { strict = false }]
+
 type coverage_data_lookup
 
 val create_of_module : TypeEnvironment.ReadOnly.t -> Reference.t -> coverage_data_lookup
@@ -115,7 +121,7 @@ val hover_info_for_position
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   module_reference:Reference.t ->
   Location.position ->
-  string option
+  hover_info
 
 val parameter_is_any_message : string list
 

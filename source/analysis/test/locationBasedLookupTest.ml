@@ -3492,20 +3492,73 @@ let test_hover_info_for_position context =
       in
       type_environment
     in
-    let result =
+    let value =
       LocationBasedLookup.hover_info_for_position
         ~type_environment
         ~module_reference:!&"test"
         (find_indicator_position ~source "cursor")
     in
-    assert_equal ~ctxt:context ~printer:[%show: string option] expected result
+    assert_equal ~ctxt:context ~printer:[%show: LocationBasedLookup.hover_info] expected value
   in
   assert_hover_info_for_position
     {|
-   test = 5
-   # ^- cursor
+      test = 5
+      # ^- cursor
   |}
-    (Some "typing_extensions.Literal[5]");
+    { value = Some "typing_extensions.Literal[5]"; docstring = None };
+  assert_hover_info_for_position
+    {|
+      def test() -> None:
+          """docstring"""
+          x = 5
+      test
+      # ^- cursor
+  |}
+    { value = Some "() -> None"; docstring = Some "docstring" };
+  assert_hover_info_for_position
+    {|
+      class Foo:
+          def test() -> None:
+              """docstring"""
+              x = 5
+      Foo.test
+      #     ^- cursor
+  |}
+    { value = Some "() -> None"; docstring = Some "docstring" };
+  assert_hover_info_for_position
+    {|
+      class Foo:
+          def test() -> None:
+              """docstring"""
+              x = 5
+      Foo.test()
+      #     ^- cursor
+  |}
+    { value = Some "() -> None"; docstring = Some "docstring" };
+  assert_hover_info_for_position
+    {|
+      class Foo:
+          def test() -> None:
+      #       ^- cursor
+              """docstring"""
+              x = 5
+  |}
+    { value = Some "() -> None"; docstring = Some "docstring" };
+  assert_hover_info_for_position
+    {|
+      def test() -> None:
+      #    ^- cursor
+          """docstring"""
+          x = 5
+  |}
+    { value = Some "() -> None"; docstring = Some "docstring" };
+  assert_hover_info_for_position
+    {|
+      def test() -> None:
+      #    ^- cursor
+          x = 5
+  |}
+    { value = Some "() -> None"; docstring = None };
   ()
 
 
