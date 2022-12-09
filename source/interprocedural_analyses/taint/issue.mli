@@ -76,8 +76,6 @@ type t = {
   define: Ast.Statement.Define.t Ast.Node.t;
 }
 
-type issue = t
-
 val canonical_location : t -> Location.WithModule.t
 
 val to_json
@@ -119,6 +117,8 @@ end
 
 (* Accumulate flows and generate issues. *)
 module Candidates : sig
+  type issue = t
+
   type t
 
   val create : unit -> t

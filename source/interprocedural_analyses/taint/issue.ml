@@ -163,8 +163,6 @@ type t = {
   define: Statement.Define.t Node.t;
 }
 
-type issue = t
-
 let join
     { flow = flow_left; handle; locations = locations_left; define }
     { flow = flow_right; handle = _; locations = locations_right; define = _ }
@@ -586,6 +584,8 @@ let generate_issues
 
 
 module Candidates = struct
+  type issue = t
+
   type t = Candidate.t CandidateKey.Table.t
 
   let create () = CandidateKey.Table.create ()
