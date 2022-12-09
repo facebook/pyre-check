@@ -5,7 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* A Resolution.t value represents all of the type information in a local scope. In Pyre, every
+   expression can potentially have a distinct Resolution.t because side effects of evaluating parts
+   of an expression can lead to type refinement (for example ternary expressions) or the
+   introduction of new names (for example the walrus operator or the placeholder variables in a
+   comprehension).
+
+   If you only neeed *global* scope information, then use GlobalResolution.t rather than
+   Resolution.t *)
 
 open Core
 open Ast
