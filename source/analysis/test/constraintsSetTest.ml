@@ -1003,6 +1003,8 @@ let test_add_constraint_readonly context =
   assert_add ~left:"C" ~right:"pyre_extensions.ReadOnly[T_Unconstrained]" [["T_Unconstrained", "C"]];
   (* TODO(T130377746): Allow binding to ReadOnly typevars. *)
   assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Bound_ReadOnly" [];
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"object" [];
+  assert_add ~left:"object" ~right:"pyre_extensions.ReadOnly[object]" [[]];
   ()
 
 

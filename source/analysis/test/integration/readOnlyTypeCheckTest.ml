@@ -533,6 +533,21 @@ let test_function_call context =
       "Incompatible variable type [9]: x is declared to have type `int` but is used as type \
        `pyre_extensions.ReadOnly[int]`.";
     ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_mutable(x: object) -> None:
+        # pyre-ignore[16]: `object` has no attribute `some_attribute`.
+        x.some_attribute = 42
+
+      def main(readonly: ReadOnly[int]) -> None:
+        expect_mutable(readonly)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional only \
+       parameter expected `object` but got `pyre_extensions.ReadOnly[int]`.";
+    ];
   ()
 
 
