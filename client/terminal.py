@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module defines code related to terminal interactions.
 """
 
 
@@ -15,7 +15,8 @@ from typing import TextIO
 
 def is_capable(file: TextIO = sys.stderr) -> bool:
     """
-    Determine whether we are connected to a capable terminal.
+    Determine whether we are connected to a terminal capable of handling
+    prompts.
     """
     if not os.isatty(file.fileno()):
         return False
