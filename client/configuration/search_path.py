@@ -4,7 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module specifies the format for search path specifications
+in the Pyre configuration.
+
+There are several options that modify how Pyre handles a search
+path, see
+https://pyre-check.org/docs/configuration/
+for details.
 """
 
 

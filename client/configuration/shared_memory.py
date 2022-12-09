@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module specifies how one can tune the backend's shared memory settings
+in a .pyre_configuration file. This is needed because for large projects we
+might want a larger heap and fatter hash table than the defaults.
 """
 
 

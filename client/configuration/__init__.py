@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This subpackage contains classes describing Pyre configurations, as
+well as logic for finding and reading configuration files.
 """
 
 

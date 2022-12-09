@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides logic for specifying platform-dependent
+configuration logic, which allows Pyre to handle a project differently
+depending on the operating system.
 """
 
 

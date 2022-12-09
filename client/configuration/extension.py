@@ -4,7 +4,21 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module describes the shape of an extension specifier in a Pyre
+configuration.
+
+We provide an hook allowing an extension to be included in the import to
+support custom python runtimes - for example if the config includes
+```
+"extensions": [
+    {"suffix": "custom_py", "include_suffix_in_module_qualifier": true}
+]
+```
+then we would allow imports of the form
+```
+import package.module.custom_py
+```
+to resolve to `package/module.custom_py`.
 """
 
 
