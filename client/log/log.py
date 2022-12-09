@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides functionality related to Pyre's terminal logging,
+including file tailing logic used to forward logs from the backend
+and pretty-printing goodies such as the color-coding of interactive logs.
 """
 
 
