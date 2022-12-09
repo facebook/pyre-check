@@ -276,6 +276,11 @@ module ReadOnly : sig
         expression: Expression.t;
         readonlyness: ReadOnlyness.t;
       }
+    | CallingMutatingMethodOnReadOnly of {
+        self_argument: Expression.t;
+        self_argument_type: Type.t;
+        method_name: Reference.t;
+      }
   [@@deriving compare, sexp, show, hash]
 end
 

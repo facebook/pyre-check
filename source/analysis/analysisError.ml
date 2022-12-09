@@ -310,6 +310,11 @@ module ReadOnly = struct
         expression: Expression.t;
         readonlyness: ReadOnlyness.t;
       }
+    | CallingMutatingMethodOnReadOnly of {
+        self_argument: Expression.t;
+        self_argument_type: Type.t;
+        method_name: Reference.t;
+      }
   [@@deriving compare, sexp, show, hash]
 
   let error_messages ~concise kind =
@@ -375,6 +380,29 @@ module ReadOnly = struct
             ReadOnlyness.pp
             readonlyness;
         ]
+    | CallingMutatingMethodOnReadOnly { self_argument; self_argument_type; method_name } ->
+        let self_argument_string =
+          Ast.Transform.sanitize_expression self_argument |> Expression.show
+        in
+        if concise then
+          [
+            Format.asprintf
+              "Method `%a` may modify `%s`."
+              pp_reference
+              method_name
+              self_argument_string;
+          ]
+        else
+          [
+            Format.asprintf
+              "Method `%a` may modify its object. Cannot call it on readonly expression `%s` of \
+               type `%a`."
+              pp_reference
+              method_name
+              self_argument_string
+              (pp_type ~concise)
+              self_argument_type;
+          ]
 
 
   let join left right =
@@ -463,6 +491,7 @@ module ReadOnly = struct
     | IncompatibleParameterType _ -> 3002
     | AssigningToReadOnlyAttribute _ -> 3003
     | RevealedType _ -> 3004
+    | CallingMutatingMethodOnReadOnly _ -> 3005
 
 
   let name_of_kind = function
@@ -470,6 +499,8 @@ module ReadOnly = struct
     | IncompatibleParameterType _ -> "ReadOnly violation - Incompatible parameter type"
     | AssigningToReadOnlyAttribute _ -> "ReadOnly violation - Assigning to readonly attribute"
     | RevealedType _ -> "ReadOnly - Revealed type"
+    | CallingMutatingMethodOnReadOnly _ ->
+        "ReadOnly violation - Calling mutating method on readonly type"
 end
 
 type invalid_decoration =

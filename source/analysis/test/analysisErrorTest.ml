@@ -855,19 +855,24 @@ let test_namespace_insensitive_set _ =
 
 
 let test_description _ =
-  let assert_messages error expected =
+  let assert_messages ?(concise = false) error expected =
     let actual =
-      Error.instantiate
-        ~show_error_traces:false
-        ~lookup:(fun _ -> None)
-        {
-          kind = error;
-          location = Location.WithModule.any;
-          signature =
-            Node.create_with_default_location
-              (Ast.Statement.Define.Signature.create_toplevel ~qualifier:None);
-        }
-      |> Error.Instantiated.description
+      let error =
+        Error.instantiate
+          ~show_error_traces:false
+          ~lookup:(fun _ -> None)
+          {
+            kind = error;
+            location = Location.WithModule.any;
+            signature =
+              Node.create_with_default_location
+                (Ast.Statement.Define.Signature.create_toplevel ~qualifier:None);
+          }
+      in
+      if concise then
+        Error.Instantiated.concise_description error
+      else
+        Error.Instantiated.description error
     in
     assert_equal ~printer:Fn.id expected actual
   in
@@ -974,6 +979,28 @@ let test_description _ =
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In anonymous call, for 1st \
      positional argument, expected `Mutable` but got `ReadOnly`.";
+  let error =
+    Error.ReadOnlynessMismatch
+      (CallingMutatingMethodOnReadOnly
+         {
+           self_argument =
+             "$local_test$my_object"
+             |> Reference.create
+             |> Expression.from_reference ~location:Location.any;
+           self_argument_type = Type.ReadOnly.create (Type.Primitive "test.Foo");
+           method_name = !&"test.Foo.my_method";
+         })
+  in
+  assert_messages
+    error
+    "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+     `test.Foo.my_method` may modify its object. Cannot call it on readonly expression `my_object` \
+     of type `pyre_extensions.ReadOnly[test.Foo]`.";
+  assert_messages
+    ~concise:true
+    error
+    "ReadOnly violation - Calling mutating method on readonly type [3005]: Method `my_method` may \
+     modify `my_object`.";
   let incompatible_parameter_type_error =
     Error.IncompatibleParameterType
       {
