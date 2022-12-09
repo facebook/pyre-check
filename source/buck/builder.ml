@@ -24,7 +24,7 @@ let build ~interface ~source_root ~artifact_root targets =
   let open Lwt.Infix in
   Interface.normalize_targets interface targets
   >>= fun normalized_targets ->
-  Interface.construct_build_map interface ~source_root normalized_targets
+  Interface.construct_build_map interface normalized_targets
   >>= fun ({ Interface.BuildResult.build_map; _ } as build_result) ->
   Log.info "Constructing Python link-tree at %a for type checking ..." PyrePath.pp artifact_root;
   Artifacts.populate ~source_root ~artifact_root build_map
@@ -75,7 +75,7 @@ let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map
   let open Lwt.Infix in
   Interface.normalize_targets interface targets
   >>= fun normalized_targets ->
-  Interface.construct_build_map interface ~source_root normalized_targets
+  Interface.construct_build_map interface normalized_targets
   >>= fun { Interface.BuildResult.targets; build_map } ->
   do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
   >>= fun changed_artifacts ->
@@ -90,7 +90,7 @@ let incremental_build_with_normalized_targets
     targets
   =
   let open Lwt.Infix in
-  Interface.construct_build_map interface ~source_root targets
+  Interface.construct_build_map interface targets
   >>= fun { Interface.BuildResult.targets; build_map } ->
   do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
   >>= fun changed_artifacts ->

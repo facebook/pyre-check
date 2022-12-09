@@ -47,32 +47,6 @@ let resolve_merge_conflict_by_name ~key left_value right_value =
     raise (FoundIncompatibleMergeItem { IncompatibleMergeItem.key; left_value; right_value })
 
 
-let resolve_merge_conflict_by_name_and_content ~source_root ~key left_value right_value =
-  let read_file path = Stdio.In_channel.read_all (PyrePath.absolute path) in
-  let content_equal left_value right_value =
-    let left_content =
-      PyrePath.create_relative ~root:source_root ~relative:left_value |> read_file
-    in
-    let right_content =
-      PyrePath.create_relative ~root:source_root ~relative:right_value |> read_file
-    in
-    String.equal left_content right_content
-  in
-  if String.equal left_value right_value then
-    left_value
-  else if content_equal left_value right_value then
-    let () =
-      Log.info
-        "Found conflicting source paths `%s` and `%s` but their contents appear to be the same. \
-         Picking the former as the source of truth."
-        left_value
-        right_value
-    in
-    left_value
-  else
-    raise (FoundIncompatibleMergeItem { IncompatibleMergeItem.key; left_value; right_value })
-
-
 module BuckChangedTargetsQueryOutput = struct
   type t = {
     source_base_path: string;
@@ -121,7 +95,7 @@ type t = {
      module, as we are still unsure whether to rely on it or not in the long term. *)
   query_owner_targets:
     targets:Target.t list -> PyrePath.t list -> BuckChangedTargetsQueryOutput.t list Lwt.t;
-  construct_build_map: source_root:PyrePath.t -> Target.t list -> BuildResult.t Lwt.t;
+  construct_build_map: Target.t list -> BuildResult.t Lwt.t;
 }
 
 module V1 = struct
@@ -347,13 +321,14 @@ module V1 = struct
 
 
   let merge_target_and_build_map
-      ~resolve_conflict
       (target_and_build_maps_sofar, build_map_sofar)
       (next_target, next_build_map)
     =
     let open BuildMap.Partial in
     try
-      let merged_build_map = merge build_map_sofar next_build_map ~resolve_conflict in
+      let merged_build_map =
+        merge build_map_sofar next_build_map ~resolve_conflict:resolve_merge_conflict_by_name
+      in
       (next_target, next_build_map) :: target_and_build_maps_sofar, merged_build_map
     with
     | FoundIncompatibleMergeItem { IncompatibleMergeItem.key; left_value; right_value } ->
@@ -374,7 +349,7 @@ module V1 = struct
         target_and_build_maps_sofar, build_map_sofar
 
 
-  let load_and_merge_build_maps ~resolve_conflict target_and_source_database_paths =
+  let load_and_merge_build_maps target_and_source_database_paths =
     let open Lwt.Infix in
     let number_of_targets_to_load = List.length target_and_source_database_paths in
     Log.info "Loading source databases for %d targets..." number_of_targets_to_load;
@@ -383,9 +358,7 @@ module V1 = struct
       | (next_target, next_build_map_path) :: rest ->
           load_partial_build_map next_build_map_path
           >>= fun next_build_map ->
-          let sofar =
-            merge_target_and_build_map sofar (next_target, next_build_map) ~resolve_conflict
-          in
+          let sofar = merge_target_and_build_map sofar (next_target, next_build_map) in
           fold ~sofar rest
     in
     fold target_and_source_database_paths ~sofar:([], BuildMap.Partial.empty)
@@ -401,32 +374,31 @@ module V1 = struct
   (* Unlike [load_and_merge_build_maps], this function assumes build maps are already loaded into
      memory and just try to merge them synchronously. Its main purpose is to facilitate testing of
      the [merge_target_and_build_map] function. *)
-  let merge_build_maps ~resolve_conflict target_and_build_maps =
+  let merge_build_maps target_and_build_maps =
     let reversed_target_and_build_maps, merged_build_map =
       List.fold
         target_and_build_maps
         ~init:([], BuildMap.Partial.empty)
-        ~f:(merge_target_and_build_map ~resolve_conflict)
+        ~f:merge_target_and_build_map
     in
     let targets = List.rev_map reversed_target_and_build_maps ~f:fst in
     targets, BuildMap.create merged_build_map
 
 
-  let load_and_merge_source_databases ~source_root target_and_source_database_paths =
+  let load_and_merge_source_databases target_and_source_database_paths =
     (* Make sure the targets are in a determinstic order. This is important to make the merging
        process deterministic later. Note that our dependency on the ordering of the target also
        implies that the loading process is non-parallelizable. *)
     List.sort target_and_source_database_paths ~compare:(fun (left_target, _) (right_target, _) ->
         Target.compare left_target right_target)
     |> load_and_merge_build_maps
-         ~resolve_conflict:(resolve_merge_conflict_by_name_and_content ~source_root)
 
 
-  let construct_build_map_with_options buck_options ~source_root normalized_targets =
+  let construct_build_map_with_options buck_options normalized_targets =
     let open Lwt.Infix in
     build_source_databases buck_options normalized_targets
     >>= fun target_and_source_database_paths ->
-    load_and_merge_source_databases ~source_root target_and_source_database_paths
+    load_and_merge_source_databases target_and_source_database_paths
 end
 
 module V2 = struct
@@ -557,7 +529,7 @@ module V2 = struct
            see https://fburl.com/pyre-target-conflict"
 
 
-  let construct_build_map_with_options ~bxl_builder ~buck_options ~source_root:_ targets =
+  let construct_build_map_with_options ~bxl_builder ~buck_options targets =
     let open Lwt.Infix in
     Log.info "Building Buck source databases...";
     run_bxl_for_targets ~bxl_builder ~buck_options targets
@@ -609,5 +581,5 @@ let query_owner_targets { query_owner_targets; _ } ~targets paths =
   query_owner_targets ~targets paths
 
 
-let construct_build_map { construct_build_map; _ } ~source_root normalized_targets =
-  construct_build_map ~source_root normalized_targets
+let construct_build_map { construct_build_map; _ } normalized_targets =
+  construct_build_map normalized_targets

@@ -385,7 +385,7 @@ module Interface : sig
       behavior. Useful for unit testing. *)
   val create_for_testing
     :  normalize_targets:(string list -> Target.t list Lwt.t) ->
-    construct_build_map:(source_root:PyrePath.t -> Target.t list -> BuildResult.t Lwt.t) ->
+    construct_build_map:(Target.t list -> BuildResult.t Lwt.t) ->
     unit ->
     t
 
@@ -404,12 +404,11 @@ module Interface : sig
       {!val:BuildMap.Partial.merge}). If it is deteced that the source-db for one target cannot be
       merged into the build map due to unresolvable conflict, a warning will be printed and the
       target will be dropped. If a target is dropped, it will not show up in the final target list
-      returned from this API (alongside with the build map). The [source_root] argument may be
-      needed for conflict detection purpose.
+      returned from this API (alongside with the build map).
 
       May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
       succeeds but its output cannot be parsed. *)
-  val construct_build_map : t -> source_root:PyrePath.t -> Target.t list -> BuildResult.t Lwt.t
+  val construct_build_map : t -> Target.t list -> BuildResult.t Lwt.t
 end
 
 (** This module contains highest-level interfaces for [buck]-related logic. It relies on
