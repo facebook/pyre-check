@@ -214,62 +214,6 @@ module V1 = struct
 end
 
 module V2 = struct
-  let source_database_suffix = "[source-db]"
-
-  let query_buck_for_normalized_targets
-      { BuckOptions.raw; mode; isolation_prefix; use_buck2 = _ }
-      target_specifications
-    =
-    match target_specifications with
-    | [] -> Lwt.return "{}"
-    | _ ->
-        List.concat
-          [
-            (* Force `buck` to hand back structured JSON output instead of plain text. *)
-            ["--json"];
-            (* Force `buck` to opt-out fancy tui logging. *)
-            ["--console=simple"];
-            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-            ["--config"; "client.id=pyre"];
-            [
-              "kind(\"python_binary|python_library|python_test\", %s)"
-              (* Don't bother with generated rules. *)
-              ^ " - attrfilter(labels, generated, %s)"
-              (* `python_unittest()` sources are separated into a macro-generated library, so make
-                 sure we include those. *)
-              ^ " + attrfilter(labels, unittest-library, %s)"
-              ^ (* Provide an opt-out label so that rules can avoid type-checking (e.g. some
-                   libraries wrap generated sources which are expensive to build and therefore
-                   typecheck). *)
-              " - attrfilter(labels, no_pyre, %s)";
-            ];
-            target_specifications;
-          ]
-        |> Raw.query ?mode ?isolation_prefix raw
-
-
-  let query_buck_for_changed_targets ~targets:_ _ _ =
-    failwith "Changed targets query is currently not implemented for Buck2"
-
-
-  let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix; use_buck2 = _ } targets =
-    match targets with
-    | [] -> Lwt.return "{}"
-    | _ ->
-        List.concat
-          [
-            (* Force `buck` to opt-out fancy tui logging. *)
-            ["--console=simple"];
-            (* Force `buck` to hand back structured JSON output that contains absolute paths. *)
-            ["--show-full-json-output"];
-            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-            ["--config"; "client.id=pyre"];
-            List.map targets ~f:(fun target ->
-                Format.sprintf "%s%s" (Target.show target) source_database_suffix);
-          ]
-        |> Raw.build ?mode ?isolation_prefix raw
-
-
   let build_map_key = "build_map"
 
   let built_targets_count_key = "built_targets_count"
@@ -408,39 +352,18 @@ module V2 = struct
     Lwt.return { BuildResult.build_map; targets }
 end
 
-let get_source_database_suffix { BuckOptions.use_buck2; _ } =
-  if use_buck2 then
-    V2.source_database_suffix
-  else
-    V1.source_database_suffix
+let get_source_database_suffix _ = V1.source_database_suffix
+
+let query_buck_for_normalized_targets buck_options target_specifications =
+  V1.query_buck_for_normalized_targets buck_options target_specifications
 
 
-let query_buck_for_normalized_targets
-    ({ BuckOptions.use_buck2; _ } as buck_options)
-    target_specifications
-  =
-  if use_buck2 then
-    V2.query_buck_for_normalized_targets buck_options target_specifications
-  else
-    V1.query_buck_for_normalized_targets buck_options target_specifications
+let query_buck_for_changed_targets ~targets buck_options source_paths =
+  V1.query_buck_for_changed_targets ~targets buck_options source_paths
 
 
-let query_buck_for_changed_targets
-    ~targets
-    ({ BuckOptions.use_buck2; _ } as buck_options)
-    source_paths
-  =
-  if use_buck2 then
-    V2.query_buck_for_changed_targets ~targets buck_options source_paths
-  else
-    V1.query_buck_for_changed_targets ~targets buck_options source_paths
-
-
-let run_buck_build_for_targets ({ BuckOptions.use_buck2; _ } as buck_options) targets =
-  if use_buck2 then
-    V2.run_buck_build_for_targets buck_options targets
-  else
-    V1.run_buck_build_for_targets buck_options targets
+let run_buck_build_for_targets buck_options targets =
+  V1.run_buck_build_for_targets buck_options targets
 
 
 let parse_buck_normalized_targets_query_output query_output =
