@@ -335,6 +335,77 @@ module V2 = struct
     | Util.Type_error (message, _)
     | Sys_error message ->
         raise (JsonError message)
+
+
+  let run_bxl_for_targets
+      ~bxl_builder
+      ~buck_options:{ BuckOptions.raw; mode; isolation_prefix; _ }
+      targets
+    =
+    match targets with
+    | [] ->
+        `Assoc
+          [
+            build_map_key, `Assoc [];
+            built_targets_count_key, `Assoc [];
+            dropped_targets_key, `Assoc [];
+          ]
+        |> Yojson.Safe.to_string
+        |> Lwt.return
+    | _ ->
+        List.concat
+          [
+            (* Location of the BXL builder. *)
+            [bxl_builder];
+            (* Force `buck` to opt-out fancy tui logging. *)
+            ["--console=simple"];
+            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+            ["--config"; "client.id=pyre"];
+            ["--"];
+            List.bind targets ~f:(fun target ->
+                ["--target"; Format.sprintf "%s" (Target.show target)]);
+          ]
+        |> Raw.bxl ?mode ?isolation_prefix raw
+
+
+  let warn_on_conflict
+      ~target
+      {
+        BuckBxlBuilderOutput.Conflict.conflict_with;
+        artifact_path;
+        preserved_source_path;
+        dropped_source_path;
+      }
+    =
+    Log.warning "Cannot include target for type checking: %s" (Target.show target);
+    Log.info
+      "... file `%s` has already been mapped to `%s` by `%s` but the target maps it to `%s` \
+       instead. "
+      artifact_path
+      preserved_source_path
+      (Target.show conflict_with)
+      dropped_source_path;
+    ()
+
+
+  let warn_on_conflicts = function
+    | [] -> ()
+    | conflicts ->
+        List.iter conflicts ~f:(fun (target, conflict) -> warn_on_conflict ~target conflict);
+        Log.warning
+          "One or more targets get dropped by Pyre due to potential conflicts. For more details, \
+           see https://fburl.com/pyre-target-conflict"
+
+
+  let construct_build_map_with_options ~bxl_builder ~buck_options ~source_root:_ targets =
+    let open Lwt.Infix in
+    Log.info "Building Buck source databases...";
+    run_bxl_for_targets ~bxl_builder ~buck_options targets
+    >>= fun output ->
+    let { BuckBxlBuilderOutput.build_map; target_count; conflicts } = parse_bxl_output output in
+    warn_on_conflicts conflicts;
+    Log.info "Loaded source databases for %d targets" target_count;
+    Lwt.return { BuildResult.build_map; targets }
 end
 
 let get_source_database_suffix { BuckOptions.use_buck2; _ } =
@@ -588,8 +659,8 @@ let construct_build_map_with_options buck_options ~source_root normalized_target
   load_and_merge_source_databases ~source_root target_and_source_database_paths
 
 
-let do_create ?mode ?isolation_prefix ~use_buck2 raw =
-  let buck_options = { BuckOptions.mode; isolation_prefix; raw; use_buck2 } in
+let create ?mode ?isolation_prefix raw =
+  let buck_options = { BuckOptions.mode; isolation_prefix; raw; use_buck2 = false } in
   {
     normalize_targets = normalize_targets_with_options buck_options;
     query_owner_targets = query_owner_targets_with_options buck_options;
@@ -597,10 +668,21 @@ let do_create ?mode ?isolation_prefix ~use_buck2 raw =
   }
 
 
-let create ?mode ?isolation_prefix raw = do_create ?mode ?isolation_prefix ~use_buck2:false raw
-
-let create_v2 ?mode ?isolation_prefix ?bxl_builder:_ raw =
-  do_create ?mode ?isolation_prefix ~use_buck2:true raw
+let create_v2 ?mode ?isolation_prefix ?bxl_builder raw =
+  let buck_options = { BuckOptions.mode; isolation_prefix; raw; use_buck2 = true } in
+  let normalize_targets targets =
+    (* Target normalization can always be handled in BXL builder *)
+    Lwt.return targets
+  in
+  let query_owner_targets ~targets:_ _ = failwith "Owner target query is not needed in Buck2" in
+  match bxl_builder with
+  | None -> failwith "BXL path is not set but it is required when using Buck2"
+  | Some bxl_builder ->
+      {
+        normalize_targets;
+        query_owner_targets;
+        construct_build_map = V2.construct_build_map_with_options ~bxl_builder ~buck_options;
+      }
 
 
 let create_for_testing ~normalize_targets ~construct_build_map () =
