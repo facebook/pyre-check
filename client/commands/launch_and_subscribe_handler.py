@@ -201,7 +201,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             await self.client_type_error_handler.clear_type_errors_for_client()
             self.server_state.diagnostics = {}
 
-    async def _try_connect_and_subscribe(
+    async def connect_and_subscribe(
         self,
         server_options: pyre_server_options.PyreServerOptions,
         socket_path: Path,
@@ -257,7 +257,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
 
         connection_timer = timer.Timer()
         try:
-            await self._try_connect_and_subscribe(
+            await self.connect_and_subscribe(
                 server_options,
                 socket_path,
                 connection_timer,
@@ -279,7 +279,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             flavor,
         )
         if isinstance(start_status, StartSuccess):
-            await self._try_connect_and_subscribe(
+            await self.connect_and_subscribe(
                 server_options,
                 socket_path,
                 connection_timer,
