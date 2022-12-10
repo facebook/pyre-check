@@ -1347,6 +1347,13 @@ let test_create_readonly _ =
   assert_create
     "typing.List[pyre_extensions.ReadOnly[int]]"
     (Type.list (Type.ReadOnly.create Type.integer));
+  assert_create "pyre_extensions.ReadOnly[None]" Type.none;
+  assert_create
+    "pyre_extensions.ReadOnly[typing.Optional[int]]"
+    (Type.Union [Type.none; Type.ReadOnly Type.integer]);
+  assert_create
+    "pyre_extensions.ReadOnly[typing.Union[int, str, pyre_extensions.ReadOnly[bool]]]"
+    (Type.Union [Type.ReadOnly Type.integer; Type.ReadOnly Type.string; Type.ReadOnly Type.bool]);
   ()
 
 

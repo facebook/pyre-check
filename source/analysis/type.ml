@@ -3702,8 +3702,10 @@ module TypeOperation = struct
 end
 
 module ReadOnly = struct
-  let create = function
+  let rec create = function
     | ReadOnly _ as type_ -> type_
+    | NoneType -> NoneType
+    | Union elements -> Union (List.map ~f:create elements)
     | type_ -> ReadOnly type_
 
 

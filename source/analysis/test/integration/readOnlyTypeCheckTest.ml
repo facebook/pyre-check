@@ -754,6 +754,38 @@ let test_generic_types context =
   ()
 
 
+let test_refinement context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Optional
+
+      def main(optional_readonly: ReadOnly[Optional[int]]) -> None:
+        if optional_readonly:
+          reveal_type(optional_readonly)
+        else:
+          reveal_type(optional_readonly)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `optional_readonly` is \
+       `Optional[pyre_extensions.ReadOnly[int]]` (inferred: `pyre_extensions.ReadOnly[int]`).";
+      "Revealed type [-1]: Revealed type for `optional_readonly` is \
+       `Optional[pyre_extensions.ReadOnly[int]]`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Optional
+
+      def main(optional_readonly: ReadOnly[Optional[int]]) -> None:
+        x = optional_readonly if optional_readonly else 99
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -766,5 +798,6 @@ let () =
          "reveal_type" >:: test_reveal_type;
          "format_string" >:: test_format_string;
          "generic_types" >:: test_generic_types;
+         "refinement" >:: test_refinement;
        ]
   |> Test.run
