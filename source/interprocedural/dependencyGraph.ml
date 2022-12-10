@@ -181,7 +181,7 @@ let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~
     let dependency_graph = Reversed.reverse reverse_dependency_graph in
     (* Analyze callables in the reverse weak topological order. *)
     let initial_callable_set =
-      FetchCallables.get_callables initial_callables |> Target.HashSet.of_list
+      FetchCallables.get_non_stub_callables initial_callables |> Target.HashSet.of_list
     in
     let callables_to_analyze =
       callables_kept
@@ -195,11 +195,11 @@ let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~
   match prune with
   | PruneMethod.None ->
       let dependency_graph = Reversed.reverse reverse_dependency_graph in
-      let callables_kept = FetchCallables.get_callables initial_callables in
+      let callables_kept = FetchCallables.get_non_stub_callables initial_callables in
       let callables_to_analyze = List.rev_append override_targets callables_kept in
       { dependency_graph; override_targets; callables_kept; callables_to_analyze }
   | PruneMethod.Internals ->
-      let callables_to_analyze = FetchCallables.get_internals initial_callables in
+      let callables_to_analyze = FetchCallables.get_internal_callables initial_callables in
       Reversed.prune reverse_dependency_graph ~callables_to_analyze
       |> create_dependency_graph_from_prune_result
   | PruneMethod.Entrypoints entrypoints ->

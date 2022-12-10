@@ -60,7 +60,7 @@ let assert_fixpoint
           class_interval_graph;
           define_call_graphs;
         }
-      ~initial_callables:(FetchCallables.get_callables initial_callables)
+      ~initial_callables:(FetchCallables.get_non_stub_callables initial_callables)
       ~stubs
       ~override_targets
       ~callables_to_analyze

@@ -196,7 +196,9 @@ let initialize_models
   Log.info "Parsing taint models...";
   let timer = Timer.start () in
   let callables_hashset =
-    initial_callables |> Interprocedural.FetchCallables.get_callables |> Target.HashSet.of_list
+    initial_callables
+    |> Interprocedural.FetchCallables.get_non_stub_callables
+    |> Target.HashSet.of_list
   in
   let stubs_hashset =
     initial_callables |> Interprocedural.FetchCallables.get_stubs |> Target.HashSet.of_list
@@ -227,7 +229,8 @@ let initialize_models
             ~class_hierarchy_graph
             ~verbose
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-            ~callables_and_stubs:(Interprocedural.FetchCallables.get_all initial_callables)
+            ~callables_and_stubs:
+              (Interprocedural.FetchCallables.get_callables_and_stubs initial_callables)
             ~stubs:stubs_hashset
             queries
         in
@@ -422,7 +425,7 @@ let run_taint_analysis
         ~override_graph:override_graph_shared_memory
         ~store_shared_memory:true
         ~attribute_targets:(Registry.object_targets initial_models)
-        ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
+        ~callables:(Interprocedural.FetchCallables.get_non_stub_callables initial_callables)
     in
     Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 
@@ -491,7 +494,7 @@ let run_taint_analysis
             class_interval_graph;
             define_call_graphs;
           }
-        ~initial_callables:(Interprocedural.FetchCallables.get_callables initial_callables)
+        ~initial_callables:(Interprocedural.FetchCallables.get_non_stub_callables initial_callables)
         ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
         ~override_targets
         ~callables_to_analyze

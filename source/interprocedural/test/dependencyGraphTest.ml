@@ -55,7 +55,7 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
       ~resolution:(TypeEnvironment.ReadOnly.global_resolution environment)
       ~include_unit_tests:true
       ~source
-    |> FetchCallables.get_callables
+    |> FetchCallables.get_non_stub_callables
   in
   let fold call_graph callable =
     let callees =

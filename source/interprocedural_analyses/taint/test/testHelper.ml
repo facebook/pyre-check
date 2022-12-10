@@ -526,7 +526,7 @@ let initialize
       ~source
   in
   let stubs = FetchCallables.get_stubs initial_callables in
-  let callables = FetchCallables.get_callables initial_callables in
+  let callables = FetchCallables.get_non_stub_callables initial_callables in
   let class_hierarchy_graph =
     ClassHierarchyGraph.Heap.from_source ~environment:type_environment ~source
   in
@@ -796,7 +796,7 @@ let end_to_end_integration_test path context =
             class_interval_graph;
             define_call_graphs;
           }
-        ~initial_callables:(FetchCallables.get_callables initial_callables)
+        ~initial_callables:(FetchCallables.get_non_stub_callables initial_callables)
         ~stubs
         ~override_targets
         ~callables_to_analyze

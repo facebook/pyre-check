@@ -7,14 +7,7 @@
 
 open Ast
 
-type t = {
-  (* Non-stub callables that are in files within the source paths
-   * (as opposed to being in the search path). *)
-  internals: Target.t list;
-  (* All non-stub callables. *)
-  callables: Target.t list;
-  stubs: Target.t list;
-}
+type t
 
 (** Traverse the AST to find all callables (functions and methods). *)
 val from_source
@@ -32,10 +25,12 @@ val from_qualifiers
   qualifiers:Reference.t list ->
   t
 
-val get_internals : t -> Target.t list
+(* Return non-stub callables that are in files within the source paths (as opposed to being in the
+   search path). *)
+val get_internal_callables : t -> Target.t list
 
-val get_callables : t -> Target.t list
+val get_non_stub_callables : t -> Target.t list
 
 val get_stubs : t -> Target.t list
 
-val get_all : t -> Target.t list
+val get_callables_and_stubs : t -> Target.t list

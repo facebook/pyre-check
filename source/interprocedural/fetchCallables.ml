@@ -175,10 +175,12 @@ let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~
     ()
 
 
-let get_internals { internals; _ } = internals
+(* Return non-stub callables that are in files within the source paths (as opposed to being in the
+   search path). *)
+let get_internal_callables { internals; _ } = internals
 
-let get_callables { callables; _ } = callables
+let get_non_stub_callables { callables; _ } = callables
 
 let get_stubs { stubs; _ } = stubs
 
-let get_all { callables; stubs; _ } = List.rev_append stubs callables
+let get_callables_and_stubs { callables; stubs; _ } = List.rev_append stubs callables

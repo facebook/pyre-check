@@ -1040,7 +1040,7 @@ let rec process_request ~type_environment ~build_system request =
                         ~source_sink_filter:None
                         ~verbose:false
                         ~callables_and_stubs:
-                          (Interprocedural.FetchCallables.get_all initial_callables)
+                          (Interprocedural.FetchCallables.get_callables_and_stubs initial_callables)
                         ~stubs:
                           (Interprocedural.Target.HashSet.of_list
                              (Interprocedural.FetchCallables.get_stubs initial_callables))

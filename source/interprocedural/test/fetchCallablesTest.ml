@@ -27,7 +27,7 @@ let test_callables context =
           (Ast.Reference.create "test"))
     in
     FetchCallables.from_source ~configuration ~resolution ~include_unit_tests:false ~source
-    |> FetchCallables.get_all
+    |> FetchCallables.get_callables_and_stubs
     |> List.sort ~compare:Target.compare
     |> assert_equal
          ~printer:(List.to_string ~f:Target.show_pretty)
