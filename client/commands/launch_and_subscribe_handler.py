@@ -111,6 +111,24 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         return self.server_state.server_options.language_server_features.type_errors
 
     @staticmethod
+    def _auxiliary_logging_info(
+        server_options: pyre_server_options.PyreServerOptions,
+    ) -> Dict[str, Optional[str]]:
+        relative_local_root = (
+            server_options.start_arguments.base_arguments.relative_local_root
+        )
+        return {
+            "binary": server_options.binary,
+            "log_path": server_options.start_arguments.base_arguments.log_path,
+            "global_root": (server_options.start_arguments.base_arguments.global_root),
+            **(
+                {}
+                if relative_local_root is None
+                else {"local_root": relative_local_root}
+            ),
+        }
+
+    @staticmethod
     def read_server_options(
         server_options_reader: pyre_server_options.PyreServerOptionsReader,
         remote_logging: Optional[backend_arguments.RemoteLogging],
@@ -182,24 +200,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             )
             await self.client_type_error_handler.clear_type_errors_for_client()
             self.server_state.diagnostics = {}
-
-    @staticmethod
-    def _auxiliary_logging_info(
-        server_options: pyre_server_options.PyreServerOptions,
-    ) -> Dict[str, Optional[str]]:
-        relative_local_root = (
-            server_options.start_arguments.base_arguments.relative_local_root
-        )
-        return {
-            "binary": server_options.binary,
-            "log_path": server_options.start_arguments.base_arguments.log_path,
-            "global_root": (server_options.start_arguments.base_arguments.global_root),
-            **(
-                {}
-                if relative_local_root is None
-                else {"local_root": relative_local_root}
-            ),
-        }
 
     async def _try_connect_and_subscribe(
         self,
