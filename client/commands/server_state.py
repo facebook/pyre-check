@@ -28,6 +28,7 @@ class ServerStatus(enum.Enum):
     SUSPENDED = "SUSPENDED"
     BUCK_BUILDING = "BUCK_BUILDING"
     INCREMENTAL_CHECK = "INCREMENTAL_CHECK"
+    STARTING = "STARTING"
 
 
 @dataclasses.dataclass(frozen=True)

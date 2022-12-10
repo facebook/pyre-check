@@ -273,6 +273,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             level=lsp.MessageType.WARNING,
             fallback_to_notification=True,
         )
+        self.server_state.server_last_status = state.ServerStatus.STARTING
         start_status = await async_start_pyre_server(
             server_options.binary,
             start_arguments,
