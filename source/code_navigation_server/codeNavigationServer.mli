@@ -42,16 +42,20 @@ module OpenFiles : sig
   type t
 
   (** Mark a file as opened in the open file state. *)
-  val open_file : t -> path:string -> overlay_id:string -> unit
+  val open_file : t -> source_path:SourcePath.t -> overlay_id:string -> unit
 
   (** Mark a file as closed in the open file state. *)
-  val close_file : t -> path:string -> overlay_id:string -> (unit, Response.ErrorKind.t) Result.t
+  val close_file
+    :  t ->
+    source_path:SourcePath.t ->
+    overlay_id:string ->
+    (unit, Response.ErrorKind.t) Result.t
 
   (** Evaluates to the list of current open files. *)
-  val open_files : t -> string list
+  val open_files : t -> SourcePath.t list
 
   (** Returns true iff the open files currently tracks `overlay_id`. *)
-  val contains : t -> path:string -> overlay_id:string -> bool
+  val contains : t -> source_path:SourcePath.t -> overlay_id:string -> bool
 
   (** Creates a new open files state object with no files marked as open. *)
   val create : unit -> t

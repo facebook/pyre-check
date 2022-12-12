@@ -9,38 +9,42 @@ open Base
 open OUnit2
 open CodeNavigationServer
 
+let ( ! ) path = PyrePath.create_absolute path |> SourcePath.create
+
 let test_open_files _ =
   let open_files = OpenFiles.create () in
   let assert_open_files open_files ~expected =
     assert_equal
       ~cmp:(List.equal String.equal)
-      (OpenFiles.open_files open_files |> List.sort ~compare:String.compare)
+      (OpenFiles.open_files open_files
+      |> List.map ~f:(fun source_path -> SourcePath.raw source_path |> PyrePath.absolute)
+      |> List.sort ~compare:String.compare)
       expected
   in
   assert_open_files open_files ~expected:[];
 
-  OpenFiles.open_file open_files ~path:"/a/b.py" ~overlay_id:"1";
+  OpenFiles.open_file open_files ~source_path:!"/a/b.py" ~overlay_id:"1";
   assert_open_files open_files ~expected:["/a/b.py"];
 
-  OpenFiles.open_file open_files ~path:"/a/b.py" ~overlay_id:"2";
+  OpenFiles.open_file open_files ~source_path:!"/a/b.py" ~overlay_id:"2";
   assert_open_files open_files ~expected:["/a/b.py"];
 
-  OpenFiles.open_file open_files ~path:"/b/c.py" ~overlay_id:"3";
+  OpenFiles.open_file open_files ~source_path:!"/b/c.py" ~overlay_id:"3";
   assert_open_files open_files ~expected:["/a/b.py"; "/b/c.py"];
 
-  let response = OpenFiles.close_file open_files ~path:"/b/c.py" ~overlay_id:"3" in
+  let response = OpenFiles.close_file open_files ~source_path:!"/b/c.py" ~overlay_id:"3" in
   assert_equal response (Result.Ok ());
   assert_open_files open_files ~expected:["/a/b.py"];
 
-  let response = OpenFiles.close_file open_files ~path:"/a/b.py" ~overlay_id:"2" in
+  let response = OpenFiles.close_file open_files ~source_path:!"/a/b.py" ~overlay_id:"2" in
   assert_equal response (Result.Ok ());
   assert_open_files open_files ~expected:["/a/b.py"];
 
-  let response = OpenFiles.close_file open_files ~path:"/a/b.py" ~overlay_id:"1" in
+  let response = OpenFiles.close_file open_files ~source_path:!"/a/b.py" ~overlay_id:"1" in
   assert_equal response (Result.Ok ());
   assert_open_files open_files ~expected:[];
 
-  let response = OpenFiles.close_file open_files ~path:"/a/b.py" ~overlay_id:"1" in
+  let response = OpenFiles.close_file open_files ~source_path:!"/a/b.py" ~overlay_id:"1" in
   assert_bool "Expected an error response" (response != Result.Ok ());
   ()
 

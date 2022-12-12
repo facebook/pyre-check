@@ -253,7 +253,8 @@ let handle_file_opened ~path ~content ~overlay_id ~subscriptions state : Respons
     | Response.Error _ -> ()
     | _ ->
         let { State.open_files; _ } = state in
-        OpenFiles.open_file open_files ~path ~overlay_id
+        let source_path = PyrePath.create_absolute path |> SourcePath.create in
+        OpenFiles.open_file open_files ~source_path ~overlay_id
   in
   Lwt.return response
 
@@ -261,7 +262,8 @@ let handle_file_opened ~path ~content ~overlay_id ~subscriptions state : Respons
 let handle_file_closed ~path ~overlay_id ~subscriptions ({ State.open_files; _ } as state)
     : Response.t Lwt.t
   =
-  if OpenFiles.contains open_files ~path ~overlay_id then
+  let source_path = PyrePath.create_absolute path |> SourcePath.create in
+  if OpenFiles.contains open_files ~source_path ~overlay_id then
     let%lwt response =
       handle_local_update
         ~module_:(Request.Module.OfPath path)
@@ -270,7 +272,7 @@ let handle_file_closed ~path ~overlay_id ~subscriptions ({ State.open_files; _ }
         ~subscriptions
         state
     in
-    match OpenFiles.close_file open_files ~path ~overlay_id with
+    match OpenFiles.close_file open_files ~source_path ~overlay_id with
     | Result.Ok () -> Lwt.return response
     | Result.Error error_kind -> Lwt.return (Response.Error error_kind)
   else
