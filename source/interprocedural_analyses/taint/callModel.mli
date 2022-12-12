@@ -77,19 +77,23 @@ val sink_trees_of_argument
 
 val type_breadcrumbs_of_calls : CallGraph.CallTarget.t list -> Features.BreadcrumbSet.t
 
-val extra_traces_from_sink_trees
-  :  argument_access_path:Abstract.TreeDomain.Label.path ->
-  named_transforms:TaintTransform.t list ->
-  tito_roots:AccessPath.Root.Set.t ->
-  sink_trees:Issue.SinkTreeWithHandle.t list ->
-  ExtraTraceFirstHop.Set.t
+module ExtraTraceForTransforms : sig
+  (* Collect sink taints that will be used as first hops of extra traces, i.e., whose call info
+     matches the given callee roots and whose taint match the given named transforms *)
+  val from_sink_trees
+    :  argument_access_path:Abstract.TreeDomain.Label.path ->
+    named_transforms:TaintTransform.t list ->
+    tito_roots:AccessPath.Root.Set.t ->
+    sink_trees:Issue.SinkTreeWithHandle.t list ->
+    ExtraTraceFirstHop.Set.t
 
-(* ExtraTraceSink is used to show taint transforms. Hence, if a function does not have a tito
-   behavior on an access path, then this access path will not have any taint transform and hence we
-   can remove ExtraTraceSink on the same access path *)
-val prune_extra_trace_sink
-  :  sink_tree:BackwardState.Tree.t ->
-  tito_tree:BackwardState.Tree.t ->
-  BackwardState.Tree.t
+  (* ExtraTraceSink is used to show taint transforms. Hence, if a function does not have a tito
+     behavior on an access path, then this access path will not have any taint transform and hence
+     we can remove ExtraTraceSink on the same access path *)
+  val prune
+    :  sink_tree:BackwardState.Tree.t ->
+    tito_tree:BackwardState.Tree.t ->
+    BackwardState.Tree.t
+end
 
 val transform_tito_depth_breadcrumb : BackwardTaint.t -> int

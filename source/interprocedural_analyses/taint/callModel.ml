@@ -275,77 +275,78 @@ let type_breadcrumbs_of_calls targets =
           return_type |> Features.type_breadcrumbs |> Features.BreadcrumbSet.join so_far)
 
 
-(* Collect sink taints that will be used as first hops of extra traces, i.e., whose call info
-   matches the given callee roots and whose taint match the given named transforms *)
-let extra_trace_first_hops ~named_transforms ~tito_roots ~sink_taint =
-  let match_call_info = function
-    | CallInfo.CallSite { port; _ } -> AccessPath.Root.Set.mem port tito_roots
-    | CallInfo.Origin _ -> false (* Skip origins because there is no subtrace to show *)
-    | CallInfo.Declaration _
-    | CallInfo.Tito ->
-        false
-  in
-  let accumulate_extra_trace_first_hop call_info sink_kind so_far =
-    match Sinks.discard_transforms sink_kind with
-    | Sinks.ExtraTraceSink
-      when List.equal TaintTransform.equal (Sinks.get_named_transforms sink_kind) named_transforms
-      ->
-        let extra_trace = { ExtraTraceFirstHop.call_info; leaf_kind = Sink sink_kind } in
-        ExtraTraceFirstHop.Set.add extra_trace so_far
-    | _ -> so_far
-  in
-  sink_taint
-  |> BackwardTaint.transform BackwardTaint.call_info Filter ~f:match_call_info
-  |> BackwardTaint.reduce
-       BackwardTaint.kind
-       ~using:(Context (BackwardTaint.call_info, Acc))
-       ~f:accumulate_extra_trace_first_hop
-       ~init:ExtraTraceFirstHop.Set.bottom
-
-
-let extra_traces_from_sink_trees ~argument_access_path ~named_transforms ~tito_roots ~sink_trees =
-  let accumulate_extra_traces_from_sink_path (path, tip) so_far =
-    let is_prefix =
-      Abstract.TreeDomain.Label.is_prefix ~prefix:path argument_access_path
-      || Abstract.TreeDomain.Label.is_prefix ~prefix:argument_access_path path
+module ExtraTraceForTransforms = struct
+  (* Collect sink taints that will be used as first hops of extra traces, i.e., whose call info
+     matches the given callee roots and whose taint match the given named transforms *)
+  let first_hops ~named_transforms ~tito_roots ~sink_taint =
+    let match_call_info = function
+      | CallInfo.CallSite { port; _ } -> AccessPath.Root.Set.mem port tito_roots
+      | CallInfo.Origin _ -> false (* Skip origins because there is no subtrace to show *)
+      | CallInfo.Declaration _
+      | CallInfo.Tito ->
+          false
     in
-    if not is_prefix then
-      so_far
-    else
-      let extra_traces = extra_trace_first_hops ~tito_roots ~named_transforms ~sink_taint:tip in
-      ExtraTraceFirstHop.Set.join extra_traces so_far
-  in
-  let accumulate_extra_traces so_far { Issue.SinkTreeWithHandle.sink_tree; _ } =
-    BackwardState.Tree.fold
-      BackwardState.Tree.Path
-      ~f:accumulate_extra_traces_from_sink_path
-      ~init:so_far
-      sink_tree
-    |> ExtraTraceFirstHop.Set.join so_far
-  in
-  List.fold sink_trees ~init:ExtraTraceFirstHop.Set.bottom ~f:accumulate_extra_traces
-
-
-(* ExtraTraceSink is used to show taint transforms. Hence, if a function does not have a tito
-   behavior on an access path, then this access path will not have any taint transform and hence we
-   can remove ExtraTraceSink on the same access path *)
-let prune_extra_trace_sink ~sink_tree ~tito_tree =
-  let remove_sink (sink_path, sink_tip) =
-    let find_tito (tito_path, _) so_far =
-      so_far
-      || Abstract.TreeDomain.Label.is_prefix ~prefix:tito_path sink_path
-      || Abstract.TreeDomain.Label.is_prefix ~prefix:sink_path tito_path
+    let accumulate_extra_trace_first_hop call_info sink_kind so_far =
+      match Sinks.discard_transforms sink_kind with
+      | Sinks.ExtraTraceSink
+        when List.equal TaintTransform.equal (Sinks.get_named_transforms sink_kind) named_transforms
+        ->
+          let extra_trace = { ExtraTraceFirstHop.call_info; leaf_kind = Sink sink_kind } in
+          ExtraTraceFirstHop.Set.add extra_trace so_far
+      | _ -> so_far
     in
-    let exist_tito =
-      BackwardState.Tree.fold BackwardState.Tree.Path ~f:find_tito ~init:false tito_tree
-    in
-    if exist_tito then
-      sink_path, sink_tip
-    else
-      sink_path, BackwardTaint.bottom
-  in
-  BackwardState.Tree.transform BackwardState.Tree.Path Map ~f:remove_sink sink_tree
+    sink_taint
+    |> BackwardTaint.transform BackwardTaint.call_info Filter ~f:match_call_info
+    |> BackwardTaint.reduce
+         BackwardTaint.kind
+         ~using:(Context (BackwardTaint.call_info, Acc))
+         ~f:accumulate_extra_trace_first_hop
+         ~init:ExtraTraceFirstHop.Set.bottom
 
+
+  let from_sink_trees ~argument_access_path ~named_transforms ~tito_roots ~sink_trees =
+    let accumulate_extra_traces_from_sink_path (path, tip) so_far =
+      let is_prefix =
+        Abstract.TreeDomain.Label.is_prefix ~prefix:path argument_access_path
+        || Abstract.TreeDomain.Label.is_prefix ~prefix:argument_access_path path
+      in
+      if not is_prefix then
+        so_far
+      else
+        let extra_traces = first_hops ~tito_roots ~named_transforms ~sink_taint:tip in
+        ExtraTraceFirstHop.Set.join extra_traces so_far
+    in
+    let accumulate_extra_traces so_far { Issue.SinkTreeWithHandle.sink_tree; _ } =
+      BackwardState.Tree.fold
+        BackwardState.Tree.Path
+        ~f:accumulate_extra_traces_from_sink_path
+        ~init:so_far
+        sink_tree
+      |> ExtraTraceFirstHop.Set.join so_far
+    in
+    List.fold sink_trees ~init:ExtraTraceFirstHop.Set.bottom ~f:accumulate_extra_traces
+
+
+  (* ExtraTraceSink is used to show taint transforms. Hence, if a function does not have a tito
+     behavior on an access path, then this access path will not have any taint transform and hence
+     we can remove ExtraTraceSink on the same access path *)
+  let prune ~sink_tree ~tito_tree =
+    let remove_sink (sink_path, sink_tip) =
+      let find_tito (tito_path, _) so_far =
+        so_far
+        || Abstract.TreeDomain.Label.is_prefix ~prefix:tito_path sink_path
+        || Abstract.TreeDomain.Label.is_prefix ~prefix:sink_path tito_path
+      in
+      let exist_tito =
+        BackwardState.Tree.fold BackwardState.Tree.Path ~f:find_tito ~init:false tito_tree
+      in
+      if exist_tito then
+        sink_path, sink_tip
+      else
+        sink_path, BackwardTaint.bottom
+    in
+    BackwardState.Tree.transform BackwardState.Tree.Path Map ~f:remove_sink sink_tree
+end
 
 let transform_tito_depth_breadcrumb tito_taint =
   let length = BackwardTaint.fold TraceLength.Self ~f:min ~init:Int.max_value tito_taint in

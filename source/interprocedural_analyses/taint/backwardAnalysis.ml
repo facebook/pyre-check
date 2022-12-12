@@ -296,9 +296,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     { arguments_taint; self_taint; callee_taint; state }
 
 
-  let add_extra_traces ~argument_access_path ~named_transforms ~sink_trees ~tito_roots taint =
+  let add_extra_traces_for_transforms
+      ~argument_access_path
+      ~named_transforms
+      ~sink_trees
+      ~tito_roots
+      taint
+    =
     let extra_traces =
-      CallModel.extra_traces_from_sink_trees
+      CallModel.ExtraTraceForTransforms.from_sink_trees
         ~argument_access_path
         ~named_transforms
         ~tito_roots
@@ -435,7 +441,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   breadcrumb
                   taint_to_propagate
               in
-              add_extra_traces
+              add_extra_traces_for_transforms
                 ~argument_access_path:tito_path
                 ~named_transforms
                 ~sink_trees
@@ -2316,7 +2322,7 @@ let extract_tito_and_sink_models
             let sink_tree =
               match Sinks.discard_transforms sink with
               | Sinks.ExtraTraceSink ->
-                  CallModel.prune_extra_trace_sink ~sink_tree ~tito_tree:taint_in_taint_out
+                  CallModel.ExtraTraceForTransforms.prune ~sink_tree ~tito_tree:taint_in_taint_out
               | _ -> sink_tree
             in
             BackwardState.Tree.join accumulator sink_tree

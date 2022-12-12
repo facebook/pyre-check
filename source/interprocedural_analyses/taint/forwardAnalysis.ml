@@ -310,9 +310,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~taint:data)
   end
 
-  let add_extra_traces ~argument_access_path ~named_transforms ~sink_trees ~tito_roots taint =
+  let add_extra_traces_for_transforms
+      ~argument_access_path
+      ~named_transforms
+      ~sink_trees
+      ~tito_roots
+      taint
+    =
     let extra_traces =
-      CallModel.extra_traces_from_sink_trees
+      CallModel.ExtraTraceForTransforms.from_sink_trees
         ~argument_access_path
         ~named_transforms
         ~tito_roots
@@ -425,7 +431,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   breadcrumb
                   taint_to_propagate
               in
-              add_extra_traces
+              add_extra_traces_for_transforms
                 ~argument_access_path
                 ~named_transforms
                 ~sink_trees
