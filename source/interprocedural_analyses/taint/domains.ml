@@ -315,31 +315,42 @@ module CallInfoIntervals = struct
   end)
 end
 
-(* Represents a sink trace that begins from a frame and ends up with a special sink that is only
-   used to show extra traces *)
+(* This module represents the first hops of the extra traces that are attached to the trace frames
+   in Zoncolan UI. *)
 module ExtraTraceFirstHop = struct
   module T = struct
+    type leaf_kind =
+      | Source of Sources.t
+      | Sink of Sinks.t
+    [@@deriving compare]
+
+    let show_leaf_kind = function
+      | Source source -> Sources.show source
+      | Sink sink -> Sinks.show sink
+
+
+    let pp_leaf_kind format kind = Format.fprintf format "%s" (show_leaf_kind kind)
+
     type t = {
       (* The first frame of an extra trace *)
       call_info: CallInfo.t;
       (* The taint kind related with the first frame *)
-      leaf_kind: Sinks.t;
+      leaf_kind: leaf_kind;
     }
     [@@deriving compare, show]
 
     let name = "extra trace"
 
-    let trace_kind leaf_kind =
-      match Sinks.discard_transforms leaf_kind with
-      | Sinks.ExtraTraceSink -> "sink"
-      | _ -> failwith "unexpected leaf kind as extra trace first hops"
+    let trace_kind = function
+      | Source _ -> "source"
+      | Sink _ -> "sink"
 
 
     let to_json { call_info; leaf_kind } =
       `Assoc
         [
           CallInfo.to_json ~filename_lookup:None call_info;
-          "leaf_kind", `String (Sinks.show leaf_kind);
+          "leaf_kind", `String (show_leaf_kind leaf_kind);
           "trace_kind", `String (trace_kind leaf_kind);
         ]
   end
