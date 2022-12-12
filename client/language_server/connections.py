@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides async stream readers and writers, in both bytes and
+string formats. We use these to manage the standard input and output
+connections in language servers.
 """
 
 
