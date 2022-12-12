@@ -45,7 +45,8 @@
                   "resolves_to": [ "extra_trace.nested_transform_x" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -95,7 +96,8 @@
                   "resolves_to": [ "extra_trace.nested_transform_x" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               },
               {
                 "call": {
@@ -103,7 +105,8 @@
                   "resolves_to": [ "extra_trace.nested_transform_x" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -318,7 +321,8 @@
                   "resolves_to": [ "extra_trace.nested_transform_x" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               },
               {
                 "call": {
@@ -326,7 +330,8 @@
                   "resolves_to": [ "extra_trace.transform_yz" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformY:TransformZ:ExtraTraceSink"
+                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -372,7 +377,8 @@
                   "resolves_to": [ "extra_trace.nested_transform_x" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               },
               {
                 "call": {
@@ -380,7 +386,8 @@
                   "resolves_to": [ "extra_trace.transform_yz" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformY:TransformZ:ExtraTraceSink"
+                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -426,7 +433,8 @@
                   "resolves_to": [ "extra_trace.transform_nested_x_y" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:TransformY:ExtraTraceSink"
+                "leaf_kind": "TransformX:TransformY:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -485,7 +493,8 @@
                   "resolves_to": [ "extra_trace.nested_transform_x" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [

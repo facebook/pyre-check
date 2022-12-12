@@ -323,7 +323,8 @@
                   ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -477,7 +478,8 @@
                   ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -918,7 +920,8 @@
                   "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformY:TransformZ:ExtraTraceSink"
+                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -1773,7 +1776,8 @@
                   "resolves_to": [ "taint_transform.sanitize_a_transform_x" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -2095,7 +2099,8 @@
                   "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformY:TransformZ:ExtraTraceSink"
+                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -2365,7 +2370,8 @@
                   "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformY:TransformZ:ExtraTraceSink"
+                "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -2575,7 +2581,8 @@
                   "resolves_to": [ "taint_transform.tito_with_transform_x" ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
@@ -3101,7 +3108,8 @@
                   ],
                   "port": "formal(arg)"
                 },
-                "kind": "TransformX:ExtraTraceSink"
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [

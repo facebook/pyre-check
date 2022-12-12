@@ -290,7 +290,7 @@ let extra_trace_first_hops ~named_transforms ~tito_roots ~sink_taint =
     | Sinks.ExtraTraceSink
       when List.equal TaintTransform.equal (Sinks.get_named_transforms sink_kind) named_transforms
       ->
-        let extra_trace = { ExtraTraceFirstHop.call_info; kind = sink_kind } in
+        let extra_trace = { ExtraTraceFirstHop.call_info; leaf_kind = sink_kind } in
         ExtraTraceFirstHop.Set.add extra_trace so_far
     | _ -> so_far
   in

@@ -323,14 +323,25 @@ module ExtraTraceFirstHop = struct
       (* The first frame of an extra trace *)
       call_info: CallInfo.t;
       (* The taint kind related with the first frame *)
-      kind: Sinks.t;
+      leaf_kind: Sinks.t;
     }
     [@@deriving compare, show]
 
     let name = "extra trace"
 
-    let to_json { call_info; kind } =
-      `Assoc [CallInfo.to_json ~filename_lookup:None call_info; "kind", `String (Sinks.show kind)]
+    let trace_kind leaf_kind =
+      match Sinks.discard_transforms leaf_kind with
+      | Sinks.ExtraTraceSink -> "sink"
+      | _ -> failwith "unexpected leaf kind as extra trace first hops"
+
+
+    let to_json { call_info; leaf_kind } =
+      `Assoc
+        [
+          CallInfo.to_json ~filename_lookup:None call_info;
+          "leaf_kind", `String (Sinks.show leaf_kind);
+          "trace_kind", `String (trace_kind leaf_kind);
+        ]
   end
 
   include T
