@@ -364,7 +364,6 @@ class PersistentRequestHandler(AbstractRequestHandler):
     async def handle_file_closed(
         self,
         path: Path,
-        code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         return "Ok"
 
