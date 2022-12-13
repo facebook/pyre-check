@@ -486,7 +486,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
     | Type.ReadOnly left, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
     | _, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
-    | Type.ReadOnly _, _ -> impossible
     | _, Type.Bottom
     | Type.Top, _ ->
         impossible
@@ -597,6 +596,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         else
           List.concat_map rights ~f:(fun right ->
               solve_less_or_equal order ~constraints ~left ~right)
+    | Type.ReadOnly _, _ -> impossible
     | ( Type.Parametric { name = "type"; parameters = [Single left] },
         Type.Parametric { name = "type"; parameters = [Single right] } ) ->
         solve_less_or_equal order ~constraints ~left ~right

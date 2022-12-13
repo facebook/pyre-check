@@ -834,6 +834,17 @@ let test_add_constraint_recursive_type context =
          ~value:(Type.dictionary ~key:Type.string ~value:Type.integer))
     ~right:json_annotation
     [[]];
+  let readonly_tree_annotation =
+    Type.RecursiveType.create
+      ~name:"test.Tree"
+      ~body:
+        (Type.union
+           [
+             Type.ReadOnly.create Type.string;
+             Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
+           ])
+  in
+  assert_add_direct ~left:(Type.ReadOnly.create Type.string) ~right:readonly_tree_annotation [[]];
   ()
 
 
@@ -1001,6 +1012,10 @@ let test_add_constraint_readonly context =
   assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" [];
   assert_add ~left:"D" ~right:"pyre_extensions.ReadOnly[C]" [[]];
   assert_add ~left:"pyre_extensions.ReadOnly[D]" ~right:"pyre_extensions.ReadOnly[C]" [[]];
+  assert_add
+    ~left:"pyre_extensions.ReadOnly[D]"
+    ~right:"typing.Union[int, pyre_extensions.ReadOnly[C]]"
+    [[]];
   assert_add
     ~left:"pyre_extensions.ReadOnly[C]"
     ~right:"T_Unconstrained"

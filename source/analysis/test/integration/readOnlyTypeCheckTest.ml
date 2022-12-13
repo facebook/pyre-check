@@ -548,6 +548,16 @@ let test_function_call context =
       "Incompatible parameter type [6]: In call `expect_mutable`, for 1st positional argument, \
        expected `object` but got `pyre_extensions.ReadOnly[int]`.";
     ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_union(x: int | ReadOnly[str]) -> None: ...
+
+      def main(readonly_string: ReadOnly[str]) -> None:
+        expect_union(readonly_string)
+    |}
+    [];
   ()
 
 
