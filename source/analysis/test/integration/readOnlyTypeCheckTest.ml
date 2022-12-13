@@ -804,8 +804,14 @@ let test_refinement context =
       def main(x: ReadOnly[Base | int]) -> None:
         if isinstance(x, Child):
           reveal_type(x)
+        else:
+          reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Child]`."];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Child]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[pyre_extensions.ReadOnly[Base], \
+       pyre_extensions.ReadOnly[int]]`.";
+    ];
   (* If the variable has type `Top`, don't pollute the output with `ReadOnly` type. *)
   assert_type_errors
     {|
@@ -826,6 +832,33 @@ let test_refinement context =
       "Revealed type [-1]: Revealed type for `variable_with_type_top` is `unknown`.";
       "Revealed type [-1]: Revealed type for `variable_with_type_top` is `str`.";
     ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo: ...
+
+      def main(x: ReadOnly[Foo] | int) -> None:
+        if isinstance(x, Foo):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Foo]`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo: ...
+
+      def main(x: ReadOnly[Foo] | int) -> None:
+        if not isinstance(x, Foo):
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
   ()
 
 

@@ -3242,6 +3242,9 @@ module State (Context : Context) = struct
         in
         extract_union_members unfolded_annotation
         |> List.partition_tf ~f:(fun left ->
+               Type.ReadOnly.unpack_readonly left
+               |> Option.value ~default:left
+               |> fun left ->
                Resolution.is_consistent_with resolution left boundary ~expression:None)
       in
       let not_consistent_with_boundary =
