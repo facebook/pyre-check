@@ -117,7 +117,10 @@ module Unit = struct
       let should_recurse, base =
         match left.base, right.base with
         | Some left, Some right ->
-            ( GlobalResolution.types_are_orderable global_resolution left.annotation right.annotation,
+            ( GlobalResolution.less_or_equal_either_way
+                global_resolution
+                left.annotation
+                right.annotation,
               Some (Annotation.join ~type_join:(GlobalResolution.join global_resolution) left right)
             )
         | None, None ->
@@ -138,7 +141,10 @@ module Unit = struct
     let should_recurse, base =
       match left.base, right.base with
       | Some left, Some right ->
-          ( GlobalResolution.types_are_orderable global_resolution left.annotation right.annotation,
+          ( GlobalResolution.less_or_equal_either_way
+              global_resolution
+              left.annotation
+              right.annotation,
             Some (Annotation.meet ~type_meet:(GlobalResolution.meet global_resolution) left right) )
       | None, None ->
           (* you only want to continue the nested meet should at least one attribute tree exists *)

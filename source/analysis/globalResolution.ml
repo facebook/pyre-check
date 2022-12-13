@@ -164,7 +164,7 @@ let meet resolution = full_order resolution |> TypeOrder.meet
 
 let widen resolution = full_order resolution |> TypeOrder.widen
 
-let types_are_orderable resolution type0 type1 =
+let less_or_equal_either_way resolution type0 type1 =
   less_or_equal resolution ~left:type0 ~right:type1
   || less_or_equal resolution ~left:type1 ~right:type0
 
