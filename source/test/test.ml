@@ -1021,6 +1021,19 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |};
     ]
   in
+  let readonly_stubs =
+    [
+      ( "readonly_stubs_for_testing.pyi",
+        {|
+          from typing import Callable, TypeVar
+
+          F = TypeVar("F", bound=Callable[..., object])
+
+          def readonly_entrypoint(f: F) -> F: ...
+|}
+      );
+    ]
+  in
   [
     ( "sys.py",
       {|
@@ -2794,6 +2807,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
   ]
   @ sqlalchemy_stubs
   @ torch_stubs
+  @ readonly_stubs
 
 
 let mock_signature =

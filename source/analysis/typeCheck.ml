@@ -5460,7 +5460,7 @@ module State (Context : Context) = struct
           resolution
       in
       let process_capture (resolution, errors) { Define.Capture.name; kind } =
-        let resolution, errors, annotation =
+        let resolution, errors, type_ =
           match kind with
           | Define.Capture.Kind.Annotation None ->
               ( resolution,
@@ -5481,10 +5481,23 @@ module State (Context : Context) = struct
           | Define.Capture.Kind.ClassSelf parent ->
               resolution, errors, type_of_parent ~global_resolution parent |> Type.meta
         in
-        let annotation = Annotation.create_immutable annotation in
+        let type_ =
+          let is_readonly_entrypoint_function =
+            decorators
+            |> List.map ~f:Expression.show
+            |> String.Set.of_list
+            |> Set.inter Recognized.readonly_entrypoint_decorators
+            |> Set.is_empty
+            |> not
+          in
+          if is_readonly_entrypoint_function then
+            type_ |> Type.ReadOnly.create |> Annotation.create_immutable
+          else
+            Annotation.create_immutable type_
+        in
         let resolution =
           let reference = Reference.create name in
-          Resolution.new_local resolution ~reference ~annotation
+          Resolution.new_local resolution ~reference ~annotation:type_
         in
         resolution, errors
       in

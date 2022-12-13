@@ -862,6 +862,145 @@ let test_refinement context =
   ()
 
 
+let test_captured_variable_for_specially_decorated_functions context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* Parameter captured in a nested zone entrypoint should be marked as readonly. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import readonly_entrypoint
+
+      class Foo:
+        x: int = 42
+
+      def main(parameter: Foo) -> None:
+
+        @readonly_entrypoint
+        def nested() -> None:
+          reveal_type(parameter)
+          parameter.x = 99
+
+        not_captured = parameter
+        reveal_type(not_captured)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `parameter` is `pyre_extensions.ReadOnly[Foo]`.";
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
+       since it is readonly";
+      "Revealed type [-1]: Revealed type for `not_captured` is `Foo`.";
+    ];
+  (* Outer local variable should be marked as readonly within the entrypoint. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import readonly_entrypoint
+
+      class Foo:
+        x: int = 42
+
+      def main() -> None:
+        local_variable: Foo = Foo()
+
+        @readonly_entrypoint
+        def nested() -> None:
+          reveal_type(local_variable)
+          local_variable.x = 99
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `local_variable` is `pyre_extensions.ReadOnly[Foo]`.";
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
+       since it is readonly";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import readonly_entrypoint
+
+      class Foo:
+        x: int = 42
+
+      def main() -> None:
+        local_variable = Foo()
+
+        @readonly_entrypoint
+        def nested() -> None:
+          reveal_type(local_variable)
+          local_variable.x = 99
+    |}
+    [
+      "Missing annotation for captured variable [53]: Captured variable `local_variable` is not \
+       annotated.";
+      "Revealed type [-1]: Revealed type for `local_variable` is \
+       `pyre_extensions.ReadOnly[typing.Any]`.";
+    ];
+  (* `self` captured in a nested entrypoint should be marked as readonly. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import readonly_entrypoint
+
+      class Foo:
+        x: int = 99
+
+        def some_method(self) -> None:
+
+          @readonly_entrypoint
+          def nested() -> None:
+            reveal_type(self)
+            self.x = 99
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `self` is `pyre_extensions.ReadOnly[Foo]`.";
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
+       since it is readonly";
+    ];
+  (* `cls` captured in a nested entrypoint should be marked as readonly. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import readonly_entrypoint
+
+      class Foo:
+        x: int = 99
+
+        @classmethod
+        def some_classmethod(cls) -> None:
+
+          @readonly_entrypoint
+          def nested() -> None:
+            reveal_type(cls)
+            cls.x = 99
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `cls` is `pyre_extensions.ReadOnly[typing.Type[Foo]]`.";
+      (* TODO(T130377746): Recognize attribute for `ReadOnly[Type[Foo]]` when it is the target of an
+         assignment. *)
+      "Undefined attribute [16]: `pyre_extensions.ReadOnly[typing.Type[Foo]]` has no attribute `x`.";
+    ];
+  (* TODO(T130377746): We should error when calling a readonly callable. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import readonly_entrypoint
+
+      some_global: str = ""
+
+      def main() -> None:
+        def other_nested() -> None:
+          some_global += "foo"
+
+        @readonly_entrypoint
+        def nested() -> None:
+          reveal_type(other_nested)
+          other_nested()
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `other_nested` is \
+       `pyre_extensions.ReadOnly[typing.Callable[[], None]]`.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -875,5 +1014,7 @@ let () =
          "format_string" >:: test_format_string;
          "generic_types" >:: test_generic_types;
          "refinement" >:: test_refinement;
+         "captured_variables_for_specially_decorated_functions"
+         >:: test_captured_variable_for_specially_decorated_functions;
        ]
   |> Test.run
