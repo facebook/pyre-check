@@ -443,6 +443,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     match left, right with
     | _, _ when Type.equal left right -> [constraints]
     | Type.ReadOnly _, Type.Primitive "object" -> impossible
+    | Type.Union items, Type.Primitive "object" when List.exists items ~f:Type.ReadOnly.is_readonly
+      ->
+        impossible
     | _, Type.Primitive "object" -> [constraints]
     | other, Type.Any -> [add_fallbacks other]
     | _, Type.Top -> [constraints]
