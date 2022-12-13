@@ -3489,38 +3489,34 @@ module State (Context : Context) = struct
               _;
             };
         } -> (
-        let mismatched_type = parse_refinement_annotation annotation_expression in
-        let contradiction =
-          if Type.contains_unknown mismatched_type || Type.is_any mismatched_type then
-            false
-          else
-            let { Resolved.resolved; _ } = forward_expression ~resolution value in
-            (not (Type.is_unbound resolved))
-            && (not (Type.contains_unknown resolved))
-            && (not (Type.is_any resolved))
-            && GlobalResolution.less_or_equal
-                 global_resolution
-                 ~left:resolved
-                 ~right:mismatched_type
-        in
-        let resolve ~name =
+        let resolve_non_instance ~boundary name =
           let { name = partitioned_name; attribute_path; _ } = partition_name ~resolution name in
           match
             Resolution.get_local_with_attributes resolution ~name:partitioned_name ~attribute_path
           with
           | Some { annotation = previous_annotation; _ } ->
-              let { not_consistent_with_boundary; _ } =
-                partition previous_annotation ~boundary:mismatched_type
-              in
+              let { not_consistent_with_boundary; _ } = partition previous_annotation ~boundary in
               not_consistent_with_boundary
               >>| Annotation.create_mutable
               >>| refine_local ~name
               |> Option.value ~default:resolution
           | _ -> resolution
         in
-        match contradiction, value with
+        let boundary = parse_refinement_annotation annotation_expression in
+        let is_consistent_with_boundary =
+          if Type.contains_unknown boundary || Type.is_any boundary then
+            false
+          else
+            let { Resolved.resolved; _ } = forward_expression ~resolution value in
+            (not (Type.is_unbound resolved))
+            && (not (Type.contains_unknown resolved))
+            && (not (Type.is_any resolved))
+            && GlobalResolution.less_or_equal global_resolution ~left:resolved ~right:boundary
+        in
+        match is_consistent_with_boundary, value with
         | true, _ -> Unreachable
-        | _, { Node.value = Name name; _ } when is_simple_name name -> Value (resolve ~name)
+        | _, { Node.value = Name name; _ } when is_simple_name name ->
+            Value (resolve_non_instance ~boundary name)
         | _ -> Value resolution)
     (* Is callable *)
     | Call
