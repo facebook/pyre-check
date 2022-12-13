@@ -23,3 +23,5 @@ val assert_functions : String.Set.t
 val lazy_import_functions : String.Set.t
 
 val allowlisted_callable_class_decorators : String.Set.t
+
+val privacy_zone_entrypoint_decorators : String.Set.t
