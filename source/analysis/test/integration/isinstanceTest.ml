@@ -410,6 +410,22 @@ let test_check_isinstance context =
       "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Optional[int]`.";
     ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Base: ...
+
+      class Child(Base): ...
+
+      def main(x: object) -> None:
+        if isinstance(x, (list, tuple)):
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[typing.List[typing.Any], \
+       typing.Tuple[typing.Any, ...]]`.";
+    ];
   ()
 
 

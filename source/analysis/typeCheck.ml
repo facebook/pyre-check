@@ -3418,7 +3418,24 @@ module State (Context : Context) = struct
                   existing_type
                   parsed_annotation
               then
-                Value (Annotation.create_mutable parsed_annotation |> refine_local ~name)
+                (* If we have `isinstance(x, Child)` where `x` is of type `Base`, then it is sound
+                   to refine `x` to `Child` because the runtime will not enter the branch unless `x`
+                   is an instance of `Child`. *)
+                let refined_type =
+                  if
+                    (not (Type.is_top existing_type))
+                    && GlobalResolution.less_or_equal
+                         global_resolution
+                         ~left:(Type.ReadOnly.create parsed_annotation)
+                         ~right:existing_type
+                  then
+                    (* In the case where `x` is `ReadOnly[Base]`, we need to refine it to
+                       `ReadOnly[Child]`. Otherwise, the code could modify the object. *)
+                    Type.ReadOnly.create parsed_annotation
+                  else
+                    parsed_annotation
+                in
+                Value (Annotation.create_mutable refined_type |> refine_local ~name)
               else
                 Unreachable
         in

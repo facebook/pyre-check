@@ -793,6 +793,39 @@ let test_refinement context =
         reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Base: ...
+
+      class Child(Base): ...
+
+      def main(x: ReadOnly[Base | int]) -> None:
+        if isinstance(x, Child):
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Child]`."];
+  (* If the variable has type `Top`, don't pollute the output with `ReadOnly` type. *)
+  assert_type_errors
+    {|
+      from unknown_module import Foo
+
+      variable_with_type_top: Foo
+
+      def main() -> None:
+        reveal_type(variable_with_type_top)
+
+        if isinstance(variable_with_type_top, str):
+          reveal_type(variable_with_type_top)
+    |}
+    [
+      (* This is merely one way to get a variable of type Top. *)
+      "Undefined import [21]: Could not find a module corresponding to import `unknown_module`.";
+      "Undefined or invalid type [11]: Annotation `Foo` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `variable_with_type_top` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `variable_with_type_top` is `str`.";
+    ];
   ()
 
 
