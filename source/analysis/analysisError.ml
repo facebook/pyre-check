@@ -302,10 +302,6 @@ module ReadOnly = struct
         mismatch: mismatch;
       }
     | AssigningToReadOnlyAttribute of { attribute_name: Identifier.t }
-    | RevealedType of {
-        expression: Expression.t;
-        readonlyness: ReadOnlyness.t;
-      }
     | CallingMutatingMethodOnReadOnly of {
         self_argument: Expression.t;
         self_argument_type: Type.t;
@@ -362,14 +358,6 @@ module ReadOnly = struct
         [Format.asprintf "%s expected `%a` but got `%a`." target pp_type expected pp_type actual]
     | AssigningToReadOnlyAttribute { attribute_name } ->
         [Format.asprintf "Cannot assign to attribute `%s` since it is readonly" attribute_name]
-    | RevealedType { expression; readonlyness } ->
-        [
-          Format.asprintf
-            "Revealed type for `%s` is %a."
-            (Ast.Transform.sanitize_expression expression |> Expression.show)
-            ReadOnlyness.pp
-            readonlyness;
-        ]
     | CallingMutatingMethodOnReadOnly { self_argument; self_argument_type; method_name } ->
         let self_argument_string =
           Ast.Transform.sanitize_expression self_argument |> Expression.show
@@ -439,15 +427,6 @@ module ReadOnly = struct
         AssigningToReadOnlyAttribute { attribute_name = right_attribute_name } )
       when Identifier.equal left_attribute_name right_attribute_name ->
         Some left
-    | ( RevealedType { expression = left_expression; readonlyness = left_readonlyness },
-        RevealedType { expression = right_expression; readonlyness = right_readonlyness } )
-      when [%compare.equal: Expression.t] left_expression right_expression ->
-        RevealedType
-          {
-            expression = left_expression;
-            readonlyness = ReadOnlyness.join left_readonlyness right_readonlyness;
-          }
-        |> Option.some
     | _ -> None
 
 
@@ -455,7 +434,6 @@ module ReadOnly = struct
     | IncompatibleVariableType _ -> 3001
     | IncompatibleParameterType _ -> 3002
     | AssigningToReadOnlyAttribute _ -> 3003
-    | RevealedType _ -> 3004
     | CallingMutatingMethodOnReadOnly _ -> 3005
 
 
@@ -463,7 +441,6 @@ module ReadOnly = struct
     | IncompatibleVariableType _ -> "ReadOnly violation - Incompatible variable type"
     | IncompatibleParameterType _ -> "ReadOnly violation - Incompatible parameter type"
     | AssigningToReadOnlyAttribute _ -> "ReadOnly violation - Assigning to readonly attribute"
-    | RevealedType _ -> "ReadOnly - Revealed type"
     | CallingMutatingMethodOnReadOnly _ ->
         "ReadOnly violation - Calling mutating method on readonly type"
 

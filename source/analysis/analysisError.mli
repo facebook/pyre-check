@@ -260,10 +260,6 @@ module ReadOnly : sig
         mismatch: mismatch;
       }
     | AssigningToReadOnlyAttribute of { attribute_name: Identifier.t }
-    | RevealedType of {
-        expression: Expression.t;
-        readonlyness: ReadOnlyness.t;
-      }
     | CallingMutatingMethodOnReadOnly of {
         self_argument: Expression.t;
         self_argument_type: Type.t;
