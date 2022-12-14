@@ -289,14 +289,13 @@ let test_parse_merged_sourcedb context =
   in
   let assert_not_parsed output =
     try
-      let _ = Interface.V1.parse_buck_build_output output in
+      let _ = Yojson.Safe.from_string output |> Interface.V2.parse_merged_sourcedb in
       let message = Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
     | Interface.JsonError _ -> ()
   in
   assert_not_parsed "42";
-  assert_not_parsed "derp";
   assert_not_parsed {|"abc"|};
   assert_not_parsed "[]";
   assert_not_parsed {| { "foo": 42 } |};
