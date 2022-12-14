@@ -226,10 +226,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   (* Store all triggered sinks seen in `triggered_sinks_to_propagate` to propagate
    * them up in the backward analysis. *)
   let store_triggered_sinks_to_propagate ~call_location ~triggered_sinks_for_call ~sink_taint =
-    if not (Issue.TriggeredSinkHashSet.is_empty triggered_sinks_for_call) then
+    if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks_for_call) then
       let add_sink ~root sink sofar =
         match Sinks.extract_partial_sink sink with
-        | Some sink when Issue.TriggeredSinkHashSet.mem triggered_sinks_for_call sink ->
+        | Some sink when Issue.TriggeredSinkHashMap.mem triggered_sinks_for_call sink ->
             let taint =
               BackwardTaint.singleton
                 CallInfo.declaration
@@ -762,7 +762,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     =
     (* Set of sinks of combined source rules triggered (i.e, a source flowed to
      * a partial sink) for the current call expression. *)
-    let triggered_sinks_for_call = Issue.TriggeredSinkHashSet.create () in
+    let triggered_sinks_for_call = Issue.TriggeredSinkHashMap.create () in
 
     (* Extract the implicit self, if any *)
     let self =

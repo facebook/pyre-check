@@ -233,17 +233,42 @@ let generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree 
   { Candidate.flows; key = { location; sink_handle } }
 
 
-(* A set of triggered sink kinds. *)
-module TriggeredSinkHashSet = struct
-  type t = String.Hash_set.t
+(* A map from triggered sink kinds, which are not issues because the other sources are missing, to
+   the sources that match other sinks in the multi-source rules as well as their corresponding
+   call_infos -- the pair of which constitutes the first hops of the matched source traces. *)
+module TriggeredSinkHashMap = struct
+  module Hashable = Core.Hashable.Make (String)
+  module HashMap = Hashable.Table
 
-  let create () = String.Hash_set.create ()
+  type t = ExtraTraceFirstHop.Set.t HashMap.t
 
-  let is_empty set = Hash_set.is_empty set
+  let create () = HashMap.create ()
 
-  let mem set partial_sink = Hash_set.mem set (Sinks.show_partial_sink partial_sink)
+  let is_empty map = HashMap.is_empty map
 
-  let add set partial_sink = Hash_set.add set (Sinks.show_partial_sink partial_sink)
+  let convert_to_key partial_sink = Sinks.show_partial_sink partial_sink
+
+  let mem map partial_sink = HashMap.mem map (convert_to_key partial_sink)
+
+  let add map ~partial_sink ~extra_trace:({ ExtraTraceFirstHop.call_info; _ } as extra_trace) =
+    let add_extra_trace =
+      match call_info with
+      | CallInfo.CallSite _ -> (* Show subtraces only when a callee exists *) true
+      | _ -> false
+    in
+    let update_extra_traces = function
+      | Some extra_traces ->
+          if add_extra_trace then
+            ExtraTraceFirstHop.Set.add extra_trace extra_traces
+          else
+            extra_traces
+      | None ->
+          if add_extra_trace then
+            ExtraTraceFirstHop.Set.singleton extra_trace
+          else
+            ExtraTraceFirstHop.Set.bottom
+    in
+    HashMap.update map (convert_to_key partial_sink) ~f:update_extra_traces
 end
 
 (* A map from locations to a set of triggered sinks.
@@ -261,24 +286,6 @@ module TriggeredSinkLocationMap = struct
 
 
   let get map ~location = Hashtbl.find map location |> Option.value ~default:BackwardState.bottom
-end
-
-module TriggeredFlows = struct
-  type t = {
-    (* Potential issues, i.e both partial sinks are triggered. *)
-    candidates: Candidate.t list;
-    (* Partial sinks triggered that are not issues, because the other source is missing. *)
-    triggered_sinks: Sinks.partial_sink list;
-  }
-
-  let empty = { candidates = []; triggered_sinks = [] }
-
-  let add_candidate { candidates; triggered_sinks } candidate =
-    { candidates = candidate :: candidates; triggered_sinks }
-
-
-  let add_triggered_sink { candidates; triggered_sinks } triggered_sink =
-    { candidates; triggered_sinks = triggered_sink :: triggered_sinks }
 end
 
 let compute_triggered_flows
@@ -299,18 +306,22 @@ let compute_triggered_flows
       ~init:[]
       sink_tree
   in
-  let sources =
-    if not (List.is_empty partial_sinks) then
-      ForwardState.Tree.fold ForwardTaint.kind ~f:List.cons ~init:[] source_tree
-      |> List.map ~f:Sources.discard_sanitize_transforms
-    else
+  let call_infos_and_sources =
+    if List.is_empty partial_sinks then
       []
+    else
+      ForwardState.Tree.reduce
+        ForwardTaint.kind
+        ~using:(Context (ForwardTaint.call_info, Acc))
+        ~f:(fun call_info source sofar -> (call_info, source) :: sofar)
+        ~init:[]
+        source_tree
   in
-  let check_source_sink_flows ~triggered_flows ~source ~partial_sink =
+  let check_source_sink_flows ~candidates ~call_info ~source ~partial_sink =
     TaintConfiguration.get_triggered_sink taint_configuration ~partial_sink ~source
     |> function
     | Some (Sinks.TriggeredPartialSink triggered_sink) ->
-        if TriggeredSinkHashSet.mem triggered_sinks_for_call partial_sink then
+        if TriggeredSinkHashMap.mem triggered_sinks_for_call partial_sink then
           (* We have both pairs, let's check the flow directly for this sink being triggered. *)
           let candidate =
             generate_source_sink_matches
@@ -324,19 +335,26 @@ let compute_triggered_flows
                       (Sinks.TriggeredPartialSink partial_sink)
                       Frame.initial))
           in
-          TriggeredFlows.add_candidate triggered_flows candidate
+          candidate :: candidates
         else
-          TriggeredFlows.add_triggered_sink triggered_flows triggered_sink
-    | _ -> triggered_flows
+          let extra_trace = { ExtraTraceFirstHop.call_info; leaf_kind = Source source } in
+          let () =
+            TriggeredSinkHashMap.add
+              triggered_sinks_for_call
+              ~partial_sink:triggered_sink
+              ~extra_trace
+          in
+          candidates
+    | _ -> candidates
   in
-  let check_sink_flows triggered_flows partial_sink =
+  let check_sink_flows candidates partial_sink =
     List.fold
-      ~f:(fun triggered_flows source ->
-        check_source_sink_flows ~triggered_flows ~source ~partial_sink)
-      ~init:triggered_flows
-      sources
+      ~f:(fun candidates (call_info, source) ->
+        check_source_sink_flows ~candidates ~call_info ~source ~partial_sink)
+      ~init:candidates
+      call_infos_and_sources
   in
-  List.fold ~f:check_sink_flows ~init:TriggeredFlows.empty partial_sinks
+  List.fold ~f:check_sink_flows ~init:[] partial_sinks
 
 
 module PartitionedFlow = struct
@@ -616,7 +634,7 @@ module Candidates = struct
       ~source_tree
       ~sink_tree
     =
-    let { TriggeredFlows.candidates = new_candidates; triggered_sinks = new_triggered_sinks } =
+    let new_candidates =
       compute_triggered_flows
         ~taint_configuration
         ~triggered_sinks_for_call
@@ -625,7 +643,6 @@ module Candidates = struct
         ~source_tree
         ~sink_tree
     in
-    List.iter new_triggered_sinks ~f:(TriggeredSinkHashSet.add triggered_sinks_for_call);
     List.iter new_candidates ~f:(add_candidate candidates)
 
 

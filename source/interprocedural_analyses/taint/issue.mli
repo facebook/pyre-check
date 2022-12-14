@@ -89,8 +89,10 @@ val to_json
 
 val to_error : taint_configuration:TaintConfiguration.Heap.t -> t -> Error.t
 
-(* A set of triggered sink kinds. *)
-module TriggeredSinkHashSet : sig
+(* A map from triggered sink kinds, which are not issues because the other sources are missing, to
+   the sources that match other sinks in the multi-source rules as well as their corresponding
+   call_infos -- the pair of which constitutes the first hops of the matched source traces. *)
+module TriggeredSinkHashMap : sig
   type t
 
   val create : unit -> t
@@ -99,7 +101,7 @@ module TriggeredSinkHashSet : sig
 
   val mem : t -> Sinks.partial_sink -> bool
 
-  val add : t -> Sinks.partial_sink -> unit
+  val add : t -> partial_sink:Sinks.partial_sink -> extra_trace:Domains.ExtraTraceFirstHop.t -> unit
 end
 
 (* A map from locations to a backward taint of triggered sinks.
@@ -140,7 +142,7 @@ module Candidates : sig
   val check_triggered_flows
     :  t ->
     taint_configuration:TaintConfiguration.Heap.t ->
-    triggered_sinks_for_call:TriggeredSinkHashSet.t ->
+    triggered_sinks_for_call:TriggeredSinkHashMap.t ->
     location:Location.WithModule.t ->
     sink_handle:SinkHandle.t ->
     source_tree:ForwardState.Tree.t ->

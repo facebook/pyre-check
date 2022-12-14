@@ -297,6 +297,7 @@ module PartialSinkConverter = struct
 
 
   let get_triggered_sink sink_to_sources ~partial_sink ~source =
+    let source = Sources.discard_sanitize_transforms source in
     match Sinks.show_partial_sink partial_sink |> String.Map.Tree.find sink_to_sources with
     | Some source_and_sink_list ->
         List.find source_and_sink_list ~f:(fun (supported_sources, _) ->
