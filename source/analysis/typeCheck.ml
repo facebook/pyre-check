@@ -7316,8 +7316,8 @@ let check_define
         EnvironmentControls.TypeCheckControls.constraint_solving_style;
         include_type_errors;
         include_local_annotations;
-        include_readonly_errors;
         debug;
+        _;
       }
     ~call_graph_builder:(module Builder : Callgraph.Builder)
     ~resolution
@@ -7342,7 +7342,7 @@ let check_define
         module Builder = Builder
       end
       in
-      let { resolution; errors = type_errors; local_annotations; callees } =
+      let { errors = type_errors; local_annotations; callees; _ } =
         exit_state ~resolution (module Context)
       in
       let errors =
@@ -7353,21 +7353,7 @@ let check_define
             else
               UninitializedLocalCheck.check_define ~qualifier define_node
           in
-          let readonly_errors =
-            if include_readonly_errors then
-              ReadOnlyCheck.readonly_errors_for_define
-                ~type_resolution_for_statement:
-                  (resolution_with_key
-                     (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-                     (module DummyContext))
-                ~global_resolution:(Resolution.global_resolution resolution)
-                ~local_annotations:(local_annotations >>| LocalAnnotationMap.read_only)
-                ~qualifier
-                define_node
-            else
-              []
-          in
-          Some (uninitialized_local_errors @ readonly_errors @ type_errors)
+          Some (uninitialized_local_errors @ type_errors)
         else
           None
       in
