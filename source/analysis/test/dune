@@ -9,8 +9,8 @@
    fixpointTest globalResolutionTest inlineDecoratorTest latticeOfMapsTest
    matchTranslateTest locationBasedLookupTest moduleTrackerTest
    overlaidEnvironmentTest newTypeTest namedTupleTest preprocessingTest
-   readOnlynessTest refinementTest resolutionTest resolvedCallableTest scopeTest
-   sqlAlchemyTest typeCheckTest typeConstraintsTest typedDictionaryAttributeTest
+   refinementTest resolutionTest resolvedCallableTest scopeTest sqlAlchemyTest
+   typeCheckTest typeConstraintsTest typedDictionaryAttributeTest
    typeOperationTest typeOrderTest typeTest unannotatedGlobalEnvironmentTest
    uninitializedLocalCheckTest weakTopologicalOrderTest)
  (preprocess
