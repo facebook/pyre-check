@@ -8,9 +8,6 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open Core
-
-exception ParserError of string
-
 module Log = Log
 
 let ( >>| ) = Option.( >>| )

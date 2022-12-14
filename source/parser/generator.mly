@@ -30,7 +30,7 @@
         in
         let decorated = { value with signature } in
         { Node.location; value = Define decorated }
-    | _ -> raise (ParserError "Cannot decorate statement")
+    | _ -> raise (Failure "Cannot decorate statement")
 
   type entry =
     | Entry of Dictionary.Entry.t
@@ -911,7 +911,7 @@ async_statement:
             Node.location;
             value = With with_async;
           }
-      | _ -> raise (ParserError "Async not supported on statement.")
+      | _ -> raise (Failure "Async not supported on statement.")
     }
   ;
 
@@ -1114,7 +1114,7 @@ define_parameters:
             |> snd
             |> fun identifier -> "**" ^ identifier
         | _ ->
-            raise (ParserError "Unexpected parameters") in
+            raise (Failure "Unexpected parameters") in
       identifier expression
     }
   ;
@@ -1532,7 +1532,7 @@ expression_list:
             Node.location = { head.Node.location with Location.stop = Node.stop last };
             value = Expression.Tuple items;
           }
-      | _ -> raise (ParserError "invalid atom")
+      | _ -> raise (Failure "invalid atom")
     }
   ;
 
@@ -1676,7 +1676,7 @@ test_list:
             Node.location = { head.Node.location with Location.stop = Node.stop last };
             value = Expression.Tuple items;
           }
-      | _ -> raise (ParserError "invalid atom")
+      | _ -> raise (Failure "invalid atom")
     }
   ;
 

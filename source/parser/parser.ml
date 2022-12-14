@@ -332,7 +332,6 @@ let parse ?start_line ?start_column ?relative lines =
     |> List.map ~f:ParserToAst.convert_statement
     |> Result.return
   with
-  | Pyre.ParserError _
   | Generator.Error
   | Failure _ ->
       let location =
