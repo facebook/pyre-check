@@ -259,6 +259,16 @@ let errors_from_not_found
   | UnexpectedKeyword name -> [None, Error.UnexpectedKeyword { callee; name }]
 
 
+let incompatible_variable_type_error_kind
+    ~declare_location
+    ({ Error.mismatch = { expected; actual; _ }; _ } as incompatible_type)
+  =
+  if Type.ReadOnly.is_readonly actual && not (Type.ReadOnly.is_readonly expected) then
+    Error.ReadOnlynessMismatch (IncompatibleVariableType { incompatible_type; declare_location })
+  else
+    Error.IncompatibleVariableType { incompatible_type; declare_location }
+
+
 let rec unpack_callable_and_self_argument ~signature_select ~global_resolution input =
   let get_call_attribute parent =
     GlobalResolution.attribute_from_annotation global_resolution ~parent ~name:"__call__"
@@ -4229,19 +4239,16 @@ module State (Context : Context) = struct
                               }
                             |> fun kind -> emit_error ~errors ~location ~kind
                         | None when is_incompatible ->
-                            Error.IncompatibleVariableType
+                            incompatible_variable_type_error_kind
+                              ~declare_location:(instantiate_path ~global_resolution location)
                               {
-                                incompatible_type =
-                                  {
-                                    Error.name = reference;
-                                    mismatch =
-                                      Error.create_mismatch
-                                        ~resolution:global_resolution
-                                        ~actual:resolved
-                                        ~expected
-                                        ~covariant:true;
-                                  };
-                                declare_location = instantiate_path ~global_resolution location;
+                                Error.name = reference;
+                                mismatch =
+                                  Error.create_mismatch
+                                    ~resolution:global_resolution
+                                    ~actual:resolved
+                                    ~expected
+                                    ~covariant:true;
                               }
                             |> fun kind -> emit_error ~errors ~location ~kind
                         | _ -> errors
@@ -5532,24 +5539,18 @@ module State (Context : Context) = struct
           then
             errors
           else
-            emit_error
-              ~errors
-              ~location
-              ~kind:
-                (Error.IncompatibleVariableType
-                   {
-                     incompatible_type =
-                       {
-                         name = Reference.create name;
-                         mismatch =
-                           Error.create_mismatch
-                             ~resolution:global_resolution
-                             ~expected:annotation
-                             ~actual:default
-                             ~covariant:true;
-                       };
-                     declare_location = instantiate_path ~global_resolution location;
-                   })
+            incompatible_variable_type_error_kind
+              ~declare_location:(instantiate_path ~global_resolution location)
+              {
+                Error.name = Reference.create name;
+                mismatch =
+                  Error.create_mismatch
+                    ~resolution:global_resolution
+                    ~expected:annotation
+                    ~actual:default
+                    ~covariant:true;
+              }
+            |> fun kind -> emit_error ~errors ~location ~kind
         in
         let add_missing_parameter_annotation_error ~errors ~given_annotation annotation =
           let name = name |> Identifier.sanitized in

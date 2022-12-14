@@ -20,8 +20,8 @@ let test_ignore_readonly context =
         return z
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   (* The type checking analysis will check compatibility for the type wrapped by `ReadOnly`. *)
   assert_type_errors
@@ -32,8 +32,8 @@ let test_ignore_readonly context =
         y: str = x
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `str` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `str` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors
     {|
@@ -48,10 +48,10 @@ let test_ignore_readonly context =
         y: Literal[False] = always_false and True
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type \
+      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type \
        `typing_extensions.Literal[True]` but is used as type \
        `pyre_extensions.ReadOnly[typing_extensions.Literal[True]]`.";
-      "Incompatible variable type [9]: y is declared to have type \
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
        `typing_extensions.Literal[False]` but is used as type \
        `pyre_extensions.ReadOnly[typing_extensions.Literal[False]]`.";
     ];
@@ -84,8 +84,8 @@ let test_readonly_configuration_flag context =
         z: int = y
     |}
     [
-      "Incompatible variable type [9]: z is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   (* Test readonly violations at the top level. *)
   assert_type_errors_including_readonly
@@ -96,8 +96,8 @@ let test_readonly_configuration_flag context =
       y: int = x
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   ()
 
@@ -116,8 +116,8 @@ let test_assignment context =
         z: int = y
     |}
     [
-      "Incompatible variable type [9]: z is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -160,8 +160,8 @@ let test_assignment context =
         x2: int = mutable_foo.mutable_attribute
     |}
     [
-      "Incompatible variable type [9]: x1 is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -181,8 +181,8 @@ let test_assignment context =
         x2: int = mutable_foo.foo_attribute.bar_attribute
     |}
     [
-      "Incompatible variable type [9]: x1 is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -199,10 +199,10 @@ let test_assignment context =
         x2: int = mutable_foo.readonly_attribute
     |}
     [
-      "Incompatible variable type [9]: x1 is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible variable type [9]: x2 is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x2 is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   (* Handle attribute types that have both `ReadOnly[...]` and `Type[...]`. *)
   assert_type_errors_including_readonly
@@ -220,10 +220,10 @@ let test_assignment context =
         y: int = type_readonly_foo.some_attribute
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -320,6 +320,20 @@ let test_assignment context =
         x = 99
     |}
     [];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import List
+
+      def main(xs: List[ReadOnly[int]]) -> None:
+        y: List[int] = xs
+    |}
+    [
+      (* TODO(T130377746): We should emit a readonly violation error here instead of the regular
+         incompatible variable type error. *)
+      "Incompatible variable type [9]: y is declared to have type `List[int]` but is used as type \
+       `List[pyre_extensions.ReadOnly[int]]`.";
+    ];
   ()
 
 
@@ -338,8 +352,8 @@ let test_function_call context =
         y: int = expect_mutable_and_readonly(x, x)
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
       "Incompatible parameter type [6]: In call `expect_mutable_and_readonly`, for 1st positional \
        argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
@@ -353,8 +367,8 @@ let test_function_call context =
         y: int = foo(foo(x))
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
       "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected `int` \
        but got `pyre_extensions.ReadOnly[int]`.";
     ];
@@ -385,8 +399,8 @@ let test_function_call context =
         y: int = foo.return_readonly(x)
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
       "Incompatible parameter type [6]: In call `Foo.return_readonly`, for 1st positional \
        argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
     ];
@@ -405,8 +419,8 @@ let test_function_call context =
         y: int = return_foo(x).return_readonly(x)
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
       "Incompatible parameter type [6]: In call `return_foo`, for 1st positional argument, \
        expected `int` but got `pyre_extensions.ReadOnly[int]`.";
       "Incompatible parameter type [6]: In call `Foo.return_readonly`, for 1st positional \
@@ -531,8 +545,8 @@ let test_function_call context =
         x: int = undefined(my_readonly)
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -576,8 +590,8 @@ let test_await context =
         y: int = await return_readonly()
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   ()
 
@@ -595,8 +609,8 @@ let test_parameters context =
         y2: ReadOnly[int] = my_mutable
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -616,12 +630,12 @@ let test_parameters context =
         y3: int = z
     |}
     [
-      "Incompatible variable type [9]: y1 is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible variable type [9]: y2 is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
-      "Incompatible variable type [9]: y3 is declared to have type `int` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y3 is declared to have type `int` \
+       but is used as type `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors_including_readonly
     {|
