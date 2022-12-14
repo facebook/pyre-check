@@ -193,21 +193,23 @@ let errors_from_not_found
                 AttributeResolution.SignatureSelection.reserved_position_for_self_argument
               && Type.ReadOnly.is_readonly self_argument_type
             in
-            let default_error =
+            let default_location_and_error =
               match callee, self_argument, callee_base_expression with
               | Some method_name, Some self_argument_type, Some self_argument
                 when is_mutating_method_on_readonly self_argument_type ->
-                  Error.ReadOnlynessMismatch
-                    (CallingMutatingMethodOnReadOnly
-                       { self_argument; self_argument_type; method_name })
+                  ( Node.location self_argument,
+                    Error.ReadOnlynessMismatch
+                      (CallingMutatingMethodOnReadOnly
+                         { self_argument; self_argument_type; method_name }) )
               | _ ->
                   if Type.is_primitive_string actual && Type.is_literal_string expected then
-                    Error.NonLiteralString { name; position; callee }
+                    location, Error.NonLiteralString { name; position; callee }
                   else
-                    Error.IncompatibleParameterType
-                      { keyword_argument_name = name; position; callee; mismatch }
+                    ( location,
+                      Error.IncompatibleParameterType
+                        { keyword_argument_name = name; position; callee; mismatch } )
             in
-            let kind =
+            let location, kind =
               match self_argument, callee >>| Reference.last with
               | Some self_annotation, Some callee_name when is_operator callee_name -> (
                   let is_uninverted = Option.equal Type.equal self_argument original_target in
@@ -225,14 +227,16 @@ let errors_from_not_found
                         else
                           actual, self_annotation
                       in
-                      Error.UnsupportedOperand
-                        (Binary { operator_name; left_operand; right_operand })
-                  | _ -> default_error)
+                      ( location,
+                        Error.UnsupportedOperand
+                          (Binary { operator_name; left_operand; right_operand }) )
+                  | _ -> default_location_and_error)
               | Some (Type.Primitive _ as annotation), Some method_name ->
                   GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
                   >>= typed_dictionary_error ~mismatch ~method_name ~position
-                  |> Option.value ~default:default_error
-              | _ -> default_error
+                  >>| (fun kind -> location, kind)
+                  |> Option.value ~default:default_location_and_error
+              | _ -> default_location_and_error
             in
             [Some location, kind]
         | MismatchWithUnpackableType { variable; mismatch } ->

@@ -449,6 +449,7 @@ let test_function_call context =
   (* A method with readonly `self` can be called on either mutable or readonly objects. However, the
      method itself cannot call other mutating methods. *)
   assert_type_errors_including_readonly
+    ~include_line_numbers:true
     {|
       from pyre_extensions import ReadOnly
 
@@ -467,7 +468,7 @@ let test_function_call context =
         mutable_foo.expect_readonly_self(x)
     |}
     [
-      "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+      "8: ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
        `Foo.expect_mutable_self` may modify its object. Cannot call it on readonly expression \
        `self` of type `pyre_extensions.ReadOnly[Foo]`.";
     ];
