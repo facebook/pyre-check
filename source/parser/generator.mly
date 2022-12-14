@@ -396,12 +396,17 @@
 %nonassoc LEFTPARENS
 
 
-%start <Statement.t list> parse
+%start <Statement.t list> parse_module
+%start <Expression.t> parse_expression
 
 %%
 
-parse:
+parse_module:
   | statements = statements; EOF { snd statements }
+  ;
+
+parse_expression:
+  | expression = expression; EOF { expression }
   ;
 
 (* Statements. *)

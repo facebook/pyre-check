@@ -58,14 +58,198 @@ let sanitize_input lines =
   |> fun input -> input ^ "\n"
 
 
-(* Transform parsed expressions and statements into their AST. *)
+let parse_symbol ~generator_parse_function ~start_line ~start_column ~file_name input =
+  let buffer =
+    let buffer = Lexing.from_string input in
+    buffer.Lexing.lex_curr_p <-
+      { Lexing.pos_fname = file_name; pos_lnum = start_line; pos_bol = -start_column; pos_cnum = 0 };
+    buffer
+  in
+  let state = Lexer.State.initial () in
+  try Ok (generator_parse_function (Lexer.read state) buffer) with
+  | Error error -> Error { error with file_name }
+  | Generator.Error
+  | Failure _ ->
+      let location =
+        Location.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p
+      in
+      let line_number = location.Location.start.Location.line - 1 in
+      let content = List.nth (String.split ~on:'\n' input) line_number in
+      Error { Error.location; file_name; content }
+
+
+(* Transform parsed expressions and statements into their AST.
+ *
+ * This can throw `Error` exceptions when parsing format strings.
+ *)
 module ParserToAst = struct
   open ParserExpression
   open ParserStatement
   module AstExpression = Ast.Expression
   module AstStatement = Ast.Statement.Statement
 
-  let rec convert_expression { Node.location; value } =
+  let rec expand_format_string substrings =
+    let module State = struct
+      type kind =
+        | Literal
+        | Expression
+
+      type t = {
+        kind: kind;
+        start_line: int;
+        start_column: int;
+        content: string;
+      }
+    end
+    in
+    let module Split = struct
+      type t =
+        | Expression of {
+            start_line: int;
+            start_column: int;
+            content: string;
+          }
+        | Literal of string Node.t
+    end
+    in
+    let expand_substring
+        sofar
+        {
+          Substring.kind;
+          location = { Location.start = { Location.line; column; _ }; _ } as location;
+          value;
+        }
+      =
+      match kind with
+      | Substring.Kind.Literal ->
+          AstExpression.Substring.Literal (Node.create ~location value) :: sofar
+      | Substring.Kind.RawFormat ->
+          let parse ~sofar = function
+            | Split.Literal literal -> AstExpression.Substring.Literal literal :: sofar
+            | Split.Expression { start_line; start_column; content } -> (
+                let string = Format.sprintf "(%s)" content in
+                let start_column = start_column - 1 in
+                match
+                  parse_symbol
+                    ~generator_parse_function:Generator.parse_expression
+                    ~start_line
+                    ~start_column
+                    ~file_name:""
+                    string
+                with
+                | Ok expression ->
+                    AstExpression.Substring.Format (convert_expression expression) :: sofar
+                | Error error -> raise (Error error))
+          in
+          let value_length = String.length value in
+          let rec expand_fstring input_string ~sofar ~line_offset ~column_offset ~index state =
+            if index = value_length then
+              match state with
+              | { State.kind = Literal; content = ""; _ } ->
+                  (* This means the expansion ends cleanly. *)
+                  sofar
+              | { State.kind = Expression; _ } ->
+                  (* The fstring contatins unclosed an curly brace, which is malformed. *)
+                  sofar
+              | { State.kind = Literal; start_line = line; start_column = column; content } ->
+                  (* This means the fstring ends with some literal characters as opposed to an
+                     expression. *)
+                  let split =
+                    let location =
+                      {
+                        Location.start = { Location.line; column };
+                        stop = { Location.line = line_offset; column = column_offset };
+                      }
+                    in
+                    Split.Literal (Node.create content ~location)
+                  in
+                  parse ~sofar split
+            else
+              let token = input_string.[index] in
+              let sofar, next_state =
+                match token, state with
+                | '{', { State.kind = Literal; content = ""; _ } ->
+                    ( sofar,
+                      {
+                        State.kind = Expression;
+                        start_line = line_offset;
+                        start_column = column_offset + 1;
+                        content = "";
+                      } )
+                | '{', { State.kind = Literal; start_line; start_column; content } ->
+                    let split =
+                      let location =
+                        {
+                          Location.start = { Location.line = start_line; column = start_column };
+                          stop = { Location.line = line_offset; column = column_offset };
+                        }
+                      in
+                      Split.Literal (Node.create content ~location)
+                    in
+                    ( parse ~sofar split,
+                      {
+                        State.kind = Expression;
+                        start_line = line_offset;
+                        start_column = column_offset + 1;
+                        content = "";
+                      } )
+                | '{', { State.kind = Expression; start_line; start_column; content = "" } ->
+                    sofar, { State.kind = Literal; start_line; start_column; content = "{{" }
+                (* NOTE: this does not account for nested expressions in e.g. format specifiers. *)
+                | '}', { State.kind = Expression; start_line; start_column; content } ->
+                    let split = Split.Expression { start_line; start_column; content } in
+                    ( parse ~sofar split,
+                      {
+                        State.kind = Literal;
+                        start_line = line_offset;
+                        start_column = column_offset + 1;
+                        content = "";
+                      } )
+                (* Ignore leading whitespace in expressions. *)
+                | (' ' | '\t'), ({ State.kind = Expression; content = ""; _ } as expression) ->
+                    sofar, expression
+                | _, { State.kind = Literal; start_line; start_column; content } ->
+                    ( sofar,
+                      {
+                        State.kind = Literal;
+                        start_line;
+                        start_column;
+                        content = content ^ Char.to_string token;
+                      } )
+                | _, { State.kind = Expression; start_line; start_column; content } ->
+                    ( sofar,
+                      {
+                        State.kind = Expression;
+                        start_line;
+                        start_column;
+                        content = content ^ Char.to_string token;
+                      } )
+              in
+              let line_offset, column_offset =
+                match token with
+                | '\n' -> line_offset + 1, 0
+                | _ -> line_offset, column_offset + 1
+              in
+              expand_fstring
+                input_string
+                ~sofar
+                ~line_offset
+                ~column_offset
+                ~index:(index + 1)
+                next_state
+          in
+          expand_fstring
+            value
+            ~sofar
+            ~line_offset:line
+            ~column_offset:column
+            ~index:0
+            { State.kind = Literal; start_line = line; start_column = column; content = "" }
+    in
+    List.fold substrings ~init:[] ~f:expand_substring |> List.rev
+
+
+  and convert_expression { Node.location; value } =
     let convert_entry { Dictionary.Entry.key; value } =
       {
         AstExpression.Dictionary.Entry.key = convert_expression key;
@@ -115,12 +299,7 @@ module ParserToAst = struct
           }
         |> Node.create ~location
     | FormatString substrings ->
-        let convert_substring { Substring.value; location; _ } =
-          (* FIXME: The legacy parser no longer has the capability of parsing expressions in
-             fstrings. *)
-          AstExpression.Substring.Literal (Node.create ~location value)
-        in
-        AstExpression.Expression.FormatString (List.map substrings ~f:convert_substring)
+        AstExpression.Expression.FormatString (expand_format_string substrings)
         |> Node.create ~location
     | Lambda { Lambda.parameters; body } ->
         AstExpression.Expression.Lambda
@@ -314,33 +493,21 @@ module ParserToAst = struct
 end
 
 let parse ?start_line ?start_column ?relative lines =
+  let open Core.Result in
   let input = sanitize_input lines in
+  let start_line = Option.value start_line ~default:1 in
+  let start_column = Option.value start_column ~default:0 in
   let file_name = Option.value relative ~default:"$invalid_path" in
-  let buffer =
-    let buffer = Lexing.from_string input in
-    buffer.Lexing.lex_curr_p <-
-      {
-        Lexing.pos_fname = file_name;
-        pos_lnum = Option.value start_line ~default:1;
-        pos_bol = -Option.value start_column ~default:0;
-        pos_cnum = 0;
-      };
-    buffer
+  let statements =
+    parse_symbol
+      ~generator_parse_function:Generator.parse_module
+      ~start_line
+      ~start_column
+      ~file_name
+      input
   in
-  let state = Lexer.State.initial () in
-  try
-    Generator.parse (Lexer.read state) buffer
-    |> List.map ~f:ParserToAst.convert_statement
-    |> Result.return
-  with
-  | Generator.Error
-  | Failure _ ->
-      let location =
-        Location.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p
-      in
-      let line_number = location.Location.start.Location.line - 1 in
-      let content = List.nth (String.split ~on:'\n' input) line_number in
-      Error { Error.location; file_name; content }
+  try statements >>| List.map ~f:ParserToAst.convert_statement with
+  | Error error -> Error { error with file_name }
 
 
 let parse_exn ?start_line ?start_column ?relative lines =

@@ -6097,6 +6097,132 @@ let test_walrus_operator _ =
   assert_not_parsed "(a := 1) := 2"
 
 
+let test_format_string _ =
+  let assert_format_string source value =
+    let parsed_source = parse_untrimmed source in
+    let found_any =
+      Visit.collect_locations parsed_source |> List.for_all ~f:(Location.equal Location.any)
+    in
+    if found_any then
+      Printf.printf "\nLocation.any\n  found in parse of %s\n" source;
+    assert_false found_any;
+    assert_source_equal
+      ~location_insensitive:true
+      (Source.create [+Statement.Expression (+Expression.FormatString value)])
+      parsed_source
+  in
+  assert_format_string "f'foo'" [Substring.Literal (+"foo")];
+  assert_format_string "f'{1}'" [Substring.Format (+Expression.Constant (Constant.Integer 1))];
+  assert_format_string
+    "f'foo{1}'"
+    [Substring.Literal (+"foo"); Substring.Format (+Expression.Constant (Constant.Integer 1))];
+  assert_format_string
+    "f'foo{1}' 'foo{2}'"
+    [
+      Substring.Literal (+"foo");
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
+      Substring.Literal (+"foo{2}");
+    ];
+
+  assert_format_string
+    "'foo{1}' f'foo{2}'"
+    [
+      Substring.Literal (+"foo{1}");
+      Substring.Literal (+"foo");
+      Substring.Format (+Expression.Constant (Constant.Integer 2));
+    ];
+  assert_format_string
+    "f'foo{1}' f'foo{2}'"
+    [
+      Substring.Literal (+"foo");
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
+      Substring.Literal (+"foo");
+      Substring.Format (+Expression.Constant (Constant.Integer 2));
+    ];
+  assert_format_string
+    "f'foo{1}{2}foo'"
+    [
+      Substring.Literal (+"foo");
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
+      Substring.Format (+Expression.Constant (Constant.Integer 2));
+      Substring.Literal (+"foo");
+    ];
+  assert_format_string "f'foo{{1}}'" [Substring.Literal (+"foo"); Substring.Literal (+"{{1}}")];
+  assert_format_string
+    "f'foo{{ {1} }}'"
+    [
+      Substring.Literal (+"foo");
+      Substring.Literal (+"{{ ");
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
+      Substring.Literal (+" }}");
+    ];
+  assert_format_string
+    "f'foo{{{1} }}'"
+    [
+      Substring.Literal (+"foo");
+      Substring.Literal (+"{{");
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
+      Substring.Literal (+" }}");
+    ];
+  assert_format_string
+    "f'foo{{ {1}}}'"
+    [
+      Substring.Literal (+"foo");
+      Substring.Literal (+"{{ ");
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
+      Substring.Literal (+"}}");
+    ];
+  assert_format_string
+    "f'foo{{{1}}}'"
+    [
+      Substring.Literal (+"foo");
+      Substring.Literal (+"{{");
+      Substring.Format (+Expression.Constant (Constant.Integer 1));
+      Substring.Literal (+"}}");
+    ];
+  assert_format_string "f'foo{{'" [Substring.Literal (+"foo"); Substring.Literal (+"{{")];
+  assert_format_string "f'foo}}'" [Substring.Literal (+"foo}}")];
+  assert_format_string
+    "f'foo{1+2}'"
+    [
+      Substring.Literal (+"foo");
+      Substring.Format
+        (+Expression.Call
+            {
+              callee =
+                +Expression.Name
+                   (Name.Attribute
+                      {
+                        base = +Expression.Constant (Constant.Integer 1);
+                        attribute = "__add__";
+                        special = true;
+                      });
+              arguments =
+                [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 2) }];
+            });
+    ];
+
+  assert_format_string
+    "f'{x for x in []}'"
+    [
+      Substring.Format
+        (+Expression.Generator
+            {
+              Comprehension.element = +Expression.Name (Name.Identifier "x");
+              generators =
+                [
+                  {
+                    Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
+                    iterator = +Expression.List [];
+                    conditions = [];
+                    async = false;
+                  };
+                ];
+            });
+    ];
+  ()
+
+
 let () =
   "parsing"
   >::: [
@@ -6140,5 +6266,6 @@ let () =
          "setitem" >:: test_setitem;
          "byte_order_mark" >:: test_byte_order_mark;
          "walrus_operator" >:: test_walrus_operator;
+         "format_string" >:: test_format_string;
        ]
   |> Test.run

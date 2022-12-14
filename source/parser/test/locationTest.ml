@@ -2707,8 +2707,7 @@ let test_string_locations _ =
               (Expression.FormatString [Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo")])));
     ];
   assert_source_locations
-    (* Format string expressions are further parsed in preprocessing. *)
-    "f'foo {x}'"
+    "f'foo {1}'"
     [
       node
         ~start:(1, 0)
@@ -2718,7 +2717,11 @@ let test_string_locations _ =
               ~start:(1, 0)
               ~stop:(1, 10)
               (Expression.FormatString
-                 [Substring.Literal (node ~start:(1, 2) ~stop:(1, 9) "foo {x}")])));
+                 [
+                   Substring.Literal (node ~start:(1, 2) ~stop:(1, 6) "foo ");
+                   Substring.Format
+                     (node ~start:(1, 7) ~stop:(1, 8) (Expression.Constant (Constant.Integer 1)));
+                 ])));
     ];
   assert_source_locations
     "f'foo' f'bar'"
@@ -2734,6 +2737,92 @@ let test_string_locations _ =
                  [
                    Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
                    Substring.Literal (node ~start:(1, 9) ~stop:(1, 12) "bar");
+                 ])));
+    ];
+  assert_source_locations
+    "f'foo{123}a{456}'"
+    [
+      node
+        ~start:(1, 0)
+        ~stop:(1, 17)
+        (Statement.Expression
+           (node
+              ~start:(1, 0)
+              ~stop:(1, 17)
+              (Expression.FormatString
+                 [
+                   Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
+                   Substring.Format
+                     (node ~start:(1, 6) ~stop:(1, 9) (Expression.Constant (Constant.Integer 123)));
+                   Substring.Literal (node ~start:(1, 10) ~stop:(1, 11) "a");
+                   Substring.Format
+                     (node
+                        ~start:(1, 12)
+                        ~stop:(1, 15)
+                        (Expression.Constant (Constant.Integer 456)));
+                 ])));
+    ];
+  assert_source_locations
+    "return f'foo{123}a{456}'"
+    [
+      node
+        ~start:(1, 0)
+        ~stop:(1, 24)
+        (Statement.Return
+           {
+             is_implicit = false;
+             expression =
+               Some
+                 (node
+                    ~start:(1, 7)
+                    ~stop:(1, 24)
+                    (Expression.FormatString
+                       [
+                         Substring.Literal (node ~start:(1, 9) ~stop:(1, 12) "foo");
+                         Substring.Format
+                           (node
+                              ~start:(1, 13)
+                              ~stop:(1, 16)
+                              (Expression.Constant (Constant.Integer 123)));
+                         Substring.Literal (node ~start:(1, 17) ~stop:(1, 18) "a");
+                         Substring.Format
+                           (node
+                              ~start:(1, 19)
+                              ~stop:(1, 22)
+                              (Expression.Constant (Constant.Integer 456)));
+                       ]));
+           });
+    ];
+  assert_source_locations
+    {|
+       f'''
+       foo{123}a{456}
+       b{789}
+       '''
+     |}
+    [
+      node
+        ~start:(2, 0)
+        ~stop:(5, 3)
+        (Statement.Expression
+           (node
+              ~start:(2, 0)
+              ~stop:(5, 3)
+              (Expression.FormatString
+                 [
+                   Substring.Literal (node ~start:(2, 4) ~stop:(3, 3) "\nfoo");
+                   Substring.Format
+                     (node ~start:(3, 4) ~stop:(3, 7) (Expression.Constant (Constant.Integer 123)));
+                   Substring.Literal (node ~start:(3, 8) ~stop:(3, 9) "a");
+                   Substring.Format
+                     (node
+                        ~start:(3, 10)
+                        ~stop:(3, 13)
+                        (Expression.Constant (Constant.Integer 456)));
+                   Substring.Literal (node ~start:(3, 14) ~stop:(4, 1) "\nb");
+                   Substring.Format
+                     (node ~start:(4, 2) ~stop:(4, 5) (Expression.Constant (Constant.Integer 789)));
+                   Substring.Literal (node ~start:(4, 6) ~stop:(5, 0) "\n");
                  ])));
     ];
   assert_source_locations
