@@ -8,10 +8,10 @@
 %{
   open Core
 
-  open Ast
-  open Statement
   open Pyre
+  module Location = Ast.Location
   open ParserExpression
+  open ParserStatement
 
   (* This weird-looking empty module definition is to work around a nasty issue when *)
   (* using menhir infer mode with dune: https://github.com/ocaml/dune/issues/2450 *)
@@ -20,9 +20,6 @@
   [@@@warning "+60"]
 
   let with_decorators decorators decoratee =
-    let decorators =
-      List.map decorators ~f:convert
-    in
     match decoratee with
     | { Node.location; value = Statement.Class value } ->
         let decorated = { value with Class.decorators; } in
@@ -216,7 +213,7 @@
       arguments = [subscript_argument subscripts; { Call.Argument.name = None; value }];
     }
     |> Node.create ~location
-    |> fun expression -> Statement.Expression (convert expression)
+    |> fun expression -> Statement.Expression expression
     |> Node.create ~location
 
   let with_annotation ~parameter ~annotation =
@@ -399,7 +396,7 @@
 %nonassoc LEFTPARENS
 
 
-%start <Ast.Statement.t list> parse
+%start <Statement.t list> parse
 
 %%
 
@@ -462,9 +459,9 @@ small_statement:
             value.Node.location.Location.stop;
         };
         value = Statement.Assign {
-          Assign.target = convert target;
+          Assign.target = target;
           annotation = None;
-          value = convert value;
+          value = value;
         };
       }]
     }
@@ -476,9 +473,9 @@ small_statement:
             annotation.Node.location.Location.stop;
         };
         value = Statement.Assign {
-          Assign.target = convert target;
-          annotation = Some annotation >>| convert;
-          value = create_ellipsis_after annotation |> convert;
+          Assign.target = target;
+          annotation = Some annotation;
+          value = create_ellipsis_after annotation;
         };
       }]
     }
@@ -490,9 +487,9 @@ small_statement:
             annotation.Node.location.Location.stop;
         };
         value = Statement.Assign {
-          Assign.target = convert target;
-          annotation = Some annotation >>| convert;
-          value = create_ellipsis_after annotation |> convert;
+          Assign.target = target;
+          annotation = Some annotation;
+          value = create_ellipsis_after annotation;
         };
       }]
     }
@@ -506,9 +503,9 @@ small_statement:
             value.Node.location.Location.stop;
         };
         value = Statement.Assign {
-          Assign.target = convert target;
-          annotation = Some annotation >>| convert;
-          value = convert value;
+          Assign.target = target;
+          annotation = Some annotation;
+          value = value;
         };
       }]
     }
@@ -522,9 +519,9 @@ small_statement:
             value.Node.location.Location.stop;
         };
         value = Statement.Assign {
-          Assign.target = convert target;
-          annotation = Some annotation >>| convert;
-          value = convert value;
+          Assign.target = target;
+          annotation = Some annotation;
+          value = value;
         };
       }]
     }
@@ -546,9 +543,9 @@ small_statement:
             ellipsis.Node.location.Location.stop;
         };
         value = Statement.Assign {
-          Assign.target = convert target;
-          annotation = Some annotation >>| convert;
-          value = convert ellipsis;
+          Assign.target = target;
+          annotation = Some annotation;
+          value = ellipsis;
         };
       }]
     }
@@ -556,18 +553,14 @@ small_statement:
   | start = ASSERT; test = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Statement.Assert { Assert.test = convert test; message = None; origin = Assert.Origin.Assertion }
+        value = Statement.Assert { Assert.test = test; message = None }
       }]
     }
   | start = ASSERT; test = test;
     COMMA; message = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Statement.Assert {
-          Assert.test = convert test;
-          message = Some message >>| convert;
-          origin = Assert.Origin.Assertion
-        }
+        value = Statement.Assert { Assert.test = test; message = Some message }
       }]
     }
 
@@ -582,11 +575,11 @@ small_statement:
     }
 
   | test = test_list {
-      [{ Node.location = test.Node.location; value = Statement.Expression (convert test) }]
+      [{ Node.location = test.Node.location; value = Statement.Expression test }]
     }
 
   | value = value {
-      [{ Node.location = value.Node.location; value = Statement.Expression (convert value) }]
+      [{ Node.location = value.Node.location; value = Statement.Expression value }]
     }
 
   | start = GLOBAL; globals = parser_generator_separated_nonempty_list(COMMA, identifier) {
@@ -639,7 +632,7 @@ small_statement:
       in
       [{
         Node.location;
-        value = Statement.Raise { Raise.expression = test >>| convert; from = raise_from >>| convert };
+        value = Statement.Raise { Raise.expression = test; from = raise_from };
       }]
     }
 
@@ -652,7 +645,7 @@ small_statement:
       in
       [{
         Node.location;
-        value = Statement.Return { Return.expression = test >>| convert; is_implicit = false };
+        value = Statement.Return { Return.expression = test; is_implicit = false };
       }]
     }
 
@@ -661,7 +654,7 @@ small_statement:
       let stop = Node.stop (List.last_exn expressions) in
       [{
         Node.location = location_create_with_stop ~start:delete ~stop;
-        value = Statement.Delete (List.map expressions ~f:convert);
+        value = Statement.Delete expressions;
       }]
     }
   ;
@@ -710,10 +703,9 @@ compound_statement:
         Node.location;
         value = Statement.Class {
           Class.name = name;
-          base_arguments = List.map ~f:convert_argument bases;
+          base_arguments = bases;
           body;
           decorators = [];
-          top_level_unbound_names = [];
         };
       }
     }
@@ -798,16 +790,12 @@ compound_statement:
         value = Statement.Define {
           signature = {
             name = name;
-            parameters = List.map ~f:convert_parameter parameters;
+            parameters = parameters;
             decorators = [];
-            return_annotation = annotation >>| convert;
+            return_annotation = annotation;
             async = false;
-            generator = Ast.Statement.is_generator body;
             parent = None;
-            nesting_define = None;
           };
-          captures = [];
-          unbound_names = [];
           body
         };
       }
@@ -822,8 +810,8 @@ compound_statement:
       {
         Node.location = location_create_with_stop ~start ~stop;
         value = Statement.For {
-          For.target = convert target;
-          iterator = convert iterator;
+          For.target = target;
+          iterator = iterator;
           body = snd body;
           orelse = snd orelse;
           async = false
@@ -868,13 +856,10 @@ compound_statement:
     items = parser_generator_separated_nonempty_list(COMMA, with_item); COLON;
     ANNOTATION_COMMENT?;
     body = block {
-      let convert_item (expression, expression_option) =
-        (convert expression, expression_option >>| convert)
-      in
       {
         Node.location = location_create_with_stop ~start ~stop:(fst body).Location.stop;
         value = Statement.With {
-          With.items = List.map ~f:convert_item items;
+          With.items = items;
           body = snd body;
           async = false;
         };
@@ -889,7 +874,7 @@ compound_statement:
         | location, _ -> location.Location.stop in
       {
         Node.location = location_create_with_stop ~start ~stop;
-        value = Statement.While { While.test = convert test; body = snd body; orelse = snd orelse };
+        value = Statement.While { While.test = test; body = snd body; orelse = snd orelse };
       }
     }
   ;
@@ -940,7 +925,7 @@ block_or_stub_body:
         (Statement.Expression
           (Node.create
             ~location
-            (AstExpression.Expression.Constant AstExpression.Constant.Ellipsis)
+            (Expression.Constant AstExpression.Constant.Ellipsis)
           )
         )
     ] in
@@ -971,7 +956,7 @@ conditional:
           | _, [] -> (fst body).Location.stop
           | location, _ -> location.Location.stop;
       },
-      Statement.If { If.test = convert test; body = snd body; orelse = snd orelse }
+      Statement.If { If.test = test; body = snd body; orelse = snd orelse }
     }
   | test = test_list; COLON;
     body = block;
@@ -979,7 +964,7 @@ conditional:
       let stop = (fst value).Location.stop in
       { test.Node.location with Location.stop },
       Statement.If {
-        If.test = convert test;
+        If.test = test;
         body = (snd body);
         orelse = [{
           Node.location =
@@ -1173,7 +1158,7 @@ handler:
     }
   | start = EXCEPT; kind = expression; COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind >>| convert; name = None; body = snd handler_body }
+      { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
     }
   | start = EXCEPT;
     kind = expression; AS; name = identifier;
@@ -1182,18 +1167,18 @@ handler:
     kind = expression; COMMA; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind >>| convert; name = Some (snd name); body = snd handler_body }
+      { Try.Handler.kind = Some kind; name = Some (snd name); body = snd handler_body }
     }
   | start = EXCEPT;
     kind = or_test; COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind >>| convert; name = None; body = snd handler_body }
+      { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
     }
   | start = EXCEPT;
     kind = or_test; AS; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind >>| convert; name = Some (snd name); body = snd handler_body }
+      { Try.Handler.kind = Some kind; name = Some (snd name); body = snd handler_body }
     }
   ;
 
@@ -1253,14 +1238,14 @@ import:
       in
       location,
       {
-        Import.name = Reference.create "*";
+        Ast.Statement.Import.name = Reference.create "*";
         alias = None;
       }
     }
   | name = reference {
       fst name,
       {
-        Import.name = snd name;
+        Ast.Statement.Import.name = snd name;
         alias = None;
       }
     }
@@ -1268,7 +1253,7 @@ import:
     AS; alias = identifier {
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
-        Import.name = snd name;
+        Ast.Statement.Import.name = snd name;
         alias = Some (snd alias);
       }
     }
@@ -1283,9 +1268,9 @@ import:
               value.Node.location.Location.stop;
           };
           value = Statement.Assign {
-            Assign.target = convert target;
-            annotation = annotation >>| convert;
-            value = convert value;
+            Assign.target = target;
+            annotation = annotation;
+            value = value;
           };
         }
       in
