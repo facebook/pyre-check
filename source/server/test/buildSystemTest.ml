@@ -369,7 +369,7 @@ let test_buck_renormalize context =
         ()
     in
     let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
-    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
+    let builder = Buck.Builder.Classic.create ~source_root ~artifact_root interface in
     BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
     |> BuildSystem.Initializer.run
   in
@@ -469,7 +469,7 @@ let test_buck_update context =
         ~query_owner_targets
         ()
     in
-    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
+    let builder = Buck.Builder.Classic.create ~source_root ~artifact_root interface in
     BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
     |> BuildSystem.Initializer.run
   in
@@ -566,7 +566,7 @@ let test_buck_update_without_rebuild context =
         ~query_owner_targets
         ()
     in
-    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
+    let builder = Buck.Builder.Classic.create ~source_root ~artifact_root interface in
     BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
     |> BuildSystem.Initializer.run
   in

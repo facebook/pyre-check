@@ -43,10 +43,12 @@ let create_for_testing
   { update; lookup_source; lookup_artifact; store }
 
 
+module ClassicBuckBuilder = Buck.Builder.Classic
+
 module BuckBuildSystem = struct
   module State = struct
     type t = {
-      builder: Buck.Builder.t;
+      builder: ClassicBuckBuilder.t;
       targets: string list;
       mutable normalized_targets: Buck.Target.t list;
       mutable build_map: Buck.BuildMap.t;
@@ -73,7 +75,7 @@ module BuckBuildSystem = struct
 
     let create_from_scratch ~builder ~targets () =
       let open Lwt.Infix in
-      Buck.Builder.build builder ~targets
+      ClassicBuckBuilder.build builder ~targets
       >>= fun { Buck.Interface.BuildResult.targets = normalized_targets; build_map } ->
       Lwt.return (create ~targets ~builder ~normalized_targets ~build_map ())
 
@@ -88,7 +90,7 @@ module BuckBuildSystem = struct
          But that should be fine -- it is guaranteed that after saved state loading, the server will
          process another incremental update request to bring everything up-to-date again. If that
          incremental update is correctly handled, the dead links will be properly cleaned up. *)
-      Buck.Builder.restore builder ~build_map
+      ClassicBuckBuilder.restore builder ~build_map
       >>= fun () -> Lwt.return (create ~targets ~builder ~normalized_targets ~build_map ())
   end
 
@@ -142,7 +144,7 @@ module BuckBuildSystem = struct
   module IncrementalBuilder = struct
     type t = {
       name: string;
-      run: Buck.Builder.t -> Buck.Builder.IncrementalBuildResult.t Lwt.t;
+      run: ClassicBuckBuilder.t -> ClassicBuckBuilder.IncrementalBuildResult.t Lwt.t;
     }
   end
 
@@ -159,7 +161,7 @@ module BuckBuildSystem = struct
         let should_reconstruct_build_map paths =
           let f path =
             List.is_empty
-              (Buck.Builder.lookup_artifact
+              (ClassicBuckBuilder.lookup_artifact
                  ~index:state.build_map_index
                  ~builder:state.builder
                  path)
@@ -170,7 +172,7 @@ module BuckBuildSystem = struct
           {
             IncrementalBuilder.name = "full";
             run =
-              Buck.Builder.full_incremental_build
+              ClassicBuckBuilder.full_incremental_build
                 ~old_build_map:state.build_map
                 ~targets:state.targets;
           }
@@ -188,7 +190,7 @@ module BuckBuildSystem = struct
             {
               IncrementalBuilder.name = "skip_rebuild";
               run =
-                Buck.Builder.incremental_build_with_unchanged_build_map
+                ClassicBuckBuilder.incremental_build_with_unchanged_build_map
                   ~build_map:state.build_map
                   ~build_map_index:state.build_map_index
                   ~targets:state.normalized_targets
@@ -198,7 +200,7 @@ module BuckBuildSystem = struct
             {
               IncrementalBuilder.name = "skip_renormalize_optimized";
               run =
-                Buck.Builder.fast_incremental_build_with_normalized_targets
+                ClassicBuckBuilder.fast_incremental_build_with_normalized_targets
                   ~old_build_map:state.build_map
                   ~old_build_map_index:state.build_map_index
                   ~targets:state.normalized_targets
@@ -215,14 +217,14 @@ module BuckBuildSystem = struct
           ])
         ~normals:(fun _ ->
           [
-            "buck_builder_type", Buck.Builder.identifier_of state.builder;
+            "buck_builder_type", ClassicBuckBuilder.identifier_of state.builder;
             "event_type", "rebuild";
             "event_subtype", incremental_builder.name;
           ])
         (fun () ->
           incremental_builder.run state.builder
           >>= fun {
-                    Buck.Builder.IncrementalBuildResult.targets = normalized_targets;
+                    ClassicBuckBuilder.IncrementalBuildResult.targets = normalized_targets;
                     build_map;
                     changed_artifacts;
                   } ->
@@ -231,12 +233,12 @@ module BuckBuildSystem = struct
     in
     let lookup_source path =
       ArtifactPath.raw path
-      |> Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder
+      |> ClassicBuckBuilder.lookup_source ~index:state.build_map_index ~builder:state.builder
       |> Option.map ~f:SourcePath.create
     in
     let lookup_artifact path =
       SourcePath.raw path
-      |> Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder
+      |> ClassicBuckBuilder.lookup_artifact ~index:state.build_map_index ~builder:state.builder
       |> List.map ~f:ArtifactPath.create
     in
     let store () =
@@ -260,7 +262,7 @@ module BuckBuildSystem = struct
         ])
       ~normals:(fun _ ->
         [
-          "buck_builder_type", Buck.Builder.identifier_of builder;
+          "buck_builder_type", ClassicBuckBuilder.identifier_of builder;
           "event_type", "build";
           "event_subtype", "cold_start";
         ])
@@ -287,7 +289,7 @@ module BuckBuildSystem = struct
         ])
       ~normals:(fun _ ->
         [
-          "buck_builder_type", Buck.Builder.identifier_of builder;
+          "buck_builder_type", ClassicBuckBuilder.identifier_of builder;
           "event_type", "build";
           "event_subtype", "saved_state";
         ])
@@ -458,11 +460,11 @@ let get_initializer source_paths =
         | false ->
             let raw = Buck.Raw.V1.create ~additional_log_size:10 () in
             let interface = Buck.Interface.V1.create ?mode ?isolation_prefix raw in
-            Buck.Builder.create ~source_root ~artifact_root interface
+            ClassicBuckBuilder.create ~source_root ~artifact_root interface
         | true ->
             let raw = Buck.Raw.V2.create ~additional_log_size:10 () in
             let interface = Buck.Interface.V2.create ?mode ?isolation_prefix ?bxl_builder raw in
-            Buck.Builder.create_v2 ~source_root ~artifact_root interface
+            ClassicBuckBuilder.create_v2 ~source_root ~artifact_root interface
       in
       Initializer.buck ~builder ~artifact_root ~targets ()
 

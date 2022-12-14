@@ -92,11 +92,16 @@ module Initializer : sig
 
       - {!Buck.Raw.BuckError} could happen when the underlying [buck] invocation has unexpected
         return code.
-      - {!Buck.Builder.JsonError} could happen when the underlying [buck] invocation has unexpected
-        output.
+      - {!Buck.Interface.JsonError} could happen when the underlying [buck] invocation has
+        unexpected output.
       - {!Buck.Builder.LinkTreeConstructionError} could happen when build artifact creation cannot
         function properly due to unexpected issues on the filesystem. *)
-  val buck : builder:Buck.Builder.t -> artifact_root:PyrePath.t -> targets:string list -> unit -> t
+  val buck
+    :  builder:Buck.Builder.Classic.t ->
+    artifact_root:PyrePath.t ->
+    targets:string list ->
+    unit ->
+    t
 
   (** [track_unwatched_dependency] initializes a build system that keeps track of file changes in
       unwatched dependencies.
