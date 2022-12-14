@@ -11,14 +11,13 @@ open Core
 open Pyre
 open Ast
 
-exception Error of string
-
 module Error = struct
   type t = {
     location: Location.t;
     file_name: string;
     content: string option;
   }
+  [@@deriving equal]
 
   let pp formatter { location; file_name; content } =
     let column = location.Location.start.Location.column in
@@ -37,6 +36,8 @@ module Error = struct
 
   let show = Format.asprintf "%a" pp
 end
+
+exception Error of Error.t
 
 let sanitize_input lines =
   (* Remove byte order mark from first line if it exists. *)
@@ -345,4 +346,4 @@ let parse ?start_line ?start_column ?relative lines =
 let parse_exn ?start_line ?start_column ?relative lines =
   match parse ?start_line ?start_column ?relative lines with
   | Ok statements -> statements
-  | Error error -> raise (Error (Error.show error))
+  | Error error -> raise (Error error)

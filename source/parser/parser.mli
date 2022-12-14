@@ -7,16 +7,16 @@
 
 open Ast
 
-exception Error of string
-
 module Error : sig
   type t = {
     location: Location.t;
     file_name: string;
     content: string option;
   }
-  [@@deriving show]
+  [@@deriving show, equal]
 end
+
+exception Error of Error.t
 
 (** Parse python source. ?handle is path relative to the file's source root, if any. *)
 val parse

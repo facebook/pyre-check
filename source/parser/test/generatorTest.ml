@@ -5989,7 +5989,13 @@ let test_byte_order_mark _ =
   (* Ensure that we can parse UTF-8 files with byte order marks properly. *)
   parse [byte_order_mark ^ "1"];
   assert_raises
-    (PyreParser.Parser.Error "Could not parse file at $invalid_path:2:0-2:0\n  \239\187\1912\n  ^")
+    (PyreParser.Parser.Error
+       {
+         PyreParser.Parser.Error.location =
+           { start = { line = 2; column = 0 }; stop = { line = 2; column = 0 } };
+         file_name = "$invalid_path";
+         content = Some (byte_order_mark ^ "2");
+       })
     (fun () -> parse ["1"; byte_order_mark ^ "2"])
 
 
