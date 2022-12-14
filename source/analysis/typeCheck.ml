@@ -204,6 +204,13 @@ let errors_from_not_found
               | _ ->
                   if Type.is_primitive_string actual && Type.is_literal_string expected then
                     location, Error.NonLiteralString { name; position; callee }
+                  else if
+                    Type.ReadOnly.is_readonly actual && not (Type.ReadOnly.is_readonly expected)
+                  then
+                    ( location,
+                      Error.ReadOnlynessMismatch
+                        (IncompatibleParameterType
+                           { keyword_argument_name = name; position; callee; mismatch }) )
                   else
                     ( location,
                       Error.IncompatibleParameterType
