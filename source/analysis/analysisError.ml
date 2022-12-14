@@ -288,12 +288,6 @@ module ReadOnly = struct
   }
   [@@deriving compare, sexp, show, hash]
 
-  type incompatible_type = {
-    name: Reference.t;
-    mismatch: mismatch;
-  }
-  [@@deriving compare, sexp, show, hash]
-
   type readonlyness_mismatch =
     | IncompatibleVariableType of {
         incompatible_type: incompatible_type;
@@ -321,25 +315,26 @@ module ReadOnly = struct
     let pp_reference = pp_reference ~concise in
     match kind with
     | IncompatibleVariableType
-        { incompatible_type = { name; mismatch = { actual; expected }; _ }; _ } ->
+        { incompatible_type = { name; mismatch = { actual; expected; _ }; _ }; _ } ->
         let message =
+          let pp_type = pp_type ~concise in
           if concise then
             Format.asprintf
-              "%a has readonlyness `%a`; used as `%a`."
+              "%a has type `%a`; used as `%a`."
               pp_reference
               name
-              ReadOnlyness.pp
+              pp_type
               expected
-              ReadOnlyness.pp
+              pp_type
               actual
           else
             Format.asprintf
-              "%a is declared to have readonlyness `%a` but is used as readonlyness `%a`."
+              "%a is declared to have type `%a` but is used as type `%a`."
               pp_reference
               name
-              ReadOnlyness.pp
+              pp_type
               expected
-              ReadOnlyness.pp
+              pp_type
               actual
         in
         [message]
@@ -405,7 +400,7 @@ module ReadOnly = struct
           ]
 
 
-  let join left right =
+  let join ~resolution left right =
     let join_mismatch
         { expected = left_expected; actual = left_actual }
         { expected = right_expected; actual = right_actual }
@@ -421,7 +416,12 @@ module ReadOnly = struct
              incompatible_type =
                {
                  name = left_name;
-                 mismatch = { actual = left_actual; expected = left_expected };
+                 mismatch =
+                   {
+                     actual = left_actual;
+                     expected = left_expected;
+                     due_to_invariance = left_due_to_invariance;
+                   };
                  _;
                } as left_incompatible_type;
              _;
@@ -431,7 +431,12 @@ module ReadOnly = struct
             incompatible_type =
               {
                 name = right_name;
-                mismatch = { actual = right_actual; expected = right_expected };
+                mismatch =
+                  {
+                    actual = right_actual;
+                    expected = right_expected;
+                    due_to_invariance = right_due_to_invariance;
+                  };
                 _;
               };
             _;
@@ -445,8 +450,9 @@ module ReadOnly = struct
                 left_incompatible_type with
                 mismatch =
                   {
-                    actual = ReadOnlyness.join left_actual right_actual;
-                    expected = ReadOnlyness.join left_expected right_expected;
+                    actual = GlobalResolution.join resolution left_actual right_actual;
+                    expected = GlobalResolution.join resolution left_expected right_expected;
+                    due_to_invariance = left_due_to_invariance || right_due_to_invariance;
                   };
               };
           }
@@ -3146,7 +3152,7 @@ let join ~resolution left right =
             missing_annotation = join_missing_annotation left right;
           }
     | ReadOnlynessMismatch left, ReadOnlynessMismatch right -> (
-        match ReadOnly.join left right with
+        match ReadOnly.join ~resolution left right with
         | Some joined -> ReadOnlynessMismatch joined
         | None -> default_error_output ())
     | RedundantCast left, RedundantCast right ->

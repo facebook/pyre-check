@@ -254,12 +254,6 @@ module ReadOnly : sig
   }
   [@@deriving compare, sexp, show, hash]
 
-  type incompatible_type = {
-    name: Reference.t;
-    mismatch: mismatch;
-  }
-  [@@deriving compare, sexp, show, hash]
-
   type readonlyness_mismatch =
     | IncompatibleVariableType of {
         incompatible_type: incompatible_type;
