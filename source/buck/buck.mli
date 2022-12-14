@@ -461,6 +461,37 @@ module Interface : sig
         succeeds but its output cannot be parsed. *)
     val construct_build_map : t -> string list -> BuildMap.t Lwt.t
   end
+
+  (** This module contains APIs specific to lazy Buck building.
+
+      Lazy building is only supported for Buck2. The APIs are very simliar to those of
+      {!Interface.V2}, except that targets to build are not specified upfront for the lazy case.
+      Instead, the lazy builder is only given a set of source paths to construct the build map on,
+      and the builder itself needs to figure out what are the corresponding targets for these source
+      paths. *)
+  module Lazy : sig
+    type t
+
+    (** Create an instance of [t] from an instance of {!Raw.V2.t} and some buck options. *)
+    val create : ?mode:string -> ?isolation_prefix:string -> bxl_builder:string -> Raw.V2.t -> t
+
+    (** Create an instance of [t] from custom [construct_build_map] behavior. Useful for unit
+        testing. *)
+    val create_for_testing : construct_build_map:(string list -> BuildMap.t Lwt.t) -> unit -> t
+
+    (** Given a list of relative source paths, invoke [buck] to construct the source databases as
+        well as relevant files referenced in the link tree. It then loads all generated source
+        databases, and merge all of them into a single {!BuildMap.t}.
+
+        Source-db merging may not always succeed when merge conflict cannot be resolved . If it is
+        deteced that the source-db for one target cannot be merged into the build map due to
+        unresolvable conflict, a warning will be printed and one of the conflicted target will be
+        dropped.
+
+        May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
+        succeeds but its output cannot be parsed. *)
+    val construct_build_map : t -> string list -> BuildMap.t Lwt.t
+  end
 end
 
 (** This module contains highest-level interfaces for [buck]-related logic. It relies on

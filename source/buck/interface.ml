@@ -577,3 +577,73 @@ module V2 = struct
   let construct_build_map { construct_build_map; _ } target_patterns =
     construct_build_map target_patterns
 end
+
+module Lazy = struct
+  type t = { construct_build_map: string list -> BuildMap.t Lwt.t }
+
+  let create_for_testing ~construct_build_map () = { construct_build_map }
+
+  let parse_merged_sourcedb merged_sourcedb : BuildMap.t =
+    let open Yojson.Safe in
+    try
+      BuildMap.Partial.of_json_exn_ignoring_duplicates_no_dependency merged_sourcedb
+      |> BuildMap.create
+    with
+    | Yojson.Json_error message
+    | Util.Type_error (message, _) ->
+        raise (JsonError message)
+
+
+  let parse_bxl_output bxl_output =
+    let open Yojson.Safe in
+    try
+      let merged_sourcedb_path =
+        from_string ~fname:"buck bxl output" bxl_output |> Util.member "db" |> Util.to_string
+      in
+      from_file merged_sourcedb_path |> parse_merged_sourcedb
+    with
+    | Yojson.Json_error message
+    | Util.Type_error (message, _)
+    | Sys_error message ->
+        raise (JsonError message)
+
+
+  let run_bxl_for_targets
+      ~bxl_builder
+      ~buck_options:{ BuckOptions.raw; mode; isolation_prefix; _ }
+      target_patterns
+    =
+    match target_patterns with
+    | [] -> Lwt.return "{}"
+    | _ ->
+        List.concat
+          [
+            (* Location of the BXL builder. *)
+            [bxl_builder];
+            (* Force `buck` to opt-out fancy tui logging. *)
+            ["--console=simple"];
+            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+            ["--config"; "client.id=pyre"];
+            ["--"];
+            List.bind target_patterns ~f:(fun source_path -> ["--source"; source_path]);
+          ]
+        |> Raw.V2.bxl ?mode ?isolation_prefix raw
+
+
+  let construct_build_map_with_options ~bxl_builder ~buck_options source_paths =
+    let open Lwt.Infix in
+    Log.info "Building Buck source databases for %d sources..." (List.length source_paths);
+    run_bxl_for_targets ~bxl_builder ~buck_options source_paths
+    >>= fun output ->
+    let build_map = parse_bxl_output output in
+    Log.info "Loaded source databases";
+    Lwt.return build_map
+
+
+  let create ?mode ?isolation_prefix ~bxl_builder raw =
+    let buck_options = { BuckOptions.mode; isolation_prefix; raw } in
+    { construct_build_map = construct_build_map_with_options ~bxl_builder ~buck_options }
+
+
+  let construct_build_map { construct_build_map; _ } source_paths = construct_build_map source_paths
+end

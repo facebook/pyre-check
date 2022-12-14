@@ -265,7 +265,7 @@ let assert_conflicts_equal ~context ~expected actual =
     (actual |> List.sort ~compare)
 
 
-let test_parse_merged_sourcedb context =
+let test_parse_merged_sourcedb_v2 context =
   let assert_parsed ~expected_build_map ~expected_target_count ~expected_conflicts output =
     let {
       Interface.V2.BuckBxlBuilderOutput.build_map = actual_build_map;
@@ -337,7 +337,39 @@ let test_parse_merged_sourcedb context =
   ()
 
 
-let test_parse_buck_bxl_output context =
+let test_parse_merged_sourcedb_lazy context =
+  let assert_parsed ~expected output =
+    let actual = Yojson.Safe.from_string output |> Interface.Lazy.parse_merged_sourcedb in
+    assert_mapping_equal ~context ~expected (BuildMap.to_alist actual)
+  in
+  let assert_not_parsed output =
+    try
+      let _ = Yojson.Safe.from_string output |> Interface.Lazy.parse_merged_sourcedb in
+      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      assert_failure message
+    with
+    | Interface.JsonError _ -> ()
+  in
+  assert_not_parsed "42";
+  assert_not_parsed {|"abc"|};
+  assert_not_parsed "[]";
+  assert_not_parsed {| { "foo": 42 } |};
+  assert_not_parsed {| { "build_map": {} } |};
+
+  assert_parsed "{}" ~expected:[];
+  assert_parsed {| {
+         "a.py": "source/a.py"
+    } |} ~expected:["a.py", "source/a.py"];
+  assert_parsed
+    {| {
+         "a.py": "source/a.py",
+         "b.py": "source/b.py"
+    } |}
+    ~expected:["a.py", "source/a.py"; "b.py", "source/b.py"];
+  ()
+
+
+let test_parse_buck_bxl_output_v2 context =
   let assert_parsed output = Interface.V2.parse_bxl_output output |> ignore in
   let assert_not_parsed output =
     try
@@ -357,6 +389,37 @@ let test_parse_buck_bxl_output context =
   File.create
     well_formed_path
     ~content:{| { "build_map": {}, "built_targets_count": 0, "dropped_targets": {} } |}
+  |> File.write;
+  File.create malformed_path ~content:{| { "derp": 42 } |} |> File.write;
+  let nonexistent_path = PyrePath.create_relative ~root ~relative:"nonexistent.json" in
+
+  assert_not_parsed "{}";
+  assert_not_parsed {| { "db": 42 }|};
+  assert_not_parsed (create_db_output nonexistent_path);
+  assert_not_parsed (create_db_output malformed_path);
+
+  assert_parsed (create_db_output well_formed_path);
+  ()
+
+
+let test_parse_buck_bxl_output_lazy context =
+  let assert_parsed output = Interface.Lazy.parse_bxl_output output |> ignore in
+  let assert_not_parsed output =
+    try
+      let _ = Interface.Lazy.parse_bxl_output output in
+      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      assert_failure message
+    with
+    | Interface.JsonError _ -> ()
+  in
+  let create_db_output path =
+    `Assoc ["db", `String (PyrePath.absolute path)] |> Yojson.Safe.to_string
+  in
+
+  let root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let well_formed_path = PyrePath.create_relative ~root ~relative:"well_formed.json" in
+  let malformed_path = PyrePath.create_relative ~root ~relative:"malformed.json" in
+  File.create well_formed_path ~content:{| { "a.py": "source/a.py", "b.py": "source/b.py" } |}
   |> File.write;
   File.create malformed_path ~content:{| { "derp": 42 } |} |> File.write;
   let nonexistent_path = PyrePath.create_relative ~root ~relative:"nonexistent.json" in
@@ -575,8 +638,10 @@ let () =
          >:: test_parse_buck_normalized_targets_query_output;
          "parse_buck_changed_targets_query_output" >:: test_parse_buck_changed_targets_query_output;
          "parse_buck_build_output" >:: test_parse_buck_build_output;
-         "parse_merged_sourcedb" >:: test_parse_merged_sourcedb;
-         "parse_buck_bxl_output" >:: test_parse_buck_bxl_output;
+         "parse_merged_sourcedb_v2" >:: test_parse_merged_sourcedb_v2;
+         "parse_merged_sourcedb_lazy" >:: test_parse_merged_sourcedb_lazy;
+         "parse_buck_bxl_output_v2" >:: test_parse_buck_bxl_output_v2;
+         "parse_buck_bxl_output_lazy" >:: test_parse_buck_bxl_output_lazy;
          "load_parital_build_map" >:: test_load_partial_build_map;
          "merge_build_map_by_name" >:: test_merge_build_map_by_name;
          "buck_changed_targets_to_build_map" >:: test_buck_changed_targets_to_build_map;
