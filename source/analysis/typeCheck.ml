@@ -924,22 +924,27 @@ module State (Context : Context) = struct
               check_unimplemented tail
           | _ -> false
         in
-        emit_error
-          ~errors
-          ~location
-          ~kind:
-            (Error.IncompatibleReturnType
-               {
-                 mismatch =
-                   Error.create_mismatch
-                     ~resolution:global_resolution
-                     ~actual
-                     ~expected:return_annotation
-                     ~covariant:true;
-                 is_implicit;
-                 is_unimplemented = check_unimplemented define.body;
-                 define_location;
-               })
+        let kind =
+          let mismatch =
+            Error.create_mismatch
+              ~resolution:global_resolution
+              ~actual
+              ~expected:return_annotation
+              ~covariant:true
+          in
+          if Type.ReadOnly.is_readonly actual && not (Type.ReadOnly.is_readonly return_annotation)
+          then
+            Error.ReadOnlynessMismatch (IncompatibleReturnType { mismatch; define_location })
+          else
+            Error.IncompatibleReturnType
+              {
+                mismatch;
+                is_implicit;
+                is_unimplemented = check_unimplemented define.body;
+                define_location;
+              }
+        in
+        emit_error ~errors ~location ~kind
       else
         errors
     in

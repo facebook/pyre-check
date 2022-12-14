@@ -1037,6 +1037,36 @@ let test_captured_variable_for_specially_decorated_functions context =
   ()
 
 
+let test_return_type context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(x: ReadOnly[int]) -> int:
+        return x
+    |}
+    [
+      "ReadOnly violation - Incompatible return type [3004]: Expected `int` but got \
+       `pyre_extensions.ReadOnly[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import List
+
+      def main(x: List[ReadOnly[int]]) -> List[int]:
+        return x
+    |}
+    [
+      (* TODO(T130377746): We should emit a readonly violation error here instead of the regular
+         incompatible return type error. *)
+      "Incompatible return type [7]: Expected `List[int]` but got \
+       `List[pyre_extensions.ReadOnly[int]]`.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -1052,5 +1082,6 @@ let () =
          "refinement" >:: test_refinement;
          "captured_variables_for_specially_decorated_functions"
          >:: test_captured_variable_for_specially_decorated_functions;
+         "return_type" >:: test_return_type;
        ]
   |> Test.run
