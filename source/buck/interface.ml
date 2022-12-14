@@ -425,7 +425,7 @@ module V1 = struct
 end
 
 module V2 = struct
-  type t = { construct_build_map: Target.t list -> BuildMap.t Lwt.t }
+  type t = { construct_build_map: string list -> BuildMap.t Lwt.t }
 
   let create_for_testing ~construct_build_map () = { construct_build_map }
 
@@ -499,9 +499,9 @@ module V2 = struct
   let run_bxl_for_targets
       ~bxl_builder
       ~buck_options:{ BuckOptions.raw; mode; isolation_prefix; _ }
-      targets
+      target_patterns
     =
-    match targets with
+    match target_patterns with
     | [] ->
         `Assoc
           [
@@ -521,8 +521,7 @@ module V2 = struct
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
             ["--config"; "client.id=pyre"];
             ["--"];
-            List.bind targets ~f:(fun target ->
-                ["--target"; Format.sprintf "%s" (Target.show target)]);
+            List.bind target_patterns ~f:(fun target -> ["--target"; Format.sprintf "%s" target]);
           ]
         |> Raw.V2.bxl ?mode ?isolation_prefix raw
 
@@ -556,10 +555,10 @@ module V2 = struct
            see https://fburl.com/pyre-target-conflict"
 
 
-  let construct_build_map_with_options ~bxl_builder ~buck_options targets =
+  let construct_build_map_with_options ~bxl_builder ~buck_options target_patterns =
     let open Lwt.Infix in
     Log.info "Building Buck source databases...";
-    run_bxl_for_targets ~bxl_builder ~buck_options targets
+    run_bxl_for_targets ~bxl_builder ~buck_options target_patterns
     >>= fun output ->
     let { BuckBxlBuilderOutput.build_map; target_count; conflicts } = parse_bxl_output output in
     warn_on_conflicts conflicts;
@@ -575,6 +574,6 @@ module V2 = struct
         { construct_build_map = construct_build_map_with_options ~bxl_builder ~buck_options }
 
 
-  let construct_build_map { construct_build_map; _ } normalized_targets =
-    construct_build_map normalized_targets
+  let construct_build_map { construct_build_map; _ } target_patterns =
+    construct_build_map target_patterns
 end

@@ -446,11 +446,11 @@ module Interface : sig
 
     (** Create an instance of [t] from custom [construct_build_map] behavior. Useful for unit
         testing. *)
-    val create_for_testing : construct_build_map:(Target.t list -> BuildMap.t Lwt.t) -> unit -> t
+    val create_for_testing : construct_build_map:(string list -> BuildMap.t Lwt.t) -> unit -> t
 
-    (** Given a list of normalized Buck targets, invoke [buck] to construct the link tree as well as
-        source databases. It then loads all generated source databases, and merge all of them into a
-        single [BuildMap.t].
+    (** Given a list of Buck targets or target expressions, invoke [buck] to construct the link tree
+        as well as source databases. It then loads all generated source databases, and merge all of
+        them into a single [BuildMap.t].
 
         Source-db merging may not always succeed when merge conflict cannot be resolved (see
         {!val:BuildMap.Partial.merge}). If it is deteced that the source-db for one target cannot be
@@ -459,7 +459,7 @@ module Interface : sig
 
         May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
         succeeds but its output cannot be parsed. *)
-    val construct_build_map : t -> Target.t list -> BuildMap.t Lwt.t
+    val construct_build_map : t -> string list -> BuildMap.t Lwt.t
   end
 end
 
