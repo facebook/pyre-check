@@ -963,10 +963,14 @@ let test_description _ =
             position = 1;
             callee = Some !&"my_callee";
             mismatch =
-              { Error.ReadOnly.actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
+              {
+                Error.actual = Type.ReadOnly.create Type.integer;
+                expected = Type.integer;
+                due_to_invariance = false;
+              };
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In call `my_callee`, for argument \
-     `my_name`, expected `Mutable` but got `ReadOnly`.";
+     `my_name`, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
   assert_messages
     (ReadOnlynessMismatch
        (IncompatibleParameterType
@@ -975,10 +979,14 @@ let test_description _ =
             position = 1;
             callee = None;
             mismatch =
-              { Error.ReadOnly.actual = ReadOnlyness.ReadOnly; expected = ReadOnlyness.Mutable };
+              {
+                Error.actual = Type.ReadOnly.create Type.integer;
+                expected = Type.integer;
+                due_to_invariance = false;
+              };
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In anonymous call, for 1st \
-     positional argument, expected `Mutable` but got `ReadOnly`.";
+     positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
   let error =
     Error.ReadOnlynessMismatch
       (CallingMutatingMethodOnReadOnly

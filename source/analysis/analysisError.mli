@@ -248,12 +248,6 @@ and tuple_concatenation_problem =
 [@@deriving compare, sexp, show, hash]
 
 module ReadOnly : sig
-  type mismatch = {
-    actual: ReadOnlyness.t;
-    expected: ReadOnlyness.t;
-  }
-  [@@deriving compare, sexp, show, hash]
-
   type readonlyness_mismatch =
     | IncompatibleVariableType of {
         incompatible_type: incompatible_type;

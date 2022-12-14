@@ -281,13 +281,15 @@ and tuple_concatenation_problem =
   | UnpackingNonIterable of { annotation: Type.t }
 [@@deriving compare, sexp, show, hash]
 
-module ReadOnly = struct
-  type mismatch = {
-    actual: ReadOnlyness.t;
-    expected: ReadOnlyness.t;
+let join_mismatch ~resolution left right =
+  {
+    expected = GlobalResolution.join resolution left.expected right.expected;
+    actual = GlobalResolution.join resolution left.actual right.actual;
+    due_to_invariance = left.due_to_invariance || right.due_to_invariance;
   }
-  [@@deriving compare, sexp, show, hash]
 
+
+module ReadOnly = struct
   type readonlyness_mismatch =
     | IncompatibleVariableType of {
         incompatible_type: incompatible_type;
@@ -339,7 +341,7 @@ module ReadOnly = struct
         in
         [message]
     | IncompatibleParameterType
-        { keyword_argument_name; position; callee; mismatch = { actual; expected } } ->
+        { keyword_argument_name; position; callee; mismatch = { actual; expected; _ } } ->
         let target =
           let parameter =
             match keyword_argument_name with
@@ -356,15 +358,8 @@ module ReadOnly = struct
           else
             Format.asprintf "In %s, for %s," callee parameter
         in
-        [
-          Format.asprintf
-            "%s expected `%a` but got `%a`."
-            target
-            ReadOnlyness.pp
-            expected
-            ReadOnlyness.pp
-            actual;
-        ]
+        let pp_type = pp_type ~concise in
+        [Format.asprintf "%s expected `%a` but got `%a`." target pp_type expected pp_type actual]
     | AssigningToReadOnlyAttribute { attribute_name } ->
         [Format.asprintf "Cannot assign to attribute `%s` since it is readonly" attribute_name]
     | RevealedType { expression; readonlyness } ->
@@ -401,46 +396,15 @@ module ReadOnly = struct
 
 
   let join ~resolution left right =
-    let join_mismatch
-        { expected = left_expected; actual = left_actual }
-        { expected = right_expected; actual = right_actual }
-      =
-      {
-        expected = ReadOnlyness.join left_expected right_expected;
-        actual = ReadOnlyness.join left_actual right_actual;
-      }
-    in
     match left, right with
     | ( IncompatibleVariableType
           ({
              incompatible_type =
-               {
-                 name = left_name;
-                 mismatch =
-                   {
-                     actual = left_actual;
-                     expected = left_expected;
-                     due_to_invariance = left_due_to_invariance;
-                   };
-                 _;
-               } as left_incompatible_type;
+               { name = left_name; mismatch = left_mismatch; _ } as left_incompatible_type;
              _;
            } as left),
         IncompatibleVariableType
-          {
-            incompatible_type =
-              {
-                name = right_name;
-                mismatch =
-                  {
-                    actual = right_actual;
-                    expected = right_expected;
-                    due_to_invariance = right_due_to_invariance;
-                  };
-                _;
-              };
-            _;
-          } )
+          { incompatible_type = { name = right_name; mismatch = right_mismatch; _ }; _ } )
       when Reference.equal left_name right_name ->
         IncompatibleVariableType
           {
@@ -448,12 +412,7 @@ module ReadOnly = struct
             incompatible_type =
               {
                 left_incompatible_type with
-                mismatch =
-                  {
-                    actual = GlobalResolution.join resolution left_actual right_actual;
-                    expected = GlobalResolution.join resolution left_expected right_expected;
-                    due_to_invariance = left_due_to_invariance || right_due_to_invariance;
-                  };
+                mismatch = join_mismatch ~resolution left_mismatch right_mismatch;
               };
           }
         |> Option.some
@@ -474,7 +433,7 @@ module ReadOnly = struct
       when Option.equal Identifier.equal_sanitized left_name right_name
            && left_position = right_position
            && Option.equal Reference.equal_sanitized left_callee right_callee ->
-        let mismatch = join_mismatch left_mismatch right_mismatch in
+        let mismatch = join_mismatch ~resolution left_mismatch right_mismatch in
         IncompatibleParameterType { left with mismatch } |> Option.some
     | ( AssigningToReadOnlyAttribute { attribute_name = left_attribute_name },
         AssigningToReadOnlyAttribute { attribute_name = right_attribute_name } )
@@ -3018,13 +2977,7 @@ let due_to_analysis_limitations { kind; _ } =
 
 
 let join ~resolution left right =
-  let join_mismatch left right =
-    {
-      expected = GlobalResolution.join resolution left.expected right.expected;
-      actual = GlobalResolution.join resolution left.actual right.actual;
-      due_to_invariance = left.due_to_invariance || right.due_to_invariance;
-    }
-  in
+  let join_mismatch = join_mismatch ~resolution in
   let join_missing_annotation
       (left : missing_annotation) (* Ohcaml... *)
       (right : missing_annotation)
