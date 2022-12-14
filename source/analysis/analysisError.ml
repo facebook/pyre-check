@@ -302,6 +302,10 @@ module ReadOnly = struct
         mismatch: mismatch;
       }
     | AssigningToReadOnlyAttribute of { attribute_name: Identifier.t }
+    | IncompatibleReturnType of {
+        mismatch: mismatch;
+        define_location: Location.t;
+      }
     | CallingMutatingMethodOnReadOnly of {
         self_argument: Expression.t;
         self_argument_type: Type.t;
@@ -309,7 +313,11 @@ module ReadOnly = struct
       }
   [@@deriving compare, sexp, show, hash]
 
-  let error_messages ~concise kind =
+  let error_messages
+      ~location:{ Location.WithPath.stop = { Location.line = stop_line; _ }; _ }
+      ~concise
+      kind
+    =
     let pp_reference = pp_reference ~concise in
     match kind with
     | IncompatibleVariableType
@@ -358,6 +366,24 @@ module ReadOnly = struct
         [Format.asprintf "%s expected `%a` but got `%a`." target pp_type expected pp_type actual]
     | AssigningToReadOnlyAttribute { attribute_name } ->
         [Format.asprintf "Cannot assign to attribute `%s` since it is readonly" attribute_name]
+    | IncompatibleReturnType
+        {
+          mismatch = { actual; expected; _ };
+          define_location = { Location.start = { line = return_line; _ }; _ };
+        } ->
+        let pp_type = pp_type ~concise in
+        let trace =
+          Format.asprintf
+            "Type `%a` expected on line %d, specified on line %d."
+            pp_type
+            expected
+            stop_line
+            return_line
+        in
+        let message =
+          Format.asprintf "Expected `%a` but got `%a`." pp_type expected pp_type actual
+        in
+        [message; trace]
     | CallingMutatingMethodOnReadOnly { self_argument; self_argument_type; method_name } ->
         let self_argument_string =
           Ast.Transform.sanitize_expression self_argument |> Expression.show
@@ -427,6 +453,11 @@ module ReadOnly = struct
         AssigningToReadOnlyAttribute { attribute_name = right_attribute_name } )
       when Identifier.equal left_attribute_name right_attribute_name ->
         Some left
+    | ( IncompatibleReturnType ({ mismatch = left_mismatch; _ } as left_record),
+        IncompatibleReturnType { mismatch = right_mismatch; _ } ) ->
+        IncompatibleReturnType
+          { left_record with mismatch = join_mismatch ~resolution left_mismatch right_mismatch }
+        |> Option.some
     | _ -> None
 
 
@@ -434,6 +465,7 @@ module ReadOnly = struct
     | IncompatibleVariableType _ -> 3001
     | IncompatibleParameterType _ -> 3002
     | AssigningToReadOnlyAttribute _ -> 3003
+    | IncompatibleReturnType _ -> 3004
     | CallingMutatingMethodOnReadOnly _ -> 3005
 
 
@@ -441,6 +473,7 @@ module ReadOnly = struct
     | IncompatibleVariableType _ -> "ReadOnly violation - Incompatible variable type"
     | IncompatibleParameterType _ -> "ReadOnly violation - Incompatible parameter type"
     | AssigningToReadOnlyAttribute _ -> "ReadOnly violation - Assigning to readonly attribute"
+    | IncompatibleReturnType _ -> "ReadOnly violation - Incompatible return type"
     | CallingMutatingMethodOnReadOnly _ ->
         "ReadOnly violation - Calling mutating method on readonly type"
 
@@ -2279,7 +2312,7 @@ let rec messages ~concise ~signature location kind =
           [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
       | TypeAlias, _ ->
           [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name])
-  | ReadOnlynessMismatch kind -> ReadOnly.error_messages ~concise kind
+  | ReadOnlynessMismatch kind -> ReadOnly.error_messages ~location ~concise kind
   | RedefinedClass { shadowed_class; _ } when concise ->
       [Format.asprintf "Class `%a` redefined" pp_reference shadowed_class]
   | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported } ->

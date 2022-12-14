@@ -1009,6 +1009,20 @@ let test_description _ =
     error
     "ReadOnly violation - Calling mutating method on readonly type [3005]: Method `my_method` may \
      modify `my_object`.";
+  assert_messages
+    (ReadOnlynessMismatch
+       (IncompatibleReturnType
+          {
+            mismatch =
+              {
+                Error.actual = Type.ReadOnly.create Type.integer;
+                expected = Type.integer;
+                due_to_invariance = false;
+              };
+            define_location = Node.location mock_define;
+          }))
+    "ReadOnly violation - Incompatible return type [3004]: Expected `int` but got \
+     `pyre_extensions.ReadOnly[int]`.";
   let incompatible_parameter_type_error =
     Error.IncompatibleParameterType
       {
