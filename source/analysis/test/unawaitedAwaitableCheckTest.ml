@@ -835,12 +835,13 @@ let test_initial context =
         return 0
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
-  (* TODO(T79853064): Need to define `await_list`. *)
   assert_awaitable_errors
     ~context
     {|
       import asyncio
-      from typing import Awaitable
+      from typing import Awaitable, Iterable
+
+      def await_list(x: Iterable[Awaitable[int]]]) -> Iterable[int]: ...
 
       async def awaitable( **d: Awaitable[int]) -> int:
         value, *_others = await_list(d.values())
