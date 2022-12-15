@@ -98,6 +98,14 @@ module HashMap : Core.Hashtbl.S with type key := t
 
 module HashSet : Core.Hash_set.S with type elt := t
 
+module MapTree : sig
+  val merge_skewed
+    :  combine:(key:t -> 'a -> 'a -> 'a) ->
+    'a Map.Tree.t ->
+    'a Map.Tree.t ->
+    'a Map.Tree.t
+end
+
 type definitions_result = {
   qualifier: Reference.t;
   (* Mapping from a target to its selected definition. *)

@@ -38,13 +38,6 @@ module Heap : sig
 
   (** If a method has too many overrides, ignore them. *)
   val cap_overrides : maximum_overrides:int option -> t -> cap_overrides_result
-
-  (** This can be used to cache the whole graph in shared memory. *)
-  type serializable
-
-  val to_serializable : t -> serializable
-
-  val of_serializable : serializable -> t
 end
 
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)

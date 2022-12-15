@@ -548,7 +548,7 @@ let test_prune_callables _ =
       (List.map expected_dependencies ~f:(fun (key, values) ->
            ( create (Reference.create key),
              List.map values ~f:(fun value -> create (Reference.create value)) )))
-      (Target.Map.to_alist actual_dependencies)
+      (Target.Map.Tree.to_alist actual_dependencies)
   in
   (* Basic case. *)
   assert_pruned

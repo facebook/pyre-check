@@ -740,24 +740,26 @@ let expression_identifier = function
 
 (** The call graph of a function or method definition. *)
 module DefineCallGraph = struct
-  type t = LocationCallees.t Location.Map.t [@@deriving eq]
+  type t = LocationCallees.t Location.Map.Tree.t [@@deriving eq]
 
   let pp formatter call_graph =
     let pp_pair formatter (key, value) =
       Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
     in
     let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-    call_graph |> Location.Map.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
+    call_graph |> Location.Map.Tree.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
 
 
   let show = Format.asprintf "%a" pp
 
-  let empty = Location.Map.empty
+  let empty = Location.Map.Tree.empty
 
-  let add call_graph ~location ~callees = Location.Map.set call_graph ~key:location ~data:callees
+  let add call_graph ~location ~callees =
+    Location.Map.Tree.set call_graph ~key:location ~data:callees
+
 
   let resolve_expression call_graph ~location ~expression_identifier =
-    match Location.Map.find call_graph location with
+    match Location.Map.Tree.find call_graph location with
     | Some (LocationCallees.Singleton callees) -> Some callees
     | Some (LocationCallees.Compound name_to_callees) ->
         PysaReference.Map.Tree.find name_to_callees expression_identifier
@@ -791,12 +793,12 @@ module DefineCallGraph = struct
 
 
   let equal_ignoring_types call_graph_left call_graph_right =
-    Location.Map.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
+    Location.Map.Tree.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
 
 
   (** Return all callees of the call graph, as a sorted list. *)
   let all_targets call_graph =
-    Location.Map.data call_graph
+    Location.Map.Tree.data call_graph
     |> List.concat_map ~f:LocationCallees.all_targets
     |> List.dedup_and_sort ~compare:Target.compare
 end
@@ -2212,7 +2214,7 @@ let call_graph_of_define
            | LocationCallees.Compound compound ->
                PysaReference.Map.Tree.exists compound ~f:(fun callees ->
                    not (ExpressionCallees.is_empty_attribute_access_callees callees)))
-    |> Location.Map.of_alist_exn
+    |> Location.Map.Tree.of_alist_exn
   in
   Statistics.performance
     ~randomly_log_every:1000
@@ -2261,24 +2263,24 @@ module DefineCallGraphSharedMemory = struct
 
   type t = Handle
 
-  let set Handle ~callable ~call_graph = add callable (Location.Map.to_tree call_graph)
+  let set Handle ~callable ~call_graph = add callable call_graph
 
-  let get Handle ~callable = get callable >>| Location.Map.of_tree
+  let get Handle ~callable = get callable
 end
 
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
     callees. *)
 module WholeProgramCallGraph = struct
-  type t = Target.t list Target.Map.t
+  type t = Target.t list Target.Map.Tree.t
 
-  let empty = Target.Map.empty
+  let empty = Target.Map.Tree.empty
 
-  let is_empty = Target.Map.is_empty
+  let is_empty = Target.Map.Tree.is_empty
 
-  let of_alist_exn = Target.Map.of_alist_exn
+  let of_alist_exn = Target.Map.Tree.of_alist_exn
 
   let add_or_exn ~callable ~callees call_graph =
-    Target.Map.update call_graph callable ~f:(function
+    Target.Map.Tree.update call_graph callable ~f:(function
         | None -> callees
         | Some _ ->
             Format.asprintf "Program call graph already has callees for `%a`" Target.pp callable
@@ -2286,11 +2288,14 @@ module WholeProgramCallGraph = struct
 
 
   let fold graph ~init ~f =
-    Target.Map.fold graph ~init ~f:(fun ~key:target ~data:callees -> f ~target ~callees)
+    Target.Map.Tree.fold graph ~init ~f:(fun ~key:target ~data:callees -> f ~target ~callees)
 
 
   let merge_disjoint left right =
-    Map.merge_skewed ~combine:(fun ~key:_ _ _ -> failwith "call graphs are not disjoint") left right
+    Target.MapTree.merge_skewed
+      ~combine:(fun ~key:_ _ _ -> failwith "call graphs are not disjoint")
+      left
+      right
 
 
   let to_target_graph graph = graph

@@ -9,9 +9,9 @@
 
 open Core
 
-type t = Target.t list Target.Map.t
+type t = Target.t list Target.Map.Tree.t
 
-let to_alist = Target.Map.to_alist
+let to_alist = Target.Map.Tree.to_alist
 
 let dump ~path graph =
   let module Buffer = Caml.Buffer in
@@ -31,7 +31,7 @@ let dump ~path graph =
       remove_trailing_comma ();
       Buffer.add_string buffer "  ],\n")
   in
-  Target.Map.iteri graph ~f:add_edges;
+  Target.Map.Tree.iteri graph ~f:add_edges;
   remove_trailing_comma ();
   Buffer.add_string buffer "}";
 
@@ -51,4 +51,4 @@ let pp formatter edges =
   let compare (left, _) (right, _) =
     String.compare (Target.show_internal left) (Target.show_internal right)
   in
-  Target.Map.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge
+  Target.Map.Tree.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge

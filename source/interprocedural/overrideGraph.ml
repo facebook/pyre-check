@@ -21,17 +21,17 @@ module AstEnvironment = Analysis.AstEnvironment
 
 (** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap = struct
-  type t = Reference.t list Target.Map.t
+  type t = Reference.t list Target.Map.Tree.t
 
-  let empty = Target.Map.empty
+  let empty = Target.Map.Tree.empty
 
-  let of_alist_exn = Target.Map.of_alist_exn
+  let of_alist_exn = Target.Map.Tree.of_alist_exn
 
   let fold graph ~init ~f =
-    Target.Map.fold graph ~init ~f:(fun ~key:member ~data:subtypes -> f ~member ~subtypes)
+    Target.Map.Tree.fold graph ~init ~f:(fun ~key:member ~data:subtypes -> f ~member ~subtypes)
 
 
-  let equal left right = Target.Map.equal (List.equal Reference.equal) left right
+  let equal left right = Target.Map.Tree.equal (List.equal Reference.equal) left right
 
   let pp formatter overrides =
     let pp_pair formatter (member, subtypes) =
@@ -43,7 +43,7 @@ module Heap = struct
         (List.map ~f:Reference.show subtypes |> String.concat ~sep:", ")
     in
     let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-    Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs (Target.Map.to_alist overrides)
+    Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs (Target.Map.Tree.to_alist overrides)
 
 
   let show = Format.asprintf "%a" pp
@@ -51,7 +51,7 @@ module Heap = struct
   let from_source ~environment ~include_unit_tests ~source =
     let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     if (not include_unit_tests) && GlobalResolution.source_is_unit_test resolution ~source then
-      Target.Map.empty
+      Target.Map.Tree.empty
     else
       let timer = Timer.start () in
       let class_method_overrides { Node.value = { Class.body; name = class_name; _ }; _ } =
@@ -118,17 +118,17 @@ module Heap = struct
           | Some types -> overriding_type :: types
           | None -> [overriding_type]
         in
-        Target.Map.update map ancestor_method ~f:update_types
+        Target.Map.Tree.update map ancestor_method ~f:update_types
       in
       let record_overrides_list map relations = List.fold relations ~init:map ~f:record_overrides in
       Preprocessing.classes source
       |> List.map ~f:class_method_overrides
-      |> List.fold ~init:Target.Map.empty ~f:record_overrides_list
-      |> Target.Map.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
+      |> List.fold ~init:Target.Map.Tree.empty ~f:record_overrides_list
+      |> Target.Map.Tree.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
 
 
   let skip_overrides ~to_skip overrides =
-    Target.Map.filter_keys
+    Target.Map.Tree.filter_keys
       ~f:(fun override -> not (Reference.Set.mem to_skip (Target.define_name override)))
       overrides
 
@@ -165,16 +165,8 @@ module Heap = struct
               number_of_overrides;
           true
     in
-    let overrides = Target.Map.filteri overrides ~f:keep_override_edge in
+    let overrides = Target.Map.Tree.filteri overrides ~f:keep_override_edge in
     { overrides; skipped_overrides = !skipped_overrides }
-
-
-  (** This can be used to cache the whole graph in shared memory. *)
-  type serializable = Reference.t list Target.Map.Tree.t
-
-  let to_serializable = Target.Map.to_tree
-
-  let of_serializable = Target.Map.of_tree
 end
 
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
@@ -206,13 +198,15 @@ module SharedMemory = struct
     let record_override_edge ~key:member ~data:subtypes =
       add_overriding_types Handle ~member ~subtypes
     in
-    let () = Target.Map.iteri overrides ~f:record_override_edge in
+    let () = Target.Map.Tree.iteri overrides ~f:record_override_edge in
     Handle
 
 
   (** Remove an override graph from shared memory. This must be called before storing another
       override graph. *)
-  let cleanup Handle overrides = overrides |> Target.Map.keys |> T.KeySet.of_list |> T.remove_batch
+  let cleanup Handle overrides =
+    overrides |> Target.Map.Tree.keys |> T.KeySet.of_list |> T.remove_batch
+
 
   let expand_override_targets Handle callees =
     let rec expand_and_gather expanded = function
@@ -260,14 +254,14 @@ let build_whole_program_overrides
             Heap.from_source ~environment ~include_unit_tests ~source
             |> Heap.skip_overrides ~to_skip:skip_overrides
           in
-          Map.merge_skewed overrides new_overrides ~combine
+          Target.MapTree.merge_skewed ~combine overrides new_overrides
     in
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
       ~initial:Heap.empty
       ~map:(fun _ qualifiers -> List.fold qualifiers ~init:Heap.empty ~f:build_overrides)
-      ~reduce:(Map.merge_skewed ~combine)
+      ~reduce:(Target.MapTree.merge_skewed ~combine)
       ~inputs:qualifiers
       ()
   in

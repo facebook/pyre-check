@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t = Target.t list Target.Map.t
+type t = Target.t list Target.Map.Tree.t
 
 val to_alist : ?key_order:[ `Decreasing | `Increasing ] -> t -> (Target.t * Target.t list) list
 

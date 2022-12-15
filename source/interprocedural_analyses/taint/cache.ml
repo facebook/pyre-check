@@ -12,7 +12,6 @@
 
 open Core
 open Pyre
-module Target = Interprocedural.Target
 module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
 module FetchCallables = Interprocedural.FetchCallables
@@ -39,35 +38,16 @@ module OverrideGraphSharedMemory = Memory.Serializer (struct
   type t = OverrideGraph.whole_program_overrides
 
   module Serialized = struct
-    type t = {
-      override_graph_heap: OverrideGraph.Heap.serializable;
-      override_graph_shared_memory: OverrideGraph.SharedMemory.t;
-      skipped_overrides: Target.t list;
-    }
+    type t = OverrideGraph.whole_program_overrides
 
     let prefix = Prefix.make ()
 
     let description = "Cached override graph"
   end
 
-  let serialize
-      { OverrideGraph.override_graph_heap; override_graph_shared_memory; skipped_overrides }
-    =
-    {
-      Serialized.override_graph_heap = OverrideGraph.Heap.to_serializable override_graph_heap;
-      override_graph_shared_memory;
-      skipped_overrides;
-    }
+  let serialize = Fn.id
 
-
-  let deserialize
-      { Serialized.override_graph_heap; override_graph_shared_memory; skipped_overrides }
-    =
-    {
-      OverrideGraph.override_graph_heap = OverrideGraph.Heap.of_serializable override_graph_heap;
-      override_graph_shared_memory;
-      skipped_overrides;
-    }
+  let deserialize = Fn.id
 end)
 
 module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct

@@ -16,12 +16,12 @@
 open Core
 open Pyre
 
-type t = Target.t list Target.Map.t
+type t = Target.t list Target.Map.Tree.t
 
-let empty = Target.Map.empty
+let empty = Target.Map.Tree.empty
 
 let dependencies dependency_graph target =
-  Target.Map.find dependency_graph target |> Option.value ~default:[]
+  Target.Map.Tree.find dependency_graph target |> Option.value ~default:[]
 
 
 let to_target_graph = Fn.id
@@ -41,12 +41,12 @@ end
 module Reversed = struct
   type nonrec dependency_graph = t
 
-  type t = Target.t list Target.Map.t
+  type t = Target.t list Target.Map.Tree.t
 
   (** Merge two reversed dependency graph that do not have common callees. *)
   let disjoint_union left right =
     let combine ~key:_ left right = List.rev_append left right in
-    Map.merge_skewed ~combine left right
+    Target.MapTree.merge_skewed ~combine left right
 
 
   (** Create a reverse dependency graph from a call graph. *)
@@ -59,9 +59,9 @@ module Reversed = struct
             | _ -> true)
           callees
       in
-      Target.Map.set result ~key:target ~data:callees
+      Target.Map.Tree.set result ~key:target ~data:callees
     in
-    CallGraph.WholeProgramCallGraph.fold callgraph ~f:add ~init:Target.Map.empty
+    CallGraph.WholeProgramCallGraph.fold callgraph ~f:add ~init:Target.Map.Tree.empty
 
 
   (** Create a reverse dependency graph from an override graph. *)
@@ -72,17 +72,17 @@ module Reversed = struct
         let data =
           List.map subtypes ~f:(fun at_type -> Target.create_derived_override key ~at_type)
         in
-        ( Target.Map.set override_map ~key ~data,
+        ( Target.Map.Tree.set override_map ~key ~data,
           Target.Set.union all_overrides (Target.Set.of_list data) )
       in
-      OverrideGraph.Heap.fold overrides ~f:add ~init:(Target.Map.empty, Target.Set.empty)
+      OverrideGraph.Heap.fold overrides ~f:add ~init:(Target.Map.Tree.empty, Target.Set.empty)
     in
     (* Create empty entries for leaves, so `override_to_method_edge` can add self-links *)
     let override_map =
       Target.Set.fold
         (fun override override_map ->
-          if not (Target.Map.mem override_map override) then
-            Target.Map.set override_map ~key:override ~data:[]
+          if not (Target.Map.Tree.mem override_map override) then
+            Target.Map.Tree.set override_map ~key:override ~data:[]
           else
             override_map)
         all_overrides
@@ -96,9 +96,9 @@ module Reversed = struct
             Some (override, [corresponding_method])
         | _ -> None
       in
-      Target.Map.keys override_map
+      Target.Map.Tree.keys override_map
       |> List.filter_map ~f:override_to_method_edge
-      |> Target.Map.of_alist_exn
+      |> Target.Map.Tree.of_alist_exn
     in
     disjoint_union override_map overrides_to_methods
 
@@ -111,7 +111,7 @@ module Reversed = struct
         accumulator
       else (
         Hashtbl.add_exn visited ~key:node ~data:();
-        let successors = Target.Map.find edges node |> Option.value ~default:[] in
+        let successors = Target.Map.Tree.find edges node |> Option.value ~default:[] in
         node :: List.fold successors ~init:accumulator ~f:visit)
     in
     let partition accumulator node =
@@ -140,9 +140,9 @@ module Reversed = struct
       (* We only keep the keys which were in the original dependency graph to avoid introducing
          spurious override leaves. *)
       let to_edge callable =
-        Target.Map.find reverse_dependency_graph callable >>| fun values -> callable, values
+        Target.Map.Tree.find reverse_dependency_graph callable >>| fun values -> callable, values
       in
-      Target.Map.of_alist_exn (List.filter_map callables_to_keep ~f:to_edge)
+      Target.Map.Tree.of_alist_exn (List.filter_map callables_to_keep ~f:to_edge)
     in
     { reverse_dependency_graph; callables_kept = callables_to_keep }
 
@@ -152,9 +152,9 @@ module Reversed = struct
   let reverse reverse_dependency_graph =
     let reverse ~key ~data dependency_graph =
       List.fold data ~init:dependency_graph ~f:(fun dependency_graph callee ->
-          Target.Map.add_multi dependency_graph ~key:callee ~data:key)
+          Target.Map.Tree.add_multi dependency_graph ~key:callee ~data:key)
     in
-    Map.fold reverse_dependency_graph ~init:Target.Map.empty ~f:reverse
+    Target.Map.Tree.fold reverse_dependency_graph ~init:Target.Map.Tree.empty ~f:reverse
 end
 
 type whole_program_dependency_graph = {
@@ -171,7 +171,7 @@ type whole_program_dependency_graph = {
     maps dependees to dependers. *)
 let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~overrides =
   let reverse_dependency_graph = Reversed.from_overrides overrides in
-  let override_targets = Target.Map.keys reverse_dependency_graph in
+  let override_targets = Target.Map.Tree.keys reverse_dependency_graph in
   let reverse_dependency_graph =
     Reversed.from_call_graph call_graph |> Reversed.disjoint_union reverse_dependency_graph
   in
