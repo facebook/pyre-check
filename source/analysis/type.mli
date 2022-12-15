@@ -424,7 +424,7 @@ end
 val pp_parameters
   :  pp_type:(Format.formatter -> type_t -> unit) ->
   Format.formatter ->
-  Parameter.t sexp_list ->
+  Parameter.t list ->
   unit
 
 val show_concise : t -> string
