@@ -198,6 +198,8 @@ and unawaited_awaitable = {
   expression: Expression.t;
 }
 
+and leak_to_global = { global_name: Reference.t }
+
 and undefined_import =
   | UndefinedModule of Reference.t
   | UndefinedName of {
@@ -471,6 +473,7 @@ and kind =
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t
   | UnawaitedAwaitable of unawaited_awaitable
+  | GlobalLeak of leak_to_global
   (* Errors from run-time edge cases *)
   | BroadcastError of {
       expression: Expression.t;

@@ -6,8 +6,8 @@
    unawaitedAwaitableCheckTest callgraphTest cfgTest classHierarchyTest
    classHierarchyEnvironmentTest classMetadataEnvironmentTest
    constraintsSetTest dataClassTest errorsEnvironmentTest environmentTest
-   fixpointTest globalResolutionTest inlineDecoratorTest latticeOfMapsTest
-   matchTranslateTest locationBasedLookupTest moduleTrackerTest
+   fixpointTest globalLeakCheckTest globalResolutionTest inlineDecoratorTest
+   latticeOfMapsTest matchTranslateTest locationBasedLookupTest moduleTrackerTest
    overlaidEnvironmentTest newTypeTest namedTupleTest preprocessingTest
    refinementTest resolutionTest resolvedCallableTest scopeTest sqlAlchemyTest
    typeCheckTest typeConstraintsTest typedDictionaryAttributeTest

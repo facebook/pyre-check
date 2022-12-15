@@ -35,6 +35,7 @@ module AnalysisError = AnalysisError
 module Fixpoint = Fixpoint
 module FunctionDefinition = FunctionDefinition
 module GlobalResolution = GlobalResolution
+module GlobalLeakCheck = GlobalLeakCheck
 module InlineDecorator = InlineDecorator
 module LatticeOfMaps = LatticeOfMaps
 module LivenessCheck = LivenessCheck
