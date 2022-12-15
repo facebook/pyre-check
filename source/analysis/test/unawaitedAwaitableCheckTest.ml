@@ -12,8 +12,12 @@ open Test
 
 let assert_awaitable_errors ~context =
   let check ~environment ~source =
+    let type_environment = TypeEnvironment.read_only environment in
     UnawaitedAwaitableCheck.check_module_TESTING_ONLY
-      ~type_environment:(TypeEnvironment.read_only environment)
+      ~global_resolution:
+        (type_environment |> TypeEnvironment.ReadOnly.global_environment |> GlobalResolution.create)
+      ~local_annotations_for_define:
+        (TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment)
       source
   in
   assert_errors ~context ~check

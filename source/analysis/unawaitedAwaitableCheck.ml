@@ -865,26 +865,20 @@ module State (Context : Context) = struct
   let backward ~statement_key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
-let unawaited_awaitable_errors ~type_environment ~qualifier define =
+let unawaited_awaitable_errors ~global_resolution ~local_annotations ~qualifier define =
   let module Context = struct
     let qualifier = qualifier
 
     let define = define
 
-    let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment
+    let global_resolution = global_resolution
 
-    let local_annotations =
-      TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
-        type_environment
-        (Node.value define |> Define.name)
+    let local_annotations = local_annotations
   end
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let cfg = Cfg.create (Node.value define) in
-  let global_resolution =
-    TypeEnvironment.ReadOnly.global_environment type_environment |> GlobalResolution.create
-  in
   Fixpoint.forward ~cfg ~initial:(State.initial ~global_resolution (Node.value define))
   |> Fixpoint.exit
   >>| State.errors
@@ -894,12 +888,9 @@ let unawaited_awaitable_errors ~type_environment ~qualifier define =
 (** Avoid emitting "unawaited awaitable" errors for classes that inherit from `Awaitable`. They may,
     for example, store attributes that are unawaited. *)
 let should_run_analysis
-    ~type_environment
+    ~global_resolution
     { Node.value = { Define.signature = { parent; _ }; _ }; _ }
   =
-  let global_resolution =
-    TypeEnvironment.ReadOnly.global_environment type_environment |> GlobalResolution.create
-  in
   parent
   >>| (fun parent -> Type.Primitive (Reference.show parent))
   >>| is_awaitable ~global_resolution
@@ -907,18 +898,24 @@ let should_run_analysis
   |> Option.value ~default:true
 
 
-let check_define ~type_environment ~qualifier define =
-  if should_run_analysis ~type_environment define then
-    unawaited_awaitable_errors ~type_environment ~qualifier define
+let check_define ~global_resolution ~local_annotations ~qualifier define =
+  if should_run_analysis ~global_resolution define then
+    unawaited_awaitable_errors ~global_resolution ~local_annotations ~qualifier define
   else
     []
 
 
 let check_module_TESTING_ONLY
-    ~type_environment
+    ~global_resolution
+    ~local_annotations_for_define
     ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
   =
   source
   |> Preprocessing.defines ~include_toplevels:true
-  |> List.map ~f:(check_define ~type_environment ~qualifier)
+  |> List.map ~f:(fun define ->
+         check_define
+           ~global_resolution
+           ~local_annotations:(local_annotations_for_define (Node.value define |> Define.name))
+           ~qualifier
+           define)
   |> List.concat

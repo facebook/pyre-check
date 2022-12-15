@@ -9,12 +9,14 @@ open Ast
 module Error = AnalysisError
 
 val check_define
-  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  :  global_resolution:GlobalResolution.t ->
+  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
   qualifier:Reference.t ->
   Statement.Define.t Node.t ->
   Error.t list
 
 val check_module_TESTING_ONLY
-  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  :  global_resolution:GlobalResolution.t ->
+  local_annotations_for_define:(Ast.Reference.t -> LocalAnnotationMap.ReadOnly.t option) ->
   Source.t ->
   Error.t list
