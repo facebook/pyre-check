@@ -35,15 +35,27 @@ let assert_awaitable_errors ~context =
 
 let test_forward context =
   let assert_awaitable_errors = assert_awaitable_errors ~context in
+  (* Test that a non-async `def` returning `Awaitable[int]` is checked correctly. *)
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      from typing import Awaitable
+
+      def awaitable() -> Awaitable[int]: ...
+
       unawaited = awaitable()
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
+      unawaited = awaitable()
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       await awaited
     |}
@@ -52,21 +64,24 @@ let test_forward context =
   (* Assert. *)
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       _ = await awaited
     |}
     [];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       assert (await awaited)
     |}
     [];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       assert awaited
     |}
@@ -75,7 +90,8 @@ let test_forward context =
   (* Delete. *)
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       if "moon_is_high":
         del (await awaited)
@@ -85,7 +101,8 @@ let test_forward context =
   (* Raise. *)
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[Exception]: ...
+      async def awaitable() -> Exception: ...
+
       awaited = awaitable()
       raise (await awaited)
     |}
@@ -94,7 +111,7 @@ let test_forward context =
   (* Return. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable() -> typing.Awaitable[int]:
         awaited = awaitable()
         return awaited
@@ -104,7 +121,7 @@ let test_forward context =
   (* Yield. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         awaited = awaitable()
         yield awaited
@@ -112,7 +129,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         awaited = awaitable()
         yield (await awaited)
@@ -121,7 +138,7 @@ let test_forward context =
 
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         awaited = awaitable()
         yield from (await awaited)
@@ -131,7 +148,7 @@ let test_forward context =
   (* Tuples. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         awaited = awaitable()
         yield (await awaited, 3)
@@ -159,7 +176,7 @@ let test_forward context =
   (* Boolean operators. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         awaited = awaitable()
         await awaited or Exception("You must await.")
@@ -167,7 +184,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         awaited = awaitable()
         1 and (2 and (await awaited))
@@ -177,7 +194,7 @@ let test_forward context =
   (* We view parameters which flow into a call as having been awaited. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def takes_awaitable(x: typing.Awaitable[int]): ...
       def meta_awaitable():
         awaited = awaitable()
@@ -186,7 +203,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def takes_awaitable(x: typing.Awaitable[int]): ...
       def meta_awaitable():
         await takes_awaitable(awaitable())
@@ -194,7 +211,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def takes_awaitable(x: typing.Awaitable[int]): ...
       def meta_awaitable():
         await takes_awaitable({ "a": awaitable(), "b": awaitable()})
@@ -204,7 +221,7 @@ let test_forward context =
   (* Comparison operators. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def meta_awaitable():
         awaited = awaitable()
         return (await awaited) > 2
@@ -212,7 +229,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def meta_awaitable() -> bool:
         awaited = awaitable()
         return 0 == (await awaited)
@@ -222,7 +239,7 @@ let test_forward context =
   (* Container literals. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def meta_awaitable():
         awaited = awaitable()
         return [1, await awaited, 2]
@@ -230,7 +247,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def meta_awaitable():
         awaited = awaitable()
         return {1, await awaited, 2}
@@ -238,7 +255,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def meta_awaitable():
         awaited = awaitable()
         return {await awaited: 1, 2: 2}
@@ -246,7 +263,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def meta_awaitable():
         awaited = awaitable()
         return {"foo": [await awaited]}
@@ -256,7 +273,7 @@ let test_forward context =
   (* Lambdas. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def meta_awaitable():
         awaited = awaitable()
         lambda x: (await awaited) or 42
@@ -266,7 +283,7 @@ let test_forward context =
   (* Starred expressions. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[typing.Iterable[int]]: ...
+      async def awaitable() -> typing.Iterable[int]: ...
       async def meta_awaitable():
         awaited = awaitable()
         [1, *(await awaited)]
@@ -274,7 +291,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[typing.Dict[int, str]]: ...
+      async def awaitable() -> typing.Dict[int, str]: ...
       async def meta_awaitable():
         awaited = awaitable()
         {1: "x", **(await awaited)}
@@ -284,21 +301,21 @@ let test_forward context =
   (* Ternaries. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       awaited = awaitable()
       1 if (await awaited) else 2
     |}
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       awaited = awaitable()
       (await awaited) if 1 else 2
     |}
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       awaited = awaitable()
       1 if 2 else (await awaited)
     |}
@@ -307,7 +324,7 @@ let test_forward context =
   (* Unary operators. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       awaited = awaitable()
       -(not (await awaited))
     |}
@@ -316,7 +333,7 @@ let test_forward context =
   (* Yield. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       awaited = awaitable()
       yield (await awaited) if 1 > 2 else False
     |}
@@ -325,43 +342,50 @@ let test_forward context =
   (* Comprehensions. *)
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       [i for i in await awaited]
     |}
     [];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       [(await awaited) for i in [1, 2, 3]]
     |}
     [];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       {(await awaited) for i in [1, 2, 3]}
     |}
     [];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       {i: (await awaited) for i in [1, 2, 3]}
     |}
     [];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       awaited = awaitable()
       ((await awaited) for i in [1, 2, 3])
     |}
     [];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
-      def other_awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
+      async def other_awaitable() -> int: ...
+
       unawaited = awaitable()
       other_unawaited = other_awaitable()
       if True > False:
@@ -374,8 +398,10 @@ let test_forward context =
     ];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
-      def other_awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
+      async def other_awaitable() -> int: ...
+
       unawaited = awaitable()
       other_unawaited = other_awaitable()
       unawaited = other_unawaited
@@ -384,8 +410,10 @@ let test_forward context =
     ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
-      def other_awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
+      async def other_awaitable() -> int: ...
+
       unawaited = awaitable()
       other_unawaited = other_awaitable()
       if 1 > 2:
@@ -395,8 +423,10 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
-      def other_awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
+      async def other_awaitable() -> int: ...
+
       unawaited = awaitable()
       other_unawaited = other_awaitable()
       if 1 > 2:
@@ -406,7 +436,8 @@ let test_forward context =
     ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
+
       def foo():
         awaitable()
     |}
@@ -416,7 +447,7 @@ let test_forward context =
   assert_awaitable_errors
     {|
       class C:
-        def awaitable(self) -> typing.Awaitable[int]: ...
+        async def awaitable(self) -> int: ...
 
       def foo():
         await C().awaitable()
@@ -495,7 +526,7 @@ let test_forward context =
 
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable() -> typing.Tuple[typing.Awaitable[int], int]:
         awaited = awaitable()
         return awaited, 1
@@ -503,7 +534,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       class C:
         a = awaitable()
         def await_the_awaitable(self):
@@ -514,7 +545,7 @@ let test_forward context =
     {|
       import typing
       class C:
-        async def foo() -> typing.Awaitable[int]: ...
+        async def foo() -> int: ...
       def foo(c: C):
        await c.foo()
     |}
@@ -633,14 +664,14 @@ let test_forward context =
   (* Multiple assignment targets. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         x = y = await awaitable()
     |}
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         x = y = awaitable()
         a = b = c = awaitable()
@@ -653,14 +684,14 @@ let test_forward context =
   (* Walrus operator. *)
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         x = y := await awaitable()
     |}
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         x = (y := awaitable())
     |}
@@ -668,7 +699,7 @@ let test_forward context =
     ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         if y := await awaitable():
           pass
@@ -676,7 +707,7 @@ let test_forward context =
     [];
   assert_awaitable_errors
     {|
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def meta_awaitable():
         if y := awaitable():
           pass
@@ -761,7 +792,7 @@ let test_state context =
   assert_awaitable_errors
     ~context
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
 
       if True:
         unawaited = awaitable()
@@ -770,7 +801,7 @@ let test_state context =
   assert_awaitable_errors
     ~context
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
 
       unawaited = awaitable()
       if True:
@@ -853,7 +884,7 @@ let test_attribute_access context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def foo() -> None:
         await awaitable().method()
     |}
@@ -866,7 +897,7 @@ let test_aliases context =
     {|
       import typing
 
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
 
       async def foo() -> None:
         x = awaitable()
@@ -877,7 +908,7 @@ let test_aliases context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def foo() -> None:
         a = [awaitable()]
         b = [1]
@@ -889,7 +920,7 @@ let test_aliases context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def foo() -> None:
         a = [awaitable()]
         b = [1]
@@ -900,7 +931,7 @@ let test_aliases context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def foo() -> None:
         a = [1]
         b = [awaitable()]
@@ -930,7 +961,7 @@ let test_return context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def foo() -> typing.Awaitable[int]:
         return awaitable()
     |}
@@ -939,7 +970,7 @@ let test_return context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       def foo() -> typing.Awaitable[int]:
         x = [awaitable()]
         y = [awaitable()]
@@ -953,7 +984,7 @@ let test_assign context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def foo() -> int:
         d = {}
         d["bar"] = awaitable()
@@ -967,7 +998,7 @@ let test_assign context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def foo() -> int:
         d = {}
         d["bar"] = awaitable()
@@ -980,7 +1011,7 @@ let test_assign context =
     {|
       import asyncio
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
       async def foo() -> int:
         d = {}
         d["bar"] = awaitable()
@@ -1032,7 +1063,7 @@ let test_if context =
   (* TODO(T79853064): This should emit an error about the awaitable sometimes not being awaited. *)
   assert_awaitable_errors
     {|
-      def awaitable() -> typing.Awaitable[int]: ...
+      async def awaitable() -> int: ...
 
       def foo(b: bool) -> None:
         unawaited = awaitable()
