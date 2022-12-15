@@ -24,7 +24,7 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Type
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-COMPILER_VERSION = "4.11.2"
+COMPILER_VERSION = "4.12.1"
 DEPENDENCIES = [
     "base64.3.5.0",
     "core.v0.14.1",
