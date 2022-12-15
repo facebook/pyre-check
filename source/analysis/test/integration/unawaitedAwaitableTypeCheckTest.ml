@@ -28,6 +28,15 @@ let test_unawaited_awaitable_configuration_flag context =
         x = awaitable()
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+  (* Don't warn about unawaited awaitables for top-level assignments. *)
+  assert_type_errors
+    ~enable_unawaited_awaitable_check:true
+    {|
+      async def awaitable() -> int: ...
+
+      x = awaitable()
+    |}
+    ["Missing global annotation [5]: Globally accessible variable `x` has no type specified."];
   ()
 
 

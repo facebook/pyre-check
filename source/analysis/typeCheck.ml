@@ -7318,6 +7318,32 @@ let compute_local_annotations ~global_environment name =
   >>| LocalAnnotationMap.read_only
 
 
+let errors_from_other_analyses
+    ~include_unawaited_awaitable_errors
+    ~resolution
+    ~local_annotations
+    ~qualifier
+    ({ Node.value = define; _ } as define_node)
+  =
+  let uninitialized_local_errors =
+    if Define.is_toplevel define then
+      []
+    else
+      UninitializedLocalCheck.check_define ~qualifier define_node
+  in
+  let unawaited_awaitable_errors =
+    if include_unawaited_awaitable_errors && not (Define.is_toplevel define) then
+      UnawaitedAwaitableCheck.check_define
+        ~resolution
+        ~local_annotations:(local_annotations >>| LocalAnnotationMap.read_only)
+        ~qualifier
+        define_node
+    else
+      []
+  in
+  uninitialized_local_errors @ unawaited_awaitable_errors
+
+
 let check_define
     ~type_check_controls:
       {
@@ -7356,23 +7382,14 @@ let check_define
       in
       let errors =
         if include_type_errors then
-          let uninitialized_local_errors =
-            if Define.is_toplevel define then
-              []
-            else
-              UninitializedLocalCheck.check_define ~qualifier define_node
-          in
-          let unawaited_awaitable_errors =
-            if include_unawaited_awaitable_errors then
-              UnawaitedAwaitableCheck.check_define
-                ~resolution
-                ~local_annotations:(local_annotations >>| LocalAnnotationMap.read_only)
-                ~qualifier
-                define_node
-            else
-              []
-          in
-          Some (uninitialized_local_errors @ unawaited_awaitable_errors @ type_errors)
+          Some
+            (errors_from_other_analyses
+               ~include_unawaited_awaitable_errors
+               ~resolution
+               ~local_annotations
+               ~qualifier
+               define_node
+            @ type_errors)
         else
           None
       in
