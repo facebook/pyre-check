@@ -112,12 +112,7 @@ module type Context = sig
 
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
 
-  val type_resolution_for_statement
-    :  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
-    parent:Reference.t option ->
-    statement_key:int ->
-    unit ->
-    Resolution.t
+  val resolution : Resolution.t
 end
 
 module State (Context : Context) = struct
@@ -811,16 +806,27 @@ module State (Context : Context) = struct
     | _ -> state
 
 
+  let resolution_for_statement ~local_annotations ~parent ~statement_key resolution =
+    let annotation_store =
+      local_annotations
+      >>= LocalAnnotationMap.ReadOnly.get_precondition ~statement_key
+      |> Option.value ~default:Refinement.Store.empty
+    in
+    resolution
+    |> Resolution.with_annotation_store ~annotation_store
+    |> Resolution.with_parent ~parent
+
+
   let forward ~statement_key state ~statement:{ Node.value; _ } =
     let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
       Context.define
     in
     let resolution =
-      Context.type_resolution_for_statement
+      resolution_for_statement
         ~local_annotations:Context.local_annotations
         ~parent
         ~statement_key
-        ()
+        Context.resolution
     in
     match value with
     | Statement.Assert { Assert.test; _ } ->
@@ -880,13 +886,7 @@ module State (Context : Context) = struct
   let backward ~statement_key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
-let unawaited_awaitable_errors
-    ~type_resolution_for_statement
-    ~global_resolution
-    ~local_annotations
-    ~qualifier
-    define
-  =
+let unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define =
   let module Context = struct
     let qualifier = qualifier
 
@@ -894,13 +894,15 @@ let unawaited_awaitable_errors
 
     let local_annotations = local_annotations
 
-    let type_resolution_for_statement = type_resolution_for_statement
+    let resolution = resolution
   end
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let cfg = Cfg.create (Node.value define) in
-  Fixpoint.forward ~cfg ~initial:(State.initial ~global_resolution (Node.value define))
+  Node.value define
+  |> State.initial ~global_resolution:(Resolution.global_resolution resolution)
+  |> (fun initial -> Fixpoint.forward ~cfg ~initial)
   |> Fixpoint.exit
   >>| State.errors
   |> Option.value ~default:[]
@@ -919,27 +921,15 @@ let should_run_analysis
   |> Option.value ~default:true
 
 
-let check_define
-    ~type_resolution_for_statement
-    ~global_resolution
-    ~local_annotations
-    ~qualifier
-    define
-  =
-  if should_run_analysis ~global_resolution define then
-    unawaited_awaitable_errors
-      ~type_resolution_for_statement
-      ~global_resolution
-      ~local_annotations
-      ~qualifier
-      define
+let check_define ~resolution ~local_annotations ~qualifier define =
+  if should_run_analysis ~global_resolution:(Resolution.global_resolution resolution) define then
+    unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define
   else
     []
 
 
 let check_module_TESTING_ONLY
-    ~type_resolution_for_statement
-    ~global_resolution
+    ~resolution
     ~local_annotations_for_define
     ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
   =
@@ -947,8 +937,7 @@ let check_module_TESTING_ONLY
   |> Preprocessing.defines ~include_toplevels:true
   |> List.map ~f:(fun define ->
          check_define
-           ~type_resolution_for_statement
-           ~global_resolution
+           ~resolution
            ~local_annotations:(local_annotations_for_define (Node.value define |> Define.name))
            ~qualifier
            define)
