@@ -2030,9 +2030,11 @@ module State (Context : Context) = struct
           in
           { Error.name; annotation }
         in
-        let annotations = Map.to_alist (Resolution.annotation_store resolution).annotations in
+        let annotations =
+          Reference.Map.Tree.to_alist (Resolution.annotation_store resolution).annotations
+        in
         let temporary_annotations =
-          Map.to_alist (Resolution.annotation_store resolution).temporary_annotations
+          Reference.Map.Tree.to_alist (Resolution.annotation_store resolution).temporary_annotations
         in
         let revealed_locals = List.map ~f:from_annotation (temporary_annotations @ annotations) in
         let errors = emit_error ~errors:[] ~location ~kind:(Error.RevealedLocals revealed_locals) in

@@ -188,8 +188,8 @@ let unset_local
     resolution with
     annotation_store =
       {
-        annotations = Map.remove annotations reference;
-        temporary_annotations = Map.remove temporary_annotations reference;
+        annotations = Reference.Map.Tree.remove annotations reference;
+        temporary_annotations = Reference.Map.Tree.remove temporary_annotations reference;
       };
   }
 
@@ -197,7 +197,7 @@ let unset_local
 let clear_temporary_annotations ({ annotation_store; _ } as resolution) =
   {
     resolution with
-    annotation_store = { annotation_store with temporary_annotations = Reference.Map.empty };
+    annotation_store = { annotation_store with temporary_annotations = Reference.Map.Tree.empty };
   }
 
 

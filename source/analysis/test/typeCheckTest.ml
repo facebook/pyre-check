@@ -45,8 +45,9 @@ let create_annotation_store ?(immutables = []) annotations =
     !&name, annotation
   in
   {
-    Refinement.Store.annotations = List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
-    temporary_annotations = Reference.Map.empty;
+    Refinement.Store.annotations =
+      List.map annotations ~f:annotify |> Reference.Map.Tree.of_alist_exn;
+    temporary_annotations = Reference.Map.Tree.empty;
   }
 
 
@@ -62,7 +63,7 @@ let assert_annotation_store ~expected actual =
         temporary_annotations = right_temporary_annotations;
       }
     =
-    let equal_map = Reference.Map.equal [%equal: Refinement.Unit.t] in
+    let equal_map = Reference.Map.Tree.equal [%equal: Refinement.Unit.t] in
     equal_map left_annotations right_annotations
     && equal_map left_temporary_annotations right_temporary_annotations
   in
@@ -71,10 +72,12 @@ let assert_annotation_store ~expected actual =
       Format.asprintf "%a -> %a" Reference.pp name Refinement.Unit.pp refinement_unit
     in
     let printed_annotations =
-      Map.to_alist annotations |> List.map ~f:annotation_to_string |> String.concat ~sep:"\n"
+      Reference.Map.Tree.to_alist annotations
+      |> List.map ~f:annotation_to_string
+      |> String.concat ~sep:"\n"
     in
     let printed_temporary_annotations =
-      Map.to_alist temporary_annotations
+      Reference.Map.Tree.to_alist temporary_annotations
       |> List.map ~f:annotation_to_string
       |> String.concat ~sep:"\n"
     in

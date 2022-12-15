@@ -131,7 +131,7 @@ end
 
 module ReferenceMap = struct
   module T = struct
-    include Reference.Map
+    include Reference.Map.Tree
 
     type key = Reference.t
   end

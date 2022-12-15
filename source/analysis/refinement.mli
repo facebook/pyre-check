@@ -46,8 +46,8 @@ end
 
 module Store : sig
   type t = {
-    annotations: Unit.t Reference.Map.t;
-    temporary_annotations: Unit.t Reference.Map.t;
+    annotations: Unit.t Reference.Map.Tree.t;
+    temporary_annotations: Unit.t Reference.Map.Tree.t;
   }
   [@@deriving eq, show]
 

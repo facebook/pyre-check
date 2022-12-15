@@ -63,7 +63,7 @@ module IdentifierMap : sig
 end
 
 module ReferenceMap : sig
-  include module type of Reference.Map
+  include module type of Reference.Map.Tree
 
   include LatticeFunctions with type key := Reference.t and type 'data t := 'data t
 end

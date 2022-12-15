@@ -40,8 +40,8 @@ let assert_backward ~resolution precondition statement postcondition =
         in
         {
           Refinement.Store.annotations =
-            List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
-          temporary_annotations = Reference.Map.empty;
+            List.map annotations ~f:annotify |> Reference.Map.Tree.of_alist_exn;
+          temporary_annotations = Reference.Map.Tree.empty;
         }
       in
       Resolution.with_annotation_store resolution ~annotation_store
