@@ -28,7 +28,7 @@ COMPILER_VERSION = "4.14.0"
 DEPENDENCIES = [
     "base64.3.5.0",
     "core.v0.15.1",
-    "core_unix.v0.15.1",
+    "core_unix.v0.15.2",
     "re2.v0.15.0",
     "dune.3.4.1",
     "yojson.2.0.2",
