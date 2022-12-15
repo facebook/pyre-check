@@ -504,6 +504,23 @@ module Modelable = struct
     | Callable { target; _ } -> Target.class_name target
     | Attribute { VariableMetadata.name; _ } -> Reference.prefix name >>| Reference.show
     | Global _ -> failwith "unexpected use of a class constraint on a global"
+
+
+  let matches_find modelable find =
+    match find, modelable with
+    | ModelQuery.Find.Function, Callable { target = Target.Function _; _ }
+    | ModelQuery.Find.Method, Callable { target = Target.Method _; _ }
+    | ModelQuery.Find.Attribute, Attribute _
+    | ModelQuery.Find.Global, Global _ ->
+        true
+    | _ -> false
+
+
+  let target = function
+    | Callable { target; _ } -> target
+    | Attribute { VariableMetadata.name; _ }
+    | Global { VariableMetadata.name; _ } ->
+        Target.create_object name
 end
 
 let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constraint =
@@ -560,12 +577,12 @@ module type QUERY_KIND = sig
 
   val get_target : target_information -> Target.t
 
-  val generate_annotations_from_query_on_target
-    :  verbose:bool ->
-    resolution:GlobalResolution.t ->
-    class_hierarchy_graph:ClassHierarchyGraph.SharedMemory.t ->
-    target:target_information ->
-    ModelQuery.t ->
+  val make_modelable : resolution:GlobalResolution.t -> target_information -> Modelable.t
+
+  (* Generate taint annotations from the `models` part of a given model query. *)
+  val generate_annotations_from_query_models
+    :  modelable:Modelable.t ->
+    ModelQuery.Model.t list ->
     annotation list
 
   val generate_model_from_annotations
@@ -581,6 +598,42 @@ end
 module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   include QueryKind
 
+  let matches_query_constraints
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~modelable
+      { ModelQuery.find; where; name = query_name; _ }
+    =
+    let result =
+      Modelable.matches_find modelable find
+      && List.for_all ~f:(matches_constraint ~resolution ~class_hierarchy_graph modelable) where
+    in
+    let () =
+      if verbose then
+        Log.info
+          "Target `%a` matches all constraints for the model query `%s`."
+          Target.pp_pretty
+          (Modelable.target modelable)
+          query_name
+    in
+    result
+
+
+  let generate_annotations_from_query_on_target
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~target
+      ({ ModelQuery.models; _ } as query)
+    =
+    let modelable = QueryKind.make_modelable ~resolution target in
+    if matches_query_constraints ~verbose ~resolution ~class_hierarchy_graph ~modelable query then
+      QueryKind.generate_annotations_from_query_models ~modelable models
+    else
+      []
+
+
   let generate_model_from_query_on_target
       ~verbose
       ~resolution
@@ -591,7 +644,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       query
     =
     match
-      QueryKind.generate_annotations_from_query_on_target
+      generate_annotations_from_query_on_target
         ~verbose
         ~resolution
         ~class_hierarchy_graph
@@ -716,19 +769,20 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
 
   let get_target = Fn.id
 
-  (* Generate taint annotations from the `models` part of a given model query. *)
-  let generate_annotations_from_query_models
-      ~models
-      {
-        Node.value =
-          {
-            Statement.Define.signature =
-              { Statement.Define.Signature.parameters; return_annotation; _ };
-            _;
-          };
-        _;
-      }
-    =
+  let make_modelable ~resolution callable =
+    let definition =
+      lazy
+        (let definition = Target.get_module_and_definition ~resolution callable >>| snd in
+         let () =
+           if Option.is_none definition then
+             Log.error "Could not find definition for callable: `%a`" Target.pp_pretty callable
+         in
+         definition)
+    in
+    Modelable.Callable { target = callable; definition }
+
+
+  let generate_annotations_from_query_models ~modelable models =
     let production_to_taint ?(parameter = None) ~production annotation =
       let open Expression in
       let get_subkind_from_annotation ~pattern annotation =
@@ -847,8 +901,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
               features = ModelParseResult.TaintFeatures.empty;
             }
     in
-    let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
-    let apply_model = function
+    let apply_model ~normalized_parameters ~return_annotation = function
       | ModelQuery.Model.Return productions ->
           List.filter_map productions ~f:(fun production ->
               production_to_taint return_annotation ~production
@@ -924,55 +977,25 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.Global _ -> failwith "impossible case"
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
-    List.concat_map models ~f:apply_model
-
-
-  let generate_annotations_from_query_on_target
-      ~verbose
-      ~resolution
-      ~class_hierarchy_graph
-      ~target:callable
-      { ModelQuery.find; where; models; name = query_name; _ }
-    =
-    let kind_matches =
-      match callable, find with
-      | Target.Function _, ModelQuery.Find.Function
-      | Target.Method _, ModelQuery.Find.Method ->
-          true
-      | _ -> false
-    in
     let definition =
-      lazy
-        (let definition = Target.get_module_and_definition ~resolution callable >>| snd in
-         let () =
-           if Option.is_none definition then
-             Log.error "Could not find definition for callable: `%a`" Target.pp_pretty callable
-         in
-         definition)
+      match modelable with
+      | Modelable.Callable { definition; _ } -> Lazy.force definition
+      | _ -> failwith "unreachable"
     in
-    if
-      kind_matches
-      && List.for_all
-           ~f:
-             (matches_constraint
-                ~resolution
-                ~class_hierarchy_graph
-                (Modelable.Callable { target = callable; definition }))
-           where
-    then
-      let () =
-        if verbose then
-          Log.info
-            "Target `%a` matches all constraints for the model query `%s`."
-            Target.pp_pretty
-            callable
-            query_name
-      in
-      Lazy.force definition
-      >>| generate_annotations_from_query_models ~models
-      |> Option.value ~default:[]
-    else
-      []
+    match definition with
+    | None -> []
+    | Some
+        {
+          Node.value =
+            {
+              Statement.Define.signature =
+                { Statement.Define.Signature.parameters; return_annotation; _ };
+              _;
+            };
+          _;
+        } ->
+        let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+        List.concat_map models ~f:(apply_model ~normalized_parameters ~return_annotation)
 
 
   let generate_model_from_annotations
@@ -997,8 +1020,9 @@ module AttributeQueryExecutor = MakeQueryExecutor (struct
 
   let get_target { VariableMetadata.name; _ } = Target.create_object name
 
-  (* Generate taint annotations from the `models` part of a given model query. *)
-  let generate_annotations_from_query_models ~models =
+  let make_modelable ~resolution:_ variable_metadata = Modelable.Attribute variable_metadata
+
+  let generate_annotations_from_query_models ~modelable:_ models =
     let production_to_taint = function
       | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
       | _ -> None
@@ -1008,35 +1032,6 @@ module AttributeQueryExecutor = MakeQueryExecutor (struct
       | _ -> failwith "impossible case"
     in
     List.concat_map models ~f:apply_model
-
-
-  let generate_annotations_from_query_on_target
-      ~verbose
-      ~resolution
-      ~class_hierarchy_graph
-      ~target:({ VariableMetadata.name; _ } as variable_metadata)
-      { ModelQuery.find; where; models; name = query_name; _ }
-    =
-    if
-      ModelQuery.Find.is_attribute find
-      && List.for_all
-           ~f:
-             (matches_constraint
-                ~resolution
-                ~class_hierarchy_graph
-                (Modelable.Attribute variable_metadata))
-           where
-    then
-      let () =
-        if verbose then
-          Log.info
-            "Attribute `%s` matches all constraints for the model query `%s`."
-            (Reference.show name)
-            query_name
-      in
-      generate_annotations_from_query_models ~models
-    else
-      []
 
 
   let generate_model_from_annotations
@@ -1114,8 +1109,10 @@ module GlobalVariableQueryExecutor = MakeQueryExecutor (struct
 
   let get_target { VariableMetadata.name; _ } = Target.create_object name
 
+  let make_modelable ~resolution:_ variable_metadata = Modelable.Global variable_metadata
+
   (* Generate taint annotations from the `models` part of a given model query. *)
-  let generate_annotations_from_query_models ~models =
+  let generate_annotations_from_query_models ~modelable:_ models =
     let production_to_taint = function
       | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
       | _ -> None
@@ -1125,35 +1122,6 @@ module GlobalVariableQueryExecutor = MakeQueryExecutor (struct
       | _ -> []
     in
     List.concat_map models ~f:apply_model
-
-
-  let generate_annotations_from_query_on_target
-      ~verbose
-      ~resolution
-      ~class_hierarchy_graph
-      ~target:({ VariableMetadata.name; _ } as variable_metadata)
-      { ModelQuery.find; where; models; name = query_name; _ }
-    =
-    if
-      ModelQuery.Find.is_global find
-      && List.for_all
-           ~f:
-             (matches_constraint
-                ~resolution
-                ~class_hierarchy_graph
-                (Modelable.Global variable_metadata))
-           where
-    then
-      let () =
-        if verbose then
-          Log.info
-            "Global `%s` matches all constraints for the model query `%s`."
-            (Reference.show name)
-            query_name
-      in
-      generate_annotations_from_query_models ~models
-    else
-      []
 
 
   let generate_model_from_annotations
