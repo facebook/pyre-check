@@ -9,7 +9,6 @@ TODO(T132414938) Add a module-level docstring
 """
 
 
-
 import argparse
 import logging
 import os
@@ -77,8 +76,24 @@ class Setup(NamedTuple):
     def switch_name(self) -> str:
         return f"{COMPILER_VERSION}+flambda" if self.release else COMPILER_VERSION
 
-    def compiler(self) -> str:
-        return f"ocaml-variants.{self.switch_name()}"
+    def compiler_specification(self) -> str:
+        """
+        Command-line argument to set the compiler version in `opam switch create ...`
+
+        The format for how to specify this changed in 4.12.0, see
+        https://discuss.ocaml.org/t/experimental-new-layout-for-the-ocaml-variants-packages-in-opam-repository/6779
+        """
+        if not self.release:
+            return COMPILER_VERSION
+        elif COMPILER_VERSION < "4.12":
+            return f"ocaml-variants.{COMPILER_VERSION}+flambda"
+        else:
+            return ",".join(
+                [
+                    f"--packages=ocaml-variants.{COMPILER_VERSION}+options",
+                    "ocaml-options-only-flambda",
+                ]
+            )
 
     @property
     def environment_variables(self) -> Mapping[str, str]:
@@ -170,16 +185,14 @@ class Setup(NamedTuple):
                 "https://opam.ocaml.org",
             ]
         )
-        self.run(
-            ["opam", "update", "--root", self.opam_root.as_posix()]
-        )
+        self.run(["opam", "update", "--root", self.opam_root.as_posix()])
         self.run(
             [
                 "opam",
                 "switch",
                 "create",
                 self.switch_name(),
-                self.compiler(),
+                self.compiler_specification(),
                 "--yes",
                 "--root",
                 self.opam_root.as_posix(),
