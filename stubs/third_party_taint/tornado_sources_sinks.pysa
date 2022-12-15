@@ -52,13 +52,13 @@ ModelQuery(
   where = [
     cls.extends("tornado.web.RequestHandler", is_transitive=True),
     AnyOf(
-      name.matches("\.get$"),
-      name.matches("\.post$"),
-      name.matches("\.head$"),
-      name.matches("\.delete$"),
-      name.matches("\.patch$"),
-      name.matches("\.put$"),
-      name.matches("\.options$"),
+      fully_qualified_name.matches("\.get$"),
+      fully_qualified_name.matches("\.post$"),
+      fully_qualified_name.matches("\.head$"),
+      fully_qualified_name.matches("\.delete$"),
+      fully_qualified_name.matches("\.patch$"),
+      fully_qualified_name.matches("\.put$"),
+      fully_qualified_name.matches("\.options$"),
     )
   ],
   model = [
