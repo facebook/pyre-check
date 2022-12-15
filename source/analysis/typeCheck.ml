@@ -6544,15 +6544,8 @@ let resolution
 
 
 let resolution_with_key ~global_resolution ~local_annotations ~parent ~statement_key context =
-  let annotation_store =
-    Option.value_map
-      local_annotations
-      ~f:(fun map ->
-        LocalAnnotationMap.ReadOnly.get_precondition map ~statement_key
-        |> Option.value ~default:Refinement.Store.empty)
-      ~default:Refinement.Store.empty
-  in
-  resolution global_resolution ~annotation_store context |> Resolution.with_parent ~parent
+  resolution global_resolution context
+  |> Resolution.resolution_for_statement ~local_annotations ~parent ~statement_key
 
 
 let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () =

@@ -117,6 +117,13 @@ val parent : t -> Reference.t option
 
 val with_parent : t -> parent:Reference.t option -> t
 
+val resolution_for_statement
+  :  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
+  parent:Reference.t option ->
+  statement_key:int ->
+  t ->
+  t
+
 val is_consistent_with : t -> Type.t -> Type.t -> expression:Ast.Expression.t option -> bool
 
 val global_resolution : t -> GlobalResolution.t
