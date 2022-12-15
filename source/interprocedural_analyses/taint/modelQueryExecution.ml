@@ -532,6 +532,9 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       >>| List.exists ~f:(fun parameter ->
               normalized_parameter_matches_constraint ~parameter parameter_constraint)
       |> Option.value ~default:false
+  | ModelQuery.Constraint.ReadFromCache _ ->
+      (* This is handled before matching constraints. *)
+      true
   | ModelQuery.Constraint.AnyDecoratorConstraint decorator_constraint ->
       Modelable.decorators value
       >>| List.exists ~f:(fun decorator ->
@@ -919,6 +922,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.Modes modes -> [ModelParseResult.ModelAnnotation.ModeAnnotation modes]
       | ModelQuery.Model.Attribute _ -> failwith "impossible case"
       | ModelQuery.Model.Global _ -> failwith "impossible case"
+      | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
     List.concat_map models ~f:apply_model
 

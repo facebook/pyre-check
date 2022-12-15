@@ -195,6 +195,31 @@ module ModelQuery : sig
     [@@deriving equal, show]
   end
 
+  module ReadFromCache : sig
+    type t = {
+      kind: string;
+      name: string;
+    }
+    [@@deriving equal, show]
+  end
+
+  module WriteToCache : sig
+    module Substring : sig
+      type t =
+        | Literal of string
+        | FunctionName
+        | MethodName
+        | ClassName
+      [@@deriving equal, show]
+    end
+
+    type t = {
+      kind: string;
+      name: Substring.t list;
+    }
+    [@@deriving equal, show]
+  end
+
   (* An arbitrary constraint for functions, methods, attributes or globals. *)
   module Constraint : sig
     type t =
@@ -203,6 +228,7 @@ module ModelQuery : sig
       | AnnotationConstraint of AnnotationConstraint.t
       | ReturnConstraint of AnnotationConstraint.t
       | AnyParameterConstraint of ParameterConstraint.t
+      | ReadFromCache of ReadFromCache.t
       | AnyOf of t list
       | AllOf of t list
       | ClassConstraint of ClassConstraint.t
@@ -282,6 +308,7 @@ module ModelQuery : sig
       | Attribute of QueryTaintAnnotation.t list
       | Global of QueryTaintAnnotation.t list
       | Modes of Model.ModeSet.t
+      | WriteToCache of WriteToCache.t
     [@@deriving show, equal]
   end
 

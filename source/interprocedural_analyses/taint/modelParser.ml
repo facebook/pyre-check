@@ -1226,6 +1226,70 @@ let parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments =
            (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
+let parse_read_from_cache_constraint ~path ~location ~constraint_expression ~arguments =
+  match arguments with
+  | [
+   {
+     Call.Argument.name = Some { Node.value = "kind"; _ };
+     value =
+       { Node.value = Expression.Constant (Constant.String { StringLiteral.value = kind; _ }); _ };
+   };
+   {
+     Call.Argument.name = Some { Node.value = "name"; _ };
+     value =
+       { Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ }); _ };
+   };
+  ] ->
+      Ok (ModelQuery.Constraint.ReadFromCache { kind; name })
+  | _ ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (InvalidReadFromCacheArguments constraint_expression))
+
+
+let parse_write_to_cache_model ~path ~location ~model_expression ~arguments =
+  let open Core.Result in
+  let parse_substring = function
+    | Ast.Expression.Substring.Literal { Node.value; _ } ->
+        Ok (ModelQuery.WriteToCache.Substring.Literal value)
+    | Ast.Expression.Substring.Format { Node.value = Expression.Name (Identifier "class_name"); _ }
+      ->
+        Ok ModelQuery.WriteToCache.Substring.ClassName
+    | Ast.Expression.Substring.Format
+        { Node.value = Expression.Name (Identifier "function_name"); _ } ->
+        Ok ModelQuery.WriteToCache.Substring.FunctionName
+    | Ast.Expression.Substring.Format { Node.value = Expression.Name (Identifier "method_name"); _ }
+      ->
+        Ok ModelQuery.WriteToCache.Substring.MethodName
+    | Ast.Expression.Substring.Format { Node.value = Expression.Name (Identifier identifier); _ } ->
+        Error
+          (model_verification_error ~path ~location (InvalidWriteToCacheNameIdentifier identifier))
+    | Ast.Expression.Substring.Format expression ->
+        Error
+          (model_verification_error ~path ~location (InvalidWriteToCacheNameExpression expression))
+  in
+  match arguments with
+  | [
+   {
+     Call.Argument.name = Some { Node.value = "kind"; _ };
+     value =
+       { Node.value = Expression.Constant (Constant.String { StringLiteral.value = kind; _ }); _ };
+   };
+   {
+     Call.Argument.name = Some { Node.value = "name"; _ };
+     value = { Node.value = Expression.FormatString substrings; _ };
+   };
+  ] ->
+      List.map ~f:parse_substring substrings
+      |> all
+      >>= fun substrings -> Ok (ModelQuery.Model.WriteToCache { kind; name = substrings })
+  | _ ->
+      Error
+        (model_verification_error ~path ~location (InvalidWriteToCacheArguments model_expression))
+
+
 let parse_bool expression =
   match Node.value expression with
   | Expression.Constant Constant.True -> Some true
@@ -1480,6 +1544,8 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
           >>= fun () ->
           parse_class_constraint ~path ~location constraint_expression
           >>| fun class_constraint -> ModelQuery.Constraint.ClassConstraint class_constraint
+      | ["read_from_cache"], _ ->
+          parse_read_from_cache_constraint ~path ~location ~constraint_expression ~arguments
       | ["AnyOf"], _ ->
           List.map arguments ~f:(fun { Call.Argument.value; _ } -> parse_constraint value)
           |> all
@@ -1809,6 +1875,9 @@ let parse_model_clause
                  ~path
                  ~location
                  (InvalidModelQueryClauseArguments { callee; arguments })))
+    | Expression.Call
+        { Call.callee = { Node.value = Name (Name.Identifier "WriteToCache"); _ }; arguments } ->
+        parse_write_to_cache_model ~path ~location ~model_expression ~arguments
     | _ ->
         Error
           (model_verification_error ~path ~location (UnexpectedModelExpression model_expression))

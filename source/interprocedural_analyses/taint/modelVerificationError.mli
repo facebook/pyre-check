@@ -148,6 +148,10 @@ type kind =
       mode_name: string;
       error: string;
     }
+  | InvalidReadFromCacheArguments of Expression.t
+  | InvalidWriteToCacheArguments of Expression.t
+  | InvalidWriteToCacheNameExpression of Expression.t
+  | InvalidWriteToCacheNameIdentifier of Identifier.t
 [@@deriving sexp, compare]
 
 type t = {

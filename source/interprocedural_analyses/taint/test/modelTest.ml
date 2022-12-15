@@ -2697,6 +2697,125 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
+        where = read_from_cache(),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` \
+       with string literal arguments, got `read_from_cache()`"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = read_from_cache(kind=1),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      "Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` \
+       with string literal arguments, got `read_from_cache(kind = 1)`"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = read_from_cache("foo", "bar"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` with string literal arguments, got `read_from_cache("foo", "bar")`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = read_from_cache(kind="thrift", name=f"{class_name}"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and `name` with string literal arguments, got `read_from_cache(kind = "thrift", name = f"{class_name}")`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = name.matches("foo"),
+        model = WriteToCache()
+      )
+    |}
+    ~expect:
+      {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache()`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = name.matches("foo"),
+        model = WriteToCache(1, 2)
+      )
+    |}
+    ~expect:
+      {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache(1, 2)`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = name.matches("foo"),
+        model = WriteToCache(kind="thrift", name="foo")
+      )
+    |}
+    ~expect:
+      {|Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a literal string argument, and a named parameter `name` with a format string argument, got `WriteToCache(kind = "thrift", name = "foo")`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = name.matches("foo"),
+        model = WriteToCache(kind="thrift", name=f"{1+2}")
+      )
+    |}
+    ~expect:
+      {|Invalid argument for the parameter `name` of `WriteToCache`: expected identifier, got `1.__add__(2)`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = name.matches("foo"),
+        model = WriteToCache(kind="thrift", name=f"{unknown}")
+      )
+    |}
+    ~expect:
+      {|Invalid argument for the parameter `name` of `WriteToCache`: unknown identifier `unknown`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
         where = cls.extends("foo", is_transitive=foobar),
         model = ReturnModel(TaintSource[Test])
       )
@@ -6101,6 +6220,103 @@ let test_query_parsing context =
                   TaintAnnotation
                     (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
                 ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+
+  (* WriteToCache/read_from_cache *)
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo",
+     find = "methods",
+     where = read_from_cache(kind="thrift", name="cache:name"),
+     model = Returns([TaintSource[Test]])
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "foo";
+          where = [ReadFromCache { kind = "thrift"; name = "cache:name" }];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo",
+     find = "methods",
+     where = name.matches("foo"),
+     model = WriteToCache(kind="thrift", name=f"{class_name}:{method_name}")
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "foo";
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Method;
+          models =
+            [
+              WriteToCache
+                {
+                  WriteToCache.kind = "thrift";
+                  name =
+                    [
+                      WriteToCache.Substring.ClassName;
+                      WriteToCache.Substring.Literal ":";
+                      WriteToCache.Substring.MethodName;
+                    ];
+                };
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo",
+     find = "functions",
+     where = name.matches("foo"),
+     model = WriteToCache(kind="thrift", name=f"{function_name}")
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "foo";
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
+            [
+              WriteToCache
+                { WriteToCache.kind = "thrift"; name = [WriteToCache.Substring.FunctionName] };
             ];
           expected_models = [];
           unexpected_models = [];

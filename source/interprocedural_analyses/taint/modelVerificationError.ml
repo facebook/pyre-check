@@ -152,6 +152,10 @@ type kind =
       mode_name: string;
       error: string;
     }
+  | InvalidReadFromCacheArguments of Expression.t
+  | InvalidWriteToCacheArguments of Expression.t
+  | InvalidWriteToCacheNameExpression of Expression.t
+  | InvalidWriteToCacheNameIdentifier of string
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -410,6 +414,28 @@ let description error =
         model_query_name
         (Expression.show models_clause)
   | InvalidModelQueryMode { mode_name; error } -> Format.asprintf "`%s`: %s" mode_name error
+  | InvalidReadFromCacheArguments constraint_expression ->
+      Format.asprintf
+        "Invalid arguments for `read_from_cache` clause: expected named parameters `kind` and \
+         `name` with string literal arguments, got `%a`"
+        Expression.pp
+        constraint_expression
+  | InvalidWriteToCacheArguments model_expression ->
+      Format.asprintf
+        "Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a \
+         literal string argument, and a named parameter `name` with a format string argument, got \
+         `%a`"
+        Expression.pp
+        model_expression
+  | InvalidWriteToCacheNameExpression expression ->
+      Format.asprintf
+        "Invalid argument for the parameter `name` of `WriteToCache`: expected identifier, got `%a`"
+        Expression.pp
+        expression
+  | InvalidWriteToCacheNameIdentifier identifier ->
+      Format.asprintf
+        "Invalid argument for the parameter `name` of `WriteToCache`: unknown identifier `%s`"
+        identifier
 
 
 let code { kind; _ } =
@@ -466,6 +492,10 @@ let code { kind; _ } =
   | UnsupportedClassConstraintCallee _ -> 50
   | UnsupportedDecoratorConstraint _ -> 51
   | UnsupportedDecoratorConstraintCallee _ -> 52
+  | InvalidReadFromCacheArguments _ -> 53
+  | InvalidWriteToCacheArguments _ -> 54
+  | InvalidWriteToCacheNameExpression _ -> 55
+  | InvalidWriteToCacheNameIdentifier _ -> 56
 
 
 let display { kind = error; path; location } =
