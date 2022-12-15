@@ -152,6 +152,10 @@ type kind =
   | InvalidWriteToCacheArguments of Expression.t
   | InvalidWriteToCacheNameExpression of Expression.t
   | InvalidWriteToCacheNameIdentifier of Identifier.t
+  | InvalidWriteToCacheIdentifierForFind of {
+      identifier: string;
+      find: string;
+    }
 [@@deriving sexp, compare]
 
 type t = {

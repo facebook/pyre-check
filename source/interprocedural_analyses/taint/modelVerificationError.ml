@@ -156,6 +156,10 @@ type kind =
   | InvalidWriteToCacheArguments of Expression.t
   | InvalidWriteToCacheNameExpression of Expression.t
   | InvalidWriteToCacheNameIdentifier of string
+  | InvalidWriteToCacheIdentifierForFind of {
+      identifier: string;
+      find: string;
+    }
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -436,6 +440,11 @@ let description error =
       Format.asprintf
         "Invalid argument for the parameter `name` of `WriteToCache`: unknown identifier `%s`"
         identifier
+  | InvalidWriteToCacheIdentifierForFind { identifier; find } ->
+      Format.asprintf
+        "Invalid identifier `%s` for parameter `name` of `WriteToCache` for find=\"%s\""
+        identifier
+        find
 
 
 let code { kind; _ } =
@@ -496,6 +505,7 @@ let code { kind; _ } =
   | InvalidWriteToCacheArguments _ -> 54
   | InvalidWriteToCacheNameExpression _ -> 55
   | InvalidWriteToCacheNameIdentifier _ -> 56
+  | InvalidWriteToCacheIdentifierForFind _ -> 57
 
 
 let display { kind = error; path; location } =

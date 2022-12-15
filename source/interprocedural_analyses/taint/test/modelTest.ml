@@ -2816,6 +2816,45 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
+        where = name.matches("foo"),
+        model = WriteToCache(kind="thrift", name=f"{function_name}")
+      )
+    |}
+    ~expect:
+      {|Invalid identifier `function_name` for parameter `name` of `WriteToCache` for find="methods"|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.matches("foo"),
+        model = WriteToCache(kind="thrift", name=f"{method_name}")
+      )
+    |}
+    ~expect:
+      {|Invalid identifier `method_name` for parameter `name` of `WriteToCache` for find="functions"|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.matches("foo"),
+        model = WriteToCache(kind="thrift", name=f"{class_name}")
+      )
+    |}
+    ~expect:
+      {|Invalid identifier `class_name` for parameter `name` of `WriteToCache` for find="functions"|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
         where = cls.extends("foo", is_transitive=foobar),
         model = ReturnModel(TaintSource[Test])
       )
