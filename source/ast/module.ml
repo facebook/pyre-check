@@ -97,7 +97,7 @@ let create_for_testing ~stub =
   Explicit
     {
       exports = ExportMap.empty;
-      legacy_aliased_exports = Reference.Map.empty |> Map.to_tree;
+      legacy_aliased_exports = Reference.Map.Tree.empty;
       empty_stub = stub;
     }
 
@@ -155,23 +155,21 @@ let create
             else
               target
           in
-          Identifier.Map.set sofar ~key:name ~data:(Export.Module exported_module_name)
+          Identifier.Map.Tree.set sofar ~key:name ~data:(Export.Module exported_module_name)
       | Imported (ImportEntry.Name { from; target; _ }) ->
-          Identifier.Map.set sofar ~key:name ~data:(Export.NameAlias { from; name = target })
+          Identifier.Map.Tree.set sofar ~key:name ~data:(Export.NameAlias { from; name = target })
       | Define defines ->
-          Identifier.Map.set
+          Identifier.Map.Tree.set
             sofar
             ~key:name
             ~data:
               Export.(Name (Name.Define { is_getattr_any = List.exists defines ~f:is_getattr_any }))
-      | Class -> Identifier.Map.set sofar ~key:name ~data:Export.(Name Class)
+      | Class -> Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name Class)
       | SimpleAssign _
       | TupleAssign _ ->
-          Identifier.Map.set sofar ~key:name ~data:Export.(Name GlobalVariable)
+          Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name GlobalVariable)
     in
-    Collector.from_source source
-    |> List.fold ~init:Identifier.Map.empty ~f:collect_export
-    |> Map.to_tree
+    Collector.from_source source |> List.fold ~init:Identifier.Map.Tree.empty ~f:collect_export
   in
   let legacy_aliased_exports =
     let rec aliased_exports aliases { Node.value; _ } =
@@ -190,7 +188,7 @@ let create
               else
                 Reference.combine from name
             in
-            Map.set aliases ~key:alias ~data:name
+            Reference.Map.Tree.set aliases ~key:alias ~data:name
           in
           List.fold imports ~f:export ~init:aliases
       | Import { Import.from = None; imports } ->
@@ -206,7 +204,7 @@ let create
               else
                 alias, name
             in
-            Map.set aliases ~key:source ~data:target
+            Reference.Map.Tree.set aliases ~key:source ~data:target
           in
           List.fold imports ~f:export ~init:aliases
       | If { If.body; orelse; _ } ->
@@ -214,7 +212,7 @@ let create
           List.fold orelse ~init:aliases ~f:aliased_exports
       | _ -> aliases
     in
-    List.fold statements ~f:aliased_exports ~init:Reference.Map.empty |> Map.to_tree
+    List.fold statements ~f:aliased_exports ~init:Reference.Map.Tree.empty
   in
   Explicit
     {
@@ -249,6 +247,5 @@ let is_implicit = function
 let legacy_aliased_export considered_module reference =
   match considered_module with
   | Explicit { legacy_aliased_exports; _ } ->
-      let aliased_exports = Reference.Map.of_tree legacy_aliased_exports in
-      Map.find aliased_exports reference
+      Reference.Map.Tree.find legacy_aliased_exports reference
   | Implicit _ -> None
