@@ -653,12 +653,13 @@ let rec parse_annotations
                         { Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ };
                       ];
                   } ->
-                  if not (String.Map.Tree.mem taint_configuration.partial_sink_labels kind) then
+                  if not (PysaReference.Map.Tree.mem taint_configuration.partial_sink_labels kind)
+                  then
                     Error
                       (annotation_error (Format.asprintf "Unrecognized partial sink `%s`." kind))
                   else
                     let label_options =
-                      String.Map.Tree.find_exn taint_configuration.partial_sink_labels kind
+                      PysaReference.Map.Tree.find_exn taint_configuration.partial_sink_labels kind
                     in
                     if not (List.mem label_options label ~equal:String.equal) then
                       Error

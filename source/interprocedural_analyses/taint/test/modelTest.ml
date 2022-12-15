@@ -74,7 +74,8 @@ let set_up_environment
         sinks;
         transforms;
         features = ["special"];
-        partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
+        partial_sink_labels =
+          Interprocedural.PysaReference.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         rules;
         filtered_rule_codes = None;
         filtered_sources;
@@ -183,7 +184,8 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
         sinks = List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["X"; "Y"; "Test"];
         features = ["featureA"; "featureB"];
         rules = [];
-        partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
+        partial_sink_labels =
+          Interprocedural.PysaReference.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
       }
   in
   let error_message =

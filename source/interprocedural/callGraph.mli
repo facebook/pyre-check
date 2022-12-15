@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
 open Analysis
 open Ast
 open Expression
@@ -180,7 +179,7 @@ end
 module LocationCallees : sig
   type t =
     | Singleton of ExpressionCallees.t
-    | Compound of ExpressionCallees.t String.Map.Tree.t
+    | Compound of ExpressionCallees.t PysaReference.Map.Tree.t
   [@@deriving eq, show]
 end
 

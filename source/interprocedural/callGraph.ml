@@ -681,13 +681,13 @@ end
 module LocationCallees = struct
   type t =
     | Singleton of ExpressionCallees.t
-    | Compound of ExpressionCallees.t String.Map.Tree.t
+    | Compound of ExpressionCallees.t PysaReference.Map.Tree.t
   [@@deriving eq]
 
   let pp formatter = function
     | Singleton callees -> Format.fprintf formatter "%a" ExpressionCallees.pp callees
     | Compound map ->
-        String.Map.Tree.to_alist map
+        PysaReference.Map.Tree.to_alist map
         |> List.map ~f:(fun (key, value) -> Format.asprintf "%s: %a" key ExpressionCallees.pp value)
         |> String.concat ~sep:", "
         |> Format.fprintf formatter "%s"
@@ -697,7 +697,8 @@ module LocationCallees = struct
 
   let all_targets = function
     | Singleton raw_callees -> ExpressionCallees.all_targets raw_callees
-    | Compound map -> String.Map.Tree.data map |> List.concat_map ~f:ExpressionCallees.all_targets
+    | Compound map ->
+        PysaReference.Map.Tree.data map |> List.concat_map ~f:ExpressionCallees.all_targets
 
 
   let equal_ignoring_types location_callees_left location_callees_right =
@@ -705,19 +706,19 @@ module LocationCallees = struct
     | Singleton callees_left, Singleton callees_right ->
         ExpressionCallees.equal_ignoring_types callees_left callees_right
     | Compound map_left, Compound map_right ->
-        String.Map.Tree.equal ExpressionCallees.equal_ignoring_types map_left map_right
+        PysaReference.Map.Tree.equal ExpressionCallees.equal_ignoring_types map_left map_right
     | _ -> false
 end
 
 module UnprocessedLocationCallees = struct
-  type t = ExpressionCallees.t String.Map.Tree.t
+  type t = ExpressionCallees.t PysaReference.Map.Tree.t
 
   let singleton ~expression_identifier ~callees =
-    String.Map.Tree.singleton expression_identifier callees
+    PysaReference.Map.Tree.singleton expression_identifier callees
 
 
   let add map ~expression_identifier ~callees =
-    String.Map.Tree.update map expression_identifier ~f:(function
+    PysaReference.Map.Tree.update map expression_identifier ~f:(function
         | Some existing_callees -> ExpressionCallees.join existing_callees callees
         | None -> callees)
 end
@@ -759,7 +760,7 @@ module DefineCallGraph = struct
     match Location.Map.find call_graph location with
     | Some (LocationCallees.Singleton callees) -> Some callees
     | Some (LocationCallees.Compound name_to_callees) ->
-        String.Map.Tree.find name_to_callees expression_identifier
+        PysaReference.Map.Tree.find name_to_callees expression_identifier
     | None -> None
 
 
@@ -2195,20 +2196,21 @@ let call_graph_of_define
   let call_graph =
     Location.Table.to_alist callees_at_location
     |> List.map ~f:(fun (location, unprocessed_callees) ->
-           match String.Map.Tree.to_alist unprocessed_callees with
+           match PysaReference.Map.Tree.to_alist unprocessed_callees with
            | [] -> failwith "unreachable"
            | [(_, callees)] ->
                location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
            | _ ->
                ( location,
                  LocationCallees.Compound
-                   (Core.String.Map.Tree.map ~f:ExpressionCallees.deduplicate unprocessed_callees) ))
+                   (PysaReference.Map.Tree.map ~f:ExpressionCallees.deduplicate unprocessed_callees)
+               ))
     |> List.filter ~f:(fun (_, callees) ->
            match callees with
            | LocationCallees.Singleton singleton ->
                not (ExpressionCallees.is_empty_attribute_access_callees singleton)
            | LocationCallees.Compound compound ->
-               Core.String.Map.Tree.exists compound ~f:(fun callees ->
+               PysaReference.Map.Tree.exists compound ~f:(fun callees ->
                    not (ExpressionCallees.is_empty_attribute_access_callees callees)))
     |> Location.Map.of_alist_exn
   in
