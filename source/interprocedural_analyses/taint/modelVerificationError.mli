@@ -149,6 +149,7 @@ type kind =
       error: string;
     }
   | InvalidReadFromCacheArguments of Expression.t
+  | InvalidReadFromCacheConstraint of Expression.t
   | InvalidWriteToCacheArguments of Expression.t
   | InvalidWriteToCacheNameExpression of Expression.t
   | InvalidWriteToCacheNameIdentifier of Identifier.t

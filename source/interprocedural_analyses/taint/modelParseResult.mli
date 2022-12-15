@@ -235,6 +235,10 @@ module ModelQuery : sig
       | AnyDecoratorConstraint of DecoratorConstraint.t
       | Not of t
     [@@deriving equal, show]
+
+    val contains_read_from_cache : t -> bool
+
+    val is_read_from_cache : t -> bool
   end
 
   module Find : sig

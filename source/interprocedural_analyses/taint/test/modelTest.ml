@@ -2751,6 +2751,51 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
+        where = Not(read_from_cache(kind="thrift", name="foo:bar")),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `Not(read_from_cache(kind = "thrift", name = "foo:bar"))`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = AnyOf(
+          read_from_cache(kind="thrift", name="foo:bar"),
+          name.matches("foo")
+        ),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `AnyOf(read_from_cache(kind = "thrift", name = "foo:bar"), name.matches("foo"))`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = AnyOf(
+          AllOf(read_from_cache(kind="thrift", name="foo:bar")),
+          name.matches("foo")
+        ),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` clauses in `AnyOf(AllOf(read_from_cache(kind = "thrift", name = "foo:bar")), name.matches("foo"))`|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
         where = name.matches("foo"),
         model = WriteToCache()
       )
@@ -6284,6 +6329,88 @@ let test_query_parsing context =
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo";
           where = [ReadFromCache { kind = "thrift"; name = "cache:name" }];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo",
+     find = "methods",
+     where = AnyOf(
+       read_from_cache(kind="thrift", name="one:name"),
+       read_from_cache(kind="thrift", name="two:name"),
+     ),
+     model = Returns([TaintSource[Test]])
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
+          name = "foo";
+          where =
+            [
+              AnyOf
+                [
+                  ReadFromCache { kind = "thrift"; name = "one:name" };
+                  ReadFromCache { kind = "thrift"; name = "two:name" };
+                ];
+            ];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo",
+     find = "methods",
+     where = AllOf(
+       read_from_cache(kind="thrift", name="one:name"),
+       read_from_cache(kind="thrift", name="two:name"),
+     ),
+     model = Returns([TaintSource[Test]])
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
+          name = "foo";
+          where =
+            [
+              AllOf
+                [
+                  ReadFromCache { kind = "thrift"; name = "one:name" };
+                  ReadFromCache { kind = "thrift"; name = "two:name" };
+                ];
+            ];
           find = Method;
           models =
             [

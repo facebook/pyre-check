@@ -439,6 +439,26 @@ module ModelQuery = struct
       | AnyDecoratorConstraint of DecoratorConstraint.t
       | Not of t
     [@@deriving equal, show]
+
+    let rec contains_read_from_cache = function
+      | NameConstraint _
+      | FullyQualifiedNameConstraint _
+      | AnnotationConstraint _
+      | ReturnConstraint _
+      | AnyParameterConstraint _
+      | ClassConstraint _
+      | AnyDecoratorConstraint _ ->
+          false
+      | ReadFromCache _ -> true
+      | AnyOf constraints
+      | AllOf constraints ->
+          List.exists ~f:contains_read_from_cache constraints
+      | Not constraint_ -> contains_read_from_cache constraint_
+
+
+    let is_read_from_cache = function
+      | ReadFromCache _ -> true
+      | _ -> false
   end
 
   module Find = struct

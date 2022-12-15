@@ -1497,6 +1497,34 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
            (UnsupportedClassConstraint constraint_expression))
 
 
+let check_invalid_read_form_cache ~path ~location ~constraint_expression where =
+  let rec is_valid = function
+    | ModelQuery.Constraint.NameConstraint _
+    | ModelQuery.Constraint.FullyQualifiedNameConstraint _
+    | ModelQuery.Constraint.AnnotationConstraint _
+    | ModelQuery.Constraint.ReturnConstraint _
+    | ModelQuery.Constraint.AnyParameterConstraint _
+    | ModelQuery.Constraint.ClassConstraint _
+    | ModelQuery.Constraint.AnyDecoratorConstraint _
+    | ModelQuery.Constraint.ReadFromCache _ ->
+        true
+    | ModelQuery.Constraint.AnyOf constraints ->
+        List.for_all ~f:ModelQuery.Constraint.is_read_from_cache constraints
+        || not (ModelQuery.Constraint.contains_read_from_cache (AnyOf constraints))
+    | ModelQuery.Constraint.AllOf constraints -> List.for_all ~f:is_valid constraints
+    | ModelQuery.Constraint.Not constraint_ ->
+        not (ModelQuery.Constraint.contains_read_from_cache constraint_)
+  in
+  if List.for_all ~f:is_valid where then
+    Ok where
+  else
+    Error
+      (model_verification_error
+         ~path
+         ~location
+         (InvalidReadFromCacheConstraint constraint_expression))
+
+
 let parse_where_clause ~path ~find_clause ({ Node.value; location } as expression) =
   let open Core.Result in
   let invalid_model_query_where_clause ~path ~location callee =
@@ -1584,9 +1612,12 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         Error
           (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression))
   in
-  match value with
-  | Expression.List items -> List.map items ~f:parse_constraint |> all
-  | _ -> parse_constraint expression >>| List.return
+  let constraints =
+    match value with
+    | Expression.List items -> List.map items ~f:parse_constraint |> all
+    | _ -> parse_constraint expression >>| List.return
+  in
+  constraints >>= check_invalid_read_form_cache ~path ~location ~constraint_expression:expression
 
 
 let parse_parameter_where_clause ~path ({ Node.value; location } as expression) =

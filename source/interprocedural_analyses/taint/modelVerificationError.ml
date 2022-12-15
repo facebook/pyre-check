@@ -153,6 +153,7 @@ type kind =
       error: string;
     }
   | InvalidReadFromCacheArguments of Expression.t
+  | InvalidReadFromCacheConstraint of Expression.t
   | InvalidWriteToCacheArguments of Expression.t
   | InvalidWriteToCacheNameExpression of Expression.t
   | InvalidWriteToCacheNameIdentifier of string
@@ -424,6 +425,12 @@ let description error =
          `name` with string literal arguments, got `%a`"
         Expression.pp
         constraint_expression
+  | InvalidReadFromCacheConstraint constraint_expression ->
+      Format.asprintf
+        "Invalid constraint: `read_from_cache` clause cannot be nested under `AnyOf` or `Not` \
+         clauses in `%a`"
+        Expression.pp
+        constraint_expression
   | InvalidWriteToCacheArguments model_expression ->
       Format.asprintf
         "Invalid arguments for `WriteToCache` clause: expected a named parameter `kind` with a \
@@ -506,6 +513,7 @@ let code { kind; _ } =
   | InvalidWriteToCacheNameExpression _ -> 55
   | InvalidWriteToCacheNameIdentifier _ -> 56
   | InvalidWriteToCacheIdentifierForFind _ -> 57
+  | InvalidReadFromCacheConstraint _ -> 58
 
 
 let display { kind = error; path; location } =
