@@ -414,3 +414,90 @@ module Classic = struct
 
   let identifier_of { identifier; _ } = identifier
 end
+
+module Lazy = struct
+  module IncrementalBuildResult = struct
+    type t = {
+      build_map: BuildMap.t;
+      changed_artifacts: ArtifactPath.Event.t list;
+    }
+  end
+
+  type t = {
+    incremental_build:
+      old_build_map:BuildMap.t -> SourcePath.t list -> IncrementalBuildResult.t Lwt.t;
+    incremental_build_with_unchanged_build_map:
+      build_map:BuildMap.t ->
+      build_map_index:BuildMap.Indexed.t ->
+      SourcePath.t list ->
+      IncrementalBuildResult.t Lwt.t;
+    lookup_source: index:BuildMap.Indexed.t -> ArtifactPath.t -> SourcePath.t option;
+    lookup_artifact: index:BuildMap.Indexed.t -> SourcePath.t -> ArtifactPath.t list;
+  }
+
+  let incremental_build ~interface ~source_root ~artifact_root ~old_build_map source_paths =
+    let open Lwt.Infix in
+    List.map source_paths ~f:SourcePath.raw
+    |> to_relative_paths ~root:source_root
+    |> Interface.Lazy.construct_build_map interface
+    >>= fun build_map ->
+    do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
+    >>= fun changed_artifacts -> Lwt.return { IncrementalBuildResult.build_map; changed_artifacts }
+
+
+  let incremental_build_with_unchanged_build_map
+      ~source_root
+      ~artifact_root
+      ~build_map
+      ~build_map_index
+      changed_sources
+    =
+    let changed_sources = List.map changed_sources ~f:SourcePath.raw in
+    let changed_artifacts =
+      do_incremental_build_with_unchanged_build_map
+        ~source_root
+        ~artifact_root
+        ~build_map_index
+        ~changed_sources
+        ()
+    in
+    Lwt.return { IncrementalBuildResult.build_map; changed_artifacts }
+
+
+  let lookup_source ~source_root ~artifact_root ~index artifact_path =
+    do_lookup_source ~source_root ~artifact_root ~index (ArtifactPath.raw artifact_path)
+    |> Option.map ~f:SourcePath.create
+
+
+  let lookup_artifact ~source_root ~artifact_root ~index source_path =
+    do_lookup_artifact ~source_root ~artifact_root ~index (SourcePath.raw source_path)
+    |> List.map ~f:ArtifactPath.create
+
+
+  let create ~source_root ~artifact_root interface =
+    {
+      incremental_build = incremental_build ~interface ~source_root ~artifact_root;
+      incremental_build_with_unchanged_build_map =
+        incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
+      lookup_source = lookup_source ~source_root ~artifact_root;
+      lookup_artifact = lookup_artifact ~source_root ~artifact_root;
+    }
+
+
+  let incremental_build ~old_build_map ~source_paths { incremental_build; _ } =
+    incremental_build ~old_build_map source_paths
+
+
+  let incremental_build_with_unchanged_build_map
+      ~build_map
+      ~build_map_index
+      ~changed_sources
+      { incremental_build_with_unchanged_build_map; _ }
+    =
+    incremental_build_with_unchanged_build_map ~build_map ~build_map_index changed_sources
+
+
+  let lookup_source ~index ~builder:{ lookup_source; _ } path = lookup_source ~index path
+
+  let lookup_artifact ~index ~builder:{ lookup_artifact; _ } path = lookup_artifact ~index path
+end

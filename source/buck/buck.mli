@@ -669,4 +669,105 @@ module Builder : sig
     (** Return an identifier of the builder (for logging purpose). *)
     val identifier_of : t -> string
   end
+
+  (** This module contains APIs specific to lazy Buck building.
+
+      Lazy building is only supported for Buck2. The APIs are very simliar to those of {!Builder},
+      except that targets to build are not specified upfront for the lazy case. Instead, the lazy
+      builder is only given a set of source paths to construct the build map on, and the builder
+      itself needs to figure out what are the corresponding targets for these source paths. *)
+  module Lazy : sig
+    type t
+
+    (** {1 Creation} *)
+
+    (** Create an instance of [Builder.t] from an instance of {!Interface.Lazy.t} and some buck
+        options. Builders created this way are only compatible with Buck2. *)
+    val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.Lazy.t -> t
+
+    (** {1 Build} *)
+
+    (** The return type for incremental builds. It contains a build map and a list of artifact files
+        whose contents may be altered by the build . *)
+    module IncrementalBuildResult : sig
+      type t = {
+        build_map: BuildMap.t;
+        changed_artifacts: ArtifactPath.Event.t list;
+      }
+    end
+
+    (** Given a list of source path, re-construct a new build map for the owning targets and
+        incrementally update the Python link tree at the given artifact root according to how the
+        new build map changed compared to the old build map. Return the new build map along with a
+        list of artifacts that are changed by the build.
+
+        Concretely, the entire build process can be broken down into 4 steps:
+
+        - Run `buck bxl` to build and load source databases into {!BuildMap.t} (see
+          {!Interface.Lazy.construct_build_map}).
+        - Construct the link tree under [artifact_root] based on the content of the newly built
+          {!BuiltMap.t}. Note that this step is carried out incrementally: we compare the new build
+          map with [old_build_map], and only perform the minimum amount of filesystem operations to
+          update files under [artifact_root].
+
+        The following exceptions may be raised by this API:
+
+        - {!exception: Raw.BuckError} if `buck` quits in any unexpected ways when shelling out to
+          it.
+        - {!exception: Interface.JsonError} if `buck` returns malformed or inconsistent JSON blobs.
+        - {!exception: LinkTreeConstructionError} if any error is encountered when constructing the
+          link tree from the build map.
+
+        Note this API does not ensure the artifact root to be empty before the build starts. If
+        cleaness of the artifact directory is desirable, it is expected that the caller would take
+        care of that before its invocation. *)
+    val incremental_build
+      :  old_build_map:BuildMap.t ->
+      source_paths:SourcePath.t list ->
+      t ->
+      IncrementalBuildResult.t Lwt.t
+
+    (** Compute the incremental check result, assuming that the corresponding update does not change
+        the build map in any way. The return value is intended to be compatible with that of
+        {!incremental_build}.
+
+        Obviously, this API makes strong assumption than {!incremental_build} -- the assumption
+        virtually allows it to completely skip the rebuild. Callers are therefore strongly
+        encouraged to verify the assumption, by checking that all changed sources exists and are
+        already included in the old build map.
+
+        NOTE(grievejia): This function can be safely replaced with [incremental_build] once the
+        underlying Buck component supports incremental source-db. *)
+    val incremental_build_with_unchanged_build_map
+      :  build_map:BuildMap.t ->
+      build_map_index:BuildMap.Indexed.t ->
+      changed_sources:SourcePath.t list ->
+      t ->
+      IncrementalBuildResult.t Lwt.t
+
+    (** {1 Lookup} *)
+
+    (** Lookup the source path that corresponds to the given artifact path. If there is no such
+        artifact, return [None]. Time complexity of this operation is O(1). The difference between
+        this API and {!BuildMap.Indexed.lookup_source} is that the build map API only understands
+        relative paths, while this API operates on full paths and takes care of
+        relativizing/expanding the input/output paths against source/artifact root. *)
+    val lookup_source
+      :  index:BuildMap.Indexed.t ->
+      builder:t ->
+      ArtifactPath.t ->
+      SourcePath.t option
+
+    (** Lookup all artifact paths that corresponds to the given source path. If there is no such
+        artifact, return an empty list. Time complexity of this operation is O(1).
+
+        The difference between this API and {!BuildMap.Indexed.lookup_artifact} is that the build
+        map API only understands relative paths, while this API operates on full paths and takes
+        care of relativizing/expanding the input/output paths against artifact/source root.*)
+    val lookup_artifact
+      :  index:BuildMap.Indexed.t ->
+      builder:t ->
+      SourcePath.t ->
+      ArtifactPath.t list
+  end
 end

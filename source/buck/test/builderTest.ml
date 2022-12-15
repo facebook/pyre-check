@@ -11,6 +11,7 @@ open OUnit2
 (* Create aliases to private modules so we could test their internal APIs. *)
 module BuildMap = Buck__BuildMap
 module Builder = Buck__Builder
+module Interface = Buck__Interface
 
 let assert_mapping_equal ~context ~expected actual =
   assert_equal
@@ -19,6 +20,15 @@ let assert_mapping_equal ~context ~expected actual =
     ~printer:(fun items -> [%sexp_of: (string * string) list] items |> Sexp.to_string_hum)
     (expected |> List.sort ~compare:[%compare: string * string])
     (actual |> List.sort ~compare:[%compare: string * string])
+
+
+let assert_artifact_event_equal ~context ~expected actual =
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: ArtifactPath.Event.t list]
+    ~printer:(fun items -> [%sexp_of: ArtifactPath.Event.t list] items |> Sexp.to_string_hum)
+    (expected |> List.sort ~compare:[%compare: ArtifactPath.Event.t])
+    (actual |> List.sort ~compare:[%compare: ArtifactPath.Event.t])
 
 
 let test_lookup_source context =
@@ -248,6 +258,96 @@ let test_difference_from_changed_relative_paths context =
   ()
 
 
+let test_lazy_build context =
+  let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
+
+  let source_path0 = PyrePath.create_relative ~root:source_root ~relative:"a.py" in
+  let source_path1 = PyrePath.create_relative ~root:source_root ~relative:"b.py" in
+  File.create source_path0 ~content:"" |> File.write;
+  File.create source_path1 ~content:"" |> File.write;
+  let source_path0 = SourcePath.create source_path0 in
+  let source_path1 = SourcePath.create source_path1 in
+  let artifact_path0 =
+    PyrePath.create_relative ~root:artifact_root ~relative:"foo/a.py" |> ArtifactPath.create
+  in
+  let artifact_path1 =
+    PyrePath.create_relative ~root:artifact_root ~relative:"bar/b.py" |> ArtifactPath.create
+  in
+
+  let mock_interface =
+    let construct_build_map paths =
+      (* Create a simple build map containing source_path0 or source_path1, depending on which ones
+         are specified. *)
+      let contains = List.mem ~equal:String.equal in
+      let result = [] in
+      let result = if contains paths "a.py" then ("foo/a.py", "a.py") :: result else result in
+      let result = if contains paths "b.py" then ("bar/b.py", "b.py") :: result else result in
+      BuildMap.Partial.of_alist_exn result |> BuildMap.create |> Lwt.return
+    in
+    Interface.Lazy.create_for_testing ~construct_build_map ()
+  in
+  let builder = Builder.Lazy.create ~source_root ~artifact_root mock_interface in
+  let empty_build_map = BuildMap.(Partial.empty |> create) in
+
+  let open Lwt.Infix in
+  (* Building for empty file set results in empty build map *)
+  Builder.Lazy.incremental_build builder ~old_build_map:empty_build_map ~source_paths:[]
+  >>= fun { Builder.Lazy.IncrementalBuildResult.build_map; changed_artifacts } ->
+  assert_bool "build map should be empty" (BuildMap.to_alist build_map |> List.is_empty);
+  assert_bool "changed artifacts be empty" (List.is_empty changed_artifacts);
+
+  (* Building for one file results in 1-element build map *)
+  Builder.Lazy.incremental_build builder ~old_build_map:build_map ~source_paths:[source_path0]
+  >>= fun { Builder.Lazy.IncrementalBuildResult.build_map; changed_artifacts } ->
+  assert_mapping_equal ~context ~expected:["foo/a.py", "a.py"] (BuildMap.to_alist build_map);
+  assert_artifact_event_equal
+    ~context
+    ~expected:[ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged artifact_path0)]
+    changed_artifacts;
+
+  (* Incrementally add 1 file to build map *)
+  Builder.Lazy.incremental_build
+    builder
+    ~old_build_map:build_map
+    ~source_paths:[source_path0; source_path1]
+  >>= fun { Builder.Lazy.IncrementalBuildResult.build_map; changed_artifacts } ->
+  assert_mapping_equal
+    ~context
+    ~expected:["foo/a.py", "a.py"; "bar/b.py", "b.py"]
+    (BuildMap.to_alist build_map);
+  assert_artifact_event_equal
+    ~context
+    ~expected:[ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged artifact_path1)]
+    changed_artifacts;
+
+  (* Incrementally edit 1 file, without altering the build map. *)
+  Builder.Lazy.incremental_build_with_unchanged_build_map
+    builder
+    ~build_map
+    ~build_map_index:(BuildMap.index build_map)
+    ~changed_sources:[source_path0]
+  >>= fun { Builder.Lazy.IncrementalBuildResult.build_map; changed_artifacts } ->
+  assert_mapping_equal
+    ~context
+    ~expected:["foo/a.py", "a.py"; "bar/b.py", "b.py"]
+    (BuildMap.to_alist build_map);
+  assert_artifact_event_equal
+    ~context
+    ~expected:[ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged artifact_path0)]
+    changed_artifacts;
+
+  (* Incrementally remove 1 file from build map *)
+  Builder.Lazy.incremental_build builder ~old_build_map:build_map ~source_paths:[source_path1]
+  >>= fun { Builder.Lazy.IncrementalBuildResult.build_map; changed_artifacts } ->
+  assert_mapping_equal ~context ~expected:["bar/b.py", "b.py"] (BuildMap.to_alist build_map);
+  assert_artifact_event_equal
+    ~context
+    ~expected:[ArtifactPath.Event.(create ~kind:Kind.Deleted artifact_path0)]
+    changed_artifacts;
+  Lwt.return_unit
+
+
 let () =
   "builder_test"
   >::: [
@@ -255,5 +355,6 @@ let () =
          "lookup_artifact" >:: test_lookup_artifact;
          "difference_from_removed_relative_paths" >:: test_difference_from_removed_relative_paths;
          "difference_from_changed_relative_paths" >:: test_difference_from_changed_relative_paths;
+         "lazy_build" >:: OUnitLwt.lwt_wrapper test_lazy_build;
        ]
   |> Test.run
