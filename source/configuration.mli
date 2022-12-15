@@ -123,6 +123,8 @@ module Analysis : sig
 
   val default_enable_readonly_analysis : bool
 
+  val default_enable_unawaited_awaitable_check : bool
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -150,6 +152,7 @@ module Analysis : sig
     enable_type_comments: bool;
     constraint_solving_style: constraint_solving_style;
     enable_readonly_analysis: bool;
+    enable_unawaited_awaitable_check: bool;
   }
   [@@deriving show]
 
@@ -181,6 +184,7 @@ module Analysis : sig
     ?enable_type_comments:bool ->
     ?constraint_solving_style:constraint_solving_style ->
     ?enable_readonly_analysis:bool ->
+    ?enable_unawaited_awaitable_check:bool ->
     source_paths:SearchPath.t list ->
     unit ->
     t
