@@ -7332,6 +7332,7 @@ let check_define
         include_type_errors;
         include_local_annotations;
         debug;
+        include_unawaited_awaitable_errors;
         _;
       }
     ~call_graph_builder:(module Builder : Callgraph.Builder)
@@ -7368,7 +7369,25 @@ let check_define
             else
               UninitializedLocalCheck.check_define ~qualifier define_node
           in
-          Some (uninitialized_local_errors @ type_errors)
+          let unawaited_awaitable_errors =
+            if include_unawaited_awaitable_errors then
+              UnawaitedAwaitableCheck.check_define
+                ~type_resolution_for_statement:(fun ~local_annotations ~parent ~statement_key () ->
+                  resolution_with_key
+                    ~global_resolution:(Resolution.global_resolution resolution)
+                    ~local_annotations
+                    ~parent
+                    ~statement_key
+                    (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                    (module DummyContext))
+                ~global_resolution:(Resolution.global_resolution resolution)
+                ~local_annotations:(local_annotations >>| LocalAnnotationMap.read_only)
+                ~qualifier
+                define_node
+            else
+              []
+          in
+          Some (uninitialized_local_errors @ unawaited_awaitable_errors @ type_errors)
         else
           None
       in

@@ -2876,6 +2876,7 @@ module ScratchProject = struct
       ?debug
       ?strict
       ?enable_readonly_analysis
+      ?enable_unawaited_awaitable_check
       sources
     =
     let local_root, external_root, log_directory =
@@ -2915,6 +2916,7 @@ module ScratchProject = struct
           ?strict
           ?debug
           ?enable_readonly_analysis
+          ?enable_unawaited_awaitable_check
           ()
       in
       if in_memory then
@@ -3116,6 +3118,7 @@ let assert_errors
     ?(include_line_numbers = false)
     ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
     ?enable_readonly_analysis
+    ?enable_unawaited_awaitable_check
     ~context
     ~check
     source
@@ -3145,6 +3148,7 @@ let assert_errors
             ~strict
             ~debug
             ?enable_readonly_analysis
+            ?enable_unawaited_awaitable_check
             [handle, source]
         in
         let { ScratchProject.BuiltGlobalEnvironment.sources; _ } =

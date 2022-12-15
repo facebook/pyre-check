@@ -16,8 +16,9 @@
    overloadTest parseErrorTest protocolTest redundantCastTest
    typeRefinementTest readOnlyTypeCheckTest returnTest revealLocalsTest
    revealTypeTest scopeTest signatureSelectionTest sqlAlchemyTest tupleTest
-   typeGuardTest typeVariableTest typedDictionaryTest unionTest varianceTest
-   walrusOperatorTest matchTest)
+   typeGuardTest typeVariableTest typedDictionaryTest
+   unawaitedAwaitableTypeCheckTest unionTest varianceTest walrusOperatorTest
+   matchTest)
  (modules :standard \ integrationTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv
