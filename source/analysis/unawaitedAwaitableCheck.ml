@@ -56,11 +56,24 @@ module Error = AnalysisError
     some other variable, we copy over all the awaitables that are pointed to by the other variable. *)
 
 let is_awaitable ~global_resolution annotation =
-  (not (Type.equal annotation Type.Any))
-  && GlobalResolution.less_or_equal
-       global_resolution
-       ~left:annotation
-       ~right:(Type.awaitable Type.Top)
+  let has_getattr_method () =
+    GlobalResolution.attribute_from_annotation
+      ~special_method:true
+      ~name:"__getattr__"
+      ~parent:annotation
+      global_resolution
+    |> Option.is_some
+  in
+  if Type.equal annotation Type.Any then
+    false
+  else
+    GlobalResolution.less_or_equal
+      global_resolution
+      ~left:annotation
+      ~right:(Type.awaitable Type.Top)
+    && (* If a class has a `__getattr__` method, then it will satisfy the `Awaitable` protocol
+          (since it implicitly has the `__await__` method). Treat such types as non-awaitables. *)
+    not (has_getattr_method ())
 
 
 module Awaitable : sig

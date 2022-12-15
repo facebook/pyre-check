@@ -1165,6 +1165,66 @@ let test_pass_to_callee context =
   ()
 
 
+let test_placeholder_stubs context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
+  assert_awaitable_errors
+    {|
+      from placeholder_stub import StubbedBase
+
+      class Foo(StubbedBase): ...
+
+      def main() -> None:
+          x = Foo()
+    |}
+    [];
+  (* TODO(T79853064): To be consistent with our existing behavior, this should emit an error about
+     `x` not being awaited. However, because we treat any class extending a placeholder class as a
+     non-awaitable, we don't emit an error here. *)
+  assert_awaitable_errors
+    {|
+      from placeholder_stub import StubbedBase
+      from typing import Awaitable
+
+      class Foo(StubbedBase, Awaitable[str]): ...
+
+      def main() -> None:
+          x = Foo()
+    |}
+    [];
+  ()
+
+
+let test_getattr context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
+  assert_awaitable_errors
+    {|
+      from typing import Any
+
+      class Foo:
+        def __getattr__(self, name: str) -> Any: ...
+
+      def main() -> None:
+        x = Foo()
+    |}
+    [];
+  (* TODO(T79853064): Ideally, this should emit an error about `x` not being awaited. However,
+     because we treat any class with `__getattr__` as non-awaitable, we don't emit an error here. *)
+  assert_awaitable_errors
+    {|
+      from typing import Any, Awaitable
+
+      class Foo():
+        def __await__(self) -> Generator[Any, None, str]: ...
+
+        def __getattr__(self, name: str) -> Any: ...
+
+      def main() -> None:
+          x = Foo()
+    |}
+    [];
+  ()
+
+
 let () =
   "unawaited"
   >::: [
@@ -1178,5 +1238,7 @@ let () =
          "globals" >:: test_globals;
          "if" >:: test_if;
          "pass_to_callee" >:: test_pass_to_callee;
+         "placeholder_stubs" >:: test_placeholder_stubs;
+         "getattr" >:: test_getattr;
        ]
   |> Test.run
