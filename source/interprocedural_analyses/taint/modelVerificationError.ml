@@ -161,6 +161,7 @@ type kind =
       identifier: string;
       find: string;
     }
+  | MutuallyExclusiveReadWriteToCache
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -452,6 +453,8 @@ let description error =
         "Invalid identifier `%s` for parameter `name` of `WriteToCache` for find=\"%s\""
         identifier
         find
+  | MutuallyExclusiveReadWriteToCache ->
+      "WriteToCache and read_from_cache cannot be used in the same model query"
 
 
 let code { kind; _ } =
@@ -514,6 +517,7 @@ let code { kind; _ } =
   | InvalidWriteToCacheNameIdentifier _ -> 56
   | InvalidWriteToCacheIdentifierForFind _ -> 57
   | InvalidReadFromCacheConstraint _ -> 58
+  | MutuallyExclusiveReadWriteToCache -> 59
 
 
 let display { kind = error; path; location } =

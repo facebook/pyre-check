@@ -567,6 +567,10 @@ module ModelQuery = struct
       | Modes of Model.ModeSet.t
       | WriteToCache of WriteToCache.t
     [@@deriving show, equal]
+
+    let is_write_to_cache = function
+      | WriteToCache _ -> true
+      | _ -> false
   end
 
   (* `ModelQuery.t` represents a ModelQuery() statement. *)

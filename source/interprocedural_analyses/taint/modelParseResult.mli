@@ -314,6 +314,8 @@ module ModelQuery : sig
       | Modes of Model.ModeSet.t
       | WriteToCache of WriteToCache.t
     [@@deriving show, equal]
+
+    val is_write_to_cache : t -> bool
   end
 
   (* `ModelQuery.t` represents a ModelQuery() statement. *)

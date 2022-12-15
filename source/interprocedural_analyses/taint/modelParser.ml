@@ -1525,6 +1525,16 @@ let check_invalid_read_form_cache ~path ~location ~constraint_expression where =
          (InvalidReadFromCacheConstraint constraint_expression))
 
 
+let check_both_read_and_write_cache ~path ~location ~where models =
+  if
+    ModelQuery.Constraint.contains_read_from_cache (AllOf where)
+    && List.exists ~f:ModelQuery.Model.is_write_to_cache models
+  then
+    Error (model_verification_error ~path ~location MutuallyExclusiveReadWriteToCache)
+  else
+    Ok models
+
+
 let parse_where_clause ~path ~find_clause ({ Node.value; location } as expression) =
   let open Core.Result in
   let invalid_model_query_where_clause ~path ~location callee =
@@ -3175,6 +3185,7 @@ let rec parse_statement
         ~find_clause:find
         ~is_object_target:(not (ModelQuery.Find.is_callable find))
         model_clause
+      >>= check_both_read_and_write_cache ~path ~location ~where
       |> as_result_error_list
       >>= fun models ->
       parse_output_models_clause ~name ~path expected_models_clause

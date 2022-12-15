@@ -157,6 +157,7 @@ type kind =
       identifier: string;
       find: string;
     }
+  | MutuallyExclusiveReadWriteToCache
 [@@deriving sexp, compare]
 
 type t = {

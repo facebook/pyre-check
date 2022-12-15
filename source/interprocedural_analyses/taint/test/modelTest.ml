@@ -2899,6 +2899,36 @@ let test_invalid_models context =
       {|
       ModelQuery(
         name = "invalid_model",
+        find = "functions",
+        where = read_from_cache(kind="first", name="foo"),
+        model = WriteToCache(kind="second", name=f"{function_name}")
+      )
+    |}
+    ~expect:{|WriteToCache and read_from_cache cannot be used in the same model query|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = [
+          name.matches("foo"),
+          read_from_cache(kind="first", name="foo"),
+        ],
+        model = [
+          WriteToCache(kind="second", name=f"{function_name}"),
+          Returns(TaintSource[Test]),
+        ]
+      )
+    |}
+    ~expect:{|WriteToCache and read_from_cache cannot be used in the same model query|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
         find = "methods",
         where = cls.extends("foo", is_transitive=foobar),
         model = ReturnModel(TaintSource[Test])
