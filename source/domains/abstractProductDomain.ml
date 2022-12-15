@@ -5,14 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* This file is shared between pyre and zoncolan, and they use different
- * version of Core/Core_kernel. Because Core_kernel is being deprecated,
- * building this file may or may not trigger a deprecation warning (-3).
- * Let's suppress it until pyre catches up with zoncolan.
- * See T138025201
- *)
-[@@@warning "-3"]
-
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open AbstractDomainCore
@@ -307,7 +299,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
       else
         Array.map show_element slots
         |> Array.to_list
-        |> List.filter_map Core_kernel.Fn.id
+        |> List.filter_map Core.Fn.id
         |> String.concat ", "
 
 
@@ -348,18 +340,18 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
     let partition
         : type a f b.
-          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core.Map.Poly.t
       =
      fun part op ~f product ->
       match part, op with
       | Self, _ -> Base.partition part op ~f product
       | _, Context (Self, _) -> Base.partition part op ~f product
       | _ ->
-          let partition (Slot slot) : (b, t) Core_kernel.Map.Poly.t =
+          let partition (Slot slot) : (b, t) Core.Map.Poly.t =
             let value = get slot product in
             let module D = (val Config.slot_domain slot) in
             D.partition part op ~f value
-            |> Core_kernel.Map.Poly.map ~f:(fun value -> update slot value product)
+            |> Core.Map.Poly.map ~f:(fun value -> update slot value product)
           in
           let route = get_route part in
           partition slots.(route)
@@ -416,14 +408,12 @@ module Make (Config : PRODUCT_CONFIG) = struct
       in
       let partition_by_slot partition (Part (part, _) as pv) =
         let key = get_route part in
-        Core_kernel.Map.Poly.update partition key ~f:(update pv)
+        Core.Map.Poly.update partition key ~f:(update pv)
       in
-      let partition =
-        ListLabels.fold_left parts ~f:partition_by_slot ~init:Core_kernel.Map.Poly.empty
-      in
+      let partition = ListLabels.fold_left parts ~f:partition_by_slot ~init:Core.Map.Poly.empty in
       let create_slot i (Slot slot) =
         let module D = (val Config.slot_domain slot) in
-        match Core_kernel.Map.Poly.find partition i with
+        match Core.Map.Poly.find partition i with
         | Some parts -> Element (List.rev parts |> D.create)
         | _ -> Element D.bottom
       in

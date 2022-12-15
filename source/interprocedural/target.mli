@@ -30,10 +30,25 @@ type t =
   | Function of function_name
   | Method of method_name
   | Override of method_name
-  (* Represents a global variable or field of a class that we want to model,
-   * e.g os.environ or HttpRequest.GET *)
+  (* Represents a global variable or field of a class that we want to model, * e.g os.environ or
+     HttpRequest.GET *)
   | Object of string
 [@@deriving sexp, compare, hash, eq]
+
+module T : sig
+  type nonrec t = t [@@deriving sexp, compare, hash, eq]
+end
+
+module Map : sig
+  include Core.Map.S with type Key.t = t
+
+  module Tree : module type of struct
+    include Core.Map.Make_tree (struct
+      include T
+      include Core.Comparator.Make (T)
+    end)
+  end
+end
 
 (* Pretty printers. *)
 
@@ -90,21 +105,11 @@ val override_to_method : t -> t
     (e.g, property getters and setters). Hence, use this at your own risk. *)
 val define_name : t -> Reference.t
 
-module Map : Core.Map.S with type Key.t = t
-
 module Set : Caml.Set.S with type elt = t
 
 module HashMap : Core.Hashtbl.S with type key := t
 
 module HashSet : Core.Hash_set.S with type elt := t
-
-module MapTree : sig
-  val merge_skewed
-    :  combine:(key:t -> 'a -> 'a -> 'a) ->
-    'a Map.Tree.t ->
-    'a Map.Tree.t ->
-    'a Map.Tree.t
-end
 
 type definitions_result = {
   qualifier: Reference.t;

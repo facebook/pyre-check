@@ -165,10 +165,10 @@ let test_parse_sources context =
     write_file local_root ".pyre/resource_cache/typeshed/foo.pyi";
     write_file link_root "link.py";
     write_file link_root "seemingly_unrelated.pyi";
-    Unix.symlink
+    Core_unix.symlink
       ~target:(PyrePath.absolute link_root ^/ "link.py")
       ~link_name:(PyrePath.absolute local_root ^/ "d.py");
-    Unix.symlink
+    Core_unix.symlink
       ~target:(PyrePath.absolute link_root ^/ "seemingly_unrelated.pyi")
       ~link_name:(PyrePath.absolute local_root ^/ "d.pyi");
     let configuration =

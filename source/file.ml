@@ -48,11 +48,11 @@ module T = struct
     let make_directories () =
       let directory = Filename.dirname path in
       if not (Hashtbl.mem existing_directories directory) then
-        match Core.Sys.is_directory directory with
+        match Sys_unix.is_directory directory with
         | `Yes -> Hashtbl.set existing_directories ~key:directory ~data:()
         | _ -> (
             try
-              Core.Unix.mkdir_p directory;
+              Core_unix.mkdir_p directory;
               Hashtbl.set existing_directories ~key:directory ~data:()
             with
             | Sys_error _ -> Log.info "Could not create directory `%s`" directory)

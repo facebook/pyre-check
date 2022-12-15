@@ -704,7 +704,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 3; name = c; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 3; name = \"c\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -723,7 +723,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 2; name = b; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 2; name = \"b\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -742,7 +742,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 1; name = a; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = \"a\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -769,7 +769,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 3; name = c; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 3; name = \"c\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -788,7 +788,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 2; name = b; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 2; name = \"b\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -807,7 +807,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 1; name = a; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = \"a\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -834,7 +834,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 2; name = c; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 2; name = \"c\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -853,7 +853,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 1; name = b; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = \"b\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -872,7 +872,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = a; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"a\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"

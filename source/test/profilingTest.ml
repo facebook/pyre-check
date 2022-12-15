@@ -41,7 +41,7 @@ let assert_event ?name ?event_type ?timestamp ?tags log_file =
 
 
 let test_event_format _ =
-  let output_name = Filename.temp_file "event_format" "test" in
+  let output_name = Filename_unix.temp_file "event_format" "test" in
   Profiling.GlobalState.initialize ~profiling_output:output_name ();
   let assert_event ~name ~event_type ~timestamp ~tags event =
     PyrePath.(remove_if_exists (create_absolute output_name));
@@ -73,24 +73,24 @@ let test_event_format _ =
     ~timestamp:1
     ~tags:["hello", "42"];
 
-  Sys.remove output_name;
+  Sys_unix.remove output_name;
   ()
 
 
 let test_event_track _ =
-  let output_name = Filename.temp_file "event_track" "test" in
+  let output_name = Filename_unix.temp_file "event_track" "test" in
   Profiling.GlobalState.initialize ~profiling_output:output_name ();
   let foo x = Profiling.track_duration_event "foo" ~tags:["hello", "world"] ~f:(fun _ -> x + 1) in
   let y = foo 42 in
   assert_int_equal 43 y;
   assert_event output_name ~name:"foo" ~tags:["hello", "world"];
 
-  Sys.remove output_name;
+  Sys_unix.remove output_name;
   ()
 
 
 let test_memory_profiling _ =
-  let output_name = Filename.temp_file "event_track" "test" in
+  let output_name = Filename_unix.temp_file "event_track" "test" in
   Profiling.GlobalState.initialize ~memory_profiling_output:output_name ();
   Profiling.track_shared_memory_usage ~name:"foo" ();
   assert_event
@@ -105,7 +105,7 @@ let test_memory_profiling _ =
         "used_dependency_slots", "0";
       ];
 
-  Sys.remove output_name;
+  Sys_unix.remove output_name;
   ()
 
 

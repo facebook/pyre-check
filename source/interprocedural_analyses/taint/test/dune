@@ -4,7 +4,8 @@
  (modules testHelper)
  (preprocess
   (pps ppx_sexp_message ppx_deriving.show))
- (libraries oUnit pyrelib.test pyrelib.ast pyrelib.analysis
+ (libraries core core_unix core_unix.sys_unix
+   oUnit pyrelib.test pyrelib.ast pyrelib.analysis
    pyrelib.interprocedural pyrelib.taint))
 
 (tests

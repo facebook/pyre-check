@@ -67,7 +67,7 @@ let kind_and_message_from_exception = function
   | Watchman.SubscriptionError message ->
       Kind.Watchman, Format.sprintf "Watchman subscription error: %s" message
   | Watchman.QueryError message -> Kind.Watchman, Format.sprintf "Watchman query error: %s" message
-  | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
+  | Core_unix.Unix_error (Core_unix.EADDRINUSE, _, _) ->
       ( Kind.Pyre,
         "A Pyre server is already running for the current project. Use `pyre stop` to stop it \
          before starting another one." )

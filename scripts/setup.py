@@ -27,8 +27,9 @@ LOG: logging.Logger = logging.getLogger(__name__)
 COMPILER_VERSION = "4.14.0"
 DEPENDENCIES = [
     "base64.3.5.0",
-    "core.v0.14.1",
-    "re2.v0.14.0",
+    "core.v0.15.1",
+    "core_unix.v0.15.1",
+    "re2.v0.15.0",
     "dune.3.4.1",
     "yojson.2.0.1",
     "ppx_deriving_yojson.3.6.1",

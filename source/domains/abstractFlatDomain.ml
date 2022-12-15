@@ -5,14 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* This file is shared between pyre and zoncolan, and they use different
- * version of Core/Core_kernel. Because Core_kernel is being deprecated,
- * building this file may or may not trigger a deprecation warning (-3).
- * Let's suppress it until pyre catches up with zoncolan.
- * See T138025201
- *)
-[@@@warning "-3"]
-
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open AbstractDomainCore
@@ -126,7 +118,7 @@ module Make (Element : ELEMENT) = struct
 
     let partition
         : type a f b.
-          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core.Map.Poly.t
       =
      fun part op ~f flat ->
       match part, op with
@@ -134,17 +126,17 @@ module Make (Element : ELEMENT) = struct
           match flat with
           | Top
           | Bottom ->
-              Core_kernel.Map.Poly.empty
-          | Concrete e -> Core_kernel.Map.Poly.singleton (f e) flat)
+              Core.Map.Poly.empty
+          | Concrete e -> Core.Map.Poly.singleton (f e) flat)
       | Element, ByFilter -> (
           match flat with
           | Top
           | Bottom ->
-              Core_kernel.Map.Poly.empty
+              Core.Map.Poly.empty
           | Concrete e -> (
               match f e with
-              | None -> Core_kernel.Map.Poly.empty
-              | Some key -> Core_kernel.Map.Poly.singleton key flat))
+              | None -> Core.Map.Poly.empty
+              | Some key -> Core.Map.Poly.singleton key flat))
       | _ -> Base.partition part op ~f flat
 
 

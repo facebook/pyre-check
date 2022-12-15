@@ -82,8 +82,8 @@ let run tests =
     let bracket_test test context =
       initialize ();
       test context;
-      Unix.unsetenv "HH_SERVER_DAEMON_PARAM";
-      Unix.unsetenv "HH_SERVER_DAEMON"
+      Core_unix.unsetenv "HH_SERVER_DAEMON_PARAM";
+      Core_unix.unsetenv "HH_SERVER_DAEMON"
     in
     match test with
     | OUnitTest.TestLabel (name, test) -> OUnitTest.TestLabel (name, bracket test)
@@ -210,7 +210,7 @@ let diff ~print format (left, right) =
       "bash -c \"diff -u <(echo '%s') <(echo '%s')\""
       (escape (Format.asprintf "%a" print left))
       (escape (Format.asprintf "%a" print right))
-    |> Unix.open_process_in
+    |> Core_unix.open_process_in
   in
   Format.fprintf format "\n%s" (In_channel.input_all input);
   In_channel.close input
@@ -415,10 +415,11 @@ let assert_is_none test = assert_true (Option.is_none test)
 let assert_unreached () = assert_true false
 
 (* Override `OUnit`s functions the return absolute paths. *)
-let bracket_tmpdir ?suffix context = bracket_tmpdir ?suffix context |> Filename.realpath
+let bracket_tmpdir ?suffix context = bracket_tmpdir ?suffix context |> Filename_unix.realpath
 
 let bracket_tmpfile ?suffix context =
-  bracket_tmpfile ?suffix context |> fun (filename, channel) -> Filename.realpath filename, channel
+  bracket_tmpfile ?suffix context
+  |> fun (filename, channel) -> Filename_unix.realpath filename, channel
 
 
 let typeshed_stubs ?(include_helper_builtins = true) () =
@@ -3089,7 +3090,7 @@ module ScratchProject = struct
 
   let delete_file project ~relative =
     let { Configuration.Analysis.local_root; _ } = configuration_of project in
-    PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
+    PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core_unix.remove
 
 
   let update_environment { errors_environment; _ } ?(scheduler = mock_scheduler ()) artifact_paths =

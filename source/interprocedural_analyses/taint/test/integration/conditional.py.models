@@ -117,7 +117,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 0; name = name; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"name\"; positional_only = false}"
                   }
                 ],
                 "kind": "MySource"

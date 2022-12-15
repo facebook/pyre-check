@@ -2094,7 +2094,7 @@ let rec pp format annotation =
       Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
-  | Primitive name -> Format.fprintf format "%a" String.pp name
+  | Primitive name -> Format.fprintf format "%s" name
   | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
   | RecursiveType { name; body } -> Format.fprintf format "%s (resolves to %a)" name pp body
   | Top -> Format.fprintf format "unknown"

@@ -600,7 +600,7 @@ let test_handle_query_basic context =
     ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
     (Single (Base.Success "Saved state."))
   >>= fun () ->
-  assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"));
+  assert_equal `Yes (Sys_unix.is_file (temporary_directory ^/ "state"));
   Lwt.return_unit
 
 

@@ -50,6 +50,15 @@ end
 
 include T
 
+module Map = struct
+  include Map.Make (T)
+
+  module Tree = Map.Make_tree (struct
+    include T
+    include Comparator.Make (T)
+  end)
+end
+
 (* Lower priority appears earlier in comparison. *)
 let priority = function
   | Function _ -> 0
@@ -207,19 +216,10 @@ let define_name = function
   | Object _ -> failwith "unexpected"
 
 
-module Map = Core.Map.Make (T)
 module Set = Caml.Set.Make (T)
 module Hashable = Core.Hashable.Make (T)
 module HashMap = Hashable.Table
 module HashSet = Hashable.Hash_set
-
-(* TODO: remove the conversion from Target.Map.Tree to Target.Map.t - this is needed when using Core
-   0.14.x as part of preparing for an upgrade to Core 0.15.x because there is no
-   Target.Map.Tree.merge_skewed but 0.15.x corrects this *)
-module MapTree = struct
-  let merge_skewed ~combine left right =
-    Core.Map.merge_skewed ~combine (Map.of_tree left) (Map.of_tree right) |> Map.to_tree
-end
 
 type definitions_result = {
   qualifier: Reference.t;

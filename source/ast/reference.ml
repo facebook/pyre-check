@@ -17,6 +17,15 @@ end
 
 include T
 
+module Map = struct
+  include Map.Make (T)
+
+  module Tree = Map.Make_tree (struct
+    include T
+    include Comparator.Make (T)
+  end)
+end
+
 let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z-_0-9\\?]+\\)\\$"
 
 let create ?prefix name =
@@ -39,7 +48,6 @@ let pp format reference = reference |> String.concat ~sep:"." |> Format.fprintf 
 
 let show reference = Format.asprintf "%a" pp reference
 
-module Map = Map.Make (T)
 module SerializableMap = Data_structures.SerializableMap.Make (T)
 module Set = Set.Make (T)
 include Hashable.Make (T)

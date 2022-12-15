@@ -5,14 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* This file is shared between pyre and zoncolan, and they use different
- * version of Core/Core_kernel. Because Core_kernel is being deprecated,
- * building this file may or may not trigger a deprecation warning (-3).
- * Let's suppress it until pyre catches up with zoncolan.
- * See T138025201
- *)
-[@@@warning "-3"]
-
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open AbstractDomainCore
@@ -167,7 +159,7 @@ module Make (Element : ELEMENT) = struct
 
     let partition
         : type a f b.
-          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core.Map.Poly.t
       =
      fun part op ~f set ->
       let update element = function
@@ -178,17 +170,16 @@ module Make (Element : ELEMENT) = struct
       | ASet set, Element, By ->
           let f element result =
             let partition_key = f element in
-            Core_kernel.Map.Poly.update result partition_key ~f:(update element)
+            Core.Map.Poly.update result partition_key ~f:(update element)
           in
-          Set.fold f set Core_kernel.Map.Poly.empty
+          Set.fold f set Core.Map.Poly.empty
       | ASet set, Element, ByFilter ->
           let f element result =
             match f element with
             | None -> result
-            | Some partition_key ->
-                Core_kernel.Map.Poly.update result partition_key ~f:(update element)
+            | Some partition_key -> Core.Map.Poly.update result partition_key ~f:(update element)
           in
-          Set.fold f set Core_kernel.Map.Poly.empty
+          Set.fold f set Core.Map.Poly.empty
       | Top, Element, _ -> failwith "Topped set cannot be partitioned by Element"
       | _ -> Base.partition part op ~f set
 

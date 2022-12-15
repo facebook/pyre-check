@@ -79,7 +79,7 @@ let create_info_response
   Response.Info
     {
       version = Version.version ();
-      pid = Unix.getpid () |> Pid.to_int;
+      pid = Core_unix.getpid () |> Pid.to_int;
       socket = PyrePath.absolute socket_path;
       global_root = PyrePath.show project_root;
       relative_local_root = PyrePath.get_relative_to_root ~root:project_root ~path:local_root;

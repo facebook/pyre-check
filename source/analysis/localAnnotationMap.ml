@@ -97,21 +97,32 @@ let set
       }
 
 
+module StatementIdMap = struct
+  module StatementId = struct
+    type t = int [@@deriving compare, sexp, hash, to_yojson]
+  end
+
+  include Map.Make_tree (struct
+    include StatementId
+    include Comparator.Make (StatementId)
+  end)
+end
+
 module ReadOnly = struct
-  type t = Annotations.t Int.Map.Tree.t [@@deriving equal]
+  type t = Annotations.t StatementIdMap.t [@@deriving equal]
 
   let convert_to_map { Annotations.annotations; temporary_annotations } =
     Refinement.Store.{ annotations; temporary_annotations }
 
 
   let get_precondition local_annotations ~statement_key =
-    Int.Map.Tree.find local_annotations statement_key
+    StatementIdMap.find local_annotations statement_key
     >>| fun { Annotations.precondition; _ } -> convert_to_map precondition
 
 
   let get_postcondition local_annotations ~statement_key =
-    Int.Map.Tree.find local_annotations statement_key
+    StatementIdMap.find local_annotations statement_key
     >>| fun { Annotations.postcondition; _ } -> convert_to_map postcondition
 end
 
-let read_only local_annotations = Hashtbl.to_alist local_annotations |> Int.Map.Tree.of_alist_exn
+let read_only local_annotations = Hashtbl.to_alist local_annotations |> StatementIdMap.of_alist_exn

@@ -5,14 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* This file is shared between pyre and zoncolan, and they use different
- * version of Core/Core_kernel. Because Core_kernel is being deprecated,
- * building this file may or may not trigger a deprecation warning (-3).
- * Let's suppress it until pyre catches up with zoncolan.
- * See T138025201
- *)
-[@@@warning "-3"]
-
 (* Constructors of this type are used to select parts of composed abstract domains. E.g., a Set
    domain will add an Element: element constructor for the element type of the set, thereby allowing
    folding, partitioning, and transforming the abstract domains by Elements. Similarly, a Map domain
@@ -110,7 +102,7 @@ module type S = sig
     ([ `Partition ], 'a, 'f, 'b) operation ->
     f:'f ->
     t ->
-    ('b, t) Core_kernel.Map.Poly.t
+    ('b, t) Core.Map.Poly.t
 
   val transform : 'a part -> ([ `Transform ], 'a, 'f, _) operation -> f:'f -> t -> t
 
@@ -182,7 +174,7 @@ module type BASE = sig
     ([ `Partition ], 'a, 'f, 'b) operation ->
     f:'f ->
     t ->
-    ('b, t) Core_kernel.Map.Poly.t
+    ('b, t) Core.Map.Poly.t
 
   val create : 'a part -> 'a -> t -> t
 
@@ -213,7 +205,7 @@ module MakeBase (D : sig
     ([ `Partition ], 'a, 'f, 'b) operation ->
     f:'f ->
     t ->
-    ('b, t) Core_kernel.Map.Poly.t
+    ('b, t) Core.Map.Poly.t
 
   val introspect : 'a introspect -> 'a
 end) : BASE with type t := D.t = struct
@@ -248,7 +240,7 @@ end) : BASE with type t := D.t = struct
     | D.Self, Add -> D.join d f
     | D.Self, Filter -> if f d then d else D.bottom
     | D.Self, FilterMap -> f d |> Option.value ~default:D.bottom
-    | D.Self, Expand -> f d |> Core_kernel.List.fold ~f:D.join ~init:D.bottom
+    | D.Self, Expand -> f d |> Core.List.fold ~f:D.join ~init:D.bottom
     | _, Seq (op1, op2) ->
         let f1, f2 = f in
         let d = D.transform part op1 ~f:f1 d in
@@ -288,19 +280,15 @@ end) : BASE with type t := D.t = struct
 
   let partition
       : type a b f.
-        a part ->
-        ([ `Partition ], a, f, b) operation ->
-        f:f ->
-        D.t ->
-        (b, D.t) Core_kernel.Map.Poly.t
+        a part -> ([ `Partition ], a, f, b) operation -> f:f -> D.t -> (b, D.t) Core.Map.Poly.t
     =
    fun part op ~f d ->
     match part, op with
-    | D.Self, By -> Core_kernel.Map.Poly.singleton (f d) d
+    | D.Self, By -> Core.Map.Poly.singleton (f d) d
     | D.Self, ByFilter -> (
         match f d with
-        | None -> Core_kernel.Map.Poly.empty
-        | Some key -> Core_kernel.Map.Poly.singleton key d)
+        | None -> Core.Map.Poly.empty
+        | Some key -> Core.Map.Poly.singleton key d)
     | _, Nest (nested_part, op) -> D.partition nested_part op ~f d
     | _, Context (D.Self, op) -> D.partition part op ~f:(f d) d
     | _, Context (p, _) -> unhandled_context p "partition"

@@ -39,7 +39,7 @@ let test_compute_locally_changed_files context =
       let path = PyrePath.create_relative ~root:local_root ~relative in
       match new_content with
       | Some content -> File.write (File.create ~content path)
-      | None -> Sys.remove (PyrePath.absolute path)
+      | None -> Sys_unix.remove (PyrePath.absolute path)
     in
     List.iter files ~f:write_new_file;
     let new_module_tracker =

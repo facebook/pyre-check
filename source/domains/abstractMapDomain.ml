@@ -5,19 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* This file is shared between pyre and zoncolan, and they use different
- * version of Core/Core_kernel. Because Core_kernel is being deprecated,
- * building this file may or may not trigger a deprecation warning (-3).
- * Let's suppress it until pyre catches up with zoncolan.
- * See T138025201
- *)
-[@@@warning "-3"]
-
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open AbstractDomainCore
-module List = Core_kernel.List
-module MapPoly = Core_kernel.Map.Poly
+module List = Core.List
+module MapPoly = Core.Map.Poly
 
 module type KEY = sig
   include Map.OrderedType

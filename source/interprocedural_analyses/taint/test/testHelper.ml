@@ -664,18 +664,18 @@ let end_to_end_integration_test path context =
     in
     let write_output ~suffix ?(initial = false) content =
       try output_filename ~suffix ~initial |> File.create ~content |> File.write with
-      | Unix.Unix_error _ ->
+      | Core_unix.Unix_error _ ->
           failwith (Format.asprintf "Could not write `%s` file for %a" suffix PyrePath.pp path)
     in
     let remove_old_output ~suffix =
-      try output_filename ~suffix ~initial:false |> PyrePath.show |> Sys.remove with
+      try output_filename ~suffix ~initial:false |> PyrePath.show |> Sys_unix.remove with
       | Sys_error _ ->
           (* be silent *)
           ()
     in
     let get_expected ~suffix =
       try PyrePath.with_suffix path ~suffix |> File.create |> File.content with
-      | Unix.Unix_error _ -> None
+      | Core_unix.Unix_error _ -> None
     in
     match get_expected ~suffix with
     | None ->
@@ -707,7 +707,7 @@ let end_to_end_integration_test path context =
         let model_path = PyrePath.with_suffix path ~suffix:".pysa" in
         File.create model_path |> File.content
       with
-      | Unix.Unix_error _ -> None
+      | Core_unix.Unix_error _ -> None
     in
     let taint_configuration =
       try
@@ -718,7 +718,7 @@ let end_to_end_integration_test path context =
                Taint.TaintConfiguration.from_json_list [path, Yojson.Safe.from_string content]
                |> Taint.TaintConfiguration.exception_on_error)
       with
-      | Unix.Unix_error _ -> None
+      | Core_unix.Unix_error _ -> None
     in
     let add_initial_models = Option.is_none models_source && Option.is_none taint_configuration in
     let taint_configuration =

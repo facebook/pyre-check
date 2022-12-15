@@ -137,9 +137,9 @@ let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
   let table_path = PyrePath.create_relative ~root ~relative:"table" in
   let dependencies_path = PyrePath.create_relative ~root ~relative:"deps" in
   let () =
-    try Core.Unix.mkdir (PyrePath.absolute root) with
+    try Core_unix.mkdir (PyrePath.absolute root) with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
-    | Core.Unix.Unix_error ((EEXIST | EISDIR), _, _) ->
+    | Core_unix.Unix_error ((EEXIST | EISDIR), _, _) ->
         PyrePath.remove_if_exists table_path;
         PyrePath.remove_if_exists dependencies_path
     | e -> raise e
@@ -148,8 +148,8 @@ let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
 
 
 let run_tar arguments =
-  let { Unix.Process_info.pid; _ } = Unix.create_process ~prog:"tar" ~args:arguments in
-  if Result.is_error (Unix.waitpid pid) then
+  let { Core_unix.Process_info.pid; _ } = Core_unix.create_process ~prog:"tar" ~args:arguments in
+  if Result.is_error (Core_unix.waitpid pid) then
     raise
       (TarError (Format.sprintf "unable to run tar command %s " (List.to_string ~f:Fn.id arguments)))
   else

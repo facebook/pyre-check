@@ -152,7 +152,7 @@ let write_event event =
     (fun () -> Event.write ~output_channel:Lwt_io.stdout event)
     (function
       | Lwt_io.Channel_closed _
-      | Caml.Unix.Unix_error (Caml.Unix.EPIPE, _, _) ->
+      | Caml_unix.Unix_error (Caml_unix.EPIPE, _, _) ->
           Lwt.return_unit
       | exn -> Lwt.fail exn)
 

@@ -177,7 +177,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = second; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = \"second\"; positional_only = false}"
                   }
                 ],
                 "kind": "AddFeatureToArgument"

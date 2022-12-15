@@ -757,7 +757,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -785,7 +785,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -813,7 +813,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -841,7 +841,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -869,7 +869,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -897,7 +897,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -925,7 +925,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -952,7 +952,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -979,7 +979,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -1006,7 +1006,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -1033,7 +1033,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -1060,7 +1060,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -1143,7 +1143,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = parameter; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = \"parameter\";\n  positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -1171,7 +1171,7 @@
                   {
                     "tag": "TheY",
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 1; name = y; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = \"y\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -1819,7 +1819,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 1; name = other; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = \"other\"; positional_only = false}"
                   }
                 ],
                 "return_paths": { "": 0 },

@@ -5,14 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* This file is shared between pyre and zoncolan, and they use different
- * version of Core/Core_kernel. Because Core_kernel is being deprecated,
- * building this file may or may not trigger a deprecation warning (-3).
- * Let's suppress it until pyre catches up with zoncolan.
- * See T138025201
- *)
-[@@@warning "-3"]
-
 (* Implements an abstract set that computes both an over- and an under-approximation. The
    under-approximation comes into play at joins, where the under-approximations are intersected. *)
 
@@ -287,7 +279,7 @@ module MakeWithSet (Set : AbstractSetDomain.SET) = struct
 
     let partition
         : type a f b.
-          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core_kernel.Map.Poly.t
+          a part -> ([ `Partition ], a, f, b) operation -> f:f -> t -> (b, t) Core.Map.Poly.t
       =
      fun part op ~f set ->
       let update_element element = function
@@ -295,38 +287,38 @@ module MakeWithSet (Set : AbstractSetDomain.SET) = struct
         | Some set -> add_element set element
       in
       match part, op, set with
-      | (Element | ElementAndUnder), By, Bottom -> Core_kernel.Map.Poly.empty
-      | (Element | ElementAndUnder), ByFilter, Bottom -> Core_kernel.Map.Poly.empty
+      | (Element | ElementAndUnder), By, Bottom -> Core.Map.Poly.empty
+      | (Element | ElementAndUnder), ByFilter, Bottom -> Core.Map.Poly.empty
       | Element, By, _ ->
           let f result element =
             let key = f element.element in
-            Core_kernel.Map.Poly.update result key ~f:(update_element element)
+            Core.Map.Poly.update result key ~f:(update_element element)
           in
-          to_approximation set |> ListLabels.fold_left ~f ~init:Core_kernel.Map.Poly.empty
+          to_approximation set |> ListLabels.fold_left ~f ~init:Core.Map.Poly.empty
       | ElementAndUnder, By, BiSet { over; under } ->
           let element_of = element_of ~under in
           let f element result =
             let element = element_of element in
             let key = f element in
-            Core_kernel.Map.Poly.update result key ~f:(update_element element)
+            Core.Map.Poly.update result key ~f:(update_element element)
           in
-          Set.fold f over Core_kernel.Map.Poly.empty
+          Set.fold f over Core.Map.Poly.empty
       | Element, ByFilter, _ ->
           let f result element =
             match f element.element with
-            | Some key -> Core_kernel.Map.Poly.update result key ~f:(update_element element)
+            | Some key -> Core.Map.Poly.update result key ~f:(update_element element)
             | None -> result
           in
-          to_approximation set |> ListLabels.fold_left ~f ~init:Core_kernel.Map.Poly.empty
+          to_approximation set |> ListLabels.fold_left ~f ~init:Core.Map.Poly.empty
       | ElementAndUnder, ByFilter, BiSet { over; under } ->
           let element_of = element_of ~under in
           let f element result =
             let element = element_of element in
             match f element with
-            | Some key -> Core_kernel.Map.Poly.update result key ~f:(update_element element)
+            | Some key -> Core.Map.Poly.update result key ~f:(update_element element)
             | None -> result
           in
-          Set.fold f over Core_kernel.Map.Poly.empty
+          Set.fold f over Core.Map.Poly.empty
       | _ -> Base.partition part op ~f set
 
 

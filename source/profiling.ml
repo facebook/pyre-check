@@ -58,7 +58,7 @@ module Event = struct
 
   let create ?(timestamp = now_in_microseconds ()) ?(tags = []) ~event_type name =
     let name = String.filter ~f:Char.is_print name in
-    let pid = Unix.getpid () |> Pid.to_int in
+    let pid = Core_unix.getpid () |> Pid.to_int in
     let worker_id = Worker.current_worker_id () in
     { name; worker_id; pid; event_type; timestamp; tags }
 end

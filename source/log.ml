@@ -89,16 +89,16 @@ let is_enabled section = Hash_set.mem GlobalState.enabled (section_to_string sec
 
 let time_zone = ref None
 
-(* A safer version of Time.Zone.local, which defaults to UTC instead of throwing an exception if we
-   cannot figure out local time. See https://github.com/janestreet/core/issues/96 for one example
-   when this can happen *)
+(* A safer version of Time_unix.Zone.local, which defaults to UTC instead of throwing an exception
+   if we cannot figure out local time. See https://github.com/janestreet/core/issues/96 for one
+   example when this can happen *)
 let get_time_zone () =
   match !time_zone with
   | Some zone -> zone
   | None ->
       let zone =
-        try force Time.Zone.local with
-        | _ -> Time.Zone.utc
+        try force Time_unix.Zone.local with
+        | _ -> Time_unix.Zone.utc
       in
       time_zone := Some zone;
       zone
@@ -111,7 +111,7 @@ let log ~section format =
     Format.fprintf
       Format.err_formatter
       ("%s %s " ^^ format ^^ "\n%!")
-      (Time.format ~zone (Time.now ()) "%Y-%m-%d %H:%M:%S")
+      (Time_unix.format ~zone (Time_unix.now ()) "%Y-%m-%d %H:%M:%S")
       (String.uppercase section)
   else
     Format.ifprintf Format.err_formatter format
@@ -130,7 +130,7 @@ let warning format = log ~section:`Warning format
 let print format = Printf.printf format
 
 let log_unix_error ?(section = `Error) (error_kind, name, parameters) =
-  log ~section "Unix error %s: %s(%s)" (Unix.error_message error_kind) name parameters
+  log ~section "Unix error %s: %s(%s)" (Core_unix.error_message error_kind) name parameters
 
 
 let log_exception message exception_to_log backtrace =
@@ -150,38 +150,38 @@ module Color = struct
 end
 
 let rotate ?(number_to_keep = 10) basename =
-  let timestamp = Time.to_filename_string ~zone:(get_time_zone ()) (Time.now ()) in
+  let timestamp = Time_unix.to_filename_string ~zone:(get_time_zone ()) (Time_unix.now ()) in
   let suppress_system_error f =
     try f () with
     | Sys_error _
-    | Unix.Unix_error _ ->
+    | Core_unix.Unix_error _ ->
         ()
   in
   let rotate_old_logs () =
     Filename.dirname basename
-    |> Sys.ls_dir
+    |> Sys_unix.ls_dir
     (* The "." is to prevent us from counting a symlinked log as a log to keep. *)
     |> List.filter ~f:(String.is_prefix ~prefix:(Filename.basename basename ^ "."))
     |> List.sort ~compare:String.compare (* Sorts by earliest date, i.e. least recent *)
     |> List.rev
     |> (fun list -> List.drop list number_to_keep)
     |> List.iter ~f:(fun path ->
-           suppress_system_error (fun () -> Unix.remove (Filename.dirname basename ^/ path)))
+           suppress_system_error (fun () -> Core_unix.remove (Filename.dirname basename ^/ path)))
   in
   suppress_system_error rotate_old_logs;
   let is_file_or_link path =
     try
-      let { Unix.st_kind; _ } = Unix.lstat path in
+      let { Core_unix.st_kind; _ } = Core_unix.lstat path in
       match st_kind with
-      | Unix.S_LNK
-      | Unix.S_REG ->
+      | Core_unix.S_LNK
+      | Core_unix.S_REG ->
           true
       | _ -> false
     with
-    | Unix.Unix_error _ -> false
+    | Core_unix.Unix_error _ -> false
   in
   if is_file_or_link basename then
-    suppress_system_error (fun () -> Unix.unlink basename);
+    suppress_system_error (fun () -> Core_unix.unlink basename);
   let actual_path = Format.sprintf "%s.%s" basename timestamp in
-  suppress_system_error (fun () -> Unix.symlink ~target:actual_path ~link_name:basename);
+  suppress_system_error (fun () -> Core_unix.symlink ~target:actual_path ~link_name:basename);
   actual_path

@@ -9,7 +9,20 @@ open Core
 
 type t = string [@@deriving compare, sexp, hash, to_yojson]
 
-module Map : Map.S with type Key.t = t
+module T : sig
+  type nonrec t = t [@@deriving compare, sexp, hash, to_yojson]
+end
+
+module Map : sig
+  include Map.S with type Key.t = t
+
+  module Tree : module type of struct
+    include Map.Make_tree (struct
+      include T
+      include Comparator.Make (T)
+    end)
+  end
+end
 
 module SerializableMap : Data_structures.SerializableMap.S with type key = t
 

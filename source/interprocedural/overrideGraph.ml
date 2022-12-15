@@ -254,14 +254,14 @@ let build_whole_program_overrides
             Heap.from_source ~environment ~include_unit_tests ~source
             |> Heap.skip_overrides ~to_skip:skip_overrides
           in
-          Target.MapTree.merge_skewed ~combine overrides new_overrides
+          Target.Map.Tree.merge_skewed ~combine overrides new_overrides
     in
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
       ~initial:Heap.empty
       ~map:(fun _ qualifiers -> List.fold qualifiers ~init:Heap.empty ~f:build_overrides)
-      ~reduce:(Target.MapTree.merge_skewed ~combine)
+      ~reduce:(Target.Map.Tree.merge_skewed ~combine)
       ~inputs:qualifiers
       ()
   in

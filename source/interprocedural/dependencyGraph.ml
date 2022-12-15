@@ -46,7 +46,7 @@ module Reversed = struct
   (** Merge two reversed dependency graph that do not have common callees. *)
   let disjoint_union left right =
     let combine ~key:_ left right = List.rev_append left right in
-    Target.MapTree.merge_skewed ~combine left right
+    Target.Map.Tree.merge_skewed ~combine left right
 
 
   (** Create a reverse dependency graph from a call graph. *)

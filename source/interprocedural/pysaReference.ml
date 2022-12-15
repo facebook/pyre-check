@@ -15,4 +15,12 @@ module T = struct
 end
 
 include T
-module Map = Map.Make (T)
+
+module Map = struct
+  include Map.Make (T)
+
+  module Tree = Map.Make_tree (struct
+    include T
+    include Comparator.Make (T)
+  end)
+end

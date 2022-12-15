@@ -199,9 +199,9 @@ let load_initial_callables () =
 
 let ensure_save_directory_exists ~configuration =
   let directory = PyrePath.absolute (get_save_directory ~configuration) in
-  try Core.Unix.mkdir directory with
+  try Core_unix.mkdir directory with
   (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
-  | Core.Unix.Unix_error ((EEXIST | EISDIR), _, _) -> ()
+  | Core_unix.Unix_error ((EEXIST | EISDIR), _, _) -> ()
   | e -> raise e
 
 

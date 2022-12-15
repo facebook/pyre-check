@@ -53,7 +53,7 @@ let get_last_server_stop_reason () = !last_server_stop_reason
 let stop_waiting_server reason =
   last_server_stop_reason := Some reason;
   (* Send the process itself a SIGINT. *)
-  let () = Signal.send_exn Signal.int (`Pid (Unix.getpid ())) in
+  let () = Signal_unix.send_exn Signal.int (`Pid (Core_unix.getpid ())) in
   (* Block forever and wait for the signal to be caught. This way, client who requested the stop can
      actually tell when the server is down by monitoring when its connection with the server gets
      dropped. *)

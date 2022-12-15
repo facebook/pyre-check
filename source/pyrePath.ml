@@ -37,7 +37,7 @@ let absolute = function
 
 let create_absolute ?(follow_symbolic_links = false) path =
   if follow_symbolic_links then
-    Absolute (Filename.realpath path)
+    Absolute (Filename_unix.realpath path)
   else
     Absolute path
 
@@ -69,7 +69,7 @@ let create_directory_recursively ?permission path =
         match do_create (Filename.dirname path) with
         | Result.Error _ as error -> error
         | Result.Ok () ->
-            Unix.mkdir path ?perm:permission;
+            Core_unix.mkdir path ?perm:permission;
             Result.Ok ())
     | path when Caml.Sys.is_directory path -> Result.Ok ()
     | path ->
@@ -91,7 +91,7 @@ let get_relative_to_root ~root ~path =
   String.chop_prefix ~prefix:root (absolute path)
 
 
-let current_working_directory () = create_absolute (Sys.getcwd ())
+let current_working_directory () = create_absolute (Sys_unix.getcwd ())
 
 let append path ~element =
   match path with
@@ -108,7 +108,7 @@ let append path ~element =
 let is_directory path =
   absolute path
   |> fun path ->
-  match Sys.is_directory path with
+  match Sys_unix.is_directory path with
   | `Yes -> true
   | `No
   | `Unknown ->
@@ -129,7 +129,7 @@ let is_path_python_init path =
 let file_exists path =
   absolute path
   |> fun path ->
-  match Sys.file_exists path with
+  match Sys_unix.file_exists path with
   | `Yes -> true
   | `No
   | `Unknown ->
@@ -143,19 +143,19 @@ let last path =
 
 let follow_symbolic_link path =
   try absolute path |> create_absolute ~follow_symbolic_links:true |> Option.some with
-  | Unix.Unix_error _ -> None
+  | Core_unix.Unix_error _ -> None
 
 
-(* Variant of Sys.readdir where names are sorted in alphabetical order *)
+(* Variant of Sys_unix.readdir where names are sorted in alphabetical order *)
 let read_directory_ordered_raw path =
-  let entries = Core.Sys.readdir path in
+  let entries = Sys_unix.readdir path in
   Array.sort ~compare:String.compare entries;
   entries
 
 
 let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~root () =
   let rec list sofar path =
-    match Core.Sys.is_directory path with
+    match Sys_unix.is_directory path with
     | `Yes ->
         if directory_filter path then (
           match read_directory_ordered_raw path with
@@ -196,8 +196,8 @@ end
 let search_upwards ~target ~target_type ~root =
   let exists =
     match target_type with
-    | FileType.File -> Sys.is_file
-    | Directory -> Sys.is_directory
+    | FileType.File -> Sys_unix.is_file
+    | Directory -> Sys_unix.is_directory
   in
   let rec directory_has_target directory =
     match exists (directory ^/ target) with
@@ -209,14 +209,14 @@ let search_upwards ~target ~target_type ~root =
 
 
 let remove path =
-  try Sys.remove (absolute path) with
+  try Sys_unix.remove (absolute path) with
   | Sys_error _ -> Log.debug "Unable to remove file at %a" pp path
 
 
 let remove_if_exists path =
   let path = absolute path in
-  match Sys.file_exists path with
-  | `Yes -> Core.Unix.remove path
+  match Sys_unix.file_exists path with
+  | `Yes -> Core_unix.remove path
   | `No
   | `Unknown ->
       ()
@@ -225,27 +225,27 @@ let remove_if_exists path =
 let remove_recursively path =
   let rec do_remove path =
     try
-      let stats = Unix.lstat path in
-      match stats.Unix.st_kind with
-      | Unix.S_DIR ->
+      let stats = Core_unix.lstat path in
+      match stats.Core_unix.st_kind with
+      | Core_unix.S_DIR ->
           let contents = Caml.Sys.readdir path in
           List.iter (Array.to_list contents) ~f:(fun name ->
               let name = Filename.concat path name in
               do_remove name);
-          Unix.rmdir path
-      | Unix.S_LNK
-      | Unix.S_REG
-      | Unix.S_CHR
-      | Unix.S_BLK
-      | Unix.S_FIFO
-      | Unix.S_SOCK ->
-          Unix.unlink path
+          Core_unix.rmdir path
+      | Core_unix.S_LNK
+      | Core_unix.S_REG
+      | Core_unix.S_CHR
+      | Core_unix.S_BLK
+      | Core_unix.S_FIFO
+      | Core_unix.S_SOCK ->
+          Core_unix.unlink path
     with
     (* Path has been deleted out from under us - can ignore it. *)
     | Sys_error message ->
         Log.warning "Error occurred when removing %s recursively: %s" path message;
         ()
-    | Unix.Unix_error (Unix.ENOENT, _, _) -> ()
+    | Core_unix.Unix_error (Core_unix.ENOENT, _, _) -> ()
   in
   do_remove (absolute path)
 
@@ -297,7 +297,7 @@ let get_matching_files_recursively ~suffix ~paths =
         else
           []
       in
-      Sys.readdir (absolute path) |> Array.to_list |> List.concat_map ~f:expand_directory_entry
+      Sys_unix.readdir (absolute path) |> Array.to_list |> List.concat_map ~f:expand_directory_entry
     else if String.is_suffix ~suffix (absolute path) then
       [path]
     else

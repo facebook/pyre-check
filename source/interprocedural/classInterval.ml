@@ -23,21 +23,22 @@
  *)
 
 open Core
-include Interval.Int
+module IntInterval = Interval_lib.Interval.Int
+include IntInterval
 
-let lower_bound_exn interval = Option.value_exn (Interval.Int.lbound interval)
+let lower_bound_exn interval = Option.value_exn (IntInterval.lbound interval)
 
-let upper_bound_exn interval = Option.value_exn (Interval.Int.ubound interval)
+let upper_bound_exn interval = Option.value_exn (IntInterval.ubound interval)
 
-let meet left right = Interval.Int.intersect left right
+let meet left right = IntInterval.intersect left right
 
-let join left right = Interval.Int.convex_hull [left; right]
+let join left right = IntInterval.convex_hull [left; right]
 
 let equal left right =
-  Interval.Int.is_subset left ~of_:right && Interval.Int.is_subset right ~of_:left
+  IntInterval.is_subset left ~of_:right && IntInterval.is_subset right ~of_:left
 
 
-let is_empty = Interval.Int.is_empty
+let is_empty = IntInterval.is_empty
 
 let bottom = empty
 
@@ -47,7 +48,7 @@ let is_top interval =
   (not (is_empty interval)) && lbound_exn interval == min_int && ubound_exn interval == max_int
 
 
-let less_or_equal ~left ~right = Interval.Int.is_subset left ~of_:right
+let less_or_equal ~left ~right = IntInterval.is_subset left ~of_:right
 
 let pp_interval formatter interval =
   if is_empty interval then
@@ -58,8 +59,8 @@ let pp_interval formatter interval =
     Format.fprintf
       formatter
       "%d,%d"
-      (Option.value_exn (Interval.Int.lbound interval))
-      (Option.value_exn (Interval.Int.ubound interval))
+      (Option.value_exn (IntInterval.lbound interval))
+      (Option.value_exn (IntInterval.ubound interval))
 
 
 let pp formatter interval = Format.fprintf formatter "@[[%a]@]" pp_interval interval

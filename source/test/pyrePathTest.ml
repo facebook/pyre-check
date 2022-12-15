@@ -36,7 +36,7 @@ let test_create context =
     (path ^/ "other/root/some/path");
 
   (* Current directory. *)
-  assert_equal (PyrePath.current_working_directory () |> PyrePath.show) (Sys.getcwd ())
+  assert_equal (PyrePath.current_working_directory () |> PyrePath.show) (Sys_unix.getcwd ())
 
 
 let test_absolute context =
@@ -169,7 +169,7 @@ let test_remove context =
 let test_remove_contents_of_directory context =
   let assert_success path =
     PyrePath.remove_contents_of_directory path |> Result.ok_or_failwith;
-    let elements = Sys.readdir (PyrePath.absolute path) in
+    let elements = Sys_unix.readdir (PyrePath.absolute path) in
     assert_true (Array.is_empty elements)
   in
   let assert_failure path =
@@ -181,29 +181,29 @@ let test_remove_contents_of_directory context =
   let _, root = root context in
   (* Empty directory *)
   let root0 = PyrePath.create_relative ~root ~relative:"test0" in
-  Unix.mkdir (PyrePath.absolute root0);
+  Core_unix.mkdir (PyrePath.absolute root0);
   assert_success root0;
 
   (* Files *)
   let root1 = PyrePath.create_relative ~root ~relative:"test1" in
-  Unix.mkdir (PyrePath.absolute root1);
+  Core_unix.mkdir (PyrePath.absolute root1);
   touch (PyrePath.create_relative ~root:root1 ~relative:"file");
   assert_success root1;
 
   (* Subdirectory *)
   let root2 = PyrePath.create_relative ~root ~relative:"test2" in
   let subdirectory = PyrePath.create_relative ~root:root2 ~relative:"subdirectory" in
-  Unix.mkdir (PyrePath.absolute root2);
-  Unix.mkdir (PyrePath.absolute subdirectory);
+  Core_unix.mkdir (PyrePath.absolute root2);
+  Core_unix.mkdir (PyrePath.absolute subdirectory);
   touch (PyrePath.create_relative ~root:subdirectory ~relative:"file");
   assert_success root2;
 
   (* Mixed *)
   let root3 = PyrePath.create_relative ~root ~relative:"test3" in
   let subdirectory = PyrePath.create_relative ~root:root3 ~relative:"subdirectory" in
-  Unix.mkdir (PyrePath.absolute root3);
+  Core_unix.mkdir (PyrePath.absolute root3);
   touch (PyrePath.create_relative ~root:root3 ~relative:"file0");
-  Unix.mkdir (PyrePath.absolute subdirectory);
+  Core_unix.mkdir (PyrePath.absolute subdirectory);
   touch (PyrePath.create_relative ~root:subdirectory ~relative:"file1");
   assert_success root3;
 
@@ -224,7 +224,7 @@ let test_read_directory_ordered context =
   assert_equal ~ctxt:context ~printer:[%show: PyrePath.t list] should_be_empty [];
   let inner_directory = PyrePath.create_relative ~root ~relative:"inner_directory" in
   let inner_file = PyrePath.create_relative ~root ~relative:"inner_file.txt" in
-  Unix.mkdir (PyrePath.absolute inner_directory);
+  Core_unix.mkdir (PyrePath.absolute inner_directory);
   touch inner_file;
   let should_have_two_entries = PyrePath.read_directory_ordered root in
   assert_equal

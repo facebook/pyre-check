@@ -371,7 +371,7 @@ let run_analyze configuration_file =
 
 let command =
   Printexc.record_backtrace true;
-  let filename_argument = Command.Param.(anon ("filename" %: Filename.arg_type)) in
+  let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
   Command.basic
     ~summary:"Runs taint analysis"
     (Command.Param.map filename_argument ~f:(fun filename () -> run_analyze filename))

@@ -6,4 +6,4 @@
  (public_name hack_parallel.utils)
  (wrapped false)
  (modules (:standard))
- (libraries core str hack_parallel.collections hack_parallel.hack_core))
+ (libraries core core_unix str hack_parallel.collections hack_parallel.hack_core))

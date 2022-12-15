@@ -40,7 +40,7 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries core))
+ (libraries core core_unix.time_unix core_unix.sys_unix))
 
 (library
  (name recognized)
@@ -93,7 +93,7 @@
  (public_name pyrelib.lwtsocketserver)
  (preprocess
   (pps lwt_ppx))
- (libraries core.lock_file_blocking lwt lwt.unix pyrelib.path))
+ (libraries core_unix.lock_file_blocking lwt lwt.unix pyrelib.path))
 
 (library
  (name lwtSubprocess)
@@ -130,7 +130,8 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries core sexplib ppxlib ppx_deriving pyrelib.log))
+ (libraries core core_unix core_unix.filename_unix
+    sexplib ppxlib ppx_deriving pyrelib.log))
 
 (library
  (name sourcePath)
@@ -179,7 +180,7 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries core sexplib ppxlib ppx_deriving hack_parallel
+ (libraries core core_unix.sys_unix sexplib ppxlib ppx_deriving hack_parallel
    pyrelib.configuration pyrelib.pyre pyrelib.path pyrelib.search_path))
 
 (library
@@ -231,7 +232,7 @@
  (ocamlc_flags
   (:standard -custom))
  %CUSTOM_LINKER_OPTION%
- (libraries pyrelib))
+ (libraries core_unix.command_unix pyrelib))
 
 (alias
  (name DEFAULT)

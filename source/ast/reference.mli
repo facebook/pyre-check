@@ -9,11 +9,24 @@ open Core
 
 type t [@@deriving compare, sexp, show, hash, to_yojson]
 
+module T : sig
+  type nonrec t = t [@@deriving compare, sexp, hash, to_yojson]
+end
+
+module Map : sig
+  include Map.S with type Key.t = t
+
+  module Tree : module type of struct
+    include Map.Make_tree (struct
+      include T
+      include Comparator.Make (T)
+    end)
+  end
+end
+
 val local_qualifier_pattern : Str.regexp
 
 val create : ?prefix:t -> string -> t
-
-module Map : Map.S with type Key.t = t
 
 module SerializableMap : Data_structures.SerializableMap.S with type key = t
 

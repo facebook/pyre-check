@@ -5,18 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* This file is shared between pyre and zoncolan, and they use different
- * version of Core/Core_kernel. Because Core_kernel is being deprecated,
- * building this file may or may not trigger a deprecation warning (-3).
- * Let's suppress it until pyre catches up with zoncolan.
- * See T138025201
- *)
-[@@@warning "-3"]
-
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-open Core_kernel
-module Sys = Stdlib.Sys
+open Core
 
 module type CONFIG = sig
   val common_integers : int array
@@ -41,7 +32,7 @@ module Make (Config : CONFIG) = struct
       Array.sub
         Config.common_integers
         ~pos:0
-        ~len:(Int.min Sys.int_size (Array.length Config.common_integers))
+        ~len:(Int.min Stdlib.Sys.int_size (Array.length Config.common_integers))
     in
     let () = Array.sort ~compare:Int.compare mapping in
     mapping

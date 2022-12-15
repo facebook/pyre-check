@@ -528,7 +528,7 @@ let test_get_info_request context =
               Info
                 {
                   socket = PyrePath.show project.start_options.socket_path;
-                  pid = Unix.getpid () |> Pid.to_int;
+                  pid = Core_unix.getpid () |> Pid.to_int;
                   version = Version.version ();
                   global_root = PyrePath.show root;
                   relative_local_root = None;

@@ -499,10 +499,10 @@ let test_module_path_directory_filter3 context =
   in
   create_file local_root "a.py";
   create_file search_root "b.py";
-  Unix.symlink
+  Core_unix.symlink
     ~link_name:(PyrePath.create_relative ~root:link_local_root ~relative:"a.py" |> PyrePath.absolute)
     ~target:(PyrePath.create_relative ~root:local_root ~relative:"a.py" |> PyrePath.absolute);
-  Unix.symlink
+  Core_unix.symlink
     ~link_name:
       (PyrePath.create_relative ~root:link_search_root ~relative:"b.py" |> PyrePath.absolute)
     ~target:(PyrePath.create_relative ~root:search_root ~relative:"b.py" |> PyrePath.absolute);

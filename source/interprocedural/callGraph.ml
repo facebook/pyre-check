@@ -2292,7 +2292,7 @@ module WholeProgramCallGraph = struct
 
 
   let merge_disjoint left right =
-    Target.MapTree.merge_skewed
+    Target.Map.Tree.merge_skewed
       ~combine:(fun ~key:_ _ _ -> failwith "call graphs are not disjoint")
       left
       right

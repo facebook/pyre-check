@@ -2430,13 +2430,7 @@ let rec messages ~concise ~signature location kind =
       if String.equal typed_dictionary_name "$anonymous" then
         [Format.asprintf "TypedDict has no key `%s`." missing_key]
       else
-        [
-          Format.asprintf
-            "TypedDict `%a` has no key `%s`."
-            String.pp
-            typed_dictionary_name
-            missing_key;
-        ]
+        [Format.asprintf "TypedDict `%s` has no key `%s`." typed_dictionary_name missing_key]
   | TypedDictionaryInvalidOperation { typed_dictionary_name; field_name; method_name; mismatch } ->
       if List.mem ["pop"; "__delitem__"] method_name ~equal:String.equal then
         [

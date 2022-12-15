@@ -13,7 +13,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = arg; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = \"arg\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -41,7 +41,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = arg; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = \"arg\"; positional_only = false}"
                   }
                 ],
                 "kind": "Test"

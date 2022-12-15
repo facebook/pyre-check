@@ -11,7 +11,7 @@
 open Core
 
 let timestamp_string () =
-  let open Unix in
+  let open Core_unix in
   let tm = localtime (time ()) in
   let year = tm.tm_year + 1900 in
   Printf.sprintf "[%d-%02d-%02d %02d:%02d:%02d]"
@@ -37,7 +37,7 @@ let print fmt = Printf.ksprintf print_raw (fmt^^"\n")
 
 let print_duration name t =
   print_raw (name ^ ": ");
-  let t2 = Unix.gettimeofday() in
+  let t2 = Core_unix.gettimeofday() in
   Printf.eprintf "%f\n%!" (t2 -. t);
   t2
 

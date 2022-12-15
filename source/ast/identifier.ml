@@ -15,7 +15,16 @@ module T = struct
 end
 
 include T
-module Map = Map.Make (T)
+
+module Map = struct
+  include Map.Make (T)
+
+  module Tree = Map.Make_tree (struct
+    include T
+    include Comparator.Make (T)
+  end)
+end
+
 module SerializableMap = Data_structures.SerializableMap.Make (T)
 module Set = Set.Make (T)
 include Hashable.Make (T)
@@ -47,7 +56,7 @@ let equal = [%compare.equal: t]
 
 let equal_sanitized left right = equal (sanitized left) (sanitized right)
 
-let pp_sanitized format identifier = Format.fprintf format "%a" String.pp (sanitized identifier)
+let pp_sanitized format identifier = Format.fprintf format "%s" (sanitized identifier)
 
 let remove_leading_underscores name =
   let renaming_pattern = Str.regexp "\\(\\$.*\\$\\)_+" in

@@ -44,7 +44,20 @@ val pp_start : Format.formatter -> t -> unit
 
 val pp_line_and_column : Format.formatter -> t -> unit
 
-module Map : Map.S with type Key.t = t
+module T : sig
+  type nonrec t = t [@@deriving compare, sexp, hash, to_yojson]
+end
+
+module Map : sig
+  include Core.Map.S with type Key.t = t
+
+  module Tree : module type of struct
+    include Core.Map.Make_tree (struct
+      include T
+      include Core.Comparator.Make (T)
+    end)
+  end
+end
 
 module Set : Set.S with type Elt.t = t
 

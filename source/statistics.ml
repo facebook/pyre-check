@@ -24,12 +24,12 @@ module GlobalState = struct
 
   let flush_timeout = 6.0 *. 3600.0 (* Seconds. *)
 
-  let username = Option.value (Sys.getenv "USER") ~default:(Unix.getlogin ())
+  let username = Option.value (Sys.getenv "USER") ~default:(Core_unix.getlogin ())
 
-  let hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Unix.gethostname ())
+  let hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Core_unix.gethostname ())
 
   let global_state =
-    let current_time = Unix.time () in
+    let current_time = Core_unix.time () in
     {
       logger = None;
       last_flush_timestamp = current_time;
@@ -109,7 +109,7 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
         | None -> integers
       in
       [
-        "time", Unix.time () |> Int.of_float;
+        "time", Core_unix.time () |> Int.of_float;
         "start_time", GlobalState.global_state.start_time |> Int.of_float;
       ]
       @ integers_with_sandcastle_instance_id
@@ -125,15 +125,15 @@ let flush () =
   | Some logger ->
       let flush_category ~key ~data =
         let command = Format.sprintf "%s %s" logger key in
-        let out_channel = Unix.open_process_out command in
+        let out_channel = Core_unix.open_process_out command in
         List.iter ~f:(Printf.fprintf out_channel "%s\n") data;
         Out_channel.flush out_channel;
-        Unix.close_process_out out_channel |> ignore
+        Core_unix.close_process_out out_channel |> ignore
       in
       Cache.with_cache ~f:(fun cache ->
           Hashtbl.iteri ~f:flush_category cache;
           Hashtbl.clear cache);
-      GlobalState.global_state.last_flush_timestamp <- Unix.time ();
+      GlobalState.global_state.last_flush_timestamp <- Core_unix.time ();
       ()
 
 
@@ -149,7 +149,7 @@ let log ?(flush = false) category sample =
         Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data))
   in
   let exceeds_timeout () =
-    let current_time = Unix.time () in
+    let current_time = Core_unix.time () in
     Float.(
       current_time -. GlobalState.global_state.last_flush_timestamp >= GlobalState.flush_timeout)
   in
@@ -264,7 +264,7 @@ let buck_event ?(flush = false) ?(integers = []) ?(normals = []) () =
       "root", GlobalState.global_state.project_name;
     ]
   in
-  let default_integers = ["time", Unix.time () |> Int.of_float] in
+  let default_integers = ["time", Core_unix.time () |> Int.of_float] in
   format_as_json
     ~integers:(List.append default_integers integers)
     ~normals:(List.append default_normals normals)
@@ -275,11 +275,11 @@ let buck_event ?(flush = false) ?(integers = []) ?(normals = []) () =
 let log_worker_exception ~pid ~origin status =
   let message =
     match status with
-    | Caml.Unix.WEXITED exit_code ->
+    | Caml_unix.WEXITED exit_code ->
         Printf.sprintf "Worker process %d exited with code %d" pid exit_code
-    | Caml.Unix.WSTOPPED signal_number ->
+    | Caml_unix.WSTOPPED signal_number ->
         Printf.sprintf "Worker process %d was stopped by signal %d" pid signal_number
-    | Caml.Unix.WSIGNALED signal_number ->
+    | Caml_unix.WSIGNALED signal_number ->
         Printf.sprintf "Worker process %d was kill by signal %d" pid signal_number
   in
   event

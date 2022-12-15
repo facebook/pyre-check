@@ -201,7 +201,7 @@ let run_server configuration_file =
 
 
 let command =
-  let filename_argument = Command.Param.(anon ("filename" %: Filename.arg_type)) in
+  let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
   Command.basic
     ~summary:"Start a new Pyre server for code navigation purpose"
     (Command.Param.map filename_argument ~f:(fun filename () -> run_server filename))

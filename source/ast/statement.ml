@@ -31,6 +31,9 @@ let name_location
     }
 
 
+(* A pp for strings that, unlike Core.String.pp, does not include quotes *)
+let pp_name format name = Format.fprintf format "%s" name
+
 module Assign = struct
   type t = {
     target: Expression.t;
@@ -1782,7 +1785,7 @@ module PrettyPrinter = struct
             Format.fprintf formatter "@[<v>from %a import %a@]" Reference.pp from pp_imports imports
         )
     | Match _ -> Format.fprintf formatter "%s" "match"
-    | Nonlocal nonlocal_list -> pp_list formatter String.pp "," nonlocal_list
+    | Nonlocal nonlocal_list -> pp_list formatter pp_name "," nonlocal_list
     | Pass -> Format.fprintf formatter "%s" "pass"
     | Raise { Raise.expression; _ } ->
         Format.fprintf formatter "raise %a" pp_expression_option ("", expression)
@@ -1793,7 +1796,7 @@ module PrettyPrinter = struct
           Format.fprintf formatter "@[<v 2>try:@;%a@]" pp_statement_list body
         in
         let pp_except_block formatter handlers =
-          let pp_as formatter name = pp_option ~prefix:" as " formatter name String.pp in
+          let pp_as formatter name = pp_option ~prefix:" as " formatter name pp_name in
           let pp_handler formatter { Try.Handler.kind; name; body } =
             Format.fprintf
               formatter

@@ -68,7 +68,7 @@ module Raw = struct
     LwtSubprocess.run "watchman" ~arguments:["--no-pretty"; "get-sockname"]
     >>= fun { LwtSubprocess.Completed.status; stdout; stderr } ->
     match status with
-    | Caml.Unix.WEXITED 0 ->
+    | Caml_unix.WEXITED 0 ->
         let socket_name =
           try
             Yojson.Safe.from_string stdout
