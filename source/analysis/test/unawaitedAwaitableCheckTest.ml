@@ -13,9 +13,19 @@ open Test
 let assert_awaitable_errors ~context =
   let check ~environment ~source =
     let type_environment = TypeEnvironment.read_only environment in
+    let global_resolution =
+      type_environment |> TypeEnvironment.ReadOnly.global_environment |> GlobalResolution.create
+    in
     UnawaitedAwaitableCheck.check_module_TESTING_ONLY
-      ~global_resolution:
-        (type_environment |> TypeEnvironment.ReadOnly.global_environment |> GlobalResolution.create)
+      ~type_resolution_for_statement:(fun ~local_annotations ~parent ~statement_key () ->
+        TypeCheck.resolution_with_key
+          ~global_resolution
+          ~local_annotations
+          ~parent
+          ~statement_key
+          (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+          (module TypeCheck.DummyContext))
+      ~global_resolution
       ~local_annotations_for_define:
         (TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment)
       source

@@ -97,9 +97,14 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val global_resolution : GlobalResolution.t
-
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
+
+  val type_resolution_for_statement
+    :  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
+    parent:Reference.t option ->
+    statement_key:int ->
+    unit ->
+    Resolution.t
 end
 
 module State (Context : Context) = struct
@@ -798,15 +803,12 @@ module State (Context : Context) = struct
       Context.define
     in
     let resolution =
-      TypeCheck.resolution_with_key
-        ~global_resolution:Context.global_resolution
+      Context.type_resolution_for_statement
         ~local_annotations:Context.local_annotations
         ~parent
         ~statement_key
-        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-        (module TypeCheck.DummyContext)
+        ()
     in
-    let global_resolution = Resolution.global_resolution resolution in
     match value with
     | Statement.Assert { Assert.test; _ } ->
         forward_expression ~resolution ~state ~expression:test |> result_state
@@ -817,7 +819,7 @@ module State (Context : Context) = struct
         let annotation = Resolution.resolve_expression_to_type resolution value in
         forward_assign
           ~state
-          ~resolution:global_resolution
+          ~resolution:(Resolution.global_resolution resolution)
           ~annotation
           ~expression:value
           ~awaitable_expressions_so_far:nested_awaitable_expressions
@@ -865,15 +867,21 @@ module State (Context : Context) = struct
   let backward ~statement_key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
-let unawaited_awaitable_errors ~global_resolution ~local_annotations ~qualifier define =
+let unawaited_awaitable_errors
+    ~type_resolution_for_statement
+    ~global_resolution
+    ~local_annotations
+    ~qualifier
+    define
+  =
   let module Context = struct
     let qualifier = qualifier
 
     let define = define
 
-    let global_resolution = global_resolution
-
     let local_annotations = local_annotations
+
+    let type_resolution_for_statement = type_resolution_for_statement
   end
   in
   let module State = State (Context) in
@@ -898,14 +906,26 @@ let should_run_analysis
   |> Option.value ~default:true
 
 
-let check_define ~global_resolution ~local_annotations ~qualifier define =
+let check_define
+    ~type_resolution_for_statement
+    ~global_resolution
+    ~local_annotations
+    ~qualifier
+    define
+  =
   if should_run_analysis ~global_resolution define then
-    unawaited_awaitable_errors ~global_resolution ~local_annotations ~qualifier define
+    unawaited_awaitable_errors
+      ~type_resolution_for_statement
+      ~global_resolution
+      ~local_annotations
+      ~qualifier
+      define
   else
     []
 
 
 let check_module_TESTING_ONLY
+    ~type_resolution_for_statement
     ~global_resolution
     ~local_annotations_for_define
     ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
@@ -914,6 +934,7 @@ let check_module_TESTING_ONLY
   |> Preprocessing.defines ~include_toplevels:true
   |> List.map ~f:(fun define ->
          check_define
+           ~type_resolution_for_statement
            ~global_resolution
            ~local_annotations:(local_annotations_for_define (Node.value define |> Define.name))
            ~qualifier
