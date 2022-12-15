@@ -614,7 +614,12 @@ module Make (Analysis : ANALYSIS) = struct
         let { expensive_callables; _ } =
           Scheduler.map_reduce
             scheduler
-            ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1000)
+            ~policy:
+              (Scheduler.Policy.fixed_chunk_size
+                 ~minimum_chunks_per_worker:1
+                 ~minimum_chunk_size:100
+                 ~preferred_chunk_size:2500
+                 ())
             ~initial:{ callables_processed = 0; expensive_callables = [] }
             ~map
             ~reduce
