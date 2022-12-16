@@ -1,6 +1,6 @@
 module Stable = struct
   module V1 = struct
-    type ('a, 'b) t = ('a, 'b) Pervasives.result =
+    type ('a, 'b) t = ('a, 'b) Stdlib.result =
       | Ok of 'a
       | Error of 'b
   end

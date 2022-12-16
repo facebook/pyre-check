@@ -14,7 +14,7 @@ type t = string
 
 let dummy_path : t = ""
 
-let compare = Pervasives.compare
+let compare = Stdlib.compare
 let dirname = Filename.dirname
 
 (**

@@ -177,8 +177,8 @@ let sample ?record name value =
   (* Knuth's online variance approximation algorithm *)
   let variance_sum = variance_sum +. (value -. old_mean) *. (value -. mean) in
 
-  let max = Pervasives.max max value in
-  let min = Pervasives.min min value in
+  let max = Stdlib.max max value in
+  let min = Stdlib.min min value in
 
   let distribution = update_distribution value distribution in
 
@@ -202,8 +202,8 @@ let merge_entries name from into = match (from, into) with
       let variance_sum = from.variance_sum +. into.variance_sum +.
                          delta *. delta *. (float into.count) *. (float from.count) /. (float count) in
 
-      let max = Pervasives.max from.max into.max in
-      let min = Pervasives.min from.min into.min in
+      let max = Stdlib.max from.max into.max in
+      let min = Stdlib.min from.min into.min in
 
       let distribution = match (from.distribution, into.distribution) with
         | None, into -> into

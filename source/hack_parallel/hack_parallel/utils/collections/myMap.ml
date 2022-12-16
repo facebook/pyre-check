@@ -23,7 +23,7 @@ module Make(Ord: Map.OrderedType) : S with type key = Ord.t = struct
     in
     union combine x y
 
-  let compare x y = compare Pervasives.compare x y
+  let compare x y = compare Stdlib.compare x y
   let equal x y = compare x y = 0
 
   let keys m = fold (fun k _ acc -> k :: acc) m []

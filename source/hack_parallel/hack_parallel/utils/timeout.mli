@@ -27,7 +27,7 @@ exception Timeout
    On Unix, the function `check_timeout` is no-op.
 
    On Unix, the type `in_channel` is in fact an alias for
-   `Pervasives.in_channel`.
+   `Stdlib.in_channel`.
 
 *)
 val with_timeout:
