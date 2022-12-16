@@ -154,6 +154,7 @@ class BaseArguments:
 
     debug: bool = False
     enable_readonly_analysis: Optional[bool] = None
+    enable_unawaited_awaitable_analysis: Optional[bool] = None
     excludes: Sequence[str] = dataclasses.field(default_factory=list)
     extensions: Sequence[str] = dataclasses.field(default_factory=list)
     relative_local_root: Optional[str] = None
@@ -190,6 +191,15 @@ class BaseArguments:
             **(
                 {"enable_readonly_analysis": self.enable_readonly_analysis}
                 if self.enable_readonly_analysis is not None
+                else {}
+            ),
+            **(
+                {
+                    "enable_unawaited_awaitable_analysis": (
+                        self.enable_unawaited_awaitable_analysis
+                    )
+                }
+                if self.enable_unawaited_awaitable_analysis is not None
                 else {}
             ),
             "extensions": self.extensions,
