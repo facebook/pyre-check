@@ -198,6 +198,9 @@ class PartialConfiguration:
             ),
             only_check_paths=arguments.only_check_paths,
             dot_pyre_directory=arguments.dot_pyre_directory,
+            enable_unawaited_awaitable_analysis=(
+                arguments.enable_unawaited_awaitable_analysis
+            ),
             excludes=arguments.exclude,
             extensions=[],
             ignore_all_errors=[],

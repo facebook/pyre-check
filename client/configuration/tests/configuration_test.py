@@ -64,6 +64,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 shared_memory_heap_size=42,
                 number_of_workers=43,
                 use_buck2=True,
+                enable_unawaited_awaitable_analysis=True,
             )
         )
         self.assertEqual(configuration.binary, "binary")
@@ -92,7 +93,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.number_of_workers, 43)
         self.assertEqual(configuration.use_buck2, True)
         self.assertEqual(configuration.enable_readonly_analysis, None)
-        self.assertEqual(configuration.enable_unawaited_awaitable_analysis, None)
+        self.assertEqual(configuration.enable_unawaited_awaitable_analysis, True)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
