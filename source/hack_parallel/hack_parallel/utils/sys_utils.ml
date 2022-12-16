@@ -288,7 +288,7 @@ let lines_of_file filename =
 let read_file file =
   let ic = open_in_bin file  in
   let size = in_channel_length ic in
-  let buf = String.create size in
+  let buf = Bytes.create size in
   really_input ic buf 0 size;
   close_in ic;
   buf
