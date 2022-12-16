@@ -332,7 +332,7 @@ module Analysis = struct
 
   let default_enable_readonly_analysis = false
 
-  let default_enable_unawaited_awaitable_check = false
+  let default_enable_unawaited_awaitable_analysis = false
 
   type t = {
     parallel: bool;
@@ -361,7 +361,7 @@ module Analysis = struct
     enable_type_comments: bool;
     constraint_solving_style: constraint_solving_style;
     enable_readonly_analysis: bool;
-    enable_unawaited_awaitable_check: bool;
+    enable_unawaited_awaitable_analysis: bool;
   }
   [@@deriving show]
 
@@ -393,7 +393,7 @@ module Analysis = struct
       ?(enable_type_comments = true)
       ?(constraint_solving_style = default_constraint_solving_style)
       ?(enable_readonly_analysis = default_enable_readonly_analysis)
-      ?(enable_unawaited_awaitable_check = default_enable_unawaited_awaitable_check)
+      ?(enable_unawaited_awaitable_analysis = default_enable_unawaited_awaitable_analysis)
       ~source_paths
       ()
     =
@@ -438,7 +438,7 @@ module Analysis = struct
       enable_type_comments;
       constraint_solving_style;
       enable_readonly_analysis;
-      enable_unawaited_awaitable_check;
+      enable_unawaited_awaitable_analysis;
     }
 
 

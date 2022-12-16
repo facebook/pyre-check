@@ -11,7 +11,7 @@ open IntegrationTest
 let test_unawaited_awaitable_configuration_flag context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~enable_unawaited_awaitable_check:false
+    ~enable_unawaited_awaitable_analysis:false
     {|
       async def awaitable() -> int: ...
 
@@ -20,7 +20,7 @@ let test_unawaited_awaitable_configuration_flag context =
     |}
     [];
   assert_type_errors
-    ~enable_unawaited_awaitable_check:true
+    ~enable_unawaited_awaitable_analysis:true
     {|
       async def awaitable() -> int: ...
 
@@ -30,7 +30,7 @@ let test_unawaited_awaitable_configuration_flag context =
     ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
   (* Don't warn about unawaited awaitables for top-level assignments. *)
   assert_type_errors
-    ~enable_unawaited_awaitable_check:true
+    ~enable_unawaited_awaitable_analysis:true
     {|
       async def awaitable() -> int: ...
 
