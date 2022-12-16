@@ -784,6 +784,7 @@ let test_initial context =
      So, our emitting an unawaited-awaitable error in the function definition is the same as our
      emitting an incompatible-variable error for a function where we assign `x: str = 1`. As a
      static type checker, we have to be conservative. *)
+  (* TODO(T140344232): Emit error when an awaitable parameter is not awaited. *)
   assert_awaitable_errors
     ~context
     {|
@@ -792,7 +793,7 @@ let test_initial context =
       async def awaitable(x: Awaitable[int]) -> int:
         return 0
     |}
-    ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+    [];
   assert_awaitable_errors
     ~context
     {|
@@ -810,7 +811,7 @@ let test_initial context =
       async def awaitable( *x: Awaitable[int]) -> int:
         return 0
     |}
-    ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+    [];
   assert_awaitable_errors
     ~context
     {|
@@ -830,7 +831,7 @@ let test_initial context =
       async def awaitable( **x: Awaitable[int]) -> int:
         return 0
     |}
-    ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+    [];
   assert_awaitable_errors
     ~context
     {|

@@ -7,6 +7,8 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+[@@@warning "-27"]
+
 open Core
 open Ast
 open Statement
@@ -206,51 +208,12 @@ module State (Context : Context) = struct
     }
 
 
-  let initial ~global_resolution { Define.signature = { Define.Signature.parameters; _ }; _ } =
-    let state =
-      {
-        unawaited = Awaitable.Map.empty;
-        awaitables_for_alias = AliasMap.empty;
-        expect_expressions_to_be_awaited = true;
-      }
-    in
-    let forward_parameter
-        ({ unawaited; awaitables_for_alias; expect_expressions_to_be_awaited } as state)
-        { Node.value = { Parameter.name; annotation; _ }; location }
-      =
-      let is_awaitable =
-        match annotation with
-        | Some annotation ->
-            let annotation = GlobalResolution.parse_annotation global_resolution annotation in
-            is_awaitable ~global_resolution annotation
-        | None -> false
-      in
-      if is_awaitable then
-        let name =
-          if String.is_prefix ~prefix:"**" name then
-            String.drop_prefix name 2
-          else if String.is_prefix ~prefix:"*" name then
-            String.drop_prefix name 1
-          else
-            name
-        in
-        {
-          unawaited =
-            Map.set
-              unawaited
-              ~key:(Awaitable.create location)
-              ~data:(Unawaited { Node.value = Name (Name.Identifier name); location });
-          awaitables_for_alias =
-            Map.set
-              awaitables_for_alias
-              ~key:(NamedAlias (Reference.create name))
-              ~data:(Awaitable.create location |> Awaitable.Set.singleton);
-          expect_expressions_to_be_awaited;
-        }
-      else
-        state
-    in
-    List.fold ~init:state ~f:forward_parameter parameters
+  let initial =
+    {
+      unawaited = Awaitable.Map.empty;
+      awaitables_for_alias = AliasMap.empty;
+      expect_expressions_to_be_awaited = true;
+    }
 
 
   let errors { unawaited; awaitables_for_alias; _ } =
@@ -900,9 +863,7 @@ let unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define 
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let cfg = Cfg.create (Node.value define) in
-  Node.value define
-  |> State.initial ~global_resolution:(Resolution.global_resolution resolution)
-  |> (fun initial -> Fixpoint.forward ~cfg ~initial)
+  Fixpoint.forward ~cfg ~initial:State.initial
   |> Fixpoint.exit
   >>| State.errors
   |> Option.value ~default:[]
