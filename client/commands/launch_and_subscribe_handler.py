@@ -17,7 +17,7 @@ import asyncio
 import logging
 import traceback
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Awaitable, Callable, Dict, Optional, TYPE_CHECKING
 
 from .. import timer
 from ..language_server import connections, features, protocol as lsp
@@ -63,6 +63,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     client_status_message_handler: ClientStatusMessageHandler
     client_type_error_handler: ClientTypeErrorHandler
     subscription_response_parser: PyreSubscriptionResponseParser
+    on_fresh_server_initialization: Optional[Callable[[], Awaitable[None]]]
 
     def __init__(
         self,
@@ -72,6 +73,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         client_type_error_handler: ClientTypeErrorHandler,
         subscription_response_parser: PyreSubscriptionResponseParser,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
+        on_fresh_server_initialization: Optional[Callable[[], Awaitable[None]]] = None,
     ) -> None:
         self.server_options_reader = server_options_reader
         self.remote_logging = remote_logging
@@ -79,6 +81,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         self.client_status_message_handler = client_status_message_handler
         self.client_type_error_handler = client_type_error_handler
         self.subscription_response_parser = subscription_response_parser
+        self.on_fresh_server_initialization = on_fresh_server_initialization
 
     @abc.abstractmethod
     async def handle_type_error_subscription(
@@ -222,6 +225,8 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     fallback_to_notification=True,
                 )
             else:
+                if self.on_fresh_server_initialization is not None:
+                    await self.on_fresh_server_initialization()
                 await self.client_status_message_handler.log_and_show_status_message_to_client(
                     f"Pyre server at `{project_identifier}` has been initialized.",
                     short_message="Pyre Ready",

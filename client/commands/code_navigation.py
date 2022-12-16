@@ -17,7 +17,7 @@ import json
 import logging
 import traceback
 
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
 from .. import timer, version
 from ..language_server import connections, features, protocol as lsp
@@ -65,6 +65,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         client_status_message_handler: persistent.ClientStatusMessageHandler,
         client_type_error_handler: persistent.ClientTypeErrorHandler,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
+        on_fresh_server_initialization: Optional[Callable[[], Awaitable[None]]] = None,
     ) -> None:
         super().__init__(
             server_options_reader,
@@ -73,6 +74,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             client_type_error_handler,
             PyreCodeNavigationSubscriptionResponseParser(),
             remote_logging,
+            on_fresh_server_initialization,
         )
 
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
@@ -168,6 +170,25 @@ def process_initialize_request(
     )
 
 
+def send_open_state_factory(
+    server_state: state.ServerState,
+    handler: request_handler.CodeNavigationRequestHandler,
+) -> Callable[[], Awaitable[None]]:
+    """Returns a method that sends the open state (all open messages that were missed while the server was not up)"""
+
+    async def send_open_state() -> None:
+        results = await asyncio.gather(
+            *[
+                handler.handle_file_opened(path, document.code)
+                for path, document in server_state.opened_documents.items()
+            ]
+        )
+        if len(results) > 0:
+            LOG.info(f"Sent {len(results)} open messages to daemon for existing state.")
+
+    return send_open_state
+
+
 async def async_run_code_navigation_client(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
@@ -205,6 +226,7 @@ async def async_run_code_navigation_client(
         client_capabilities=client_capabilities,
         server_options=initial_server_options,
     )
+    handler = request_handler.CodeNavigationRequestHandler(server_state=server_state)
     server = pyre_language_server.PyreLanguageServer(
         input_channel=stdin,
         output_channel=stdout,
@@ -220,9 +242,12 @@ async def async_run_code_navigation_client(
                 client_type_error_handler=persistent.ClientTypeErrorHandler(
                     stdout, server_state, remote_logging
                 ),
+                on_fresh_server_initialization=send_open_state_factory(
+                    server_state, handler
+                ),
             )
         ),
-        handler=request_handler.CodeNavigationRequestHandler(server_state=server_state),
+        handler=handler,
     )
     return await server.run()
 
