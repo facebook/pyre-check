@@ -364,10 +364,35 @@ let test_check_decorated_overloads context =
   ()
 
 
+let test_typing_extensions_overloads context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing_extensions import overload
+
+      @overload
+      def foo(a: str) -> str: ...
+
+      @overload
+      def foo(a: bool) -> bool: ...
+
+      def foo(a: object) -> object: ...
+
+      reveal_type(foo("hello"))
+      reveal_type(foo(True))
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.foo(\"hello\")` is `str`.";
+      "Revealed type [-1]: Revealed type for `test.foo(True)` is `bool`.";
+    ];
+  ()
+
+
 let () =
   "overload"
   >::: [
          "check_implementation" >:: test_check_implementation;
          "decorated_overloads" >:: test_check_decorated_overloads;
+         "typing_extensions_overloads" >:: test_typing_extensions_overloads;
        ]
   |> Test.run

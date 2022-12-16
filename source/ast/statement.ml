@@ -643,7 +643,9 @@ end = struct
 
 
     let is_overloaded_function signature =
-      has_decorator signature "overload" || has_decorator signature "typing.overload"
+      has_decorator signature "overload"
+      || has_decorator signature "typing.overload"
+      || has_decorator signature "typing_extensions.overload"
 
 
     let is_static_method signature =

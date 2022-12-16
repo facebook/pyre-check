@@ -1474,7 +1474,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |};
     ( "typing_extensions.pyi",
       {|
-        from typing import Final as Final, ParamSpec as ParamSpec, _SpecialForm
+        from typing import Final as Final, ParamSpec as ParamSpec, _SpecialForm, overload as overload
         Literal: _SpecialForm = ...
         LiteralString: _SpecialForm = ...
 
