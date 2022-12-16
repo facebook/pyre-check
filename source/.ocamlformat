@@ -1,12 +1,12 @@
 assignment-operator=end-line
 break-cases=all
 break-fun-decl=fit-or-vertical
-break-infix=fit-or-vertical
 break-infix-before-func
+break-infix=fit-or-vertical
 break-separators=after
 break-sequences
-dock-collection-brackets=true
 doc-comments=before
+dock-collection-brackets=true
 exp-grouping=preserve
 field-space=tight-decl
 if-then-else=fit-or-vertical
@@ -14,11 +14,13 @@ indicate-nested-or-patterns=unsafe-no
 let-and=sparse
 let-binding-spacing=sparse
 margin=100
+module-item-spacing=sparse
 ocp-indent-compat
-parens-tuple=multi-line-only
 parens-tuple-patterns=multi-line-only
-sequence-style=terminator
+parens-tuple=multi-line-only
+parse-docstrings
 sequence-blank-line=preserve-one
+sequence-style=terminator
 single-case=sparse
 space-around-lists=false
 space-around-records
@@ -26,4 +28,3 @@ space-around-variants
 type-decl=sparse
 wrap-comments
 wrap-fun-args=false
-parse-docstrings
