@@ -10,26 +10,15 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import (
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Callable, Iterator, List
 from unittest.mock import CallableMixin, patch
 
 import testslide
 from libcst.metadata import CodePosition, CodeRange
 
-from ... import error, identifiers, json_rpc
+from ... import error, json_rpc
 from ...language_server import connections, protocol as lsp
 from ...language_server.connections import (
-    AsyncBytesWriter,
     AsyncTextReader,
     AsyncTextWriter,
     create_memory_text_reader,
@@ -37,7 +26,6 @@ from ...language_server.connections import (
     MemoryBytesReader,
     MemoryBytesWriter,
 )
-from ...language_server.daemon_connection import DaemonConnectionFailure
 from ...language_server.features import (
     DefinitionAvailability,
     HoverAvailability,
@@ -73,272 +61,15 @@ from ..persistent import (
 )
 
 from ..pyre_language_server import PyreLanguageServer, read_lsp_request
-from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
+from ..pyre_server_options import PyreServerOptions
 from ..request_handler import (
-    AbstractRequestHandler,
     path_to_coverage_response,
     PersistentRequestHandler,
     to_coverage_result,
     uncovered_range_to_diagnostic,
 )
 from ..server_state import OpenedDocumentState, ServerState
-
-
-DEFAULT_BINARY = "/bin/pyre"
-DEFAULT_SERVER_IDENTIFIER = "server_identifier"
-DEFAULT_START_ARGUMENTS: start.Arguments = start.Arguments(
-    base_arguments=backend_arguments.BaseArguments(
-        source_paths=backend_arguments.SimpleSourcePath(),
-        log_path="/log/path",
-        global_root="/global/root",
-    ),
-    socket_path=Path("irrelevant_socket_path.sock"),
-)
-DEFAULT_FEATURES: LanguageServerFeatures = LanguageServerFeatures(
-    type_coverage=TypeCoverageAvailability.FUNCTION_LEVEL
-)
-DEFAULT_IS_STRICT = False
-DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
-DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
-DEFAULT_ENABLE_TELEMETRY: bool = False
-DEFAULT_FILE_CONTENTS: str = "```\nfoo.Foo\n```"
-
-
-def _create_server_options(
-    binary: str = DEFAULT_BINARY,
-    server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
-    start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
-    language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
-    strict_default: bool = DEFAULT_IS_STRICT,
-    excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
-    flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
-    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
-) -> PyreServerOptions:
-    return PyreServerOptions(
-        binary,
-        server_identifier,
-        start_arguments,
-        language_server_features,
-        strict_default,
-        excludes if excludes else [],
-        flavor,
-        enabled_telemetry_event,
-    )
-
-
-def _create_server_options_reader(
-    binary: str = DEFAULT_BINARY,
-    server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
-    start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
-    language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
-    strict_default: bool = DEFAULT_IS_STRICT,
-    excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
-    flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
-    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
-) -> PyreServerOptionsReader:
-    return lambda: _create_server_options(
-        binary,
-        server_identifier,
-        start_arguments,
-        language_server_features,
-        strict_default,
-        excludes,
-        flavor,
-        enabled_telemetry_event,
-    )
-
-
-def _create_server_state_with_options(
-    binary: str = DEFAULT_BINARY,
-    server_identifier: str = DEFAULT_SERVER_IDENTIFIER,
-    start_arguments: start.Arguments = DEFAULT_START_ARGUMENTS,
-    language_server_features: LanguageServerFeatures = DEFAULT_FEATURES,
-    strict_default: bool = DEFAULT_IS_STRICT,
-    excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
-    flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
-    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
-) -> ServerState:
-    return ServerState(
-        _create_server_options(
-            binary,
-            server_identifier,
-            start_arguments,
-            language_server_features,
-            strict_default,
-            excludes,
-            flavor,
-            enabled_telemetry_event,
-        )
-    )
-
-
-mock_server_options_reader: PyreServerOptionsReader = _create_server_options_reader()
-mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
-mock_server_state: ServerState = ServerState(server_options=mock_initial_server_options)
-
-
-class ExceptionRaisingBytesWriter(AsyncBytesWriter):
-    """
-    An AsyncBytesWriter that always raises a given except when write is invoked.
-    """
-
-    def __init__(self, exception: Exception) -> None:
-        self.exception = exception
-
-    async def write(self, data: bytes) -> None:
-        raise self.exception
-
-    async def close(self) -> None:
-        pass
-
-
-class MockRequestHandler(AbstractRequestHandler):
-    def __init__(
-        self,
-        mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
-        mock_hover_response: Optional[lsp.LspHoverResponse] = None,
-        mock_definition_response: Optional[List[lsp.LspLocation]] = None,
-        mock_references_response: Optional[List[lsp.LspLocation]] = None,
-    ) -> None:
-        self.requests: List[object] = []
-        self.mock_type_coverage = mock_type_coverage
-        self.mock_hover_response = mock_hover_response
-        self.mock_definition_response = mock_definition_response
-        self.mock_references_response = mock_references_response
-
-    async def get_type_coverage(
-        self,
-        path: Path,
-    ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
-        self.requests.append({"path": path})
-        return self.mock_type_coverage
-
-    async def get_hover(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> Union[DaemonQueryFailure, lsp.LspHoverResponse]:
-        self.requests.append({"path": path, "position": position})
-        if self.mock_hover_response is None:
-            raise ValueError("You need to set hover response in the mock handler")
-        else:
-            return self.mock_hover_response
-
-    async def get_definition_locations(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
-        self.requests.append({"path": path, "position": position})
-        if self.mock_definition_response is None:
-            raise ValueError("You need to set hover response in the mock handler")
-        else:
-            return self.mock_definition_response
-
-    async def get_reference_locations(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
-        self.requests.append({"path": path, "position": position})
-        if self.mock_references_response is None:
-            raise ValueError("You need to set hover response in the mock handler")
-        else:
-            return self.mock_references_response
-
-    async def update_overlay(
-        self,
-        path: Path,
-        code: str,
-    ) -> Union[DaemonConnectionFailure, str]:
-        self.requests.append({"path": path, "code": code})
-        # dummy result here- response not processed.
-        return code
-
-    async def handle_file_opened(
-        self,
-        path: Path,
-        code: str,
-    ) -> Union[DaemonConnectionFailure, str]:
-        return "Ok"
-
-    async def handle_file_closed(
-        self,
-        path: Path,
-    ) -> Union[DaemonConnectionFailure, str]:
-        return "Ok"
-
-
-async def _create_server_for_request_test(
-    opened_documents: Dict[Path, OpenedDocumentState],
-    handler: MockRequestHandler,
-    server_options: PyreServerOptions = mock_initial_server_options,
-) -> Tuple[PyreLanguageServer, MemoryBytesWriter]:
-    # set up the system under test
-    fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
-    output_writer: MemoryBytesWriter = MemoryBytesWriter()
-    server = PyreLanguageServer(
-        input_channel=create_memory_text_reader(""),
-        output_channel=AsyncTextWriter(output_writer),
-        server_state=ServerState(
-            server_options=server_options,
-            opened_documents=opened_documents,
-        ),
-        daemon_manager=fake_task_manager,
-        handler=handler,
-    )
-    await fake_task_manager.ensure_task_running()
-    return server, output_writer
-
-
-def _extract_json_from_json_rpc_message(
-    raw_message: bytes,
-) -> str:
-    """
-    Return the content-length of a json rpc message
-    """
-    content_length_portion, json_portion = raw_message.split(b"\r\n\r\n")
-    CONTENT_LENGTH_PREFIX = b"Content-Length: "
-    if not content_length_portion.startswith(CONTENT_LENGTH_PREFIX):
-        raise ValueError(
-            f"Did not get expected content length header, but {content_length_portion!r}"
-        )
-    content_length = int(content_length_portion[len(CONTENT_LENGTH_PREFIX) :])
-    if not len(json_portion) == content_length:
-        raise ValueError(
-            f"Expected content length {content_length} to match length "
-            f"{len(json_portion)} of json mssage {json_portion!r}"
-        )
-    return json_portion.decode()
-
-
-async def _create_input_channel_with_requests(
-    requests: Iterable[json_rpc.Request],
-) -> AsyncTextReader:
-    bytes_writer = MemoryBytesWriter()
-    for request in requests:
-        await lsp.write_json_rpc(AsyncTextWriter(bytes_writer), request)
-    return AsyncTextReader(MemoryBytesReader(b"\n".join(bytes_writer.items())))
-
-
-DEFAULT_REQUEST_ID: int = 42
-
-
-def _success_response_json(
-    result: object,
-    request_id: int = DEFAULT_REQUEST_ID,
-) -> str:
-    return json.dumps(json_rpc.SuccessResponse(id=request_id, result=result).json())
-
-
-class NoOpBackgroundTask(background.Task):
-    async def run(self) -> None:
-        pass
-
-
-class WaitForeverBackgroundTask(background.Task):
-    async def run(self) -> None:
-        await asyncio.Event().wait()
+from ..tests import server_setup
 
 
 class PersistentTest(testslide.TestCase):
@@ -348,7 +79,9 @@ class PersistentTest(testslide.TestCase):
             id=0,
             method="derp",
         )
-        input_channel = await _create_input_channel_with_requests([expected_request])
+        input_channel = await server_setup.create_input_channel_with_requests(
+            [expected_request]
+        )
         bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(bytes_writer)
         actual_request = await read_lsp_request(input_channel, output_channel)
@@ -392,7 +125,7 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_try_initialize_success(self) -> None:
-        input_channel = await _create_input_channel_with_requests(
+        input_channel = await server_setup.create_input_channel_with_requests(
             [
                 json_rpc.Request(
                     id=0,
@@ -421,7 +154,7 @@ class PersistentTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             AsyncTextWriter(bytes_writer),
-            mock_initial_server_options,
+            server_setup.mock_initial_server_options,
             process_initialize_request,
         )
         self.assertIsInstance(result, InitializationSuccess)
@@ -429,35 +162,35 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_try_initialize_failure__not_a_request(self) -> None:
-        input_channel = await _create_input_channel_with_requests(
+        input_channel = await server_setup.create_input_channel_with_requests(
             [json_rpc.Request(method="derp", parameters=None)]
         )
         output_channel = create_memory_text_writer()
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            mock_initial_server_options,
+            server_setup.mock_initial_server_options,
             process_initialize_request,
         )
         self.assertIsInstance(result, InitializationFailure)
 
     @setup.async_test
     async def test_try_initialize_failure__invalid_parameters(self) -> None:
-        input_channel = await _create_input_channel_with_requests(
+        input_channel = await server_setup.create_input_channel_with_requests(
             [json_rpc.Request(id=0, method="initialize", parameters=None)]
         )
         output_channel = create_memory_text_writer()
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            mock_initial_server_options,
+            server_setup.mock_initial_server_options,
             process_initialize_request,
         )
         self.assertIsInstance(result, InitializationFailure)
 
     @setup.async_test
     async def test_try_initialize_failure__no_initialized(self) -> None:
-        input_channel = await _create_input_channel_with_requests(
+        input_channel = await server_setup.create_input_channel_with_requests(
             [
                 json_rpc.Request(
                     id=0,
@@ -486,28 +219,28 @@ class PersistentTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            mock_initial_server_options,
+            server_setup.mock_initial_server_options,
             process_initialize_request,
         )
         self.assertIsInstance(result, InitializationFailure)
 
     @setup.async_test
     async def test_try_initialize_exit(self) -> None:
-        input_channel = await _create_input_channel_with_requests(
+        input_channel = await server_setup.create_input_channel_with_requests(
             [json_rpc.Request(method="exit", parameters=None)]
         )
         output_channel = create_memory_text_writer()
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            mock_initial_server_options,
+            server_setup.mock_initial_server_options,
             process_initialize_request,
         )
         self.assertIsInstance(result, InitializationExit)
 
     @setup.async_test
     async def test_try_initialize_exit__shutdown_after_initialize(self) -> None:
-        input_channel = await _create_input_channel_with_requests(
+        input_channel = await server_setup.create_input_channel_with_requests(
             [
                 json_rpc.Request(
                     id=0,
@@ -535,14 +268,14 @@ class PersistentTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            mock_initial_server_options,
+            server_setup.mock_initial_server_options,
             process_initialize_request,
         )
         self.assertIsInstance(result, InitializationExit)
 
     @setup.async_test
     async def test_try_initialize_exit__shutdown_without_exit(self) -> None:
-        input_channel = await _create_input_channel_with_requests(
+        input_channel = await server_setup.create_input_channel_with_requests(
             [
                 json_rpc.Request(
                     id=0,
@@ -562,7 +295,7 @@ class PersistentTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            mock_initial_server_options,
+            server_setup.mock_initial_server_options,
             process_initialize_request,
         )
         self.assertIsInstance(result, InitializationExit)
@@ -572,7 +305,7 @@ class PersistentTest(testslide.TestCase):
         result = await async_try_initialize(
             create_memory_text_reader(""),
             create_memory_text_writer(),
-            mock_initial_server_options,
+            server_setup.mock_initial_server_options,
             process_initialize_request,
         )
         self.assertIsInstance(result, InitializationExit)
@@ -587,7 +320,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                     status=lsp.ShowStatusRequestClientCapabilities(),
                 ),
             ),
-            server_options=mock_initial_server_options,
+            server_options=server_setup.mock_initial_server_options,
         )
         bytes_writer = MemoryBytesWriter()
 
@@ -649,7 +382,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                     status=lsp.ShowStatusRequestClientCapabilities(),
                 ),
             ),
-            server_options=_create_server_options(
+            server_options=server_setup.create_server_options(
                 language_server_features=LanguageServerFeatures(
                     status_updates=StatusUpdatesAvailability.DISABLED,
                 )
@@ -709,12 +442,12 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         client_output_channel = AsyncTextWriter(MemoryBytesWriter())
         server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
-            server_state=mock_server_state,
+            server_state=server_setup.mock_server_state,
             client_status_message_handler=ClientStatusMessageHandler(
-                client_output_channel, mock_server_state
+                client_output_channel, server_setup.mock_server_state
             ),
             client_type_error_handler=ClientTypeErrorHandler(
-                client_output_channel, mock_server_state
+                client_output_channel, server_setup.mock_server_state
             ),
         )
         with self.assertRaises(PyreDaemonShutdown):
@@ -726,7 +459,8 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     async def test_busy_status_clear_diagnostics(self) -> None:
         path = Path("foo.py")
         server_state = ServerState(
-            server_options=mock_initial_server_options, diagnostics={path: []}
+            server_options=server_setup.mock_initial_server_options,
+            diagnostics={path: []},
         )
         bytes_writer = MemoryBytesWriter()
 
@@ -762,7 +496,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     async def test_busy_status_no_clear_diagnostics_if_no_type_errors(self) -> None:
         path = Path("foo.py")
         server_state = ServerState(
-            server_options=_create_server_options(
+            server_options=server_setup.create_server_options(
                 language_server_features=LanguageServerFeatures(
                     type_errors=TypeErrorsAvailability.DISABLED,
                 ),
@@ -798,13 +532,15 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
-        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(
+            server_setup.WaitForeverBackgroundTask()
+        )
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            server_state=mock_server_state,
+            server_state=server_setup.mock_server_state,
             daemon_manager=fake_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -824,16 +560,18 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_open_triggers_pyre_restart__limit_reached(self) -> None:
-        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(
+            server_setup.WaitForeverBackgroundTask()
+        )
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
-                server_options=mock_initial_server_options,
+                server_options=server_setup.mock_initial_server_options,
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
             daemon_manager=fake_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -854,18 +592,22 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_save_triggers_pyre_restart(self) -> None:
         test_path = Path("/foo.py")
-        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(
+            server_setup.WaitForeverBackgroundTask()
+        )
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
-                server_options=mock_initial_server_options,
+                server_options=server_setup.mock_initial_server_options,
                 opened_documents={
-                    test_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                    test_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
                 },
             ),
             daemon_manager=fake_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -882,19 +624,23 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_save_triggers_pyre_restart__limit_reached(self) -> None:
         test_path = Path("/foo.py")
-        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(
+            server_setup.WaitForeverBackgroundTask()
+        )
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
-                server_options=mock_initial_server_options,
+                server_options=server_setup.mock_initial_server_options,
                 opened_documents={
-                    test_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                    test_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
                 },
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
             daemon_manager=fake_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -911,18 +657,22 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_save_adds_path_to_queue(self) -> None:
         test_path = Path("/root/test.py")
-        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(
+            server_setup.WaitForeverBackgroundTask()
+        )
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
-                server_options=mock_initial_server_options,
+                server_options=server_setup.mock_initial_server_options,
                 opened_documents={
-                    test_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                    test_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
                 },
             ),
             daemon_manager=fake_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
 
         # Save should add path to query even if the server is already running.
@@ -1070,14 +820,14 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     async def test_connections_lost(self) -> None:
         test_path = Path("/foo.py")
         server_state = ServerState(
-            server_options=mock_initial_server_options,
+            server_options=server_setup.mock_initial_server_options,
             diagnostics={test_path: []},
         )
 
         bytes_writer = MemoryBytesWriter()
         client_output_channel = AsyncTextWriter(bytes_writer)
         server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
-            server_options_reader=_create_server_options_reader(
+            server_options_reader=lambda: server_setup.create_server_options(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1136,10 +886,10 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                     status=lsp.ShowStatusRequestClientCapabilities(),
                 ),
             ),
-            server_options=mock_initial_server_options,
+            server_options=server_setup.mock_initial_server_options,
         )
         server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
-            server_options_reader=_create_server_options_reader(
+            server_options_reader=lambda: server_setup.create_server_options(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1180,9 +930,9 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 class PyreServerTest(testslide.TestCase):
     @setup.async_test
     async def test_exit(self) -> None:
-        server_state = mock_server_state
-        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
-        input_channel = await _create_input_channel_with_requests(
+        server_state = server_setup.mock_server_state
+        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
+        input_channel = await server_setup.create_input_channel_with_requests(
             [
                 json_rpc.Request(method="shutdown", parameters=None),
                 json_rpc.Request(method="exit", parameters=None),
@@ -1193,7 +943,7 @@ class PyreServerTest(testslide.TestCase):
             output_channel=create_memory_text_writer(),
             server_state=server_state,
             daemon_manager=noop_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
 
         exit_code = await server.run()
@@ -1201,9 +951,9 @@ class PyreServerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_exit_unknown_request_after_shutdown(self) -> None:
-        server_state = mock_server_state
-        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
-        input_channel = await _create_input_channel_with_requests(
+        server_state = server_setup.mock_server_state
+        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
+        input_channel = await server_setup.create_input_channel_with_requests(
             [
                 json_rpc.Request(method="shutdown", parameters=None),
                 json_rpc.Request(method="derp", parameters=None),
@@ -1215,7 +965,7 @@ class PyreServerTest(testslide.TestCase):
             output_channel=create_memory_text_writer(),
             server_state=server_state,
             daemon_manager=noop_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
 
         exit_code = await server.run()
@@ -1223,9 +973,9 @@ class PyreServerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_exit_gracefully_after_shutdown(self) -> None:
-        server_state = mock_server_state
-        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
-        input_channel = await _create_input_channel_with_requests(
+        server_state = server_setup.mock_server_state
+        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
+        input_channel = await server_setup.create_input_channel_with_requests(
             [
                 json_rpc.Request(method="shutdown", parameters=None),
             ]
@@ -1235,11 +985,11 @@ class PyreServerTest(testslide.TestCase):
             input_channel=input_channel,
             # Always rasing in the output channel
             output_channel=AsyncTextWriter(
-                ExceptionRaisingBytesWriter(ConnectionResetError())
+                server_setup.ExceptionRaisingBytesWriter(ConnectionResetError())
             ),
             server_state=server_state,
             daemon_manager=noop_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
 
         exit_code = await server.run()
@@ -1247,18 +997,18 @@ class PyreServerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_exit_gracefully_on_channel_closure(self) -> None:
-        server_state = mock_server_state
-        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
+        server_state = server_setup.mock_server_state
+        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
         server = PyreLanguageServer(
             # Feed nothing to input channel
             input_channel=create_memory_text_reader(""),
             # Always rasing in the output channel
             output_channel=AsyncTextWriter(
-                ExceptionRaisingBytesWriter(ConnectionResetError())
+                server_setup.ExceptionRaisingBytesWriter(ConnectionResetError())
             ),
             server_state=server_state,
             daemon_manager=noop_task_manager,
-            handler=MockRequestHandler(),
+            handler=server_setup.MockRequestHandler(),
         )
 
         exit_code = await server.run()
@@ -1266,13 +1016,13 @@ class PyreServerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_open_close(self) -> None:
-        server_state = mock_server_state
+        server_state = server_setup.mock_server_state
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=server_state,
-            daemon_manager=background.TaskManager(NoOpBackgroundTask()),
-            handler=MockRequestHandler(),
+            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
+            handler=server_setup.MockRequestHandler(),
         )
         test_path0 = Path("/foo/bar")
         test_path1 = Path("/foo/baz")
@@ -1314,8 +1064,10 @@ class PyreServerTest(testslide.TestCase):
     async def test_type_coverage_request(self) -> None:
         test_path = Path("/foo")
         output_writer = MemoryBytesWriter()
-        fake_daemon_manager = background.TaskManager(WaitForeverBackgroundTask())
-        handler = MockRequestHandler(
+        fake_daemon_manager = background.TaskManager(
+            server_setup.WaitForeverBackgroundTask()
+        )
+        handler = server_setup.MockRequestHandler(
             mock_type_coverage=lsp.TypeCoverageResponse(
                 covered_percent=42.42,
                 uncovered_ranges=[],
@@ -1325,7 +1077,7 @@ class PyreServerTest(testslide.TestCase):
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
-            server_state=mock_server_state,
+            server_state=server_setup.mock_server_state,
             daemon_manager=fake_daemon_manager,
             handler=handler,
         )
@@ -1353,12 +1105,14 @@ class PyreServerTest(testslide.TestCase):
     async def test_type_coverage_request__None_response(self) -> None:
         test_path = Path("/foo")
         output_writer = MemoryBytesWriter()
-        fake_daemon_manager = background.TaskManager(WaitForeverBackgroundTask())
-        handler = MockRequestHandler(mock_type_coverage=None)
+        fake_daemon_manager = background.TaskManager(
+            server_setup.WaitForeverBackgroundTask()
+        )
+        handler = server_setup.MockRequestHandler(mock_type_coverage=None)
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
-            server_state=mock_server_state,
+            server_state=server_setup.mock_server_state,
             daemon_manager=fake_daemon_manager,
             handler=handler,
         )
@@ -1389,11 +1143,11 @@ class PyreServerTest(testslide.TestCase):
     def _expect_success_message(
         self,
         result: object,
-        request_id: int = DEFAULT_REQUEST_ID,
+        request_id: int = server_setup.DEFAULT_REQUEST_ID,
     ) -> Callable[[str], None]:
         return lambda actual_json_string: self._assert_json_equal(
             actual_json_string,
-            _success_response_json(
+            server_setup.success_response_json(
                 result=result,
                 request_id=request_id,
             ),
@@ -1423,7 +1177,7 @@ class PyreServerTest(testslide.TestCase):
             len(expectations),
         )
         for raw_message, expectation in zip(output_writer.items(), expectations):
-            json_string = _extract_json_from_json_rpc_message(raw_message)
+            json_string = server_setup.extract_json_from_json_rpc_message(raw_message)
             expectation(json_string)
 
     @setup.async_test
@@ -1431,17 +1185,21 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         lsp_line = 3
         daemon_line = lsp_line + 1
-        expected_response = lsp.LspHoverResponse(contents=DEFAULT_FILE_CONTENTS)
+        expected_response = lsp.LspHoverResponse(
+            contents=server_setup.DEFAULT_FILE_CONTENTS
+        )
         for enabled_telemetry_event in (True, False):
-            handler = MockRequestHandler(
+            handler = server_setup.MockRequestHandler(
                 mock_hover_response=expected_response,
             )
-            server, output_writer = await _create_server_for_request_test(
+            server, output_writer = await server_setup.create_server_for_request_test(
                 opened_documents={
-                    tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                    tracked_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
                 },
                 handler=handler,
-                server_options=_create_server_options(
+                server_options=server_setup.create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event
                 ),
             )
@@ -1452,7 +1210,7 @@ class PyreServerTest(testslide.TestCase):
                     ),
                     position=lsp.LspPosition(line=lsp_line, character=4),
                 ),
-                request_id=DEFAULT_REQUEST_ID,
+                request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             self.assertEqual(
                 handler.requests,
@@ -1489,17 +1247,21 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         lsp_line = 3
         daemon_line = lsp_line + 1
-        expected_response = lsp.LspHoverResponse(contents=DEFAULT_FILE_CONTENTS)
+        expected_response = lsp.LspHoverResponse(
+            contents=server_setup.DEFAULT_FILE_CONTENTS
+        )
         for enabled_telemetry_event in (True, False):
-            handler = MockRequestHandler(
+            handler = server_setup.MockRequestHandler(
                 mock_hover_response=expected_response,
             )
-            server, output_writer = await _create_server_for_request_test(
+            server, output_writer = await server_setup.create_server_for_request_test(
                 opened_documents={
-                    tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                    tracked_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
                 },
                 handler=handler,
-                server_options=_create_server_options(
+                server_options=server_setup.create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event,
                     language_server_features=LanguageServerFeatures(
                         unsaved_changes=UnsavedChangesAvailability.ENABLED,
@@ -1513,12 +1275,12 @@ class PyreServerTest(testslide.TestCase):
                     ),
                     position=lsp.LspPosition(line=lsp_line, character=4),
                 ),
-                request_id=DEFAULT_REQUEST_ID,
+                request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             self.assertEqual(
                 handler.requests,
                 [
-                    {"path": tracked_path, "code": DEFAULT_FILE_CONTENTS},
+                    {"path": tracked_path, "code": server_setup.DEFAULT_FILE_CONTENTS},
                     {
                         "path": tracked_path,
                         "position": lsp.PyrePosition(line=daemon_line, character=4),
@@ -1551,10 +1313,12 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
-        handler = MockRequestHandler()
-        server, output_writer = await _create_server_for_request_test(
+        handler = server_setup.MockRequestHandler()
+        server, output_writer = await server_setup.create_server_for_request_test(
             opened_documents={
-                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                tracked_path: OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
             },
             handler=handler,
         )
@@ -1565,7 +1329,7 @@ class PyreServerTest(testslide.TestCase):
                 ),
                 position=lsp.LspPosition(line=lsp_line, character=4),
             ),
-            request_id=DEFAULT_REQUEST_ID,
+            request_id=server_setup.DEFAULT_REQUEST_ID,
         )
         self.assertEqual(handler.requests, [])
         self._assert_output_messages(
@@ -1594,15 +1358,17 @@ class PyreServerTest(testslide.TestCase):
             )
         ]
         for enabled_telemetry_event in (True, False):
-            handler = MockRequestHandler(
+            handler = server_setup.MockRequestHandler(
                 mock_definition_response=expected_response,
             )
-            server, output_writer = await _create_server_for_request_test(
+            server, output_writer = await server_setup.create_server_for_request_test(
                 opened_documents={
-                    tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                    tracked_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
                 },
                 handler=handler,
-                server_options=_create_server_options(
+                server_options=server_setup.create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event
                 ),
             )
@@ -1613,7 +1379,7 @@ class PyreServerTest(testslide.TestCase):
                     ),
                     position=lsp.LspPosition(line=lsp_line, character=4),
                 ),
-                request_id=DEFAULT_REQUEST_ID,
+                request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             self.assertEqual(
                 handler.requests,
@@ -1660,15 +1426,17 @@ class PyreServerTest(testslide.TestCase):
             )
         ]
         for enabled_telemetry_event in (True, False):
-            handler = MockRequestHandler(
+            handler = server_setup.MockRequestHandler(
                 mock_definition_response=expected_response,
             )
-            server, output_writer = await _create_server_for_request_test(
+            server, output_writer = await server_setup.create_server_for_request_test(
                 opened_documents={
-                    tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                    tracked_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
                 },
                 handler=handler,
-                server_options=_create_server_options(
+                server_options=server_setup.create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event,
                     language_server_features=LanguageServerFeatures(
                         unsaved_changes=UnsavedChangesAvailability.ENABLED
@@ -1682,12 +1450,12 @@ class PyreServerTest(testslide.TestCase):
                     ),
                     position=lsp.LspPosition(line=lsp_line, character=4),
                 ),
-                request_id=DEFAULT_REQUEST_ID,
+                request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             self.assertEqual(
                 handler.requests,
                 [
-                    {"path": tracked_path, "code": DEFAULT_FILE_CONTENTS},
+                    {"path": tracked_path, "code": server_setup.DEFAULT_FILE_CONTENTS},
                     {
                         "path": tracked_path,
                         "position": lsp.PyrePosition(line=daemon_line, character=4),
@@ -1730,15 +1498,17 @@ class PyreServerTest(testslide.TestCase):
                 ),
             )
         ]
-        handler = MockRequestHandler(
+        handler = server_setup.MockRequestHandler(
             mock_definition_response=expected_telemetry_response,
         )
-        server, output_writer = await _create_server_for_request_test(
+        server, output_writer = await server_setup.create_server_for_request_test(
             opened_documents={
-                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                tracked_path: OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
             },
             handler=handler,
-            server_options=_create_server_options(
+            server_options=server_setup.create_server_options(
                 enabled_telemetry_event=True,
                 language_server_features=LanguageServerFeatures(
                     definition=DefinitionAvailability.SHADOW
@@ -1752,7 +1522,7 @@ class PyreServerTest(testslide.TestCase):
                 ),
                 position=lsp.LspPosition(line=lsp_line, character=4),
             ),
-            request_id=DEFAULT_REQUEST_ID,
+            request_id=server_setup.DEFAULT_REQUEST_ID,
         )
         self.assertEqual(
             handler.requests,
@@ -1784,10 +1554,12 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
-        handler = MockRequestHandler()
-        server, output_writer = await _create_server_for_request_test(
+        handler = server_setup.MockRequestHandler()
+        server, output_writer = await server_setup.create_server_for_request_test(
             opened_documents={
-                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                tracked_path: OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
             },
             handler=handler,
         )
@@ -1798,7 +1570,7 @@ class PyreServerTest(testslide.TestCase):
                 ),
                 position=lsp.LspPosition(line=lsp_line, character=4),
             ),
-            request_id=DEFAULT_REQUEST_ID,
+            request_id=server_setup.DEFAULT_REQUEST_ID,
         )
         self.assertEqual(handler.requests, [])
         self._assert_output_messages(
@@ -1820,12 +1592,14 @@ class PyreServerTest(testslide.TestCase):
                 ),
             )
         ]
-        handler = MockRequestHandler(
+        handler = server_setup.MockRequestHandler(
             mock_references_response=expected_response,
         )
-        server, output_writer = await _create_server_for_request_test(
+        server, output_writer = await server_setup.create_server_for_request_test(
             opened_documents={
-                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                tracked_path: OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
             },
             handler=handler,
         )
@@ -1836,7 +1610,7 @@ class PyreServerTest(testslide.TestCase):
                 ),
                 position=lsp.LspPosition(line=lsp_line, character=4),
             ),
-            request_id=DEFAULT_REQUEST_ID,
+            request_id=server_setup.DEFAULT_REQUEST_ID,
         )
         self.assertEqual(
             handler.requests,
@@ -1863,10 +1637,12 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
-        handler = MockRequestHandler()
-        server, output_writer = await _create_server_for_request_test(
+        handler = server_setup.MockRequestHandler()
+        server, output_writer = await server_setup.create_server_for_request_test(
             opened_documents={
-                tracked_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                tracked_path: OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
             },
             handler=handler,
         )
@@ -1877,7 +1653,7 @@ class PyreServerTest(testslide.TestCase):
                 ),
                 position=lsp.LspPosition(line=lsp_line, character=4),
             ),
-            request_id=DEFAULT_REQUEST_ID,
+            request_id=server_setup.DEFAULT_REQUEST_ID,
         )
         self.assertEqual(handler.requests, [])
         self._assert_output_messages(
@@ -1891,17 +1667,19 @@ class PyreServerTest(testslide.TestCase):
             temporary_file.write(b"def foo(x):\n  pass\n")
             temporary_file.flush()
             test_path = Path(temporary_file.name)
-            server, output_writer = await _create_server_for_request_test(
+            server, output_writer = await server_setup.create_server_for_request_test(
                 opened_documents={
-                    test_path: OpenedDocumentState(code=DEFAULT_FILE_CONTENTS)
+                    test_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
                 },
-                handler=MockRequestHandler(),
+                handler=server_setup.MockRequestHandler(),
             )
             await server.process_document_symbols_request(
                 lsp.DocumentSymbolsParameters(
                     text_document=lsp.TextDocumentIdentifier(uri=test_path.as_uri())
                 ),
-                request_id=DEFAULT_REQUEST_ID,
+                request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                 end_line, end_character = 1, 6
@@ -2005,7 +1783,9 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = PersistentRequestHandler(
-                server_state=_create_server_state_with_options(strict_default=False),
+                server_state=server_setup.create_server_state_with_options(
+                    strict_default=False
+                ),
             )
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n'
@@ -2028,7 +1808,9 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_get_type_coverage__bad_json(self) -> None:
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(strict_default=False),
+            server_state=server_setup.create_server_state_with_options(
+                strict_default=False
+            ),
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
@@ -2045,7 +1827,9 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = PersistentRequestHandler(
-                server_state=_create_server_state_with_options(strict_default=True),
+                server_state=server_setup.create_server_state_with_options(
+                    strict_default=True
+                ),
             )
             input_channel = create_memory_text_reader(
                 '["Query", {"response": ["test"]}]\n'
@@ -2061,7 +1845,9 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_get_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(strict_default=False),
+            server_state=server_setup.create_server_state_with_options(
+                strict_default=False
+            ),
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
@@ -2082,7 +1868,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = PersistentRequestHandler(
-                server_state=_create_server_state_with_options(
+                server_state=server_setup.create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
                         type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
@@ -2114,7 +1900,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = PersistentRequestHandler(
-                server_state=_create_server_state_with_options(
+                server_state=server_setup.create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
                         type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
@@ -2144,7 +1930,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_get_type_coverage__expression_level__bad_json(self) -> None:
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(
+            server_state=server_setup.create_server_state_with_options(
                 strict_default=False,
                 language_server_features=LanguageServerFeatures(
                     type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
@@ -2168,7 +1954,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = PersistentRequestHandler(
-                server_state=_create_server_state_with_options(
+                server_state=server_setup.create_server_state_with_options(
                     strict_default=True,
                     language_server_features=LanguageServerFeatures(
                         type_coverage=TypeCoverageAvailability.EXPRESSION_LEVEL
@@ -2192,7 +1978,7 @@ class RequestHandlerTest(testslide.TestCase):
     async def test_query_hover(self) -> None:
         json_output = """{ "response": {"value": "foo.bar.Bar", "docstring": "test docstring"} }"""
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(
+            server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
                 ),
@@ -2225,7 +2011,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_hover__bad_json(self) -> None:
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(
+            server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
                 ),
@@ -2264,7 +2050,7 @@ class RequestHandlerTest(testslide.TestCase):
         }
         """
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(
+            server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
                 ),
@@ -2304,7 +2090,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_definition_location__bad_json(self) -> None:
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(
+            server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
                 )
@@ -2324,7 +2110,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_definition_location__error_response(self) -> None:
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(
+            server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
                 )
@@ -2383,7 +2169,7 @@ class RequestHandlerTest(testslide.TestCase):
         }
         """
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(
+            server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     references=ReferencesAvailability.ENABLED,
                 ),
@@ -2430,7 +2216,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_references__bad_json(self) -> None:
         pyre_query_manager = PersistentRequestHandler(
-            server_state=_create_server_state_with_options(
+            server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     references=ReferencesAvailability.ENABLED,
                 ),

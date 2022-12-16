@@ -11,17 +11,7 @@ from ...tests import setup
 from .. import persistent, pyre_server_options, server_state as state, subscription
 
 from ..code_navigation import PyreCodeNavigationDaemonLaunchAndSubscribeHandler
-from .persistent_test import _create_server_options_reader
-
-mock_server_options_reader: pyre_server_options.PyreServerOptionsReader = (
-    _create_server_options_reader()
-)
-mock_initial_server_options: pyre_server_options.PyreServerOptions = (
-    mock_server_options_reader()
-)
-mock_server_state: state.ServerState = state.ServerState(
-    server_options=mock_initial_server_options
-)
+from ..tests import server_setup
 
 
 class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
@@ -33,7 +23,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                     status=lsp.ShowStatusRequestClientCapabilities(),
                 ),
             ),
-            server_options=mock_initial_server_options,
+            server_options=server_setup.mock_initial_server_options,
         )
         bytes_writer = connections.MemoryBytesWriter()
 
