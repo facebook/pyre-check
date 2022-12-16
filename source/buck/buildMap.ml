@@ -20,7 +20,7 @@ module Partial = struct
       Hashtbl.create (module String) ~size
     in
     let add_mapping (key, value) =
-      if String.is_suffix key ~suffix:".py" or String.is_suffix key ~suffix:".pyi" then
+      if String.is_suffix key ~suffix:".py" || String.is_suffix key ~suffix:".pyi" then
         add result ~key ~data:value
     in
     List.iter items ~f:add_mapping;
