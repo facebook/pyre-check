@@ -15,6 +15,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
+from tools.pyre.client.language_server.protocol import PyreHoverResponse
+
 from .. import dataclasses_json_extensions as json_mixins
 
 from . import daemon_connection, protocol as lsp
@@ -66,14 +68,8 @@ class ErrorResponse:
 
 
 @dataclasses.dataclass(frozen=True)
-class HoverContent(json_mixins.CamlCaseAndExcludeJsonMixin):
-    value: Optional[str]
-    docstring: Optional[str] = None
-
-
-@dataclasses.dataclass(frozen=True)
 class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    contents: List[HoverContent]
+    contents: List[PyreHoverResponse]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -199,7 +195,7 @@ def parse_raw_response(
 async def async_handle_hover_request(
     socket_path: Path,
     hover_request: HoverRequest,
-) -> Union[lsp.PyreHoverResponse, ErrorResponse]:
+) -> Union[HoverResponse, ErrorResponse]:
     raw_request = json.dumps(["Query", hover_request.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_request
@@ -211,12 +207,7 @@ async def async_handle_hover_request(
     )
     if isinstance(response, ErrorResponse):
         return response
-    types = [content.value for content in response.contents]
-    types = filter(lambda value: value is not None, types)
-    return lsp.PyreHoverResponse(
-        "\n".join(str(content.value) for content in response.contents),
-        "\n".join(str(content.docstring) for content in response.contents),
-    )
+    return HoverResponse(response.contents)
 
 
 async def async_handle_definition_request(

@@ -410,8 +410,15 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
             self.socket_path,
             hover_request,
         )
-        if isinstance(response, lsp.PyreHoverResponse):
-            return response.to_lsp_hover_response()
+        if isinstance(response, code_navigation_request.HoverResponse):
+            return lsp.LspHoverResponse(
+                "\n".join(
+                    [
+                        hover.to_lsp_hover_response().contents
+                        for hover in response.contents
+                    ]
+                )
+            )
         return daemon_query.DaemonQueryFailure(response.message)
 
     async def get_definition_locations(

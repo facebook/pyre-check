@@ -109,9 +109,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             ),
             code_navigation_request.HoverResponse(
                 contents=[
-                    code_navigation_request.HoverContent(
-                        value="int", docstring="test docstring"
-                    )
+                    lsp.PyreHoverResponse(value="int", docstring="test docstring")
                 ]
             ),
         )
@@ -126,7 +124,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             code_navigation_request.HoverResponse(
                 contents=[
                     # pyre-ignore[6]: This is documenting a known type error, see comments in test above.
-                    code_navigation_request.HoverContent(value=32)
+                    lsp.PyreHoverResponse(value=32)
                 ]
             ),
         )
