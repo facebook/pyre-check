@@ -313,6 +313,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         server_state: ServerState,
         client_status_message_handler: ClientStatusMessageHandler,
         client_type_error_handler: ClientTypeErrorHandler,
+        request_handler: request_handler.AbstractRequestHandler,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         super().__init__(
@@ -321,6 +322,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
             client_status_message_handler,
             client_type_error_handler,
             PyrePersistentSubscriptionResponseParser(),
+            request_handler,
             remote_logging,
         )
 
@@ -428,6 +430,10 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
                 server_output_channel,
             )
 
+    async def send_open_state(self) -> None:
+        """Unnecessary to send open state on server instantiation for persistent server."""
+        pass
+
 
 async def run_persistent(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
@@ -468,6 +474,9 @@ async def run_persistent(
         client_capabilities=client_capabilities,
         server_options=initial_server_options,
     )
+    handler = request_handler.PersistentRequestHandler(
+        server_state=server_state,
+    )
     server = pyre_language_server.PyreLanguageServer(
         input_channel=stdin,
         output_channel=stdout,
@@ -480,14 +489,13 @@ async def run_persistent(
                 client_status_message_handler=ClientStatusMessageHandler(
                     stdout, server_state
                 ),
+                request_handler=handler,
                 client_type_error_handler=ClientTypeErrorHandler(
                     stdout, server_state, remote_logging
                 ),
             )
         ),
-        handler=request_handler.PersistentRequestHandler(
-            server_state=server_state,
-        ),
+        handler=handler,
     )
     return await server.run()
 

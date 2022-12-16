@@ -17,7 +17,7 @@ import json
 import logging
 import traceback
 
-from typing import Awaitable, Callable, Optional
+from typing import Optional
 
 from .. import timer, version
 from ..language_server import connections, features, protocol as lsp
@@ -64,8 +64,8 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         server_state: state.ServerState,
         client_status_message_handler: persistent.ClientStatusMessageHandler,
         client_type_error_handler: persistent.ClientTypeErrorHandler,
+        request_handler: request_handler.AbstractRequestHandler,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
-        on_fresh_server_initialization: Optional[Callable[[], Awaitable[None]]] = None,
     ) -> None:
         super().__init__(
             server_options_reader,
@@ -73,8 +73,8 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             client_status_message_handler,
             client_type_error_handler,
             PyreCodeNavigationSubscriptionResponseParser(),
+            request_handler,
             remote_logging,
-            on_fresh_server_initialization,
         )
 
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
@@ -145,6 +145,16 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             server_output_channel,
         )
 
+    async def send_open_state(self) -> None:
+        results = await asyncio.gather(
+            *[
+                self.request_handler.handle_file_opened(path, document.code)
+                for path, document in self.server_state.opened_documents.items()
+            ]
+        )
+        if len(results) > 0:
+            LOG.info(f"Sent {len(results)} open messages to daemon for existing state.")
+
 
 def process_initialize_request(
     parameters: lsp.InitializeParameters,
@@ -168,25 +178,6 @@ def process_initialize_request(
     return lsp.InitializeResult(
         capabilities=server_capabilities, server_info=server_info
     )
-
-
-def send_open_state_factory(
-    server_state: state.ServerState,
-    handler: request_handler.CodeNavigationRequestHandler,
-) -> Callable[[], Awaitable[None]]:
-    """Returns a method that sends the open state (all open messages that were missed while the server was not up)"""
-
-    async def send_open_state() -> None:
-        results = await asyncio.gather(
-            *[
-                handler.handle_file_opened(path, document.code)
-                for path, document in server_state.opened_documents.items()
-            ]
-        )
-        if len(results) > 0:
-            LOG.info(f"Sent {len(results)} open messages to daemon for existing state.")
-
-    return send_open_state
 
 
 async def async_run_code_navigation_client(
@@ -239,11 +230,9 @@ async def async_run_code_navigation_client(
                 client_status_message_handler=persistent.ClientStatusMessageHandler(
                     stdout, server_state
                 ),
+                request_handler=handler,
                 client_type_error_handler=persistent.ClientTypeErrorHandler(
                     stdout, server_state, remote_logging
-                ),
-                on_fresh_server_initialization=send_open_state_factory(
-                    server_state, handler
                 ),
             )
         ),
