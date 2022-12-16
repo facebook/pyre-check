@@ -123,6 +123,7 @@ module ServerConfiguration = struct
             parallel;
             number_of_workers;
             enable_readonly_analysis;
+            enable_unawaited_awaitable_analysis;
             shared_memory =
               { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
             remote_logging = _;
@@ -169,6 +170,7 @@ module ServerConfiguration = struct
       ~enable_type_comments
       ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
       ~enable_readonly_analysis
+      ~enable_unawaited_awaitable_analysis
       ()
 
 

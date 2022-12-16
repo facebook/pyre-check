@@ -37,6 +37,7 @@ module BaseConfiguration = struct
     profiling_output: string option;
     memory_profiling_output: string option;
     enable_readonly_analysis: bool;
+    enable_unawaited_awaitable_analysis: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -107,6 +108,12 @@ module BaseConfiguration = struct
              "enable_readonly_analysis"
              ~default:Configuration.Analysis.default_enable_readonly_analysis
       in
+      let enable_unawaited_awaitable_analysis =
+        json
+        |> bool_member
+             "enable_unawaited_awaitable_analysis"
+             ~default:Configuration.Analysis.default_enable_unawaited_awaitable_analysis
+      in
       Result.Ok
         {
           source_paths;
@@ -128,6 +135,7 @@ module BaseConfiguration = struct
           profiling_output;
           memory_profiling_output;
           enable_readonly_analysis;
+          enable_unawaited_awaitable_analysis;
         }
     with
     | Type_error (message, _)
