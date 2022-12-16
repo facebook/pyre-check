@@ -117,6 +117,7 @@ class PartialConfiguration:
     )
     dot_pyre_directory: Optional[Path] = None
     enable_readonly_analysis: Optional[bool] = None
+    enable_unawaited_awaitable_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
@@ -409,6 +410,9 @@ class PartialConfiguration:
                 enable_readonly_analysis=ensure_option_type(
                     configuration_json, "enable_readonly_analysis", bool
                 ),
+                enable_unawaited_awaitable_analysis=ensure_option_type(
+                    configuration_json, "enable_unawaited_awaitable_analysis", bool
+                ),
                 excludes=ensure_string_list(
                     configuration_json, "exclude", allow_single_string=True
                 ),
@@ -537,6 +541,7 @@ class Configuration:
     bxl_builder: Optional[str] = None
     only_check_paths: Sequence[str] = field(default_factory=list)
     enable_readonly_analysis: Optional[bool] = None
+    enable_unawaited_awaitable_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[extension.Element] = field(default_factory=list)
     ignore_all_errors: Sequence[str] = field(default_factory=list)
@@ -588,6 +593,9 @@ class Configuration:
                 for path in only_check_paths
             ],
             enable_readonly_analysis=partial_configuration.enable_readonly_analysis,
+            enable_unawaited_awaitable_analysis=(
+                partial_configuration.enable_unawaited_awaitable_analysis
+            ),
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             ignore_all_errors=_expand_all_globs(
@@ -677,6 +685,15 @@ class Configuration:
             **(
                 {"enable_readonly_analysis": self.enable_readonly_analysis}
                 if self.enable_readonly_analysis is not None
+                else {}
+            ),
+            **(
+                {
+                    "enable_unawaited_awaitable_analysis": (
+                        self.enable_unawaited_awaitable_analysis
+                    )
+                }
+                if self.enable_unawaited_awaitable_analysis is not None
                 else {}
             ),
             "excludes": list(self.excludes),
