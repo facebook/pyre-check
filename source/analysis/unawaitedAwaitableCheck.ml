@@ -675,7 +675,7 @@ module State (Context : Context) = struct
       ~state:({ awaitable_to_awaited_state; awaitables_for_alias; _ } as state)
       ~annotation
       ~expression
-      ~awaitable_expressions_so_far
+      ~awaitable_expressions_in_value
       ~target
     =
     let open Expression in
@@ -693,7 +693,8 @@ module State (Context : Context) = struct
     | Expression.Name target when is_simple_name target -> (
         match expression with
         | { Node.value = Expression.Name value; _ } when is_simple_name value ->
-            (* Aliasing. *)
+            (* Aliasing: If `target` is awaited, then the awaitables pointed to by `value` will have
+               been awaited. So, make `target` also point to them. *)
             let awaitables_for_alias =
               Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn value))
               >>| (fun locations ->
@@ -705,20 +706,24 @@ module State (Context : Context) = struct
             in
             { state with awaitables_for_alias }
         | _ ->
-            (* The expression must be analyzed before we call `forward_assign` on it, as that's
-               where unawaitables are introduced. *)
+            let value_awaitable = Node.location expression |> Awaitable.create in
+            let key = NamedAlias (name_to_reference_exn target) in
             let awaitables_for_alias =
-              let awaitable = Node.location expression |> Awaitable.create in
-              let key = NamedAlias (name_to_reference_exn target) in
-              if not (List.is_empty awaitable_expressions_so_far) then
-                let nested_awaitable_expressions =
-                  List.map awaitable_expressions_so_far ~f:Node.location
+              if not (List.is_empty awaitable_expressions_in_value) then
+                (* If there are awaitables inside the value, then make `target` point to them.
+
+                   For example, it is a list expression, `target = [awaitable(), awaitable2()]`,
+                   `target` should point to the awaitables. *)
+                let awaitables_in_value =
+                  List.map awaitable_expressions_in_value ~f:Node.location
                   |> List.map ~f:Awaitable.create
                   |> Awaitable.Set.of_list
                 in
-                Map.set awaitables_for_alias ~key ~data:nested_awaitable_expressions
-              else if Map.mem awaitable_to_awaited_state awaitable then
-                Map.set awaitables_for_alias ~key ~data:(Awaitable.Set.singleton awaitable)
+                Map.set awaitables_for_alias ~key ~data:awaitables_in_value
+              else if Map.mem awaitable_to_awaited_state value_awaitable then
+                (* If the entire value being assigned is known to be an awaitable, make `target`
+                   point to it. *)
+                Map.set awaitables_for_alias ~key ~data:(Awaitable.Set.singleton value_awaitable)
               else
                 awaitables_for_alias
             in
@@ -775,7 +780,7 @@ module State (Context : Context) = struct
                      ~state
                      ~target
                      ~annotation
-                     ~awaitable_expressions_so_far:[]
+                     ~awaitable_expressions_in_value:[]
                      ~expression)
         | _ ->
             (* Right now, if we don't have a concrete tuple to break down, we won't introduce new
@@ -819,7 +824,7 @@ module State (Context : Context) = struct
           ~resolution:(Resolution.global_resolution resolution)
           ~annotation
           ~expression:value
-          ~awaitable_expressions_so_far:nested_awaitable_expressions
+          ~awaitable_expressions_in_value:nested_awaitable_expressions
           ~target
     | Delete expressions ->
         let f state expression =
