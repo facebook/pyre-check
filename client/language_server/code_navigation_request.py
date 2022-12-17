@@ -15,11 +15,11 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-from tools.pyre.client.language_server.protocol import PyreHoverResponse
-
 from .. import dataclasses_json_extensions as json_mixins
 
 from . import daemon_connection, protocol as lsp
+
+from .protocol import PyreHoverResponse
 
 
 @dataclasses.dataclass(frozen=True)
