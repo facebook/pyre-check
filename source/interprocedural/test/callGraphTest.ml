@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Data_structures
 open OUnit2
 open Ast
 open Analysis
@@ -166,7 +167,7 @@ let test_call_graph_of_define context =
                   ())) );
         ( "3:5-3:10",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__le__",
                    ExpressionCallees.from_call
@@ -213,7 +214,7 @@ let test_call_graph_of_define context =
       [
         ( "3:5-3:10",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__le__",
                    ExpressionCallees.from_call
@@ -1412,7 +1413,7 @@ let test_call_graph_of_define context =
                   ())) );
         ( "8:31-8:33",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__iter__",
                    ExpressionCallees.from_call
@@ -1482,7 +1483,7 @@ let test_call_graph_of_define context =
       [
         ( "4:7-4:14",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__enter__",
                    ExpressionCallees.from_call_with_empty_attribute
@@ -1770,7 +1771,7 @@ let test_call_graph_of_define context =
       [
         ( "10:2-10:7",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__setitem__",
                    ExpressionCallees.from_attribute_access
@@ -1840,7 +1841,7 @@ let test_call_graph_of_define context =
                   ())) );
         ( "12:2-12:8",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__getitem__",
                    ExpressionCallees.from_call
@@ -1945,7 +1946,7 @@ let test_call_graph_of_define context =
       [
         ( "7:18-7:23",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
                    ExpressionCallees.from_format_string
@@ -2104,7 +2105,7 @@ let test_call_graph_of_define context =
       [
         ( "10:11-10:25",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__iter__",
                    ExpressionCallees.from_call_with_empty_attribute
@@ -2163,7 +2164,7 @@ let test_call_graph_of_define context =
       [
         ( "9:11-9:21",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__iter__",
                    ExpressionCallees.from_call_with_empty_attribute
@@ -2763,7 +2764,7 @@ let test_call_graph_of_define context =
       [
         ( "6:9-6:36",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "getattr",
                    ExpressionCallees.from_call
@@ -2797,7 +2798,7 @@ let test_call_graph_of_define context =
       [
         ( "6:9-6:44",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__setattr__",
                    ExpressionCallees.from_call
@@ -3252,7 +3253,7 @@ let test_call_graph_of_define context =
                }) );
         ( "4:5-4:12",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
                    ExpressionCallees.from_format_string
@@ -3358,7 +3359,7 @@ let test_call_graph_of_define context =
       [
         ( "8:5-8:16",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
                    ExpressionCallees.from_format_string
@@ -3403,7 +3404,7 @@ let test_call_graph_of_define context =
       [
         ( "6:5-6:16",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
                    ExpressionCallees.from_format_string
@@ -3443,7 +3444,7 @@ let test_call_graph_of_define context =
       [
         ( "3:9-3:15",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  "__add__", ExpressionCallees.from_attribute_access AttributeAccessCallees.empty;
                  ( "__str__",
@@ -4087,7 +4088,7 @@ let test_call_graph_of_define context =
       [
         ( "3:17-3:18",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__aiter__",
                    ExpressionCallees.from_call_with_empty_attribute
@@ -4157,7 +4158,7 @@ let test_call_graph_of_define context =
       [
         ( "10:24-10:26",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__aiter__",
                    ExpressionCallees.from_call
@@ -4204,7 +4205,7 @@ let test_call_graph_of_define context =
                ]) );
         ( "11:18-11:20",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__iter__",
                    ExpressionCallees.from_call
@@ -4246,7 +4247,7 @@ let test_call_graph_of_define context =
                ]) );
         ( "12:24-12:26",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__aiter__",
                    ExpressionCallees.from_call
@@ -4301,7 +4302,7 @@ let test_call_graph_of_define context =
                   ())) );
         ( "13:18-13:25",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__iter__",
                    ExpressionCallees.from_call
@@ -4357,7 +4358,7 @@ let test_call_graph_of_define context =
                ]) );
         ( "14:18-14:20",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__iter__",
                    ExpressionCallees.from_call
@@ -4401,7 +4402,7 @@ let test_call_graph_of_define context =
                ]) );
         ( "15:24-15:26",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__aiter__",
                    ExpressionCallees.from_call
@@ -4450,7 +4451,7 @@ let test_call_graph_of_define context =
                ]) );
         ( "16:20-16:22",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__iter__",
                    ExpressionCallees.from_call
@@ -4494,7 +4495,7 @@ let test_call_graph_of_define context =
                ]) );
         ( "17:26-17:28",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__aiter__",
                    ExpressionCallees.from_call
@@ -4543,7 +4544,7 @@ let test_call_graph_of_define context =
                ]) );
         ( "18:18-18:20",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__iter__",
                    ExpressionCallees.from_call
@@ -4587,7 +4588,7 @@ let test_call_graph_of_define context =
                ]) );
         ( "19:24-19:26",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__aiter__",
                    ExpressionCallees.from_call
@@ -4651,7 +4652,7 @@ let test_call_graph_of_define context =
       [
         ( "7:21-7:22",
           LocationCallees.Compound
-            (PysaReference.Map.Tree.of_alist_exn
+            (SerializableStringMap.of_alist_exn
                [
                  ( "__aiter__",
                    ExpressionCallees.from_call

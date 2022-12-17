@@ -13,6 +13,7 @@
  *)
 
 open Core
+open Data_structures
 open Ast
 open Analysis
 open Expression
@@ -653,13 +654,13 @@ let rec parse_annotations
                         { Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ };
                       ];
                   } ->
-                  if not (PysaReference.Map.Tree.mem taint_configuration.partial_sink_labels kind)
+                  if not (SerializableStringMap.mem kind taint_configuration.partial_sink_labels)
                   then
                     Error
                       (annotation_error (Format.asprintf "Unrecognized partial sink `%s`." kind))
                   else
                     let label_options =
-                      PysaReference.Map.Tree.find_exn taint_configuration.partial_sink_labels kind
+                      SerializableStringMap.find kind taint_configuration.partial_sink_labels
                     in
                     if not (List.mem label_options label ~equal:String.equal) then
                       Error

@@ -17,6 +17,14 @@ module type S = sig
 
   val set : 'a t -> key:key -> data:'a -> 'a t
 
+  val to_alist : 'a t -> (key * 'a) list
+
+  val of_alist_exn : (key * 'a) list -> 'a t
+
+  val data : 'a t -> 'a list
+
+  val add_multi : 'a list t -> key:key -> data:'a -> 'a list t
+
   val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
 
   val sexp_of_t : ('a -> Sexp.t) -> 'a t -> Sexp.t
@@ -48,6 +56,31 @@ module Make (Ordered : OrderedType) : S with type key = Ordered.t = struct
   end
 
   let set map ~key ~data = add key data map
+
+  let to_alist = bindings
+
+  let of_alist_exn list =
+    let add_new_key map (key, value) =
+      update
+        key
+        (function
+          | None -> Some value
+          | Some _ -> failwith "key specified twice in of_alist_exn")
+        map
+    in
+    List.fold ~init:empty ~f:add_new_key list
+
+
+  let data map = fold (fun _ value sofar -> value :: sofar) map []
+
+  let add_multi map ~key ~data =
+    update
+      key
+      (function
+        | None -> Some [data]
+        | Some existing -> Some (data :: existing))
+      map
+
 
   let t_of_sexp a_of_sexp sexp =
     Core.List.t_of_sexp (Key.assoc_of_sexp a_of_sexp) sexp |> Caml.List.to_seq |> of_seq

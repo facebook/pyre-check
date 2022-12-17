@@ -14,6 +14,14 @@ module type S = sig
 
   val set : 'a t -> key:key -> data:'a -> 'a t
 
+  val to_alist : 'a t -> (key * 'a) list
+
+  val of_alist_exn : (key * 'a) list -> 'a t
+
+  val data : 'a t -> 'a list
+
+  val add_multi : 'a list t -> key:key -> data:'a -> 'a list t
+
   val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
 
   val sexp_of_t : ('a -> Sexp.t) -> 'a t -> Sexp.t

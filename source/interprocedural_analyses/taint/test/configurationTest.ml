@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Data_structures
 open OUnit2
 open Taint
 open Pyre
@@ -315,9 +316,7 @@ let test_combined_source_rules _ =
       };
     ];
   assert_equal (List.hd_exn configuration.rules).code 2001;
-  assert_equal
-    (Interprocedural.PysaReference.Map.Tree.to_alist configuration.partial_sink_labels)
-    ["C", ["a"; "b"]];
+  assert_equal (SerializableStringMap.to_alist configuration.partial_sink_labels) ["C", ["a"; "b"]];
   let configuration =
     assert_parse
       {|
@@ -342,7 +341,7 @@ let test_combined_source_rules _ =
   assert_equal configuration.sources [named "A"; named "B"; named "C"];
   assert_equal configuration.sinks [];
   assert_equal
-    (Interprocedural.PysaReference.Map.Tree.to_alist configuration.partial_sink_labels)
+    (SerializableStringMap.to_alist configuration.partial_sink_labels)
     ["CombinedSink", ["a"; "b"]];
   assert_equal
     ~printer:(List.to_string ~f:Rule.show)

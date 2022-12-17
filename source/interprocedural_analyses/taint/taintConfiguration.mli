@@ -61,7 +61,7 @@ module Heap : sig
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
     partial_sink_converter: PartialSinkConverter.t;
-    partial_sink_labels: string list Interprocedural.PysaReference.Map.Tree.t;
+    partial_sink_labels: string list Data_structures.SerializableStringMap.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;

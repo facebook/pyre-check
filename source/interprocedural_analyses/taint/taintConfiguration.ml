@@ -15,7 +15,7 @@
  *)
 
 open Core
-open Interprocedural
+open Data_structures
 module Json = Yojson.Safe
 
 let ( >>= ) = Result.( >>= )
@@ -272,16 +272,16 @@ module ModelConstraints = struct
 end
 
 module PartialSinkConverter = struct
-  type t = (Sources.t list * Sinks.t) list PysaReference.Map.Tree.t
+  type t = (Sources.t list * Sinks.t) list SerializableStringMap.t
 
   let add map ~first_sources ~first_sinks ~second_sources ~second_sinks =
     let add map (first_sink, second_sink) =
       (* Trigger second sink when the first sink matches a source, and vice versa. *)
-      PysaReference.Map.Tree.add_multi
+      SerializableStringMap.add_multi
         map
         ~key:(Sinks.show_partial_sink first_sink)
         ~data:(first_sources, Sinks.TriggeredPartialSink second_sink)
-      |> PysaReference.Map.Tree.add_multi
+      |> SerializableStringMap.add_multi
            ~key:(Sinks.show_partial_sink second_sink)
            ~data:(second_sources, Sinks.TriggeredPartialSink first_sink)
     in
@@ -289,20 +289,21 @@ module PartialSinkConverter = struct
 
 
   let merge left right =
-    PysaReference.Map.Tree.merge
-      ~f:
-        (fun ~key:_ -> function
-          | `Left value
-          | `Right value ->
-              Some value
-          | `Both (left, right) -> Some (left @ right))
+    SerializableStringMap.merge
+      (fun _ left right ->
+        match left, right with
+        | Some value, None
+        | None, Some value ->
+            Some value
+        | Some left, Some right -> Some (left @ right)
+        | None, None -> None)
       left
       right
 
 
   let get_triggered_sink sink_to_sources ~partial_sink ~source =
     let source = Sources.discard_sanitize_transforms source in
-    match Sinks.show_partial_sink partial_sink |> PysaReference.Map.Tree.find sink_to_sources with
+    match SerializableStringMap.find_opt (Sinks.show_partial_sink partial_sink) sink_to_sources with
     | Some source_and_sink_list ->
         List.find source_and_sink_list ~f:(fun (supported_sources, _) ->
             List.exists supported_sources ~f:(Sources.equal source))
@@ -343,7 +344,7 @@ module Heap = struct
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
     partial_sink_converter: PartialSinkConverter.t;
-    partial_sink_labels: string list PysaReference.Map.Tree.t;
+    partial_sink_labels: string list SerializableStringMap.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;
@@ -362,10 +363,10 @@ module Heap = struct
       features = [];
       rules = [];
       filtered_rule_codes = None;
-      partial_sink_converter = PysaReference.Map.Tree.empty;
+      partial_sink_converter = SerializableStringMap.empty;
       implicit_sinks = empty_implicit_sinks;
       implicit_sources = empty_implicit_sources;
-      partial_sink_labels = PysaReference.Map.Tree.empty;
+      partial_sink_labels = SerializableStringMap.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
@@ -516,8 +517,8 @@ module Heap = struct
         ];
       rules;
       filtered_rule_codes = None;
-      partial_sink_converter = PysaReference.Map.Tree.empty;
-      partial_sink_labels = PysaReference.Map.Tree.empty;
+      partial_sink_converter = SerializableStringMap.empty;
+      partial_sink_labels = SerializableStringMap.empty;
       implicit_sinks = empty_implicit_sinks;
       implicit_sources = empty_implicit_sources;
       find_missing_flows = None;
@@ -931,14 +932,14 @@ let from_json_list source_json_list =
           >>= fun second_sources ->
           json_string_member ~path "partial_sink" json
           >>= fun partial_sink ->
-          if PysaReference.Map.Tree.mem partial_sink_labels partial_sink then
+          if SerializableStringMap.mem partial_sink partial_sink_labels then
             Result.Error [Error.create ~path ~kind:(Error.PartialSinkDuplicate partial_sink)]
           else
             let partial_sink_labels =
-              PysaReference.Map.Tree.set partial_sink_labels ~key:partial_sink ~data:[first; second]
+              SerializableStringMap.set partial_sink_labels ~key:partial_sink ~data:[first; second]
             in
             let create_partial_sink label sink =
-              match PysaReference.Map.Tree.find partial_sink_labels sink with
+              match SerializableStringMap.find_opt sink partial_sink_labels with
               | Some labels when not (List.mem ~equal:String.equal labels label) ->
                   Error
                     [Error.create ~path ~kind:(Error.InvalidLabelMultiSink { label; sink; labels })]
@@ -978,7 +979,7 @@ let from_json_list source_json_list =
     in
     array_member ~path "combined_source_rules" json
     >>= List.fold
-          ~init:(Ok ([], PysaReference.Map.Tree.empty, PysaReference.Map.Tree.empty))
+          ~init:(Ok ([], SerializableStringMap.empty, SerializableStringMap.empty))
           ~f:parse_combined_source_rule
   in
   let parse_implicit_sinks ~allowed_sinks (path, json) =
@@ -1078,11 +1079,11 @@ let from_json_list source_json_list =
   let partial_sink_converter =
     List.fold
       partial_sink_converters
-      ~init:PysaReference.Map.Tree.empty
+      ~init:SerializableStringMap.empty
       ~f:PartialSinkConverter.merge
   in
   let partial_sink_labels =
-    List.fold partial_sink_labels ~init:PysaReference.Map.Tree.empty ~f:PartialSinkConverter.merge
+    List.fold partial_sink_labels ~init:SerializableStringMap.empty ~f:PartialSinkConverter.merge
   in
 
   let merge_implicit_sinks left right =
