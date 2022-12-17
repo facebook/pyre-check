@@ -12,6 +12,7 @@
  *)
 
 open Core
+open Data_structures
 open Pyre
 open Ast
 open Analysis
@@ -521,6 +522,20 @@ module Modelable = struct
     | Attribute { VariableMetadata.name; _ }
     | Global { VariableMetadata.name; _ } ->
         Target.create_object name
+
+
+  let expand_write_to_cache modelable name =
+    let expand_substring modelable substring =
+      match substring, modelable with
+      | ModelQuery.WriteToCache.Substring.Literal value, _ -> value
+      | FunctionName, Callable { target = Target.Function { name; _ }; _ } ->
+          Reference.create name |> Reference.last
+      | MethodName, Callable { target = Target.Method { method_name; _ }; _ } -> method_name
+      | ClassName, Callable { target = Target.Method { class_name; _ }; _ } ->
+          Reference.create class_name |> Reference.last
+      | _ -> failwith "unreachable"
+    in
+    name |> List.map ~f:(expand_substring modelable) |> String.concat ~sep:""
 end
 
 let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constraint =
@@ -616,6 +631,54 @@ module PartitionCacheQueries = struct
         add_others query partition
     in
     List.fold ~init:empty ~f:add queries
+end
+
+(* This is the cache for `WriteToCache` and `read_from_cache` *)
+module ReadWriteCache = struct
+  module NameToTargetSet = struct
+    type t = Target.Set.t SerializableStringMap.t
+
+    let singleton ~name ~target =
+      SerializableStringMap.add name (Target.Set.singleton target) SerializableStringMap.empty
+
+
+    let write map ~name ~target =
+      SerializableStringMap.update
+        name
+        (function
+          | None -> Some (Target.Set.singleton target)
+          | Some targets -> Some (Target.Set.add target targets))
+        map
+  end
+
+  type t = NameToTargetSet.t SerializableStringMap.t
+
+  let empty = SerializableStringMap.empty
+
+  let write map ~kind ~name ~target =
+    SerializableStringMap.update
+      kind
+      (function
+        | None -> Some (NameToTargetSet.singleton ~name ~target)
+        | Some name_targets -> Some (NameToTargetSet.write name_targets ~name ~target))
+      map
+
+
+  let show_set set =
+    set
+    |> Target.Set.elements
+    |> List.map ~f:Target.external_name
+    |> String.concat ~sep:", "
+    |> Format.sprintf "{%s}"
+
+
+  let pp_set formatter set = Format.fprintf formatter "%s" (show_set set)
+
+  let pp = SerializableStringMap.pp (SerializableStringMap.pp pp_set)
+
+  let show = Format.asprintf "%a" pp
+
+  let equal = SerializableStringMap.equal (SerializableStringMap.equal Target.Set.equal)
 end
 
 (* Module interface that we need to provide for each type of query (callable, attribute and global). *)
@@ -776,6 +839,57 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         model_query_results
     in
     List.fold queries ~init:ModelQueryRegistryMap.empty ~f:fold
+
+
+  let generate_cache_from_query_on_target
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~initial_cache
+      ~target
+      ({ ModelQuery.models; name; _ } as query)
+    =
+    let modelable = QueryKind.make_modelable ~resolution target in
+    let write_to_cache cache = function
+      | ModelQuery.Model.WriteToCache { kind; name } ->
+          ReadWriteCache.write
+            cache
+            ~kind
+            ~name:(Modelable.expand_write_to_cache modelable name)
+            ~target:(QueryKind.get_target target)
+      | model ->
+          Format.asprintf
+            "unexpected model in generate_cache_from_query_on_target for model query `%s`, \
+             expecting `WriteToCache`, got `%a`"
+            name
+            ModelQuery.Model.pp
+            model
+          |> failwith
+    in
+    if matches_query_constraints ~verbose ~resolution ~class_hierarchy_graph ~modelable query then
+      List.fold ~init:initial_cache ~f:write_to_cache models
+    else
+      initial_cache
+
+
+  let generate_cache_from_queries_on_targets
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~targets
+      write_to_cache_queries
+    =
+    let fold_target ~query cache target =
+      generate_cache_from_query_on_target
+        ~verbose
+        ~resolution
+        ~class_hierarchy_graph
+        ~initial_cache:cache
+        ~target
+        query
+    in
+    let fold_query cache query = List.fold targets ~init:cache ~f:(fold_target ~query) in
+    List.fold write_to_cache_queries ~init:ReadWriteCache.empty ~f:fold_query
 
 
   let generate_models_from_queries_on_targets_with_multiprocessing

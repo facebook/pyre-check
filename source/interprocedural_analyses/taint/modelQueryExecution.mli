@@ -57,6 +57,14 @@ module PartitionCacheQueries : sig
   val partition : ModelParseResult.ModelQuery.t list -> t
 end
 
+module ReadWriteCache : sig
+  type t [@@deriving show, equal]
+
+  val empty : t
+
+  val write : t -> kind:string -> name:string -> target:Interprocedural.Target.t -> t
+end
+
 module CallableQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
@@ -65,6 +73,14 @@ module CallableQueryExecutor : sig
     target:Interprocedural.Target.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.ModelAnnotation.t list
+
+  val generate_cache_from_queries_on_targets
+    :  verbose:bool ->
+    resolution:Analysis.GlobalResolution.t ->
+    class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
+    targets:Interprocedural.Target.t list ->
+    ModelParseResult.ModelQuery.t list ->
+    ReadWriteCache.t
 end
 
 module AttributeQueryExecutor : sig
@@ -75,6 +91,14 @@ module AttributeQueryExecutor : sig
     target:VariableMetadata.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
+
+  val generate_cache_from_queries_on_targets
+    :  verbose:bool ->
+    resolution:Analysis.GlobalResolution.t ->
+    class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
+    targets:VariableMetadata.t list ->
+    ModelParseResult.ModelQuery.t list ->
+    ReadWriteCache.t
 end
 
 val get_globals_and_annotations : resolution:Analysis.GlobalResolution.t -> VariableMetadata.t list
@@ -87,6 +111,14 @@ module GlobalVariableQueryExecutor : sig
     target:VariableMetadata.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
+
+  val generate_cache_from_queries_on_targets
+    :  verbose:bool ->
+    resolution:Analysis.GlobalResolution.t ->
+    class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
+    targets:VariableMetadata.t list ->
+    ModelParseResult.ModelQuery.t list ->
+    ReadWriteCache.t
 end
 
 val generate_models_from_queries

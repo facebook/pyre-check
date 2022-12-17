@@ -15,19 +15,21 @@ module ModelQuery = ModelParseResult.ModelQuery
 
 type query_element = ModelParseResult.ModelAnnotation.t [@@deriving show, equal]
 
+let source ?subkind name =
+  let source =
+    match subkind with
+    | None -> Sources.NamedSource name
+    | Some subkind -> Sources.ParametricSource { source_name = name; subkind }
+  in
+  ModelParseResult.TaintAnnotation.from_source source
+
+
+let sink name =
+  let sink = Sinks.NamedSink name in
+  ModelParseResult.TaintAnnotation.from_sink sink
+
+
 let test_generated_annotations context =
-  let source ?subkind name =
-    let source =
-      match subkind with
-      | None -> Sources.NamedSource name
-      | Some subkind -> Sources.ParametricSource { source_name = name; subkind }
-    in
-    ModelParseResult.TaintAnnotation.from_source source
-  in
-  let sink name =
-    let sink = Sinks.NamedSink name in
-    ModelParseResult.TaintAnnotation.from_sink sink
-  in
   let assert_generated_annotations ~source ~query ~callable ~expected =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
@@ -3442,10 +3444,205 @@ let test_partition_cache_queries _ =
   ()
 
 
+let test_generated_cache context =
+  let assert_generated_cache ~source ~queries ~callables ~expected =
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+    in
+    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let class_hierarchy_graph =
+      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+        ~scheduler:(mock_scheduler ())
+        ~environment:type_environment
+        ~qualifiers:[Ast.Reference.create "test"]
+      |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
+    in
+    let actual =
+      ModelQueryExecution.CallableQueryExecutor.generate_cache_from_queries_on_targets
+        ~verbose:false
+        ~resolution:global_resolution
+        ~class_hierarchy_graph
+        ~targets:callables
+        queries
+    in
+    let expected =
+      List.fold
+        ~init:ModelQueryExecution.ReadWriteCache.empty
+        ~f:(fun cache (kind, name, target) ->
+          ModelQueryExecution.ReadWriteCache.write cache ~kind ~name ~target)
+        expected
+    in
+    assert_equal
+      ~cmp:ModelQueryExecution.ReadWriteCache.equal
+      ~printer:ModelQueryExecution.ReadWriteCache.show
+      expected
+      actual
+  in
+  assert_generated_cache
+    ~source:{|
+      def foo(): ...
+      def no_match(): ...
+      |}
+    ~queries:
+      [
+        {
+          location = Ast.Location.any;
+          name = "get_foo";
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          models =
+            [
+              WriteToCache
+                {
+                  ModelQuery.WriteToCache.kind = "thrift";
+                  name = [ModelQuery.WriteToCache.Substring.FunctionName];
+                };
+            ];
+          find = Function;
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ~callables:
+      [
+        Target.Function { name = "test.foo"; kind = Normal };
+        Target.Function { name = "test.no_match"; kind = Normal };
+      ]
+    ~expected:["thrift", "foo", Target.Function { name = "test.foo"; kind = Normal }];
+  assert_generated_cache
+    ~source:
+      {|
+      class C:
+        def foo(self): ...
+      class D:
+        def foo(self): ...
+      |}
+    ~queries:
+      [
+        {
+          location = Ast.Location.any;
+          name = "get_foo";
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          models =
+            [
+              WriteToCache
+                {
+                  ModelQuery.WriteToCache.kind = "thrift";
+                  name =
+                    [
+                      ModelQuery.WriteToCache.Substring.ClassName;
+                      ModelQuery.WriteToCache.Substring.Literal ":";
+                      ModelQuery.WriteToCache.Substring.MethodName;
+                    ];
+                };
+            ];
+          find = Method;
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ~callables:
+      [
+        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
+      ]
+    ~expected:
+      [
+        ( "thrift",
+          "C:foo",
+          Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal } );
+        ( "thrift",
+          "D:foo",
+          Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal } );
+      ];
+  (* We can have multiple targets for the same kind+name *)
+  assert_generated_cache
+    ~source:
+      {|
+      class C:
+        def foo(self): ...
+      class D:
+        def foo(self): ...
+      |}
+    ~queries:
+      [
+        {
+          location = Ast.Location.any;
+          name = "get_foo";
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          models =
+            [
+              WriteToCache
+                {
+                  ModelQuery.WriteToCache.kind = "thrift";
+                  name = [ModelQuery.WriteToCache.Substring.MethodName];
+                };
+            ];
+          find = Method;
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ~callables:
+      [
+        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
+      ]
+    ~expected:
+      [
+        "thrift", "foo", Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        "thrift", "foo", Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
+      ];
+  (* Multiple WriteToCache in the same query. *)
+  assert_generated_cache
+    ~source:
+      {|
+      class C:
+        def foo(self): ...
+      class D:
+        def foo(self): ...
+      |}
+    ~queries:
+      [
+        {
+          location = Ast.Location.any;
+          name = "get_foo";
+          where = [NameConstraint (Matches (Re2.create_exn "C.foo"))];
+          models =
+            [
+              WriteToCache
+                {
+                  ModelQuery.WriteToCache.kind = "a";
+                  name = [ModelQuery.WriteToCache.Substring.MethodName];
+                };
+              WriteToCache
+                {
+                  ModelQuery.WriteToCache.kind = "b";
+                  name = [ModelQuery.WriteToCache.Substring.MethodName];
+                };
+            ];
+          find = Method;
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ~callables:
+      [
+        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal };
+      ]
+    ~expected:
+      [
+        "a", "foo", Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+        "b", "foo", Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+      ];
+  ()
+
+
 let () =
   "modelQuery"
   >::: [
          "generated_annotations" >:: test_generated_annotations;
          "partition_cache_queries" >:: test_partition_cache_queries;
+         "generated_cache" >:: test_generated_cache;
        ]
   |> Test.run
