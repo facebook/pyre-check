@@ -657,7 +657,7 @@ module State (Context : Context) = struct
 
   and forward_assign
       ~resolution
-      ~state:({ unawaited; awaitables_for_alias; expect_expressions_to_be_awaited } as state)
+      ~state:({ unawaited; awaitables_for_alias; _ } as state)
       ~annotation
       ~expression
       ~awaitable_expressions_so_far
@@ -688,7 +688,7 @@ module State (Context : Context) = struct
                       ~data:locations)
               |> Option.value ~default:awaitables_for_alias
             in
-            { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+            { state with awaitables_for_alias }
         | _ ->
             (* The expression must be analyzed before we call `forward_assign` on it, as that's
                where unawaitables are introduced. *)
@@ -707,7 +707,7 @@ module State (Context : Context) = struct
               else
                 awaitables_for_alias
             in
-            { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited })
+            { state with unawaited; awaitables_for_alias })
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (
