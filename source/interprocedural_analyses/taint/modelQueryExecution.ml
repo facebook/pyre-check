@@ -610,7 +610,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       && List.for_all ~f:(matches_constraint ~resolution ~class_hierarchy_graph modelable) where
     in
     let () =
-      if verbose then
+      if verbose && result then
         Log.info
           "Target `%a` matches all constraints for the model query `%s`."
           Target.pp_pretty
