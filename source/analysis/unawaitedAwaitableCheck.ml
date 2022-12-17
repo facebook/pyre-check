@@ -690,7 +690,7 @@ module State (Context : Context) = struct
       | _ -> []
     in
     match Node.value target with
-    | Expression.Name target when is_simple_name target -> (
+    | Expression.Name (Identifier target_name) -> (
         match expression with
         | { Node.value = Expression.Name value; _ } when is_simple_name value ->
             (* Aliasing: If `target` is awaited, then the awaitables pointed to by `value` will have
@@ -700,14 +700,14 @@ module State (Context : Context) = struct
               >>| (fun locations ->
                     Map.set
                       awaitables_for_alias
-                      ~key:(NamedAlias (name_to_reference_exn target))
+                      ~key:(NamedAlias (Reference.create target_name))
                       ~data:locations)
               |> Option.value ~default:awaitables_for_alias
             in
             { state with awaitables_for_alias }
         | _ ->
             let value_awaitable = Node.location expression |> Awaitable.create in
-            let key = NamedAlias (name_to_reference_exn target) in
+            let key = NamedAlias (Reference.create target_name) in
             let awaitables_for_alias =
               if not (List.is_empty awaitable_expressions_in_value) then
                 (* If there are awaitables inside the value, then make `target` point to them.
@@ -727,7 +727,18 @@ module State (Context : Context) = struct
               else
                 awaitables_for_alias
             in
-            { state with awaitable_to_awaited_state; awaitables_for_alias })
+            { state with awaitables_for_alias })
+    | Name (Attribute _) ->
+        (* Unsoundly assume that any awaitable assigned to an attribute is being awaited somewhere.
+           Otherwise, we risk getting many false positives for attribute assignments. *)
+        let awaitable_to_awaited_state =
+          Node.location expression
+          |> Awaitable.create
+          |> Map.change awaitable_to_awaited_state ~f:(function
+                 | Some _ -> Some Awaited
+                 | None -> None)
+        in
+        { state with awaitable_to_awaited_state }
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (

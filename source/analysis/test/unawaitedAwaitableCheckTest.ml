@@ -576,7 +576,7 @@ let test_forward context =
         def await_the_awaitable(self):
           await self.a
     |}
-    ["Unawaited awaitable [1001]: Awaitable assigned to `test.C.a` is never awaited."];
+    [];
   assert_awaitable_errors
     {|
       class C:
@@ -1020,7 +1020,7 @@ let test_aliases context =
         def my_method(self) -> None:
           self.x = awaitable()
     |}
-    ["Unawaited awaitable [1001]: Awaitable assigned to `self.x` is never awaited."];
+    [];
   ()
 
 
@@ -1222,6 +1222,35 @@ let test_getattr context =
   ()
 
 
+let test_attribute_assignment context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
+  assert_awaitable_errors
+    {|
+      from typing import Awaitable
+
+      class MyQuery(Awaitable[str]): ...
+
+      class Foo:
+        def __init__(self) -> None:
+          self.x: MyQuery = MyQuery()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      from typing import Optional, Awaitable
+
+      class MyQuery(Awaitable[str]): ...
+
+      class Foo:
+        x: Optional[MyQuery]
+
+        def set_x(self) -> None:
+          self.x = MyQuery()
+    |}
+    [];
+  ()
+
+
 let () =
   "unawaited"
   >::: [
@@ -1237,5 +1266,6 @@ let () =
          "pass_to_callee" >:: test_pass_to_callee;
          "placeholder_stubs" >:: test_placeholder_stubs;
          "getattr" >:: test_getattr;
+         "attribute_assignment" >:: test_attribute_assignment;
        ]
   |> Test.run
