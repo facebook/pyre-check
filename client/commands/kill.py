@@ -20,7 +20,6 @@ from .. import (
     daemon_socket,
     find_directories,
     identifiers,
-    recently_used_configurations,
 )
 from . import commands, frontend_configuration, stop
 
@@ -126,7 +125,6 @@ def _delete_caches(configuration: frontend_configuration.Base) -> None:
     )
     try:
         shutil.rmtree(str(resource_cache_directory), ignore_errors=True)
-        recently_used_configurations.Cache(dot_pyre_directory).delete()
     except OSError:
         pass
     # TODO (T85602687): Try to remove buck builder cache as well once buck is
