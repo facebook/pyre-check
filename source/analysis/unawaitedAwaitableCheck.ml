@@ -143,7 +143,7 @@ module State (Context : Context) = struct
   type t = {
     (* For every location where we encounter an awaitable, we maintain whether that awaitable's
        state, i.e., has it been awaited or not? *)
-    unawaited: awaitable_state Awaitable.Map.t;
+    awaitable_to_awaited_state: awaitable_state Awaitable.Map.t;
     (* For an alias, what awaitable locations could it point to? *)
     awaitables_for_alias: Awaitable.Set.t AliasMap.t;
     (* HACK: This flag represents whether an expression should be expected to await.
@@ -171,11 +171,11 @@ module State (Context : Context) = struct
 
   let result_state { state; nested_awaitable_expressions = _ } = state
 
-  let show { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited } =
-    let unawaited =
-      Map.to_alist unawaited
-      |> List.map ~f:(fun (location, awaitable_state) ->
-             Format.asprintf "%a -> %a" Awaitable.pp location pp_awaitable_state awaitable_state)
+  let show { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited } =
+    let awaitable_to_awaited_state =
+      Map.to_alist awaitable_to_awaited_state
+      |> List.map ~f:(fun (awaitable, awaitable_state) ->
+             Format.asprintf "%a -> %a" Awaitable.pp awaitable pp_awaitable_state awaitable_state)
       |> String.concat ~sep:", "
     in
     let awaitables_for_alias =
@@ -193,7 +193,7 @@ module State (Context : Context) = struct
     in
     Format.sprintf
       "Unawaited expressions: %s\nAwaitables for aliases: %s\nNeed to await: %b"
-      unawaited
+      awaitable_to_awaited_state
       awaitables_for_alias
       expect_expressions_to_be_awaited
 
@@ -202,7 +202,7 @@ module State (Context : Context) = struct
 
   let bottom =
     {
-      unawaited = Awaitable.Map.empty;
+      awaitable_to_awaited_state = Awaitable.Map.empty;
       awaitables_for_alias = AliasMap.empty;
       expect_expressions_to_be_awaited = false;
     }
@@ -210,19 +210,19 @@ module State (Context : Context) = struct
 
   let initial =
     {
-      unawaited = Awaitable.Map.empty;
+      awaitable_to_awaited_state = Awaitable.Map.empty;
       awaitables_for_alias = AliasMap.empty;
       expect_expressions_to_be_awaited = true;
     }
 
 
-  let errors { unawaited; awaitables_for_alias; _ } =
+  let errors { awaitable_to_awaited_state; awaitables_for_alias; _ } =
     let errors =
       let keep_unawaited = function
         | Unawaited expression -> Some { Error.references = []; expression }
         | Awaited -> None
       in
-      Map.filter_map unawaited ~f:keep_unawaited
+      Map.filter_map awaitable_to_awaited_state ~f:keep_unawaited
     in
     let add_reference ~key ~data errors =
       let awaitables = data in
@@ -251,7 +251,7 @@ module State (Context : Context) = struct
 
   let less_or_equal ~left ~right =
     let less_or_equal_unawaited (reference, awaitable_state) =
-      match awaitable_state, Map.find right.unawaited reference with
+      match awaitable_state, Map.find right.awaitable_to_awaited_state reference with
       | Unawaited _, Some _ -> true
       | Awaited, Some Awaited -> true
       | _ -> false
@@ -261,7 +261,7 @@ module State (Context : Context) = struct
       | Some other_locations -> Set.is_subset locations ~of_:other_locations
       | None -> false
     in
-    Map.to_alist left.unawaited |> List.for_all ~f:less_or_equal_unawaited
+    Map.to_alist left.awaitable_to_awaited_state |> List.for_all ~f:less_or_equal_unawaited
     && Map.to_alist left.awaitables_for_alias |> List.for_all ~f:less_or_equal_awaitables_for_alias
 
 
@@ -277,7 +277,11 @@ module State (Context : Context) = struct
     in
     let merge_awaitables ~key:_ left right = Set.union left right in
     {
-      unawaited = Map.merge_skewed left.unawaited right.unawaited ~combine:merge_unawaited;
+      awaitable_to_awaited_state =
+        Map.merge_skewed
+          left.awaitable_to_awaited_state
+          right.awaitable_to_awaited_state
+          ~combine:merge_unawaited;
       awaitables_for_alias =
         Map.merge_skewed
           left.awaitables_for_alias
@@ -291,28 +295,31 @@ module State (Context : Context) = struct
   let widen ~previous ~next ~iteration:_ = join previous next
 
   let mark_name_as_awaited
-      { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+      { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited }
       ~name
     =
     if is_simple_name name then
-      let unawaited =
-        let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
+      let awaitable_to_awaited_state =
+        let await_location awaitable_to_awaited_state awaitable =
+          Map.set awaitable_to_awaited_state ~key:awaitable ~data:Awaited
+        in
         Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn name))
-        >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
-        |> Option.value ~default:unawaited
+        >>| (fun locations -> Set.fold locations ~init:awaitable_to_awaited_state ~f:await_location)
+        |> Option.value ~default:awaitable_to_awaited_state
       in
-      { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+      { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited }
     else (* Non-simple names cannot store awaitables. *)
-      { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+      { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited }
 
 
   let mark_location_as_awaited
-      { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+      { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited }
       ~location
     =
-    if Map.mem unawaited (Awaitable.create location) then
+    if Map.mem awaitable_to_awaited_state (Awaitable.create location) then
       {
-        unawaited = Map.set unawaited ~key:(Awaitable.create location) ~data:Awaited;
+        awaitable_to_awaited_state =
+          Map.set awaitable_to_awaited_state ~key:(Awaitable.create location) ~data:Awaited;
         awaitables_for_alias;
         expect_expressions_to_be_awaited;
       }
@@ -323,12 +330,16 @@ module State (Context : Context) = struct
           (ExpressionWithNestedAliases { expression_location = location })
       with
       | Some awaitables ->
-          let unawaited =
-            Set.fold awaitables ~init:unawaited ~f:(fun unawaited awaitable ->
-                Map.set unawaited ~key:awaitable ~data:Awaited)
+          let awaitable_to_awaited_state =
+            Set.fold
+              awaitables
+              ~init:awaitable_to_awaited_state
+              ~f:(fun awaitable_to_awaited_state awaitable ->
+                Map.set awaitable_to_awaited_state ~key:awaitable ~data:Awaited)
           in
-          { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
-      | None -> { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+          { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited }
+      | None ->
+          { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited }
 
 
   let ( |>> ) { state; nested_awaitable_expressions } existing_awaitables =
@@ -434,10 +445,12 @@ module State (Context : Context) = struct
           { state; nested_awaitable_expressions }
     in
     let annotation = Resolution.resolve_expression_to_type resolution expression in
-    let { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited } = state in
+    let { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited } =
+      state
+    in
     let find_aliases { Node.value; location } =
       let awaitable = Awaitable.create location in
-      if Map.mem unawaited awaitable then
+      if Map.mem awaitable_to_awaited_state awaitable then
         Some (Awaitable.Set.singleton awaitable)
       else
         match value with
@@ -463,7 +476,7 @@ module State (Context : Context) = struct
               {
                 state =
                   {
-                    unawaited;
+                    awaitable_to_awaited_state;
                     awaitables_for_alias =
                       Map.set
                         awaitables_for_alias
@@ -477,7 +490,8 @@ module State (Context : Context) = struct
               {
                 state =
                   {
-                    unawaited = Map.set unawaited ~key:awaitable ~data:(Unawaited expression);
+                    awaitable_to_awaited_state =
+                      Map.set awaitable_to_awaited_state ~key:awaitable ~data:(Unawaited expression);
                     awaitables_for_alias;
                     expect_expressions_to_be_awaited;
                   };
@@ -487,7 +501,8 @@ module State (Context : Context) = struct
           {
             state =
               {
-                unawaited = Map.set unawaited ~key:awaitable ~data:(Unawaited expression);
+                awaitable_to_awaited_state =
+                  Map.set awaitable_to_awaited_state ~key:awaitable ~data:(Unawaited expression);
                 awaitables_for_alias;
                 expect_expressions_to_be_awaited;
               };
@@ -507,7 +522,7 @@ module State (Context : Context) = struct
               {
                 state =
                   {
-                    unawaited;
+                    awaitable_to_awaited_state;
                     awaitables_for_alias =
                       Map.set
                         awaitables_for_alias
@@ -633,7 +648,7 @@ module State (Context : Context) = struct
           match Map.find state.awaitables_for_alias (NamedAlias (name_to_reference_exn name)) with
           | Some aliases ->
               let add_unawaited unawaited location =
-                match Map.find state.unawaited location with
+                match Map.find state.awaitable_to_awaited_state location with
                 | Some (Unawaited expression) -> expression :: unawaited
                 | _ -> unawaited
               in
@@ -657,7 +672,7 @@ module State (Context : Context) = struct
 
   and forward_assign
       ~resolution
-      ~state:({ unawaited; awaitables_for_alias; _ } as state)
+      ~state:({ awaitable_to_awaited_state; awaitables_for_alias; _ } as state)
       ~annotation
       ~expression
       ~awaitable_expressions_so_far
@@ -702,12 +717,12 @@ module State (Context : Context) = struct
                   |> Awaitable.Set.of_list
                 in
                 Map.set awaitables_for_alias ~key ~data:nested_awaitable_expressions
-              else if Map.mem unawaited awaitable then
+              else if Map.mem awaitable_to_awaited_state awaitable then
                 Map.set awaitables_for_alias ~key ~data:(Awaitable.Set.singleton awaitable)
               else
                 awaitables_for_alias
             in
-            { state with unawaited; awaitables_for_alias })
+            { state with awaitable_to_awaited_state; awaitables_for_alias })
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (
