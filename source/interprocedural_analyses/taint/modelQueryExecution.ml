@@ -566,6 +566,38 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       |> Option.value ~default:false
 
 
+module PartitionCacheQueries = struct
+  type t = {
+    write_to_cache: ModelQuery.t list;
+    read_from_cache: ModelQuery.t list;
+    others: ModelQuery.t list;
+  }
+  [@@deriving show, equal]
+
+  let empty = { write_to_cache = []; read_from_cache = []; others = [] }
+
+  let add_read_from_cache query partition =
+    { partition with read_from_cache = query :: partition.read_from_cache }
+
+
+  let add_write_to_cache query partition =
+    { partition with write_to_cache = query :: partition.write_to_cache }
+
+
+  let add_others query partition = { partition with others = query :: partition.others }
+
+  let partition queries =
+    let add partition ({ ModelQuery.where; models; _ } as query) =
+      if ModelQuery.Constraint.contains_read_from_cache (AllOf where) then
+        add_read_from_cache query partition
+      else if List.exists ~f:ModelQuery.Model.is_write_to_cache models then
+        add_write_to_cache query partition
+      else
+        add_others query partition
+    in
+    List.fold ~init:empty ~f:add queries
+end
+
 (* Module interface that we need to provide for each type of query (callable, attribute and global). *)
 module type QUERY_KIND = sig
   (* The target we want to model, with possibly additional information. *)

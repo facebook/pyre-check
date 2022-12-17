@@ -46,6 +46,17 @@ module DumpModelQueryResults : sig
     string
 end
 
+module PartitionCacheQueries : sig
+  type t = {
+    write_to_cache: ModelParseResult.ModelQuery.t list;
+    read_from_cache: ModelParseResult.ModelQuery.t list;
+    others: ModelParseResult.ModelQuery.t list;
+  }
+  [@@deriving show, equal]
+
+  val partition : ModelParseResult.ModelQuery.t list -> t
+end
+
 module CallableQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->

@@ -41,7 +41,7 @@ let test_generated_annotations context =
       |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
     in
     let actual =
-      Taint.ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
+      ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
@@ -78,7 +78,7 @@ let test_generated_annotations context =
       | _ -> None
     in
     let actual =
-      Taint.ModelQueryExecution.AttributeQueryExecutor.generate_annotations_from_query_on_target
+      ModelQueryExecution.AttributeQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
@@ -104,8 +104,7 @@ let test_generated_annotations context =
       |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
     in
     let actual =
-      Taint.ModelQueryExecution.GlobalVariableQueryExecutor
-      .generate_annotations_from_query_on_target
+      ModelQueryExecution.GlobalVariableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
@@ -3361,4 +3360,92 @@ let test_generated_annotations context =
   ()
 
 
-let () = "modelQuery" >::: ["generated_annotations" >:: test_generated_annotations] |> Test.run
+let test_partition_cache_queries _ =
+  let assert_partition ~queries ~expected () =
+    let partition = ModelQueryExecution.PartitionCacheQueries.partition queries in
+    assert_equal
+      ~cmp:ModelQueryExecution.PartitionCacheQueries.equal
+      ~printer:ModelQueryExecution.PartitionCacheQueries.show
+      expected
+      partition
+  in
+  let empty_query =
+    {
+      ModelQuery.location = { start = { line = 0; column = 0 }; stop = { line = 0; column = 0 } };
+      name = "empty";
+      where = [];
+      find = Method;
+      models = [];
+      expected_models = [];
+      unexpected_models = [];
+    }
+  in
+  let read_from_cache =
+    {
+      empty_query with
+      name = "read_from_cache";
+      where = [ReadFromCache { kind = "thrift"; name = "cache:name" }];
+      models =
+        [
+          Return
+            [
+              TaintAnnotation
+                (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+            ];
+        ];
+    }
+  in
+  let write_to_cache =
+    {
+      empty_query with
+      name = "write_to_cache";
+      where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+      models =
+        [
+          WriteToCache
+            {
+              ModelQuery.WriteToCache.kind = "thrift";
+              name =
+                [
+                  ModelQuery.WriteToCache.Substring.ClassName;
+                  ModelQuery.WriteToCache.Substring.Literal ":";
+                  ModelQuery.WriteToCache.Substring.MethodName;
+                ];
+            };
+        ];
+    }
+  in
+  let regular =
+    {
+      empty_query with
+      name = "regular";
+      where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+      models =
+        [
+          Return
+            [
+              TaintAnnotation
+                (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+            ];
+        ];
+    }
+  in
+  assert_partition
+    ~queries:[regular; read_from_cache; write_to_cache]
+    ~expected:
+      {
+        ModelQueryExecution.PartitionCacheQueries.write_to_cache = [write_to_cache];
+        read_from_cache = [read_from_cache];
+        others = [regular];
+      }
+    ();
+  ()
+
+
+let () =
+  "modelQuery"
+  >::: [
+         "generated_annotations" >:: test_generated_annotations;
+         "partition_cache_queries" >:: test_partition_cache_queries;
+       ]
+  |> Test.run
