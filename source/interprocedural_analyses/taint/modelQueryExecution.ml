@@ -566,6 +566,26 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       |> Option.value ~default:false
 
 
+module PartitionTargetQueries = struct
+  type t = {
+    callable_queries: ModelQuery.t list;
+    attribute_queries: ModelQuery.t list;
+    global_queries: ModelQuery.t list;
+  }
+
+  let partition queries =
+    let attribute_queries, global_queries, callable_queries =
+      List.partition3_map
+        ~f:(fun query ->
+          match query.ModelQuery.find with
+          | ModelQuery.Find.Attribute -> `Fst query
+          | ModelQuery.Find.Global -> `Snd query
+          | _ -> `Trd query)
+        queries
+    in
+    { callable_queries; attribute_queries; global_queries }
+end
+
 module PartitionCacheQueries = struct
   type t = {
     write_to_cache: ModelQuery.t list;
@@ -1180,14 +1200,8 @@ let generate_models_from_queries
     ~stubs
     queries
   =
-  let attribute_queries, global_queries, callable_queries =
-    List.partition3_map
-      ~f:(fun query ->
-        match query.ModelQuery.find with
-        | ModelQuery.Find.Attribute -> `Fst query
-        | ModelQuery.Find.Global -> `Snd query
-        | _ -> `Trd query)
-      queries
+  let { PartitionTargetQueries.callable_queries; attribute_queries; global_queries } =
+    PartitionTargetQueries.partition queries
   in
 
   (* Generate models for functions and methods. *)
