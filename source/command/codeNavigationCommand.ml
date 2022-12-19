@@ -136,13 +136,40 @@ module CodeNavigationConfiguration = struct
       }
 end
 
+(* The Event module allows the code navigation server to communicate events the client relies on
+ * to avoid the client having to poll or guess the server's state during initialization. These
+ * events are written to ~output_channel, which is only stdout in practice at the moment. *)
+module Event = struct
+  type t = SocketCreated of PyrePath.t [@@deriving sexp, compare, hash, to_yojson]
+
+  let serialize event = to_yojson event |> Yojson.Safe.to_string
+
+  let write ~output_channel event =
+    let open Lwt.Infix in
+    serialize event |> Lwt_io.fprintl output_channel >>= fun () -> Lwt_io.flush output_channel
+end
+
+let write_event event =
+  Lwt.catch
+    (fun () -> Event.write ~output_channel:Lwt_io.stdout event)
+    (function
+      | Lwt_io.Channel_closed _
+      | Caml_unix.Unix_error (Caml_unix.EPIPE, _, _) ->
+          Lwt.return_unit
+      | exn -> Lwt.fail exn)
+
+
 let start_server_and_wait code_navigation_configuration =
   let open Lwt.Infix in
   CodeNavigationConfiguration.start_options_of code_navigation_configuration
   >>= fun start_options ->
   Lwt.catch
     (fun () ->
-      CodeNavigationServer.Start.start_server start_options ~on_started:(fun _ _ ->
+      CodeNavigationServer.Start.start_server
+        start_options
+        ~on_started:(fun { Server.ServerProperties.socket_path; _ } _ ->
+          write_event (Event.SocketCreated socket_path)
+          >>= fun () ->
           let wait_forever, _ = Lwt.wait () in
           wait_forever))
     (function

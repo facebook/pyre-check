@@ -134,29 +134,6 @@ let initialize_server_state environment_controls =
   { State.environment; open_files }
 
 
-(* The Event module allows the code navigation server to communicate events the client relies on
- * to avoid the client having to poll or guess the server's state during initialization. These
- * events are written to ~output_channel, which is only stdout in practice at the moment. *)
-module Event = struct
-  type t = SocketCreated of PyrePath.t [@@deriving sexp, compare, hash, to_yojson]
-
-  let serialize event = to_yojson event |> Yojson.Safe.to_string
-
-  let write ~output_channel event =
-    let open Lwt.Infix in
-    serialize event |> Lwt_io.fprintl output_channel >>= fun () -> Lwt_io.flush output_channel
-end
-
-let write_event event =
-  Lwt.catch
-    (fun () -> Event.write ~output_channel:Lwt_io.stdout event)
-    (function
-      | Lwt_io.Channel_closed _
-      | Caml_unix.Unix_error (Caml_unix.EPIPE, _, _) ->
-          Lwt.return_unit
-      | exn -> Lwt.fail exn)
-
-
 let broadcast_server_stop_and_fail ~subscriptions ~message exn =
   let%lwt () =
     Subscriptions.broadcast
@@ -184,7 +161,6 @@ let start_server
   let server = { RequestHandler.ServerInternal.properties; state; subscriptions } in
   let after_server_starts () =
     Log.info "Code navigation server has started listening on socket `%a`" PyrePath.pp socket_path;
-    let%lwt () = write_event (Event.SocketCreated socket_path) in
     let waiters =
       let server_waiter () = on_started properties state in
       let watchman_waiter subscriber =
