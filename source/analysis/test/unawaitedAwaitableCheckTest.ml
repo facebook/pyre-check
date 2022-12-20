@@ -319,32 +319,6 @@ let test_forward context =
     |}
     [];
 
-  (* Ternaries. *)
-  assert_awaitable_errors
-    {|
-      async def awaitable() -> int: ...
-
-      awaited = awaitable()
-      1 if (await awaited) else 2
-    |}
-    [];
-  assert_awaitable_errors
-    {|
-      async def awaitable() -> int: ...
-
-      awaited = awaitable()
-      (await awaited) if 1 else 2
-    |}
-    [];
-  assert_awaitable_errors
-    {|
-      async def awaitable() -> int: ...
-
-      awaited = awaitable()
-      1 if 2 else (await awaited)
-    |}
-    [];
-
   (* Unary operators. *)
   assert_awaitable_errors
     {|
@@ -1251,6 +1225,47 @@ let test_attribute_assignment context =
   ()
 
 
+let test_ternary_expression context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> bool: ...
+
+      def main() -> None:
+        unawaited = awaitable()
+        awaited = awaitable()
+
+        1 if unawaited else 2
+        1 if await awaited else 2
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+
+      def main(some_bool: bool) -> None:
+        unawaited = awaitable()
+        awaited = awaitable()
+
+        unawaited if some_bool else 2
+        await awaited if some_bool else 2
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+
+      def main(some_bool: bool) -> None:
+        unawaited = awaitable()
+        awaited = awaitable()
+
+        1 if some_bool else unawaited
+        1 if some_bool else (await awaited)
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
+  ()
+
+
 let () =
   "unawaited"
   >::: [
@@ -1267,5 +1282,6 @@ let () =
          "placeholder_stubs" >:: test_placeholder_stubs;
          "getattr" >:: test_getattr;
          "attribute_assignment" >:: test_attribute_assignment;
+         "ternary" >:: test_ternary_expression;
        ]
   |> Test.run
