@@ -77,28 +77,6 @@ let can_lead_to_runtime_warning_if_unawaited ~global_resolution = function
   | _ -> false
 
 
-let is_awaitable ~global_resolution annotation =
-  let has_getattr_method () =
-    GlobalResolution.attribute_from_annotation
-      ~name:"__getattr__"
-      ~parent:annotation
-      global_resolution
-    |> Option.is_some
-  in
-  match annotation with
-  | Type.Any
-  | Bottom ->
-      false
-  | _ ->
-      GlobalResolution.less_or_equal
-        global_resolution
-        ~left:annotation
-        ~right:(Type.awaitable Type.Top)
-      && (* If a class has a `__getattr__` method, then it will satisfy the `Awaitable` protocol
-            (since it implicitly has the `__await__` method). Treat such types as non-awaitables. *)
-      not (has_getattr_method ())
-
-
 module Awaitable : sig
   type t [@@deriving show, sexp, compare]
 
@@ -931,24 +909,8 @@ let unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define 
   |> Option.value ~default:[]
 
 
-(** Avoid emitting "unawaited awaitable" errors for classes that inherit from `Awaitable`. They may,
-    for example, store attributes that are unawaited. *)
-let should_run_analysis
-    ~global_resolution
-    { Node.value = { Define.signature = { parent; _ }; _ }; _ }
-  =
-  parent
-  >>| (fun parent -> Type.Primitive (Reference.show parent))
-  >>| is_awaitable ~global_resolution
-  >>| not
-  |> Option.value ~default:true
-
-
 let check_define ~resolution ~local_annotations ~qualifier define =
-  if should_run_analysis ~global_resolution:(Resolution.global_resolution resolution) define then
-    unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define
-  else
-    []
+  unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define
 
 
 let check_module_TESTING_ONLY
