@@ -1193,6 +1193,17 @@ let test_getattr context =
           x = Foo()
     |}
     [];
+  assert_awaitable_errors
+    {|
+      from typing import Any
+
+      class Foo:
+        def __getattr__(self, name: str) -> Any: ...
+
+        def some_method(self) -> None:
+          x = type(self)
+    |}
+    [];
   ()
 
 

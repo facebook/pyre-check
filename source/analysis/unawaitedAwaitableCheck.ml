@@ -60,7 +60,6 @@ module Error = AnalysisError
 let is_awaitable ~global_resolution annotation =
   let has_getattr_method () =
     GlobalResolution.attribute_from_annotation
-      ~special_method:true
       ~name:"__getattr__"
       ~parent:annotation
       global_resolution
