@@ -66,16 +66,18 @@ let is_awaitable ~global_resolution annotation =
       global_resolution
     |> Option.is_some
   in
-  if Type.equal annotation Type.Any then
-    false
-  else
-    GlobalResolution.less_or_equal
-      global_resolution
-      ~left:annotation
-      ~right:(Type.awaitable Type.Top)
-    && (* If a class has a `__getattr__` method, then it will satisfy the `Awaitable` protocol
-          (since it implicitly has the `__await__` method). Treat such types as non-awaitables. *)
-    not (has_getattr_method ())
+  match annotation with
+  | Type.Any
+  | Bottom ->
+      false
+  | _ ->
+      GlobalResolution.less_or_equal
+        global_resolution
+        ~left:annotation
+        ~right:(Type.awaitable Type.Top)
+      && (* If a class has a `__getattr__` method, then it will satisfy the `Awaitable` protocol
+            (since it implicitly has the `__await__` method). Treat such types as non-awaitables. *)
+      not (has_getattr_method ())
 
 
 module Awaitable : sig

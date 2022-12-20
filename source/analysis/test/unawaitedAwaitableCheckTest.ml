@@ -1297,6 +1297,44 @@ let test_ternary_expression context =
   ()
 
 
+let test_bottom_type context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
+  assert_awaitable_errors
+    {|
+      from typing import Callable, TypeVar
+
+      T = TypeVar("T")
+
+      def meet_of_parameter_types(x: Callable[[T], None], y: Callable[[T], None]) -> T: ...
+
+      def f1(x: int) -> None: ...
+      def f2(x: str) -> None: ...
+
+      def main() -> None:
+          bottom_type = meet_of_parameter_types(f1, f2)
+    |}
+    [];
+  (* TODO(T140446657): Addition of union of literals should not return bottom. *)
+  assert_awaitable_errors
+    {|
+      from typing import Union
+      from typing_extensions import Literal
+
+      def main(some_bool: bool, y: Union[Literal[42], Literal[99]]) -> None:
+        z = y + y
+    |}
+    [];
+  (* TODO(T140446657): Addition of union of literals should not return bottom. *)
+  assert_awaitable_errors
+    {|
+      def main(some_bool: bool) -> None:
+        y = 42 if some_bool else 0
+        y + y
+    |}
+    [];
+  ()
+
+
 let () =
   "unawaited"
   >::: [
@@ -1314,5 +1352,6 @@ let () =
          "getattr" >:: test_getattr;
          "attribute_assignment" >:: test_attribute_assignment;
          "ternary" >:: test_ternary_expression;
+         "bottom_type" >:: test_bottom_type;
        ]
   |> Test.run
