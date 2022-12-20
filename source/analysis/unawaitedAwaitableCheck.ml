@@ -57,6 +57,26 @@ module Error = AnalysisError
     mark the original awaitable as awaited. So, whenever we detect that a variable is being assigned
     some other variable, we copy over all the awaitables that are pointed to by the other variable. *)
 
+(* Return true if the expression is of an awaitable type that will lead to a `RuntimeWarning` that
+   `coroutine ... was never awaited`.
+
+   Note that this is more restrictive than the general question of "does this type satisfy the
+   Awaitable protocol?", which just needs to check for the `__await__` method. However, this matches
+   our goal of catching potential RuntimeWarnings about unawaited coroutines. Otherwise, we would
+   emit an error for entire class hierarchies where the base class happens to have a `__await__`
+   method, since that means every class in the hierarchy will satisfy the `Awaitable` protocol. That
+   has caused a lot of noise in the past for basic functions such as:
+
+   def set_foo(builder: BuilderClass, foo: Foo) -> BuilderClass: ...
+
+   which is seen as a function returning an awaitable, since `BuilderClass` satisfies `Awaitable`.
+   Given that there is no RuntimeWarning for classes with hand-rolled `__await__`, we can leave them
+   out of our analysis. *)
+let can_lead_to_runtime_warning_if_unawaited ~global_resolution = function
+  | Type.Parametric { name = "typing.Coroutine" | "typing.Awaitable"; _ } -> true
+  | _ -> false
+
+
 let is_awaitable ~global_resolution annotation =
   let has_getattr_method () =
     GlobalResolution.attribute_from_annotation
@@ -469,7 +489,9 @@ module State (Context : Context) = struct
     let annotation = Resolution.resolve_expression_to_type resolution expression in
     if
       expect_expressions_to_be_awaited
-      && is_awaitable ~global_resolution:(Resolution.global_resolution resolution) annotation
+      && can_lead_to_runtime_warning_if_unawaited
+           ~global_resolution:(Resolution.global_resolution resolution)
+           annotation
     then
       (* If the callee is a method on an awaitable, make the assumption that the returned value is
          the same awaitable. *)

@@ -887,7 +887,7 @@ let test_attribute_access context =
         unawaited = awaitable()
         unawaited.method()
     |}
-    ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
+    ["Unawaited awaitable [1001]: `unawaited.method()` is never awaited."];
   assert_awaitable_errors
     ~context
     {|
@@ -1346,6 +1346,44 @@ let test_bottom_type context =
   ()
 
 
+let test_class_satisfying_awaitable context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
+  assert_awaitable_errors
+    {|
+      from typing import Awaitable
+
+      class C(Awaitable[int]): ...
+
+      async def main() -> None:
+        unawaited = C()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      from typing import Any, Generator
+
+      class C:
+        def __await__(self) -> Generator[Any, None, str]: ...
+
+      async def main() -> None:
+        unawaited = C()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      from typing import Awaitable
+
+      class C(Awaitable[int]): ...
+
+      def return_C() -> C: ...
+
+      async def main() -> None:
+        unawaited = return_C()
+    |}
+    [];
+  ()
+
+
 let () =
   "unawaited"
   >::: [
@@ -1364,5 +1402,6 @@ let () =
          "attribute_assignment" >:: test_attribute_assignment;
          "ternary" >:: test_ternary_expression;
          "bottom_type" >:: test_bottom_type;
+         "class_satisfying_awaitable" >:: test_class_satisfying_awaitable;
        ]
   |> Test.run
