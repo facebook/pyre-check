@@ -312,14 +312,13 @@ module State (Context : Context) = struct
       { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited }
 
 
-  let mark_location_as_awaited
+  let mark_awaitable_as_awaited
       { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited }
-      ~location
+      ~awaitable
     =
-    if Map.mem awaitable_to_awaited_state (Awaitable.create location) then
+    if Map.mem awaitable_to_awaited_state awaitable then
       {
-        awaitable_to_awaited_state =
-          Map.set awaitable_to_awaited_state ~key:(Awaitable.create location) ~data:Awaited;
+        awaitable_to_awaited_state = Map.set awaitable_to_awaited_state ~key:awaitable ~data:Awaited;
         awaitables_for_alias;
         expect_expressions_to_be_awaited;
       }
@@ -327,7 +326,7 @@ module State (Context : Context) = struct
       match
         Map.find
           awaitables_for_alias
-          (ExpressionWithNestedAliases { expression_location = location })
+          (ExpressionWithNestedAliases { expression_location = Awaitable.to_location awaitable })
       with
       | Some awaitables ->
           let awaitable_to_awaited_state =
@@ -553,7 +552,10 @@ module State (Context : Context) = struct
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression
         in
-        { state = mark_location_as_awaited state ~location; nested_awaitable_expressions }
+        {
+          state = mark_awaitable_as_awaited state ~awaitable:(Awaitable.create location);
+          nested_awaitable_expressions;
+        }
     | BooleanOperator { BooleanOperator.left; right; _ } ->
         let { state; nested_awaitable_expressions = left_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:left
