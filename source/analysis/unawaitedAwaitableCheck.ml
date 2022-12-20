@@ -375,46 +375,21 @@ module State (Context : Context) = struct
 
 
   and forward_call ~resolution ~state ~location ({ Call.callee; arguments } as call) =
-    let expression = { Node.value = Expression.Call call; location } in
-    let { state; nested_awaitable_expressions } =
-      forward_expression ~resolution ~state ~expression:callee
-    in
-    let is_special_function =
+    let is_special_function callee =
       match Node.value callee with
-      | Name (Name.Attribute { special = true; _ }) -> true
+      | Expression.Name (Name.Attribute { special = true; _ }) -> true
       | _ -> false
     in
-    let forward_argument { state; nested_awaitable_expressions } { Call.Argument.value; _ } =
-      (* For special methods such as `+`, ensure that we still require you to await the expressions. *)
-      if is_special_function then
-        forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
-      else
-        let state = await_all_subexpressions ~state ~expression:value in
-        { state; nested_awaitable_expressions }
-    in
-    let find_aliases
-        ~state:{ awaitable_to_awaited_state; awaitables_for_alias; _ }
-        { Node.value; location }
-      =
-      let awaitable = Awaitable.create location in
-      if Map.mem awaitable_to_awaited_state awaitable then
-        Some (Awaitable.Set.singleton awaitable)
-      else
-        match value with
-        | Expression.Name name when is_simple_name name ->
-            Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn name))
-        | _ ->
-            Map.find
-              awaitables_for_alias
-              (ExpressionWithNestedAliases { expression_location = location })
-    in
-    let {
-      state =
-        { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited } as
-        state;
-      nested_awaitable_expressions;
-    }
-      =
+    let forward_arguments { state; nested_awaitable_expressions } =
+      let forward_argument { state; nested_awaitable_expressions } { Call.Argument.value; _ } =
+        (* For special methods such as `+`, ensure that we still require you to await the
+           expressions. *)
+        if is_special_function callee then
+          forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
+        else
+          let state = await_all_subexpressions ~state ~expression:value in
+          { state; nested_awaitable_expressions }
+      in
       match Node.value callee, arguments with
       (* a["b"] = c gets converted to a.__setitem__("b", c). *)
       | ( Name (Name.Attribute { attribute = "__setitem__"; base; _ }),
@@ -441,7 +416,6 @@ module State (Context : Context) = struct
                       ~data:(Set.union nested_awaitable_expressions new_awaitables)
                 | None -> Map.set awaitables_for_alias ~key:(NamedAlias name) ~data:new_awaitables
               in
-
               {
                 state = { state with awaitables_for_alias };
                 nested_awaitable_expressions =
@@ -457,13 +431,40 @@ module State (Context : Context) = struct
               arguments
               ~init:
                 {
-                  state = { state with expect_expressions_to_be_awaited = is_special_function };
+                  state =
+                    { state with expect_expressions_to_be_awaited = is_special_function callee };
                   nested_awaitable_expressions;
                 }
               ~f:forward_argument
           in
           let state = { state with expect_expressions_to_be_awaited } in
           { state; nested_awaitable_expressions }
+    in
+    let find_aliases
+        ~state:{ awaitable_to_awaited_state; awaitables_for_alias; _ }
+        { Node.value; location }
+      =
+      let awaitable = Awaitable.create location in
+      if Map.mem awaitable_to_awaited_state awaitable then
+        Some (Awaitable.Set.singleton awaitable)
+      else
+        match value with
+        | Expression.Name name when is_simple_name name ->
+            Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn name))
+        | _ ->
+            Map.find
+              awaitables_for_alias
+              (ExpressionWithNestedAliases { expression_location = location })
+    in
+    let expression = { Node.value = Expression.Call call; location } in
+    let {
+      state =
+        { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited } as
+        state;
+      nested_awaitable_expressions;
+    }
+      =
+      forward_expression ~resolution ~state ~expression:callee |> forward_arguments
     in
     let annotation = Resolution.resolve_expression_to_type resolution expression in
     if
