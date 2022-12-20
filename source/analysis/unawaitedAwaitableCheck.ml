@@ -552,6 +552,10 @@ module State (Context : Context) = struct
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression
         in
+        let state =
+          List.fold nested_awaitable_expressions ~init:state ~f:(fun state { Node.location; _ } ->
+              mark_awaitable_as_awaited ~awaitable:(Awaitable.create location) state)
+        in
         {
           state = mark_awaitable_as_awaited state ~awaitable:(Awaitable.create location);
           nested_awaitable_expressions;

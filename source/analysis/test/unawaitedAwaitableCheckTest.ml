@@ -1263,6 +1263,37 @@ let test_ternary_expression context =
         1 if some_bool else (await awaited)
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+
+      def main(some_bool: bool) -> None:
+        unawaited1 = awaitable()
+        unawaited2 = awaitable()
+        awaited1 = awaitable()
+        awaited2 = awaitable()
+
+        unawaited1 if some_bool else unawaited2
+        await (awaited1 if some_bool else awaited2)
+    |}
+    [
+      "Unawaited awaitable [1001]: Awaitable assigned to `unawaited1` is never awaited.";
+      "Unawaited awaitable [1001]: Awaitable assigned to `unawaited2` is never awaited.";
+    ];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> bool: ...
+
+      def main(some_bool: bool) -> None:
+        unawaited1 = awaitable()
+        awaited1 = awaitable()
+        awaited2 = awaitable()
+
+        await (awaited1 if unawaited1 else awaited2)
+    |}
+    (* TODO(T79853064): Ideally, this should warn about `unawaited1` not being awaited. But because
+       we mark all nested awaitables as being awaited, we miss the conditional not being awaited. *)
+    [];
   ()
 
 
