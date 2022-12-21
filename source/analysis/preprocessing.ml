@@ -4572,6 +4572,7 @@ let preprocess_phase1 source =
   |> expand_pytorch_register_buffer
   |> add_dataclass_keyword_only_specifiers
   |> SelfType.expand_self_type
+  |> expand_enum_functional_syntax
   |> populate_nesting_defines
   |> populate_captures
 

@@ -184,10 +184,34 @@ let test_check_enumeration_attributes context =
   ()
 
 
+let test_functional_syntax context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from enum import Enum
+
+      Color = Enum("Color", ("RED", "GREEN", "BLUE"))
+
+      def main(x: Color) -> None:
+        y: Color = Color.RED
+        reveal_type(x)
+        reveal_type(y)
+        reveal_type(x.value)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Color`.";
+      "Revealed type [-1]: Revealed type for `y` is `Color` (inferred: \
+       `typing_extensions.Literal[Color.RED]`).";
+      "Revealed type [-1]: Revealed type for `x.value` is `unknown`.";
+    ];
+  ()
+
+
 let () =
   "enumeration"
   >::: [
          "enumeration_attributes" >:: test_check_enumeration_attributes;
          "enumeration_methods" >:: test_enumeration_methods;
+         "functional_syntax" >:: test_functional_syntax;
        ]
   |> Test.run
