@@ -15,7 +15,7 @@ from .. import code_navigation_request, protocol as lsp
 class CodeNavigationRequestsTest(testslide.TestCase):
     def test_serialize_request(self) -> None:
         hover_request = code_navigation_request.HoverRequest(
-            path=Path("/a/b.py"),
+            module=code_navigation_request.ModuleOfPath(Path("/a/b.py")),
             overlay_id=None,
             position=lsp.PyrePosition(line=1, character=2),
         )
@@ -32,7 +32,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         )
 
         hover_request = code_navigation_request.HoverRequest(
-            path=Path("/a/b.py"),
+            module=code_navigation_request.ModuleOfPath(Path("/a/b.py")),
             overlay_id="overlay_key",
             position=lsp.PyrePosition(line=1, character=2),
         )
@@ -48,7 +48,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             ],
         )
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
-            path=Path("/a/b.py"),
+            module=code_navigation_request.ModuleOfPath(Path("/a/b.py")),
             overlay_id="overlay_key",
             position=lsp.PyrePosition(line=1, character=2),
         )
@@ -165,7 +165,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
 
     def test_local_update_json(self) -> None:
         local_update = code_navigation_request.LocalUpdate(
-            path=Path("/a/b.py"),
+            module=code_navigation_request.ModuleOfPath(Path("/a/b.py")),
             content="def foo() -> int: pass\n",
             overlay_id="/a/b.py 1234",
         )

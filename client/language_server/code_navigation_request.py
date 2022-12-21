@@ -25,9 +25,47 @@ from . import daemon_connection, protocol as lsp
 from .protocol import PyreHoverResponse
 
 
+class Module(abc.ABC):
+    @staticmethod
+    def module_to_json(module: Module) -> List[object]:
+        if isinstance(module, ModuleOfName):
+            return ["OfName", module.name]
+        assert isinstance(module, ModuleOfPath)
+        return ["OfPath", f"{module.path}"]
+
+    @staticmethod
+    def module_from_json(module_json: List[object]) -> Module:
+        if not isinstance(module_json, list):
+            raise AssertionError("JSON is not a list")
+        if (
+            len(module_json) != 2
+            or module_json[0] not in ("OfName", "OfPath")
+            or not isinstance(module_json[1], str)
+        ):
+            raise AssertionError(
+                'JSON must be a list of form ["OfName"/"OfPath", module]'
+            )
+        if module_json[0] == "OfName":
+            return ModuleOfName(name=str(module_json[1]))
+        return ModuleOfPath(path=Path(str(module_json[1])))
+
+    def to_json(self) -> List[object]:
+        return Module.module_to_json(self)
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleOfName(Module):
+    name: str
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleOfPath(Module):
+    path: Path
+
+
 @dataclasses.dataclass(frozen=True)
 class HoverRequest:
-    path: Path
+    module: Module
     overlay_id: Optional[str]
     position: lsp.PyrePosition
 
@@ -35,7 +73,7 @@ class HoverRequest:
         return [
             "Hover",
             {
-                "module": ["OfPath", f"{self.path}"],
+                "module": self.module.to_json(),
                 "overlay_id": self.overlay_id,
                 "position": {
                     "line": self.position.line,
@@ -47,7 +85,7 @@ class HoverRequest:
 
 @dataclasses.dataclass(frozen=True)
 class LocationOfDefinitionRequest:
-    path: Path
+    module: Module
     overlay_id: Optional[str]
     position: lsp.PyrePosition
 
@@ -55,7 +93,7 @@ class LocationOfDefinitionRequest:
         return [
             "LocationOfDefinition",
             {
-                "module": ["OfPath", f"{self.path}"],
+                "module": self.module.to_json(),
                 "overlay_id": self.overlay_id,
                 "position": {
                     "line": self.position.line,
@@ -114,7 +152,7 @@ class LocationOfDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class LocalUpdate:
-    path: Path
+    module: Module
     content: str
     overlay_id: str
 
@@ -122,7 +160,7 @@ class LocalUpdate:
         return [
             "LocalUpdate",
             {
-                "module": ["OfPath", f"{self.path}"],
+                "module": self.module.to_json(),
                 "content": self.content,
                 "overlay_id": self.overlay_id,
             },
@@ -159,44 +197,6 @@ class FileClosed:
                 "overlay_id": self.overlay_id,
             },
         ]
-
-
-class Module(abc.ABC):
-    @staticmethod
-    def module_to_json(module: Module) -> List[object]:
-        if isinstance(module, ModuleOfName):
-            return ["OfName", module.name]
-        assert isinstance(module, ModuleOfPath)
-        return ["OfPath", f"{module.path}"]
-
-    @staticmethod
-    def module_from_json(module_json: List[object]) -> Module:
-        if not isinstance(module_json, list):
-            raise AssertionError("JSON is not a list")
-        if (
-            len(module_json) != 2
-            or module_json[0] not in ("OfName", "OfPath")
-            or not isinstance(module_json[1], str)
-        ):
-            raise AssertionError(
-                'JSON must be a list of form ["OfName"/"OfPath", module]'
-            )
-        if module_json[0] == "OfName":
-            return ModuleOfName(name=str(module_json[1]))
-        return ModuleOfPath(path=Path(str(module_json[1])))
-
-    def to_json(self) -> List[object]:
-        return Module.module_to_json(self)
-
-
-@dataclasses.dataclass(frozen=True)
-class ModuleOfName(Module):
-    name: str
-
-
-@dataclasses.dataclass(frozen=True)
-class ModuleOfPath(Module):
-    path: Path
 
 
 @dataclasses.dataclass(frozen=True)

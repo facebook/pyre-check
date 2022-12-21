@@ -402,7 +402,7 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
         hover_request = code_navigation_request.HoverRequest(
-            path=path,
+            module=code_navigation_request.ModuleOfPath(path),
             overlay_id=self._get_overlay_id(path),
             position=position,
         )
@@ -427,7 +427,7 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
-            path=path,
+            module=code_navigation_request.ModuleOfPath(path),
             overlay_id=self._get_overlay_id(path),
             position=position,
         )
@@ -460,7 +460,9 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
                 "Unsaved changes should always be enabled when updating overlays."
             )
         local_update = code_navigation_request.LocalUpdate(
-            overlay_id=overlay_id, path=path, content=code
+            overlay_id=overlay_id,
+            module=code_navigation_request.ModuleOfPath(path),
+            content=code,
         )
         return await code_navigation_request.async_handle_local_update(
             self.socket_path, local_update
@@ -475,7 +477,9 @@ class CodeNavigationRequestHandler(AbstractRequestHandler):
         if overlay_id is None:
             return "Ok"
         file_opened = code_navigation_request.FileOpened(
-            overlay_id=overlay_id, path=path, content=code
+            path=path,
+            overlay_id=overlay_id,
+            content=code,
         )
         return await code_navigation_request.async_handle_file_opened(
             self.socket_path, file_opened
