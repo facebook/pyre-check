@@ -10,10 +10,13 @@ server and gets a response.
 """
 from __future__ import annotations
 
+import abc
 import dataclasses
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+
+import dataclasses_json
 
 from .. import dataclasses_json_extensions as json_mixins
 
@@ -158,6 +161,71 @@ class FileClosed:
         ]
 
 
+class Module(abc.ABC):
+    @staticmethod
+    def module_to_json(module: Module) -> List[object]:
+        if isinstance(module, ModuleOfName):
+            return ["OfName", module.name]
+        assert isinstance(module, ModuleOfPath)
+        return ["OfPath", f"{module.path}"]
+
+    @staticmethod
+    def module_from_json(module_json: List[object]) -> Module:
+        if not isinstance(module_json, list):
+            raise AssertionError("JSON is not a list")
+        if (
+            len(module_json) != 2
+            or module_json[0] not in ("OfName", "OfPath")
+            or not isinstance(module_json[1], str)
+        ):
+            raise AssertionError(
+                'JSON must be a list of form ["OfName"/"OfPath", module]'
+            )
+        if module_json[0] == "OfName":
+            return ModuleOfName(name=str(module_json[1]))
+        return ModuleOfPath(path=Path(str(module_json[1])))
+
+    def to_json(self) -> List[object]:
+        return Module.module_to_json(self)
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleOfName(Module):
+    name: str
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleOfPath(Module):
+    path: Path
+
+
+@dataclasses.dataclass(frozen=True)
+class ClassExpression(json_mixins.SnakeCaseAndExcludeJsonMixin):
+    module: Module = dataclasses.field(
+        metadata=dataclasses_json.config(
+            encoder=Module.module_to_json, decoder=Module.module_from_json
+        )
+    )
+    qualified_name: str
+
+
+@dataclasses.dataclass(frozen=True)
+class SuperclassesRequest:
+    class_: ClassExpression
+    overlay_id: str | None
+
+    def to_json(self) -> List[object]:
+        return [
+            "Superclasses",
+            {"class": self.class_.to_dict(), "overlay_id": self.overlay_id},
+        ]
+
+
+@dataclasses.dataclass(frozen=True)
+class SuperclassesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    superclasses: List[ClassExpression]
+
+
 def invalid_response(response: str) -> ErrorResponse:
     return ErrorResponse(message=f"Invalid response {response} to hover request.")
 
@@ -251,6 +319,17 @@ async def async_handle_file_closed(
     socket_path: Path, file_closed: FileClosed
 ) -> str | daemon_connection.DaemonConnectionFailure:
     raw_command = json.dumps(["Command", file_closed.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_command
+    )
+    return response
+
+
+async def async_handle_superclasses(
+    socket_path: Path,
+    superclasses: SuperclassesRequest,
+) -> str | daemon_connection.DaemonConnectionFailure:
+    raw_command = json.dumps(["Query", superclasses.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_command
     )
