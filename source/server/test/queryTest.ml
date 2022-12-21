@@ -3146,6 +3146,19 @@ let test_dump_call_graph context =
               "typing.Iterable.__iter__": [],
               "pyre_extensions.generic.Generic.__class_getitem__": [],
               "bar.bar2": [],
+              "bar.bar2.inner": [
+                {
+                  "locations": [
+                    {
+                      "path": "bar.py",
+                      "start": { "line": 8, "column": 11 },
+                      "stop": { "line": 8, "column": 14 }
+                    }
+                  ],
+                  "kind": "function",
+                  "target": "bar.bar"
+                }
+              ],
               "bar.bar": [],
               "contextlib.ContextManager.__enter__": [],
               "foo.not_called": [

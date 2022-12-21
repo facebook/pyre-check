@@ -845,11 +845,14 @@ let rec process_request ~type_environment ~build_system request =
             Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
             |> List.map ~f:(fun { Callgraph.callee; locations } ->
                    { Base.callee; locations = List.map locations ~f:instantiate })
-            |> fun callees -> { Base.caller; callees }
+            |> fun callees -> { Base.caller = Reference.delocalize caller; callees }
           in
           let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
           AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
-          >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false
+          >>| Preprocessing.defines
+                ~include_toplevels:false
+                ~include_stubs:false
+                ~include_nested:true
           >>| List.map ~f:callees
           |> Option.value ~default:[]
         in
