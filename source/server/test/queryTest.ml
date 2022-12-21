@@ -2013,44 +2013,6 @@ let test_handle_query_pysa context =
         }
         |}
       );
-      ( "dump_call_graph()",
-        {|
-        {
-            "response": {
-                "typing.Iterable.__iter__": [],
-                "pyre_extensions.generic.Generic.__class_getitem__": [],
-                "wait.bar": [
-                    {
-                        "locations": [
-                            {
-                                "path": "wait.py",
-                                "start": {
-                                    "line": 4,
-                                    "column": 2
-                                },
-                                "stop": {
-                                    "line": 4,
-                                    "column": 10
-                                }
-                            }
-                        ],
-                        "kind": "function",
-                        "target": "wait.await_me"
-                    }
-                ],
-                "contextlib.ContextManager.__enter__": [],
-                "pyre_extensions.override":[],
-                "dict.items": [],
-                "dict.add_both": [],
-                "dict.add_value": [],
-                "dict.add_key": [],
-                "str.substr": [],
-                "str.lower": [],
-                "test.foo": []
-            }
-        }
-        |}
-      );
       ( "defines(test)",
         {|
         {
@@ -3141,6 +3103,128 @@ let test_hover context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
+let test_dump_call_graph context =
+  let sources =
+    [
+      ( "foo.py",
+        {|
+              from bar import bar2
+              def foo(x: int) -> int:
+                return foo2(x) + bar2(x)
+
+              def foo2(x: int) -> int:
+                return x
+
+              def not_called(x: int) -> int:
+                print(x)
+            |}
+      );
+      ( "bar.py",
+        {|
+              def bar(x: int) -> int:
+                return x
+
+              def bar2(x: int) -> int:
+
+                def inner(x: int) -> int:
+                  return bar(x)
+
+                return inner(x)
+            |}
+      );
+    ]
+  in
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let queries_and_expected_responses =
+    [
+      ( "dump_call_graph()",
+        {|
+          {
+            "response": {
+              "typing.Iterable.__iter__": [],
+              "pyre_extensions.generic.Generic.__class_getitem__": [],
+              "bar.bar2": [],
+              "bar.bar": [],
+              "contextlib.ContextManager.__enter__": [],
+              "foo.not_called": [
+                {
+                  "locations": [
+                    {
+                      "path": "foo.py",
+                      "start": { "line": 10, "column": 2 },
+                      "stop": { "line": 10, "column": 7 }
+                    }
+                  ],
+                  "kind": "function",
+                  "target": "print"
+                }
+              ],
+              "foo.foo2": [],
+              "foo.foo": [
+                {
+                  "locations": [
+                    {
+                      "path": "foo.py",
+                      "start": { "line": 4, "column": 9 },
+                      "stop": { "line": 4, "column": 16 }
+                    }
+                  ],
+                  "kind": "method",
+                  "is_optional_class_attribute": false,
+                  "direct_target": "int.__add__",
+                  "class_name": "int",
+                  "dispatch": "dynamic"
+                },
+                {
+                  "locations": [
+                    {
+                      "path": "foo.py",
+                      "start": { "line": 4, "column": 19 },
+                      "stop": { "line": 4, "column": 23 }
+                    }
+                  ],
+                  "kind": "function",
+                  "target": "bar.bar2"
+                },
+                {
+                  "locations": [
+                    {
+                      "path": "foo.py",
+                      "start": { "line": 4, "column": 9 },
+                      "stop": { "line": 4, "column": 13 }
+                    }
+                  ],
+                  "kind": "function",
+                  "target": "foo.foo2"
+                }
+              ],
+              "pyre_extensions.override": [],
+              "dict.items": [],
+              "dict.add_both": [],
+              "dict.add_value": [],
+              "dict.add_key": [],
+              "str.substr": [],
+              "str.lower": []
+            }
+          }
+    |}
+      );
+    ]
+  in
+  assert_queries_with_local_root
+    ~custom_source_root
+    ~context
+    ~sources
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
+
+
 let () =
   "query"
   >::: [
@@ -3159,5 +3243,6 @@ let () =
          "find_references" >:: OUnitLwt.lwt_wrapper test_find_references;
          "expression_level_coverage" >:: OUnitLwt.lwt_wrapper test_expression_level_coverage;
          "hover" >:: OUnitLwt.lwt_wrapper test_hover;
+         "dump_call_graph" >:: OUnitLwt.lwt_wrapper test_dump_call_graph;
        ]
   |> Test.run
