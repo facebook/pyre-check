@@ -6829,6 +6829,97 @@ let test_inline_keyword_only_attribute _ =
   ()
 
 
+let test_expand_enum_functional_syntax _ =
+  let assert_expand ?(handle = "test.py") source expected =
+    let expected = parse ~handle expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source |> Preprocessing.qualify |> Preprocessing.expand_enum_functional_syntax
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_expand
+    {|
+      from enum import Enum
+
+      Color = Enum("Color", ["RED", "GREEN", "BLUE"])
+  |}
+    {|
+      import enum
+      from enum import Enum
+
+      class Color(enum.Enum):
+        RED = enum.auto()
+        GREEN = enum.auto()
+        BLUE = enum.auto()
+  |};
+  assert_expand
+    {|
+      from enum import Enum
+
+      Color = Enum("Color", ("RED", "GREEN", "BLUE"))
+  |}
+    {|
+      import enum
+      from enum import Enum
+
+      class Color(enum.Enum):
+        RED = enum.auto()
+        GREEN = enum.auto()
+        BLUE = enum.auto()
+  |};
+  assert_expand
+    {|
+      from enum import Enum
+
+      xs = ["NOT", "SUPPORTED"]
+      Color = Enum("Color", [x for x in xs])
+  |}
+    {|
+      from enum import Enum
+
+      xs = ["NOT", "SUPPORTED"]
+      Color = Enum("Color", [x for x in xs])
+  |};
+  assert_expand
+    {|
+      from enum import Enum
+
+      Color = Enum("Color", "NOT SUPPORTED")
+  |}
+    {|
+      from enum import Enum
+
+      Color = Enum("Color", "NOT SUPPORTED")
+  |};
+  assert_expand
+    {|
+      from enum import Enum
+
+      class Outer:
+        Color = Enum("Color", "NOT SUPPORTED")
+  |}
+    {|
+      from enum import Enum
+
+      class Outer:
+        Color = Enum("Color", "NOT SUPPORTED")
+  |};
+  assert_expand
+    {|
+      from enum import Enum
+
+      def foo() -> None:
+        Color = Enum("Color", "NOT SUPPORTED")
+  |}
+    {|
+      from enum import Enum
+
+      def foo() -> None:
+        Color = Enum("Color", "NOT SUPPORTED")
+  |};
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -6865,5 +6956,6 @@ let () =
          "expand_pytorch_register_buffer" >:: test_expand_pytorch_register_buffer;
          "self_type" >:: test_expand_self_type;
          "inline_keyword_only_attribute" >:: test_inline_keyword_only_attribute;
+         "enum_functional_syntax" >:: test_expand_enum_functional_syntax;
        ]
   |> Test.run

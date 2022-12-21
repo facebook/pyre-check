@@ -4409,6 +4409,143 @@ module SelfType = struct
     { source with statements = type_variable_definitions @ Source.statements source }
 end
 
+(** Expand Enums declared using functional syntax to the class-based syntax. *)
+let expand_enum_functional_syntax
+    ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
+  =
+  let expand_enum_functional_declaration
+      needs_enum_import_so_far
+      ({ Node.location; value } as statement)
+    =
+    let enum_class_declaration ~class_reference members =
+      let assignments =
+        let field_for_member = function
+          | {
+              Node.value =
+                Expression.Constant
+                  (Constant.String
+                    { StringLiteral.value = attribute_name; kind = StringLiteral.String });
+              _;
+            } ->
+              let target =
+                Expression.Name
+                  (Name.Attribute
+                     {
+                       base = from_reference ~location class_reference;
+                       attribute = attribute_name;
+                       special = false;
+                     })
+                |> Node.create ~location
+              in
+              let value =
+                Expression.Call
+                  {
+                    callee = Reference.create "enum.auto" |> from_reference ~location;
+                    arguments = [];
+                  }
+                |> Node.create ~location
+              in
+              Some (Statement.Assign { target; annotation = None; value } |> Node.create ~location)
+          | _ -> None
+        in
+        match List.filter_map members ~f:field_for_member with
+        | [] -> [Node.create ~location Statement.Pass]
+        | assignments -> assignments
+      in
+      let base_arguments =
+        [
+          {
+            Call.Argument.name = None;
+            value = Node.create ~location (Expression.Name (create_name ~location "enum.Enum"));
+          };
+        ]
+      in
+      Statement.Class
+        {
+          name = class_reference;
+          base_arguments;
+          decorators = [];
+          body = assignments;
+          top_level_unbound_names = [];
+        }
+    in
+    match value with
+    | Statement.Assign
+        {
+          value =
+            {
+              Node.value =
+                Call
+                  {
+                    callee =
+                      {
+                        Node.value =
+                          Name
+                            (Name.Attribute
+                              {
+                                base = { Node.value = Name (Name.Identifier "enum"); _ };
+                                attribute = "Enum";
+                                _;
+                              });
+                        _;
+                      };
+                    arguments =
+                      [
+                        {
+                          Call.Argument.name = None;
+                          value =
+                            {
+                              Node.value =
+                                Expression.Constant
+                                  (Constant.String
+                                    {
+                                      StringLiteral.value = class_name;
+                                      kind = StringLiteral.String;
+                                    });
+                              _;
+                            };
+                        };
+                        {
+                          Call.Argument.name = None;
+                          value = { Node.value = List members | Tuple members; _ };
+                          _;
+                        };
+                      ];
+                  };
+              _;
+            };
+          _;
+        } ->
+        let expanded_declaration =
+          enum_class_declaration
+            ~class_reference:(Reference.create ~prefix:qualifier class_name)
+            members
+        in
+        true, { statement with Node.value = expanded_declaration }
+    | _ -> needs_enum_import_so_far, statement
+  in
+  let needs_enum_import, statements =
+    List.fold_map ~init:false ~f:expand_enum_functional_declaration statements
+  in
+  let statements =
+    if needs_enum_import then
+      let location = Location.any in
+      let import_statement =
+        Statement.Import
+          {
+            from = None;
+            imports =
+              [{ Import.name = Reference.create "enum"; alias = None } |> Node.create ~location];
+          }
+        |> Node.create ~location
+      in
+      import_statement :: statements
+    else
+      statements
+  in
+  { source with Source.statements }
+
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports

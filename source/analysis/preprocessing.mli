@@ -134,3 +134,5 @@ module SelfType : sig
 
   val expand_self_type : Source.t -> Source.t
 end
+
+val expand_enum_functional_syntax : Source.t -> Source.t
