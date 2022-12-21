@@ -170,8 +170,8 @@ class LocalUpdate:
 @dataclasses.dataclass(frozen=True)
 class FileOpened:
     path: Path
-    content: str
-    overlay_id: str
+    content: Optional[str]
+    overlay_id: Optional[str]
 
     def to_json(self) -> List[object]:
         return [
@@ -187,7 +187,7 @@ class FileOpened:
 @dataclasses.dataclass(frozen=True)
 class FileClosed:
     path: Path
-    overlay_id: str
+    overlay_id: Optional[str]
 
     def to_json(self) -> List[object]:
         return [

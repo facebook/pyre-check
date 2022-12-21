@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional, Set
 
 from ..client import (
     command_arguments,
@@ -40,6 +41,8 @@ class CodeNavConnection:
             configuration.project_identifier,
             flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
         )
+        # All open files must be resolved to full paths before getting added here.
+        self.open_files: Set[Path] = set()
 
     async def superclasses(
         self, module_name: str, class_name: str
@@ -64,3 +67,31 @@ class CodeNavConnection:
         return code_navigation_request.parse_raw_response(
             response, "Superclasses", code_navigation_request.SuperclassesResponse
         )
+
+    async def open_file(
+        self, path: Path
+    ) -> Optional[daemon_connection.DaemonConnectionFailure]:
+        path = path.resolve()
+        self.open_files.add(path)
+        request = code_navigation_request.FileOpened(
+            path=path, content=None, overlay_id=None
+        )
+        response = await code_navigation_request.async_handle_file_opened(
+            self.socket_path, request
+        )
+        if isinstance(response, daemon_connection.DaemonConnectionFailure):
+            return response
+        return None
+
+    async def close_file(
+        self, path: Path
+    ) -> Optional[daemon_connection.DaemonConnectionFailure]:
+        path = path.resolve()
+        self.open_files.remove(path)
+        request = code_navigation_request.FileClosed(path=path, overlay_id=None)
+        response = await code_navigation_request.async_handle_file_closed(
+            self.socket_path, request
+        )
+        if isinstance(response, daemon_connection.DaemonConnectionFailure):
+            return response
+        return None
