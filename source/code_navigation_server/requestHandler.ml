@@ -241,12 +241,15 @@ let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.env
 
 let handle_file_opened ~path ~content ~overlay_id ~subscriptions state : Response.t Lwt.t =
   let%lwt response =
-    handle_local_update
-      ~module_:(Request.Module.OfPath path)
-      ~content
-      ~overlay_id
-      ~subscriptions
-      state
+    match overlay_id with
+    | Some overlay_id ->
+        handle_local_update
+          ~module_:(Request.Module.OfPath path)
+          ~content
+          ~overlay_id
+          ~subscriptions
+          state
+    | None -> Lwt.return Response.Ok
   in
   let () =
     match response with
@@ -265,12 +268,15 @@ let handle_file_closed ~path ~overlay_id ~subscriptions ({ State.open_files; _ }
   let source_path = PyrePath.create_absolute path |> SourcePath.create in
   if OpenFiles.contains open_files ~source_path ~overlay_id then
     let%lwt response =
-      handle_local_update
-        ~module_:(Request.Module.OfPath path)
-        ~content:None
-        ~overlay_id
-        ~subscriptions
-        state
+      match overlay_id with
+      | Some overlay_id ->
+          handle_local_update
+            ~module_:(Request.Module.OfPath path)
+            ~content:None
+            ~overlay_id
+            ~subscriptions
+            state
+      | None -> Lwt.return Response.Ok
     in
     match OpenFiles.close_file open_files ~source_path ~overlay_id with
     | Result.Ok () -> Lwt.return response

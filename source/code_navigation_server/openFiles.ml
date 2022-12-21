@@ -9,25 +9,40 @@
 
 open Core
 
-type t = string list String.Table.t
+type overlay =
+  | Overlay of string
+  | Root
+[@@deriving compare, equal]
+
+type t = overlay list String.Table.t
 
 let source_path_of_string path = PyrePath.create_absolute path |> SourcePath.create
 
 let string_of_source_path source_path = SourcePath.raw source_path |> PyrePath.absolute
 
 let open_file open_files ~source_path ~overlay_id : unit =
+  let overlay =
+    match overlay_id with
+    | None -> Root
+    | Some overlay_id -> Overlay overlay_id
+  in
   let path = string_of_source_path source_path in
   match String.Table.find open_files path with
-  | None -> String.Table.set open_files ~key:path ~data:[overlay_id]
-  | Some overlays when List.mem overlays overlay_id ~equal:String.equal -> ()
-  | Some overlays -> String.Table.set open_files ~key:path ~data:(overlay_id :: overlays)
+  | None -> String.Table.set open_files ~key:path ~data:[overlay]
+  | Some overlays when List.mem overlays overlay ~equal:equal_overlay -> ()
+  | Some overlays -> String.Table.set open_files ~key:path ~data:(overlay :: overlays)
 
 
 let close_file open_files ~source_path ~overlay_id : (unit, Response.ErrorKind.t) Result.t =
   let path = SourcePath.raw source_path |> PyrePath.absolute in
+  let overlay =
+    match overlay_id with
+    | None -> Root
+    | Some overlay_id -> Overlay overlay_id
+  in
   match String.Table.find open_files path with
-  | Some overlays when List.mem overlays overlay_id ~equal:String.equal ->
-      let overlays = List.filter overlays ~f:(fun id -> not (String.equal overlay_id id)) in
+  | Some overlays when List.mem overlays overlay ~equal:equal_overlay ->
+      let overlays = List.filter overlays ~f:(fun id -> not (equal_overlay overlay id)) in
       let () =
         if List.is_empty overlays then
           String.Table.remove open_files path
@@ -43,10 +58,16 @@ let open_files open_files : SourcePath.t list =
 
 
 let contains open_files ~source_path ~overlay_id =
+  let overlay =
+    match overlay_id with
+    | None -> Root
+    | Some overlay_id -> Overlay overlay_id
+  in
+
   let path = string_of_source_path source_path in
   match String.Table.find open_files path with
   | None -> false
-  | Some overlays -> List.mem overlays overlay_id ~equal:String.equal
+  | Some overlays -> List.mem overlays overlay ~equal:equal_overlay
 
 
 let create () = String.Table.create ()

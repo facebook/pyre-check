@@ -48,11 +48,11 @@ module Command = struct
     | FileOpened of {
         path: string;
         content: string option;
-        overlay_id: string;
+        overlay_id: string option;
       }
     | FileClosed of {
         path: string;
-        overlay_id: string;
+        overlay_id: string option;
       }
     | LocalUpdate of {
         module_: Module.t; [@key "module"]

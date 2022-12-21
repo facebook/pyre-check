@@ -42,20 +42,20 @@ module OpenFiles : sig
   type t
 
   (** Mark a file as opened in the open file state. *)
-  val open_file : t -> source_path:SourcePath.t -> overlay_id:string -> unit
+  val open_file : t -> source_path:SourcePath.t -> overlay_id:string option -> unit
 
   (** Mark a file as closed in the open file state. *)
   val close_file
     :  t ->
     source_path:SourcePath.t ->
-    overlay_id:string ->
+    overlay_id:string option ->
     (unit, Response.ErrorKind.t) Result.t
 
   (** Evaluates to the list of current open files. *)
   val open_files : t -> SourcePath.t list
 
   (** Returns true iff the open files currently tracks `overlay_id`. *)
-  val contains : t -> source_path:SourcePath.t -> overlay_id:string -> bool
+  val contains : t -> source_path:SourcePath.t -> overlay_id:string option -> bool
 
   (** Creates a new open files state object with no files marked as open. *)
   val create : unit -> t
@@ -141,7 +141,7 @@ module Testing : sig
         | FileOpened of {
             path: string;
             content: string option;
-            overlay_id: string;
+            overlay_id: string option;
           }
             (** A command that asks the server to create an overlay for a given module and mark a
                 file as tracked. [content] specifies the content of the source file corresponds to
@@ -156,7 +156,7 @@ module Testing : sig
                 specifying closed opened/closed files by name. *)
         | FileClosed of {
             path: string;
-            overlay_id: string;
+            overlay_id: string option;
           }
             (** A command that notifies the server that a previouly open file was closed. The server
                 will send back a {!Response.Ok} response when the update succeeds.

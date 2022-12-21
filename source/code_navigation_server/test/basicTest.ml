@@ -160,30 +160,33 @@ let test_file_opened_and_closed_request context =
                    {
                      path = test_path;
                      content = Some "reveal_type(43)\nreveal_type(44)";
-                     overlay_id = "foo";
+                     overlay_id = Some "foo";
                    }))
           ~expected:Response.Ok;
         assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
-              Command (Command.FileClosed { path = "/untracked/file.py"; overlay_id = "foo" }))
+              Command (Command.FileClosed { path = "/untracked/file.py"; overlay_id = Some "foo" }))
           ~expected:
             (Response.Error (Response.ErrorKind.UntrackedFileClosed { path = "/untracked/file.py" }));
         assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
-              Command (Command.FileClosed { path = test_path; overlay_id = "untracked overlay id" }))
+              Command
+                (Command.FileClosed { path = test_path; overlay_id = Some "untracked overlay id" }))
           ~expected:(Response.Error (Response.ErrorKind.UntrackedFileClosed { path = test_path }));
         assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
-          ~request:Request.(Command (Command.FileClosed { path = test_path; overlay_id = "foo" }))
+          ~request:
+            Request.(Command (Command.FileClosed { path = test_path; overlay_id = Some "foo" }))
           ~expected:Response.Ok;
         assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:1;
         (* Now that foo is no longer tracked as an open file, this should error. *)
         ScratchProject.ClientConnection.assert_response
-          ~request:Request.(Command (Command.FileClosed { path = test_path; overlay_id = "foo" }))
+          ~request:
+            Request.(Command (Command.FileClosed { path = test_path; overlay_id = Some "foo" }))
           ~expected:(Response.Error (Response.ErrorKind.UntrackedFileClosed { path = test_path }));
       ]
 
@@ -664,7 +667,7 @@ let test_superclasses context =
                    {
                      path = test_path;
                      content = Some "class OnlyInOverlay: ...";
-                     overlay_id = "foo";
+                     overlay_id = Some "foo";
                    }))
           ~expected:Response.Ok;
         ScratchProject.ClientConnection.assert_response
