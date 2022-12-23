@@ -4406,9 +4406,11 @@ module State (Context : Context) = struct
                         let is_readonly_attribute =
                           target_annotation |> Annotation.annotation |> Type.ReadOnly.is_readonly
                         in
-                        match attribute with
-                        | Some (_, attribute_name)
-                          when is_readonly_attribute && not (Define.is_class_toplevel define) ->
+                        match attribute, resolved_base with
+                        | Some (_, attribute_name), `Attribute (_, resolved_base_type)
+                          when is_readonly_attribute
+                               && Type.ReadOnly.is_readonly resolved_base_type
+                               && not (Define.is_class_toplevel define) ->
                             emit_error
                               ~errors
                               ~location

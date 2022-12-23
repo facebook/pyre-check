@@ -240,6 +240,8 @@ let test_assignment context =
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
        `some_attribute` since it is readonly";
     ];
+  (* It is ok to reassign to a readonly attribute of a mutable object, since we aren't actually
+     modifying the value that has been marked as readonly. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -253,10 +255,7 @@ let test_assignment context =
         mutable_foo.readonly_attribute = 99
         mutable_foo.mutable_attribute = 99
     |}
-    [
-      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
-       `readonly_attribute` since it is readonly";
-    ];
+    [];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
@@ -269,10 +268,19 @@ let test_assignment context =
           self.readonly_attribute = 99
           self.mutable_attribute = 99
     |}
-    [
-      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
-       `readonly_attribute` since it is readonly";
-    ];
+    [];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def __init__(self, x: ReadOnly[int], some_bool: bool) -> None:
+          self.x = x
+
+          if some_bool:
+            self.x = 99
+    |}
+    [];
   (* TODO(T130377746): Recognize attribute for `ReadOnly[Type[Foo]]` when it is the target of an
      assignment. *)
   assert_type_errors_including_readonly
@@ -333,6 +341,21 @@ let test_assignment context =
          incompatible variable type error. *)
       "Incompatible variable type [9]: y is declared to have type `List[int]` but is used as type \
        `List[pyre_extensions.ReadOnly[int]]`.";
+    ];
+  (* We cannot assign to any attribute of a readonly object. *)
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        mutable_attribute: int = 42
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        readonly_foo.mutable_attribute = 99
+    |}
+    [
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
+       `mutable_attribute` since it is readonly";
     ];
   ()
 
