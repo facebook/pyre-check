@@ -35,7 +35,9 @@ class Info(dataclasses_json.DataClassJsonMixin):
     log_directory: str
     client_logs: str
     server_log_directory: str
+    codenav_server_log_directory: str
     current_server_logs: str
+    current_codenav_server_logs: str
 
     def display(self) -> str:
         return "\n".join(
@@ -59,7 +61,12 @@ class Info(dataclasses_json.DataClassJsonMixin):
         log_directory = configuration.get_log_directory()
         client_logs = log_directory / "pyre.stderr"
         server_log_directory = log_directory / flavor.server_log_subdirectory()
+        codenav_server_log_directory = (
+            log_directory
+            / identifiers.PyreFlavor.CODE_NAVIGATION.server_log_subdirectory()
+        )
         current_server_logs = server_log_directory / "server.stderr"
+        codenav_current_server_log = codenav_server_log_directory / "server.stderr"
         client_version = version.__version__
         try:
             binary_version = configuration.get_binary_version()
@@ -72,8 +79,10 @@ class Info(dataclasses_json.DataClassJsonMixin):
         return cls(
             socket_path=str(socket_path),
             current_server_logs=str(current_server_logs),
+            current_codenav_server_logs=str(codenav_current_server_log),
             log_directory=str(log_directory),
             server_log_directory=str(server_log_directory),
+            codenav_server_log_directory=str(codenav_server_log_directory),
             client_logs=str(client_logs),
             binary_location=None if binary_location is None else str(binary_location),
             client_version=client_version,
