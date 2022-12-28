@@ -432,6 +432,11 @@ let run_taint_analysis
     let prune_method =
       if limit_entrypoints then
         let entrypoint_references = Registry.get_entrypoints initial_models in
+        let () =
+          Log.info
+            "Pruning call graph by the following entrypoints: %s"
+            ([%show: Target.t list] entrypoint_references)
+        in
         Interprocedural.DependencyGraph.PruneMethod.Entrypoints entrypoint_references
       else
         Interprocedural.DependencyGraph.PruneMethod.Internals
