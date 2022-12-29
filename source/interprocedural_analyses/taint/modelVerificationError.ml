@@ -171,6 +171,14 @@ type t = {
 }
 [@@deriving sexp, compare, show]
 
+let show_type_for_error annotation =
+  match annotation with
+  | Type.Callable { kind = Named reference; _ } ->
+      (* add def [function name] : ... to provide better syntax highlighting for hover *)
+      Format.asprintf "def %s%s: ..." (Reference.last reference) (Type.show_concise annotation)
+  | _ -> Type.show_concise annotation
+
+
 let description error =
   match error with
   | ParseError -> "Syntax error."
@@ -220,7 +228,7 @@ let description error =
                 Format.asprintf
                   "%s in overload `%s`"
                   reason
-                  (Type.show_for_hover
+                  (show_type_for_error
                      (Type.Callable { kind = Anonymous; implementation = overload; overloads = [] }))
             | None -> reason)
       in
@@ -232,7 +240,7 @@ let description error =
       Format.asprintf
         "Model signature parameters for `%s` do not match implementation `%s`. %s"
         name
-        (Type.show_for_hover (Type.Callable callable_type))
+        (show_type_for_error (Type.Callable callable_type))
         reasons
   | ImportedFunctionModel { name; actual_name } ->
       Format.asprintf

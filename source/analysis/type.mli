@@ -429,8 +429,6 @@ val pp_parameters
 
 val show_concise : t -> string
 
-val show_for_hover : t -> string
-
 val serialize : t -> string
 
 val parametric : string -> Parameter.t list -> t

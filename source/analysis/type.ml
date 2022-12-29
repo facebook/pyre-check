@@ -2219,14 +2219,6 @@ and show_concise annotation = Format.asprintf "%a" pp_concise annotation
 
 and polynomial_show_variable variable = show_concise (Variable variable)
 
-let show_for_hover annotation =
-  match annotation with
-  | Callable { kind = Named reference; _ } ->
-      (* add def [function name] : ... to provide better syntax highlighting for hover *)
-      Format.asprintf "def %s%s: ..." (Reference.last reference) (show_concise annotation)
-  | _ -> show_concise annotation
-
-
 let serialize = function
   | Bottom -> "$bottom"
   | annotation -> Format.asprintf "%a" pp annotation
