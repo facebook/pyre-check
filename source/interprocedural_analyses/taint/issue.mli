@@ -102,6 +102,8 @@ module TriggeredSinkHashMap : sig
   val mem : t -> Sinks.partial_sink -> bool
 
   val add : t -> partial_sink:Sinks.partial_sink -> extra_trace:Domains.ExtraTraceFirstHop.t -> unit
+
+  val find : t -> Sinks.partial_sink -> Domains.ExtraTraceFirstHop.Set.t option
 end
 
 (* A map from locations to a backward taint of triggered sinks.

@@ -389,6 +389,76 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.multiple_source_traces",
+    "callable_line": 144,
+    "code": 4321,
+    "line": 146,
+    "start": 36,
+    "end": 38,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.permissive_context" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 145,
+              "start": 9,
+              "end": 29
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 146,
+                "start": 36,
+                "end": 38
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_context_2"
+              ],
+              "port": "formal(vc)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_context_2",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.multiple_source_traces:4321:0:Call|multiple_sources.demonstrate_triggered_context_2|0|formal(vc):1eb6915cb7dc2f1e893049091eed3858"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.__init__",
@@ -568,6 +638,48 @@
 {
   "kind": "model",
   "data": {
+    "callable": "multiple_sources.demonstrate_triggered_context_2",
+    "sinks": [
+      {
+        "port": "formal(vc)",
+        "taint": [
+          {
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "extra_traces": [
+              {
+                "call": {
+                  "position": { "line": 140, "start": 9, "end": 40 },
+                  "resolves_to": [
+                    "multiple_sources.user_controlled_input_wrapper"
+                  ],
+                  "port": "result"
+                },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
+            "kinds": [
+              {
+                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 141,
+              "start": 22,
+              "end": 24
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "multiple_sources.demonstrate_triggered_input",
     "sinks": [
       {
@@ -725,6 +837,35 @@
         "port": "result",
         "taint": [
           { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.user_controlled_input_wrapper",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.user_controlled_input" }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 136,
+              "start": 11,
+              "end": 34
+            }
+          }
         ]
       }
     ]

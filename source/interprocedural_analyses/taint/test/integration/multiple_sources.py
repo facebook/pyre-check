@@ -130,3 +130,17 @@ def issue_with_sanitizer():
 def no_sink_with_sanitizer(x):
     y = sanitize_source_b_tito(sanitize_source_a_tito(x))
     combines_tests_and_context(y, permissive_context())
+
+
+def user_controlled_input_wrapper():
+    return user_controlled_input()
+
+
+def demonstrate_triggered_context_2(vc):
+    id = user_controlled_input_wrapper()
+    Node.get(id).send(vc)
+
+
+def multiple_source_traces():
+    vc = permissive_context()
+    demonstrate_triggered_context_2(vc)

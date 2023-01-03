@@ -269,6 +269,9 @@ module TriggeredSinkHashMap = struct
             ExtraTraceFirstHop.Set.bottom
     in
     HashMap.update map (convert_to_key partial_sink) ~f:update_extra_traces
+
+
+  let find map partial_sink = HashMap.find map (convert_to_key partial_sink)
 end
 
 (* A map from locations to a set of triggered sinks.

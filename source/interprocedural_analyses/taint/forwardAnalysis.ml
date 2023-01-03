@@ -229,16 +229,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks_for_call) then
       let add_sink ~root sink sofar =
         match Sinks.extract_partial_sink sink with
-        | Some sink when Issue.TriggeredSinkHashMap.mem triggered_sinks_for_call sink ->
-            let taint =
-              BackwardTaint.singleton
-                CallInfo.declaration
-                (Sinks.TriggeredPartialSink sink)
-                Frame.initial
-              |> BackwardState.Tree.create_leaf
-            in
-            BackwardState.assign ~root ~path:[] taint BackwardState.bottom
-            |> BackwardState.join sofar
+        | Some sink -> (
+            match Issue.TriggeredSinkHashMap.find triggered_sinks_for_call sink with
+            | Some extra_traces ->
+                let taint =
+                  BackwardTaint.singleton
+                    CallInfo.declaration
+                    (Sinks.TriggeredPartialSink sink)
+                    Frame.initial
+                  |> BackwardState.Tree.create_leaf
+                  |> BackwardState.Tree.transform
+                       ExtraTraceFirstHop.Set.Self
+                       Map
+                       ~f:(ExtraTraceFirstHop.Set.join extra_traces)
+                in
+                BackwardState.assign ~root ~path:[] taint BackwardState.bottom
+                |> BackwardState.join sofar
+            | None -> sofar)
         | _ -> sofar
       in
       let add_taint (root, taint) sofar =
