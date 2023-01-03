@@ -19,7 +19,13 @@ module T = struct
     kind: string;
     label: string;
   }
-  [@@deriving compare, hash, sexp, show]
+  [@@deriving compare, hash, sexp]
+
+  let show_partial_sink { kind; label } = Format.sprintf "%s[%s]" kind label
+
+  let pp_partial_sink format partial_sink =
+    Format.fprintf format "%s" (show_partial_sink partial_sink)
+
 
   type t =
     | Attach
@@ -46,9 +52,10 @@ module T = struct
 
   let rec pp formatter = function
     | Attach -> Format.fprintf formatter "Attach"
-    | PartialSink { kind; label } -> Format.fprintf formatter "PartialSink[%s[%s]]" kind label
-    | TriggeredPartialSink { kind; label } ->
-        Format.fprintf formatter "TriggeredPartialSink[%s[%s]]" kind label
+    | PartialSink partial_sink ->
+        Format.fprintf formatter "PartialSink[%s]" (show_partial_sink partial_sink)
+    | TriggeredPartialSink partial_sink ->
+        Format.fprintf formatter "TriggeredPartialSink[%s]" (show_partial_sink partial_sink)
     | LocalReturn -> Format.fprintf formatter "LocalReturn"
     | NamedSink name -> Format.fprintf formatter "%s" name
     | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind

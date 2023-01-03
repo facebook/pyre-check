@@ -271,6 +271,39 @@ module ModelConstraints = struct
     }
 end
 
+(* A map from partial sink kinds to the related labels *)
+module PartialSinkLabelsMap = struct
+  include SerializableStringMap
+
+  type labels = {
+    all_labels: string list;
+    main_label: string;
+  }
+
+  type t = labels SerializableStringMap.t
+
+  let merge left right =
+    SerializableStringMap.merge
+      (fun _ left right ->
+        match left, right with
+        | Some value, None
+        | None, Some value ->
+            Some value
+        | ( Some { all_labels = left_all_labels; main_label = left_main_label },
+            Some { all_labels = right_all_labels; main_label = right_main_label } ) ->
+            if String.equal left_main_label right_main_label then
+              Some { all_labels = left_all_labels @ right_all_labels; main_label = left_main_label }
+            else
+              Format.sprintf
+                "when merging, main labels are different: %s %s"
+                left_main_label
+                right_main_label
+              |> failwith
+        | None, None -> None)
+      left
+      right
+end
+
 module PartialSinkConverter = struct
   type t = (Sources.t list * Sinks.t) list SerializableStringMap.t
 
@@ -344,7 +377,7 @@ module Heap = struct
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
     partial_sink_converter: PartialSinkConverter.t;
-    partial_sink_labels: string list SerializableStringMap.t;
+    partial_sink_labels: PartialSinkLabelsMap.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;
@@ -366,7 +399,7 @@ module Heap = struct
       partial_sink_converter = SerializableStringMap.empty;
       implicit_sinks = empty_implicit_sinks;
       implicit_sources = empty_implicit_sources;
-      partial_sink_labels = SerializableStringMap.empty;
+      partial_sink_labels = PartialSinkLabelsMap.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
@@ -518,7 +551,7 @@ module Heap = struct
       rules;
       filtered_rule_codes = None;
       partial_sink_converter = SerializableStringMap.empty;
-      partial_sink_labels = SerializableStringMap.empty;
+      partial_sink_labels = PartialSinkLabelsMap.empty;
       implicit_sinks = empty_implicit_sinks;
       implicit_sources = empty_implicit_sources;
       find_missing_flows = None;
@@ -932,19 +965,31 @@ let from_json_list source_json_list =
           >>= fun second_sources ->
           json_string_member ~path "partial_sink" json
           >>= fun partial_sink ->
-          if SerializableStringMap.mem partial_sink partial_sink_labels then
+          if PartialSinkLabelsMap.mem partial_sink partial_sink_labels then
             Result.Error [Error.create ~path ~kind:(Error.PartialSinkDuplicate partial_sink)]
           else
+            let main_label =
+              match json_string_member ~path "main_trace_source" json with
+              | Ok main_trace_source -> main_trace_source
+              | Error _ -> first
+            in
             let partial_sink_labels =
-              SerializableStringMap.set partial_sink_labels ~key:partial_sink ~data:[first; second]
+              PartialSinkLabelsMap.set
+                partial_sink_labels
+                ~key:partial_sink
+                ~data:{ PartialSinkLabelsMap.all_labels = [first; second]; main_label }
             in
             let create_partial_sink label sink =
-              match SerializableStringMap.find_opt sink partial_sink_labels with
-              | Some labels when not (List.mem ~equal:String.equal labels label) ->
-                  Error
-                    [Error.create ~path ~kind:(Error.InvalidLabelMultiSink { label; sink; labels })]
+              match PartialSinkLabelsMap.find_opt sink partial_sink_labels with
+              | Some { all_labels; _ } when not (List.mem ~equal:String.equal all_labels label) ->
+                  Result.Error
+                    [
+                      Error.create
+                        ~path
+                        ~kind:(Error.InvalidLabelMultiSink { label; sink; labels = all_labels });
+                    ]
               | None -> Result.Error [Error.create ~path ~kind:(Error.InvalidMultiSink sink)]
-              | _ -> Result.Ok { Sinks.kind = sink; label }
+              | _ -> Ok { Sinks.kind = sink; label }
             in
             create_partial_sink first partial_sink
             >>= fun first_sink ->
@@ -1083,7 +1128,7 @@ let from_json_list source_json_list =
       ~f:PartialSinkConverter.merge
   in
   let partial_sink_labels =
-    List.fold partial_sink_labels ~init:SerializableStringMap.empty ~f:PartialSinkConverter.merge
+    List.fold partial_sink_labels ~init:PartialSinkLabelsMap.empty ~f:PartialSinkLabelsMap.merge
   in
 
   let merge_implicit_sinks left right =

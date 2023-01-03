@@ -42,6 +42,22 @@ module ModelConstraints : sig
   val default : t
 end
 
+(* A map from partial sink kinds to the related labels *)
+module PartialSinkLabelsMap : sig
+  type labels = {
+    all_labels: string list;
+    main_label: string;
+  }
+
+  type t
+
+  val find_opt : string -> t -> labels option
+
+  val of_alist_exn : (string * labels) list -> t
+
+  val to_alist : t -> (string * labels) list
+end
+
 module PartialSinkConverter : sig
   type t
 end
@@ -61,7 +77,7 @@ module Heap : sig
     implicit_sinks: implicit_sinks;
     implicit_sources: implicit_sources;
     partial_sink_converter: PartialSinkConverter.t;
-    partial_sink_labels: string list Data_structures.SerializableStringMap.t;
+    partial_sink_labels: PartialSinkLabelsMap.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;

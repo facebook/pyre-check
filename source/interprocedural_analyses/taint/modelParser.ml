@@ -13,7 +13,6 @@
  *)
 
 open Core
-open Data_structures
 open Ast
 open Analysis
 open Expression
@@ -653,25 +652,26 @@ let rec parse_annotations
                       [
                         { Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ };
                       ];
-                  } ->
-                  if not (SerializableStringMap.mem kind taint_configuration.partial_sink_labels)
-                  then
-                    Error
-                      (annotation_error (Format.asprintf "Unrecognized partial sink `%s`." kind))
-                  else
-                    let label_options =
-                      SerializableStringMap.find kind taint_configuration.partial_sink_labels
-                    in
-                    if not (List.mem label_options label ~equal:String.equal) then
+                  } -> (
+                  match
+                    TaintConfiguration.PartialSinkLabelsMap.find_opt
+                      kind
+                      taint_configuration.partial_sink_labels
+                  with
+                  | Some { TaintConfiguration.PartialSinkLabelsMap.all_labels; _ } ->
+                      if List.mem all_labels label ~equal:String.equal then
+                        Ok (Sinks.PartialSink { kind; label })
+                      else
+                        Error
+                          (annotation_error
+                             (Format.sprintf
+                                "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
+                                label
+                                kind
+                                (String.concat all_labels ~sep:", ")))
+                  | None ->
                       Error
-                        (annotation_error
-                           (Format.sprintf
-                              "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
-                              label
-                              kind
-                              (String.concat label_options ~sep:", ")))
-                    else
-                      Ok (Sinks.PartialSink { kind; label })
+                        (annotation_error (Format.sprintf "Unrecognized partial sink `%s`." kind)))
               | _ -> invalid_annotation_error ()
             in
             partial_sink
