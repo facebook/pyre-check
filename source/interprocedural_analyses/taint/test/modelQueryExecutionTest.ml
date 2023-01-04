@@ -980,7 +980,7 @@ let test_generated_annotations context =
     ~expected:[];
   assert_generated_annotations
     ~source:{|
-       def foo(a) -> typing.Annotated[int, "annotation"]): ...
+       def foo(a) -> typing.Annotated[int, "annotation"]: ...
      |}
     ~query:
       {

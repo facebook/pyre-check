@@ -431,7 +431,7 @@ module Modelable = struct
   type t =
     | Callable of {
         target: Target.t;
-        definition: Statement.Define.t Node.t option Lazy.t;
+        signature: Statement.Define.Signature.t Lazy.t;
       }
     | Attribute of VariableMetadata.t
     | Global of VariableMetadata.t
@@ -451,51 +451,27 @@ module Modelable = struct
 
 
   let return_annotation = function
-    | Callable { definition; _ } -> (
-        match Lazy.force definition with
-        | Some
-            {
-              Node.value =
-                {
-                  Statement.Define.signature = { Statement.Define.Signature.return_annotation; _ };
-                  _;
-                };
-              _;
-            } ->
-            return_annotation
-        | _ -> None)
+    | Callable { signature; _ } ->
+        let { Statement.Define.Signature.return_annotation; _ } = Lazy.force signature in
+        return_annotation
     | Attribute _
     | Global _ ->
         failwith "unexpected use of return_annotation on an attribute or global"
 
 
   let parameters = function
-    | Callable { definition; _ } -> (
-        match Lazy.force definition with
-        | Some
-            {
-              Node.value =
-                { Statement.Define.signature = { Statement.Define.Signature.parameters; _ }; _ };
-              _;
-            } ->
-            Some parameters
-        | _ -> None)
+    | Callable { signature; _ } ->
+        let { Statement.Define.Signature.parameters; _ } = Lazy.force signature in
+        parameters
     | Attribute _
     | Global _ ->
         failwith "unexpected use of any_parameter on an attribute or global"
 
 
   let decorators = function
-    | Callable { definition; _ } -> (
-        match Lazy.force definition with
-        | Some
-            {
-              Node.value =
-                { Statement.Define.signature = { Statement.Define.Signature.decorators; _ }; _ };
-              _;
-            } ->
-            Some decorators
-        | _ -> None)
+    | Callable { signature; _ } ->
+        let { Statement.Define.Signature.decorators; _ } = Lazy.force signature in
+        decorators
     | Attribute _
     | Global _ ->
         failwith "unexpected use of Decorator on an attribute or global"
@@ -560,20 +536,18 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       |> Option.value ~default:false
   | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint ->
       Modelable.parameters value
-      >>| AccessPath.Root.normalize_parameters
-      >>| List.exists ~f:(fun parameter ->
-              normalized_parameter_matches_constraint ~parameter parameter_constraint)
-      |> Option.value ~default:false
+      |> AccessPath.Root.normalize_parameters
+      |> List.exists ~f:(fun parameter ->
+             normalized_parameter_matches_constraint ~parameter parameter_constraint)
   | ModelQuery.Constraint.ReadFromCache _ ->
       (* This is handled before matching constraints. *)
       true
   | ModelQuery.Constraint.AnyDecoratorConstraint decorator_constraint ->
       Modelable.decorators value
-      >>| List.exists ~f:(fun decorator ->
-              Statement.Decorator.from_expression decorator
-              >>| (fun decorator -> matches_decorator_constraint ~decorator decorator_constraint)
-              |> Option.value ~default:false)
-      |> Option.value ~default:false
+      |> List.exists ~f:(fun decorator ->
+             Statement.Decorator.from_expression decorator
+             >>| (fun decorator -> matches_decorator_constraint ~decorator decorator_constraint)
+             |> Option.value ~default:false)
   | ModelQuery.Constraint.ClassConstraint class_constraint ->
       Modelable.class_name value
       >>| (fun name ->
@@ -1003,16 +977,19 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
   let get_target = Fn.id
 
   let make_modelable ~resolution callable =
-    let definition =
+    let signature =
       lazy
-        (let definition = Target.get_module_and_definition ~resolution callable >>| snd in
-         let () =
-           if Option.is_none definition then
-             Log.error "Could not find definition for callable: `%a`" Target.pp_pretty callable
-         in
-         definition)
+        (match Target.get_module_and_definition ~resolution callable with
+        | Some (_, { Node.value = { signature; _ }; _ }) -> signature
+        | None ->
+            (* This should only be called with valid targets, generated from `FetchCallables`. *)
+            Format.asprintf
+              "unknown target `%a` in `CallableQueryExecutor`"
+              Target.pp_external
+              callable
+            |> failwith)
     in
-    Modelable.Callable { target = callable; definition }
+    Modelable.Callable { target = callable; signature }
 
 
   let generate_annotations_from_query_models ~modelable models =
@@ -1210,25 +1187,13 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.Global _ -> failwith "impossible case"
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
-    let definition =
+    let { Statement.Define.Signature.parameters; return_annotation; _ } =
       match modelable with
-      | Modelable.Callable { definition; _ } -> Lazy.force definition
+      | Modelable.Callable { signature; _ } -> Lazy.force signature
       | _ -> failwith "unreachable"
     in
-    match definition with
-    | None -> []
-    | Some
-        {
-          Node.value =
-            {
-              Statement.Define.signature =
-                { Statement.Define.Signature.parameters; return_annotation; _ };
-              _;
-            };
-          _;
-        } ->
-        let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
-        List.concat_map models ~f:(apply_model ~normalized_parameters ~return_annotation)
+    let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+    List.concat_map models ~f:(apply_model ~normalized_parameters ~return_annotation)
 
 
   let generate_model_from_annotations
