@@ -134,51 +134,6 @@ module.exports = {
       },
       links: [
         {
-          title: 'Learn',
-          items: [
-            {
-              label: 'Getting Started',
-              href: 'docs/getting-started',
-              target: '_blank',
-              rel: 'noreferrer noopener',
-            },
-            {
-              label: 'Types in Python',
-              href: 'docs/types-in-python',
-              target: '_blank',
-              rel: 'noreferrer noopener',
-            },
-          ],
-        },
-        {
-          title: 'Community',
-          items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/facebook/pyre-check',
-              target: '_blank',
-              rel: 'noreferrer noopener',
-            },
-            {
-              label: 'Issues',
-              href: 'https://github.com/facebook/pyre-check/issues',
-              target: '_blank',
-              rel: 'noreferrer noopener',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'Change Log',
-              href: 'docs/change-log',
-              target: '_blank',
-              rel: 'noreferrer noopener',
-            },
-          ],
-        },
-        {
           title: 'Legal',
           // Please do not remove the privacy and terms, it's a legal requirement.
           items: [

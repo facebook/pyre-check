@@ -18,7 +18,7 @@
   --ifm-footer-color: #c25725;
   --ifm-footer-color: var(--ifm-navbar-link-color);
   --ifm-footer-link-color: var(--ifm-navbar-link-color);
-  --ifm-footer-title-color: rgb(190, 186, 186);
+  --ifm-footer-title-color: var(--ifm-color-primary);
   --ifm-navbar-background-color: rgb(40, 29, 29);
   --ifm-footer-color:rgb(40, 29, 29);
   --ifm-footer-background-color:rgb(40, 29, 29);
@@ -33,12 +33,7 @@
 }
 
 .check {
-  float: left;
-}
-
-.clean-list{
-  list-style: none;
-  padding-left: var(--ifm-list-left-padding);
+  float: left
 }
 
 .cm-s-height100 {
@@ -54,8 +49,8 @@
   max-height: 50vh;
 }
 
-.footer__title {
-  padding-left: var(--ifm-list-left-padding);
+.footer__links {
+  margin-bottom: 0rem;
 }
 
 .navbar__link--active {
