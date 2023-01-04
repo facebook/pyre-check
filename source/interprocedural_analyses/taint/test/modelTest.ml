@@ -2928,7 +2928,6 @@ let test_invalid_models context =
         find = "functions",
         where = [
           name.matches("foo"),
-          read_from_cache(kind="first", name="foo"),
         ],
         model = [
           WriteToCache(kind="second", name=f"{function_name}"),
@@ -2936,7 +2935,7 @@ let test_invalid_models context =
         ]
       )
     |}
-    ~expect:{|WriteToCache and read_from_cache cannot be used in the same model query|}
+    ~expect:{|WriteToCache cannot be used with other taint annotations in the same model query|}
     ();
   assert_invalid_model
     ~model_source:

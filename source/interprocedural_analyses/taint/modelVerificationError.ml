@@ -162,6 +162,7 @@ type kind =
       find: string;
     }
   | MutuallyExclusiveReadWriteToCache
+  | MutuallyExclusiveTaintWriteToCache
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -463,6 +464,8 @@ let description error =
         find
   | MutuallyExclusiveReadWriteToCache ->
       "WriteToCache and read_from_cache cannot be used in the same model query"
+  | MutuallyExclusiveTaintWriteToCache ->
+      "WriteToCache cannot be used with other taint annotations in the same model query"
 
 
 let code { kind; _ } =
@@ -526,6 +529,7 @@ let code { kind; _ } =
   | InvalidWriteToCacheIdentifierForFind _ -> 57
   | InvalidReadFromCacheConstraint _ -> 58
   | MutuallyExclusiveReadWriteToCache -> 59
+  | MutuallyExclusiveTaintWriteToCache -> 60
 
 
 let display { kind = error; path; location } =

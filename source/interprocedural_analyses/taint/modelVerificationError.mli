@@ -158,6 +158,7 @@ type kind =
       find: string;
     }
   | MutuallyExclusiveReadWriteToCache
+  | MutuallyExclusiveTaintWriteToCache
 [@@deriving sexp, compare]
 
 type t = {
