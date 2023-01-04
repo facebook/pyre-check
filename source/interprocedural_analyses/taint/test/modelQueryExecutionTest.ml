@@ -36,11 +36,11 @@ let test_generated_annotations context =
     in
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
     let class_hierarchy_graph =
-      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+      ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
         ~environment:type_environment
         ~qualifiers:[Ast.Reference.create "test"]
-      |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
+      |> ClassHierarchyGraph.SharedMemory.from_heap
     in
     let actual =
       ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
@@ -62,11 +62,11 @@ let test_generated_annotations context =
     in
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
     let class_hierarchy_graph =
-      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+      ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
         ~environment:type_environment
         ~qualifiers:[Ast.Reference.create "test"]
-      |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
+      |> ClassHierarchyGraph.SharedMemory.from_heap
     in
     let annotation_expression =
       annotation
@@ -99,11 +99,11 @@ let test_generated_annotations context =
     in
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
     let class_hierarchy_graph =
-      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+      ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
         ~environment:type_environment
         ~qualifiers:[Ast.Reference.create "test"]
-      |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
+      |> ClassHierarchyGraph.SharedMemory.from_heap
     in
     let actual =
       ModelQueryExecution.GlobalVariableQueryExecutor.generate_annotations_from_query_on_target
@@ -3451,11 +3451,11 @@ let test_generated_cache context =
     in
     let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
     let class_hierarchy_graph =
-      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+      ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
         ~environment:type_environment
         ~qualifiers:[Ast.Reference.create "test"]
-      |> Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
+      |> ClassHierarchyGraph.SharedMemory.from_heap
     in
     let actual =
       ModelQueryExecution.CallableQueryExecutor.generate_cache_from_queries_on_targets
@@ -3668,7 +3668,7 @@ let test_read_from_cache_constraints _ =
     ~constraints:[ReadFromCache { kind = "thrift"; name = "A:foo" }]
     ~expected:
       (Set
-         (Interprocedural.Target.Set.of_list
+         (Target.Set.of_list
             [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
   assert_target_candidates
     ~cache
@@ -3683,7 +3683,7 @@ let test_read_from_cache_constraints _ =
       ]
     ~expected:
       (Set
-         (Interprocedural.Target.Set.of_list
+         (Target.Set.of_list
             [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
   assert_target_candidates
     ~cache
@@ -3692,7 +3692,7 @@ let test_read_from_cache_constraints _ =
         ReadFromCache { kind = "thrift"; name = "A:foo" };
         ReadFromCache { kind = "thrift"; name = "B:foo" };
       ]
-    ~expected:(Set Interprocedural.Target.Set.empty);
+    ~expected:(Set Target.Set.empty);
   assert_target_candidates
     ~cache
     ~constraints:
@@ -3705,7 +3705,7 @@ let test_read_from_cache_constraints _ =
       ]
     ~expected:
       (Set
-         (Interprocedural.Target.Set.of_list
+         (Target.Set.of_list
             [
               Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal };
               Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal };
@@ -3748,7 +3748,7 @@ let test_read_from_cache_constraints _ =
       ]
     ~expected:
       (Set
-         (Interprocedural.Target.Set.of_list
+         (Target.Set.of_list
             [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
   ()
 
