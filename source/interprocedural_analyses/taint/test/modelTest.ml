@@ -5955,12 +5955,12 @@ let test_query_parsing context =
 
   (* Expected models *)
   let create_expected_model ?source ?rules ~model_source function_name =
-    let { Taint.ModelParseResult.models; _ }, _, _, _ =
+    let { ModelParseResult.models; _ }, _, _, _ =
       set_up_environment ?source ?rules ~context ~model_source ()
     in
     let model = Option.value_exn (Registry.get models (List.hd_exn (Registry.targets models))) in
     {
-      Taint.ModelParseResult.ModelQuery.ExpectedModel.model;
+      ModelParseResult.ModelQuery.ExpectedModel.model;
       target = Target.create_function (Ast.Reference.create function_name);
       model_source;
     }

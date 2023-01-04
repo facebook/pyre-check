@@ -425,7 +425,7 @@ let test_lineage_analysis _ =
 let test_partial_sink_converter _ =
   let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
     let configuration = assert_parse configuration in
-    Taint.TaintConfiguration.get_triggered_sink configuration ~partial_sink ~source
+    TaintConfiguration.get_triggered_sink configuration ~partial_sink ~source
     |> assert_equal
          ~cmp:(Option.equal Sinks.equal)
          ~printer:(fun value -> value >>| Sinks.show |> Option.value ~default:"None")
@@ -539,7 +539,7 @@ let test_validate _ =
       configurations
       |> List.map ~f:(fun (path, content) ->
              PyrePath.create_absolute path, Yojson.Safe.from_string content)
-      |> Taint.TaintConfiguration.from_json_list
+      |> TaintConfiguration.from_json_list
       |> Core.Result.map_error
            ~f:
              (List.map ~f:(fun { TaintConfiguration.Error.path; kind } ->

@@ -715,14 +715,14 @@ let end_to_end_integration_test path context =
         File.create path
         |> File.content
         |> Option.map ~f:(fun content ->
-               Taint.TaintConfiguration.from_json_list [path, Yojson.Safe.from_string content]
-               |> Taint.TaintConfiguration.exception_on_error)
+               TaintConfiguration.from_json_list [path, Yojson.Safe.from_string content]
+               |> TaintConfiguration.exception_on_error)
       with
       | Core_unix.Unix_error _ -> None
     in
     let add_initial_models = Option.is_none models_source && Option.is_none taint_configuration in
     let taint_configuration =
-      taint_configuration |> Option.value ~default:Taint.TaintConfiguration.Heap.default
+      taint_configuration |> Option.value ~default:TaintConfiguration.Heap.default
     in
     let handle = PyrePath.show path |> String.split ~on:'/' |> List.last_exn in
     let create_call_graph_files call_graph =
@@ -810,7 +810,7 @@ let end_to_end_integration_test path context =
           TypeEnvironment.ReadOnly.module_tracker type_environment
           |> ModuleTracker.ReadOnly.lookup_relative_path
         in
-        Taint.Reporting.fetch_and_externalize
+        Reporting.fetch_and_externalize
           ~taint_configuration
           ~fixpoint_state
           ~filename_lookup
