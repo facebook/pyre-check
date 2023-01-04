@@ -3051,7 +3051,8 @@ let test_call_graph_of_define context =
                {
                  FormatStringCallees.call_targets =
                    [
-                     (* TODO(T112028293): Properly resolve `__str__` calls on union-typed variables *)
+                     (* TODO(T112028293): Properly resolve `__str__` calls on union-typed
+                        variables *)
                      CallTarget.create
                        ~implicit_self:true
                        ~receiver_type:(Type.Primitive "test.B")
@@ -3676,8 +3677,7 @@ let test_call_graph_of_define context =
                   ~call_targets:
                     [
                       CallTarget.create
-                        ~implicit_self:
-                          true
+                        ~implicit_self:true
                           (* Assigned index is 2 instead of 1, because we use the control flow graph
                              traversal order. *)
                         ~index:2
@@ -3704,7 +3704,8 @@ let test_call_graph_of_define context =
                (CallCallees.create
                   ~call_targets:
                     [
-                      (* Assigned index is 2 instead of 1, because we visit the if statement twice. *)
+                      (* Assigned index is 2 instead of 1, because we visit the if statement
+                         twice. *)
                       CallTarget.create
                         ~index:2
                         ~return_type:(Some ReturnType.bool)

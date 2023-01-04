@@ -445,7 +445,7 @@ let call_function_with_precise_parameters
                    _;
                  };
              }
-             :: prefix_arguments
+          :: prefix_arguments
           when Identifier.equal args_local_variable_name given_args_variable
                && Identifier.equal kwargs_local_variable_name given_kwargs_variable ->
             let prefix_arguments = List.rev prefix_arguments in
@@ -513,7 +513,8 @@ let replace_signature_if_always_passing_on_arguments
   =
   match List.rev wrapper_parameters with
   | { Node.value = { name = kwargs_parameter; _ }; _ }
-    :: { Node.value = { name = args_parameter; _ }; _ } :: remaining_parameters
+    :: { Node.value = { name = args_parameter; _ }; _ }
+    :: remaining_parameters
     when String.is_prefix ~prefix:"*" args_parameter
          && (not (String.is_prefix ~prefix:"**" args_parameter))
          && String.is_prefix ~prefix:"**" kwargs_parameter ->
@@ -541,7 +542,8 @@ let replace_signature_if_always_passing_on_arguments
         | Ok pairs ->
             let pairs =
               (args_parameter, args_local_variable_name)
-              :: (kwargs_parameter, kwargs_local_variable_name) :: pairs
+              :: (kwargs_parameter, kwargs_local_variable_name)
+              :: pairs
             in
             Some (rename_local_variables ~pairs define_with_original_signature)
         | Unequal_lengths -> None

@@ -274,7 +274,8 @@ module UninstantiatedAttributeTable = struct
     | nonzero -> nonzero
 end
 
-(* These modules get included at the bottom of this file, they're just here for aesthetic purposes *)
+(* These modules get included at the bottom of this file, they're just here for aesthetic
+   purposes *)
 module TypeParameterValidationTypes = struct
   type generic_type_problems =
     | IncorrectNumberOfParameters of {
@@ -2153,7 +2154,8 @@ module SignatureSelection = struct
         in
         match List.rev arguments with
         | { kind = DoubleStar; resolved = keyword_component; _ }
-          :: { kind = SingleStar; resolved = positional_component; _ } :: reversed_arguments_head
+          :: { kind = SingleStar; resolved = positional_component; _ }
+          :: reversed_arguments_head
           when combines_into_variable ~positional_component ~keyword_component ->
             let arguments = List.rev reversed_arguments_head in
             get_parameter_argument_mapping
@@ -3014,10 +3016,9 @@ class base class_metadata_environment dependency =
         in
         let all_special_methods =
           constructor
-          ::
-          (base_typed_dictionary_definition fields
-          |> get_field_attributes ~include_generated_attributes:true
-          |> List.filter_map ~f:overload_method)
+          :: (base_typed_dictionary_definition fields
+             |> get_field_attributes ~include_generated_attributes:true
+             |> List.filter_map ~f:overload_method)
         in
         List.iter ~f:(UninstantiatedAttributeTable.add table) all_special_methods
       in
@@ -3099,8 +3100,7 @@ class base class_metadata_environment dependency =
                    ~assumptions
                    ?instantiated:None
                    ~accessed_through_class:false
-                   ~accessed_through_readonly:
-                     false
+                   ~accessed_through_readonly:false
                      (* TODO(T65806273): Right now we're just ignoring `__set__`s on dataclass
                         attributes. This avoids needing to explicitly break the loop that would
                         otherwise result or to somehow separate these results from the main set of
@@ -4271,7 +4271,7 @@ class base class_metadata_environment dependency =
             let simple_decorator_name =
               match decorator with
               | Some (ModuleAttribute { from; name; remaining; _ }) ->
-                  Reference.create_from_list (Reference.as_list from @ name :: remaining)
+                  Reference.create_from_list (Reference.as_list from @ (name :: remaining))
                   |> Reference.show
               | _ -> Reference.show name
             in
@@ -4729,11 +4729,10 @@ class base class_metadata_environment dependency =
       in
       let definitions =
         class_name
-        ::
-        ClassMetadataEnvironment.ReadOnly.successors
-          class_metadata_environment
-          ?dependency
-          class_name
+        :: ClassMetadataEnvironment.ReadOnly.successors
+             class_metadata_environment
+             ?dependency
+             class_name
       in
       let definition_index parent =
         parent

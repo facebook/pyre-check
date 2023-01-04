@@ -14,7 +14,8 @@ exception ParentDirectoryError of string
 
 let ensure_parent_directory_exists path =
   (* The directory creation part is intentionally using a sequential API, since if we call
-     `Lwt_unix.mkdir` instead it would lead to race conditions among the prefix `mkdir` invocations. *)
+     `Lwt_unix.mkdir` instead it would lead to race conditions among the prefix `mkdir`
+     invocations. *)
   match PyrePath.ensure_parent_directory_exists path with
   | Result.Ok () -> Lwt.return_unit
   | Result.Error message -> Lwt.fail (ParentDirectoryError message)

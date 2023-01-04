@@ -10,7 +10,8 @@
 
    The typical build system is just an identity mapping - we analyze the source directories and
    search path as-is. But Pyre also supports using the Buck build system which can handle remapping
-   source locations as well as generating code (e.g. thrift, stubs generated from C++ sources, etc.) *)
+   source locations as well as generating code (e.g. thrift, stubs generated from C++ sources,
+   etc.) *)
 
 open Base
 

@@ -1165,7 +1165,8 @@ let test_register_buffer_attribute context =
       "Revealed type [-1]: Revealed type for `self.none_buffer` is `unknown`.";
       "Revealed type [-1]: Revealed type for `y` is `torch.Tensor`.";
     ];
-  (* No spurious "uninitialized attribute" error if someone also explicitly declares the attribute. *)
+  (* No spurious "uninitialized attribute" error if someone also explicitly declares the
+     attribute. *)
   assert_type_errors
     {|
       import torch

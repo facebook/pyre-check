@@ -901,7 +901,8 @@ let test_define_local_bindings _ =
   |}
     ~expected:["x", Some (ExpectBinding.create Binding.Kind.WalrusTarget (location (3, 9) (3, 10)))];
 
-  (* Bindings in nested scope should not leak into the nesting scope (except for walrus operators) *)
+  (* Bindings in nested scope should not leak into the nesting scope (except for walrus
+     operators) *)
   assert_bindings {|
     def foo():
       def bar():

@@ -571,7 +571,8 @@ let type_of_generator_send_and_return ~global_resolution generator_type =
       | Some [_yield_type; send_type] -> send_type, Type.none
       | _ ->
           (* Fall back to Type.none because it's legal to use other annotations like `object` or
-             `Iterator` on a generator function, but in those cases the send type is always NoneType *)
+             `Iterator` on a generator function, but in those cases the send type is always
+             NoneType *)
           Type.none, Type.none)
 
 

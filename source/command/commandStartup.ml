@@ -9,7 +9,8 @@
 
 open Core
 
-(* These configurations are essential in setting up global states and triggering full type checking. *)
+(* These configurations are essential in setting up global states and triggering full type
+   checking. *)
 module BaseConfiguration = struct
   type t = {
     (* Source file discovery *)

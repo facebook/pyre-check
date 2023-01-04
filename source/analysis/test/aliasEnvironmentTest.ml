@@ -399,8 +399,8 @@ let test_updates context =
       Y = C
       X = Y
     |}
-    ~middle_actions:
-      ["test.X", dependency, Some "test.C"] (* Even if the route to the alias changed, no trigger *)
+    ~middle_actions:["test.X", dependency, Some "test.C"]
+      (* Even if the route to the alias changed, no trigger *)
     ~expected_triggers:[]
     ~post_actions:["test.X", dependency, Some "test.C"]
     ();

@@ -903,7 +903,7 @@ end = struct
     | { Node.value = Expression { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } :: _
     | _
       :: { Node.value = Expression { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ }
-         :: _ ->
+      :: _ ->
         true
     | _ -> false
 

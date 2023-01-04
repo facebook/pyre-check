@@ -111,7 +111,8 @@ let resolve_global ~resolution name =
       match find_method_definitions ~resolution name with
       | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
       | first :: _ :: _ as overloads ->
-          (* Note that we use the first overload as the base implementation, which might be unsound. *)
+          (* Note that we use the first overload as the base implementation, which might be
+             unsound. *)
           Some
             (Global.Attribute
                (Type.Callable.create

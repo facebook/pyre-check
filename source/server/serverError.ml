@@ -40,7 +40,8 @@ let kind_and_message_from_exception = function
           []
         else
           "Here are the last few lines of Buck log:"
-          :: "  ..." :: List.map additional_logs ~f:(String.( ^ ) " ")
+          :: "  ..."
+          :: List.map additional_logs ~f:(String.( ^ ) " ")
       in
       ( kind,
         Format.sprintf

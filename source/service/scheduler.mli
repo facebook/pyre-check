@@ -71,7 +71,8 @@ val map_reduce
   'state
 
 (* NOTE: If incremental check matters, and if within `f` new dependency keys are going to be
-   created, you might want to use `SharedMemoryKeys.DependencyKey.Registry.collected_iter` instead. *)
+   created, you might want to use `SharedMemoryKeys.DependencyKey.Registry.collected_iter`
+   instead. *)
 val iter : t -> policy:Policy.t -> f:('input list -> unit) -> inputs:'input list -> unit
 
 val is_parallel : t -> bool

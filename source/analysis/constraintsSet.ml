@@ -263,7 +263,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 ~ordered_type:(Concatenation concatenation)
                 ~remaining_parameters
           | ( Parameter.Variable (Concrete variable_annotation)
-              :: Parameter.Keywords keywords_annotation :: _,
+              :: Parameter.Keywords keywords_annotation
+              :: _,
               Parameter.Named { annotation = named_annotation; _ } :: right_parameters ) ->
               if Type.equal variable_annotation keywords_annotation then
                 solve_less_or_equal
@@ -552,7 +553,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            have no explicit upper bound, we would solve upper bound for unconstrained type variables
            <: union. This is `object` <: union, which will bind any free type variable T in the
            union as `object`. And, since we pick the first valid solution, we would ignore any
-           solution from the other approach (a) and return the confusing solution that `T = object`. *)
+           solution from the other approach (a) and return the confusing solution that `T =
+           object`. *)
         List.concat_map ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right) union
         @ solve_less_or_equal
             order
@@ -649,7 +651,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               match left, right, unary with
               (* TODO kill these special cases *)
               | Type.Bottom, _, _ ->
-                  (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
+                  (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its
+                     variance. *)
                   constraints
               | _, Type.Top, _ ->
                   (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)

@@ -554,8 +554,8 @@ module ClassAttributes = struct
           match Define.is_property_setter define, parameters with
           | ( true,
               _
-              :: { Node.value = { Expression.Parameter.annotation = value_annotation; _ }; _ } :: _
-            ) ->
+              :: { Node.value = { Expression.Parameter.annotation = value_annotation; _ }; _ }
+              :: _ ) ->
               Some (Setter { name; self_annotation; value_annotation })
           | _ -> None
       in

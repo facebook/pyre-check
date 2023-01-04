@@ -1332,7 +1332,8 @@ module State (Context : Context) = struct
                      base = None;
                    }
         (* TODO(T63892020): We need to fix up qualification so nested classes and functions are just
-           normal locals rather than attributes of the enclosing function, which they really are not *)
+           normal locals rather than attributes of the enclosing function, which they really are
+           not *)
         | Type.Parametric { name = "BoundMethod"; _ }
         | Type.Callable _ -> (
             let resolved =
@@ -1508,7 +1509,8 @@ module State (Context : Context) = struct
                             ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                             ~callable
                             ~self_argument;
-                        (* Make sure we emit errors against the inverse function, not the original *)
+                        (* Make sure we emit errors against the inverse function, not the
+                           original *)
                         callable = unpacked_callable_and_self_argument;
                       })
                 |> Option.value ~default:{ callable_data with selected_return_annotation }
@@ -2310,7 +2312,8 @@ module State (Context : Context) = struct
           callee = { Node.value = Name (Name.Identifier "getattr"); _ };
           arguments =
             { Call.Argument.value = base; _ }
-            :: { Call.Argument.value = attribute_expression; _ } :: (([] | [_]) as default_argument);
+            :: { Call.Argument.value = attribute_expression; _ }
+            :: (([] | [_]) as default_argument);
         } -> (
         let ({ Resolved.errors; resolution; _ } as base_resolved) =
           forward_expression ~resolution base
@@ -4434,7 +4437,8 @@ module State (Context : Context) = struct
                                 (AnalysisError.FinalAttribute reference)
                           | None, _ -> None
                           | Some _, Some _ ->
-                              (* We presume assignments to annotated targets are valid re: Finality *)
+                              (* We presume assignments to annotated targets are valid re:
+                                 Finality *)
                               None
                           | Some (attribute, _), None -> (
                               let open AnnotatedAttribute in
@@ -4522,7 +4526,8 @@ module State (Context : Context) = struct
                       | Some reference -> Type.Primitive (Reference.show reference)
                     in
                     explicit
-                    (* [Movie.items: int] would raise an error because [Mapping] also has [items]. *)
+                    (* [Movie.items: int] would raise an error because [Mapping] also has
+                       [items]. *)
                     && (not
                           (GlobalResolution.is_typed_dictionary
                              ~resolution:global_resolution
@@ -4723,7 +4728,8 @@ module State (Context : Context) = struct
                     GlobalResolution.refine ~global_resolution annotation refined
                   in
                   let annotation =
-                    (* Do not refine targets explicitly annotated as 'Any' to allow for escape hatch *)
+                    (* Do not refine targets explicitly annotated as 'Any' to allow for escape
+                       hatch *)
                     (* Do not refine targets with invariance mismatch as we cannot keep the inferred
                        type up to date for mutable containers *)
                     let invariance_mismatch =
@@ -5171,7 +5177,8 @@ module State (Context : Context) = struct
                                 GlobalResolution.module_exists
                                   global_resolution
                                   (Reference.combine from name_reference)
-                                || (* The current module is descendant of a placeholder-stub module. *)
+                                || (* The current module is descendant of a placeholder-stub
+                                      module. *)
                                 GlobalResolution.is_suppressed_module global_resolution from
                               then
                                 None
@@ -5815,7 +5822,7 @@ module State (Context : Context) = struct
                Node.value = { name = first_name; value = None; annotation = Some first_annotation };
                _;
              }
-             :: reversed_head,
+          :: reversed_head,
           _ )
         when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
           match

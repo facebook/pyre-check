@@ -143,7 +143,8 @@ let test_unresolved_select context =
           with
           | Some
               ({ Node.value = Expression { Node.value = Expression.Call { arguments; _ }; _ }; _ }
-              :: { Node.value = Expression expression; _ } :: _) ->
+              :: { Node.value = Expression expression; _ }
+              :: _) ->
               arguments, expression
           | _ -> failwith "couldnt extract"
         in

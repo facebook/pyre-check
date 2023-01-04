@@ -520,7 +520,8 @@ let sanitize_expression =
 
 let sanitize_statement statement =
   (* The names in the function signatures are not strictly "expressions", so
-     [transform_in_statement] doesn't transform them. We have to transform them in a separate pass. *)
+     [transform_in_statement] doesn't transform them. We have to transform them in a separate
+     pass. *)
   let module SanitizeSignatures = MakeStatementTransformer (struct
     type t = unit
 

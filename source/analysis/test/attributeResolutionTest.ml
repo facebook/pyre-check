@@ -422,7 +422,8 @@ let test_get_parameter_argument_mapping _ =
           annotation = [];
         };
     };
-  (* TODO(T107236583): We currently store the argument for a named parameter as the entire `*args`. *)
+  (* TODO(T107236583): We currently store the argument for a named parameter as the entire
+     `*args`. *)
   assert_parameter_argument_mapping
     ~callable:"typing.Callable[[Named(x, int)], None]"
     ~self_argument:None

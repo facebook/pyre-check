@@ -258,7 +258,9 @@ let test_updates context =
     Option.iter new_source ~f:(ScratchProject.add_file project ~relative:"test.py");
     let update_result =
       let { Configuration.Analysis.local_root; _ } = configuration in
-      List.map ["test.py", ()] ~f:(fun (relative, _) ->
+      List.map
+        ["test.py", ()]
+        ~f:(fun (relative, _) ->
           Test.relative_artifact_path ~root:local_root ~relative
           |> ArtifactPath.Event.(create ~kind:Kind.Unknown))
       |> ScratchProject.update_environment project

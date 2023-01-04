@@ -2218,7 +2218,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let forward ~statement_key:_ _ ~statement:_ = failwith "Don't call me"
 end
 
-(* Split the inferred entry state into externally visible taint_in_taint_out parts and sink_taint. *)
+(* Split the inferred entry state into externally visible taint_in_taint_out parts and
+   sink_taint. *)
 let extract_tito_and_sink_models
     define
     ~is_constructor

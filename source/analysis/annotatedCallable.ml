@@ -92,7 +92,7 @@ let create_overload_without_applying_decorators
       match List.rev parameters with
       | Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation)
         :: Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation))
-           :: reversed_head -> (
+        :: reversed_head -> (
           let default () = Defined (List.map parameters ~f:parse) in
           match
             parse_as_parameter_specification_instance_annotation
@@ -134,8 +134,7 @@ let create_overload_without_applying_decorators
             |> Option.value ~default:(Type.Primitive class_annotation)
           in
           let annotation = if meta then Type.meta parent_type else parent_type in
-          Type.Callable.Defined
-            (Named { Type.Callable.Parameter.name; annotation; default } :: tail)
+          Type.Callable.Defined (Named { Type.Callable.Parameter.name; annotation; default } :: tail)
         in
         if String.equal (Define.Signature.unqualified_name signature) "__new__" then
           replacement ~meta:true

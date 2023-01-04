@@ -1617,7 +1617,7 @@ end = struct
               create_int_expression_from_types
                 ~operation:`Multiply
                 (create (Polynomial.create_from_operation (Monomial.Operation.Product middle))
-                 :: multiplicands)
+                :: multiplicands)
         in
         prefix @ suffix
         |> List.map ~f:type_to_int_expression
@@ -6486,7 +6486,8 @@ module TypedDictionary = struct
       @ (non_total_special_methods class_name |> List.map ~f:(fun { name; _ } -> define name))
 end
 
-(* Transform tuples and callables so they are printed correctly when running infer and click to fix. *)
+(* Transform tuples and callables so they are printed correctly when running infer and click to
+   fix. *)
 let infer_transform annotation =
   let module InferTransform = Transform.Make (struct
     type state = unit

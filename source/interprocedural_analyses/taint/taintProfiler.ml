@@ -133,21 +133,21 @@ let dump = function
           name = "Forward analysis - statements";
           seconds = statement_events |> filter_statement_events Forward |> statement_events_seconds;
         }
-        ::
-        {
-          name = "Backward analysis - statements";
-          seconds = statement_events |> filter_statement_events Backward |> statement_events_seconds;
-        }
-        ::
-        {
-          name = "Forward analysis - fetch models";
-          seconds = fetch_model_events |> filter_model_events Forward |> fetch_model_events_seconds;
-        }
-        ::
-        {
-          name = "Backward analysis - fetch models";
-          seconds = fetch_model_events |> filter_model_events Backward |> fetch_model_events_seconds;
-        }
+        :: {
+             name = "Backward analysis - statements";
+             seconds =
+               statement_events |> filter_statement_events Backward |> statement_events_seconds;
+           }
+        :: {
+             name = "Forward analysis - fetch models";
+             seconds =
+               fetch_model_events |> filter_model_events Forward |> fetch_model_events_seconds;
+           }
+        :: {
+             name = "Backward analysis - fetch models";
+             seconds =
+               fetch_model_events |> filter_model_events Backward |> fetch_model_events_seconds;
+           }
         :: step_events
       in
 

@@ -68,7 +68,7 @@ let test_json_parsing context =
              `Assoc ["extension", `String "derp"];
              `Assoc ["full_path", `String "/home/bar.txt"];
            ] )
-       :: dummy_server_json))
+      :: dummy_server_json))
     ~expected:
       {
         dummy_server_configuration with
@@ -93,7 +93,7 @@ let test_json_parsing context =
     (`Assoc
       (( "saved_state_action",
          `List [`String "load_from_project"; `Assoc ["project_name", `String "project"]] )
-       :: dummy_server_json))
+      :: dummy_server_json))
     ~expected:
       {
         dummy_server_configuration with

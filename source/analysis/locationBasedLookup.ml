@@ -642,7 +642,8 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
       List.foldi statements ~init:names_so_far ~f:(walk_statement ~node_id)
     in
     let walk_define_signature ~define_signature names_so_far =
-      (* Special-case define signature processing, since this is not included in the define's cfg. *)
+      (* Special-case define signature processing, since this is not included in the define's
+         cfg. *)
       walk_statement ~node_id:Cfg.entry_index 0 names_so_far define_signature
     in
     let cfg = Cfg.create define in

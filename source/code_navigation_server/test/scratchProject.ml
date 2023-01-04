@@ -83,7 +83,8 @@ let setup ~context ?(include_typeshed_stubs = true) ?(critical_files = []) ?watc
      to `/tmp` to avoid the issue for now. *)
   Caml.Filename.set_temp_dir_name "/tmp";
 
-  (* We assume that there's only one checked source directory that acts as the global root as well. *)
+  (* We assume that there's only one checked source directory that acts as the global root as
+     well. *)
   let source_root =
     bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in

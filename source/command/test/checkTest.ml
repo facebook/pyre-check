@@ -42,7 +42,7 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc
       (("additional_logging_sections", `List [`String "foo"; `String "bar"])
-       :: BaseConfigurationTest.dummy_base_json))
+      :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_check_configuration with additional_logging_sections = ["foo"; "bar"] };
   ()
 

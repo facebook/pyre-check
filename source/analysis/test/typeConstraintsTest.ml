@@ -284,7 +284,8 @@ let test_single_variable_solution _ =
       [`Lower (ParameterVariadicPair (parameter_variadic, empty_parameters))]
     (Some [ParameterVariadicPair (parameter_variadic, empty_parameters)]);
 
-  (* Attempting to bound a parameter variadic by more than one set of non-identical parameters fails *)
+  (* Attempting to bound a parameter variadic by more than one set of non-identical parameters
+     fails *)
   assert_solution
     ~sequentially_applied_bounds:
       [

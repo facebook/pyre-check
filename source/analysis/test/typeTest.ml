@@ -5192,7 +5192,8 @@ let test_split_ordered_types _ =
                (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[Type.string] variadic) );
          suffix_pairs = [Type.bool, Type.integer];
        });
-  (* There are no matching elements of known length in either the prefix_pairs or the suffix_pairs. *)
+  (* There are no matching elements of known length in either the prefix_pairs or the
+     suffix_pairs. *)
   assert_split
     "[pyre_extensions.Unpack[Ts], str]"
     "[int, pyre_extensions.Unpack[Ts]]"
@@ -5816,7 +5817,8 @@ let test_zip_variables_with_parameters _ =
 
      def foo(x: Foo[*Ts]) -> None: ...
 
-     because `Ts` might be an empty tuple, in which case the generic `T` won't be bound to any type. *)
+     because `Ts` might be an empty tuple, in which case the generic `T` won't be bound to any
+     type. *)
   assert_zipped
     ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts]]"
     ~instantiation:"Foo[pyre_extensions.Unpack[Ts2]]"

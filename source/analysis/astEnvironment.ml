@@ -316,7 +316,8 @@ module FromReadOnlyUpstream = struct
               }
             in
             let stop =
-              (* Work around CPython bug where the end location sometimes precedes start location. *)
+              (* Work around CPython bug where the end location sometimes precedes start
+                 location. *)
               if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
                 start
               else

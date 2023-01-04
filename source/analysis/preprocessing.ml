@@ -94,7 +94,8 @@ let transform_string_annotation_expression ~relative =
             }
       | List elements -> List (List.map elements ~f:transform_expression)
       | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
-          (* Start at column + 1 since parsing begins after the opening quote of the string literal. *)
+          (* Start at column + 1 since parsing begins after the opening quote of the string
+             literal. *)
           match
             Parser.parse
               ~start_line
@@ -1073,8 +1074,9 @@ module Qualify (Context : QualifyContext) = struct
                 ]
             | variable_name :: remaining_arguments when name_is ~name:"typing.TypeVar" callee ->
                 variable_name
-                ::
-                List.map ~f:(qualify_argument ~qualify_strings:Qualify ~scope) remaining_arguments
+                :: List.map
+                     ~f:(qualify_argument ~qualify_strings:Qualify ~scope)
+                     remaining_arguments
             | arguments ->
                 let qualify_strings =
                   if
@@ -1430,12 +1432,11 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                            Node.value = Expression.Constant (Constant.Integer given_minor_version);
                            _;
                          }
-                         :: {
-                              Node.value =
-                                Expression.Constant (Constant.Integer given_micro_version);
-                              _;
-                            }
-                            :: _);
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_micro_version);
+                           _;
+                         }
+                      :: _);
                   _;
                 } )
             when is_system_version_expression left ->
@@ -1458,7 +1459,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                            Node.value = Expression.Constant (Constant.Integer given_minor_version);
                            _;
                          }
-                         :: _);
+                      :: _);
                   _;
                 } )
             when is_system_version_expression left ->
@@ -1531,12 +1532,11 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                            Node.value = Expression.Constant (Constant.Integer given_minor_version);
                            _;
                          }
-                         :: {
-                              Node.value =
-                                Expression.Constant (Constant.Integer given_micro_version);
-                              _;
-                            }
-                            :: _);
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_micro_version);
+                           _;
+                         }
+                      :: _);
                   _;
                 },
                 right )
@@ -1559,7 +1559,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                            Node.value = Expression.Constant (Constant.Integer given_minor_version);
                            _;
                          }
-                         :: _);
+                      :: _);
                   _;
                 },
                 right )
@@ -2254,7 +2254,7 @@ let expand_typed_dictionary_declarations
                              value = { Node.value = Dictionary { Dictionary.entries; _ }; _ };
                              _;
                            }
-                           :: argument_tail;
+                        :: argument_tail;
                     };
                 _;
               };
@@ -3221,7 +3221,8 @@ let populate_captures ({ Source.statements; _ } as source) =
             | Scope.Kind.Define ({ Define.Signature.parent; _ } as signature) -> (
                 match binding_kind with
                 | Binding.Kind.(ClassName | ImportName _) ->
-                    (* Judgement call: these bindings are (supposedly) not useful for type checking *)
+                    (* Judgement call: these bindings are (supposedly) not useful for type
+                       checking *)
                     None
                 | Binding.Kind.(ParameterName { star = Some Star.Twice; annotation; _ }) ->
                     let dictionary_annotation value_annotation =
@@ -3523,7 +3524,8 @@ let populate_unbound_names source =
           in
           AccessCollector.from_class class_ |> compute_unbound_names ~scopes
         in
-        (* Use parent scope here as classes do not open up new scopes for the methods defined in it. *)
+        (* Use parent scope here as classes do not open up new scopes for the methods defined in
+           it. *)
         let body = transform_statements ~scopes body in
         { Node.location; value = Class { class_ with body; top_level_unbound_names } }
     (* The rest is just boilerplates to make sure every nested define gets visited *)
@@ -4041,7 +4043,7 @@ let expand_pytorch_register_buffer source =
                         };
                     }
                     :: { value = initial_value; _ }
-                       :: ([] | [{ name = Some { Node.value = "$parameter$persistent"; _ }; _ }]);
+                    :: ([] | [{ name = Some { Node.value = "$parameter$persistent"; _ }; _ }]);
                 };
             location;
           }

@@ -119,7 +119,8 @@ let handle_subscription_request
       in
       match subscription_request with
       | Subscription.Request.SubscribeToTypeErrors _ ->
-          (* We send back the initial set of type errors when a subscription first gets established. *)
+          (* We send back the initial set of type errors when a subscription first gets
+             established. *)
           handle_request
             ~properties:server_properties
             ~state:old_server_state

@@ -39,7 +39,8 @@ let test_low_level_apis _ =
     (fun () -> create_exn () >>= with_connection ~f:test_connection)
     (function
       | OUnitTest.OUnit_failure _ as exn ->
-          (* We need to re-raise OUnit test failures since OUnit relies on it for error reporting. *)
+          (* We need to re-raise OUnit test failures since OUnit relies on it for error
+             reporting. *)
           raise exn
       | _ as exn ->
           Format.printf

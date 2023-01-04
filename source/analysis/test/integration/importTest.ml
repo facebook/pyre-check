@@ -190,7 +190,8 @@ let test_check_imports context =
         ) -> None: ...
     |}
     ["Unbound name [10]: Name `existing_module` is used but not defined in the current scope."];
-  (* TODO(T80454071): This should raise an error about `existing_module` since it was not imported. *)
+  (* TODO(T80454071): This should raise an error about `existing_module` since it was not
+     imported. *)
   assert_type_errors
     ~update_environment_with:[source]
     {|

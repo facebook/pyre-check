@@ -1056,7 +1056,8 @@ let test_priority_multi_source_paths context =
 
 
 let test_root_independence context =
-  (* We want to test that `ModuleTracker` creation is independent of where the root is located at. *)
+  (* We want to test that `ModuleTracker` creation is independent of where the root is located
+     at. *)
   let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
   let external_root0 =
     bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
@@ -1694,7 +1695,8 @@ let test_update_lazy_tracker context =
       ~loading_style:
         (LazyLookUpQualifiers [!&"looked_up"; !&"inner.looked_up"; !&"implicit_looked_up"])
   in
-  (* TODO: get rid of this; without it the compiler will not let us include a not-yet-used variant. *)
+  (* TODO: get rid of this; without it the compiler will not let us include a not-yet-used
+     variant. *)
   let _ = LoadingStyle.LazyLookUpQualifiers [] in
   (* Adding new entirely new modules *)
   assert_incremental

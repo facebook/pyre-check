@@ -58,7 +58,7 @@ let test_json_parsing context =
              `Assoc ["extension", `String "derp"];
              `Assoc ["full_path", `String "/home/bar.txt"];
            ] )
-       :: dummy_base_json))
+      :: dummy_base_json))
     ~expected:
       {
         dummy_codenav_configuration with

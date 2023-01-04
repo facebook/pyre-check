@@ -185,7 +185,8 @@ module ScratchProject = struct
       ?on_server_socket_ready
       ~on_exception:(function
         | OUnitTest.OUnit_failure _ as exn ->
-            (* We need to re-raise OUnit test failures since OUnit relies on it for error reporting. *)
+            (* We need to re-raise OUnit test failures since OUnit relies on it for error
+               reporting. *)
             raise exn
         | Start.ServerStopped _ ->
             if expect_server_error then

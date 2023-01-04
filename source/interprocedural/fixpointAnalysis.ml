@@ -299,7 +299,8 @@ module Make (Analysis : ANALYSIS) = struct
     }
 
     let add step callable state =
-      (* Separate diagnostics from state to speed up lookups, and cache fixpoint state separately. *)
+      (* Separate diagnostics from state to speed up lookups, and cache fixpoint state
+         separately. *)
       let () = SharedModels.add callable state.model in
       (* Skip result writing unless necessary (e.g. overrides don't have results) *)
       let () =

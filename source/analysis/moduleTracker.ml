@@ -621,7 +621,8 @@ module ImplicitModules = struct
 
   module Value = struct
     (* This represents the raw paths of all *explicit* children. We treat a namespace package as
-       importable only when it has regular python files as children, i.e. when this set is nonempty. *)
+       importable only when it has regular python files as children, i.e. when this set is
+       nonempty. *)
     type t = ModulePath.Raw.Set.t [@@deriving compare]
 
     let empty = ModulePath.Raw.Set.empty
