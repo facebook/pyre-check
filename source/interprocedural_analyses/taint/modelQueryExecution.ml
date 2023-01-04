@@ -638,6 +638,8 @@ module ReadWriteCache = struct
   module NameToTargetSet = struct
     type t = Target.Set.t SerializableStringMap.t
 
+    let empty = SerializableStringMap.empty
+
     let singleton ~name ~target =
       SerializableStringMap.add name (Target.Set.singleton target) SerializableStringMap.empty
 
@@ -649,6 +651,10 @@ module ReadWriteCache = struct
           | None -> Some (Target.Set.singleton target)
           | Some targets -> Some (Target.Set.add target targets))
         map
+
+
+    let read map ~name =
+      SerializableStringMap.find_opt name map |> Option.value ~default:Target.Set.empty
   end
 
   type t = NameToTargetSet.t SerializableStringMap.t
@@ -662,6 +668,12 @@ module ReadWriteCache = struct
         | None -> Some (NameToTargetSet.singleton ~name ~target)
         | Some name_targets -> Some (NameToTargetSet.write name_targets ~name ~target))
       map
+
+
+  let read map ~kind ~name =
+    SerializableStringMap.find_opt kind map
+    |> Option.value ~default:NameToTargetSet.empty
+    |> NameToTargetSet.read ~name
 
 
   let show_set set =
@@ -679,6 +691,61 @@ module ReadWriteCache = struct
   let show = Format.asprintf "%a" pp
 
   let equal = SerializableStringMap.equal (SerializableStringMap.equal Target.Set.equal)
+end
+
+module CandidateTargetsFromCache = struct
+  type t =
+    | Top
+    | Set of Target.Set.t
+  [@@deriving equal]
+
+  let bottom = Set Target.Set.empty
+
+  let meet left right =
+    match left, right with
+    | Top, _ -> right
+    | _, Top -> left
+    | Set left, Set right -> Set (Target.Set.inter left right)
+
+
+  let join left right =
+    match left, right with
+    | Top, _
+    | _, Top ->
+        Top
+    | Set left, Set right -> Set (Target.Set.union left right)
+
+
+  let rec from_constraint cache = function
+    | ModelQuery.Constraint.ReadFromCache { kind; name } ->
+        Set (ReadWriteCache.read cache ~name ~kind)
+    | ModelQuery.Constraint.AnyOf constraints ->
+        List.fold
+          ~init:bottom
+          ~f:(fun candidates constraint_ -> join candidates (from_constraint cache constraint_))
+          constraints
+    | ModelQuery.Constraint.AllOf constraints ->
+        List.fold
+          ~init:Top
+          ~f:(fun candidates constraint_ -> meet candidates (from_constraint cache constraint_))
+          constraints
+    | ModelQuery.Constraint.Not _
+    | ModelQuery.Constraint.NameConstraint _
+    | ModelQuery.Constraint.FullyQualifiedNameConstraint _
+    | ModelQuery.Constraint.AnnotationConstraint _
+    | ModelQuery.Constraint.ReturnConstraint _
+    | ModelQuery.Constraint.AnyParameterConstraint _
+    | ModelQuery.Constraint.AnyDecoratorConstraint _
+    | ModelQuery.Constraint.ClassConstraint _ ->
+        Top
+
+
+  let pp formatter = function
+    | Top -> Format.fprintf formatter "Top"
+    | Set set -> Format.fprintf formatter "Set(%s)" (ReadWriteCache.show_set set)
+
+
+  let show = Format.asprintf "%a" pp
 end
 
 (* Module interface that we need to provide for each type of query (callable, attribute and global). *)

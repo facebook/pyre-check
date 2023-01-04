@@ -63,6 +63,17 @@ module ReadWriteCache : sig
   val empty : t
 
   val write : t -> kind:string -> name:string -> target:Interprocedural.Target.t -> t
+
+  val read : t -> kind:string -> name:string -> Interprocedural.Target.Set.t
+end
+
+module CandidateTargetsFromCache : sig
+  type t =
+    | Top
+    | Set of Interprocedural.Target.Set.t
+  [@@deriving show, equal]
+
+  val from_constraint : ReadWriteCache.t -> ModelParseResult.ModelQuery.Constraint.t -> t
 end
 
 module CallableQueryExecutor : sig

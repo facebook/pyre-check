@@ -3638,11 +3638,127 @@ let test_generated_cache context =
   ()
 
 
+let test_read_from_cache_constraints _ =
+  let assert_target_candidates ~cache ~constraints ~expected =
+    let cache =
+      List.fold
+        ~init:ModelQueryExecution.ReadWriteCache.empty
+        ~f:(fun cache (kind, name, target) ->
+          ModelQueryExecution.ReadWriteCache.write cache ~kind ~name ~target)
+        cache
+    in
+    let actual =
+      ModelQueryExecution.CandidateTargetsFromCache.from_constraint cache (AllOf constraints)
+    in
+    assert_equal
+      ~cmp:ModelQueryExecution.CandidateTargetsFromCache.equal
+      ~printer:ModelQueryExecution.CandidateTargetsFromCache.show
+      expected
+      actual
+  in
+  let cache =
+    [
+      "thrift", "A:foo", Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal };
+      "thrift", "B:foo", Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal };
+      "thrift", "C:foo", Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+    ]
+  in
+  assert_target_candidates
+    ~cache
+    ~constraints:[ReadFromCache { kind = "thrift"; name = "A:foo" }]
+    ~expected:
+      (Set
+         (Interprocedural.Target.Set.of_list
+            [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
+  assert_target_candidates
+    ~cache
+    ~constraints:[NameConstraint (Matches (Re2.create_exn "bar"))]
+    ~expected:Top;
+  assert_target_candidates
+    ~cache
+    ~constraints:
+      [
+        ReadFromCache { kind = "thrift"; name = "A:foo" };
+        NameConstraint (Matches (Re2.create_exn "bar"));
+      ]
+    ~expected:
+      (Set
+         (Interprocedural.Target.Set.of_list
+            [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
+  assert_target_candidates
+    ~cache
+    ~constraints:
+      [
+        ReadFromCache { kind = "thrift"; name = "A:foo" };
+        ReadFromCache { kind = "thrift"; name = "B:foo" };
+      ]
+    ~expected:(Set Interprocedural.Target.Set.empty);
+  assert_target_candidates
+    ~cache
+    ~constraints:
+      [
+        AnyOf
+          [
+            ReadFromCache { kind = "thrift"; name = "A:foo" };
+            ReadFromCache { kind = "thrift"; name = "B:foo" };
+          ];
+      ]
+    ~expected:
+      (Set
+         (Interprocedural.Target.Set.of_list
+            [
+              Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal };
+              Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal };
+            ]));
+  assert_target_candidates
+    ~cache
+    ~constraints:
+      [
+        AnyOf
+          [
+            ReadFromCache { kind = "thrift"; name = "A:foo" };
+            ReadFromCache { kind = "thrift"; name = "B:foo" };
+            NameConstraint (Matches (Re2.create_exn "bar"));
+          ];
+      ]
+    ~expected:Top;
+  assert_target_candidates
+    ~cache
+    ~constraints:
+      [
+        AllOf
+          [
+            AnyOf
+              [
+                ReadFromCache { kind = "thrift"; name = "A:foo" };
+                ReadFromCache { kind = "thrift"; name = "B:foo" };
+                ReadFromCache { kind = "thrift"; name = "C:foo" };
+              ];
+            AnyOf
+              [
+                ReadFromCache { kind = "thrift"; name = "A:foo" };
+                ReadFromCache { kind = "thrift"; name = "B:foo" };
+              ];
+            AnyOf
+              [
+                ReadFromCache { kind = "thrift"; name = "A:foo" };
+                ReadFromCache { kind = "thrift"; name = "C:foo" };
+              ];
+          ];
+      ]
+    ~expected:
+      (Set
+         (Interprocedural.Target.Set.of_list
+            [Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal }]));
+  ()
+
+
 let () =
   "modelQuery"
   >::: [
          "generated_annotations" >:: test_generated_annotations;
          "partition_cache_queries" >:: test_partition_cache_queries;
          "generated_cache" >:: test_generated_cache;
+         "read_from_cache_constraints" >:: test_read_from_cache_constraints;
        ]
   |> Test.run
