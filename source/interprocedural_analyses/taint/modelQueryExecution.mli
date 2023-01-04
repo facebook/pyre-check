@@ -110,9 +110,9 @@ module AttributeQueryExecutor : sig
     targets:VariableMetadata.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
-end
 
-val get_globals_and_annotations : resolution:Analysis.GlobalResolution.t -> VariableMetadata.t list
+  val get_attributes : resolution:Analysis.GlobalResolution.t -> VariableMetadata.t list
+end
 
 module GlobalVariableQueryExecutor : sig
   val generate_annotations_from_query_on_target
@@ -130,6 +130,8 @@ module GlobalVariableQueryExecutor : sig
     targets:VariableMetadata.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
+
+  val get_globals : resolution:Analysis.GlobalResolution.t -> VariableMetadata.t list
 end
 
 val generate_models_from_queries

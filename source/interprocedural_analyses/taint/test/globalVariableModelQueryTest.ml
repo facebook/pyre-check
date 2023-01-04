@@ -57,7 +57,8 @@ let test_find_globals context =
              Reference.is_prefix ~prefix:exclude_prefix global_name))
     in
     let actual =
-      Taint.ModelQueryExecution.get_globals_and_annotations ~resolution:global_resolution
+      Taint.ModelQueryExecution.GlobalVariableQueryExecutor.get_globals
+        ~resolution:global_resolution
       |> List.filter ~f:is_uninteresting_global
     in
     let expected =

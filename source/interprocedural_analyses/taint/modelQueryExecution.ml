@@ -1246,130 +1246,139 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       annotations
 end)
 
-module AttributeQueryExecutor = MakeQueryExecutor (struct
-  type target_information = VariableMetadata.t
+module AttributeQueryExecutor = struct
+  let get_attributes ~resolution =
+    let get_class_attributes class_name =
+      let class_summary =
+        GlobalResolution.class_summary resolution (Type.Primitive class_name) >>| Node.value
+      in
+      match class_summary with
+      | None -> []
+      | Some ({ name = class_name_reference; _ } as class_summary) ->
+          let attributes, constructor_attributes =
+            ( ClassSummary.attributes ~include_generated_attributes:false class_summary,
+              ClassSummary.constructor_attributes class_summary )
+          in
+          let all_attributes =
+            Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
+          in
+          let get_name_and_annotation_from_attributes attribute_name attribute accumulator =
+            match Node.value attribute with
+            | { ClassSummary.Attribute.kind = Simple { ClassSummary.Attribute.annotation; _ }; _ }
+              ->
+                {
+                  VariableMetadata.name =
+                    Reference.create ~prefix:class_name_reference attribute_name;
+                  type_annotation = annotation;
+                }
+                :: accumulator
+            | _ -> accumulator
+          in
+          Identifier.SerializableMap.fold get_name_and_annotation_from_attributes all_attributes []
+    in
+    let all_classes =
+      resolution
+      |> GlobalResolution.unannotated_global_environment
+      |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+    in
+    List.concat_map all_classes ~f:get_class_attributes
 
-  type annotation = TaintAnnotation.t
 
-  let get_target { VariableMetadata.name; _ } = Target.create_object name
+  include MakeQueryExecutor (struct
+    type target_information = VariableMetadata.t
 
-  let make_modelable ~resolution:_ variable_metadata = Modelable.Attribute variable_metadata
+    type annotation = TaintAnnotation.t
 
-  let generate_annotations_from_query_models ~modelable:_ models =
-    let production_to_taint = function
-      | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
+    let get_target { VariableMetadata.name; _ } = Target.create_object name
+
+    let make_modelable ~resolution:_ variable_metadata = Modelable.Attribute variable_metadata
+
+    let generate_annotations_from_query_models ~modelable:_ models =
+      let production_to_taint = function
+        | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
+        | _ -> None
+      in
+      let apply_model = function
+        | ModelQuery.Model.Attribute productions ->
+            List.filter_map productions ~f:production_to_taint
+        | _ -> failwith "impossible case"
+      in
+      List.concat_map models ~f:apply_model
+
+
+    let generate_model_from_annotations
+        ~resolution
+        ~source_sink_filter
+        ~stubs:_
+        ~target:{ VariableMetadata.name; _ }
+        annotations
+      =
+      ModelParser.create_attribute_model_from_annotations
+        ~resolution
+        ~name
+        ~source_sink_filter
+        annotations
+  end)
+end
+
+module GlobalVariableQueryExecutor = struct
+  let get_globals ~resolution =
+    let unannotated_global_environment =
+      GlobalResolution.unannotated_global_environment resolution
+    in
+    let variable_metadata_for_global global_reference =
+      match
+        UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+          unannotated_global_environment
+          global_reference
+      with
+      | Some (SimpleAssign { explicit_annotation = Some _ as explicit_annotation; _ }) ->
+          Some { VariableMetadata.name = global_reference; type_annotation = explicit_annotation }
+      | Some (TupleAssign _)
+      | Some (SimpleAssign _) ->
+          Some { VariableMetadata.name = global_reference; type_annotation = None }
       | _ -> None
     in
-    let apply_model = function
-      | ModelQuery.Model.Attribute productions -> List.filter_map productions ~f:production_to_taint
-      | _ -> failwith "impossible case"
-    in
-    List.concat_map models ~f:apply_model
+    UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
+    |> List.filter_map ~f:variable_metadata_for_global
 
 
-  let generate_model_from_annotations
-      ~resolution
-      ~source_sink_filter
-      ~stubs:_
-      ~target:{ VariableMetadata.name; _ }
-      annotations
-    =
-    ModelParser.create_attribute_model_from_annotations
-      ~resolution
-      ~name
-      ~source_sink_filter
-      annotations
-end)
+  include MakeQueryExecutor (struct
+    type target_information = VariableMetadata.t
 
-let get_class_attributes ~resolution class_name =
-  let class_summary =
-    GlobalResolution.class_summary resolution (Type.Primitive class_name) >>| Node.value
-  in
-  match class_summary with
-  | None -> []
-  | Some ({ name = class_name_reference; _ } as class_summary) ->
-      let attributes, constructor_attributes =
-        ( ClassSummary.attributes ~include_generated_attributes:false class_summary,
-          ClassSummary.constructor_attributes class_summary )
+    type annotation = TaintAnnotation.t
+
+    let get_target { VariableMetadata.name; _ } = Target.create_object name
+
+    let make_modelable ~resolution:_ variable_metadata = Modelable.Global variable_metadata
+
+    (* Generate taint annotations from the `models` part of a given model query. *)
+    let generate_annotations_from_query_models ~modelable:_ models =
+      let production_to_taint = function
+        | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
+        | _ -> None
       in
-      let all_attributes =
-        Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
+      let apply_model = function
+        | ModelQuery.Model.Global productions -> List.filter_map productions ~f:production_to_taint
+        | _ -> []
       in
-      let get_name_and_annotation_from_attributes attribute_name attribute accumulator =
-        match attribute with
-        | {
-         Node.value =
-           {
-             ClassSummary.Attribute.kind =
-               ClassSummary.Attribute.Simple { ClassSummary.Attribute.annotation; _ };
-             _;
-           };
-         _;
-        } ->
-            {
-              VariableMetadata.name = Reference.create ~prefix:class_name_reference attribute_name;
-              type_annotation = annotation;
-            }
-            :: accumulator
-        | _ -> accumulator
-      in
-      Identifier.SerializableMap.fold get_name_and_annotation_from_attributes all_attributes []
+      List.concat_map models ~f:apply_model
 
 
-let get_globals_and_annotations ~resolution =
-  let unannotated_global_environment = GlobalResolution.unannotated_global_environment resolution in
-  let variable_metadata_for_global global_reference =
-    match
-      UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-        unannotated_global_environment
-        global_reference
-    with
-    | Some (SimpleAssign { explicit_annotation = Some _ as explicit_annotation; _ }) ->
-        Some { VariableMetadata.name = global_reference; type_annotation = explicit_annotation }
-    | Some (TupleAssign _)
-    | Some (SimpleAssign _) ->
-        Some { VariableMetadata.name = global_reference; type_annotation = None }
-    | _ -> None
-  in
-  UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
-  |> List.filter_map ~f:variable_metadata_for_global
-
-
-module GlobalVariableQueryExecutor = MakeQueryExecutor (struct
-  type target_information = VariableMetadata.t
-
-  type annotation = TaintAnnotation.t
-
-  let get_target { VariableMetadata.name; _ } = Target.create_object name
-
-  let make_modelable ~resolution:_ variable_metadata = Modelable.Global variable_metadata
-
-  (* Generate taint annotations from the `models` part of a given model query. *)
-  let generate_annotations_from_query_models ~modelable:_ models =
-    let production_to_taint = function
-      | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
-      | _ -> None
-    in
-    let apply_model = function
-      | ModelQuery.Model.Global productions -> List.filter_map productions ~f:production_to_taint
-      | _ -> []
-    in
-    List.concat_map models ~f:apply_model
-
-
-  let generate_model_from_annotations
-      ~resolution
-      ~source_sink_filter
-      ~stubs:_
-      ~target:{ VariableMetadata.name; _ }
-      annotations
-    =
-    ModelParser.create_attribute_model_from_annotations
-      ~resolution
-      ~name
-      ~source_sink_filter
-      annotations
-end)
+    let generate_model_from_annotations
+        ~resolution
+        ~source_sink_filter
+        ~stubs:_
+        ~target:{ VariableMetadata.name; _ }
+        annotations
+      =
+      ModelParser.create_attribute_model_from_annotations
+        ~resolution
+        ~name
+        ~source_sink_filter
+        annotations
+  end)
+end
 
 let generate_models_from_queries
     ~resolution
@@ -1406,12 +1415,7 @@ let generate_models_from_queries
   let model_query_results =
     if not (List.is_empty attribute_queries) then
       let () = Log.info "Generating models from attribute model queries..." in
-      let all_classes =
-        resolution
-        |> GlobalResolution.unannotated_global_environment
-        |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
-      in
-      let attributes = List.concat_map all_classes ~f:(get_class_attributes ~resolution) in
+      let attributes = AttributeQueryExecutor.get_attributes ~resolution in
       AttributeQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~resolution
@@ -1430,7 +1434,7 @@ let generate_models_from_queries
   let model_query_results =
     if not (List.is_empty global_queries) then
       let () = Log.info "Generating models from global model queries..." in
-      let globals = get_globals_and_annotations ~resolution in
+      let globals = GlobalVariableQueryExecutor.get_globals ~resolution in
       GlobalVariableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~resolution
