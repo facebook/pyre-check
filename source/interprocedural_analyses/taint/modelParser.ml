@@ -454,14 +454,14 @@ let rec parse_annotations
                               (Constant.String { StringLiteral.value = canonical_name; _ });
                           _;
                         }
-                        :: {
-                             Node.value =
-                               Expression.Constant
-                                 (Constant.String { StringLiteral.value = canonical_port; _ });
-                             _;
-                           }
-                           :: { Node.value = Expression.Constant (Constant.Integer producer_id); _ }
-                              :: remaining_arguments);
+                     :: {
+                          Node.value =
+                            Expression.Constant
+                              (Constant.String { StringLiteral.value = canonical_port; _ });
+                          _;
+                        }
+                     :: { Node.value = Expression.Constant (Constant.Integer producer_id); _ }
+                     :: remaining_arguments);
                  _;
                };
              _;
@@ -3134,9 +3134,9 @@ let rec parse_statement
               };
           }
           :: { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause }
-             :: { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause }
-                :: { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause }
-                   :: remaining_arguments ->
+          :: { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause }
+          :: { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause }
+          :: remaining_arguments ->
             Ok ((name, find_clause, where_clause, model_clause), remaining_arguments)
         | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses statement)]
       in

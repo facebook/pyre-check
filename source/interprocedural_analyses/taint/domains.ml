@@ -309,7 +309,8 @@ module CallInfoIntervals = struct
       {
         caller_interval = ClassIntervalSet.meet caller_interval_left caller_interval_right;
         receiver_interval = ClassIntervalSet.meet receiver_interval_left receiver_interval_right;
-        (* The result of meeting two calls is a call on `self` iff. one of the calls is on `self`. *)
+        (* The result of meeting two calls is a call on `self` iff. one of the calls is on
+           `self`. *)
         is_self_call = is_self_call_left || is_self_call_right;
       }
   end)

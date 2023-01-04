@@ -1003,15 +1003,14 @@ let from_json_list source_json_list =
                 code;
                 message_format;
               }
-              ::
-              {
-                Rule.sources = second_sources;
-                sinks = [Sinks.TriggeredPartialSink second_sink];
-                transforms = [];
-                name;
-                code;
-                message_format;
-              }
+              :: {
+                   Rule.sources = second_sources;
+                   sinks = [Sinks.TriggeredPartialSink second_sink];
+                   transforms = [];
+                   name;
+                   code;
+                   message_format;
+                 }
               :: rules,
               PartialSinkConverter.add
                 partial_sink_converter

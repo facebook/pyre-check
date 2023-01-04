@@ -296,7 +296,8 @@ let rec matches_decorator_constraint ~decorator = function
           let decorator_positional_arguments, decorator_keyword_arguments =
             split_arguments arguments
           in
-          (* Since equality comparison is more costly, check the lists are the same lengths first. *)
+          (* Since equality comparison is more costly, check the lists are the same lengths
+             first. *)
           Int.equal
             (List.length constraint_positional_arguments)
             (List.length decorator_positional_arguments)
@@ -721,7 +722,8 @@ module CandidateTargetsFromCache = struct
   let show = Format.asprintf "%a" pp
 end
 
-(* Module interface that we need to provide for each type of query (callable, attribute and global). *)
+(* Module interface that we need to provide for each type of query (callable, attribute and
+   global). *)
 module type QUERY_KIND = sig
   (* The target or reference we want to model. *)
   type target_or_reference
