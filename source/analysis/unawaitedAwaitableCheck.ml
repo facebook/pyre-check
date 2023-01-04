@@ -909,26 +909,31 @@ let unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define 
   |> Option.value ~default:[]
 
 
+let should_check_define { Node.value = define; _ } = Define.is_async define
+
 let check_define ~resolution ~local_annotations ~qualifier define =
-  let timer = Timer.start () in
-  let errors = unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define in
-  let () =
-    Statistics.performance
-      ~flush:false
-      ~randomly_log_every:1000
-      ~always_log_time_threshold:0.5 (* Seconds *)
-      ~name:"UnawaitedAwaitableCheck"
-      ~timer
-      ~normals:
-        [
-          (* We want the time taken for each function, so send the function name as the name of the
-             event. *)
-          "name", define |> Node.value |> Define.name |> Reference.show;
-          "request kind", "UnawaitedAwaitableCheck";
-        ]
-      ()
-  in
-  errors
+  if not (should_check_define define) then
+    []
+  else
+    let timer = Timer.start () in
+    let errors = unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define in
+    let () =
+      Statistics.performance
+        ~flush:false
+        ~randomly_log_every:1000
+        ~always_log_time_threshold:0.5 (* Seconds *)
+        ~name:"UnawaitedAwaitableCheck"
+        ~timer
+        ~normals:
+          [
+            (* We want the time taken for each function, so send the function name as the name of
+               the event. *)
+            "name", define |> Node.value |> Define.name |> Reference.show;
+            "request kind", "UnawaitedAwaitableCheck";
+          ]
+        ()
+    in
+    errors
 
 
 let check_module_TESTING_ONLY

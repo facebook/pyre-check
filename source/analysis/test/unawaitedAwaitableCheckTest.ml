@@ -38,22 +38,25 @@ let test_forward context =
 
       def awaitable() -> Awaitable[int]: ...
 
-      unawaited = awaitable()
+      async def main() -> None:
+        unawaited = awaitable()
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
 
-      unawaited = awaitable()
+      async def main() -> None:
+        unawaited = awaitable()
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
 
-      awaited = awaitable()
-      await awaited
+      async def main() -> None:
+        awaited = awaitable()
+        await awaited
     |}
     [];
 
@@ -78,8 +81,9 @@ let test_forward context =
     {|
       async def awaitable() -> int: ...
 
-      awaited = awaitable()
-      assert awaited
+      async def main() -> None:
+        awaited = awaitable()
+        assert awaited
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `awaited` is never awaited."];
 
@@ -386,10 +390,11 @@ let test_forward context =
 
       async def other_awaitable() -> int: ...
 
-      unawaited = awaitable()
-      other_unawaited = other_awaitable()
-      if True > False:
-        unawaited = other_unawaited
+      async def main() -> None:
+        unawaited = awaitable()
+        other_unawaited = other_awaitable()
+        if True > False:
+          unawaited = other_unawaited
     |}
     [
       "Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited.";
@@ -402,10 +407,11 @@ let test_forward context =
 
       async def other_awaitable() -> int: ...
 
-      unawaited = awaitable()
-      other_unawaited = other_awaitable()
-      unawaited = other_unawaited
-      await unawaited
+      async def main() -> None:
+        unawaited = awaitable()
+        other_unawaited = other_awaitable()
+        unawaited = other_unawaited
+        await unawaited
     |}
     ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
   assert_awaitable_errors
@@ -414,11 +420,12 @@ let test_forward context =
 
       async def other_awaitable() -> int: ...
 
-      unawaited = awaitable()
-      other_unawaited = other_awaitable()
-      if 1 > 2:
-        unawaited = other_unawaited
-      await unawaited
+      async def main() -> None:
+        unawaited = awaitable()
+        other_unawaited = other_awaitable()
+        if 1 > 2:
+          unawaited = other_unawaited
+        await unawaited
     |}
     [];
   assert_awaitable_errors
@@ -427,18 +434,19 @@ let test_forward context =
 
       async def other_awaitable() -> int: ...
 
-      unawaited = awaitable()
-      other_unawaited = other_awaitable()
-      if 1 > 2:
-        unawaited = other_unawaited
-      await other_unawaited
+      async def main() -> None:
+        unawaited = awaitable()
+        other_unawaited = other_awaitable()
+        if 1 > 2:
+          unawaited = other_unawaited
+        await other_unawaited
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
 
-      def foo():
+      async def foo():
         awaitable()
     |}
     ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
@@ -449,7 +457,7 @@ let test_forward context =
       class C:
         async def awaitable(self) -> int: ...
 
-      def foo():
+      async def foo():
         await C().awaitable()
     |}
     [];
@@ -696,7 +704,7 @@ let test_forward context =
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
-      def meta_awaitable():
+      async def meta_awaitable():
         x = y = awaitable()
         a = b = c = awaitable()
     |}
@@ -709,14 +717,14 @@ let test_forward context =
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
-      def meta_awaitable():
+      async def meta_awaitable():
         x = y := await awaitable()
     |}
     [];
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
-      def meta_awaitable():
+      async def meta_awaitable():
         x = (y := awaitable())
     |}
     (* TODO(T53600647): Mention y in the error message. *)
@@ -724,7 +732,7 @@ let test_forward context =
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
-      def meta_awaitable():
+      async def meta_awaitable():
         if y := await awaitable():
           pass
     |}
@@ -732,7 +740,7 @@ let test_forward context =
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
-      def meta_awaitable():
+      async def meta_awaitable():
         if y := awaitable():
           pass
     |}
@@ -742,7 +750,7 @@ let test_forward context =
     {|
       async def awaitable() -> bool: ...
 
-      def foo():
+      async def foo():
         if awaitable():
           pass
     |}
@@ -827,8 +835,9 @@ let test_state context =
     {|
       async def awaitable() -> int: ...
 
-      if True:
-        unawaited = awaitable()
+      async def main() -> None:
+        if True:
+          unawaited = awaitable()
     |}
     ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
   assert_awaitable_errors
@@ -836,9 +845,10 @@ let test_state context =
     {|
       async def awaitable() -> int: ...
 
-      unawaited = awaitable()
-      if True:
-        await unawaited
+      async def main() -> None:
+        unawaited = awaitable()
+        if True:
+          await unawaited
     |}
     []
 
@@ -1242,7 +1252,7 @@ let test_ternary_expression context =
     {|
       async def awaitable() -> bool: ...
 
-      def main() -> None:
+      async def main() -> None:
         unawaited = awaitable()
         awaited = awaitable()
 
@@ -1254,7 +1264,7 @@ let test_ternary_expression context =
     {|
       async def awaitable() -> int: ...
 
-      def main(some_bool: bool) -> None:
+      async def main(some_bool: bool) -> None:
         unawaited = awaitable()
         awaited = awaitable()
 
@@ -1266,7 +1276,7 @@ let test_ternary_expression context =
     {|
       async def awaitable() -> int: ...
 
-      def main(some_bool: bool) -> None:
+      async def main(some_bool: bool) -> None:
         unawaited = awaitable()
         awaited = awaitable()
 
@@ -1278,7 +1288,7 @@ let test_ternary_expression context =
     {|
       async def awaitable() -> int: ...
 
-      def main(some_bool: bool) -> None:
+      async def main(some_bool: bool) -> None:
         unawaited1 = awaitable()
         unawaited2 = awaitable()
         awaited1 = awaitable()
@@ -1295,7 +1305,7 @@ let test_ternary_expression context =
     {|
       async def awaitable() -> bool: ...
 
-      def main(some_bool: bool) -> None:
+      async def main(some_bool: bool) -> None:
         unawaited1 = awaitable()
         awaited1 = awaitable()
         awaited2 = awaitable()
@@ -1384,6 +1394,22 @@ let test_class_satisfying_awaitable context =
   ()
 
 
+let test_non_async_function context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
+  (* Don't error for unawaited awaitables within a non-async function. *)
+  assert_awaitable_errors
+    {|
+      from typing import Awaitable
+
+      async def foo() -> int: ...
+
+      def main() -> None:
+        unawaited = foo()
+    |}
+    [];
+  ()
+
+
 let () =
   "unawaited"
   >::: [
@@ -1403,5 +1429,6 @@ let () =
          "ternary" >:: test_ternary_expression;
          "bottom_type" >:: test_bottom_type;
          "class_satisfying_awaitable" >:: test_class_satisfying_awaitable;
+         "non_async_function" >:: test_non_async_function;
        ]
   |> Test.run
