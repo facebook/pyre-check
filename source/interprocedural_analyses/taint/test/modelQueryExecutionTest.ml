@@ -7,7 +7,6 @@
 
 open OUnit2
 open Core
-open Pyre
 open Test
 open Taint
 open Interprocedural
@@ -56,7 +55,7 @@ let test_generated_annotations context =
       expected
       actual
   in
-  let assert_generated_annotations_for_attributes ~source ~query ~name ~annotation ~expected =
+  let assert_generated_annotations_for_attributes ~source ~query ~name ~expected =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
@@ -68,23 +67,12 @@ let test_generated_annotations context =
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap
     in
-    let annotation_expression =
-      annotation
-      >>= fun annotation ->
-      try
-        let parsed = PyreParser.Parser.parse_exn [annotation] in
-        match parsed with
-        | [{ Ast.Node.value = Expression expression; _ }] -> Some expression
-        | _ -> None
-      with
-      | _ -> None
-    in
     let actual =
       ModelQueryExecution.AttributeQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
-        ~target:{ name = Ast.Reference.create name; type_annotation = annotation_expression }
+        ~target:(Ast.Reference.create name)
         query
     in
     assert_equal
@@ -110,7 +98,7 @@ let test_generated_annotations context =
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
-        ~target:{ name = Ast.Reference.create name; type_annotation = None }
+        ~target:(Ast.Reference.create name)
         query
     in
     assert_equal
@@ -2014,7 +2002,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:None
     ~expected:[source "Test"];
   assert_generated_annotations_for_attributes
     ~source:{|
@@ -2034,7 +2021,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:None
     ~expected:[sink "Test"];
   assert_generated_annotations_for_attributes
     ~source:{|
@@ -2054,7 +2040,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~annotation:None
     ~expected:[];
   assert_generated_annotations_for_attributes
     ~source:{|
@@ -2078,7 +2063,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:None
     ~expected:[source "Test"];
   ();
   assert_generated_annotations_for_attributes
@@ -2103,7 +2087,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~annotation:None
     ~expected:[source "Test"];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2130,7 +2113,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.E.z"
-    ~annotation:None
     ~expected:[];
   assert_generated_annotations_for_attributes
     ~source:{|
@@ -2149,7 +2131,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:(Some "int")
     ~expected:[source "Test"];
   assert_generated_annotations_for_attributes
     ~source:{|
@@ -2168,7 +2149,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.y"
-    ~annotation:(Some "str")
     ~expected:[];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2195,7 +2175,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:(Some "typing.Type[Foo1]")
     ~expected:[source "Test"];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2222,7 +2201,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.y"
-    ~annotation:(Some "typing.Type[Foo2]")
     ~expected:[source "Test"];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2249,7 +2227,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.z"
-    ~annotation:(Some "typing.Type[Bar]")
     ~expected:[];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2270,7 +2247,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:(Some "int")
     ~expected:[];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2291,7 +2267,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.y"
-    ~annotation:(Some "typing.Annotated[str, \"foo\"]")
     ~expected:[source "Test"];
 
   (* Test 'Not' clause *)
@@ -2451,7 +2426,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:None
     ~expected:[];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2479,7 +2453,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~annotation:None
     ~expected:[];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2507,7 +2480,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.E.z"
-    ~annotation:None
     ~expected:[source "Test"];
 
   (* Test transitive extends *)
@@ -2536,7 +2508,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.E.z"
-    ~annotation:None
     ~expected:[source "Test"];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2563,7 +2534,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~annotation:None
     ~expected:[source "Test"];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2590,7 +2560,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:None
     ~expected:[source "Test"];
   assert_generated_annotations
     ~source:
@@ -2735,7 +2704,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~annotation:None
     ~expected:[];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2762,7 +2730,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~annotation:None
     ~expected:[source "Test"];
   assert_generated_annotations_for_attributes
     ~source:
@@ -2789,7 +2756,6 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.E.z"
-    ~annotation:None
     ~expected:[];
   assert_generated_annotations
     ~source:

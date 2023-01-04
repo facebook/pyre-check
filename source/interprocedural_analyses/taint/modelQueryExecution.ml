@@ -19,14 +19,6 @@ open Analysis
 open Interprocedural
 open ModelParseResult
 
-module VariableMetadata = struct
-  type t = {
-    name: Ast.Reference.t;
-    type_annotation: Ast.Expression.Expression.t option;
-  }
-  [@@deriving show, compare]
-end
-
 (* Represents the result of generating models from queries. *)
 module ModelQueryRegistryMap = struct
   type t = Registry.t String.Map.t
@@ -428,26 +420,40 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name = func
 
 
 module Modelable = struct
+  (* Use lazy values so we only query information when required. *)
   type t =
     | Callable of {
         target: Target.t;
         signature: Statement.Define.Signature.t Lazy.t;
       }
-    | Attribute of VariableMetadata.t
-    | Global of VariableMetadata.t
+    | Attribute of {
+        name: Reference.t;
+        type_annotation: Expression.t option Lazy.t;
+      }
+    | Global of {
+        name: Reference.t;
+        type_annotation: Expression.t option Lazy.t;
+      }
+
+  let target = function
+    | Callable { target; _ } -> target
+    | Attribute { name; _ }
+    | Global { name; _ } ->
+        Target.create_object name
+
 
   let name = function
     | Callable { target; _ } -> Target.external_name target
-    | Attribute { VariableMetadata.name; _ }
-    | Global { VariableMetadata.name; _ } ->
+    | Attribute { name; _ }
+    | Global { name; _ } ->
         Reference.show name
 
 
   let type_annotation = function
     | Callable _ -> failwith "unexpected use of type_annotation on a callable"
-    | Attribute { VariableMetadata.type_annotation; _ }
-    | Global { VariableMetadata.type_annotation; _ } ->
-        type_annotation
+    | Attribute { type_annotation; _ }
+    | Global { type_annotation; _ } ->
+        Lazy.force type_annotation
 
 
   let return_annotation = function
@@ -479,7 +485,7 @@ module Modelable = struct
 
   let class_name = function
     | Callable { target; _ } -> Target.class_name target
-    | Attribute { VariableMetadata.name; _ } -> Reference.prefix name >>| Reference.show
+    | Attribute { name; _ } -> Reference.prefix name >>| Reference.show
     | Global _ -> failwith "unexpected use of a class constraint on a global"
 
 
@@ -491,13 +497,6 @@ module Modelable = struct
     | ModelQuery.Find.Global, Global _ ->
         true
     | _ -> false
-
-
-  let target = function
-    | Callable { target; _ } -> target
-    | Attribute { VariableMetadata.name; _ }
-    | Global { VariableMetadata.name; _ } ->
-        Target.create_object name
 
 
   let expand_write_to_cache modelable name =
@@ -724,16 +723,16 @@ end
 
 (* Module interface that we need to provide for each type of query (callable, attribute and global). *)
 module type QUERY_KIND = sig
-  (* The target we want to model, with possibly additional information. *)
-  type target_information
+  (* The target or reference we want to model. *)
+  type target_or_reference
 
   (* The type of annotation produced by this type of query (e.g, `ModelAnnotation.t` for callables
      and `TaintAnnotation.t` for attributes and globals). *)
   type annotation
 
-  val get_target : target_information -> Target.t
+  val get_target : target_or_reference -> Target.t
 
-  val make_modelable : resolution:GlobalResolution.t -> target_information -> Modelable.t
+  val make_modelable : resolution:GlobalResolution.t -> target_or_reference -> Modelable.t
 
   (* Generate taint annotations from the `models` part of a given model query. *)
   val generate_annotations_from_query_models
@@ -745,7 +744,7 @@ module type QUERY_KIND = sig
     :  resolution:GlobalResolution.t ->
     source_sink_filter:SourceSinkFilter.t option ->
     stubs:Target.t Hash_set.t ->
-    target:target_information ->
+    target:target_or_reference ->
     annotation list ->
     (Model.t, ModelVerificationError.t) result
 end
@@ -970,7 +969,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 end
 
 module CallableQueryExecutor = MakeQueryExecutor (struct
-  type target_information = Target.t
+  type target_or_reference = Target.t
 
   type annotation = ModelAnnotation.t
 
@@ -1227,19 +1226,13 @@ module AttributeQueryExecutor = struct
           let all_attributes =
             Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
           in
-          let get_name_and_annotation_from_attributes attribute_name attribute accumulator =
+          let get_reference_from_attributes attribute_name attribute accumulator =
             match Node.value attribute with
-            | { ClassSummary.Attribute.kind = Simple { ClassSummary.Attribute.annotation; _ }; _ }
-              ->
-                {
-                  VariableMetadata.name =
-                    Reference.create ~prefix:class_name_reference attribute_name;
-                  type_annotation = annotation;
-                }
-                :: accumulator
+            | { ClassSummary.Attribute.kind = Simple _; _ } ->
+                Reference.create ~prefix:class_name_reference attribute_name :: accumulator
             | _ -> accumulator
           in
-          Identifier.SerializableMap.fold get_name_and_annotation_from_attributes all_attributes []
+          Identifier.SerializableMap.fold get_reference_from_attributes all_attributes []
     in
     let all_classes =
       resolution
@@ -1249,14 +1242,45 @@ module AttributeQueryExecutor = struct
     List.concat_map all_classes ~f:get_class_attributes
 
 
+  let get_type_annotation ~resolution class_name attribute =
+    let get_annotation = function
+      | { ClassSummary.Attribute.kind = Simple { ClassSummary.Attribute.annotation; _ }; _ } ->
+          annotation
+      | _ -> None
+    in
+    GlobalResolution.class_summary resolution (Type.Primitive class_name)
+    >>| Node.value
+    >>= fun class_summary ->
+    match
+      ClassSummary.constructor_attributes class_summary
+      |> Identifier.SerializableMap.find_opt attribute
+      >>| Node.value
+      >>| get_annotation
+    with
+    | Some annotation -> annotation
+    | None ->
+        ClassSummary.attributes ~include_generated_attributes:false class_summary
+        |> Identifier.SerializableMap.find_opt attribute
+        >>| Node.value
+        >>= get_annotation
+
+
   include MakeQueryExecutor (struct
-    type target_information = VariableMetadata.t
+    type target_or_reference = Reference.t
 
     type annotation = TaintAnnotation.t
 
-    let get_target { VariableMetadata.name; _ } = Target.create_object name
+    let get_target = Target.create_object
 
-    let make_modelable ~resolution:_ variable_metadata = Modelable.Attribute variable_metadata
+    let make_modelable ~resolution name =
+      let type_annotation =
+        lazy
+          (let class_name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
+           let attribute = Reference.last name in
+           get_type_annotation ~resolution class_name attribute)
+      in
+      Modelable.Attribute { name; type_annotation }
+
 
     let generate_annotations_from_query_models ~modelable:_ models =
       let production_to_taint = function
@@ -1275,7 +1299,7 @@ module AttributeQueryExecutor = struct
         ~resolution
         ~source_sink_filter
         ~stubs:_
-        ~target:{ VariableMetadata.name; _ }
+        ~target:name
         annotations
       =
       ModelParser.create_attribute_model_from_annotations
@@ -1291,31 +1315,43 @@ module GlobalVariableQueryExecutor = struct
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment resolution
     in
-    let variable_metadata_for_global global_reference =
+    let filter_global global_reference =
       match
         UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
           unannotated_global_environment
           global_reference
       with
-      | Some (SimpleAssign { explicit_annotation = Some _ as explicit_annotation; _ }) ->
-          Some { VariableMetadata.name = global_reference; type_annotation = explicit_annotation }
       | Some (TupleAssign _)
       | Some (SimpleAssign _) ->
-          Some { VariableMetadata.name = global_reference; type_annotation = None }
-      | _ -> None
+          true
+      | _ -> false
     in
-    UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
-    |> List.filter_map ~f:variable_metadata_for_global
+    unannotated_global_environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
+    |> List.filter ~f:filter_global
+
+
+  let get_type_annotation ~resolution reference =
+    match
+      UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+        (GlobalResolution.unannotated_global_environment resolution)
+        reference
+    with
+    | Some (SimpleAssign { explicit_annotation; _ }) -> explicit_annotation
+    | _ -> None
 
 
   include MakeQueryExecutor (struct
-    type target_information = VariableMetadata.t
+    type target_or_reference = Reference.t
 
     type annotation = TaintAnnotation.t
 
-    let get_target { VariableMetadata.name; _ } = Target.create_object name
+    let get_target = Target.create_object
 
-    let make_modelable ~resolution:_ variable_metadata = Modelable.Global variable_metadata
+    let make_modelable ~resolution name =
+      let type_annotation = lazy (get_type_annotation ~resolution name) in
+      Modelable.Global { name; type_annotation }
+
 
     (* Generate taint annotations from the `models` part of a given model query. *)
     let generate_annotations_from_query_models ~modelable:_ models =
@@ -1334,7 +1370,7 @@ module GlobalVariableQueryExecutor = struct
         ~resolution
         ~source_sink_filter
         ~stubs:_
-        ~target:{ VariableMetadata.name; _ }
+        ~target:name
         annotations
       =
       ModelParser.create_attribute_model_from_annotations

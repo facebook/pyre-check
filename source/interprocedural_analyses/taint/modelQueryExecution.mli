@@ -5,14 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module VariableMetadata : sig
-  type t = {
-    name: Ast.Reference.t;
-    type_annotation: Ast.Expression.Expression.t option;
-  }
-  [@@deriving show, compare]
-end
-
 module ModelQueryRegistryMap : sig
   type t
 
@@ -99,7 +91,7 @@ module AttributeQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    target:VariableMetadata.t ->
+    target:Ast.Reference.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
 
@@ -107,11 +99,17 @@ module AttributeQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    targets:VariableMetadata.t list ->
+    targets:Ast.Reference.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_attributes : resolution:Analysis.GlobalResolution.t -> VariableMetadata.t list
+  val get_attributes : resolution:Analysis.GlobalResolution.t -> Ast.Reference.t list
+
+  val get_type_annotation
+    :  resolution:Analysis.GlobalResolution.t ->
+    string ->
+    string ->
+    Ast.Expression.t option
 end
 
 module GlobalVariableQueryExecutor : sig
@@ -119,7 +117,7 @@ module GlobalVariableQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    target:VariableMetadata.t ->
+    target:Ast.Reference.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
 
@@ -127,11 +125,16 @@ module GlobalVariableQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    targets:VariableMetadata.t list ->
+    targets:Ast.Reference.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_globals : resolution:Analysis.GlobalResolution.t -> VariableMetadata.t list
+  val get_globals : resolution:Analysis.GlobalResolution.t -> Ast.Reference.t list
+
+  val get_type_annotation
+    :  resolution:Analysis.GlobalResolution.t ->
+    Ast.Reference.t ->
+    Ast.Expression.t option
 end
 
 val generate_models_from_queries
