@@ -37,7 +37,7 @@ let worker_garbage_control =
     (Gc.get ()) with
     Gc.minor_heap_size = 256 * 1024;
     allocation_policy = best_fit_allocation_policy;
-    space_overhead = 120;
+    space_overhead = 200;
   }
 
 
@@ -52,7 +52,7 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
           (Gc.get ()) with
           Gc.minor_heap_size;
           allocation_policy = best_fit_allocation_policy;
-          space_overhead = 100;
+          space_overhead = 120;
         };
       let shared_mem_config =
         {
