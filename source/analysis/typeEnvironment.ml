@@ -125,7 +125,7 @@ let populate_for_definitions ~scheduler environment defines =
         (Scheduler.Policy.fixed_chunk_size
            ~minimum_chunk_size:100
            ~minimum_chunks_per_worker:2
-           ~preferred_chunk_size:5000
+           ~preferred_chunk_size:10000
            ())
       ~initial:0
       ~map
