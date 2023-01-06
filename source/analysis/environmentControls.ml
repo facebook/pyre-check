@@ -45,10 +45,8 @@ let no_validation_on_class_lookup_failure { no_validation_on_class_lookup_failur
   no_validation_on_class_lookup_failure
 
 
-let track_dependencies { configuration = { Configuration.Analysis.incremental_style; _ }; _ } =
-  match incremental_style with
-  | Configuration.Analysis.Shallow -> false
-  | Configuration.Analysis.FineGrained -> true
+let track_dependencies { configuration = { Configuration.Analysis.track_dependencies; _ }; _ } =
+  track_dependencies
 
 
 let debug { configuration = { Configuration.Analysis.debug; _ }; _ } = debug

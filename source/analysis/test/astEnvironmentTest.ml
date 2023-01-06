@@ -178,7 +178,7 @@ let test_parse_sources context =
         ~search_paths:
           [SearchPath.Root module_root; SearchPath.Root typeshed_root; SearchPath.Root stub_root]
         ~filter_directories:[local_root]
-        ~incremental_style:FineGrained
+        ~track_dependencies:true
         ()
     in
     let ast_environment =

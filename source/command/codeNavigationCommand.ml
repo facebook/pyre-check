@@ -93,7 +93,7 @@ module CodeNavigationConfiguration = struct
       ~excludes
       ~extensions
       ~store_type_check_resolution:true
-      ~incremental_style:Configuration.Analysis.FineGrained
+      ~track_dependencies:true
       ~log_directory:(PyrePath.absolute log_path)
       ~python_major_version:major
       ~python_minor_version:minor

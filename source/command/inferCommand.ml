@@ -89,7 +89,7 @@ module InferConfiguration = struct
       ~show_error_traces:false
       ~excludes
       ~extensions
-      ~incremental_style:Configuration.Analysis.Shallow
+      ~track_dependencies:false
       ~log_directory:(PyrePath.absolute log_path)
       ~python_major_version:major
       ~python_minor_version:minor

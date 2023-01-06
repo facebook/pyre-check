@@ -301,7 +301,7 @@ let test_updates context =
     let project =
       ScratchProject.setup
         ~include_typeshed_stubs:false
-        ~incremental_style:FineGrained
+        ~track_dependencies:true
         ~in_memory:false
         original_sources
         ~context

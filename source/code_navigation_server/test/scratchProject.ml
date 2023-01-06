@@ -122,7 +122,7 @@ let setup ~context ?(include_typeshed_stubs = true) ?(critical_files = []) ?watc
       ~excludes:[]
       ~extensions:[]
       ~store_type_check_resolution:true
-      ~incremental_style:Configuration.Analysis.FineGrained
+      ~track_dependencies:true
       ~log_directory:log_root
       ~source_paths:[SearchPath.Root source_root]
       ()

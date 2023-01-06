@@ -159,7 +159,7 @@ module ServerConfiguration = struct
       ~excludes
       ~extensions
       ~store_type_check_resolution
-      ~incremental_style:Configuration.Analysis.FineGrained
+      ~track_dependencies:true
       ~log_directory:(PyrePath.absolute log_path)
       ~python_major_version:major
       ~python_minor_version:minor

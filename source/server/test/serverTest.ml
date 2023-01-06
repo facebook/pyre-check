@@ -130,7 +130,7 @@ module ScratchProject = struct
           ~excludes:[]
           ~extensions:[]
           ~store_type_check_resolution:false
-          ~incremental_style:Configuration.Analysis.FineGrained
+          ~track_dependencies:true
           ~log_directory:log_root
           ~source_paths:[SearchPath.Root source_root]
           ()

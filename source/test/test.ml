@@ -2862,7 +2862,7 @@ module ScratchProject = struct
   end
 
   let setup
-      ?(incremental_style = Configuration.Analysis.FineGrained)
+      ?(track_dependencies = true)
       ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
       ~context
       ?(external_sources = [])
@@ -2909,7 +2909,7 @@ module ScratchProject = struct
           ~log_directory
           ~filter_directories:[local_root]
           ~ignore_all_errors:[external_root]
-          ~incremental_style
+          ~track_dependencies
           ~constraint_solving_style
           ~show_error_traces
           ~parallel:false

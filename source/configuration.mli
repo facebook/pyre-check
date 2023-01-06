@@ -102,11 +102,6 @@ module Extension : sig
 end
 
 module Analysis : sig
-  type incremental_style =
-    | Shallow
-    | FineGrained
-  [@@deriving show]
-
   type shared_memory = {
     heap_size: int;
     dependency_table_power: int;
@@ -143,7 +138,7 @@ module Analysis : sig
     extensions: Extension.t list;
     store_type_check_resolution: bool;
     store_type_errors: bool;
-    incremental_style: incremental_style;
+    track_dependencies: bool;
     log_directory: PyrePath.t;
     python_major_version: int;
     python_minor_version: int;
@@ -173,7 +168,7 @@ module Analysis : sig
     ?extensions:Extension.t list ->
     ?store_type_check_resolution:bool ->
     ?store_type_errors:bool ->
-    ?incremental_style:incremental_style ->
+    ?track_dependencies:bool ->
     ?log_directory:string ->
     ?python_major_version:int ->
     ?python_minor_version:int ->

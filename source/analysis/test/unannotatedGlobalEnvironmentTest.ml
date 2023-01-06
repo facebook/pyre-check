@@ -773,7 +773,7 @@ let assert_updates
   let project =
     ScratchProject.setup
       ~include_typeshed_stubs:false
-      ~incremental_style:FineGrained
+      ~track_dependencies:true
       ~in_memory:false
       sources
       ~context
@@ -2277,7 +2277,7 @@ let create_overlay_test_data ~context ?(updatable = false) sources =
   let project =
     ScratchProject.setup
       ~include_typeshed_stubs:false
-      ~incremental_style:FineGrained
+      ~track_dependencies:true
       ~in_memory:(not updatable)
       sources
       ~context

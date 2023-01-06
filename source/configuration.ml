@@ -311,11 +311,6 @@ module Extension = struct
 end
 
 module Analysis = struct
-  type incremental_style =
-    | Shallow
-    | FineGrained
-  [@@deriving show]
-
   type shared_memory = {
     heap_size: int;
     dependency_table_power: int;
@@ -352,7 +347,7 @@ module Analysis = struct
     extensions: Extension.t list;
     store_type_check_resolution: bool;
     store_type_errors: bool;
-    incremental_style: incremental_style;
+    track_dependencies: bool;
     log_directory: PyrePath.t;
     python_major_version: int;
     python_minor_version: int;
@@ -382,7 +377,7 @@ module Analysis = struct
       ?(extensions = [])
       ?(store_type_check_resolution = true)
       ?(store_type_errors = true)
-      ?(incremental_style = Shallow)
+      ?(track_dependencies = false)
       ?log_directory
       ?(python_major_version = default_python_major_version)
       ?(python_minor_version = default_python_minor_version)
@@ -421,7 +416,7 @@ module Analysis = struct
       extensions;
       store_type_check_resolution;
       store_type_errors;
-      incremental_style;
+      track_dependencies;
       log_directory =
         (match log_directory with
         | Some directory -> PyrePath.create_absolute directory

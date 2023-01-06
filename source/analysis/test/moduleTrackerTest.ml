@@ -84,7 +84,7 @@ let create_test_configuration ~context ~local_tree ~external_tree =
         (List.map
            ~f:Configuration.Extension.create_extension
            [".first"; ".second"; ".third"; ".special$include_suffix_in_module_qualifier"])
-      ~incremental_style:Configuration.Analysis.FineGrained
+      ~track_dependencies:true
       ()
   in
   configuration, external_root
