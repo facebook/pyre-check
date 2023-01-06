@@ -107,20 +107,26 @@ end
 let with_performance_tracking ~debug f =
   let timer = Timer.start () in
   let result = f () in
-  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-  Statistics.performance
-    ~name:"no_daemon_query"
-    ~timer
-    ~integers:
-      [
-        "gc_minor_collections", minor_collections;
-        "gc_major_collections", major_collections;
-        "gc_compactions", compactions;
-      ]
-    ~normals:["request kind", "NoDaemonQuery"]
-    ();
-  if debug then
-    Memory.report_statistics ();
+  if debug then (
+    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+    Statistics.performance
+      ~name:"no_daemon_query"
+      ~timer
+      ~integers:
+        [
+          "gc_minor_collections", minor_collections;
+          "gc_major_collections", major_collections;
+          "gc_compactions", compactions;
+        ]
+      ~normals:["request kind", "NoDaemonQuery"]
+      ();
+    Memory.report_statistics ())
+  else
+    Statistics.performance
+      ~name:"no_daemon_query"
+      ~timer
+      ~normals:["request kind", "NoDaemonQuery"]
+      ();
   result
 
 

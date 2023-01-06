@@ -117,20 +117,22 @@ end
 let with_performance_tracking ~debug f =
   let timer = Timer.start () in
   let result = f () in
-  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-  Statistics.performance
-    ~name:"check"
-    ~timer
-    ~integers:
-      [
-        "gc_minor_collections", minor_collections;
-        "gc_major_collections", major_collections;
-        "gc_compactions", compactions;
-      ]
-    ~normals:["request kind", "FullCheck"]
-    ();
-  if debug then
-    Memory.report_statistics ();
+  if debug then (
+    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+    Statistics.performance
+      ~name:"check"
+      ~timer
+      ~integers:
+        [
+          "gc_minor_collections", minor_collections;
+          "gc_major_collections", major_collections;
+          "gc_compactions", compactions;
+        ]
+      ~normals:["request kind", "FullCheck"]
+      ();
+    Memory.report_statistics ())
+  else
+    Statistics.performance ~name:"check" ~timer ~normals:["request kind", "FullCheck"] ();
   result
 
 

@@ -280,25 +280,30 @@ module AnalyzeConfiguration = struct
     }
 end
 
-let with_performance_tracking ~f =
+let with_performance_tracking ~debug ~f =
   let timer = Timer.start () in
   let result = f () in
-  let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-  Statistics.performance
-    ~name:"analyze"
-    ~timer
-    ~integers:
-      [
-        "gc_minor_collections", minor_collections;
-        "gc_major_collections", major_collections;
-        "gc_compactions", compactions;
-      ]
-    ();
+  if debug then (
+    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+    Statistics.performance
+      ~name:"analyze"
+      ~timer
+      ~integers:
+        [
+          "gc_minor_collections", minor_collections;
+          "gc_major_collections", major_collections;
+          "gc_compactions", compactions;
+        ]
+      ();
+    Memory.report_statistics ())
+  else
+    Statistics.performance ~name:"analyze" ~timer ();
   result
 
 
 let run_analyze analyze_configuration =
-  let { AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ }; _ } =
+  let { AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; debug; _ }; _ }
+    =
     analyze_configuration
   in
   let ({ Configuration.StaticAnalysis.configuration = analysis_configuration; _ } as
@@ -308,7 +313,7 @@ let run_analyze analyze_configuration =
   in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       Scheduler.with_scheduler ~configuration:analysis_configuration ~f:(fun scheduler ->
-          with_performance_tracking ~f:(fun () ->
+          with_performance_tracking ~debug ~f:(fun () ->
               TaintAnalysis.run_taint_analysis
                 ~static_analysis_configuration
                 ~build_system
