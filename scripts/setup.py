@@ -5,7 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This script provides a the logic used to bootstrap a local opam
+switch for building Pyre by collecting all dependencies, as well
+as how to configure opam and then invoke dune for various flavors
+of builds.
 """
 
 
