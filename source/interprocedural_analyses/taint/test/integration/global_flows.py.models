@@ -137,6 +137,68 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "global_flows.global_source",
+    "callable_line": 79,
+    "code": 5002,
+    "line": 80,
+    "start": 15,
+    "end": 22,
+    "filename": "global_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{global_flows.tainted}" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "global_flows.py",
+              "line": 80,
+              "start": 15,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "global_flows.py",
+              "line": 80,
+              "start": 15,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "global_flows.global_source:5002:0:Call|_test_sink|0|formal(arg):c993fb1b9abe92246f9a509c4e57bdf1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "global_flows.update_x_at_arg1",
     "callable_line": 20,
     "code": 5002,
@@ -411,6 +473,18 @@
     "sinks": [
       {
         "port": "formal($global)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{global_flows.tainted}",
+    "sources": [
+      {
+        "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

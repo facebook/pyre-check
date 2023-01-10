@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import _test_source
+from builtins import _test_source, _test_sink
 
 
 def update_arg1(arg1, arg2):
@@ -71,3 +71,10 @@ def append_argument(arg):
 
 def append_indirectly():
     append_argument(_test_source())
+
+
+tainted = ...
+
+
+def global_source():
+    _test_sink(tainted)
