@@ -95,7 +95,7 @@ Example:
 
 ```python
 ModelQuery(
-  name = "get_foo",
+  name = "get_starting_with_foo",
   find = ...,
   where = [
     fully_qualified_name.matches("foo.*")
@@ -130,11 +130,42 @@ ModelQuery(
 
 ### `name.matches`
 
-For now, `name.matches` is equivalent to `fully_qualified_name.matches`.
+The `name.matches` clause is similar to `fully_qualified_name.matches`, but matches against the actual name of the entity, excluding module and class names.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_starting_with_foo",
+  find = ...,
+  where = [
+    name.matches("foo.*")
+  ],
+  model = ...
+)
+```
+
+:::caution
+
+`matches` performs a partial match! For instance, `matches("bar")` will match against a function named `foobarbaz`.
+To perform a full match, use `^` and `$`. For instance: `matches("^.*bar$")`.
+
+:::
 
 ### `name.equals`
 
-For now, `name.equals` is equivalent to `fully_qualified_name.equals`.
+The `name.equals` clause is similar to `fully_qualified_name.equals`, but matches against the actual name of the entity, excluding module and class names.
+
+```python
+ModelQuery(
+  name = "get_foo",
+  find = ...,
+  where = [
+    name.equals("foo")
+  ],
+  model = ...
+)
+```
 
 ### `return_annotation` clauses
 
@@ -410,7 +441,7 @@ ModelQuery(
 
 #### Decorator `name` clauses
 
-For now, `name` is equivalent to `fully_qualified_name`.
+The `name` clause is similar to `fully_qualified_name`, but matches against the actual name of the entity, excluding module and class names.
 
 #### Decorator `arguments` clauses
 
@@ -539,11 +570,11 @@ ModelQuery(
 
 ### `cls.name.matches` clause
 
-For now, `cls.name.matches` is equivalent to `cls.fully_qualified_name.matches`.
+The `cls.name.matches` clause is similar to `cls.fully_qualified_name.matches`, but matches against the actual name of the class, excluding modules.
 
 ### `cls.name.equals` clause
 
-For now, `cls.name.equals` is equivalent to `cls.fully_qualified_name.equals`.
+The `cls.name.equals` clause is similar to `cls.fully_qualified_name.equals`, but matches against the actual name of the class, excluding modules.
 
 ### `cls.extends` clause
 

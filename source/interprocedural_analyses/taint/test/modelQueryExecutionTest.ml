@@ -115,6 +115,54 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        where = [FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo"))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:{|
+      def foo(): ...
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where = [FullyQualifiedNameConstraint (Equals "foo")];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:{|
+      def foo(): ...
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where = [FullyQualifiedNameConstraint (Equals "test.foo")];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:{|
+      def foo(): ...
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -138,7 +186,7 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -154,7 +202,7 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[];
 
   (* Test multiple constraints. *)
   assert_generated_annotations
@@ -1322,7 +1370,8 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
+        where =
+          [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1350,6 +1399,34 @@ let test_generated_annotations context =
         location = Ast.Location.any;
         name = "get_foo";
         where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+       def d1(c): ...
+       def d2(c): ...
+
+       @d1
+       def foo(a): ...
+       @d2
+       def bar(a): ...
+
+       @d1
+       @d2
+       def baz(a): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1376,13 +1453,38 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
+        where =
+          [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+       from flask import Flask
+       app = Flask(__name__)
+       @app.route('/')
+       def foo(a): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        where =
+          [
+            AnyDecoratorConstraint
+              (FullyQualifiedNameConstraint (Matches (Re2.create_exn "app.route")));
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
@@ -1403,7 +1505,7 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[];
   assert_generated_annotations
     ~source:
       {|
@@ -1423,7 +1525,8 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
+        where =
+          [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1450,7 +1553,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
-        where = [AnyDecoratorConstraint (NameConstraint (Equals "test.d1"))];
+        where = [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Equals "test.d1"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1482,7 +1585,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   NameConstraint (Equals "test.d1");
+                   FullyQualifiedNameConstraint (Equals "test.d1");
                    ArgumentsConstraint
                      (ModelQuery.ArgumentsConstraint.Contains
                         [
@@ -1524,7 +1627,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   NameConstraint (Equals "test.d1");
+                   FullyQualifiedNameConstraint (Equals "test.d1");
                    ArgumentsConstraint
                      (Contains
                         [
@@ -1566,7 +1669,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   NameConstraint (Equals "test.d1");
+                   FullyQualifiedNameConstraint (Equals "test.d1");
                    ArgumentsConstraint
                      (Contains
                         [
@@ -1609,7 +1712,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   NameConstraint (Equals "test.d1");
+                   FullyQualifiedNameConstraint (Equals "test.d1");
                    ArgumentsConstraint
                      (Contains
                         [
@@ -1652,7 +1755,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   NameConstraint (Equals "test.d1");
+                   FullyQualifiedNameConstraint (Equals "test.d1");
                    ArgumentsConstraint
                      (Contains
                         [
@@ -1702,7 +1805,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   NameConstraint (Equals "test.d1");
+                   FullyQualifiedNameConstraint (Equals "test.d1");
                    ArgumentsConstraint
                      (Equals
                         [
@@ -1752,7 +1855,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   NameConstraint (Equals "test.d1");
+                   FullyQualifiedNameConstraint (Equals "test.d1");
                    ArgumentsConstraint
                      (Equals
                         [
@@ -3572,7 +3675,7 @@ let test_generated_cache context =
         {
           location = Ast.Location.any;
           name = "get_foo";
-          where = [NameConstraint (Matches (Re2.create_exn "C.foo"))];
+          where = [FullyQualifiedNameConstraint (Matches (Re2.create_exn "C.foo"))];
           models =
             [
               WriteToCache
