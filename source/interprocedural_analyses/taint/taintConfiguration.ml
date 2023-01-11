@@ -305,30 +305,38 @@ module PartialSinkLabelsMap = struct
 end
 
 module PartialSinkConverter = struct
-  type t = (Sources.t list * Sinks.t) list SerializableStringMap.t
+  type t = (Sources.t list * Sinks.t) SerializableStringMap.t
 
-  let add map ~first_sources ~first_sinks ~second_sources ~second_sinks =
-    let add map (first_sink, second_sink) =
-      (* Trigger second sink when the first sink matches a source, and vice versa. *)
-      SerializableStringMap.add_multi
+  let add map ~first_sources ~first_sink ~second_sources ~second_sink =
+    (* Trigger second sink when the first sink matches a source, and vice versa. *)
+    let add_entry sink sources triggered_sink map =
+      let sink = Sinks.show_partial_sink sink in
+      SerializableStringMap.update
+        sink
+        (function
+          | Some _ ->
+              Format.asprintf "Unexpected that partial sink %s already has an entry" sink
+              |> failwith
+          | None -> Some (sources, Sinks.TriggeredPartialSink triggered_sink))
         map
-        ~key:(Sinks.show_partial_sink first_sink)
-        ~data:(first_sources, Sinks.TriggeredPartialSink second_sink)
-      |> SerializableStringMap.add_multi
-           ~key:(Sinks.show_partial_sink second_sink)
-           ~data:(second_sources, Sinks.TriggeredPartialSink first_sink)
     in
-    List.cartesian_product first_sinks second_sinks |> List.fold ~f:add ~init:map
+    map
+    |> add_entry first_sink first_sources second_sink
+    |> add_entry second_sink second_sources first_sink
 
 
   let merge left right =
     SerializableStringMap.merge
-      (fun _ left right ->
+      (fun partial_sink left right ->
         match left, right with
         | Some value, None
         | None, Some value ->
             Some value
-        | Some left, Some right -> Some (left @ right)
+        | Some _, Some _ ->
+            Format.asprintf
+              "Unexpected that partial sink %s corresponds to different sources and sinks"
+              partial_sink
+            |> failwith
         | None, None -> None)
       left
       right
@@ -337,10 +345,9 @@ module PartialSinkConverter = struct
   let get_triggered_sink sink_to_sources ~partial_sink ~source =
     let source = Sources.discard_sanitize_transforms source in
     match SerializableStringMap.find_opt (Sinks.show_partial_sink partial_sink) sink_to_sources with
-    | Some source_and_sink_list ->
-        List.find source_and_sink_list ~f:(fun (supported_sources, _) ->
-            List.exists supported_sources ~f:(Sources.equal source))
-        |> Option.map ~f:snd
+    | Some (supported_sources, triggered_sink)
+      when List.exists supported_sources ~f:(Sources.equal source) ->
+        Some triggered_sink
     | _ -> None
 end
 
@@ -965,6 +972,7 @@ let from_json_list source_json_list =
           >>= fun second_sources ->
           json_string_member ~path "partial_sink" json
           >>= fun partial_sink ->
+          (* Disallow using the same partial sink in multiple multi-source rules *)
           if PartialSinkLabelsMap.mem partial_sink partial_sink_labels then
             Result.Error [Error.create ~path ~kind:(Error.PartialSinkDuplicate partial_sink)]
           else
@@ -1015,9 +1023,9 @@ let from_json_list source_json_list =
               PartialSinkConverter.add
                 partial_sink_converter
                 ~first_sources
-                ~first_sinks:[first_sink]
+                ~first_sink
                 ~second_sources
-                ~second_sinks:[second_sink],
+                ~second_sink,
               partial_sink_labels )
       | _ -> Result.Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)]
     in
