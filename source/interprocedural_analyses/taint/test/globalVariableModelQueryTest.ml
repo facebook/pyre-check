@@ -11,6 +11,7 @@ open Ast
 open Test
 open Analysis
 open Pyre
+open Interprocedural
 open Taint
 
 module VariableWithType = struct
@@ -83,6 +84,7 @@ let test_find_globals context =
     in
     let actual =
       ModelQueryExecution.GlobalVariableQueryExecutor.get_globals ~resolution:global_resolution
+      |> List.map ~f:Target.object_name
       |> List.filter ~f:is_uninteresting_global
       |> List.map ~f:add_type_annotation
     in

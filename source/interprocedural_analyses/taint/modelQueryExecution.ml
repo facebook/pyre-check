@@ -726,16 +726,11 @@ end
 (* Module interface that we need to provide for each type of query (callable, attribute and
    global). *)
 module type QUERY_KIND = sig
-  (* The target or reference we want to model. *)
-  type target_or_reference
-
   (* The type of annotation produced by this type of query (e.g, `ModelAnnotation.t` for callables
      and `TaintAnnotation.t` for attributes and globals). *)
   type annotation
 
-  val get_target : target_or_reference -> Target.t
-
-  val make_modelable : resolution:GlobalResolution.t -> target_or_reference -> Modelable.t
+  val make_modelable : resolution:GlobalResolution.t -> Target.t -> Modelable.t
 
   (* Generate taint annotations from the `models` part of a given model query. *)
   val generate_annotations_from_query_models
@@ -747,7 +742,7 @@ module type QUERY_KIND = sig
     :  resolution:GlobalResolution.t ->
     source_sink_filter:SourceSinkFilter.t option ->
     stubs:Target.t Hash_set.t ->
-    target:target_or_reference ->
+    target:Target.t ->
     annotation list ->
     (Model.t, ModelVerificationError.t) result
 end
@@ -840,12 +835,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~target
           query
       with
-      | Ok (Some model) ->
-          Registry.add
-            registry
-            ~join:Model.join_user_models
-            ~target:(QueryKind.get_target target)
-            ~model
+      | Ok (Some model) -> Registry.add registry ~join:Model.join_user_models ~target ~model
       | Ok None -> registry
       | Error error ->
           let () =
@@ -899,7 +889,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             cache
             ~kind
             ~name:(Modelable.expand_write_to_cache modelable name)
-            ~target:(QueryKind.get_target target)
+            ~target
       | model ->
           Format.asprintf
             "unexpected model in generate_cache_from_query_on_target for model query `%s`, \
@@ -972,11 +962,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 end
 
 module CallableQueryExecutor = MakeQueryExecutor (struct
-  type target_or_reference = Target.t
-
   type annotation = ModelAnnotation.t
-
-  let get_target = Fn.id
 
   let make_modelable ~resolution callable =
     let signature =
@@ -1229,13 +1215,14 @@ module AttributeQueryExecutor = struct
           let all_attributes =
             Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
           in
-          let get_reference_from_attributes attribute_name attribute accumulator =
+          let get_target_from_attributes attribute_name attribute accumulator =
             match Node.value attribute with
             | { ClassSummary.Attribute.kind = Simple _; _ } ->
-                Reference.create ~prefix:class_name_reference attribute_name :: accumulator
+                Target.create_object (Reference.create ~prefix:class_name_reference attribute_name)
+                :: accumulator
             | _ -> accumulator
           in
-          Identifier.SerializableMap.fold get_reference_from_attributes all_attributes []
+          Identifier.SerializableMap.fold get_target_from_attributes all_attributes []
     in
     let all_classes =
       resolution
@@ -1269,13 +1256,10 @@ module AttributeQueryExecutor = struct
 
 
   include MakeQueryExecutor (struct
-    type target_or_reference = Reference.t
-
     type annotation = TaintAnnotation.t
 
-    let get_target = Target.create_object
-
-    let make_modelable ~resolution name =
+    let make_modelable ~resolution target =
+      let name = Target.object_name target in
       let type_annotation =
         lazy
           (let class_name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
@@ -1298,16 +1282,11 @@ module AttributeQueryExecutor = struct
       List.concat_map models ~f:apply_model
 
 
-    let generate_model_from_annotations
-        ~resolution
-        ~source_sink_filter
-        ~stubs:_
-        ~target:name
-        annotations
+    let generate_model_from_annotations ~resolution ~source_sink_filter ~stubs:_ ~target annotations
       =
       ModelParser.create_attribute_model_from_annotations
         ~resolution
-        ~name
+        ~name:(Target.object_name target)
         ~source_sink_filter
         annotations
   end)
@@ -1332,6 +1311,7 @@ module GlobalVariableQueryExecutor = struct
     unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
     |> List.filter ~f:filter_global
+    |> List.map ~f:Target.create_object
 
 
   let get_type_annotation ~resolution reference =
@@ -1345,13 +1325,10 @@ module GlobalVariableQueryExecutor = struct
 
 
   include MakeQueryExecutor (struct
-    type target_or_reference = Reference.t
-
     type annotation = TaintAnnotation.t
 
-    let get_target = Target.create_object
-
-    let make_modelable ~resolution name =
+    let make_modelable ~resolution target =
+      let name = Target.object_name target in
       let type_annotation = lazy (get_type_annotation ~resolution name) in
       Modelable.Global { name; type_annotation }
 
@@ -1369,16 +1346,11 @@ module GlobalVariableQueryExecutor = struct
       List.concat_map models ~f:apply_model
 
 
-    let generate_model_from_annotations
-        ~resolution
-        ~source_sink_filter
-        ~stubs:_
-        ~target:name
-        annotations
+    let generate_model_from_annotations ~resolution ~source_sink_filter ~stubs:_ ~target annotations
       =
       ModelParser.create_attribute_model_from_annotations
         ~resolution
-        ~name
+        ~name:(Target.object_name target)
         ~source_sink_filter
         annotations
   end)

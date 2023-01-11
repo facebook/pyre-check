@@ -91,7 +91,7 @@ module AttributeQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    target:Ast.Reference.t ->
+    target:Interprocedural.Target.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
 
@@ -99,11 +99,11 @@ module AttributeQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    targets:Ast.Reference.t list ->
+    targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_attributes : resolution:Analysis.GlobalResolution.t -> Ast.Reference.t list
+  val get_attributes : resolution:Analysis.GlobalResolution.t -> Interprocedural.Target.t list
 
   val get_type_annotation
     :  resolution:Analysis.GlobalResolution.t ->
@@ -117,7 +117,7 @@ module GlobalVariableQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    target:Ast.Reference.t ->
+    target:Interprocedural.Target.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
 
@@ -125,11 +125,11 @@ module GlobalVariableQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    targets:Ast.Reference.t list ->
+    targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_globals : resolution:Analysis.GlobalResolution.t -> Ast.Reference.t list
+  val get_globals : resolution:Analysis.GlobalResolution.t -> Interprocedural.Target.t list
 
   val get_type_annotation
     :  resolution:Analysis.GlobalResolution.t ->

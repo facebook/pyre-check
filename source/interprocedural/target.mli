@@ -105,6 +105,8 @@ val override_to_method : t -> t
     (e.g, property getters and setters). Hence, use this at your own risk. *)
 val define_name : t -> Reference.t
 
+val object_name : t -> Reference.t
+
 module Set : Caml.Set.S with type elt = t
 
 module HashMap : Core.Hashtbl.S with type key := t

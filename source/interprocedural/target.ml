@@ -216,6 +216,11 @@ let define_name = function
   | Object _ -> failwith "unexpected"
 
 
+let object_name = function
+  | Object name -> Reference.create name
+  | _ -> failwith "unexpected"
+
+
 module Set = Caml.Set.Make (T)
 module Hashable = Core.Hashable.Make (T)
 module HashMap = Hashable.Table

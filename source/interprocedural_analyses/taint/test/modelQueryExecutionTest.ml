@@ -72,7 +72,7 @@ let test_generated_annotations context =
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
-        ~target:(Ast.Reference.create name)
+        ~target:(name |> Ast.Reference.create |> Target.create_object)
         query
     in
     assert_equal
@@ -98,7 +98,7 @@ let test_generated_annotations context =
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
-        ~target:(Ast.Reference.create name)
+        ~target:(name |> Ast.Reference.create |> Target.create_object)
         query
     in
     assert_equal
