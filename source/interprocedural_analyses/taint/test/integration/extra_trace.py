@@ -90,3 +90,9 @@ def transform_nested_x_y(arg):
 
 def source_transform_nested_x_y():
     return transform_nested_x_y(_test_source())
+
+
+def extra_trace_sink_as_origin():
+    source = _test_source()
+    source_x = transform_x(source)
+    _test_sink(source_x)
