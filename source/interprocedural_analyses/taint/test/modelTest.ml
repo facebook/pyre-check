@@ -2995,6 +2995,19 @@ let test_invalid_models context =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
+        where = cls.matches("foo"),
+        model = ReturnModel(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|Constraint `cls.matches` is deprecated, use `cls.fully_qualified_name.matches` instead.|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
         where = name.foo("foo"),
         model = ReturnModel(TaintSource[Test])
       )

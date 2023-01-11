@@ -1441,8 +1441,6 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
   let open Core.Result in
   let parse_constraint_reference ~callee ~reference ~arguments =
     match reference, arguments with
-    (* TODO(T139061519): Deprecate `cls.equals` in favor of `cls.name.equals`. *)
-    | ["cls"; (("equals" | "matches") as attribute)], _
     | ["cls"; "name"; (("equals" | "matches") as attribute)], _ ->
         parse_name_constraint ~path ~location ~constraint_expression ~attribute ~arguments
         >>| fun name_constraint -> ModelQuery.ClassConstraint.NameConstraint name_constraint
@@ -1475,6 +1473,16 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
     | ["Not"], [{ Call.Argument.value; _ }] ->
         parse_class_constraint ~path ~location value
         >>= fun class_constraint -> Ok (ModelQuery.ClassConstraint.Not class_constraint)
+    | ["cls"; (("equals" | "matches") as attribute)], _ ->
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (DeprecatedConstraint
+                {
+                  deprecated = Format.sprintf "cls.%s" attribute;
+                  suggested = Format.sprintf "cls.fully_qualified_name.%s" attribute;
+                }))
     | _ ->
         Error
           (model_verification_error

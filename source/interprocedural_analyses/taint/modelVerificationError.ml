@@ -121,6 +121,10 @@ type kind =
   | UnsupportedClassConstraintCallee of Expression.t
   | UnsupportedDecoratorConstraint of Expression.t
   | UnsupportedDecoratorConstraintCallee of Expression.t
+  | DeprecatedConstraint of {
+      deprecated: string;
+      suggested: string;
+    }
   | InvalidModelForTaint of {
       model_name: string;
       error: string;
@@ -381,6 +385,8 @@ let description error =
         (Expression.show constraint_name)
   | UnsupportedDecoratorConstraintCallee callee ->
       Format.sprintf "Unsupported callee for decorator constraint: `%s`" (Expression.show callee)
+  | DeprecatedConstraint { deprecated; suggested } ->
+      Format.sprintf "Constraint `%s` is deprecated, use `%s` instead." deprecated suggested
   | UnsupportedFindClause clause -> Format.sprintf "Unsupported find clause `%s`" clause
   | UnexpectedModelExpression expression ->
       Format.sprintf "Unexpected model expression: `%s`" (Expression.show expression)
@@ -530,6 +536,7 @@ let code { kind; _ } =
   | InvalidReadFromCacheConstraint _ -> 58
   | MutuallyExclusiveReadWriteToCache -> 59
   | MutuallyExclusiveTaintWriteToCache -> 60
+  | DeprecatedConstraint _ -> 61
 
 
 let display { kind = error; path; location } =

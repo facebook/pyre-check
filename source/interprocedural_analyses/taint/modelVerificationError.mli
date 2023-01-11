@@ -117,6 +117,10 @@ type kind =
   | UnsupportedClassConstraintCallee of Expression.t
   | UnsupportedDecoratorConstraint of Expression.t
   | UnsupportedDecoratorConstraintCallee of Expression.t
+  | DeprecatedConstraint of {
+      deprecated: string;
+      suggested: string;
+    }
   | InvalidModelForTaint of {
       model_name: string;
       error: string;
