@@ -38,12 +38,6 @@ module MakeNodeVisitor (Visitor : NodeVisitor) : sig
 
   val visit_statement : state:Visitor.t ref -> Statement.t -> unit
 
-  val visit_reference
-    :  state:Visitor.t ref ->
-    ?visitor_override:(Visitor.t -> node -> Visitor.t) ->
-    Reference.t Node.t ->
-    unit
-
   val visit : Visitor.t -> Source.t -> Visitor.t
 end
 

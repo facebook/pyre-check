@@ -259,10 +259,6 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
     visit_node ~state ~visitor (Statement statement)
 
 
-  let visit_reference ~state ?visitor_override (reference : Reference.t Node.t) =
-    state := (Option.value visitor_override ~default:Visitor.node) !state (Reference reference)
-
-
   let visit state source =
     let state = ref state in
     List.iter source.Source.statements ~f:(visit_statement ~state);

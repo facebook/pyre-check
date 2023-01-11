@@ -1840,18 +1840,33 @@ let test_lookup_call_arguments context =
 
 
 let test_lookup_class_attributes context =
-  let source = {|
+  let source =
+    {|
+      from typing import List, Iterable
       class Foo():
           b: bool
-    |} in
+          def baz(self, x: List[Iterable[str]]) -> List[Iterable[str]]:
+            return x
+    |}
+  in
   let lookup = generate_lookup ~context source in
-  let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
-    ["2:6-2:9/typing.Type[test.Foo]"; "3:4-3:5/bool"; "3:7-3:11/typing.Type[bool]"];
-  assert_annotation ~position:{ Location.line = 3; column = 3 } ~annotation:None;
-  assert_annotation ~position:{ Location.line = 3; column = 4 } ~annotation:(Some "3:4-3:5/bool");
-  assert_annotation ~position:{ Location.line = 3; column = 5 } ~annotation:None
+    [
+      "2:19-2:23/typing.Type[list]";
+      "2:25-2:33/typing.Type[typing.Iterable]";
+      "3:6-3:9/typing.Type[test.Foo]";
+      "4:4-4:5/bool";
+      "4:7-4:11/typing.Type[bool]";
+      "5:8-5:11/typing.Callable(test.Foo.baz)[[Named(self, test.Foo), Named(x, \
+       typing.List[typing.Iterable[str]])], typing.List[typing.Iterable[str]]]";
+      "5:12-5:16/test.Foo";
+      "5:18-5:19/typing.List[typing.Iterable[str]]";
+      "5:21-5:40/typing.Type[typing.List[typing.Iterable[str]]]";
+      "5:45-5:64/typing.Type[typing.List[typing.Iterable[str]]]";
+      "6:13-6:14/typing.List[typing.Iterable[str]]";
+    ];
+  ()
 
 
 let test_lookup_class_attributes_nested context =
