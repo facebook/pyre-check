@@ -4,7 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module defines shared logic for data sent to the Pyre backend
+as a json arguments file when launching a new backend process.
+
+Several commands define their own specific arguments types with extra
+fields, but most of these contain a `base_arguments` field of type
+backend_arguments.BaseArguments.
 """
 
 
