@@ -24,15 +24,15 @@ jobs:
       - name: Setup OCaml
         uses: avsm/setup-ocaml@v2
         with:
-          ocaml-compiler: 4.14.0
+          ocaml-compiler: 5.0.0
 
       - name: Setup opam switch
         run: |
-          opam switch create 4.14.0
-          echo "OPAM_SWITCH_PREFIX=$HOME/.opam/4.14.0" >> $GITHUB_ENV
-          echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/4.14.0/lib/stublibs:$HOME/.opam/4.14.0/lib/ocaml/stublibs:$HOME/.opam/4.14.0/lib/ocam" >> $GITHUB_ENV
-          echo "$HOME/.opam/4.14.0/bin" >> $GITHUB_PATH
-          echo "/home/opam/.opam/4.14.0/bin" >> $GITHUB_PATH
+          opam switch create 5.0.0
+          echo "OPAM_SWITCH_PREFIX=$HOME/.opam/5.0.0" >> $GITHUB_ENV
+          echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/5.0.0/lib/stublibs:$HOME/.opam/5.0.0/lib/ocaml/stublibs:$HOME/.opam/5.0.0/lib/ocam" >> $GITHUB_ENV
+          echo "$HOME/.opam/5.0.0/bin" >> $GITHUB_PATH
+          echo "/home/opam/.opam/5.0.0/bin" >> $GITHUB_PATH
 
       - name: Build Pyre (and Pysa)
         run: |
