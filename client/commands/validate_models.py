@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Entrypoint for the `pyre validate-models` command.
+
+This command will sanity check that Pysa taint models make sense for
+the given project.
 """
 
 
