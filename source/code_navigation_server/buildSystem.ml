@@ -39,16 +39,11 @@ module Initializer = struct
   type build_system = t
 
   type t = {
-    initialize: unit -> build_system Lwt.t;
-    cleanup: unit -> unit Lwt.t;
+    initialize: unit -> build_system;
+    cleanup: unit -> unit;
   }
 
-  let null =
-    {
-      initialize = (fun () -> Lwt.return (create_for_testing ()));
-      cleanup = (fun () -> Lwt.return_unit);
-    }
-
+  let null = { initialize = (fun () -> create_for_testing ()); cleanup = (fun () -> ()) }
 
   let create_for_testing ~initialize ~cleanup () = { initialize; cleanup }
 

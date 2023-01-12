@@ -518,7 +518,7 @@ module Testing : sig
 
           This API may or may not raise exceptions, depending on the behavior of each individual
           initializer. *)
-      val initialize : t -> build_system Lwt.t
+      val initialize : t -> build_system
 
       (** This API allows the build system to perform additional work (e.g. removing temporary
           files) when the Pyre server is about to shut down.
@@ -526,7 +526,7 @@ module Testing : sig
           This API is defined on {!type: t} instead of {!type: build_system} because we want to
           ensure that the cleanup operation can be performed even if build system initialization
           process is interrupted before server initialization finishes. *)
-      val cleanup : t -> unit Lwt.t
+      val cleanup : t -> unit
 
       (** [null] initializes a no-op build system. It does nothing on [update], and [cleanup], and
           it always assumes an identity source-to-artifact mapping. This can be used when the
@@ -536,8 +536,8 @@ module Testing : sig
       (* This function allows the client to fully tweak the behavior of an initializer. Expose for
          testing purpose only. *)
       val create_for_testing
-        :  initialize:(unit -> build_system Lwt.t) ->
-        cleanup:(unit -> unit Lwt.t) ->
+        :  initialize:(unit -> build_system) ->
+        cleanup:(unit -> unit) ->
         unit ->
         t
     end
