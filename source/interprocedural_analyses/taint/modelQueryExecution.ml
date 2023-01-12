@@ -244,25 +244,51 @@ let is_ancestor ~resolution ~is_transitive ~includes_self ancestor_class child_c
     List.mem parents ancestor_class ~equal:String.equal
 
 
-let matches_name_constraint ~name_constraint =
+(* Store all regular expression captures in name constraints for WriteToCache queries. *)
+module NameCaptures : sig
+  type t
+
+  val create : unit -> t
+
+  val add : t -> Re2.Match.t -> unit
+
+  val get : t -> string -> string option
+end = struct
+  type t = Re2.Match.t list ref
+
+  let create () = ref []
+
+  let add results name_match = results := name_match :: !results
+
+  let get results identifier =
+    List.find_map !results ~f:(fun name_match -> Re2.Match.get ~sub:(`Name identifier) name_match)
+end
+
+let matches_name_constraint ~name_captures ~name_constraint name =
   match name_constraint with
-  | ModelQuery.NameConstraint.Equals string -> String.equal string
-  | ModelQuery.NameConstraint.Matches pattern -> Re2.matches pattern
+  | ModelQuery.NameConstraint.Equals string -> String.equal string name
+  | ModelQuery.NameConstraint.Matches pattern ->
+      let is_match = Re2.matches pattern name in
+      (match name_captures with
+      | Some name_captures when is_match ->
+          NameCaptures.add name_captures (Re2.first_match_exn pattern name)
+      | _ -> ());
+      is_match
 
 
-let rec matches_decorator_constraint ~decorator = function
+let rec matches_decorator_constraint ~name_captures ~decorator = function
   | ModelQuery.DecoratorConstraint.AnyOf constraints ->
-      List.exists constraints ~f:(matches_decorator_constraint ~decorator)
+      List.exists constraints ~f:(matches_decorator_constraint ~name_captures ~decorator)
   | ModelQuery.DecoratorConstraint.AllOf constraints ->
-      List.for_all constraints ~f:(matches_decorator_constraint ~decorator)
+      List.for_all constraints ~f:(matches_decorator_constraint ~name_captures ~decorator)
   | ModelQuery.DecoratorConstraint.Not decorator_constraint ->
-      not (matches_decorator_constraint ~decorator decorator_constraint)
+      not (matches_decorator_constraint ~name_captures ~decorator decorator_constraint)
   | ModelQuery.DecoratorConstraint.NameConstraint name_constraint ->
       let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
-      matches_name_constraint ~name_constraint (Reference.last decorator_name)
+      matches_name_constraint ~name_captures ~name_constraint (Reference.last decorator_name)
   | ModelQuery.DecoratorConstraint.FullyQualifiedNameConstraint name_constraint ->
       let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
-      matches_name_constraint ~name_constraint (Reference.show decorator_name)
+      matches_name_constraint ~name_captures ~name_constraint (Reference.show decorator_name)
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
       let { Statement.Decorator.arguments = decorator_arguments; _ } = decorator in
       let split_arguments =
@@ -315,7 +341,7 @@ let rec matches_decorator_constraint ~decorator = function
                (SanitizedCallArgumentSet.of_list decorator_keyword_arguments))
 
 
-let matches_annotation_constraint ~annotation_constraint annotation =
+let matches_annotation_constraint ~name_captures ~annotation_constraint annotation =
   let open Expression in
   match annotation_constraint, annotation with
   | ( ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint,
@@ -341,40 +367,47 @@ let matches_annotation_constraint ~annotation_constraint annotation =
       } ) ->
       true
   | ModelQuery.AnnotationConstraint.NameConstraint name_constraint, annotation_expression ->
-      matches_name_constraint ~name_constraint (Expression.show annotation_expression)
+      matches_name_constraint
+        ~name_captures
+        ~name_constraint
+        (Expression.show annotation_expression)
   | _ -> false
 
 
 let rec normalized_parameter_matches_constraint
+    ~name_captures
     ~parameter:
       ((root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
       parameter)
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
-      >>| matches_annotation_constraint ~annotation_constraint
+      >>| matches_annotation_constraint ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
-      matches_name_constraint ~name_constraint (Identifier.sanitized parameter_name)
+      matches_name_constraint ~name_captures ~name_constraint (Identifier.sanitized parameter_name)
   | ModelQuery.ParameterConstraint.IndexConstraint index -> (
       match root with
       | AccessPath.Root.PositionalParameter { position; _ } when position = index -> true
       | _ -> false)
   | ModelQuery.ParameterConstraint.AnyOf constraints ->
-      List.exists constraints ~f:(normalized_parameter_matches_constraint ~parameter)
+      List.exists constraints ~f:(normalized_parameter_matches_constraint ~name_captures ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
-      not (normalized_parameter_matches_constraint ~parameter query_constraint)
+      not (normalized_parameter_matches_constraint ~name_captures ~parameter query_constraint)
   | ModelQuery.ParameterConstraint.AllOf constraints ->
-      List.for_all constraints ~f:(normalized_parameter_matches_constraint ~parameter)
+      List.for_all
+        constraints
+        ~f:(normalized_parameter_matches_constraint ~name_captures ~parameter)
 
 
-let class_matches_decorator_constraint ~resolution ~decorator_constraint class_name =
+let class_matches_decorator_constraint ~name_captures ~resolution ~decorator_constraint class_name =
   GlobalResolution.class_summary resolution (Type.Primitive class_name)
   >>| Node.value
   >>| (fun { decorators; _ } ->
         List.exists decorators ~f:(fun decorator ->
             Statement.Decorator.from_expression decorator
-            >>| (fun decorator -> matches_decorator_constraint ~decorator decorator_constraint)
+            >>| (fun decorator ->
+                  matches_decorator_constraint ~name_captures ~decorator decorator_constraint)
             |> Option.value ~default:false))
   |> Option.value ~default:false
 
@@ -402,28 +435,44 @@ let rec find_children ~class_hierarchy_graph ~is_transitive ~includes_self class
   child_name_set
 
 
-let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name = function
+let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captures ~name = function
   | ModelQuery.ClassConstraint.AnyOf constraints ->
-      List.exists constraints ~f:(class_matches_constraint ~resolution ~class_hierarchy_graph ~name)
+      List.exists
+        constraints
+        ~f:(class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captures ~name)
   | ModelQuery.ClassConstraint.AllOf constraints ->
       List.for_all
         constraints
-        ~f:(class_matches_constraint ~resolution ~class_hierarchy_graph ~name)
+        ~f:(class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captures ~name)
   | ModelQuery.ClassConstraint.Not class_constraint ->
-      not (class_matches_constraint ~resolution ~name ~class_hierarchy_graph class_constraint)
+      not
+        (class_matches_constraint
+           ~resolution
+           ~name
+           ~class_hierarchy_graph
+           ~name_captures
+           class_constraint)
   | ModelQuery.ClassConstraint.NameConstraint name_constraint ->
-      matches_name_constraint ~name_constraint (name |> Reference.create |> Reference.last)
+      matches_name_constraint
+        ~name_captures
+        ~name_constraint
+        (name |> Reference.create |> Reference.last)
   | ModelQuery.ClassConstraint.FullyQualifiedNameConstraint name_constraint ->
-      matches_name_constraint ~name_constraint name
+      matches_name_constraint ~name_captures ~name_constraint name
   | ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self } ->
       is_ancestor ~resolution ~is_transitive ~includes_self class_name name
   | ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint ->
-      class_matches_decorator_constraint ~resolution ~decorator_constraint name
+      class_matches_decorator_constraint ~name_captures ~resolution ~decorator_constraint name
   | ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive; includes_self }
     ->
       find_children ~class_hierarchy_graph ~is_transitive ~includes_self name
       |> ClassHierarchyGraph.ClassNameSet.exists (fun name ->
-             class_matches_constraint ~resolution ~name ~class_hierarchy_graph class_constraint)
+             class_matches_constraint
+               ~resolution
+               ~name
+               ~class_hierarchy_graph
+               ~name_captures
+               class_constraint)
 
 
 module Modelable = struct
@@ -506,7 +555,7 @@ module Modelable = struct
     | _ -> false
 
 
-  let expand_write_to_cache modelable name =
+  let expand_write_to_cache ~name_captures modelable name =
     let expand_substring modelable substring =
       match substring, modelable with
       | ModelQuery.WriteToCache.Substring.Literal value, _ -> value
@@ -515,36 +564,58 @@ module Modelable = struct
       | MethodName, Callable { target = Target.Method { method_name; _ }; _ } -> method_name
       | ClassName, Callable { target = Target.Method { class_name; _ }; _ } ->
           Reference.create class_name |> Reference.last
+      | Capture identifier, _ -> (
+          match NameCaptures.get name_captures identifier with
+          | Some value -> value
+          | None ->
+              let () = Log.warning "No match for capture `%s` in WriteToCache query" identifier in
+              "")
       | _ -> failwith "unreachable"
     in
     name |> List.map ~f:(expand_substring modelable) |> String.concat ~sep:""
 end
 
-let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constraint =
+let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures value query_constraint =
   match query_constraint with
   | ModelQuery.Constraint.AnyOf constraints ->
-      List.exists constraints ~f:(matches_constraint ~resolution ~class_hierarchy_graph value)
+      List.exists
+        constraints
+        ~f:(matches_constraint ~resolution ~class_hierarchy_graph ~name_captures value)
   | ModelQuery.Constraint.AllOf constraints ->
-      List.for_all constraints ~f:(matches_constraint ~resolution ~class_hierarchy_graph value)
+      List.for_all
+        constraints
+        ~f:(matches_constraint ~resolution ~class_hierarchy_graph ~name_captures value)
   | ModelQuery.Constraint.Not query_constraint ->
-      not (matches_constraint ~resolution ~class_hierarchy_graph value query_constraint)
+      not
+        (matches_constraint
+           ~resolution
+           ~class_hierarchy_graph
+           ~name_captures
+           value
+           query_constraint)
   | ModelQuery.Constraint.NameConstraint name_constraint ->
-      matches_name_constraint ~name_constraint (value |> Modelable.name |> Reference.last)
+      matches_name_constraint
+        ~name_captures
+        ~name_constraint
+        (value |> Modelable.name |> Reference.last)
   | ModelQuery.Constraint.FullyQualifiedNameConstraint name_constraint ->
-      matches_name_constraint ~name_constraint (value |> Modelable.name |> Reference.show)
+      matches_name_constraint
+        ~name_captures
+        ~name_constraint
+        (value |> Modelable.name |> Reference.show)
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
-      >>| matches_annotation_constraint ~annotation_constraint
+      >>| matches_annotation_constraint ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.ReturnConstraint annotation_constraint ->
       Modelable.return_annotation value
-      >>| matches_annotation_constraint ~annotation_constraint
+      >>| matches_annotation_constraint ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint ->
       Modelable.parameters value
       |> AccessPath.Root.normalize_parameters
       |> List.exists ~f:(fun parameter ->
-             normalized_parameter_matches_constraint ~parameter parameter_constraint)
+             normalized_parameter_matches_constraint ~name_captures ~parameter parameter_constraint)
   | ModelQuery.Constraint.ReadFromCache _ ->
       (* This is handled before matching constraints. *)
       true
@@ -552,12 +623,18 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph value query_constr
       Modelable.decorators value
       |> List.exists ~f:(fun decorator ->
              Statement.Decorator.from_expression decorator
-             >>| (fun decorator -> matches_decorator_constraint ~decorator decorator_constraint)
+             >>| (fun decorator ->
+                   matches_decorator_constraint ~name_captures ~decorator decorator_constraint)
              |> Option.value ~default:false)
   | ModelQuery.Constraint.ClassConstraint class_constraint ->
       Modelable.class_name value
       >>| (fun name ->
-            class_matches_constraint ~resolution ~class_hierarchy_graph ~name class_constraint)
+            class_matches_constraint
+              ~resolution
+              ~class_hierarchy_graph
+              ~name_captures
+              ~name
+              class_constraint)
       |> Option.value ~default:false
 
 
@@ -767,12 +844,15 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~verbose
       ~resolution
       ~class_hierarchy_graph
+      ~name_captures
       ~modelable
       { ModelQuery.find; where; name = query_name; _ }
     =
     let result =
       Modelable.matches_find modelable find
-      && List.for_all ~f:(matches_constraint ~resolution ~class_hierarchy_graph modelable) where
+      && List.for_all
+           ~f:(matches_constraint ~resolution ~class_hierarchy_graph ~name_captures modelable)
+           where
     in
     let () =
       if verbose && result then
@@ -793,7 +873,15 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ({ ModelQuery.models; _ } as query)
     =
     let modelable = QueryKind.make_modelable ~resolution target in
-    if matches_query_constraints ~verbose ~resolution ~class_hierarchy_graph ~modelable query then
+    if
+      matches_query_constraints
+        ~verbose
+        ~resolution
+        ~class_hierarchy_graph
+        ~name_captures:None
+        ~modelable
+        query
+    then
       QueryKind.generate_annotations_from_query_models ~modelable models
     else
       []
@@ -891,13 +979,14 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~target
       ({ ModelQuery.models; name; _ } as query)
     =
+    let name_captures = NameCaptures.create () in
     let modelable = QueryKind.make_modelable ~resolution target in
     let write_to_cache cache = function
       | ModelQuery.Model.WriteToCache { kind; name } ->
           ReadWriteCache.write
             cache
             ~kind
-            ~name:(Modelable.expand_write_to_cache modelable name)
+            ~name:(Modelable.expand_write_to_cache ~name_captures modelable name)
             ~target
       | model ->
           Format.asprintf
@@ -908,7 +997,15 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             model
           |> failwith
     in
-    if matches_query_constraints ~verbose ~resolution ~class_hierarchy_graph ~modelable query then
+    if
+      matches_query_constraints
+        ~verbose
+        ~resolution
+        ~class_hierarchy_graph
+        ~name_captures:(Some name_captures)
+        ~modelable
+        query
+    then
       List.fold ~init:initial_cache ~f:write_to_cache models
     else
       initial_cache
@@ -1316,7 +1413,11 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
               ( ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as parameter),
                 production )
             =
-            if List.for_all where ~f:(normalized_parameter_matches_constraint ~parameter) then
+            if
+              List.for_all
+                where
+                ~f:(normalized_parameter_matches_constraint ~name_captures:None ~parameter)
+            then
               let parameter, _, _ = parameter in
               production_to_taint annotation ~production ~parameter:(Some parameter)
               >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)

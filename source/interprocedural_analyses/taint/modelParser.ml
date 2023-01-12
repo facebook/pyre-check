@@ -1281,6 +1281,23 @@ let parse_write_to_cache_model ~path ~location ~find_clause ~model_expression ~a
     | Ast.Expression.Substring.Format { Node.value = Expression.Name (Identifier identifier); _ } ->
         Error
           (model_verification_error ~path ~location (InvalidWriteToCacheNameIdentifier identifier))
+    | Ast.Expression.Substring.Format
+        {
+          Node.value =
+            Expression.Call
+              {
+                callee = { Node.value = Expression.Name (Identifier "capture"); _ };
+                arguments =
+                  [
+                    {
+                      Call.Argument.value = { Node.value = Expression.Name (Identifier name); _ };
+                      _;
+                    };
+                  ];
+              };
+          _;
+        } ->
+        Ok (ModelQuery.WriteToCache.Substring.Capture name)
     | Ast.Expression.Substring.Format expression ->
         Error
           (model_verification_error ~path ~location (InvalidWriteToCacheNameExpression expression))

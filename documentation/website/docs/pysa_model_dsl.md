@@ -1221,6 +1221,7 @@ The name can use the following variables:
 * `function_name`: The (non-qualified) name of the function.
 * `method_name`: The (non-qualified) name of the method.
 * `class_name`: The (non-qualified) name of the class.
+* `capture(identifier)`: The regular expression capture group called `identifier`. See documentation below.
 
 For instance:
 ```python
@@ -1261,3 +1262,26 @@ ModelQuery(
   model = ...
 )
 ```
+
+### Regular expression capture
+
+`name.matches` and `cls.name.matches` clause can use named capturing groups, which can be used in the `name` of `WriteToCache` clauses.
+
+For instance:
+```python
+ModelQuery(
+  find = "functions",
+  where = name.matches("^get_(?P<attribute>[a-z]+)$"),
+  model = WriteToCache(kind="cache_name", name=f"{capture(attribute)}")
+)
+```
+
+For a function `get_foo`, this will create a cache for key `foo`.
+
+:::caution
+
+Be careful when using regular expression captures. If the capture group is not found (e.g, a typo), `WriteToCache` will use the empty string.
+
+:::
+
+Note that we do not support numbered capture groups, e.g `Foo(.*)`.

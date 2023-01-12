@@ -70,3 +70,26 @@ class Z:
 
     def bar(self, x):
         return 1
+
+
+class Table:
+    pass
+
+
+class FooTable(Table):
+    def attribute_x(self):
+        return 0
+
+    def attribute_y(self):
+        return 0
+
+
+class BarTable(Table):
+    def attribute_x(self):
+        return 0
+
+    def attribute_z(self):
+        return 0
+
+    def non_attribute_t(self):
+        return 0

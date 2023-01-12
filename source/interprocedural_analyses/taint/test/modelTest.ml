@@ -6545,6 +6545,42 @@ let test_query_parsing context =
         };
       ]
     ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "foo",
+     find = "functions",
+     where = name.matches("^foo(?P<x>.*)bar(?P<y>.*)$"),
+     model = WriteToCache(kind="thrift", name=f"{capture(x)}:{capture(y)}")
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "foo";
+          where = [NameConstraint (Matches (Re2.create_exn "^foo(?P<x>.*)bar(?P<y>.*)$"))];
+          find = Function;
+          models =
+            [
+              WriteToCache
+                {
+                  WriteToCache.kind = "thrift";
+                  name =
+                    [
+                      WriteToCache.Substring.Capture "x";
+                      WriteToCache.Substring.Literal ":";
+                      WriteToCache.Substring.Capture "y";
+                    ];
+                };
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
   ()
 
 

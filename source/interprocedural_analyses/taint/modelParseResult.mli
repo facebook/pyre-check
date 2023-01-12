@@ -207,6 +207,7 @@ module ModelQuery : sig
     module Substring : sig
       type t =
         | Literal of string
+        | Capture of string
         | FunctionName
         | MethodName
         | ClassName

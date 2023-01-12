@@ -64,10 +64,50 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query_cache.BarTable.attribute_x",
+    "sources": [
+      {
+        "port": "result[get_table_Bar_x]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query_cache.C.bar",
     "sources": [
       {
         "port": "result[get_AnyOf_BC_bar]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_cache.FooTable.attribute_x",
+    "sources": [
+      {
+        "port": "result[get_invalid_table]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_cache.FooTable.attribute_y",
+    "sources": [
+      {
+        "port": "result[get_invalid_table]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[get_table_Foo_y]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

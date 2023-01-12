@@ -411,6 +411,7 @@ module ModelQuery = struct
     module Substring = struct
       type t =
         | Literal of string
+        | Capture of string
         | FunctionName
         | MethodName
         | ClassName
