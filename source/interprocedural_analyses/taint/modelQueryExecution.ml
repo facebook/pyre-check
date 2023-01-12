@@ -25,8 +25,13 @@ module ModelQueryRegistryMap = struct
 
   let empty = String.Map.empty
 
-  let set model_query_map ~model_query_name ~models =
-    String.Map.set ~key:model_query_name ~data:models model_query_map
+  let add model_query_map ~model_query_name ~registry =
+    if not (Registry.is_empty registry) then
+      String.Map.update model_query_map model_query_name ~f:(function
+          | None -> registry
+          | Some existing -> Registry.merge ~join:Model.join_user_models existing registry)
+    else
+      model_query_map
 
 
   let get = String.Map.find
@@ -630,6 +635,9 @@ module ReadWriteCache = struct
 
     let read map ~name =
       SerializableStringMap.find_opt name map |> Option.value ~default:Target.Set.empty
+
+
+    let merge = SerializableStringMap.merge (fun _ -> Option.merge ~f:Target.Set.union)
   end
 
   type t = NameToTargetSet.t SerializableStringMap.t
@@ -650,6 +658,8 @@ module ReadWriteCache = struct
     |> Option.value ~default:NameToTargetSet.empty
     |> NameToTargetSet.read ~name
 
+
+  let merge = SerializableStringMap.merge (fun _ -> Option.merge ~f:NameToTargetSet.merge)
 
   let show_set set =
     set
@@ -729,6 +739,8 @@ module type QUERY_KIND = sig
   (* The type of annotation produced by this type of query (e.g, `ModelAnnotation.t` for callables
      and `TaintAnnotation.t` for attributes and globals). *)
   type annotation
+
+  val query_kind_name : string
 
   val make_modelable : resolution:GlobalResolution.t -> Target.t -> Modelable.t
 
@@ -866,10 +878,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~targets
           query
       in
-      if not (Registry.is_empty registry) then
-        ModelQueryRegistryMap.set model_query_results ~model_query_name ~models:registry
-      else
-        model_query_results
+      ModelQueryRegistryMap.add model_query_results ~model_query_name ~registry
     in
     List.fold queries ~init:ModelQueryRegistryMap.empty ~f:fold
 
@@ -925,6 +934,111 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     List.fold write_to_cache_queries ~init:ReadWriteCache.empty ~f:fold_query
 
 
+  let generate_cache_from_queries_on_targets_with_multiprocessing
+      ~verbose
+      ~resolution
+      ~scheduler
+      ~class_hierarchy_graph
+      ~targets
+    = function
+    | [] -> ReadWriteCache.empty
+    | write_to_cache_queries ->
+        let map cache targets =
+          generate_cache_from_queries_on_targets
+            ~verbose
+            ~resolution
+            ~class_hierarchy_graph
+            ~targets
+            write_to_cache_queries
+          |> ReadWriteCache.merge cache
+        in
+        Scheduler.map_reduce
+          scheduler
+          ~policy:
+            (Scheduler.Policy.fixed_chunk_count
+               ~minimum_chunk_size:500
+               ~preferred_chunks_per_worker:1
+               ())
+          ~initial:ReadWriteCache.empty
+          ~map
+          ~reduce:ReadWriteCache.merge
+          ~inputs:targets
+          ()
+
+
+  let generate_models_from_read_cache_queries_on_targets
+      ~verbose
+      ~resolution
+      ~class_hierarchy_graph
+      ~source_sink_filter
+      ~stubs
+      ~cache
+      read_from_cache_queries
+    =
+    let fold model_query_results ({ ModelQuery.name = model_query_name; where; _ } as query) =
+      match CandidateTargetsFromCache.from_constraint cache (AllOf where) with
+      | Top ->
+          (* This should never happen, since model verification prevents building invalid
+             read_from_cache queries. *)
+          Format.sprintf
+            "Model query `%s` has an invalid `read_from_cache` query: could not compute a set of \
+             candidate targets"
+            model_query_name
+          |> failwith
+      | Set candidates ->
+          let registry =
+            generate_models_from_query_on_targets
+              ~verbose
+              ~resolution
+              ~class_hierarchy_graph
+              ~source_sink_filter
+              ~stubs
+              ~targets:(Target.Set.elements candidates)
+              query
+          in
+          ModelQueryRegistryMap.add model_query_results ~model_query_name ~registry
+    in
+    List.fold read_from_cache_queries ~init:ModelQueryRegistryMap.empty ~f:fold
+
+
+  (* Generate models from non-cache queries. *)
+  let generate_models_from_regular_queries_on_targets_with_multiprocessing
+      ~verbose
+      ~resolution
+      ~scheduler
+      ~class_hierarchy_graph
+      ~source_sink_filter
+      ~stubs
+      ~targets
+    = function
+    | [] -> ModelQueryRegistryMap.empty
+    | regular_queries ->
+        let map model_query_results targets =
+          generate_models_from_queries_on_targets
+            ~verbose
+            ~resolution
+            ~class_hierarchy_graph
+            ~source_sink_filter
+            ~stubs
+            ~targets
+            regular_queries
+          |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results
+        in
+        let reduce = ModelQueryRegistryMap.merge ~model_join:Model.join_user_models in
+        Scheduler.map_reduce
+          scheduler
+          ~policy:
+            (Scheduler.Policy.fixed_chunk_count
+               ~minimum_chunk_size:500
+               ~preferred_chunks_per_worker:1
+               ())
+          ~initial:ModelQueryRegistryMap.empty
+          ~map
+          ~reduce
+          ~inputs:targets
+          ()
+
+
   let generate_models_from_queries_on_targets_with_multiprocessing
       ~verbose
       ~resolution
@@ -935,34 +1049,75 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~targets
       queries
     =
-    let map model_query_results targets =
-      generate_models_from_queries_on_targets
+    let {
+      PartitionCacheQueries.write_to_cache = write_to_cache_queries;
+      read_from_cache = read_from_cache_queries;
+      others = regular_queries;
+    }
+      =
+      PartitionCacheQueries.partition queries
+    in
+
+    let model_query_results_cache_queries =
+      let () =
+        Log.info
+          "Building cache for %d %s model queries..."
+          (List.length write_to_cache_queries)
+          QueryKind.query_kind_name
+      in
+      let cache =
+        generate_cache_from_queries_on_targets_with_multiprocessing
+          ~verbose
+          ~resolution
+          ~scheduler
+          ~class_hierarchy_graph
+          ~targets
+          write_to_cache_queries
+      in
+      let () =
+        Log.info
+          "Generating models from %d cached %s model queries..."
+          (List.length read_from_cache_queries)
+          QueryKind.query_kind_name
+      in
+      generate_models_from_read_cache_queries_on_targets
         ~verbose
         ~resolution
         ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs
-        ~targets
-        queries
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results
+        ~cache
+        read_from_cache_queries
     in
-    let reduce = ModelQueryRegistryMap.merge ~model_join:Model.join_user_models in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:
-        (Scheduler.Policy.fixed_chunk_count
-           ~minimum_chunk_size:500
-           ~preferred_chunks_per_worker:1
-           ())
-      ~initial:ModelQueryRegistryMap.empty
-      ~map
-      ~reduce
-      ~inputs:targets
-      ()
+
+    let model_query_results_regular_queries =
+      let () =
+        Log.info
+          "Generating models from %d regular %s model queries..."
+          (List.length regular_queries)
+          QueryKind.query_kind_name
+      in
+      generate_models_from_regular_queries_on_targets_with_multiprocessing
+        ~verbose
+        ~resolution
+        ~scheduler
+        ~class_hierarchy_graph
+        ~source_sink_filter
+        ~stubs
+        ~targets
+        regular_queries
+    in
+
+    ModelQueryRegistryMap.merge
+      ~model_join:Model.join_user_models
+      model_query_results_regular_queries
+      model_query_results_cache_queries
 end
 
 module CallableQueryExecutor = MakeQueryExecutor (struct
   type annotation = ModelAnnotation.t
+
+  let query_kind_name = "callable"
 
   let make_modelable ~resolution callable =
     let signature =
@@ -1201,6 +1356,7 @@ end)
 
 module AttributeQueryExecutor = struct
   let get_attributes ~resolution =
+    let () = Log.info "Fetching all attributes..." in
     let get_class_attributes class_name =
       let class_summary =
         GlobalResolution.class_summary resolution (Type.Primitive class_name) >>| Node.value
@@ -1258,6 +1414,8 @@ module AttributeQueryExecutor = struct
   include MakeQueryExecutor (struct
     type annotation = TaintAnnotation.t
 
+    let query_kind_name = "attribute"
+
     let make_modelable ~resolution target =
       let name = Target.object_name target in
       let type_annotation =
@@ -1294,6 +1452,7 @@ end
 
 module GlobalVariableQueryExecutor = struct
   let get_globals ~resolution =
+    let () = Log.info "Fetching all globals..." in
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment resolution
     in
@@ -1326,6 +1485,8 @@ module GlobalVariableQueryExecutor = struct
 
   include MakeQueryExecutor (struct
     type annotation = TaintAnnotation.t
+
+    let query_kind_name = "global"
 
     let make_modelable ~resolution target =
       let name = Target.object_name target in
@@ -1373,7 +1534,6 @@ let generate_models_from_queries
   (* Generate models for functions and methods. *)
   let model_query_results =
     if not (List.is_empty callable_queries) then
-      let () = Log.info "Generating models from callable model queries..." in
       CallableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~resolution
@@ -1390,7 +1550,6 @@ let generate_models_from_queries
   (* Generate models for attributes. *)
   let model_query_results =
     if not (List.is_empty attribute_queries) then
-      let () = Log.info "Generating models from attribute model queries..." in
       let attributes = AttributeQueryExecutor.get_attributes ~resolution in
       AttributeQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
@@ -1409,7 +1568,6 @@ let generate_models_from_queries
   (* Generate models for globals. *)
   let model_query_results =
     if not (List.is_empty global_queries) then
-      let () = Log.info "Generating models from global model queries..." in
       let globals = GlobalVariableQueryExecutor.get_globals ~resolution in
       GlobalVariableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose

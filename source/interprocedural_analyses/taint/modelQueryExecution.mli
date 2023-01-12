@@ -10,7 +10,7 @@ module ModelQueryRegistryMap : sig
 
   val empty : t
 
-  val set : t -> model_query_name:string -> models:Registry.t -> t
+  val add : t -> model_query_name:string -> registry:Registry.t -> t
 
   val get : t -> string -> Registry.t option
 

@@ -1,0 +1,62 @@
+def _test_sink(arg: TaintSink[Test]): ...
+def _test_source() -> TaintSource[Test]: ...
+
+ModelQuery(
+  name = "build_extendsbase_cache",
+  find = "methods",
+  where = [
+    fully_qualified_name.matches("^model_query_cache."),
+    cls.extends("model_query_cache.Base"),
+  ],
+  model = WriteToCache(kind="ExtendsBase", name=f"{class_name}:{method_name}")
+)
+
+ModelQuery(
+  name = "get_A_bar",
+  find = "methods",
+  where = read_from_cache(kind="ExtendsBase", name="A:bar"),
+  model = Returns(TaintSource[Test, ReturnPath[_.get_A_bar]])
+)
+
+ModelQuery(
+  name = "get_B_foo",
+  find = "methods",
+  where = [
+    read_from_cache(kind="ExtendsBase", name="B:foo"),
+    cls.name.equals("B"),
+  ],
+  model = Returns(TaintSource[Test, ReturnPath[_.get_B_foo]])
+)
+
+# should not match anything.
+ModelQuery(
+  name = "get_DoesNotExtendsBase_foo",
+  find = "methods",
+  where = read_from_cache(kind="ExtendsBase", name="DoesNotExtendsBase:foo"),
+  model = Returns(TaintSource[Test, ReturnPath[_.get_DoesNotExtendsBase_foo]])
+)
+
+ModelQuery(
+  name = "get_AnyOf_BC_bar",
+  find = "methods",
+  where = AnyOf(
+    read_from_cache(kind="ExtendsBase", name="B:bar"),
+    read_from_cache(kind="ExtendsBase", name="C:bar"),
+  ),
+  model = Returns(TaintSource[Test, ReturnPath[_.get_AnyOf_BC_bar]])
+)
+
+
+ModelQuery(
+  name = "build_decorated_cache",
+  find = "methods",
+  where = cls.decorator(name.equals("decorated")),
+  model = WriteToCache(kind="Decorated", name=f"{method_name}")
+)
+
+ModelQuery(
+  name = "get_decorated_foo",
+  find = "methods",
+  where = read_from_cache(kind="Decorated", name="foo"),
+  model = Returns(TaintSource[Test, ReturnPath[_.get_decorated_foo]])
+)
