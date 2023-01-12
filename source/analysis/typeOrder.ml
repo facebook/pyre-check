@@ -374,12 +374,10 @@ module OrderImplementation = struct
             with
             | Some other_callable -> join order other_callable (Type.Callable callable)
             | None -> Type.union [left; right])
-        | Type.Literal (String AnyLiteral), Type.Literal (String _)
-        | Type.Literal (String _), Type.Literal (String AnyLiteral) ->
-            Type.Literal (String AnyLiteral)
+        | Type.Literal (String _), Type.Literal (String _) -> Type.Literal (String AnyLiteral)
         | (Type.Literal _ as literal), other
         | other, (Type.Literal _ as literal) ->
-            join order other (Type.weaken_to_arbitrary_literal_if_possible literal)
+            join order other (Type.weaken_literals literal)
         | _ when is_protocol right ~protocol_assumptions && always_less_or_equal order ~left ~right
           ->
             right
