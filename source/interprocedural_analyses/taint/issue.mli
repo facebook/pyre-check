@@ -24,31 +24,10 @@ module Flow : sig
   val join : t -> t -> t
 end
 
-(* A unique identifier that represents the first sink of an issue. *)
-module SinkHandle : sig
-  type t =
-    | Call of {
-        callee: Target.t;
-        index: int;
-        parameter: AccessPath.Root.t;
-      }
-    | Global of {
-        callee: Target.t;
-        index: int;
-      }
-    | Return
-    | LiteralStringSink of Sinks.t
-    | ConditionalTestSink of Sinks.t
-
-  val make_call : call_target:CallGraph.CallTarget.t -> root:AccessPath.Root.t -> t
-
-  val make_global : call_target:CallGraph.CallTarget.t -> t
-end
-
 module SinkTreeWithHandle : sig
   type t = {
     sink_tree: BackwardState.Tree.t;
-    handle: SinkHandle.t;
+    handle: IssueHandle.Sink.t;
   }
 
   val filter_bottom : t list -> t list
@@ -57,20 +36,11 @@ module SinkTreeWithHandle : sig
   val join : t list -> BackwardState.Tree.t
 end
 
-module Handle : sig
-  type t = {
-    code: int;
-    callable: Target.t;
-    sink: SinkHandle.t;
-  }
-  [@@deriving compare]
-end
-
 module LocationSet : Stdlib.Set.S with type elt = Location.WithModule.t
 
 type t = {
   flow: Flow.t;
-  handle: Handle.t;
+  handle: IssueHandle.t;
   locations: LocationSet.t;
   (* Only used to create the Pyre errors. *)
   define: Ast.Statement.Define.t Ast.Node.t;
@@ -132,7 +102,7 @@ module Candidates : sig
   val check_flow
     :  t ->
     location:Location.WithModule.t ->
-    sink_handle:SinkHandle.t ->
+    sink_handle:IssueHandle.Sink.t ->
     source_tree:ForwardState.Tree.t ->
     sink_tree:BackwardState.Tree.t ->
     unit
@@ -146,7 +116,7 @@ module Candidates : sig
     taint_configuration:TaintConfiguration.Heap.t ->
     triggered_sinks_for_call:TriggeredSinkHashMap.t ->
     location:Location.WithModule.t ->
-    sink_handle:SinkHandle.t ->
+    sink_handle:IssueHandle.Sink.t ->
     source_tree:ForwardState.Tree.t ->
     sink_tree:BackwardState.Tree.t ->
     unit

@@ -262,7 +262,7 @@ let sink_trees_of_argument
       |> BackwardState.Tree.read ~transform_non_leaves formal_path
       |> BackwardState.Tree.prepend actual_path
     in
-    { Issue.SinkTreeWithHandle.sink_tree; handle = Issue.SinkHandle.make_call ~call_target ~root }
+    { Issue.SinkTreeWithHandle.sink_tree; handle = IssueHandle.Sink.make_call ~call_target ~root }
   in
   List.map sink_matches ~f:to_sink_tree_with_identifier |> Issue.SinkTreeWithHandle.filter_bottom
 

@@ -23,6 +23,7 @@ module TaintTransforms = TaintTransforms
 module TaintProfiler = TaintProfiler
 module Features = Features
 module Issue = Issue
+module IssueHandle = IssueHandle
 module ForwardAnalysis = ForwardAnalysis
 module MissingFlow = MissingFlow
 module Model = Model

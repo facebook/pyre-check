@@ -2140,7 +2140,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             check_flow
               ~location
-              ~sink_handle:(Issue.SinkHandle.LiteralStringSink sink_kind)
+              ~sink_handle:(IssueHandle.Sink.LiteralStringSink sink_kind)
               ~source_tree:taint
               ~sink_tree);
     taint, state
@@ -2388,7 +2388,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              in
              check_flow
                ~location
-               ~sink_handle:(Issue.SinkHandle.ConditionalTestSink sink_kind)
+               ~sink_handle:(IssueHandle.Sink.ConditionalTestSink sink_kind)
                ~source_tree:taint
                ~sink_tree)
     in
@@ -2501,7 +2501,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         check_flow
           ~location
-          ~sink_handle:Issue.SinkHandle.Return
+          ~sink_handle:IssueHandle.Sink.Return
           ~source_tree:taint
           ~sink_tree:(return_sink ~resolution ~return_location:location);
         store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state

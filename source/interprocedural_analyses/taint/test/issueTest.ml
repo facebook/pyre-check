@@ -48,7 +48,7 @@ let test_no_errors _ =
       Candidates.check_flow
         candidates
         ~location
-        ~sink_handle:SinkHandle.Return
+        ~sink_handle:IssueHandle.Sink.Return
         ~source_tree
         ~sink_tree
     in
@@ -105,7 +105,7 @@ let test_errors _ =
       Candidates.check_flow
         candidates
         ~location
-        ~sink_handle:SinkHandle.Return
+        ~sink_handle:IssueHandle.Sink.Return
         ~source_tree
         ~sink_tree
     in
@@ -146,7 +146,7 @@ let test_canonical_location _ =
           {
             code = 1000;
             callable = Interprocedural.Target.create define;
-            sink = Issue.SinkHandle.Return;
+            sink = IssueHandle.Sink.Return;
           };
         locations;
         define;

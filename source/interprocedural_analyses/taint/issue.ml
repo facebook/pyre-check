@@ -39,69 +39,10 @@ module Flow = struct
     }
 end
 
-module SinkHandle = struct
-  type t =
-    | Call of {
-        callee: Target.t;
-        index: int;
-        parameter: AccessPath.Root.t;
-      }
-    | Global of {
-        callee: Target.t;
-        index: int;
-      }
-    | Return
-    | LiteralStringSink of Sinks.t
-    | ConditionalTestSink of Sinks.t
-  [@@deriving compare, hash, sexp]
-
-  let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
-    let root =
-      (* Ignore extra information in the parameter in order to group issues together. *)
-      let open AccessPath.Root in
-      match root with
-      | LocalResult -> LocalResult
-      | PositionalParameter { name; _ } -> NamedParameter { name }
-      | NamedParameter { name } -> NamedParameter { name }
-      | StarParameter _ -> StarParameter { position = 0 }
-      | StarStarParameter _ -> StarStarParameter { excluded = [] }
-      | Variable name -> Variable name
-    in
-    let target = Target.override_to_method target in
-    Call { callee = target; index; parameter = root }
-
-
-  let make_global ~call_target:{ CallGraph.CallTarget.target; index; _ } =
-    Global { callee = target; index }
-
-
-  let to_json = function
-    | Call { callee; index; parameter } ->
-        `Assoc
-          [
-            "kind", `String "Call";
-            "callee", `String (Target.external_name callee);
-            "index", `Int index;
-            "parameter", `String (AccessPath.Root.to_string parameter);
-          ]
-    | Global { callee; index } ->
-        `Assoc
-          [
-            "kind", `String "Global";
-            "callee", `String (Target.external_name callee);
-            "index", `Int index;
-          ]
-    | Return -> `Assoc ["kind", `String "Return"]
-    | LiteralStringSink sink ->
-        `Assoc ["kind", `String "LiteralStringSink"; "sink", `String (Sinks.show sink)]
-    | ConditionalTestSink sink ->
-        `Assoc ["kind", `String "ConditionalTestSink"; "sink", `String (Sinks.show sink)]
-end
-
 module SinkTreeWithHandle = struct
   type t = {
     sink_tree: BackwardState.Tree.t;
-    handle: SinkHandle.t;
+    handle: IssueHandle.Sink.t;
   }
 
   let filter_bottom sink_tree_with_identifiers =
@@ -117,48 +58,11 @@ module SinkTreeWithHandle = struct
       sink_tree_with_identifiers
 end
 
-module Handle = struct
-  type t = {
-    code: int;
-    callable: Target.t;
-    sink: SinkHandle.t;
-  }
-  [@@deriving compare, hash, sexp]
-
-  let master_handle { code; callable; sink = sink_handle; _ } =
-    let version = 0 (* Increment the version on format change. *) in
-    let sink_handle =
-      match sink_handle with
-      | Call { callee; index; parameter } ->
-          Format.asprintf
-            "Call|%s|%d|%s"
-            (Target.external_name callee)
-            index
-            (AccessPath.Root.to_string parameter)
-      | Global { callee; index } ->
-          Format.asprintf "Global|%s|%d" (Target.external_name callee) index
-      | Return -> "Return"
-      | LiteralStringSink sink -> Format.asprintf "LiteralStringSink|%a" Sinks.pp sink
-      | ConditionalTestSink sink -> Format.asprintf "ConditionalTestSink|%a" Sinks.pp sink
-    in
-    let full_handle =
-      Format.asprintf "%s:%d:%d:%s" (Target.external_name callable) code version sink_handle
-    in
-    let hash = full_handle |> Digest.string |> Digest.to_hex in
-    let short_handle =
-      String.sub
-        full_handle
-        ~pos:0
-        ~len:(min (String.length full_handle) (255 - String.length hash - 1))
-    in
-    Format.asprintf "%s:%s" short_handle hash
-end
-
 module LocationSet = Stdlib.Set.Make (Location.WithModule)
 
 type t = {
   flow: Flow.t;
-  handle: Handle.t;
+  handle: IssueHandle.t;
   locations: LocationSet.t;
   define: Statement.Define.t Node.t;
 }
@@ -179,14 +83,12 @@ let canonical_location { locations; _ } =
   Option.value_exn ~message:"issue has no location" (LocationSet.min_elt_opt locations)
 
 
-module HandleMap = Map.Make (Handle)
-
 (* Define how to group issue candidates for a given function. *)
 module CandidateKey = struct
   module T = struct
     type t = {
       location: Location.WithModule.t;
-      sink_handle: SinkHandle.t;
+      sink_handle: IssueHandle.Sink.t;
     }
     [@@deriving compare, sexp, hash]
   end
@@ -593,7 +495,7 @@ let generate_issues
       | None -> issue
       | Some previous_issue -> join previous_issue issue
     in
-    HandleMap.update map issue.handle ~f:update
+    IssueHandle.Map.update map issue.handle ~f:update
   in
   if taint_configuration.TaintConfiguration.Heap.lineage_analysis then
     (* Create different issues for same access path, e.g, Issue{[a] -> [b]}, Issue {[c] -> [d]}. *)
@@ -602,8 +504,8 @@ let generate_issues
     List.fold taint_configuration.rules ~init:[] ~f:apply_rule_separate_access_path
   else (* Create single issue for same access path, e.g, Issue{[a],[c] -> [b], [d]}. *)
     List.filter_map ~f:apply_rule_merge_access_path taint_configuration.rules
-    |> List.fold ~init:HandleMap.empty ~f:group_by_handle
-    |> HandleMap.data
+    |> List.fold ~init:IssueHandle.Map.empty ~f:group_by_handle
+    |> IssueHandle.Map.data
 
 
 module Candidates = struct
@@ -794,8 +696,8 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lo
     canonical_location issue |> Location.WithModule.instantiate ~lookup:filename_lookup
   in
   let callable_line = Ast.(Location.line issue.define.location) in
-  let sink_handle = SinkHandle.to_json issue.handle.sink in
-  let master_handle = Handle.master_handle issue.handle in
+  let sink_handle = IssueHandle.Sink.to_json issue.handle.sink in
+  let master_handle = IssueHandle.master_handle issue.handle in
   `Assoc
     [
       "callable", `String callable_name;
