@@ -281,7 +281,7 @@ module ExtraTraceForTransforms = struct
   let first_hops ~named_transforms ~tito_roots ~sink_taint =
     let match_call_info = function
       | CallInfo.CallSite { port; _ } -> AccessPath.Root.Set.mem port tito_roots
-      | CallInfo.Origin _ -> false (* Skip origins because there is no subtrace to show *)
+      | CallInfo.Origin _ -> true
       | CallInfo.Declaration _
       | CallInfo.Tito ->
           false
@@ -291,7 +291,10 @@ module ExtraTraceForTransforms = struct
       | Sinks.ExtraTraceSink
         when List.equal TaintTransform.equal (Sinks.get_named_transforms sink_kind) named_transforms
         ->
-          let extra_trace = { ExtraTraceFirstHop.call_info; leaf_kind = Sink sink_kind } in
+          let message = Sinks.get_named_transforms sink_kind |> TaintTransforms.show_transforms in
+          let extra_trace =
+            { ExtraTraceFirstHop.call_info; leaf_kind = Sink sink_kind; message = Some message }
+          in
           ExtraTraceFirstHop.Set.add extra_trace so_far
       | _ -> so_far
     in

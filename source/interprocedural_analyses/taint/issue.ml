@@ -340,7 +340,9 @@ let compute_triggered_flows
           in
           candidate :: candidates
         else
-          let extra_trace = { ExtraTraceFirstHop.call_info; leaf_kind = Source source } in
+          let extra_trace =
+            { ExtraTraceFirstHop.call_info; leaf_kind = Source source; message = None }
+          in
           let () =
             TriggeredSinkHashMap.add
               triggered_sinks_for_call

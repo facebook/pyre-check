@@ -15,6 +15,14 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 460, "start": 23, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
@@ -243,6 +251,14 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 436, "start": 24, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -316,6 +332,7 @@
           {
             "extra_traces": [
               {
+                "message": "TransformX",
                 "call": {
                   "position": { "line": 448, "start": 39, "end": 44 },
                   "resolves_to": [
@@ -471,6 +488,7 @@
           {
             "extra_traces": [
               {
+                "message": "TransformX",
                 "call": {
                   "position": { "line": 303, "start": 39, "end": 44 },
                   "resolves_to": [
@@ -550,6 +568,14 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 88, "start": 23, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -618,6 +644,14 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 314, "start": 23, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -692,6 +726,14 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 290, "start": 23, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -763,6 +805,20 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformY",
+                "origin": { "line": 119, "start": 23, "end": 28 },
+                "leaf_kind": "TransformY:ExtraTraceSink",
+                "trace_kind": "sink"
+              },
+              {
+                "message": "TransformZ",
+                "origin": { "line": 120, "start": 24, "end": 28 },
+                "leaf_kind": "TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -834,6 +890,14 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformY",
+                "origin": { "line": 221, "start": 23, "end": 28 },
+                "leaf_kind": "TransformY:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -915,6 +979,7 @@
           {
             "extra_traces": [
               {
+                "message": "TransformY:TransformZ",
                 "call": {
                   "position": { "line": 203, "start": 34, "end": 39 },
                   "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
@@ -1227,6 +1292,14 @@
         "name": "forward",
         "roots": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformZ",
+                "origin": { "line": 197, "start": 23, "end": 28 },
+                "leaf_kind": "TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "features": [
@@ -1682,6 +1755,20 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformY",
+                "origin": { "line": 364, "start": 23, "end": 28 },
+                "leaf_kind": "TransformY:ExtraTraceSink",
+                "trace_kind": "sink"
+              },
+              {
+                "message": "TransformZ",
+                "origin": { "line": 365, "start": 24, "end": 28 },
+                "leaf_kind": "TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
@@ -1771,6 +1858,7 @@
           {
             "extra_traces": [
               {
+                "message": "TransformX",
                 "call": {
                   "position": { "line": 270, "start": 35, "end": 38 },
                   "resolves_to": [ "taint_transform.sanitize_a_transform_x" ],
@@ -2094,6 +2182,7 @@
           {
             "extra_traces": [
               {
+                "message": "TransformY:TransformZ",
                 "call": {
                   "position": { "line": 165, "start": 35, "end": 38 },
                   "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
@@ -2135,6 +2224,14 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 125, "start": 24, "end": 27 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
@@ -2167,6 +2264,20 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformY",
+                "origin": { "line": 137, "start": 24, "end": 27 },
+                "leaf_kind": "TransformY:ExtraTraceSink",
+                "trace_kind": "sink"
+              },
+              {
+                "message": "TransformZ",
+                "origin": { "line": 138, "start": 23, "end": 28 },
+                "leaf_kind": "TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
@@ -2202,6 +2313,14 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformZ",
+                "origin": { "line": 186, "start": 24, "end": 27 },
+                "leaf_kind": "TransformZ:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.sink_b" } ],
@@ -2278,6 +2397,14 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 472, "start": 24, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2313,6 +2440,14 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 412, "start": 23, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2365,6 +2500,7 @@
           {
             "extra_traces": [
               {
+                "message": "TransformY:TransformZ",
                 "call": {
                   "position": { "line": 160, "start": 34, "end": 39 },
                   "resolves_to": [ "taint_transform.tito_with_transform_yz" ],
@@ -2406,6 +2542,14 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformY",
+                "origin": { "line": 181, "start": 23, "end": 28 },
+                "leaf_kind": "TransformY:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2438,6 +2582,14 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 37, "start": 23, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2470,6 +2622,14 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 47, "start": 31, "end": 36 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2507,6 +2667,14 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 57, "start": 36, "end": 41 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2539,6 +2707,20 @@
         "port": "result",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 63, "start": 23, "end": 28 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              },
+              {
+                "message": "TransformY",
+                "origin": { "line": 64, "start": 24, "end": 28 },
+                "leaf_kind": "TransformY:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.source_a" } ],
@@ -2576,6 +2758,7 @@
           {
             "extra_traces": [
               {
+                "message": "TransformX",
                 "call": {
                   "position": { "line": 238, "start": 34, "end": 35 },
                   "resolves_to": [ "taint_transform.tito_with_transform_x" ],
@@ -3101,6 +3284,7 @@
           {
             "extra_traces": [
               {
+                "message": "TransformX",
                 "call": {
                   "position": { "line": 582, "start": 40, "end": 43 },
                   "resolves_to": [
@@ -3239,6 +3423,14 @@
             }
           },
           {
+            "extra_traces": [
+              {
+                "message": "TransformY",
+                "origin": { "line": 148, "start": 24, "end": 27 },
+                "leaf_kind": "TransformY:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.transform_z" } ],
@@ -3354,6 +3546,14 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "extra_traces": [
+              {
+                "message": "TransformX",
+                "origin": { "line": 324, "start": 24, "end": 27 },
+                "leaf_kind": "TransformX:ExtraTraceSink",
+                "trace_kind": "sink"
+              }
+            ],
             "kinds": [
               {
                 "leaves": [ { "name": "taint_transform.sink_b" } ],

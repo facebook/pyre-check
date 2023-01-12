@@ -337,6 +337,8 @@ module ExtraTraceFirstHop = struct
       call_info: CallInfo.t;
       (* The taint kind related with the first frame *)
       leaf_kind: leaf_kind;
+      (* The text to show in the SAPP frames *)
+      message: string option;
     }
     [@@deriving compare, show]
 
@@ -347,13 +349,20 @@ module ExtraTraceFirstHop = struct
       | Sink _ -> "sink"
 
 
-    let to_json { call_info; leaf_kind } =
-      `Assoc
+    let to_json { call_info; leaf_kind; message } =
+      let json =
         [
           CallInfo.to_json ~filename_lookup:None call_info;
           "leaf_kind", `String (show_leaf_kind leaf_kind);
           "trace_kind", `String (trace_kind leaf_kind);
         ]
+      in
+      let json =
+        match message with
+        | Some message -> ("message", `String message) :: json
+        | None -> json
+      in
+      `Assoc json
   end
 
   include T
