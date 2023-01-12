@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module defines a background task base class, that can be used
+to start an async background task (which is basically a forked async
+green thread, which exposes hooks to start, stop, and query whether
+it is running but is otherwise opaque to the rest of the program).
 """
 
 
