@@ -199,7 +199,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let check_flow_to_global ~location ~source_tree global_model =
     let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
-    let check { Issue.SinkTreeWithHandle.sink_tree; handle } =
+    let check { SinkTreeWithHandle.sink_tree; handle } =
       check_flow ~location ~sink_handle:handle ~source_tree ~sink_tree
     in
     GlobalModel.get_sinks global_model |> List.iter ~f:check
@@ -522,7 +522,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let breadcrumbs_to_add =
               List.fold
                 sink_trees
-                ~f:(fun sofar { Issue.SinkTreeWithHandle.sink_tree; _ } ->
+                ~f:(fun sofar { SinkTreeWithHandle.sink_tree; _ } ->
                   sink_tree
                   |> BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument
                   |> BackwardTaint.joined_breadcrumbs
@@ -541,7 +541,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
 
       let () =
-        List.iter sink_trees ~f:(fun { Issue.SinkTreeWithHandle.sink_tree; handle } ->
+        List.iter sink_trees ~f:(fun { SinkTreeWithHandle.sink_tree; handle } ->
             (* Check for issues. *)
             check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree;
             (* Check for issues for combined source rules. *)

@@ -39,25 +39,6 @@ module Flow = struct
     }
 end
 
-module SinkTreeWithHandle = struct
-  type t = {
-    sink_tree: BackwardState.Tree.t;
-    handle: IssueHandle.Sink.t;
-  }
-
-  let filter_bottom sink_tree_with_identifiers =
-    List.filter
-      ~f:(fun { sink_tree; _ } -> not (BackwardState.Tree.is_bottom sink_tree))
-      sink_tree_with_identifiers
-
-
-  let join sink_tree_with_identifiers =
-    List.fold
-      ~init:BackwardState.Tree.bottom
-      ~f:(fun sofar { sink_tree; _ } -> BackwardState.Tree.join sofar sink_tree)
-      sink_tree_with_identifiers
-end
-
 module LocationSet = Stdlib.Set.Make (Location.WithModule)
 
 type t = {

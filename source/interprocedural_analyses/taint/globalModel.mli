@@ -22,7 +22,7 @@ val from_expression
 
 val get_source : t -> Domains.ForwardState.Tree.t
 
-val get_sinks : t -> Issue.SinkTreeWithHandle.t list
+val get_sinks : t -> Domains.SinkTreeWithHandle.t list
 
 val get_tito : t -> Domains.BackwardState.Tree.t
 

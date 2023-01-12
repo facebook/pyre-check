@@ -24,18 +24,6 @@ module Flow : sig
   val join : t -> t -> t
 end
 
-module SinkTreeWithHandle : sig
-  type t = {
-    sink_tree: BackwardState.Tree.t;
-    handle: IssueHandle.Sink.t;
-  }
-
-  val filter_bottom : t list -> t list
-
-  (* Discard handles, join sink trees into a single tree. *)
-  val join : t list -> BackwardState.Tree.t
-end
-
 module LocationSet : Stdlib.Set.S with type elt = Location.WithModule.t
 
 type t = {

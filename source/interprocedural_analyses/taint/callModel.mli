@@ -73,7 +73,7 @@ val sink_trees_of_argument
   is_self_call:bool ->
   caller_class_interval:ClassIntervalSet.t ->
   receiver_class_interval:ClassIntervalSet.t ->
-  Issue.SinkTreeWithHandle.t list
+  Domains.SinkTreeWithHandle.t list
 
 val type_breadcrumbs_of_calls : CallGraph.CallTarget.t list -> Features.BreadcrumbSet.t
 
@@ -84,7 +84,7 @@ module ExtraTraceForTransforms : sig
     :  argument_access_path:Abstract.TreeDomain.Label.path ->
     named_transforms:TaintTransform.t list ->
     tito_roots:AccessPath.Root.Set.t ->
-    sink_trees:Issue.SinkTreeWithHandle.t list ->
+    sink_trees:Domains.SinkTreeWithHandle.t list ->
     ExtraTraceFirstHop.Set.t
 
   (* ExtraTraceSink is used to show taint transforms. Hence, if a function does not have a tito

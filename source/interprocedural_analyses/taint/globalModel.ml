@@ -104,9 +104,9 @@ let get_sinks { models; resolution; location; interval } =
            ~caller_class_interval:interval
            ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
     in
-    { Issue.SinkTreeWithHandle.sink_tree; handle = IssueHandle.Sink.make_global ~call_target }
+    { Domains.SinkTreeWithHandle.sink_tree; handle = IssueHandle.Sink.make_global ~call_target }
   in
-  List.map ~f:to_sink_tree_with_identifier models |> Issue.SinkTreeWithHandle.filter_bottom
+  List.map ~f:to_sink_tree_with_identifier models |> Domains.SinkTreeWithHandle.filter_bottom
 
 
 let get_tito { models; _ } =

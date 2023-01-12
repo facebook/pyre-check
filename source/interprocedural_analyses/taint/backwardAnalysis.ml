@@ -391,7 +391,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~expression:argument
           ~interval:FunctionContext.caller_class_interval
         |> GlobalModel.get_sinks
-        |> Issue.SinkTreeWithHandle.join
+        |> SinkTreeWithHandle.join
       in
       let access_path = AccessPath.of_expression argument in
       get_taint access_path initial_state |> BackwardState.Tree.join global_sink
@@ -535,7 +535,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         else
           BackwardState.Tree.empty
       in
-      let sink_taint = Issue.SinkTreeWithHandle.join sink_trees in
+      let sink_taint = SinkTreeWithHandle.join sink_trees in
       let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
       let state =
         match AccessPath.of_expression argument with
@@ -1552,7 +1552,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~expression:base
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_sinks
-            |> Issue.SinkTreeWithHandle.join
+            |> SinkTreeWithHandle.join
           in
           BackwardState.Tree.join global_taint (get_taint access_path state)
         in
@@ -2061,7 +2061,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~expression:target
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_sinks
-            |> Issue.SinkTreeWithHandle.join
+            |> SinkTreeWithHandle.join
           in
           BackwardState.Tree.join local_taint global_taint
         in
