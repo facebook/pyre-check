@@ -89,8 +89,6 @@ class Setup(NamedTuple):
         """
         if not self.release:
             return COMPILER_VERSION
-        elif COMPILER_VERSION < "4.12":
-            return f"ocaml-variants.{COMPILER_VERSION}+flambda"
         else:
             return ",".join(
                 [
