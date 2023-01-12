@@ -4,7 +4,18 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides the logic for computing function-level coverage in Pyre.
+
+The coverage command produces the number of lines of code considered covered
+by Pyre using function-level coverage rules: a line is uncovered if:
+- the module strict (in which case all lines are considered covered)
+- or, the function has a return annotation or at least one parameter
+  annotation
+
+Note that function-level coverage is entirely determined by the AST, we are
+not asking about which code has strong types that Pyre can analyze but rather
+which code Pyre will attempt to analyze at all based on where annotations
+were provided.
 """
 
 

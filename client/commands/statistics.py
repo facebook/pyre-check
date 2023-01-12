@@ -4,7 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Entrypoint for the `pyre statistics` command.
+
+This command allows users to get some simple information about the number of
+code objects (e.g. returns, parameters), how many of those code objects have
+annotations, and some other information such as the number of strict files
+and pyre-fixme and pyre-ignore directives.
 """
 
 

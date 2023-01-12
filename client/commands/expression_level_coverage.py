@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides logic for computing expression-level coverage in
+Pyre. Expression-level coverage queries the backend and actually traveses
+code, to determine which expressions have an informative (non-Any) type
+in Pyre analysis.
 """
 
 
