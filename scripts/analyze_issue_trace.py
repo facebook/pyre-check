@@ -49,6 +49,10 @@ class CallGraph:
                         f"Callee in callee list for {caller} is not a str: {type(callee)} -> {str(callee)}"
                     )
 
+    @staticmethod
+    def node_path_to_str(node_path: List[str]) -> str:
+        return " -> ".join(node_path)
+
 
 @click.command()
 @click.option(
