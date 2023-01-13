@@ -4,7 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides a raw, untyped representation for daemon query
+responses which handles unwrapping the outer layer of responses sent
+by the classic daemon. Client code must decode the `object`-typed
+`response_json` field, which requires knowing the expected shape
+of the response for any given query.
 """
 
 
