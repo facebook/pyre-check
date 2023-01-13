@@ -4,7 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides the logic for `pyre start`, which starts up a Pyre
+daemon.
+
+In most cases daemons are started incrementally when starting a language
+server or running incremental checks, but it can be useful to have a
+dedicated start command, particularly to start a deamon that we can later
+query.
 """
 
 
