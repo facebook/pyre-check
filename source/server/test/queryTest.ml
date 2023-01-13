@@ -156,6 +156,9 @@ let test_parse_query context =
   assert_fails_to_parse "hover_info_for_position(path='/foo.py', line=42)";
   assert_fails_to_parse "hover_info_for_position(path='/foo.py', column=10)";
   assert_fails_to_parse "hover_info_for_position(path=99, line=42, column=10)";
+  assert_parses "global_leaks(path.to.my_function)" (GlobalLeaks !&"path.to.my_function");
+  assert_fails_to_parse "global_leaks()";
+  assert_fails_to_parse "global_leaks(my.function1, my.function2)";
   ()
 
 

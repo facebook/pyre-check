@@ -25,6 +25,7 @@ module Request = struct
     | Defines of Reference.t list
     | DumpCallGraph
     | ExpressionLevelCoverage of string list
+    | GlobalLeaks of Reference.t
     | Help of string
     | HoverInfoForPosition of {
         path: PyrePath.t;
@@ -350,6 +351,10 @@ let help () =
           "expression_level_coverage(path='path') or expression_level_coverage('path1', 'path2', \
            ...): Return JSON output containing the number of covered and uncovered expressions \
            from above, along with a list of known coverage gaps."
+    | GlobalLeaks _ ->
+        Some
+          "global_leaks(function): analyzes the transitive call graph for the given function and \
+           raises errors when global variables are mutated."
     | HoverInfoForPosition _ ->
         Some
           "hover_info_for_position(path='<absolute path>', line=<line>, character=<character>): \
@@ -526,6 +531,7 @@ let rec parse_request_exn query =
       | "dump_class_hierarchy", [] -> Request.Superclasses []
       | "expression_level_coverage", paths ->
           Request.ExpressionLevelCoverage (List.map ~f:string paths)
+      | "global_leaks", [name] -> Request.GlobalLeaks (reference name)
       | "help", _ -> Request.Help (help ())
       | "hover_info_for_position", [path; line; column] ->
           Request.HoverInfoForPosition
@@ -916,6 +922,23 @@ let rec process_request ~type_environment ~build_system request =
 
         let results = List.concat_map paths ~f:extract_paths |> List.map ~f:find_resolved_types in
         Single (Base.ExpressionLevelCoverageResponse results)
+    | GlobalLeaks name -> (
+        match GlobalResolution.define_body global_resolution name with
+        | Some define ->
+            let errors =
+              Analysis.GlobalLeakCheck.check_define ~type_environment ~qualifier:name define
+            in
+            let lookup =
+              GlobalResolution.module_tracker global_resolution
+              |> ModuleTracker.ReadOnly.lookup_relative_path
+            in
+            let instantiated_errors =
+              List.map
+                ~f:(fun error -> AnalysisError.instantiate ~show_error_traces:true ~lookup error)
+                errors
+            in
+            Single (Base.Errors instantiated_errors)
+        | None -> Error (Format.sprintf "No entrypoint definition for `%s`" (Reference.show name)))
     | Help help_list -> Single (Base.Help help_list)
     | HoverInfoForPosition { path; position } ->
         module_of_path path
