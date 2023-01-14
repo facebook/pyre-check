@@ -566,29 +566,9 @@ let to_json ({ kind; path; location } as error) =
     ]
 
 
-module SharedMemory =
-  Memory.WithCache.Make
-    (Memory.SingletonKey)
-    (struct
-      type nonrec t = t list
-
-      let prefix = Prefix.make ()
-
-      let description = "Model verification errors"
-    end)
-
-let register errors =
-  let () =
-    if SharedMemory.mem Memory.SingletonKey.key then
-      SharedMemory.remove_batch (SharedMemory.KeySet.singleton Memory.SingletonKey.key)
-  in
-  SharedMemory.add Memory.SingletonKey.key errors
-
-
 exception ModelVerificationErrors of t list
 
 let verify_models_and_dsl errors verify =
-  register errors;
   if not (List.is_empty errors) then
     (* Exit or log errors, depending on whether models need to be verified. *)
     if not verify then begin
@@ -597,6 +577,3 @@ let verify_models_and_dsl errors verify =
     end
     else
       raise (ModelVerificationErrors errors)
-
-
-let get () = SharedMemory.get Memory.SingletonKey.key |> Option.value ~default:[]

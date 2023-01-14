@@ -34,6 +34,7 @@ val report
   override_graph:OverrideGraph.SharedMemory.t ->
   callables:Target.Set.t ->
   skipped_overrides:Target.t list ->
+  model_verification_errors:ModelVerificationError.t list ->
   fixpoint_timer:Timer.t ->
   fixpoint_state:Fixpoint.t ->
   Yojson.Safe.t list

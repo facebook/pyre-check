@@ -215,14 +215,14 @@ let initialize_models
   in
   Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
 
-  let models =
+  let models, errors =
     match queries with
-    | [] -> models
+    | [] -> models, errors
     | _ ->
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
         let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
-        let model_query_results, errors =
+        let model_query_results, model_query_errors =
           ModelQueryExecution.generate_models_from_queries
             ~resolution
             ~scheduler
@@ -240,7 +240,12 @@ let initialize_models
               ModelQueryExecution.DumpModelQueryResults.dump_to_file ~model_query_results ~path
           | None -> ()
         in
-        ModelVerificationError.verify_models_and_dsl errors static_analysis_configuration.verify_dsl;
+        let () =
+          ModelVerificationError.verify_models_and_dsl
+            model_query_errors
+            static_analysis_configuration.verify_dsl
+        in
+        let errors = List.append errors model_query_errors in
         let models =
           model_query_results
           |> ModelQueryExecution.ModelQueryRegistryMap.get_registry
@@ -252,7 +257,7 @@ let initialize_models
           ~phase_name:"Generating models from model queries"
           ~timer
           ();
-        models
+        models, errors
   in
 
   let models =
@@ -370,7 +375,13 @@ let run_taint_analysis
     (* Save the cache here, in case there is a model verification error. *)
     let () = Cache.save cache in
 
-    let { ModelParseResult.models = initial_models; skip_overrides; _ } =
+    let {
+      ModelParseResult.models = initial_models;
+      skip_overrides;
+      errors = model_verification_errors;
+      _;
+    }
+      =
       initialize_models
         ~scheduler
         ~static_analysis_configuration
@@ -532,6 +543,7 @@ let run_taint_analysis
         ~override_graph:override_graph_shared_memory
         ~callables
         ~skipped_overrides
+        ~model_verification_errors
         ~fixpoint_timer
         ~fixpoint_state
     in

@@ -56,9 +56,9 @@ let issues_to_json ~taint_configuration ~fixpoint_state ~filename_lookup ~overri
   List.map ~f:issue_to_json issues
 
 
-let statistics () =
+let statistics ~model_verification_errors =
   let model_verification_errors =
-    ModelVerificationError.get () |> List.map ~f:ModelVerificationError.to_json
+    List.map ~f:ModelVerificationError.to_json model_verification_errors
   in
   `Assoc ["model_verification_errors", `List model_verification_errors]
 
@@ -161,6 +161,7 @@ let save_results_to_directory
     ~override_graph
     ~skipped_overrides
     ~callables
+    ~model_verification_errors
     ~fixpoint_state
     ~errors
   =
@@ -251,7 +252,7 @@ let save_results_to_directory
                      `String (Target.show_pretty override))) );
           ]
       in
-      Json.Util.combine global_statistics (statistics ())
+      Json.Util.combine global_statistics (statistics ~model_verification_errors)
     in
     let metadata_json =
       `Assoc
@@ -299,6 +300,7 @@ let report
     ~override_graph
     ~callables
     ~skipped_overrides
+    ~model_verification_errors
     ~fixpoint_timer
     ~fixpoint_state
   =
@@ -346,6 +348,7 @@ let report
         ~override_graph
         ~skipped_overrides
         ~callables
+        ~model_verification_errors
         ~fixpoint_state
         ~errors;
       []
