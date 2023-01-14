@@ -1333,48 +1333,45 @@ let rec process_request ~type_environment ~build_system request =
           Single (Base.TypesByPath results)
         else
           Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
-    | ValidateTaintModels path -> (
-        try
-          let paths =
-            match path with
-            | Some path ->
-                if String.is_prefix ~prefix:"/" path then
-                  [PyrePath.create_absolute ~follow_symbolic_links:true path]
-                else
-                  let { Configuration.Analysis.local_root = root; _ } = configuration in
-                  [PyrePath.create_relative ~root ~relative:path]
-            | None -> configuration.Configuration.Analysis.taint_model_paths
+    | ValidateTaintModels path ->
+        let paths =
+          match path with
+          | Some path ->
+              if String.is_prefix ~prefix:"/" path then
+                [PyrePath.create_absolute ~follow_symbolic_links:true path]
+              else
+                let { Configuration.Analysis.local_root = root; _ } = configuration in
+                [PyrePath.create_relative ~root ~relative:path]
+          | None -> configuration.Configuration.Analysis.taint_model_paths
+        in
+        let taint_configuration =
+          Taint.TaintConfiguration.from_taint_model_paths paths
+          |> Taint.TaintConfiguration.exception_on_error
+        in
+        let get_model_errors sources =
+          let model_errors (path, source) =
+            Taint.ModelParser.parse
+              ~resolution:global_resolution
+              ~path
+              ~source
+              ~taint_configuration
+              ~source_sink_filter:None
+              ~callables:None
+              ~stubs:(Interprocedural.Target.HashSet.create ())
+              ()
+            |> fun { Taint.ModelParseResult.errors; _ } -> errors
           in
-          let taint_configuration =
-            Taint.TaintConfiguration.from_taint_model_paths paths
-            |> Taint.TaintConfiguration.exception_on_error
-          in
-          let get_model_errors sources =
-            let model_errors (path, source) =
-              Taint.ModelParser.parse
-                ~resolution:global_resolution
-                ~path
-                ~source
-                ~taint_configuration
-                ~source_sink_filter:None
-                ~callables:None
-                ~stubs:(Interprocedural.Target.HashSet.create ())
-                ()
-              |> fun { Taint.ModelParseResult.errors; _ } -> errors
-            in
-            List.concat_map sources ~f:model_errors
-          in
-          let errors = Taint.ModelParser.get_model_sources ~paths |> get_model_errors in
-          if List.is_empty errors then
-            Single
-              (Base.Success
-                 (Format.asprintf
-                    "Models in `%s` are valid."
-                    (paths |> List.map ~f:PyrePath.show |> String.concat ~sep:", ")))
-          else
-            Single (Base.ModelVerificationErrors errors)
-        with
-        | error -> Error (Exn.to_string error))
+          List.concat_map sources ~f:model_errors
+        in
+        let errors = Taint.ModelParser.get_model_sources ~paths |> get_model_errors in
+        if List.is_empty errors then
+          Single
+            (Base.Success
+               (Format.asprintf
+                  "Models in `%s` are valid."
+                  (paths |> List.map ~f:PyrePath.show |> String.concat ~sep:", ")))
+        else
+          Single (Base.ModelVerificationErrors errors)
   in
   try process_request () with
   | ClassHierarchy.Untracked untracked ->
@@ -1392,6 +1389,18 @@ let rec process_request ~type_environment ~build_system request =
         (Format.asprintf
            "Cyclic class hierarchy: {%s}"
            (Hash_set.to_list trace |> String.concat ~sep:", "))
+  | Taint.TaintConfiguration.TaintConfigurationError errors ->
+      errors
+      |> List.map ~f:Taint.TaintConfiguration.Error.show
+      |> String.concat ~sep:"\n"
+      |> Format.sprintf "Found %d taint configuration errors:\n%s" (List.length errors)
+      |> fun message -> Response.Error message
+  | Taint.ModelVerificationError.ModelVerificationErrors errors ->
+      errors
+      |> List.map ~f:Taint.ModelVerificationError.show
+      |> String.concat ~sep:"\n"
+      |> Format.sprintf "Found %d model verification errors:\n%s" (List.length errors)
+      |> fun message -> Response.Error message
 
 
 let parse_and_process_request ~overlaid_environment ~build_system request overlay_id =
