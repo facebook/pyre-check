@@ -1,10 +1,8 @@
 server {
     listen 80;
     server_name play.pyre-check.org;
-    limit_req_zone $binary_remote_addr zone=mylimit:10m rate=2r/s;
 
     location / {
-        limit_req zone=mylimit;
         include proxy_params;
         proxy_pass http://127.0.0.1:5000;
     }
