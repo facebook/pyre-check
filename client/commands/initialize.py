@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains logic for `pyre init`, which interactively
+helps a user create a new pyre configuration.
 """
 
 
