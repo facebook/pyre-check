@@ -11,7 +11,7 @@ TODO(T132414938) Add a module-level docstring
 import enum
 from typing import Dict, Optional
 
-from .. import statistics_logger, version
+from .. import remote_logger, version
 
 from . import backend_arguments
 
@@ -38,8 +38,8 @@ def _log_lsp_event(
         logger = remote_logging.logger
         if logger is not None:
             log_identifier = remote_logging.identifier
-            statistics_logger.log(
-                category=statistics_logger.LoggerCategory.LSP_EVENTS,
+            remote_logger.log(
+                category=remote_logger.LoggerCategory.LSP_EVENTS,
                 logger=logger,
                 integers=integers,
                 normals={

@@ -25,7 +25,7 @@ from .. import (
     daemon_socket,
     identifiers,
     log,
-    statistics_logger,
+    remote_logger,
 )
 
 from ..language_server import connections, protocol as lsp
@@ -256,8 +256,8 @@ def _log_number_expression_level_coverage(
     covered_expressions = total_expressions - len(
         expression_level_coverage.coverage_gaps
     )
-    statistics_logger.log(
-        category=statistics_logger.LoggerCategory.EXPRESSION_LEVEL_COVERAGE,
+    remote_logger.log(
+        category=remote_logger.LoggerCategory.EXPRESSION_LEVEL_COVERAGE,
         logger=logger,
         integers={
             "total_expressions": total_expressions,
@@ -281,8 +281,8 @@ def _log_unannotated_functions(
     unannotated_functions: Dict[str, int],
 ) -> None:
     for function_name, count in unannotated_functions.items():
-        statistics_logger.log(
-            category=statistics_logger.LoggerCategory.UNANNOTATED_FUNCTIONS,
+        remote_logger.log(
+            category=remote_logger.LoggerCategory.UNANNOTATED_FUNCTIONS,
             logger=logger,
             integers={
                 "count": count,

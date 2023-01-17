@@ -21,7 +21,7 @@ from .. import (
     daemon_socket,
     error,
     identifiers,
-    statistics_logger,
+    remote_logger,
 )
 
 from ..language_server import connections
@@ -114,8 +114,8 @@ def log_error_statistics(
         return
     log_identifier = remote_logging.identifier
     for integers in compute_error_statistics_per_code(type_errors):
-        statistics_logger.log(
-            category=statistics_logger.LoggerCategory.ERROR_STATISTICS,
+        remote_logger.log(
+            category=remote_logger.LoggerCategory.ERROR_STATISTICS,
             logger=logger,
             integers=integers,
             normals={
