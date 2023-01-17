@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides the logic for `pyre kill`. Normally one would cleanly
+shut down a pyre daemon using `pyre stop`, but if the daemon is not
+responsive `pyre kill` will kill it right away.
 """
 
 
