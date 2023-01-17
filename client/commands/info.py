@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Logic for the `pyre info` command, which prints information about
+the current pyre environment (e.g. socket path, log locations).
 """
 
 
