@@ -138,7 +138,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             "this_function_does_not_exist",
         )
 
-        self.assertIsNone(trace)
+        self.assertIsNotNone(trace)
+        self.assertListEqual(trace, [])
 
     def test_find_trace_to_parent_multi_path(self) -> None:
         call_graph = CallGraph(
