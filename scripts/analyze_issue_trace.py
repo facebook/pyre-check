@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from collections import defaultdict, deque
-from typing import cast, Deque, Dict, List, Optional, Set, TextIO
+from typing import cast, Collection, Deque, Dict, List, Optional, Set, TextIO
 
 import click
 from typing_extensions import TypeAlias
@@ -23,8 +23,6 @@ class CallGraph:
         self.call_graph = self.json_to_call_graph(
             cast(Dict[str, List[str]], call_graph)
         )
-        self.dependency_graph = self.create_dependency_graph(self.call_graph)
-
         self.dependency_graph = self.create_dependency_graph(self.call_graph)
 
         self.entrypoints = self.validate_and_get_entrypoints(
@@ -129,6 +127,13 @@ class CallGraph:
                 queue.append(next_node_path)
 
         return None
+
+    def find_traces_for_callees(
+        self, callees: Collection[str]
+    ) -> Dict[str, Optional[Trace]]:
+        return {
+            callee: self.find_shortest_trace_to_entrypoint(callee) for callee in callees
+        }
 
 
 @click.command()
