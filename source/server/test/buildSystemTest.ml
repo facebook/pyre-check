@@ -417,23 +417,27 @@ let test_buck_renormalize context =
   Lwt.return_unit
 
 
+let assert_source_path ~context ~expected actual =
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: SourcePath.t option]
+    ~printer:(Option.value_map ~default:"NONE" ~f:SourcePath.show)
+    expected
+    actual
+
+
+let assert_artifact_paths ~context ~expected actual =
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: ArtifactPath.t list]
+    ~printer:(List.to_string ~f:ArtifactPath.show)
+    expected
+    actual
+
+
 let test_buck_update context =
-  let assert_optional_path ~expected actual =
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: SourcePath.t option]
-      ~printer:(Option.value_map ~default:"NONE" ~f:SourcePath.show)
-      expected
-      actual
-  in
-  let assert_optional_analysis_path ~expected actual =
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: ArtifactPath.t option]
-      ~printer:(Option.value_map ~default:"NONE" ~f:ArtifactPath.show)
-      expected
-      actual
-  in
+  let assert_source_path = assert_source_path ~context in
+  let assert_artifact_paths = assert_artifact_paths ~context in
   let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
 
@@ -482,16 +486,14 @@ let test_buck_update context =
   let baz_artifact = Test.relative_artifact_path ~root:artifact_root ~relative:"baz.py" in
 
   (* Initially, we build bar.py but not baz.py. *)
-  assert_optional_path
+  assert_source_path
     ~expected:(Some bar_source)
     (BuildSystem.lookup_source buck_build_system bar_artifact);
-  assert_optional_path ~expected:None (BuildSystem.lookup_source buck_build_system baz_artifact);
-  assert_optional_analysis_path
-    ~expected:(Some bar_artifact)
-    (BuildSystem.lookup_artifact buck_build_system bar_source |> List.hd);
-  assert_optional_analysis_path
-    ~expected:None
-    (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
+  assert_source_path ~expected:None (BuildSystem.lookup_source buck_build_system baz_artifact);
+  assert_artifact_paths
+    ~expected:[bar_artifact]
+    (BuildSystem.lookup_artifact buck_build_system bar_source);
+  assert_artifact_paths ~expected:[] (BuildSystem.lookup_artifact buck_build_system baz_source);
 
   (* Rebuild the project. The fake TARGET file is needed to force a full rebuild. *)
   let fake_target_file =
@@ -507,18 +509,18 @@ let test_buck_update context =
     ]
   >>= fun _ ->
   (* After the rebuild, both bar.py and baz.py should be included in build map. *)
-  assert_optional_path
+  assert_source_path
     ~expected:(Some bar_source)
     (BuildSystem.lookup_source buck_build_system bar_artifact);
-  assert_optional_path
+  assert_source_path
     ~expected:(Some baz_source)
     (BuildSystem.lookup_source buck_build_system baz_artifact);
-  assert_optional_analysis_path
-    ~expected:(Some bar_artifact)
-    (BuildSystem.lookup_artifact buck_build_system bar_source |> List.hd);
-  assert_optional_analysis_path
-    ~expected:(Some baz_artifact)
-    (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
+  assert_artifact_paths
+    ~expected:[bar_artifact]
+    (BuildSystem.lookup_artifact buck_build_system bar_source);
+  assert_artifact_paths
+    ~expected:[baz_artifact]
+    (BuildSystem.lookup_artifact buck_build_system baz_source);
 
   Lwt.return_unit
 
