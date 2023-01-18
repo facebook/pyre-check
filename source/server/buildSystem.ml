@@ -145,11 +145,12 @@ module BuckBuildSystem = struct
   module IncrementalBuilder = struct
     type t = {
       name: string;
-      run: ClassicBuckBuilder.t -> ClassicBuckBuilder.IncrementalBuildResult.t Lwt.t;
+      run: unit -> ArtifactPath.Event.t list Lwt.t;
     }
   end
 
   let initialize_from_state (state : State.t) =
+    let open Lwt.Infix in
     let update source_path_events =
       let incremental_builder =
         let should_renormalize paths =
@@ -169,13 +170,24 @@ module BuckBuildSystem = struct
           in
           List.exists paths ~f
         in
+        let rebuild_and_update_state rebuild () =
+          rebuild state.builder
+          >>= fun {
+                    ClassicBuckBuilder.IncrementalBuildResult.targets = normalized_targets;
+                    build_map;
+                    changed_artifacts;
+                  } ->
+          State.update ~normalized_targets ~build_map state;
+          Lwt.return changed_artifacts
+        in
         if should_renormalize source_path_events then
           {
             IncrementalBuilder.name = "full";
             run =
               ClassicBuckBuilder.full_incremental_build
                 ~old_build_map:state.build_map
-                ~targets:state.targets;
+                ~targets:state.targets
+              |> rebuild_and_update_state;
           }
         else
           let changed_paths, removed_paths =
@@ -188,17 +200,7 @@ module BuckBuildSystem = struct
             List.partition_map source_path_events ~f:categorize
           in
           if List.is_empty removed_paths && not (should_reconstruct_build_map changed_paths) then
-            {
-              IncrementalBuilder.name = "skip_rebuild";
-              run =
-                (fun _ ->
-                  Lwt.return
-                    {
-                      ClassicBuckBuilder.IncrementalBuildResult.targets = state.normalized_targets;
-                      build_map = state.build_map;
-                      changed_artifacts = [];
-                    });
-            }
+            { IncrementalBuilder.name = "skip_rebuild"; run = (fun () -> Lwt.return []) }
           else
             {
               IncrementalBuilder.name = "skip_renormalize_optimized";
@@ -208,10 +210,10 @@ module BuckBuildSystem = struct
                   ~old_build_map_index:state.build_map_index
                   ~targets:state.normalized_targets
                   ~changed_paths
-                  ~removed_paths;
+                  ~removed_paths
+                |> rebuild_and_update_state;
             }
       in
-      let open Lwt.Infix in
       with_logging
         ~integers:(fun changed_analysis_paths ->
           [
@@ -224,15 +226,7 @@ module BuckBuildSystem = struct
             "event_type", "rebuild";
             "event_subtype", incremental_builder.name;
           ])
-        (fun () ->
-          incremental_builder.run state.builder
-          >>= fun {
-                    ClassicBuckBuilder.IncrementalBuildResult.targets = normalized_targets;
-                    build_map;
-                    changed_artifacts;
-                  } ->
-          State.update ~normalized_targets ~build_map state;
-          Lwt.return changed_artifacts)
+        incremental_builder.run
     in
     let lookup_source path =
       ArtifactPath.raw path
