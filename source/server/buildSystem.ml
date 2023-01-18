@@ -191,11 +191,13 @@ module BuckBuildSystem = struct
             {
               IncrementalBuilder.name = "skip_rebuild";
               run =
-                ClassicBuckBuilder.incremental_build_with_unchanged_build_map
-                  ~build_map:state.build_map
-                  ~build_map_index:state.build_map_index
-                  ~targets:state.normalized_targets
-                  ~changed_sources:changed_paths;
+                (fun _ ->
+                  Lwt.return
+                    {
+                      ClassicBuckBuilder.IncrementalBuildResult.targets = state.normalized_targets;
+                      build_map = state.build_map;
+                      changed_artifacts = [];
+                    });
             }
           else
             {

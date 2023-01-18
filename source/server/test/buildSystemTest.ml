@@ -586,16 +586,18 @@ let test_buck_update_without_rebuild context =
       (baz_source |> SourcePath.Event.(create ~kind:Kind.CreatedOrChanged));
     ]
   >>= fun changed_artifacts ->
+  assert_paths_no_order changed_artifacts ~expected:[];
   (* After the rebuild, both bar.py and baz.py should be included in build map. *)
-  let bar_artifact =
-    Test.relative_artifact_path ~root:artifact_root ~relative:"bar.py"
-    |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged)
-  in
-  let baz_artifact =
-    Test.relative_artifact_path ~root:artifact_root ~relative:"baz.py"
-    |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged)
-  in
-  assert_paths_no_order changed_artifacts ~expected:[bar_artifact; baz_artifact];
+  let bar_artifact = Test.relative_artifact_path ~root:artifact_root ~relative:"bar.py" in
+  let baz_artifact = Test.relative_artifact_path ~root:artifact_root ~relative:"baz.py" in
+  assert_source_path
+    ~context
+    ~expected:(Some bar_source)
+    (BuildSystem.lookup_source buck_build_system bar_artifact);
+  assert_source_path
+    ~context
+    ~expected:(Some baz_source)
+    (BuildSystem.lookup_source buck_build_system baz_artifact);
   Lwt.return_unit
 
 
