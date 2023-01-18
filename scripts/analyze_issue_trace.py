@@ -11,12 +11,14 @@ import click
 
 class CallGraph:
     call_graph: Dict[str, Set[str]]
+    dependency_graph: Dict[str, Set[str]]
 
     def __init__(self, call_graph: object) -> None:
         self.validate_call_graph(call_graph)
         self.call_graph = self.json_to_call_graph(
             cast(Dict[str, List[str]], call_graph)
         )
+        self.dependency_graph = self.create_dependency_graph(self.call_graph)
 
     @staticmethod
     def json_to_call_graph(call_graph: Dict[str, List[str]]) -> Dict[str, Set[str]]:
@@ -27,6 +29,16 @@ class CallGraph:
 
             # skip self calls, since they're irrelevant for trace purposes
             nodes[caller] -= {caller}
+
+        return nodes
+
+    @staticmethod
+    def create_dependency_graph(call_graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
+        nodes = defaultdict(lambda: set())
+
+        for caller, callees in call_graph.items():
+            for callee in callees:
+                nodes[callee].add(caller)
 
         return nodes
 

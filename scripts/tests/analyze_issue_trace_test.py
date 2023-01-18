@@ -110,3 +110,43 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             self.fail("should have thrown")
         except ValueError:
             pass
+
+    def test_create_dependency_graph(self) -> None:
+        call_graph = {
+            "parent.function.one": {
+                "child_function.one",
+                "child_function.two",
+                "child_function.three",
+            },
+            "parent.function.two": {
+                "child_function.one",
+                "child_function.two",
+            },
+            "child_function.one": {"child_function.two"},
+        }
+
+        expected_dependency_graph = {
+            "child_function.one": {
+                "parent.function.one",
+                "parent.function.two",
+            },
+            "child_function.two": {
+                "parent.function.one",
+                "parent.function.two",
+                "child_function.one",
+            },
+            "child_function.three": {
+                "parent.function.one",
+            },
+        }
+
+        actual_dependency_graph = CallGraph.create_dependency_graph(call_graph)
+
+        self.assertSetEqual(
+            set(actual_dependency_graph), set(expected_dependency_graph)
+        )
+        for callee, expected_callers in expected_dependency_graph.items():
+            with self.subTest(f"Callee: {callee}"):
+                actual_callers = actual_dependency_graph[callee]
+
+                self.assertSetEqual(actual_callers, expected_callers)
