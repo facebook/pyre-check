@@ -533,6 +533,15 @@ module Testing : sig
           project being checked does not use a build system. This initializer never raises. *)
       val null : t
 
+      (** [buck] initializes a build system that interops with Buck. See {!module:Buck} for more
+          details about its behavior.
+
+          The initialization process may fail with many kinds of exceptions:
+
+          - {!Buck.Builder.LinkTreeConstructionError} could happen when build artifact creation
+            cannot function properly due to unexpected issues on the filesystem. *)
+      val buck : artifact_root:PyrePath.t -> Buck.Builder.Lazy.t -> t
+
       (* This function allows the client to fully tweak the behavior of an initializer. Expose for
          testing purpose only. *)
       val create_for_testing

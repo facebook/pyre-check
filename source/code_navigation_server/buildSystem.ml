@@ -109,6 +109,31 @@ module Initializer = struct
 
   let null = { initialize = (fun () -> create_for_testing ()); cleanup = (fun () -> ()) }
 
+  let buck ~artifact_root builder =
+    let ensure_directory_exist_and_clean path =
+      let result =
+        let open Result in
+        PyrePath.create_directory_recursively path
+        >>= fun () -> PyrePath.remove_contents_of_directory path
+      in
+      match result with
+      | Result.Error message -> raise (Buck.Builder.LinkTreeConstructionError message)
+      | Result.Ok () -> ()
+    in
+    let initialize () =
+      ensure_directory_exist_and_clean artifact_root;
+      BuckBuildSystem.State.create_empty builder |> BuckBuildSystem.create
+    in
+    let cleanup () =
+      match PyrePath.remove_contents_of_directory artifact_root with
+      | Result.Error message ->
+          Log.warning "Encountered error during buck builder cleanup: %s" message;
+          ()
+      | Result.Ok () -> ()
+    in
+    { initialize; cleanup }
+
+
   let create_for_testing ~initialize ~cleanup () = { initialize; cleanup }
 
   let initialize { initialize; _ } = initialize ()
