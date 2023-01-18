@@ -105,13 +105,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.two": ["function.three"],
                 "function.three": ["print"],
                 "unrelated.call": ["int"],
-            }
+            },
+            ["function.start"],
         )
 
-        trace = call_graph.find_shortest_trace_to_entrypoint(
-            "print",
-            {"function.start"},
-        )
+        trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -132,12 +130,12 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.one": ["function.two"],
                 "function.two": ["function.three"],
                 "function.three": ["print"],
-            }
+            },
+            ["function.one"],
         )
 
         trace = call_graph.find_shortest_trace_to_entrypoint(
             "this_function_does_not_exist",
-            {"function.one"},
         )
 
         self.assertIsNone(trace)
@@ -151,13 +149,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.two_b": ["function.two_b.extra_call"],
                 "function.two_b.extra_call": ["function.three"],
                 "function.three": ["print"],
-            }
+            },
+            ["function.start"],
         )
 
-        trace = call_graph.find_shortest_trace_to_entrypoint(
-            "print",
-            {"function.start"},
-        )
+        trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -181,13 +177,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.two": ["function.three"],
                 "function.three": ["print"],
                 "unrelated.call_2": ["int"],
-            }
+            },
+            ["function.start"],
         )
 
-        trace = call_graph.find_shortest_trace_to_entrypoint(
-            "print",
-            {"function.start"},
-        )
+        trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -209,13 +203,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.two": ["function.three"],
                 "function.three": ["function.one", "print"],
                 "unrelated.call_2": ["int"],
-            }
+            },
+            ["function.start"],
         )
 
-        trace = call_graph.find_shortest_trace_to_entrypoint(
-            "print",
-            {"function.start"},
-        )
+        trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -237,13 +229,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.two": ["function.three"],
                 "function.three": ["function.one", "print"],
                 "unrelated.call_2": ["int"],
-            }
+            },
+            ["function.start"],
         )
 
-        trace = call_graph.find_shortest_trace_to_entrypoint(
-            "function.one",
-            {"function.start"},
-        )
+        trace = call_graph.find_shortest_trace_to_entrypoint("function.one")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -257,12 +247,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.start": ["function.one"],
                 "function.one": ["function.one", "function.two"],
                 "function.two": ["print"],
-            }
+            },
+            ["function.start"],
         )
 
-        trace = call_graph.find_shortest_trace_to_entrypoint(
-            "print", {"function.start"}
-        )
+        trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -274,15 +263,58 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         call_graph = CallGraph(
             {
                 "function.start": ["function.start"],
-            }
+            },
+            ["function.start"],
         )
 
-        trace = call_graph.find_shortest_trace_to_entrypoint(
-            "function.start", {"function.start"}
-        )
+        trace = call_graph.find_shortest_trace_to_entrypoint("function.start")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
             trace,
             ["function.start"],
         )
+
+    def test_find_trace_to_parent_multiple_valid_entrypoints(self) -> None:
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.one"],
+                "function.one": ["function.two", "unrelated.call_1"],
+                "function.two": ["function.three"],
+                "function.three": ["function.one", "print"],
+                "unrelated.call_2": ["int"],
+            },
+            ["function.start", "function.one"],
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint("print")
+
+        self.assertIsNotNone(trace)
+        self.assertListEqual(
+            trace,
+            ["print", "function.three", "function.two", "function.one"],
+        )
+
+    def test_validate_entrypoints_file_happy_path(self) -> None:
+        entrypoints_list = ["my.entrypoint.one", "doesnt.exist"]
+        call_graph = CallGraph({"my.entrypoint.one": ["print"]}, entrypoints_list)
+
+        self.assertSetEqual(call_graph.entrypoints, {"my.entrypoint.one"})
+
+    def test_validate_entrypoints_file_bad_root(self) -> None:
+        entrypoints_list = {"not_a_list": True}
+
+        try:
+            CallGraph({"my.entrypoint.one": ["print"]}, entrypoints_list)
+            self.fail("should have thrown")
+        except ValueError:
+            pass
+
+    def test_validate_entrypoints_file_bad_list_elements(self) -> None:
+        entrypoints_list = [True, 1]
+
+        try:
+            CallGraph({"my.entrypoint.one": ["print"]}, entrypoints_list)
+            self.fail("should have thrown")
+        except ValueError:
+            pass

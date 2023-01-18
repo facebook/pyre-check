@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from collections import defaultdict, deque
-from typing import cast, Collection, Deque, Dict, List, Optional, Set, TextIO
+from typing import cast, Deque, Dict, List, Optional, Set, TextIO
 
 import click
 from typing_extensions import TypeAlias
@@ -16,13 +16,20 @@ Trace: TypeAlias = List[str]
 class CallGraph:
     call_graph: Dict[str, Set[str]]
     dependency_graph: Dict[str, Set[str]]
+    entrypoints: Set[str]
 
-    def __init__(self, call_graph: object) -> None:
+    def __init__(self, call_graph: object, entrypoints: object) -> None:
         self.validate_call_graph(call_graph)
         self.call_graph = self.json_to_call_graph(
             cast(Dict[str, List[str]], call_graph)
         )
         self.dependency_graph = self.create_dependency_graph(self.call_graph)
+
+        self.dependency_graph = self.create_dependency_graph(self.call_graph)
+
+        self.entrypoints = self.validate_and_get_entrypoints(
+            entrypoints, set(self.call_graph)
+        )
 
     @staticmethod
     def json_to_call_graph(call_graph: Dict[str, List[str]]) -> Dict[str, Set[str]]:
@@ -47,6 +54,19 @@ class CallGraph:
         return nodes
 
     @staticmethod
+    def validate_json_list(json_list: object, from_file: str, level: str) -> None:
+        if not isinstance(json_list, list):
+            raise ValueError(
+                f"Expected {level} value in {from_file} file to be a list, got: {type(json_list)}"
+            )
+
+        for i, entrypoint in enumerate(json_list):
+            if not isinstance(entrypoint, str):
+                raise ValueError(
+                    f"Expected {level} list value in {from_file} at position {i} to be a string, got: {type(entrypoint)}"
+                )
+
+    @staticmethod
     def validate_call_graph(call_graph: object) -> None:
         if not isinstance(call_graph, Dict):
             raise ValueError(
@@ -54,16 +74,29 @@ class CallGraph:
             )
 
         for caller, callees in call_graph.items():
-            if not isinstance(callees, list):
-                raise ValueError(
-                    f"Value for {caller} in top-level dictionary is not a list of callees: {type(callees)} -> {str(callees)}"
-                )
+            CallGraph.validate_json_list(callees, "CALL_GRAPH_FILE", caller)
 
-            for callee in callees:
-                if not isinstance(callee, str):
-                    raise ValueError(
-                        f"Callee in callee list for {caller} is not a str: {type(callee)} -> {str(callee)}"
-                    )
+    @staticmethod
+    def validate_and_get_entrypoints(
+        entrypoints_json: object, known_callers: Set[str]
+    ) -> Set[str]:
+        entrypoints = set()
+        CallGraph.validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top level")
+
+        for entrypoint in cast(List[str], entrypoints_json):
+            if entrypoint in known_callers:
+                entrypoints.add(entrypoint)
+                continue
+
+            # if the entrypoint is not found in the call graph, then try truncating the last part of the qualified name and retry
+            parent_function = ".".join(entrypoint.split(".")[:-1])
+            if parent_function in known_callers:
+                entrypoints.add(parent_function)
+            else:
+                print(
+                    f"Unknown entrypoint {entrypoint} and parent function {parent_function}, skipping..."
+                )
+        return entrypoints
 
     @staticmethod
     def node_path_to_str(node_path: Trace) -> str:
@@ -72,10 +105,8 @@ class CallGraph:
     def callees(self, caller: str) -> Set[str]:
         return self.call_graph[caller]
 
-    def find_shortest_trace_to_entrypoint(
-        self, start_call: str, entrypoints: Collection[str]
-    ) -> Optional[Trace]:
-        if start_call in entrypoints:
+    def find_shortest_trace_to_entrypoint(self, start_call: str) -> Optional[Trace]:
+        if start_call in self.entrypoints:
             return [start_call]
 
         queue: Deque[Trace] = deque([[start_call]])
@@ -92,7 +123,7 @@ class CallGraph:
 
                 next_node_path = current_node_path + [caller]
 
-                if caller in entrypoints:
+                if caller in self.entrypoints:
                     return next_node_path
 
                 queue.append(next_node_path)
