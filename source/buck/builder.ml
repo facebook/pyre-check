@@ -46,21 +46,6 @@ let to_relative_path ~root path = PyrePath.get_relative_to_root ~root ~path
 
 let to_relative_paths ~root paths = List.filter_map paths ~f:(to_relative_path ~root)
 
-let do_incremental_build_with_unchanged_build_map
-    ~source_root
-    ~artifact_root
-    ~build_map_index
-    ~changed_sources
-    ()
-  =
-  to_relative_paths ~root:source_root changed_sources
-  |> List.concat_map ~f:(BuildMap.Indexed.lookup_artifact build_map_index)
-  |> List.map ~f:(fun relative ->
-         PyrePath.create_relative ~root:artifact_root ~relative
-         |> ArtifactPath.create
-         |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged))
-
-
 let do_lookup_source ~index ~source_root ~artifact_root path =
   match to_relative_path ~root:artifact_root path with
   | None -> None
@@ -94,25 +79,6 @@ module Classic = struct
     | Result.Ok () -> Lwt.return_unit
 
 
-  let incremental_build_with_unchanged_build_map
-      ~source_root
-      ~artifact_root
-      ~build_map
-      ~build_map_index
-      ~changed_sources
-      targets
-    =
-    let changed_artifacts =
-      do_incremental_build_with_unchanged_build_map
-        ~source_root
-        ~artifact_root
-        ~build_map_index
-        ~changed_sources
-        ()
-    in
-    Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
-
-
   let lookup_source ~source_root ~artifact_root ~index path =
     do_lookup_source ~index ~source_root ~artifact_root path
 
@@ -133,12 +99,6 @@ module Classic = struct
       old_build_map_index:BuildMap.Indexed.t ->
       changed_paths:PyrePath.t list ->
       removed_paths:PyrePath.t list ->
-      Target.t list ->
-      IncrementalBuildResult.t Lwt.t;
-    incremental_build_with_unchanged_build_map:
-      build_map:BuildMap.t ->
-      build_map_index:BuildMap.Indexed.t ->
-      changed_sources:PyrePath.t list ->
       Target.t list ->
       IncrementalBuildResult.t Lwt.t;
     lookup_source: index:BuildMap.Indexed.t -> PyrePath.t -> PyrePath.t option;
@@ -331,8 +291,6 @@ module Classic = struct
         V1.incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
       fast_incremental_build_with_normalized_targets =
         V1.fast_incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
-      incremental_build_with_unchanged_build_map =
-        incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
       lookup_source = lookup_source ~source_root ~artifact_root;
       lookup_artifact = lookup_artifact ~source_root ~artifact_root;
       identifier = "new_server";
@@ -358,8 +316,6 @@ module Classic = struct
       incremental_build_with_normalized_targets =
         V2.full_incremental_build ~interface ~source_root ~artifact_root;
       fast_incremental_build_with_normalized_targets;
-      incremental_build_with_unchanged_build_map =
-        incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
       lookup_source = lookup_source ~source_root ~artifact_root;
       lookup_artifact = lookup_artifact ~source_root ~artifact_root;
       identifier = "new_server_buck2_bxl";
@@ -398,16 +354,6 @@ module Classic = struct
       targets
 
 
-  let incremental_build_with_unchanged_build_map
-      ~build_map
-      ~build_map_index
-      ~targets
-      ~changed_sources
-      { incremental_build_with_unchanged_build_map; _ }
-    =
-    incremental_build_with_unchanged_build_map ~build_map ~build_map_index ~changed_sources targets
-
-
   let lookup_source ~index ~builder:{ lookup_source; _ } path = lookup_source ~index path
 
   let lookup_artifact ~index ~builder:{ lookup_artifact; _ } path = lookup_artifact ~index path
@@ -426,11 +372,6 @@ module Lazy = struct
   type t = {
     incremental_build:
       old_build_map:BuildMap.t -> SourcePath.t list -> IncrementalBuildResult.t Lwt.t;
-    incremental_build_with_unchanged_build_map:
-      build_map:BuildMap.t ->
-      build_map_index:BuildMap.Indexed.t ->
-      SourcePath.t list ->
-      IncrementalBuildResult.t Lwt.t;
     lookup_source: index:BuildMap.Indexed.t -> ArtifactPath.t -> SourcePath.t option;
     lookup_artifact: index:BuildMap.Indexed.t -> SourcePath.t -> ArtifactPath.t list;
   }
@@ -443,25 +384,6 @@ module Lazy = struct
     >>= fun build_map ->
     do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
     >>= fun changed_artifacts -> Lwt.return { IncrementalBuildResult.build_map; changed_artifacts }
-
-
-  let incremental_build_with_unchanged_build_map
-      ~source_root
-      ~artifact_root
-      ~build_map
-      ~build_map_index
-      changed_sources
-    =
-    let changed_sources = List.map changed_sources ~f:SourcePath.raw in
-    let changed_artifacts =
-      do_incremental_build_with_unchanged_build_map
-        ~source_root
-        ~artifact_root
-        ~build_map_index
-        ~changed_sources
-        ()
-    in
-    Lwt.return { IncrementalBuildResult.build_map; changed_artifacts }
 
 
   let lookup_source ~source_root ~artifact_root ~index artifact_path =
@@ -477,8 +399,6 @@ module Lazy = struct
   let create ~source_root ~artifact_root interface =
     {
       incremental_build = incremental_build ~interface ~source_root ~artifact_root;
-      incremental_build_with_unchanged_build_map =
-        incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
       lookup_source = lookup_source ~source_root ~artifact_root;
       lookup_artifact = lookup_artifact ~source_root ~artifact_root;
     }
@@ -486,15 +406,6 @@ module Lazy = struct
 
   let incremental_build ~old_build_map ~source_paths { incremental_build; _ } =
     incremental_build ~old_build_map source_paths
-
-
-  let incremental_build_with_unchanged_build_map
-      ~build_map
-      ~build_map_index
-      ~changed_sources
-      { incremental_build_with_unchanged_build_map; _ }
-    =
-    incremental_build_with_unchanged_build_map ~build_map ~build_map_index changed_sources
 
 
   let lookup_source ~index ~builder:{ lookup_source; _ } path = lookup_source ~index path

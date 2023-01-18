@@ -321,22 +321,6 @@ let test_lazy_build context =
     ~expected:[ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged artifact_path1)]
     changed_artifacts;
 
-  (* Incrementally edit 1 file, without altering the build map. *)
-  Builder.Lazy.incremental_build_with_unchanged_build_map
-    builder
-    ~build_map
-    ~build_map_index:(BuildMap.index build_map)
-    ~changed_sources:[source_path0]
-  >>= fun { Builder.Lazy.IncrementalBuildResult.build_map; changed_artifacts } ->
-  assert_mapping_equal
-    ~context
-    ~expected:["foo/a.py", "a.py"; "bar/b.py", "b.py"]
-    (BuildMap.to_alist build_map);
-  assert_artifact_event_equal
-    ~context
-    ~expected:[ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged artifact_path0)]
-    changed_artifacts;
-
   (* Incrementally remove 1 file from build map *)
   Builder.Lazy.incremental_build builder ~old_build_map:build_map ~source_paths:[source_path1]
   >>= fun { Builder.Lazy.IncrementalBuildResult.build_map; changed_artifacts } ->

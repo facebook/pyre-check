@@ -630,23 +630,6 @@ module Builder : sig
       t ->
       IncrementalBuildResult.t Lwt.t
 
-    (** Compute the incremental check result, assuming that the corresponding update does not change
-        the build map in any way. The return value is intended to be compatible with that of
-        {!full_incremental_build} and {!incremental_build_with_normalized_targets}.
-
-        Obviously, this API makes even stronger assumption than
-        {!incremental_build_with_normalized_targets} -- the assumption virtually allows it to
-        completely skip the rebuild. Callers are therefore strongly encouraged to verify the
-        assumption, by checking that all changed sources exists and are already included in the old
-        build map. *)
-    val incremental_build_with_unchanged_build_map
-      :  build_map:BuildMap.t ->
-      build_map_index:BuildMap.Indexed.t ->
-      targets:Target.t list ->
-      changed_sources:PyrePath.t list ->
-      t ->
-      IncrementalBuildResult.t Lwt.t
-
     (** {1 Lookup} *)
 
     (** Lookup the source path that corresponds to the given artifact path. If there is no such
@@ -724,24 +707,6 @@ module Builder : sig
     val incremental_build
       :  old_build_map:BuildMap.t ->
       source_paths:SourcePath.t list ->
-      t ->
-      IncrementalBuildResult.t Lwt.t
-
-    (** Compute the incremental check result, assuming that the corresponding update does not change
-        the build map in any way. The return value is intended to be compatible with that of
-        {!incremental_build}.
-
-        Obviously, this API makes strong assumption than {!incremental_build} -- the assumption
-        virtually allows it to completely skip the rebuild. Callers are therefore strongly
-        encouraged to verify the assumption, by checking that all changed sources exists and are
-        already included in the old build map.
-
-        NOTE(grievejia): This function can be safely replaced with [incremental_build] once the
-        underlying Buck component supports incremental source-db. *)
-    val incremental_build_with_unchanged_build_map
-      :  build_map:BuildMap.t ->
-      build_map_index:BuildMap.Indexed.t ->
-      changed_sources:SourcePath.t list ->
       t ->
       IncrementalBuildResult.t Lwt.t
 
