@@ -2418,8 +2418,10 @@ let run
         None
     | _ ->
         TaintProfiler.track_duration ~profiler ~name:"Backward analysis - fixpoint" ~f:(fun () ->
-            Metrics.with_alarm
-              callable
+            Interprocedural.Metrics.with_alarm
+              ~max_time_in_seconds:60
+              ~event_name:"backward taint analysis"
+              ~callable
               (fun () -> Fixpoint.backward ~cfg ~initial |> Fixpoint.entry)
               ())
   in

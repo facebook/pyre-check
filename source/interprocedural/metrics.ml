@@ -18,35 +18,34 @@ let clear_alarm previous =
   ()
 
 
-let callable_max_time_in_seconds = 60
-
-let with_alarm name f () =
-  (* Print a warning every `callable_max_time_in_seconds` * 2^n seconds. *)
+let with_alarm ~max_time_in_seconds ~event_name ~callable f () =
+  (* Print a warning every `max_time_in_seconds` * 2^n seconds. *)
   let alarm_counter = ref 0 in
   let next_warning = ref 1 in
   let callback _ =
-    start_alarm callable_max_time_in_seconds;
+    start_alarm max_time_in_seconds;
     incr alarm_counter;
     if !alarm_counter = !next_warning then (
       next_warning := 2 * !next_warning;
-      let current_time_in_seconds = !alarm_counter * callable_max_time_in_seconds in
+      let current_time_in_seconds = !alarm_counter * max_time_in_seconds in
       Statistics.event
         ~flush:true
-        ~name:"long taint analysis of callable"
+        ~name:(Format.sprintf "long %s of callable" event_name)
         ~section:`Performance
         ~integers:["cutoff time", current_time_in_seconds]
-        ~normals:["callable", Interprocedural.Target.show_pretty name]
+        ~normals:["callable", Target.show_pretty callable]
         ();
       let pid = Unix.getpid () in
       Log.info
-        "The analysis of %a is taking more than %d seconds (pid = %d)"
-        Interprocedural.Target.pp_pretty
-        name
+        "The %s of %a is taking more than %d seconds (pid = %d)"
+        event_name
+        Target.pp_pretty
+        callable
         current_time_in_seconds
         pid)
   in
   let id = register_alarm callback in
-  let () = start_alarm callable_max_time_in_seconds in
+  let () = start_alarm max_time_in_seconds in
   try
     let result = f () in
     clear_alarm id;

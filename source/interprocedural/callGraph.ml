@@ -2329,12 +2329,18 @@ let build_whole_program_call_graph
   let whole_program_call_graph =
     let build_call_graph whole_program_call_graph callable =
       let callable_call_graph =
-        call_graph_of_callable
-          ~static_analysis_configuration
-          ~environment
-          ~override_graph
-          ~attribute_targets
+        Metrics.with_alarm
+          ~max_time_in_seconds:60
+          ~event_name:"call graph building"
           ~callable
+          (fun () ->
+            call_graph_of_callable
+              ~static_analysis_configuration
+              ~environment
+              ~override_graph
+              ~attribute_targets
+              ~callable)
+          ()
       in
       let () =
         if store_shared_memory then

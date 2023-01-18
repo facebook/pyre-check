@@ -23,3 +23,4 @@ module ClassIntervalSetGraph = ClassIntervalSetGraph
 module FetchCallables = FetchCallables
 module TargetGraph = TargetGraph
 module ChangedPaths = ChangedPaths
+module Metrics = Metrics
