@@ -9,60 +9,6 @@ import unittest
 from ..analyze_issue_trace import CallGraph
 
 
-CALL_GRAPH = {
-    "test.nested_run.do_the_thing": ["Obj{test.glob}", "Ovr{list::append}"],
-    "test.$toplevel": [
-        "Obj{test.glob}",
-        "object.__init__",
-        "object.__new__",
-        "test.main",
-        "str.__eq__",
-        "str.__ne__",
-    ],
-    "test.call_multi_path4": ["test.multi_path2", "test.multi_path4"],
-    "test.cycle_call1": ["test.cycle_call2"],
-    "test.cycle_call2": ["test.cycle_call3"],
-    "test.cycle_call3": ["test.cycle_call1"],
-    "test.get_these": [
-        "test.call_multi_path4",
-        "test.cycle_call1",
-        "test.immediate_examples",
-        "test.leak_globals_by_passing_in",
-        "test.leak_globals_by_transitive_call",
-        "test.long_chain1",
-        "test.multi_path1",
-        "test.nested_run",
-        "test.self_call",
-        "test.transitive_call_accessing_globals",
-    ],
-    "test.immediate_examples": ["Obj{test.glob}", "Ovr{list::append}"],
-    "test.leak_globals_by_passing_in": [
-        "Obj{test.glob}",
-        "test.transitive_call_with_globals_passed_in",
-    ],
-    "test.leak_globals_by_transitive_call": ["test.transitive_call_accessing_globals"],
-    "test.long_chain1": ["test.long_chain2"],
-    "test.long_chain2": ["test.long_chain3"],
-    "test.long_chain3": ["test.long_chain4"],
-    "test.long_chain4": ["print"],
-    "test.main": [
-        "Ovr{test.MyClass::this_one_too}",
-        "test.get_these",
-        "test.this_one_shouldnt_be_found",
-    ],
-    "test.multi_path1": ["test.multi_path2", "test.multi_path3"],
-    "test.multi_path2": ["test.multi_path3", "test.multi_path4"],
-    "test.multi_path3": ["test.multi_path4"],
-    "test.multi_path4": ["print"],
-    "test.nested_run": ["test.nested_run.do_the_thing"],
-    "test.self_call": ["test.self_call"],
-    "test.this_one_shouldnt_be_found": ["Obj{test.glob}", "Ovr{list::append}"],
-    "test.transitive_call_accessing_globals": ["Obj{test.glob}", "Ovr{list::append}"],
-    "test.transitive_call_with_globals_passed_in": ["Ovr{list::append}"],
-    "test.MySubclass.this_one_too": ["Obj{test.glob}", "Ovr{list::append}"],
-}
-
-
 class AnalyzeIssueTraceTest(unittest.TestCase):
     def test_load_call_graph_happy_path(self) -> None:
         call_graph = {
@@ -150,3 +96,193 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 actual_callers = actual_dependency_graph[callee]
 
                 self.assertSetEqual(actual_callers, expected_callers)
+
+    def test_find_trace_to_parent_simple_path(self) -> None:
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.one"],
+                "function.one": ["function.two", "unrelated.call"],
+                "function.two": ["function.three"],
+                "function.three": ["print"],
+                "unrelated.call": ["int"],
+            }
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint(
+            "print",
+            {"function.start"},
+        )
+
+        self.assertIsNotNone(trace)
+        self.assertListEqual(
+            trace,
+            [
+                "print",
+                "function.three",
+                "function.two",
+                "function.one",
+                "function.start",
+            ],
+        )
+
+    def test_find_trace_to_parent_no_path(self) -> None:
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.one"],
+                "function.one": ["function.two"],
+                "function.two": ["function.three"],
+                "function.three": ["print"],
+            }
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint(
+            "this_function_does_not_exist",
+            {"function.one"},
+        )
+
+        self.assertIsNone(trace)
+
+    def test_find_trace_to_parent_multi_path(self) -> None:
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.one"],
+                "function.one": ["function.two_a", "function.two_b"],
+                "function.two_a": ["function.three"],
+                "function.two_b": ["function.two_b.extra_call"],
+                "function.two_b.extra_call": ["function.three"],
+                "function.three": ["print"],
+            }
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint(
+            "print",
+            {"function.start"},
+        )
+
+        self.assertIsNotNone(trace)
+        self.assertListEqual(
+            trace,
+            [
+                "print",
+                "function.three",
+                "function.two_a",
+                "function.one",
+                "function.start",
+            ],
+        )
+
+    def test_find_trace_to_parent_incomplete_call_graph(self) -> None:
+        # this function tests a call graph whose keys are not fully represented
+        # in values and vice-versa
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.one"],
+                "function.one": ["function.two", "unrelated.call_1"],
+                "function.two": ["function.three"],
+                "function.three": ["print"],
+                "unrelated.call_2": ["int"],
+            }
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint(
+            "print",
+            {"function.start"},
+        )
+
+        self.assertIsNotNone(trace)
+        self.assertListEqual(
+            trace,
+            [
+                "print",
+                "function.three",
+                "function.two",
+                "function.one",
+                "function.start",
+            ],
+        )
+
+    def test_find_trace_to_parent_cycle_from_bottom(self) -> None:
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.one"],
+                "function.one": ["function.two", "unrelated.call_1"],
+                "function.two": ["function.three"],
+                "function.three": ["function.one", "print"],
+                "unrelated.call_2": ["int"],
+            }
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint(
+            "print",
+            {"function.start"},
+        )
+
+        self.assertIsNotNone(trace)
+        self.assertListEqual(
+            trace,
+            [
+                "print",
+                "function.three",
+                "function.two",
+                "function.one",
+                "function.start",
+            ],
+        )
+
+    def test_find_trace_to_parent_cycle_from_top(self) -> None:
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.one"],
+                "function.one": ["function.two", "unrelated.call_1"],
+                "function.two": ["function.three"],
+                "function.three": ["function.one", "print"],
+                "unrelated.call_2": ["int"],
+            }
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint(
+            "function.one",
+            {"function.start"},
+        )
+
+        self.assertIsNotNone(trace)
+        self.assertListEqual(
+            trace,
+            ["function.one", "function.start"],
+        )
+
+    def test_find_trace_to_parent_self_call(self) -> None:
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.one"],
+                "function.one": ["function.one", "function.two"],
+                "function.two": ["print"],
+            }
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint(
+            "print", {"function.start"}
+        )
+
+        self.assertIsNotNone(trace)
+        self.assertListEqual(
+            trace,
+            ["print", "function.two", "function.one", "function.start"],
+        )
+
+    def test_find_trace_to_parent_start_is_entrypoint(self) -> None:
+        call_graph = CallGraph(
+            {
+                "function.start": ["function.start"],
+            }
+        )
+
+        trace = call_graph.find_shortest_trace_to_entrypoint(
+            "function.start", {"function.start"}
+        )
+
+        self.assertIsNotNone(trace)
+        self.assertListEqual(
+            trace,
+            ["function.start"],
+        )
