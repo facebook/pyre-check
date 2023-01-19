@@ -4,7 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains Python classes representing the information found
+in a Pyre configuration file (.pyre_configuration).
+
+The implementation is split into Base and OpenSource so that it is
+possible to customize Pyre by implementing a new command-line tool
+with additional configuration, using open-source Pyre as a library.
 """
 
 
