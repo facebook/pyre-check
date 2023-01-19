@@ -435,6 +435,7 @@ let run_taint_analysis
         ~override_graph:override_graph_shared_memory
         ~store_shared_memory:true
         ~attribute_targets:(Registry.object_targets initial_models)
+        ~skip_analysis_targets:(Registry.skip_analysis initial_models)
         ~callables:(Interprocedural.FetchCallables.get_non_stub_callables initial_callables)
     in
     Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();

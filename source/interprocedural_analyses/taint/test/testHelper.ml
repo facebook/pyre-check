@@ -618,6 +618,7 @@ let initialize
       ~override_graph:override_graph_shared_memory
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
+      ~skip_analysis_targets:Target.Set.empty
       ~callables
   in
   let initial_models =

@@ -28,4 +28,8 @@ let skip_overrides models =
   |> Reference.Set.of_list
 
 
+let skip_analysis models =
+  targets_with_mode models ~mode:Model.Mode.SkipAnalysis |> Target.Set.of_list
+
+
 let entrypoints models = targets_with_mode models ~mode:Model.Mode.Entrypoint
