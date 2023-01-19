@@ -62,17 +62,20 @@ module State (Context : Context) = struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)
     in
-    ignore resolution;
     match value with
     | Statement.Assert _ -> ()
     | Assign { target = { Node.value = Expression.Name (Name.Identifier target); location }; _ } ->
-        let error =
-          Error.create
-            ~location:(Location.with_module ~module_reference:Context.qualifier location)
-            ~kind:(Error.GlobalLeak { global_name = Ast.Reference.create target })
-            ~define:Context.define
-        in
-        LocalErrorMap.append Context.error_map ~statement_key ~error
+        let reference = Reference.create target |> Reference.delocalize in
+        if Resolution.is_global resolution ~reference then
+          let error =
+            Error.create
+              ~location:(Location.with_module ~module_reference:Context.qualifier location)
+              ~kind:(Error.GlobalLeak { global_name = reference })
+              ~define:Context.define
+          in
+          LocalErrorMap.append Context.error_map ~statement_key ~error
+        else
+          ()
     | Assign _ -> ()
     | Delete _ -> ()
     | Expression _ -> ()
@@ -106,12 +109,14 @@ module State (Context : Context) = struct
 end
 
 let global_leak_errors ~type_environment ~qualifier define =
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+
   let module Context = struct
     let qualifier = qualifier
 
     let define = define
 
-    let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment
+    let global_resolution = global_resolution
 
     let local_annotations =
       TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
@@ -125,9 +130,6 @@ let global_leak_errors ~type_environment ~qualifier define =
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let cfg = Cfg.create (Node.value define) in
-  let global_resolution =
-    TypeEnvironment.ReadOnly.global_environment type_environment |> GlobalResolution.create
-  in
   Fixpoint.forward ~cfg ~initial:(State.initial ~global_resolution (Node.value define))
   |> Fixpoint.exit
   >>| State.errors

@@ -29,25 +29,15 @@ let assert_global_leak_errors ~context =
 
 let test_forward context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
-  assert_global_leak_errors
-    {|
+  assert_global_leak_errors {|
       def foo():
          x = y
-    |}
-    [
-      (* TODO (T142189949): leaks should not be detected on non-global variable mutations *)
-      "Global leak [3100]: Data is leaked to global `x`.";
-    ];
-  assert_global_leak_errors
-    {|
+    |} [];
+  assert_global_leak_errors {|
       my_global: int = 1
       def foo():
         x = 1
-    |}
-    [
-      (* TODO (T142189949): leaks should not be detected on non-global variable mutations *)
-      "Global leak [3100]: Data is leaked to global `x`.";
-    ];
+    |} [];
   assert_global_leak_errors
     (* my_global here is not actually a global, this is a valid assignment *)
     {|
@@ -55,10 +45,7 @@ let test_forward context =
       def foo():
         my_global = 2
     |}
-    [
-      (* TODO (T142189949): leaks should not be detected on non-global variable mutations *)
-      "Global leak [3100]: Data is leaked to global `my_global`.";
-    ];
+    [];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -68,11 +55,7 @@ let test_forward context =
           non_local = 3
         inner()
     |}
-    [
-      (* TODO (T142189949): leaks should not be detected on non-global variable mutations *)
-      "Global leak [3100]: Data is leaked to global `non_local`.";
-      "Global leak [3100]: Data is leaked to global `non_local`.";
-    ];
+    [];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -80,7 +63,23 @@ let test_forward context =
         global my_global
         my_global = 2
     |}
-    ["Global leak [3100]: Data is leaked to global `my_global`."];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        my_global, y = 2, 3
+    |}
+    [ (* TODO (T142189949): leaks should be detected for tuple deconstruction into a global *) ];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        x, my_global = 2, 3
+    |}
+    [ (* TODO (T142189949): leaks should be detected for tuple deconstruction into a global *) ];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -90,7 +89,7 @@ let test_forward context =
           my_global = 2
         inner()
     |}
-    ["Global leak [3100]: Data is leaked to global `my_global`."];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -135,10 +134,15 @@ let test_forward context =
       def foo():
          y = my_global
     |}
-    [
-      (* TODO (T142189949): leaks should be detected on global assignment to a local variable *)
-      "Global leak [3100]: Data is leaked to global `y`.";
-    ];
+    [ (* TODO (T142189949): leaks should be detected on global assignment to a local variable *) ];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+         x, y = my_global, 1
+    |}
+    [ (* TODO (T142189949): leaks should be detected on global assignment to a local variable
+         through tuple deconstruction *) ];
 
   ()
 
