@@ -118,7 +118,7 @@ let with_performance_tracking ~debug f =
   let timer = Timer.start () in
   let result = f () in
   if debug then (
-    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.quick_stat () in
     Statistics.performance
       ~name:"check"
       ~timer
