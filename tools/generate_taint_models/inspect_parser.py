@@ -6,7 +6,6 @@
 # pyre-strict
 
 
-import _ast
 import ast
 import inspect
 import types
@@ -85,10 +84,10 @@ def strip_custom_annotations(annotation: str) -> str:
     if annotation.startswith("Annotated["):
         parsed_annotation = ast.parse(annotation).body[0]
         if (
-            isinstance(parsed_annotation, _ast.Expr)
-            and isinstance(parsed_annotation.value, _ast.Subscript)
-            and isinstance(parsed_annotation.value.slice, _ast.Index)
-            and isinstance(parsed_annotation.value.slice.value, _ast.Tuple)
+            isinstance(parsed_annotation, ast.Expr)
+            and isinstance(parsed_annotation.value, ast.Subscript)
+            and isinstance(parsed_annotation.value.slice, ast.Index)
+            and isinstance(parsed_annotation.value.slice.value, ast.Tuple)
         ):
             return ast_to_pretty_string(parsed_annotation.value.slice.value.elts[0])
 
