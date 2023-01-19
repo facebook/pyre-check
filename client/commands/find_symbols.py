@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains logic for a Python-based implementation of
+gathering document symbols for a language server. We traverse the
+output of `ast.parse` to do this.
 """
 
 
