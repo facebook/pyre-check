@@ -1053,7 +1053,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           scheduler
           ~policy:
             (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunk_size:500
+               ~minimum_chunks_per_worker:1
+               ~minimum_chunk_size:1000
                ~preferred_chunks_per_worker:1
                ())
           ~initial:ReadWriteCache.empty
@@ -1126,7 +1127,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           scheduler
           ~policy:
             (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunk_size:500
+               ~minimum_chunks_per_worker:1
+               ~minimum_chunk_size:1000
                ~preferred_chunks_per_worker:1
                ())
           ~initial:ModelQueryRegistryMap.empty

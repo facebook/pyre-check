@@ -54,7 +54,12 @@ let save_current_paths ~scheduler ~configuration ~module_tracker =
   in
   Scheduler.map_reduce
     scheduler
-    ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+    ~policy:
+      (Scheduler.Policy.fixed_chunk_count
+         ~minimum_chunks_per_worker:1
+         ~minimum_chunk_size:100
+         ~preferred_chunks_per_worker:1
+         ())
     ~initial:()
     ~map:save_paths
     ~reduce:(fun () () -> ())
@@ -91,7 +96,12 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
   let changed_paths =
     Scheduler.map_reduce
       scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:1
+           ())
       ~initial:[]
       ~map:changed_paths
       ~reduce:( @ )

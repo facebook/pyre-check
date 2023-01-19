@@ -167,7 +167,11 @@ let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~
   Scheduler.map_reduce
     scheduler
     ~policy:
-      (Scheduler.Policy.fixed_chunk_count ~minimum_chunk_size:50 ~preferred_chunks_per_worker:1 ())
+      (Scheduler.Policy.fixed_chunk_count
+         ~minimum_chunks_per_worker:1
+         ~minimum_chunk_size:50
+         ~preferred_chunks_per_worker:1
+         ())
     ~map
     ~reduce:join
     ~initial:empty

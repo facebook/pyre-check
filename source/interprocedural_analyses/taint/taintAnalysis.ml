@@ -149,7 +149,12 @@ let parse_models_and_queries_from_sources
   in
   Scheduler.map_reduce
     scheduler
-    ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+    ~policy:
+      (Scheduler.Policy.fixed_chunk_count
+         ~minimum_chunks_per_worker:1
+         ~minimum_chunk_size:1
+         ~preferred_chunks_per_worker:1
+         ())
     ~initial:ModelParseResult.empty
     ~map
     ~reduce:ModelParseResult.join

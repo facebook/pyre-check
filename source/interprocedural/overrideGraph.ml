@@ -258,7 +258,12 @@ let build_whole_program_overrides
     in
     Scheduler.map_reduce
       scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:50
+           ~preferred_chunks_per_worker:1
+           ())
       ~initial:Heap.empty
       ~map:(fun _ qualifiers -> List.fold qualifiers ~init:Heap.empty ~f:build_overrides)
       ~reduce:(Target.Map.Tree.merge_skewed ~combine)

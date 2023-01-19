@@ -75,7 +75,12 @@ let extract_errors ~scheduler ~taint_configuration ~callables ~fixpoint_state =
   in
   Scheduler.map_reduce
     scheduler
-    ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+    ~policy:
+      (Scheduler.Policy.fixed_chunk_size
+         ~minimum_chunks_per_worker:1
+         ~minimum_chunk_size:100
+         ~preferred_chunk_size:2500
+         ())
     ~initial:[]
     ~map:(fun _ callables -> extract_errors callables)
     ~reduce:List.cons
