@@ -383,14 +383,9 @@ module TriggeredSinkHashMap = struct
       ~extra_trace:({ ExtraTraceFirstHop.call_info; _ } as extra_trace)
       ~issue_handles
     =
-    let add_extra_trace =
-      match call_info with
-      | CallInfo.CallSite _ -> (* Show subtraces only when a callee exists *) true
-      | _ -> false
-    in
     let add_extra_traces_and_handles triggered_sink =
       let triggered_sink =
-        if add_extra_trace then
+        if CallInfo.show_as_extra_trace call_info then
           (* Sources, which have been matched with sinks and thus cause the creation of the
              triggered sinks, as well as the corresponding call_infos. This pair constitutes the
              first hops of the matched source traces *)

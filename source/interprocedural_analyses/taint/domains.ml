@@ -112,6 +112,16 @@ module CallInfo = struct
 
   let show = Format.asprintf "%a" pp
 
+  (* Whether to show a call site as an extra trace *)
+  let show_as_extra_trace = function
+    | Origin _
+    | CallSite _ ->
+        true (* These are actual call sites *)
+    | Declaration _
+    | Tito ->
+        false
+
+
   (* Only called when emitting models before we compute the json so we can dedup *)
   let expand_overrides ~override_graph ~is_valid_callee trace =
     match trace with

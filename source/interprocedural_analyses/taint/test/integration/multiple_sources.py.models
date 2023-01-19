@@ -626,6 +626,13 @@
           {
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
+            "extra_traces": [
+              {
+                "origin": { "line": 34, "start": 9, "end": 32 },
+                "leaf_kind": "UserControlled",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "multi_source_issue_handles": [
@@ -703,6 +710,13 @@
           {
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
+            "extra_traces": [
+              {
+                "origin": { "line": 39, "start": 9, "end": 29 },
+                "leaf_kind": "PermissiveContext",
+                "trace_kind": "source"
+              }
+            ],
             "kinds": [
               {
                 "multi_source_issue_handles": [

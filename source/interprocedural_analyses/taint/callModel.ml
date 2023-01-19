@@ -279,12 +279,13 @@ module ExtraTraceForTransforms = struct
   (* Collect sink taints that will be used as first hops of extra traces, i.e., whose call info
      matches the given callee roots and whose taint match the given named transforms *)
   let first_hops ~named_transforms ~tito_roots ~sink_taint =
-    let match_call_info = function
-      | CallInfo.CallSite { port; _ } -> AccessPath.Root.Set.mem port tito_roots
-      | CallInfo.Origin _ -> true
-      | CallInfo.Declaration _
-      | CallInfo.Tito ->
-          false
+    let match_call_info call_info =
+      if CallInfo.show_as_extra_trace call_info then
+        match call_info with
+        | CallInfo.CallSite { port; _ } -> AccessPath.Root.Set.mem port tito_roots
+        | _ -> true
+      else
+        false
     in
     let accumulate_extra_trace_first_hop call_info sink_kind so_far =
       match Sinks.discard_transforms sink_kind with
