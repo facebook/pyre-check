@@ -4,7 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains the logic for `pyre infer`.
+
+The Pyre Infer backend uses an extended version of our type-checking logic to
+attempt to infer types of Python variabes, and then in the client we take
+those types, write them to a stub file, and use a vendored copy of LibCST's
+ApplyTypeAnnotationsVisitor to merge the stub and the original source code.
 """
 
 
