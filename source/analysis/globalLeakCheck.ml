@@ -142,13 +142,3 @@ let check_define ~type_environment ~qualifier define =
     global_leak_errors ~type_environment ~qualifier define
   else
     []
-
-
-let check_module_TESTING_ONLY
-    ~type_environment
-    ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
-  =
-  source
-  |> Preprocessing.defines ~include_toplevels:true
-  |> List.map ~f:(check_define ~type_environment ~qualifier)
-  |> List.concat

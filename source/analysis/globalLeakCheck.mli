@@ -13,8 +13,3 @@ val check_define
   qualifier:Reference.t ->
   Statement.Define.t Node.t ->
   Error.t list
-
-val check_module_TESTING_ONLY
-  :  type_environment:TypeEnvironment.ReadOnly.t ->
-  Source.t ->
-  Error.t list
