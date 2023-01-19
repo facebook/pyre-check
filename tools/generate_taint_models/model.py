@@ -5,7 +5,6 @@
 
 # pyre-strict
 
-import _ast
 import abc
 import ast
 import logging
@@ -26,7 +25,7 @@ from .inspect_parser import (
 from .parameter import Parameter
 
 
-FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
+FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -217,7 +216,7 @@ class FunctionDefinitionModel(RawCallableModel):
         annotation = ast_arg.annotation
         # ast tries to parse the annotation (e.g.
         # Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]
-        # is treated as an _ast.Subscript instead of _ast.Name )
+        # is treated as an ast.Subscript instead of ast.Name )
         # We use the unparse function to get the annotation as a string and in the case of custom annotation
         # use the strip_custom_annotations already defined to extract the actual type annotation
         if annotation:
