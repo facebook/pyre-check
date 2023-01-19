@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides the logic for the `pyre check` command, which runs a
+single-shot type check (as opposed to `pyre incremental`, which starts a
+server to enable quick incremental updates.)
 """
 
 
