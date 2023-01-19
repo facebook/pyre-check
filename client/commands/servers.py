@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides the logic for the `pyre servers` command, which lists
+running servers (i.e. daemons - background backend processes available for
+incremental checks and queries, including from language servers).
 """
 
 
