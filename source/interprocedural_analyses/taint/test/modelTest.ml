@@ -99,7 +99,7 @@ let set_up_environment
   let source = Test.trim_extra_indentation model_source in
   let global_resolution = ScratchProject.build_global_resolution project in
 
-  let ({ ModelParseResult.errors; skip_overrides; _ } as parse_result) =
+  let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
       ~resolution:global_resolution
       ~source
@@ -116,7 +116,7 @@ let set_up_environment
     (List.is_empty errors);
 
   let environment = ScratchProject.type_environment project in
-  parse_result, environment, taint_configuration, skip_overrides
+  parse_result, environment, taint_configuration
 
 
 let assert_model
@@ -130,14 +130,14 @@ let assert_model
     ~expect
     ()
   =
-  let { ModelParseResult.models; _ }, type_environment, taint_configuration, skip_overrides =
+  let { ModelParseResult.models; _ }, type_environment, taint_configuration =
     set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context ~model_source ()
   in
   begin
     match expected_skipped_overrides with
     | Some expected ->
         let expected_set = List.map expected ~f:Ast.Reference.create |> Ast.Reference.Set.of_list in
-        assert_equal ~cmp:Ast.Reference.Set.equal expected_set skip_overrides
+        assert_equal ~cmp:Ast.Reference.Set.equal expected_set (Registry.skip_overrides models)
     | None -> ()
   end;
   let get_model = Registry.get models in
@@ -228,7 +228,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
-  let { ModelParseResult.queries; _ }, _, _, _ =
+  let { ModelParseResult.queries; _ }, _, _ =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   assert_equal
@@ -5968,7 +5968,7 @@ let test_query_parsing context =
 
   (* Expected models *)
   let create_expected_model ?source ?rules ~model_source function_name =
-    let { ModelParseResult.models; _ }, _, _, _ =
+    let { ModelParseResult.models; _ }, _, _ =
       set_up_environment ?source ?rules ~context ~model_source ()
     in
     let model = Option.value_exn (Registry.get models (List.hd_exn (Registry.targets models))) in

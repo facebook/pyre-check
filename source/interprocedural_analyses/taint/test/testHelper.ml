@@ -530,7 +530,7 @@ let initialize
   let class_hierarchy_graph =
     ClassHierarchyGraph.Heap.from_source ~environment:type_environment ~source
   in
-  let user_models, skip_overrides =
+  let user_models =
     let models_source =
       match models_source, add_initial_models with
       | Some source, true ->
@@ -539,9 +539,9 @@ let initialize
       | models_source, _ -> models_source
     in
     match models_source with
-    | None -> Registry.empty, Ast.Reference.Set.empty
+    | None -> Registry.empty
     | Some source ->
-        let { ModelParseResult.models; errors; skip_overrides; queries } =
+        let { ModelParseResult.models; errors; queries } =
           ModelParser.parse
             ~resolution:global_resolution
             ~source:(Test.trim_extra_indentation source)
@@ -597,15 +597,14 @@ let initialize
             ~stubs:(Target.HashSet.of_list stubs)
             ~initial_models:models
         in
-
-        models, skip_overrides
+        models
   in
   let inferred_models = ClassModels.infer ~environment:type_environment ~user_models in
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let override_graph_heap =
     OverrideGraph.Heap.from_source ~environment:type_environment ~include_unit_tests:true ~source
-    |> OverrideGraph.Heap.skip_overrides ~to_skip:skip_overrides
+    |> OverrideGraph.Heap.skip_overrides ~to_skip:(Registry.skip_overrides user_models)
   in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
 
@@ -770,7 +769,7 @@ let end_to_end_integration_test path context =
         ~context
         source
     in
-    let entrypoints = Registry.get_entrypoints initial_models in
+    let entrypoints = Registry.entrypoints initial_models in
     let prune_method =
       match entrypoints with
       | [] -> Interprocedural.DependencyGraph.PruneMethod.Internals

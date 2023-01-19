@@ -335,7 +335,6 @@ end
 type t = {
   models: Registry.t;
   queries: ModelQuery.t list;
-  skip_overrides: Ast.Reference.Set.t;
   errors: ModelVerificationError.t list;
 }
 

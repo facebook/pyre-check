@@ -2198,7 +2198,7 @@ type parsed_statement =
   | ParsedQuery of ModelQuery.t
 
 type model_or_query =
-  | Model of (Model.WithTarget.t * Reference.t option)
+  | Model of Model.WithTarget.t
   | Query of ModelQuery.t
 
 let resolve_global_callable
@@ -2398,7 +2398,7 @@ let adjust_sanitize_and_modes_and_skipped_override
         | sanitizer -> Ok { sanitizers with global = Sanitize.join sanitizers.global sanitizer })
   in
   let join_with_decorator
-      (sanitizers, modes, skipped_override)
+      (sanitizers, modes)
       { Decorator.name = { Node.value = name; location = decorator_location }; arguments }
     =
     let name = Reference.show name in
@@ -2412,28 +2412,27 @@ let adjust_sanitize_and_modes_and_skipped_override
           ~location:decorator_location
           ~original_expression
           arguments
-        >>| fun sanitizers -> sanitizers, modes, skipped_override
+        >>| fun sanitizers -> sanitizers, modes
     | "SanitizeSingleTrace" ->
         join_with_sanitize_single_trace_decorator
           ~sanitizers
           ~location:decorator_location
           ~original_expression
           arguments
-        >>| fun sanitizers -> sanitizers, modes, skipped_override
-    | "SkipAnalysis" -> Ok (sanitizers, Model.ModeSet.add SkipAnalysis modes, skipped_override)
+        >>| fun sanitizers -> sanitizers, modes
+    | "SkipAnalysis" -> Ok (sanitizers, Model.ModeSet.add SkipAnalysis modes)
     | "SkipDecoratorWhenInlining" ->
-        Ok (sanitizers, Model.ModeSet.add SkipDecoratorWhenInlining modes, skipped_override)
-    | "SkipOverrides" -> Ok (sanitizers, Model.ModeSet.add SkipOverrides modes, Some define_name)
-    | "SkipObscure" -> Ok (sanitizers, Model.ModeSet.remove Obscure modes, skipped_override)
-    | "Entrypoint" -> Ok (sanitizers, Model.ModeSet.add Entrypoint modes, skipped_override)
-    | _ -> Ok (sanitizers, modes, skipped_override)
+        Ok (sanitizers, Model.ModeSet.add SkipDecoratorWhenInlining modes)
+    | "SkipOverrides" -> Ok (sanitizers, Model.ModeSet.add SkipOverrides modes)
+    | "SkipObscure" -> Ok (sanitizers, Model.ModeSet.remove Obscure modes)
+    | "Entrypoint" -> Ok (sanitizers, Model.ModeSet.add Entrypoint modes)
+    | _ -> Ok (sanitizers, modes)
   in
   List.fold_result
     top_level_decorators
     ~f:join_with_decorator
-    ~init:(model.Model.sanitizers, model.Model.modes, None)
-  >>| fun (sanitizers, modes, skipped_override) ->
-  { model with sanitizers; modes }, skipped_override
+    ~init:(model.Model.sanitizers, model.Model.modes)
+  >>| fun (sanitizers, modes) -> { model with sanitizers; modes }
 
 
 let create_model_from_signature
@@ -2647,8 +2646,7 @@ let create_model_from_signature
         ~top_level_decorators
         ~define_name:callable_name
         ~is_object_target
-  >>| fun (model, skipped_override) ->
-  Model ({ Model.WithTarget.model; target = call_target }, skipped_override)
+  >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
 
 let create_model_from_attribute
@@ -2716,8 +2714,7 @@ let create_model_from_attribute
         ~top_level_decorators:decorators
         ~define_name:name
         ~is_object_target
-  >>| fun (model, skipped_override) ->
-  Model ({ Model.WithTarget.model; target = call_target }, skipped_override)
+  >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
 
 let is_obscure ~callables ~stubs call_target =
@@ -2741,7 +2738,7 @@ let parse_models ~resolution ~taint_configuration ~source_sink_filter ~callables
         parsed_signature
       >>| fun model_or_query ->
       match model_or_query with
-      | Model (model_with_target, _) ->
+      | Model model_with_target ->
           Some
             {
               ModelQuery.ExpectedModel.model = model_with_target.model;
@@ -3317,17 +3314,14 @@ let parse ~resolution ?path ~source ~taint_configuration ~source_sink_filter ~ca
       new_models_and_queries
       ~f:
         (fun (models, queries) -> function
-          | Model (model, skipped_override) -> (model, skipped_override) :: models, queries
+          | Model model -> model :: models, queries
           | Query query -> models, query :: queries)
       ~init:([], [])
   in
   {
     models =
-      List.map new_models ~f:(fun (model, _) -> model.target, model.model)
+      List.map new_models ~f:(fun model -> model.target, model.model)
       |> Registry.of_alist ~join:Model.join_user_models;
-    skip_overrides =
-      List.filter_map new_models ~f:(fun (_, skipped_override) -> skipped_override)
-      |> Reference.Set.of_list;
     queries = new_queries;
     errors = List.concat errors;
   }

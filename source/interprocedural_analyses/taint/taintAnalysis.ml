@@ -208,7 +208,7 @@ let initialize_models
   let stubs_hashset =
     initial_callables |> Interprocedural.FetchCallables.get_stubs |> Target.HashSet.of_list
   in
-  let { ModelParseResult.models; queries; skip_overrides; errors } =
+  let { ModelParseResult.models; queries; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
       ~static_analysis_configuration
@@ -278,7 +278,7 @@ let initialize_models
       ~initial_models:models
   in
 
-  { ModelParseResult.models; skip_overrides; queries = []; errors }
+  { ModelParseResult.models; queries = []; errors }
 
 
 (** Aggressively remove things we do not need anymore from the shared memory. *)
@@ -380,13 +380,7 @@ let run_taint_analysis
     (* Save the cache here, in case there is a model verification error. *)
     let () = Cache.save cache in
 
-    let {
-      ModelParseResult.models = initial_models;
-      skip_overrides;
-      errors = model_verification_errors;
-      _;
-    }
-      =
+    let { ModelParseResult.models = initial_models; errors = model_verification_errors; _ } =
       initialize_models
         ~scheduler
         ~static_analysis_configuration
@@ -418,7 +412,7 @@ let run_taint_analysis
               ~scheduler
               ~environment:(Analysis.TypeEnvironment.read_only environment)
               ~include_unit_tests:false
-              ~skip_overrides
+              ~skip_overrides:(Registry.skip_overrides initial_models)
               ~maximum_overrides:
                 (TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
               ~qualifiers
@@ -447,7 +441,7 @@ let run_taint_analysis
 
     let prune_method =
       if limit_entrypoints then
-        let entrypoint_references = Registry.get_entrypoints initial_models in
+        let entrypoint_references = Registry.entrypoints initial_models in
         let () =
           Log.info
             "Pruning call graph by the following entrypoints: %s"

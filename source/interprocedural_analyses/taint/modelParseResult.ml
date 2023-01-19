@@ -590,31 +590,17 @@ end
 type t = {
   models: Registry.t;
   queries: ModelQuery.t list;
-  skip_overrides: Ast.Reference.Set.t;
   errors: ModelVerificationError.t list;
 }
 
-let empty =
-  { models = Registry.empty; queries = []; skip_overrides = Ast.Reference.Set.empty; errors = [] }
-
+let empty = { models = Registry.empty; queries = []; errors = [] }
 
 let join
-    {
-      models = models_left;
-      queries = queries_left;
-      skip_overrides = skip_overrides_left;
-      errors = errors_left;
-    }
-    {
-      models = models_right;
-      queries = queries_right;
-      skip_overrides = skip_overrides_right;
-      errors = errors_right;
-    }
+    { models = models_left; queries = queries_left; errors = errors_left }
+    { models = models_right; queries = queries_right; errors = errors_right }
   =
   {
     models = Registry.merge ~join:Model.join_user_models models_left models_right;
     queries = List.rev_append queries_right queries_left;
     errors = List.rev_append errors_right errors_left;
-    skip_overrides = Set.union skip_overrides_left skip_overrides_right;
   }

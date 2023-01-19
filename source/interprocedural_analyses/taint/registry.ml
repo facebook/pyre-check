@@ -7,14 +7,25 @@
 
 (* Registry: represents a mapping from targets to their model. *)
 
+open Core
+open Ast
+open Interprocedural
 include Fixpoint.Registry
 
-let get_entrypoints models =
-  let collect_targets ~target ~model target_accumulator =
-    let { Model.modes; _ } = model in
-    if Model.ModeSet.contains Model.Mode.Entrypoint modes then
-      target :: target_accumulator
+let targets_with_mode models ~mode =
+  let collect ~target ~model:{ Model.modes; _ } set =
+    if Model.ModeSet.contains mode modes then
+      target :: set
     else
-      target_accumulator
+      set
   in
-  fold ~init:[] ~f:collect_targets models
+  fold ~init:[] ~f:collect models
+
+
+let skip_overrides models =
+  targets_with_mode models ~mode:Model.Mode.SkipOverrides
+  |> List.map ~f:Target.define_name
+  |> Reference.Set.of_list
+
+
+let entrypoints models = targets_with_mode models ~mode:Model.Mode.Entrypoint
