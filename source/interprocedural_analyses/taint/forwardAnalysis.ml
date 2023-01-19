@@ -214,6 +214,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~location
       ~source_tree
       ~sink_tree
+      ~define:FunctionContext.definition
 
 
   let generate_issues () =
@@ -231,18 +232,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match Sinks.extract_partial_sink sink with
         | Some sink -> (
             match Issue.TriggeredSinkHashMap.find triggered_sinks_for_call sink with
-            | Some extra_traces ->
-                let taint =
-                  BackwardTaint.singleton
-                    CallInfo.declaration
-                    (Sinks.TriggeredPartialSink sink)
-                    Frame.initial
-                  |> BackwardState.Tree.create_leaf
-                  |> BackwardState.Tree.transform
-                       ExtraTraceFirstHop.Set.Self
-                       Map
-                       ~f:(ExtraTraceFirstHop.Set.join extra_traces)
-                in
+            | Some triggered_sink ->
+                let taint = BackwardState.Tree.create_leaf triggered_sink in
                 BackwardState.assign ~root ~path:[] taint BackwardState.bottom
                 |> BackwardState.join sofar
             | None -> sofar)
@@ -581,6 +572,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let tito_taint = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     let () =
+      (* Need to be called after calling `check_triggered_flows` *)
       store_triggered_sinks_to_propagate
         ~call_location
         ~triggered_sinks_for_call

@@ -22,7 +22,7 @@ module Sink : sig
     | Return
     | LiteralStringSink of Sinks.t
     | ConditionalTestSink of Sinks.t
-  [@@deriving compare, hash, sexp]
+  [@@deriving compare, hash, sexp, show]
 
   val make_call : call_target:CallGraph.CallTarget.t -> root:AccessPath.Root.t -> t
 
@@ -36,10 +36,10 @@ type t = {
   callable: Target.t;
   sink: Sink.t;
 }
-[@@deriving compare]
+[@@deriving compare, show]
 
 val master_handle : t -> string
 
-module Map : sig
-  include Core.Map.S with type Key.t = t
-end
+val name : string
+
+module Map : Core.Map.S with type Key.t = t

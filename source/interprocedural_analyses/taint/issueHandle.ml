@@ -22,7 +22,7 @@ module Sink = struct
     | Return
     | LiteralStringSink of Sinks.t
     | ConditionalTestSink of Sinks.t
-  [@@deriving compare, hash, sexp]
+  [@@deriving compare, hash, sexp, show]
 
   let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
     let root =
@@ -73,7 +73,7 @@ module T = struct
     callable: Target.t;
     sink: Sink.t;
   }
-  [@@deriving compare, hash, sexp]
+  [@@deriving compare, hash, sexp, show]
 
   let master_handle { code; callable; sink = sink_handle; _ } =
     let version = 0 (* Increment the version on format change. *) in
@@ -102,6 +102,9 @@ module T = struct
         ~len:(min (String.length full_handle) (255 - String.length hash - 1))
     in
     Format.asprintf "%s:%s" short_handle hash
+
+
+  let name = "IssueHandle"
 end
 
 include T
