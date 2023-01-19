@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides some utility code for handling exit status and
+uncaught exceptions in Pyre commands.
 """
 
 
