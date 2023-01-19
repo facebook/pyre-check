@@ -409,6 +409,7 @@ let run_taint_analysis
           Log.info "Computing overrides...";
           let overrides =
             Interprocedural.OverrideGraph.build_whole_program_overrides
+              ~static_analysis_configuration
               ~scheduler
               ~environment:(Analysis.TypeEnvironment.read_only environment)
               ~include_unit_tests:false
@@ -463,6 +464,7 @@ let run_taint_analysis
     }
       =
       Interprocedural.DependencyGraph.build_whole_program_dependency_graph
+        ~static_analysis_configuration
         ~prune:prune_method
         ~initial_callables
         ~call_graph:whole_program_call_graph

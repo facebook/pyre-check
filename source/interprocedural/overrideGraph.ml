@@ -167,6 +167,12 @@ module Heap = struct
     in
     let overrides = Target.Map.Tree.filteri overrides ~f:keep_override_edge in
     { overrides; skipped_overrides = !skipped_overrides }
+
+
+  let dump ~path overrides =
+    (* We represent the override graph as a target graph, by representing class names as function targets.
+     * This is technically wrong but works fine in this context. *)
+    Target.Map.Tree.map ~f:(List.map ~f:Target.create_function) overrides |> TargetGraph.dump ~path
 end
 
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
@@ -238,6 +244,7 @@ type whole_program_overrides = {
     all concrete methods overriding them, and save it to shared memory. *)
 let build_whole_program_overrides
     ~scheduler
+    ~static_analysis_configuration
     ~environment
     ~include_unit_tests
     ~skip_overrides
@@ -274,4 +281,12 @@ let build_whole_program_overrides
     Heap.cap_overrides ~maximum_overrides overrides
   in
   let override_graph_shared_memory = SharedMemory.from_heap override_graph_heap in
+  let () =
+    match static_analysis_configuration.Configuration.StaticAnalysis.save_results_to with
+    | Some path ->
+        let path = PyrePath.append path ~element:"override-graph.json" in
+        Log.info "Writing the override graph to `%s`" (PyrePath.absolute path);
+        Heap.dump ~path override_graph_heap
+    | None -> ()
+  in
   { override_graph_heap; override_graph_shared_memory; skipped_overrides }

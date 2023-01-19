@@ -24,6 +24,7 @@ let assert_fixpoint
   =
   let scheduler = Test.mock_scheduler () in
   let {
+    static_analysis_configuration;
     taint_configuration;
     taint_configuration_shared_memory;
     whole_program_call_graph;
@@ -42,6 +43,7 @@ let assert_fixpoint
   in
   let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
     DependencyGraph.build_whole_program_dependency_graph
+      ~static_analysis_configuration
       ~prune:DependencyGraph.PruneMethod.None
       ~initial_callables
       ~call_graph:whole_program_call_graph

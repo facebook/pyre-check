@@ -67,7 +67,8 @@ type whole_program_dependency_graph = {
     dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
     maps dependees to dependers. *)
 val build_whole_program_dependency_graph
-  :  prune:PruneMethod.t ->
+  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  prune:PruneMethod.t ->
   initial_callables:FetchCallables.t ->
   call_graph:CallGraph.WholeProgramCallGraph.t ->
   overrides:OverrideGraph.Heap.t ->

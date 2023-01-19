@@ -2369,6 +2369,14 @@ let build_whole_program_call_graph
       ()
   in
   let () =
+    match static_analysis_configuration.Configuration.StaticAnalysis.save_results_to with
+    | Some path ->
+        let path = PyrePath.append path ~element:"call-graph.json" in
+        Log.info "Writing the call graph to `%s`" (PyrePath.absolute path);
+        whole_program_call_graph |> WholeProgramCallGraph.to_target_graph |> TargetGraph.dump ~path
+    | None -> ()
+  in
+  let () =
     match static_analysis_configuration.Configuration.StaticAnalysis.dump_call_graph with
     | Some path ->
         Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);

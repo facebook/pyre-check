@@ -169,7 +169,13 @@ type whole_program_dependency_graph = {
     the callables we are actually analyzing. Then reverse the graph, which maps dependers to
     dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
     maps dependees to dependers. *)
-let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~overrides =
+let build_whole_program_dependency_graph
+    ~static_analysis_configuration
+    ~prune
+    ~initial_callables
+    ~call_graph
+    ~overrides
+  =
   let reverse_dependency_graph = Reversed.from_overrides overrides in
   let override_targets = Target.Map.Tree.keys reverse_dependency_graph in
   let reverse_dependency_graph =
@@ -192,16 +198,27 @@ let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~
     in
     { dependency_graph; override_targets; callables_kept; callables_to_analyze }
   in
-  match prune with
-  | PruneMethod.None ->
-      let dependency_graph = Reversed.reverse reverse_dependency_graph in
-      let callables_kept = FetchCallables.get_non_stub_callables initial_callables in
-      let callables_to_analyze = List.rev_append override_targets callables_kept in
-      { dependency_graph; override_targets; callables_kept; callables_to_analyze }
-  | PruneMethod.Internals ->
-      let callables_to_analyze = FetchCallables.get_internal_callables initial_callables in
-      Reversed.prune reverse_dependency_graph ~callables_to_analyze
-      |> create_dependency_graph_from_prune_result
-  | PruneMethod.Entrypoints entrypoints ->
-      Reversed.prune reverse_dependency_graph ~callables_to_analyze:entrypoints
-      |> create_dependency_graph_from_prune_result
+  let ({ dependency_graph; _ } as whole_program_dependency_graph) =
+    match prune with
+    | PruneMethod.None ->
+        let dependency_graph = Reversed.reverse reverse_dependency_graph in
+        let callables_kept = FetchCallables.get_non_stub_callables initial_callables in
+        let callables_to_analyze = List.rev_append override_targets callables_kept in
+        { dependency_graph; override_targets; callables_kept; callables_to_analyze }
+    | PruneMethod.Internals ->
+        let callables_to_analyze = FetchCallables.get_internal_callables initial_callables in
+        Reversed.prune reverse_dependency_graph ~callables_to_analyze
+        |> create_dependency_graph_from_prune_result
+    | PruneMethod.Entrypoints entrypoints ->
+        Reversed.prune reverse_dependency_graph ~callables_to_analyze:entrypoints
+        |> create_dependency_graph_from_prune_result
+  in
+  let () =
+    match static_analysis_configuration.Configuration.StaticAnalysis.save_results_to with
+    | Some path ->
+        let path = PyrePath.append path ~element:"dependency-graph.json" in
+        Log.info "Writing the dependency graph to `%s`" (PyrePath.absolute path);
+        TargetGraph.dump ~path dependency_graph
+    | None -> ()
+  in
+  whole_program_dependency_graph

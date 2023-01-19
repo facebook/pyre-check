@@ -747,6 +747,7 @@ let end_to_end_integration_test path context =
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
     let {
+      static_analysis_configuration;
       taint_configuration;
       taint_configuration_shared_memory;
       whole_program_call_graph;
@@ -778,6 +779,7 @@ let end_to_end_integration_test path context =
     in
     let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
       DependencyGraph.build_whole_program_dependency_graph
+        ~static_analysis_configuration
         ~prune:prune_method
         ~initial_callables
         ~call_graph:whole_program_call_graph

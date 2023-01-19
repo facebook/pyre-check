@@ -71,6 +71,7 @@ type whole_program_overrides = {
     all concrete methods overriding them, and save it to shared memory. *)
 val build_whole_program_overrides
   :  scheduler:Scheduler.t ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   include_unit_tests:bool ->
   skip_overrides:Reference.Set.t ->
