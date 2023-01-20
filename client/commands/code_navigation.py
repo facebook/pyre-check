@@ -25,13 +25,13 @@ from ..language_server import connections, features, protocol as lsp
 from . import (
     backend_arguments,
     background,
+    daemon_querier,
     initialization,
     launch_and_subscribe_handler,
     log_lsp_event,
     persistent,
     pyre_language_server,
     pyre_server_options,
-    request_handler,
     server_state as state,
     subscription,
 )
@@ -64,7 +64,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         server_state: state.ServerState,
         client_status_message_handler: persistent.ClientStatusMessageHandler,
         client_type_error_handler: persistent.ClientTypeErrorHandler,
-        request_handler: request_handler.AbstractRequestHandler,
+        querier: daemon_querier.AbstractDaemonQuerier,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         super().__init__(
@@ -73,7 +73,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             client_status_message_handler,
             client_type_error_handler,
             PyreCodeNavigationSubscriptionResponseParser(),
-            request_handler,
+            querier,
             remote_logging,
         )
 
@@ -148,7 +148,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     async def send_open_state(self) -> None:
         results = await asyncio.gather(
             *[
-                self.request_handler.handle_file_opened(path, document.code)
+                self.daemon_querier.handle_file_opened(path, document.code)
                 for path, document in self.server_state.opened_documents.items()
             ]
         )
@@ -217,7 +217,7 @@ async def async_run_code_navigation_client(
         client_capabilities=client_capabilities,
         server_options=initial_server_options,
     )
-    handler = request_handler.CodeNavigationRequestHandler(server_state=server_state)
+    querier = daemon_querier.CodeNavigationDaemonQuerier(server_state=server_state)
     server = pyre_language_server.PyreLanguageServer(
         input_channel=stdin,
         output_channel=stdout,
@@ -230,13 +230,13 @@ async def async_run_code_navigation_client(
                 client_status_message_handler=persistent.ClientStatusMessageHandler(
                     stdout, server_state
                 ),
-                request_handler=handler,
+                querier=querier,
                 client_type_error_handler=persistent.ClientTypeErrorHandler(
                     stdout, server_state, remote_logging
                 ),
             )
         ),
-        handler=handler,
+        querier=querier,
     )
     return await server.run()
 

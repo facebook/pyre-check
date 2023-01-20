@@ -29,6 +29,7 @@ from . import (
     server_state as state,
     subscription,
 )
+from .daemon_querier import AbstractDaemonQuerier
 from .initialization import (
     async_start_pyre_server,
     BuckStartFailure,
@@ -36,7 +37,6 @@ from .initialization import (
     StartSuccess,
 )
 from .pyre_server_options import PyreServerOptionsReader
-from .request_handler import AbstractRequestHandler
 from .server_state import ServerState
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     server_state: ServerState
     client_status_message_handler: ClientStatusMessageHandler
     client_type_error_handler: ClientTypeErrorHandler
-    request_handler: AbstractRequestHandler
+    daemon_querier: AbstractDaemonQuerier
     subscription_response_parser: PyreSubscriptionResponseParser
 
     def __init__(
@@ -73,7 +73,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         client_status_message_handler: ClientStatusMessageHandler,
         client_type_error_handler: ClientTypeErrorHandler,
         subscription_response_parser: PyreSubscriptionResponseParser,
-        request_handler: AbstractRequestHandler,
+        daemon_querier: AbstractDaemonQuerier,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         self.server_options_reader = server_options_reader
@@ -81,7 +81,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         self.server_state = server_state
         self.client_status_message_handler = client_status_message_handler
         self.client_type_error_handler = client_type_error_handler
-        self.request_handler = request_handler
+        self.daemon_querier = daemon_querier
         self.subscription_response_parser = subscription_response_parser
 
     @abc.abstractmethod

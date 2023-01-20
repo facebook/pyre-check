@@ -7,7 +7,7 @@
 The request handler provides an interface and implementation for LSP related
 queries (such as hover & definition). The current implementation of the request
 handler involves a synchronous query to the Pyre server via a daemon connection,
-but since the request handler also provides an interface (AbstractRequestHandler),
+but since the request handler also provides an interface (AbstractDaemonQuerier),
 the request handler implementation can be mocked.
 """
 
@@ -155,7 +155,7 @@ def path_to_expression_coverage_response(
     )
 
 
-class AbstractRequestHandler(abc.ABC):
+class AbstractDaemonQuerier(abc.ABC):
     def __init__(
         self,
         server_state: state.ServerState,
@@ -227,7 +227,7 @@ class AbstractRequestHandler(abc.ABC):
         return f"{path}, pid_{os.getpid()}" if unsaved_changes_enabled else None
 
 
-class PersistentRequestHandler(AbstractRequestHandler):
+class PersistentDaemonQuerier(AbstractDaemonQuerier):
     async def _query_modules_of_path(
         self,
         path: Path,
@@ -389,7 +389,7 @@ class PersistentRequestHandler(AbstractRequestHandler):
         return daemon_response
 
 
-class CodeNavigationRequestHandler(AbstractRequestHandler):
+class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_coverage(
         self,
         path: Path,

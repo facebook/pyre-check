@@ -40,6 +40,12 @@ from ...language_server.protocol import SymbolKind
 from ...libcst_collectors import CoveredAndUncoveredLines
 from ...tests import setup
 from .. import backend_arguments, background, start, subscription
+from ..daemon_querier import (
+    path_to_coverage_response,
+    PersistentDaemonQuerier,
+    to_coverage_result,
+    uncovered_range_to_diagnostic,
+)
 from ..daemon_query import DaemonQueryFailure
 from ..initialization import (
     async_try_initialize,
@@ -62,12 +68,6 @@ from ..persistent import (
 
 from ..pyre_language_server import PyreLanguageServer, read_lsp_request
 from ..pyre_server_options import PyreServerOptions
-from ..request_handler import (
-    path_to_coverage_response,
-    PersistentRequestHandler,
-    to_coverage_result,
-    uncovered_range_to_diagnostic,
-)
 from ..server_state import OpenedDocumentState, ServerState
 from ..tests import server_setup
 
@@ -339,7 +339,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            request_handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_subscription(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -406,7 +406,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            request_handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_subscription(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -451,7 +451,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_setup.mock_server_state
             ),
-            request_handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         with self.assertRaises(PyreDaemonShutdown):
             await server_handler.handle_error_subscription(
@@ -481,7 +481,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            request_handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_subscription(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -523,7 +523,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            request_handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_subscription(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -545,7 +545,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             output_channel=create_memory_text_writer(),
             server_state=server_setup.mock_server_state,
             daemon_manager=fake_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -576,7 +576,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
             daemon_manager=fake_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -612,7 +612,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 },
             ),
             daemon_manager=fake_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -645,7 +645,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
             daemon_manager=fake_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         self.assertFalse(fake_task_manager.is_task_running())
 
@@ -677,7 +677,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 },
             ),
             daemon_manager=fake_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
 
         # Save should add path to query even if the server is already running.
@@ -851,7 +851,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            request_handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
 
         with self.assertRaises(asyncio.IncompleteReadError):
@@ -914,7 +914,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            request_handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.client_status_message_handler.show_status_message_to_client(
             message="derp", level=lsp.MessageType.WARNING
@@ -950,7 +950,7 @@ class PyreServerTest(testslide.TestCase):
             output_channel=create_memory_text_writer(),
             server_state=server_state,
             daemon_manager=noop_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
 
         exit_code = await server.run()
@@ -972,7 +972,7 @@ class PyreServerTest(testslide.TestCase):
             output_channel=create_memory_text_writer(),
             server_state=server_state,
             daemon_manager=noop_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
 
         exit_code = await server.run()
@@ -996,7 +996,7 @@ class PyreServerTest(testslide.TestCase):
             ),
             server_state=server_state,
             daemon_manager=noop_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
 
         exit_code = await server.run()
@@ -1015,7 +1015,7 @@ class PyreServerTest(testslide.TestCase):
             ),
             server_state=server_state,
             daemon_manager=noop_task_manager,
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
 
         exit_code = await server.run()
@@ -1029,7 +1029,7 @@ class PyreServerTest(testslide.TestCase):
             output_channel=create_memory_text_writer(),
             server_state=server_state,
             daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
-            handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         test_path0 = Path("/foo/bar")
         test_path1 = Path("/foo/baz")
@@ -1074,7 +1074,7 @@ class PyreServerTest(testslide.TestCase):
         fake_daemon_manager = background.TaskManager(
             server_setup.WaitForeverBackgroundTask()
         )
-        handler = server_setup.MockRequestHandler(
+        querier = server_setup.MockDaemonQuerier(
             mock_type_coverage=lsp.TypeCoverageResponse(
                 covered_percent=42.42,
                 uncovered_ranges=[],
@@ -1086,7 +1086,7 @@ class PyreServerTest(testslide.TestCase):
             output_channel=AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
             daemon_manager=fake_daemon_manager,
-            handler=handler,
+            querier=querier,
         )
         await server.process_type_coverage_request(
             lsp.TypeCoverageParameters(
@@ -1097,7 +1097,7 @@ class PyreServerTest(testslide.TestCase):
             request_id=1,
         )
         self.assertEqual(
-            handler.requests,
+            querier.requests,
             [{"path": test_path}],
         )
         self.assertEqual(
@@ -1115,13 +1115,13 @@ class PyreServerTest(testslide.TestCase):
         fake_daemon_manager = background.TaskManager(
             server_setup.WaitForeverBackgroundTask()
         )
-        handler = server_setup.MockRequestHandler(mock_type_coverage=None)
+        querier = server_setup.MockDaemonQuerier(mock_type_coverage=None)
         server = PyreLanguageServer(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
             daemon_manager=fake_daemon_manager,
-            handler=handler,
+            querier=querier,
         )
         await server.process_type_coverage_request(
             lsp.TypeCoverageParameters(
@@ -1132,7 +1132,7 @@ class PyreServerTest(testslide.TestCase):
             request_id=1,
         )
         self.assertEqual(
-            handler.requests,
+            querier.requests,
             [{"path": test_path}],
         )
         self.assertEqual(output_writer.items(), [])
@@ -1196,7 +1196,7 @@ class PyreServerTest(testslide.TestCase):
             contents=server_setup.DEFAULT_FILE_CONTENTS
         )
         for enabled_telemetry_event in (True, False):
-            handler = server_setup.MockRequestHandler(
+            querier = server_setup.MockDaemonQuerier(
                 mock_hover_response=expected_response,
             )
             server, output_writer = await server_setup.create_server_for_request_test(
@@ -1205,7 +1205,7 @@ class PyreServerTest(testslide.TestCase):
                         code=server_setup.DEFAULT_FILE_CONTENTS
                     )
                 },
-                handler=handler,
+                querier=querier,
                 server_options=server_setup.create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event
                 ),
@@ -1220,7 +1220,7 @@ class PyreServerTest(testslide.TestCase):
                 request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             self.assertEqual(
-                handler.requests,
+                querier.requests,
                 [
                     {
                         "path": tracked_path,
@@ -1258,7 +1258,7 @@ class PyreServerTest(testslide.TestCase):
             contents=server_setup.DEFAULT_FILE_CONTENTS
         )
         for enabled_telemetry_event in (True, False):
-            handler = server_setup.MockRequestHandler(
+            querier = server_setup.MockDaemonQuerier(
                 mock_hover_response=expected_response,
             )
             server, output_writer = await server_setup.create_server_for_request_test(
@@ -1267,7 +1267,7 @@ class PyreServerTest(testslide.TestCase):
                         code=server_setup.DEFAULT_FILE_CONTENTS
                     )
                 },
-                handler=handler,
+                querier=querier,
                 server_options=server_setup.create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event,
                     language_server_features=LanguageServerFeatures(
@@ -1285,7 +1285,7 @@ class PyreServerTest(testslide.TestCase):
                 request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             self.assertEqual(
-                handler.requests,
+                querier.requests,
                 [
                     {"path": tracked_path, "code": server_setup.DEFAULT_FILE_CONTENTS},
                     {
@@ -1320,14 +1320,14 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
-        handler = server_setup.MockRequestHandler()
+        querier = server_setup.MockDaemonQuerier()
         server, output_writer = await server_setup.create_server_for_request_test(
             opened_documents={
                 tracked_path: OpenedDocumentState(
                     code=server_setup.DEFAULT_FILE_CONTENTS
                 )
             },
-            handler=handler,
+            querier=querier,
         )
         await server.process_hover_request(
             parameters=lsp.HoverParameters(
@@ -1338,7 +1338,7 @@ class PyreServerTest(testslide.TestCase):
             ),
             request_id=server_setup.DEFAULT_REQUEST_ID,
         )
-        self.assertEqual(handler.requests, [])
+        self.assertEqual(querier.requests, [])
         self._assert_output_messages(
             output_writer,
             [
@@ -1365,7 +1365,7 @@ class PyreServerTest(testslide.TestCase):
             )
         ]
         for enabled_telemetry_event in (True, False):
-            handler = server_setup.MockRequestHandler(
+            querier = server_setup.MockDaemonQuerier(
                 mock_definition_response=expected_response,
             )
             server, output_writer = await server_setup.create_server_for_request_test(
@@ -1374,7 +1374,7 @@ class PyreServerTest(testslide.TestCase):
                         code=server_setup.DEFAULT_FILE_CONTENTS
                     )
                 },
-                handler=handler,
+                querier=querier,
                 server_options=server_setup.create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event
                 ),
@@ -1389,7 +1389,7 @@ class PyreServerTest(testslide.TestCase):
                 request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             self.assertEqual(
-                handler.requests,
+                querier.requests,
                 [
                     {
                         "path": tracked_path,
@@ -1433,7 +1433,7 @@ class PyreServerTest(testslide.TestCase):
             )
         ]
         for enabled_telemetry_event in (True, False):
-            handler = server_setup.MockRequestHandler(
+            querier = server_setup.MockDaemonQuerier(
                 mock_definition_response=expected_response,
             )
             server, output_writer = await server_setup.create_server_for_request_test(
@@ -1442,7 +1442,7 @@ class PyreServerTest(testslide.TestCase):
                         code=server_setup.DEFAULT_FILE_CONTENTS
                     )
                 },
-                handler=handler,
+                querier=querier,
                 server_options=server_setup.create_server_options(
                     enabled_telemetry_event=enabled_telemetry_event,
                     language_server_features=LanguageServerFeatures(
@@ -1460,7 +1460,7 @@ class PyreServerTest(testslide.TestCase):
                 request_id=server_setup.DEFAULT_REQUEST_ID,
             )
             self.assertEqual(
-                handler.requests,
+                querier.requests,
                 [
                     {"path": tracked_path, "code": server_setup.DEFAULT_FILE_CONTENTS},
                     {
@@ -1505,7 +1505,7 @@ class PyreServerTest(testslide.TestCase):
                 ),
             )
         ]
-        handler = server_setup.MockRequestHandler(
+        querier = server_setup.MockDaemonQuerier(
             mock_definition_response=expected_telemetry_response,
         )
         server, output_writer = await server_setup.create_server_for_request_test(
@@ -1514,7 +1514,7 @@ class PyreServerTest(testslide.TestCase):
                     code=server_setup.DEFAULT_FILE_CONTENTS
                 )
             },
-            handler=handler,
+            querier=querier,
             server_options=server_setup.create_server_options(
                 enabled_telemetry_event=True,
                 language_server_features=LanguageServerFeatures(
@@ -1532,7 +1532,7 @@ class PyreServerTest(testslide.TestCase):
             request_id=server_setup.DEFAULT_REQUEST_ID,
         )
         self.assertEqual(
-            handler.requests,
+            querier.requests,
             [
                 {
                     "path": tracked_path,
@@ -1561,14 +1561,14 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
-        handler = server_setup.MockRequestHandler()
+        querier = server_setup.MockDaemonQuerier()
         server, output_writer = await server_setup.create_server_for_request_test(
             opened_documents={
                 tracked_path: OpenedDocumentState(
                     code=server_setup.DEFAULT_FILE_CONTENTS
                 )
             },
-            handler=handler,
+            querier=querier,
         )
         await server.process_definition_request(
             parameters=lsp.DefinitionParameters(
@@ -1579,7 +1579,7 @@ class PyreServerTest(testslide.TestCase):
             ),
             request_id=server_setup.DEFAULT_REQUEST_ID,
         )
-        self.assertEqual(handler.requests, [])
+        self.assertEqual(querier.requests, [])
         self._assert_output_messages(
             output_writer,
             [self._expect_success_message([])],
@@ -1599,7 +1599,7 @@ class PyreServerTest(testslide.TestCase):
                 ),
             )
         ]
-        handler = server_setup.MockRequestHandler(
+        querier = server_setup.MockDaemonQuerier(
             mock_references_response=expected_response,
         )
         server, output_writer = await server_setup.create_server_for_request_test(
@@ -1608,7 +1608,7 @@ class PyreServerTest(testslide.TestCase):
                     code=server_setup.DEFAULT_FILE_CONTENTS
                 )
             },
-            handler=handler,
+            querier=querier,
         )
         await server.process_find_all_references_request(
             lsp.ReferencesParameters(
@@ -1620,7 +1620,7 @@ class PyreServerTest(testslide.TestCase):
             request_id=server_setup.DEFAULT_REQUEST_ID,
         )
         self.assertEqual(
-            handler.requests,
+            querier.requests,
             [
                 {
                     "path": tracked_path,
@@ -1644,14 +1644,14 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
-        handler = server_setup.MockRequestHandler()
+        querier = server_setup.MockDaemonQuerier()
         server, output_writer = await server_setup.create_server_for_request_test(
             opened_documents={
                 tracked_path: OpenedDocumentState(
                     code=server_setup.DEFAULT_FILE_CONTENTS
                 )
             },
-            handler=handler,
+            querier=querier,
         )
         await server.process_find_all_references_request(
             lsp.ReferencesParameters(
@@ -1662,7 +1662,7 @@ class PyreServerTest(testslide.TestCase):
             ),
             request_id=server_setup.DEFAULT_REQUEST_ID,
         )
-        self.assertEqual(handler.requests, [])
+        self.assertEqual(querier.requests, [])
         self._assert_output_messages(
             output_writer, [self._expect_success_message(result=[])]
         )
@@ -1680,7 +1680,7 @@ class PyreServerTest(testslide.TestCase):
                         code=server_setup.DEFAULT_FILE_CONTENTS
                     )
                 },
-                handler=server_setup.MockRequestHandler(),
+                querier=server_setup.MockDaemonQuerier(),
             )
             await server.process_document_symbols_request(
                 lsp.DocumentSymbolsParameters(
@@ -1789,7 +1789,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentRequestHandler(
+            pyre_query_manager = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=False
                 ),
@@ -1814,7 +1814,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__bad_json(self) -> None:
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 strict_default=False
             ),
@@ -1833,7 +1833,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentRequestHandler(
+            pyre_query_manager = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=True
                 ),
@@ -1851,7 +1851,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__not_typechecked(self) -> None:
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 strict_default=False
             ),
@@ -1874,7 +1874,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentRequestHandler(
+            pyre_query_manager = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
@@ -1906,7 +1906,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentRequestHandler(
+            pyre_query_manager = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
@@ -1936,7 +1936,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__expression_level__bad_json(self) -> None:
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 strict_default=False,
                 language_server_features=LanguageServerFeatures(
@@ -1960,7 +1960,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentRequestHandler(
+            pyre_query_manager = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=True,
                     language_server_features=LanguageServerFeatures(
@@ -1984,7 +1984,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_hover(self) -> None:
         json_output = """{ "response": {"value": "foo.bar.Bar", "docstring": "test docstring"} }"""
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2017,7 +2017,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_hover__bad_json(self) -> None:
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2056,7 +2056,7 @@ class RequestHandlerTest(testslide.TestCase):
             ]
         }
         """
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2096,7 +2096,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_definition_location__bad_json(self) -> None:
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2116,7 +2116,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_definition_location__error_response(self) -> None:
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2175,7 +2175,7 @@ class RequestHandlerTest(testslide.TestCase):
             ]
         }
         """
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     references=ReferencesAvailability.ENABLED,
@@ -2222,7 +2222,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_references__bad_json(self) -> None:
-        pyre_query_manager = PersistentRequestHandler(
+        pyre_query_manager = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     references=ReferencesAvailability.ENABLED,

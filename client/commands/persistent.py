@@ -35,12 +35,12 @@ from ..language_server import connections, features, protocol as lsp
 from . import (
     backend_arguments,
     background,
+    daemon_querier,
     incremental,
     launch_and_subscribe_handler,
     log_lsp_event,
     pyre_language_server,
     pyre_server_options,
-    request_handler,
     server_state as state,
     subscription,
 )
@@ -313,7 +313,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         server_state: ServerState,
         client_status_message_handler: ClientStatusMessageHandler,
         client_type_error_handler: ClientTypeErrorHandler,
-        request_handler: request_handler.AbstractRequestHandler,
+        querier: daemon_querier.AbstractDaemonQuerier,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         super().__init__(
@@ -322,7 +322,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
             client_status_message_handler,
             client_type_error_handler,
             PyrePersistentSubscriptionResponseParser(),
-            request_handler,
+            querier,
             remote_logging,
         )
 
@@ -474,7 +474,7 @@ async def run_persistent(
         client_capabilities=client_capabilities,
         server_options=initial_server_options,
     )
-    handler = request_handler.PersistentRequestHandler(
+    querier = daemon_querier.PersistentDaemonQuerier(
         server_state=server_state,
     )
     server = pyre_language_server.PyreLanguageServer(
@@ -489,13 +489,13 @@ async def run_persistent(
                 client_status_message_handler=ClientStatusMessageHandler(
                     stdout, server_state
                 ),
-                request_handler=handler,
+                querier=querier,
                 client_type_error_handler=ClientTypeErrorHandler(
                     stdout, server_state, remote_logging
                 ),
             )
         ),
-        handler=handler,
+        querier=daemon_querier,
     )
     return await server.run()
 

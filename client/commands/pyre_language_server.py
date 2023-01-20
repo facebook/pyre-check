@@ -20,7 +20,7 @@ from typing import ClassVar, Dict, Generic, List, Optional, TypeVar, Union
 from .. import json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
-from . import background, commands, find_symbols, request_handler, server_state as state
+from . import background, commands, daemon_querier, find_symbols, server_state as state
 
 from .daemon_query import DaemonQueryFailure
 
@@ -123,7 +123,7 @@ class PyreLanguageServer:
     # NOTE: The fields inside `server_state` are mutable and can be changed by `daemon_manager`
     server_state: state.ServerState
 
-    handler: request_handler.AbstractRequestHandler
+    querier: daemon_querier.AbstractDaemonQuerier
 
     async def write_telemetry(
         self,
@@ -180,7 +180,7 @@ class PyreLanguageServer:
             code_changes = opened_document_state.code
             current_is_dirty_state = opened_document_state.is_dirty
             if not opened_document_state.pyre_code_updated:
-                result = await self.handler.update_overlay(
+                result = await self.querier.update_overlay(
                     path=document_path, code=code_changes
                 )
                 if isinstance(result, daemon_connection.DaemonConnectionFailure):
@@ -249,7 +249,7 @@ class PyreLanguageServer:
         # Attempt to trigger a background Pyre server start on each file open
         if not self.daemon_manager.is_task_running():
             await self._try_restart_pyre_daemon()
-        await self.handler.handle_file_opened(
+        await self.querier.handle_file_opened(
             document_path, parameters.text_document.text
         )
 
@@ -265,7 +265,7 @@ class PyreLanguageServer:
         try:
             del self.server_state.opened_documents[document_path]
             LOG.info(f"File closed: {document_path}")
-            await self.handler.handle_file_closed(document_path)
+            await self.querier.handle_file_closed(document_path)
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
@@ -380,7 +380,7 @@ class PyreLanguageServer:
         document_path = document_path.resolve()
         type_coverage_timer = timer.Timer()
         server_status_before = self.server_state.server_last_status.value
-        response = await self.handler.get_type_coverage(path=document_path)
+        response = await self.querier.get_type_coverage(path=document_path)
         if response is not None:
             await lsp.write_json_rpc(
                 self.output_channel,
@@ -438,7 +438,7 @@ class PyreLanguageServer:
             hover_timer = timer.Timer()
             server_status_before = self.server_state.server_last_status.value
             await self.update_overlay_if_needed(document_path)
-            result = await self.handler.get_hover(
+            result = await self.querier.get_hover(
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
             )
@@ -486,14 +486,14 @@ class PyreLanguageServer:
         self, document_path: Path, position: lsp.LspPosition
     ) -> QueryResultWithDurations[List[Dict[str, object]]]:
         """
-        Helper function to call the handler. Exists only to reduce code duplication
+        Helper function to call the querier. Exists only to reduce code duplication
         due to shadow mode, please don't make more of these - we already have enough
         layers of handling.
         """
         overall_timer = timer.Timer()
         overlay_update_duration = await self.update_overlay_if_needed(document_path)
         query_timer = timer.Timer()
-        raw_result = await self.handler.get_definition_locations(
+        raw_result = await self.querier.get_definition_locations(
             path=document_path,
             position=position.to_pyre_position(),
         )
@@ -663,7 +663,7 @@ class PyreLanguageServer:
             )
             return
 
-        reference_locations = await self.handler.get_reference_locations(
+        reference_locations = await self.querier.get_reference_locations(
             path=document_path,
             position=parameters.position.to_pyre_position(),
         )

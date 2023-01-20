@@ -24,10 +24,10 @@ from ...language_server.daemon_connection import DaemonConnectionFailure
 from ...language_server.features import LanguageServerFeatures, TypeCoverageAvailability
 
 from .. import backend_arguments, background, start
+from ..daemon_querier import AbstractDaemonQuerier
 from ..daemon_query import DaemonQueryFailure
 from ..pyre_language_server import PyreLanguageServer
 from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
-from ..request_handler import AbstractRequestHandler
 from ..server_state import OpenedDocumentState, ServerState
 
 
@@ -134,7 +134,7 @@ class ExceptionRaisingBytesWriter(AsyncBytesWriter):
         pass
 
 
-class MockRequestHandler(AbstractRequestHandler):
+class MockDaemonQuerier(AbstractDaemonQuerier):
     def __init__(
         self,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
@@ -162,7 +162,7 @@ class MockRequestHandler(AbstractRequestHandler):
     ) -> Union[DaemonQueryFailure, lsp.LspHoverResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_hover_response is None:
-            raise ValueError("You need to set hover response in the mock handler")
+            raise ValueError("You need to set hover response in the mock querier")
         else:
             return self.mock_hover_response
 
@@ -173,7 +173,7 @@ class MockRequestHandler(AbstractRequestHandler):
     ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_definition_response is None:
-            raise ValueError("You need to set hover response in the mock handler")
+            raise ValueError("You need to set hover response in the mock querier")
         else:
             return self.mock_definition_response
 
@@ -184,7 +184,7 @@ class MockRequestHandler(AbstractRequestHandler):
     ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_references_response is None:
-            raise ValueError("You need to set hover response in the mock handler")
+            raise ValueError("You need to set hover response in the mock querier")
         else:
             return self.mock_references_response
 
@@ -218,7 +218,7 @@ mock_server_state: ServerState = ServerState(server_options=mock_initial_server_
 
 async def create_server_for_request_test(
     opened_documents: Dict[Path, OpenedDocumentState],
-    handler: MockRequestHandler,
+    querier: MockDaemonQuerier,
     server_options: PyreServerOptions = mock_initial_server_options,
 ) -> Tuple[PyreLanguageServer, MemoryBytesWriter]:
     # set up the system under test
@@ -232,7 +232,7 @@ async def create_server_for_request_test(
             opened_documents=opened_documents,
         ),
         daemon_manager=fake_task_manager,
-        handler=handler,
+        querier=querier,
     )
     await fake_task_manager.ensure_task_running()
     return server, output_writer

@@ -42,7 +42,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=persistent.ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            request_handler=server_setup.MockRequestHandler(),
+            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_subscription(
             subscription.StatusUpdate(kind="BusyChecking")
