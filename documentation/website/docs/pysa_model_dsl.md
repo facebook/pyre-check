@@ -652,7 +652,7 @@ ModelQuery(
       fully_qualified_name.matches("d1"),
       arguments.contains(2)
     ),
-    fully_qualified_name.matches("\.__init__$")
+    name.equals("__init__")
   ],
   model = [
     Parameters(TaintSource[Test], where=[
@@ -701,7 +701,7 @@ ModelQuery(
         arguments.contains(2)
       )
     ),
-    fully_qualified_name.matches("\.__init__$")
+    name.equals("__init__")
   ],
   model = [
     Parameters(TaintSource[Test], where=[
@@ -746,7 +746,7 @@ ModelQuery(
       ),
       is_transitive=True
     ),
-    fully_qualified_name.matches("\.__init__$")
+    name.equals("__init__")
   ],
   ...
 )
@@ -771,7 +771,7 @@ ModelQuery(
       is_transitive=True,
       includes_self=False
     ),
-    fully_qualified_name.matches("\.__init__$")
+    name.equals("__init__")
   ],
   ...
 )

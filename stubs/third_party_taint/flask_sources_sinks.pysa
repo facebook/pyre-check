@@ -84,7 +84,7 @@ ModelQuery(
   name = "get_route_sources_sinks",
   find = "functions",
   where = [
-    Decorator(fully_qualified_name.matches("app.route")),
+    Decorator(fully_qualified_name.equals("app.route")),
   ],
   model = [
     Parameters(TaintSource[UserControlled, UserControlled_Parameter]),
@@ -96,7 +96,7 @@ ModelQuery(
   name = "get_errorhandler_sinks",
   find = "functions",
   where = [
-    Decorator(fully_qualified_name.matches("app.errorhandler")),
+    Decorator(fully_qualified_name.equals("app.errorhandler")),
   ],
   model = [
     Returns(TaintSink[ReturnedToUser])
