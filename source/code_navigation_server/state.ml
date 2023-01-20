@@ -9,5 +9,6 @@
 
 type t = {
   environment: Analysis.OverlaidEnvironment.t;
+  build_system: BuildSystem.t;
   open_files: OpenFiles.t;
 }

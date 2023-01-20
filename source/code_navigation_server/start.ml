@@ -125,13 +125,14 @@ let initialize_shared_memory environment_controls =
   |> ignore
 
 
-let initialize_server_state environment_controls =
+let initialize_server_state ~build_system_initializer ~environment_controls () =
   initialize_shared_memory environment_controls;
   let environment =
     Analysis.ErrorsEnvironment.create environment_controls |> Analysis.OverlaidEnvironment.create
   in
+  let build_system = BuildSystem.Initializer.initialize build_system_initializer in
   let open_files = OpenFiles.create () in
-  { State.environment; open_files }
+  { State.environment; build_system; open_files }
 
 
 let broadcast_server_stop_and_fail ~subscriptions ~message exn =
@@ -156,7 +157,11 @@ let start_server
     Server.Start.get_optional_watchman_subscriber ~critical_files ~extensions ~source_paths watchman
   in
   let properties = Server.ServerProperties.create ~socket_path ~critical_files ~configuration () in
-  let state = Server.ExclusiveLock.create (initialize_server_state environment_controls) in
+  let build_system_initializer = BuildSystem.get_initializer source_paths in
+  let state =
+    Server.ExclusiveLock.create
+      (initialize_server_state ~build_system_initializer ~environment_controls ())
+  in
   let subscriptions = Subscriptions.create () in
   let server = { RequestHandler.ServerInternal.properties; state; subscriptions } in
   let after_server_starts () =
@@ -208,6 +213,7 @@ let start_server
   in
   let after_server_stops () =
     Log.info "Code navigation server is going down. Cleaning up...";
+    BuildSystem.Initializer.cleanup build_system_initializer;
     Lwt.return_unit
   in
   LwtSocketServer.SocketAddress.create_from_path socket_path
