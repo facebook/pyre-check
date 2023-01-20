@@ -646,6 +646,11 @@ end = struct
       has_decorator signature "overload"
       || has_decorator signature "typing.overload"
       || has_decorator signature "typing_extensions.overload"
+      (* TODO(T142322930) Pytest aliases typing.overload, and currently Pyre's alias resolution
+         logic runs after the collection of overloads so we have to hardcode support. If we could
+         move alias resolution out of UnannotedGlobalEnvironment by adding a new environment layer,
+         we could remove this hack. *)
+      || has_decorator signature "_pytest.compat.overload"
 
 
     let is_static_method signature =
