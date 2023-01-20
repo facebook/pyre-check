@@ -4284,16 +4284,162 @@ module SelfType = struct
     parameter_uses_self_type || return_annotation_uses_self_type
 
 
+  (* Return true if `self/cls` parameter can be bound using a synthesized TypeVar bound to the
+     current class.
+
+     If `self/cls` is unannotated, then we can bind it with `self: <Self_TypeVar>` or `cls:
+     Type[Self_TypeVar]`.
+
+     If it has `self: ReadOnly[Self]` or `cls: ReadOnly[Type[Self]]`, then it can still be bound by
+     replacing the `typing.Self` with a synthesized `Self_TypeVar`.
+
+     Otherwise, if we have a concrete annotation, such as `self: Foo`, then we cannot bind it using
+     a synthesized TypeVar. *)
+  let can_bind_self_parameter_using_self_type_variable = function
+    | {
+        Node.value =
+          {
+            Parameter.annotation =
+              ( None
+              | Some
+                  {
+                    Node.value =
+                      Call
+                        {
+                          callee =
+                            {
+                              Node.value =
+                                Name
+                                  (Attribute
+                                    {
+                                      base =
+                                        {
+                                          Node.value =
+                                            Name
+                                              (Attribute
+                                                {
+                                                  base =
+                                                    {
+                                                      Node.value =
+                                                        Name (Identifier "pyre_extensions");
+                                                      _;
+                                                    };
+                                                  attribute = "ReadOnly";
+                                                  special = false;
+                                                });
+                                          _;
+                                        };
+                                      attribute = "__getitem__";
+                                      special = true;
+                                    });
+                              _;
+                            };
+                          arguments =
+                            [
+                              {
+                                name = None;
+                                value =
+                                  {
+                                    Node.value =
+                                      ( Name
+                                          (Attribute
+                                            {
+                                              base =
+                                                {
+                                                  Node.value =
+                                                    Name
+                                                      (Identifier ("typing_extensions" | "typing"));
+                                                  _;
+                                                };
+                                              attribute = "Self";
+                                              special = false;
+                                            })
+                                      | Call
+                                          {
+                                            callee =
+                                              {
+                                                Node.value =
+                                                  Name
+                                                    (Attribute
+                                                      {
+                                                        base =
+                                                          {
+                                                            Node.value =
+                                                              Name
+                                                                (Attribute
+                                                                  {
+                                                                    base =
+                                                                      {
+                                                                        Node.value =
+                                                                          Name (Identifier "typing");
+                                                                        _;
+                                                                      };
+                                                                    attribute = "Type";
+                                                                    special = false;
+                                                                  });
+                                                            _;
+                                                          };
+                                                        attribute = "__getitem__";
+                                                        special = true;
+                                                      });
+                                                _;
+                                              };
+                                            arguments =
+                                              [
+                                                {
+                                                  name = None;
+                                                  value =
+                                                    {
+                                                      Node.value =
+                                                        Name
+                                                          (Attribute
+                                                            {
+                                                              base =
+                                                                {
+                                                                  Node.value =
+                                                                    Name
+                                                                      (Identifier
+                                                                        ( "typing_extensions"
+                                                                        | "typing" ));
+                                                                  _;
+                                                                };
+                                                              attribute = "Self";
+                                                              special = false;
+                                                            });
+                                                      _;
+                                                    };
+                                                };
+                                              ];
+                                          } );
+                                    _;
+                                  };
+                              };
+                            ];
+                        };
+                    _;
+                  } );
+            _;
+          };
+        _;
+      }
+      :: _ ->
+        true
+    | _ -> false
+
+
   let replace_self_type_in_signature
       ~qualifier
       ({ Define.Signature.parameters; return_annotation; parent; _ } as signature)
     =
-    match parent, parameters, return_annotation with
+    match
+      ( parent,
+        can_bind_self_parameter_using_self_type_variable parameters,
+        parameters,
+        return_annotation )
+    with
     | ( Some parent,
-        ({
-           Node.value = { Parameter.annotation = None; _ } as self_or_class_parameter_value;
-           location;
-         } as self_or_class_parameter)
+        true,
+        ({ Node.value = self_or_class_parameter_value; location } as self_or_class_parameter)
         :: rest_parameters,
         return_annotation )
       when signature_uses_self_type signature ->
@@ -4310,9 +4456,22 @@ module SelfType = struct
             else
               variable_annotation
           in
+          let annotation_with_possible_readonly_wrapper =
+            match self_or_class_parameter_value with
+            | { Parameter.annotation = Some _readonly_self_or_class_parameter; _ } ->
+                (* The user wrote `self: ReadOnly[Self]` or `cls: ReadOnly[Type[Self]]`. So, wrap
+                   the synthesized type in `ReadOnly`. *)
+                get_item_call ~location "pyre_extensions.ReadOnly" [annotation]
+                |> Node.create ~location
+            | _ -> annotation
+          in
           {
             self_or_class_parameter with
-            value = { self_or_class_parameter_value with annotation = Some annotation };
+            value =
+              {
+                self_or_class_parameter_value with
+                annotation = Some annotation_with_possible_readonly_wrapper;
+              };
           }
         in
         let replace_self_type_in_parameter_annotation = function

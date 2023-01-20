@@ -617,6 +617,23 @@ let test_function_call context =
       "Incompatible parameter type [6]: In call `expect_list_mutable`, for 1st positional \
        argument, expected `List[pyre_extensions.ReadOnly[int]]` but got `List[int]`.";
     ];
+  assert_type_errors_including_readonly
+    {|
+      from typing import TypeVar
+      from pyre_extensions import ReadOnly
+      from typing_extensions import Self
+
+      class Foo:
+          def mutable_method(self) -> None: ...
+
+          def readonly_method(self: ReadOnly[Self]) -> None:
+            self.mutable_method()
+      |}
+    [
+      "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+       `Foo.mutable_method` may modify its object. Cannot call it on readonly expression `self` of \
+       type `pyre_extensions.ReadOnly[Variable[_Self_test_Foo__ (bound to Foo)]]`.";
+    ];
   ()
 
 

@@ -6624,6 +6624,80 @@ let test_expand_self_type _ =
         def merge_into(self: _Self_test_Merger__, other: _Self_test_Merger__) -> None:
           return self
      |};
+  (* ReadOnly method with `typing_extensions.Self`. *)
+  assert_expand
+    {|
+      from typing_extensions import Self
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def readonly_method(self: ReadOnly[Self]) -> None: ...
+      |}
+    {|
+      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound="Foo")
+
+      from typing_extensions import Self
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def readonly_method(self: ReadOnly[_Self_test_Foo__]) -> None: ...
+      |};
+  (* ReadOnly method with `typing.Self`. *)
+  assert_expand
+    {|
+      from typing import Self
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def readonly_method(self: ReadOnly[Self]) -> None: ...
+      |}
+    {|
+      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound="Foo")
+
+      from typing import Self
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def readonly_method(self: ReadOnly[_Self_test_Foo__]) -> None: ...
+      |};
+  (* ReadOnly method that does not use `typing_extensions.Self`. *)
+  assert_expand
+    {|
+      from typing_extensions import Self
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def readonly_method(self: ReadOnly[Foo]) -> None: ...
+      |}
+    {|
+      from typing_extensions import Self
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def readonly_method(self: ReadOnly[Foo]) -> None: ...
+      |};
+  (* ReadOnly classmethod. *)
+  assert_expand
+    {|
+      from typing import Type
+      from typing_extensions import Self
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        @classmethod
+        def readonly_classmethod(cls: ReadOnly[Type[Self]]) -> None: ...
+      |}
+    {|
+      _Self_test_Foo__ = typing.TypeVar("_Self_test_Foo__", bound="Foo")
+
+      from typing import Type
+      from typing_extensions import Self
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        @classmethod
+        def readonly_classmethod(cls: ReadOnly[typing.Type[_Self_test_Foo__]]) -> None: ...
+      |};
   ()
 
 
