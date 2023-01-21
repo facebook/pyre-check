@@ -186,7 +186,7 @@ def run_from_parsed_arguments(
             generated_models[mode] = set(generator_options[mode].generate_models())
             elapsed_time_seconds = time.time() - start
             LOG.info(
-                f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds."
+                f"Computed {len(generated_models[mode])} models for `{mode}` in {elapsed_time_seconds:.3f} seconds."
             )
 
             if logger_executable is not None:
