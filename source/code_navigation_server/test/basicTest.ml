@@ -16,11 +16,11 @@ let range start_line start_column stop_line stop_column =
   { Ast.Location.start = position start_line start_column; stop = position stop_line stop_column }
 
 
-let assert_type_error_count ?overlay_id ~module_name ~expected client =
+let assert_type_error_count ?overlay_id ~module_ ~expected client =
   let%lwt raw_response =
     ScratchProject.ClientConnection.send_request
       client
-      Request.(Query (Query.GetTypeErrors { module_ = Module.OfName module_name; overlay_id }))
+      Request.(Query (Query.GetTypeErrors { module_; overlay_id }))
   in
   match Yojson.Safe.from_string raw_response with
   | `List [`String "TypeErrors"; `List errors] ->
@@ -36,6 +36,10 @@ let assert_type_error_count ?overlay_id ~module_name ~expected client =
         Format.sprintf "Expected type error response but got: `%s`" (Yojson.Safe.to_string json)
       in
       assert_failure message
+
+
+let assert_type_error_count_for_module ?overlay_id ~module_name ~expected client =
+  assert_type_error_count client ?overlay_id ~expected ~module_:(Request.Module.OfName module_name)
 
 
 let test_no_op_server context =
@@ -151,7 +155,7 @@ let test_file_opened_and_closed_request context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count ~module_name:"test" ~expected:1;
+        assert_type_error_count_for_module ~module_name:"test" ~expected:1;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -163,26 +167,26 @@ let test_file_opened_and_closed_request context =
                      overlay_id = Some "foo";
                    }))
           ~expected:Response.Ok;
-        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Command (Command.FileClosed { path = "/untracked/file.py"; overlay_id = Some "foo" }))
           ~expected:
             (Response.Error (Response.ErrorKind.UntrackedFileClosed { path = "/untracked/file.py" }));
-        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Command
                 (Command.FileClosed { path = test_path; overlay_id = Some "untracked overlay id" }))
           ~expected:(Response.Error (Response.ErrorKind.UntrackedFileClosed { path = test_path }));
-        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileClosed { path = test_path; overlay_id = Some "foo" }))
           ~expected:Response.Ok;
-        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:1;
+        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:1;
         (* Now that foo is no longer tracked as an open file, this should error. *)
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -197,7 +201,7 @@ let test_local_update_request context =
        ~style:ScratchProject.ClientConnection.Style.Sequential
        ~clients:
          [
-           assert_type_error_count ~module_name:"test" ~expected:1;
+           assert_type_error_count_for_module ~module_name:"test" ~expected:1;
            ScratchProject.ClientConnection.assert_response
              ~request:
                Request.(
@@ -209,7 +213,7 @@ let test_local_update_request context =
                         overlay_id = "foo";
                       }))
              ~expected:Response.Ok;
-           assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+           assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
            ScratchProject.ClientConnection.assert_error_response
              ~request:
                Request.(
@@ -232,9 +236,9 @@ let test_local_update_request context =
                         overlay_id = "bar";
                       }))
              ~expected:Response.Ok;
-           assert_type_error_count ~module_name:"test" ~overlay_id:"bar" ~expected:3;
-           assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:2;
-           assert_type_error_count ~module_name:"test" ~expected:1;
+           assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"bar" ~expected:3;
+           assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+           assert_type_error_count_for_module ~module_name:"test" ~expected:1;
            ScratchProject.ClientConnection.assert_response
              ~request:
                Request.(
@@ -242,7 +246,7 @@ let test_local_update_request context =
                    (Command.LocalUpdate
                       { module_ = Module.OfName "test"; content = None; overlay_id = "foo" }))
              ~expected:Response.Ok;
-           assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:1;
+           assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:1;
          ]
 
 
@@ -258,7 +262,7 @@ let test_file_update_request context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count ~module_name:"test" ~expected:1;
+        assert_type_error_count_for_module ~module_name:"test" ~expected:1;
         (fun _ ->
           PyrePath.remove test_path;
           Lwt.return_unit);
@@ -289,7 +293,7 @@ let test_file_update_request context =
                        { kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
                    ]))
           ~expected:Response.Ok;
-        assert_type_error_count ~module_name:"test2" ~expected:2;
+        assert_type_error_count_for_module ~module_name:"test2" ~expected:2;
       ]
 
 
@@ -307,7 +311,7 @@ let test_file_and_local_update context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count ~module_name:"test" ~expected:2;
+        assert_type_error_count_for_module ~module_name:"test" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -319,7 +323,7 @@ let test_file_and_local_update context =
                      overlay_id = "foo";
                    }))
           ~expected:Response.Ok;
-        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:1;
+        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:1;
         (fun _ ->
           File.create test2_path ~content:"x: int = 42" |> File.write;
           Lwt.return_unit);
@@ -333,7 +337,7 @@ let test_file_and_local_update context =
                        { kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
                    ]))
           ~expected:Response.Ok;
-        assert_type_error_count ~module_name:"test" ~overlay_id:"foo" ~expected:0;
+        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:0;
       ]
 
 
@@ -772,11 +776,11 @@ let test_watchman_integration context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count ~module_name:"test" ~expected:0;
+        assert_type_error_count_for_module ~module_name:"test" ~expected:0;
         (fun _ ->
           File.create ~content:"reveal_type(42)" test_path |> File.write;
           Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]));
-        assert_type_error_count ~module_name:"test" ~expected:1;
+        assert_type_error_count_for_module ~module_name:"test" ~expected:1;
         (fun _ ->
           PyrePath.remove test_path;
           Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]));
