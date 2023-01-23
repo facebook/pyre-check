@@ -56,7 +56,10 @@ module Request = struct
     | Superclasses of Reference.t list
     | Type of Expression.t
     | TypesInFiles of string list
-    | ValidateTaintModels of string option
+    | ValidateTaintModels of {
+        path: string option;
+        verify_dsl: bool;
+      }
   [@@deriving sexp, compare]
 
   let inline_decorators ?(decorators_to_skip = []) function_reference =
@@ -426,7 +429,7 @@ let help () =
       Superclasses [Reference.empty];
       Type (Node.create_with_default_location (Expression.Constant Constant.True));
       TypesInFiles [""];
-      ValidateTaintModels None;
+      ValidateTaintModels { path = None; verify_dsl = false };
       Request.inline_decorators (Reference.create "");
     ]
   |> List.sort ~compare:String.compare
@@ -503,6 +506,48 @@ let rec parse_request_exn query =
                  "inline_decorators expects qualified name and optional `decorators_to_skip=[...]`")
       in
       let string argument = argument |> expression |> string_of_expression in
+      let boolean argument =
+        let boolean_of_expression = function
+          | Expression.Constant Constant.True -> true
+          | Expression.Constant Constant.False -> false
+          | _ -> raise (InvalidQuery "expected boolean")
+        in
+        argument |> boolean_of_expression
+      in
+      let parse_validate_taint_models arguments =
+        let path, verify_dsl =
+          match arguments with
+          | [] -> None, false
+          | [
+           {
+             Call.Argument.name = Some { Node.value = "verify_dsl"; _ };
+             value = { Node.value = Expression.Constant (True | False) as verify_dsl; _ };
+           };
+          ] ->
+              None, boolean verify_dsl
+          | [path] -> Some (string path), false
+          | [
+              {
+                Call.Argument.name = Some { Node.value = "verify_dsl"; _ };
+                value = { Node.value = Expression.Constant (True | False) as verify_dsl; _ };
+              };
+              path;
+            ]
+          | [
+              path;
+              {
+                Call.Argument.name = Some { Node.value = "verify_dsl"; _ };
+                value = { Node.value = Expression.Constant (True | False) as verify_dsl; _ };
+              };
+            ] ->
+              Some (string path), boolean verify_dsl
+          | _ ->
+              raise
+                (InvalidQuery
+                   "validate_taint_models expects optional path and optional `verify_dsl=...`")
+        in
+        Request.ValidateTaintModels { path; verify_dsl }
+      in
       let integer argument =
         let integer_of_expression = function
           | { Node.value = Expression.Constant (Constant.Integer value); _ } -> value
@@ -565,8 +610,7 @@ let rec parse_request_exn query =
       | "superclasses", names -> Superclasses (List.map ~f:reference names)
       | "type", [argument] -> Type (expression argument)
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
-      | "validate_taint_models", [] -> ValidateTaintModels None
-      | "validate_taint_models", [argument] -> Request.ValidateTaintModels (Some (string argument))
+      | "validate_taint_models", arguments -> parse_validate_taint_models arguments
       | _ -> raise (InvalidQuery "unexpected query"))
   | Ok _ when String.equal query "help" -> Help (help ())
   | Ok _ -> raise (InvalidQuery "unexpected query")
@@ -1329,7 +1373,7 @@ let rec process_request ~type_environment ~build_system request =
           Single (Base.TypesByPath results)
         else
           Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
-    | ValidateTaintModels path ->
+    | ValidateTaintModels { path; verify_dsl = _ } ->
         let paths =
           match path with
           | Some path ->

@@ -96,8 +96,23 @@ let test_parse_query context =
   assert_parses "path_of_module(a.b.c)" (PathOfModule !&"a.b.c");
   assert_fails_to_parse "path_of_module('a.b.c')";
   assert_fails_to_parse "path_of_module(a.b, b.c)";
-  assert_parses "validate_taint_models()" (ValidateTaintModels None);
-  assert_parses "validate_taint_models('foo.py')" (ValidateTaintModels (Some "foo.py"));
+  assert_parses "validate_taint_models()" (ValidateTaintModels { path = None; verify_dsl = false });
+  assert_parses
+    "validate_taint_models('foo.py')"
+    (ValidateTaintModels { path = Some "foo.py"; verify_dsl = false });
+  assert_parses
+    "validate_taint_models('foo.py', verify_dsl=True)"
+    (ValidateTaintModels { path = Some "foo.py"; verify_dsl = true });
+  assert_parses
+    "validate_taint_models('foo.py', verify_dsl=False)"
+    (ValidateTaintModels { path = Some "foo.py"; verify_dsl = false });
+  assert_parses
+    "validate_taint_models(verify_dsl=True)"
+    (ValidateTaintModels { path = None; verify_dsl = true });
+  assert_fails_to_parse "validate_taint_models(a)";
+  assert_fails_to_parse "validate_taint_models('foo.py', 'foo.py')";
+  assert_fails_to_parse "validate_taint_models(verify_dsl=False, verify_dsl=False)";
+  assert_fails_to_parse "validate_taint_models('foo.py', verify_dsl='foo.py')";
   assert_parses "defines(a.b)" (Defines [Reference.create "a.b"]);
   assert_parses "batch()" (Batch []);
   assert_fails_to_parse "batch(batch())";

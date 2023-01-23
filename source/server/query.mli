@@ -48,7 +48,10 @@ module Request : sig
     | Superclasses of Reference.t list
     | Type of Expression.t
     | TypesInFiles of string list
-    | ValidateTaintModels of string option
+    | ValidateTaintModels of {
+        path: string option;
+        verify_dsl: bool;
+      }
   [@@deriving sexp, compare]
 
   val inline_decorators : ?decorators_to_skip:Reference.t list -> Reference.t -> t
