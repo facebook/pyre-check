@@ -63,7 +63,14 @@ module ModelQueryRegistryMap = struct
 
 
   let check_expected_and_unexpected_model_errors ~model_query_results ~queries =
-    let find_expected_and_unexpected_model_errors ~expect ~actual_models ~name ~location ~models =
+    let find_expected_and_unexpected_model_errors
+        ~expect
+        ~actual_models
+        ~name
+        ~path
+        ~location
+        ~models
+      =
       let registry_contains_model registry ~target ~model =
         (* TODO T127682824: Deal with the case of joined models *)
         match Registry.get registry target with
@@ -89,39 +96,49 @@ module ModelQueryRegistryMap = struct
             else
               ModelVerificationError.UnexpectedModelsArePresent { model_query_name = name; models }
           in
-          [{ ModelVerificationError.kind; location; path = None }]
+          [{ ModelVerificationError.kind; location; path }]
     in
-    let find_expected_model_errors ~actual_models ~name ~location ~expected_models =
+    let find_expected_model_errors ~actual_models ~name ~path ~location ~expected_models =
       find_expected_and_unexpected_model_errors
         ~expect:true
         ~actual_models
         ~name
+        ~path
         ~location
         ~models:expected_models
     in
-    let find_unexpected_model_errors ~actual_models ~name ~location ~unexpected_models =
+    let find_unexpected_model_errors ~actual_models ~name ~path ~location ~unexpected_models =
       find_expected_and_unexpected_model_errors
         ~expect:false
         ~actual_models
         ~name
+        ~path
         ~location
         ~models:unexpected_models
     in
     let expected_and_unexpected_model_errors =
       queries
-      |> List.map ~f:(fun { ModelQuery.name; location; expected_models; unexpected_models; _ } ->
+      |> List.map
+           ~f:(fun { ModelQuery.name; path; location; expected_models; unexpected_models; _ } ->
              let actual_models =
                Option.value (get model_query_results name) ~default:Registry.empty
              in
              let expected_model_errors =
                match expected_models with
                | [] -> []
-               | _ -> find_expected_model_errors ~actual_models ~name ~location ~expected_models
+               | _ ->
+                   find_expected_model_errors ~actual_models ~name ~path ~location ~expected_models
              in
              let unexpected_model_errors =
                match unexpected_models with
                | [] -> []
-               | _ -> find_unexpected_model_errors ~actual_models ~name ~location ~unexpected_models
+               | _ ->
+                   find_unexpected_model_errors
+                     ~actual_models
+                     ~name
+                     ~path
+                     ~location
+                     ~unexpected_models
              in
              List.append expected_model_errors unexpected_model_errors)
       |> List.concat
@@ -130,9 +147,11 @@ module ModelQueryRegistryMap = struct
 
 
   let check_errors ~model_query_results ~queries =
-    let model_query_names = List.map queries ~f:(fun query -> query.ModelQuery.name) in
+    let model_query_names_and_path =
+      List.map queries ~f:(fun query -> query.ModelQuery.name, query.ModelQuery.path)
+    in
     let errors =
-      List.filter_map model_query_names ~f:(fun model_query_name ->
+      List.filter_map model_query_names_and_path ~f:(fun (model_query_name, model_query_path) ->
           let models = get model_query_results model_query_name in
           Statistics.log_model_query_outputs
             ~model_query_name
@@ -146,7 +165,7 @@ module ModelQueryRegistryMap = struct
                   ModelVerificationError.kind =
                     ModelVerificationError.NoOutputFromModelQuery model_query_name;
                   location = Ast.Location.any;
-                  path = None;
+                  path = model_query_path;
                 })
     in
     Statistics.flush ();

@@ -244,7 +244,10 @@ let test_invalid_model_query context =
   let error_message =
     error >>| ModelVerificationError.display |> Option.value ~default:"no failure"
   in
-  assert_equal ~printer:ident "ModelQuery `invalid_model_query` output no models." error_message;
+  assert_equal
+    ~printer:ident
+    "/a/b.pysa:-1: ModelQuery `invalid_model_query` output no models."
+    error_message;
   assert_json
     ~expected:
       {|
@@ -254,7 +257,7 @@ let test_invalid_model_query context =
           "column": -1,
           "stop_line": -1,
           "stop_column": -1,
-          "path": null,
+          "path": "/a/b.pysa",
           "code": 41
         }
       |}
