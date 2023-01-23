@@ -11,14 +11,15 @@ open Taint
 open TestHelper
 open Pyre
 
+let assert_json ~expected error =
+  assert_equal
+    ~printer:Yojson.Safe.pretty_to_string
+    ~cmp:Yojson.Safe.equal
+    (Yojson.Safe.from_string expected)
+    (ModelVerificationError.to_json error)
+
+
 let test_to_json _ =
-  let assert_json ~expected error =
-    assert_equal
-      ~printer:Yojson.Safe.pretty_to_string
-      ~cmp:Yojson.Safe.equal
-      (Yojson.Safe.from_string expected)
-      (ModelVerificationError.to_json error)
-  in
   assert_json
     ~expected:
       {|
@@ -215,32 +216,50 @@ let test_to_json _ =
 
 let test_invalid_model_query context =
   let configuration = TaintConfiguration.Heap.default in
-  let error_message =
+  let error =
     try
       let _ =
         initialize
           ~models_source:
             {|
-        ModelQuery(
-          name = "invalid_model_query",
-          find = "functions",
-          where = Decorator(arguments.contains("1"), name.matches("d")),
-          model = Returns(TaintSource[Test])
-        )
-      |}
+              ModelQuery(
+                name = "invalid_model_query",
+                find = "functions",
+                where = Decorator(arguments.contains("1"), name.matches("d")),
+                model = Returns(TaintSource[Test])
+              )
+            |}
           ~context
           ~taint_configuration:configuration
+          ~model_path:(PyrePath.create_absolute "/a/b.pysa")
           {|
-      def foo(x):
-          ...
-      |}
+            def foo(x):
+                ...
+          |}
       in
-      "no failure"
+      None
     with
-    | ModelVerificationError.ModelVerificationErrors errors ->
-        List.hd errors >>| ModelVerificationError.display |> Option.value ~default:"no failure"
+    | ModelVerificationError.ModelVerificationErrors errors -> List.hd errors
   in
-  assert_equal ~printer:ident "ModelQuery `invalid_model_query` output no models." error_message
+  let error_message =
+    error >>| ModelVerificationError.display |> Option.value ~default:"no failure"
+  in
+  assert_equal ~printer:ident "ModelQuery `invalid_model_query` output no models." error_message;
+  assert_json
+    ~expected:
+      {|
+        {
+          "description": "ModelQuery `invalid_model_query` output no models.",
+          "line": -1,
+          "column": -1,
+          "stop_line": -1,
+          "stop_column": -1,
+          "path": null,
+          "code": 41
+        }
+      |}
+    (Option.value_exn error);
+  ()
 
 
 let () =

@@ -472,6 +472,7 @@ let initialize
     ?(taint_configuration = TaintConfiguration.Heap.default)
     ?expected_dump_string
     ?(verify_model_queries = true)
+    ?model_path
     ~context
     source_content
   =
@@ -544,6 +545,7 @@ let initialize
         let { ModelParseResult.models; errors; queries } =
           ModelParser.parse
             ~resolution:global_resolution
+            ?path:model_path
             ~source:(Test.trim_extra_indentation source)
             ~taint_configuration
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
