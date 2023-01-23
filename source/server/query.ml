@@ -1373,7 +1373,7 @@ let rec process_request ~type_environment ~build_system request =
           Single (Base.TypesByPath results)
         else
           Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
-    | ValidateTaintModels { path; verify_dsl = _ } ->
+    | ValidateTaintModels { path; verify_dsl } ->
         let paths =
           match path with
           | Some path ->
@@ -1388,8 +1388,8 @@ let rec process_request ~type_environment ~build_system request =
           Taint.TaintConfiguration.from_taint_model_paths paths
           |> Taint.TaintConfiguration.exception_on_error
         in
-        let get_model_errors sources =
-          let model_errors (path, source) =
+        let get_model_errors_and_model_queries sources =
+          let get_model_errors_and_model_queries (path, source) =
             Taint.ModelParser.parse
               ~resolution:global_resolution
               ~path
@@ -1399,11 +1399,25 @@ let rec process_request ~type_environment ~build_system request =
               ~callables:None
               ~stubs:(Interprocedural.Target.HashSet.create ())
               ()
-            |> fun { Taint.ModelParseResult.errors; _ } -> errors
+            |> fun { Taint.ModelParseResult.errors; queries; _ } -> errors, queries
           in
-          List.concat_map sources ~f:model_errors
+          let model_errors_and_model_queries =
+            List.map sources ~f:get_model_errors_and_model_queries
+          in
+          let errors = List.concat (List.map model_errors_and_model_queries ~f:fst) in
+          let model_queries = List.concat (List.map model_errors_and_model_queries ~f:snd) in
+          errors, model_queries
         in
-        let errors = Taint.ModelParser.get_model_sources ~paths |> get_model_errors in
+        let model_parse_errors, model_queries =
+          get_model_errors_and_model_queries (Taint.ModelParser.get_model_sources ~paths)
+        in
+        let model_query_errors =
+          if verify_dsl then
+            setup_and_execute_model_queries ~taint_configuration model_queries |> snd
+          else
+            []
+        in
+        let errors = List.append model_parse_errors model_query_errors in
         if List.is_empty errors then
           Single
             (Base.Success
