@@ -146,7 +146,15 @@ let broadcast_server_stop_and_fail ~subscriptions ~message exn =
 
 let start_server
     ~on_started
-    { StartOptions.environment_controls; socket_path; source_paths; watchman; critical_files; _ }
+    {
+      StartOptions.environment_controls;
+      socket_path;
+      source_paths;
+      watchman;
+      build_system_initializer;
+      critical_files;
+      _;
+    }
   =
   let ({ Configuration.Analysis.extensions; _ } as configuration) =
     Analysis.EnvironmentControls.configuration environment_controls
@@ -157,7 +165,6 @@ let start_server
     Server.Start.get_optional_watchman_subscriber ~critical_files ~extensions ~source_paths watchman
   in
   let properties = Server.ServerProperties.create ~socket_path ~critical_files ~configuration () in
-  let build_system_initializer = BuildSystem.get_initializer source_paths in
   let state =
     Server.ExclusiveLock.create
       (initialize_server_state ~build_system_initializer ~environment_controls ())

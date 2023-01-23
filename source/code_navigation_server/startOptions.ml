@@ -14,5 +14,6 @@ type t = {
   source_paths: Configuration.SourcePaths.t;
   socket_path: PyrePath.t;
   watchman: Server.StartOptions.Watchman.t option;
+  build_system_initializer: BuildSystem.Initializer.t;
   critical_files: Server.CriticalFile.t list;
 }

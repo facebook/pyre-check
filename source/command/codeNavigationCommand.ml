@@ -125,6 +125,7 @@ module CodeNavigationConfiguration = struct
     let open Lwt.Infix in
     ServerCommand.watchman_options_of watchman_root
     >>= fun watchman ->
+    let build_system_initializer = CodeNavigationServer.BuildSystem.get_initializer source_paths in
     Lwt.return
       {
         CodeNavigationServer.StartOptions.environment_controls =
@@ -132,6 +133,7 @@ module CodeNavigationConfiguration = struct
         source_paths;
         socket_path;
         watchman;
+        build_system_initializer;
         critical_files;
       }
 end

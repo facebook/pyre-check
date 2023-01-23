@@ -10,5 +10,6 @@
 module OpenFiles = OpenFiles
 module Start = Start
 module StartOptions = StartOptions
+module BuildSystem = BuildSystem
 module State = State
 module Testing = Testing

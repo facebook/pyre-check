@@ -16,6 +16,136 @@
     - Code navigation server is not expected to interact with end users directly. Its primary focus
       is to serve downstream language toolings like linters and IDEs. *)
 
+(** {1 Path translation} *)
+
+(** This module defines the interfaces for a build system.
+
+    From Pyre's perspective, a build system is defined as a component that remaps file paths: it
+    allows the type checker to view a source file with certain path (i.e. the "source path") as a
+    file with some other path (i.e. the "artifact path"). File paths matter for the type checker
+    since it affects how Python modules are qualified.
+
+    According to the definition above, a build system must provide interfaces that allow its client
+    to query the associations between source paths and artifact paths. Since these associations may
+    change throughout the lifetime of a Pyre server, additional hooks are also provided to allow
+    clients to refresh them, if necessary. *)
+module BuildSystem : sig
+  (** The abstract type of a build system. *)
+  type t
+
+  (** {1 External Interfaces} *)
+
+  (** [update_working_set build_system source_paths] notifies [build_system] that the current
+      working set may be changed. The [source_paths] argument specifies the set of files whose
+      source mapping needs to be included in the build (usually this would correspond to the set of
+      currently opened files, and an update is needed whenever a file gets opened or closed).
+
+      This function and {!update_sources} are expected to handle different kinds of events. This
+      function should be invoked when files are added to or removed from the current working set
+      (e.g. a file is opened or closed by the editor). {!update_sources} should be invoked when
+      files are detected to be changed on the filesystem (e.g. a file is saved by the editor). Since
+      a file save could possibly affect what gets included in a build, {!update_sources} may or may
+      not invoke this function under the hood. But this function will never invoke {!update_sources}
+      as working set change would never alter the contents of files in the set.
+
+      Return a list of artifact events where contents of the artifacts may be changed by this
+      update. *)
+  val update_working_set : t -> SourcePath.t list -> ArtifactPath.Event.t list Lwt.t
+
+  (** [update_sources build_system source_path_events] notifies [build_system] that some sources
+      files may be changed on the filesystem, and the [source_path_events] argument specifies what
+      files get changed and how.
+
+      This function and {!update_working_set} are expected to handle different kinds of events.
+      {!update_working_set} should be invoked when files are added to or removed from the current
+      working set (e.g. a file is opened or closed by the editor). This function should be invoked
+      when files are detected to be changed on the filesystem (e.g. a file is saved by the editor).
+      Since a file save could possibly affect what gets included in a build, this function may or
+      may not invoke {!update_working_set} under the hood. But {!update_working_set} will never
+      invoke this function as working set change would never alter the contents of files in the set.
+
+      Return a list of artifact events where contents of the artifacts may be changed by this
+      update. *)
+  val update_sources
+    :  t ->
+    working_set:SourcePath.t list ->
+    SourcePath.Event.t list ->
+    ArtifactPath.Event.t list Lwt.t
+
+  (** Given an artifact path, return the corresponding source path, which is guaranteed to be unique
+      if exists. Return [None] if no such source path exists. *)
+  val lookup_source : t -> ArtifactPath.t -> SourcePath.t option
+
+  (** Given an source path, return the corresponding artifact paths. Return the empty list if no
+      such artifact path exists. *)
+  val lookup_artifact : t -> SourcePath.t -> ArtifactPath.t list
+
+  (** This module provides APIs that facilitate build system creation. *)
+  module Initializer : sig
+    (** A type alias to {!type:BuildSystem.t}. This alias is needed to avoid naming conflict with
+        {!type:t}. *)
+    type build_system = t
+
+    (** The abstract type of a build system initializer. *)
+    type t
+
+    (** Construct a {!type:BuildSystem.t}. Additional work can be performed (e.g. copying or
+        indexing files) to establish the source-to-artifact mapping, before the build system gets
+        created.
+
+        This API may or may not raise exceptions, depending on the behavior of each individual
+        initializer. *)
+    val initialize : t -> build_system
+
+    (** This API allows the build system to perform additional work (e.g. removing temporary files)
+        when the Pyre server is about to shut down.
+
+        This API is defined on {!type: t} instead of {!type: build_system} because we want to ensure
+        that the cleanup operation can be performed even if build system initialization process is
+        interrupted before server initialization finishes. *)
+    val cleanup : t -> unit
+
+    (** [null] initializes a no-op build system. It does nothing on [update], and [cleanup], and it
+        always assumes an identity source-to-artifact mapping. This can be used when the project
+        being checked does not use a build system. This initializer never raises. *)
+    val null : t
+
+    (** [buck] initializes a build system that interops with Buck. See {!module:Buck} for more
+        details about its behavior.
+
+        The initialization process may fail with many kinds of exceptions:
+
+        - {!Buck.Builder.LinkTreeConstructionError} could happen when build artifact creation cannot
+          function properly due to unexpected issues on the filesystem. *)
+    val buck : artifact_root:PyrePath.t -> Buck.Builder.Lazy.t -> t
+
+    (* This function allows the client to fully tweak the behavior of an initializer. Expose for
+       testing purpose only. *)
+    val create_for_testing
+      :  initialize:(unit -> build_system) ->
+      cleanup:(unit -> unit) ->
+      unit ->
+      t
+  end
+
+  (** {1 Creation} *)
+
+  (* This function allows the client to fully tweak the behavior of a build system. Expose for
+     testing purpose only. *)
+  val create_for_testing
+    :  ?update_working_set:(SourcePath.t list -> ArtifactPath.Event.t list Lwt.t) ->
+    ?update_sources:
+      (working_set:SourcePath.t list -> SourcePath.Event.t list -> ArtifactPath.Event.t list Lwt.t) ->
+    ?lookup_source:(ArtifactPath.t -> SourcePath.t option) ->
+    ?lookup_artifact:(SourcePath.t -> ArtifactPath.t list) ->
+    unit ->
+    t
+
+  (** [get_initializer source_paths] infers the right kind of build system initializer according to
+      [source_paths] and returns it. *)
+  val get_initializer : Configuration.SourcePaths.t -> Initializer.t
+end
+
 (** {1 Server Start} *)
 
 (** This module contains all information needed to start a code navigation server. *)
@@ -30,6 +160,8 @@ module StartOptions : sig
             socket should be placed on the filesystem. *)
     watchman: Server.StartOptions.Watchman.t option;
         (** Watchman setting for the code navigation server. [None] means watchman is disabled. *)
+    build_system_initializer: BuildSystem.Initializer.t;
+        (** Initializer used to create the build system. *)
     critical_files: Server.CriticalFile.t list;
         (** A list of files whose changes would immediately bring down the server.*)
   }
@@ -438,117 +570,5 @@ module Testing : sig
         The message being sent is constructed by forcing [message]. The message is constructed
         lazily to avoid the cost of the construction when [subscriptions] is empty *)
     val broadcast : response:Response.t Lazy.t -> t -> unit Lwt.t
-  end
-
-  (** This module defines the interfaces for a build system.
-
-      From Pyre's perspective, a build system is defined as a component that remaps file paths: it
-      allows the type checker to view a source file with certain path (i.e. the "source path") as a
-      file with some other path (i.e. the "artifact path"). File paths matter for the type checker
-      since it affects how Python modules are qualified.
-
-      According to the definition above, a build system must provide interfaces that allow its
-      client to query the associations between source paths and artifact paths. Since these
-      associations may change throughout the lifetime of a Pyre server, additional hooks are also
-      provided to allow clients to refresh them, if necessary. *)
-  module BuildSystem : sig
-    (** The abstract type of a build system. *)
-    type t
-
-    (** {1 External Interfaces} *)
-
-    (** [update_working_set build_system source_paths] notifies [build_system] that the current
-        working set may be changed. The [source_paths] argument specifies the set of files whose
-        source mapping needs to be included in the build (usually this would correspond to the set
-        of currently opened files, and an update is needed whenever a file gets opened or closed).
-
-        This function and {!update_sources} are expected to handle different kinds of events. This
-        function should be invoked when files are added to or removed from the current working set
-        (e.g. a file is opened or closed by the editor). {!update_sources} should be invoked when
-        files are detected to be changed on the filesystem (e.g. a file is saved by the editor).
-        Since a file save could possibly affect what gets included in a build, {!update_sources} may
-        or may not invoke this function under the hood. But this function will never invoke
-        {!update_sources} as working set change would never alter the contents of files in the set.
-
-        Return a list of artifact events where contents of the artifacts may be changed by this
-        update. *)
-    val update_working_set : t -> SourcePath.t list -> ArtifactPath.Event.t list Lwt.t
-
-    (** [update_sources build_system source_path_events] notifies [build_system] that some sources
-        files may be changed on the filesystem, and the [source_path_events] argument specifies what
-        files get changed and how.
-
-        This function and {!update_working_set} are expected to handle different kinds of events.
-        {!update_working_set} should be invoked when files are added to or removed from the current
-        working set (e.g. a file is opened or closed by the editor). This function should be invoked
-        when files are detected to be changed on the filesystem (e.g. a file is saved by the
-        editor). Since a file save could possibly affect what gets included in a build, this
-        function may or may not invoke {!update_working_set} under the hood. But
-        {!update_working_set} will never invoke this function as working set change would never
-        alter the contents of files in the set.
-
-        Return a list of artifact events where contents of the artifacts may be changed by this
-        update. *)
-    val update_sources
-      :  t ->
-      working_set:SourcePath.t list ->
-      SourcePath.Event.t list ->
-      ArtifactPath.Event.t list Lwt.t
-
-    (** Given an artifact path, return the corresponding source path, which is guaranteed to be
-        unique if exists. Return [None] if no such source path exists. *)
-    val lookup_source : t -> ArtifactPath.t -> SourcePath.t option
-
-    (** Given an source path, return the corresponding artifact paths. Return the empty list if no
-        such artifact path exists. *)
-    val lookup_artifact : t -> SourcePath.t -> ArtifactPath.t list
-
-    (** This module provides APIs that facilitate build system creation. *)
-    module Initializer : sig
-      (** A type alias to {!type:BuildSystem.t}. This alias is needed to avoid naming conflict with
-          {!type:t}. *)
-      type build_system = t
-
-      (** The abstract type of a build system initializer. *)
-      type t
-
-      (** Construct a {!type:BuildSystem.t}. Additional work can be performed (e.g. copying or
-          indexing files) to establish the source-to-artifact mapping, before the build system gets
-          created.
-
-          This API may or may not raise exceptions, depending on the behavior of each individual
-          initializer. *)
-      val initialize : t -> build_system
-
-      (** This API allows the build system to perform additional work (e.g. removing temporary
-          files) when the Pyre server is about to shut down.
-
-          This API is defined on {!type: t} instead of {!type: build_system} because we want to
-          ensure that the cleanup operation can be performed even if build system initialization
-          process is interrupted before server initialization finishes. *)
-      val cleanup : t -> unit
-
-      (** [null] initializes a no-op build system. It does nothing on [update], and [cleanup], and
-          it always assumes an identity source-to-artifact mapping. This can be used when the
-          project being checked does not use a build system. This initializer never raises. *)
-      val null : t
-
-      (** [buck] initializes a build system that interops with Buck. See {!module:Buck} for more
-          details about its behavior.
-
-          The initialization process may fail with many kinds of exceptions:
-
-          - {!Buck.Builder.LinkTreeConstructionError} could happen when build artifact creation
-            cannot function properly due to unexpected issues on the filesystem. *)
-      val buck : artifact_root:PyrePath.t -> Buck.Builder.Lazy.t -> t
-
-      (* This function allows the client to fully tweak the behavior of an initializer. Expose for
-         testing purpose only. *)
-      val create_for_testing
-        :  initialize:(unit -> build_system) ->
-        cleanup:(unit -> unit) ->
-        unit ->
-        t
-    end
   end
 end

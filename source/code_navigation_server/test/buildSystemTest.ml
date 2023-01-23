@@ -7,7 +7,7 @@
 
 open Base
 open OUnit2
-module BuildSystem = CodeNavigationServer.Testing.BuildSystem
+module BuildSystem = CodeNavigationServer.BuildSystem
 
 let assert_artifact_events_equal ~context ~expected actual =
   assert_equal
