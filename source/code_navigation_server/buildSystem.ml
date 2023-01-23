@@ -74,11 +74,17 @@ module BuckBuildSystem = struct
         State.update ~build_map state;
       Lwt.return changed_artifacts
     in
-    let lookup_source =
-      LazyBuckBuilder.lookup_source ~index:state.build_map_index ~builder:state.builder
+    let lookup_source artifact_path =
+      LazyBuckBuilder.lookup_source
+        ~index:state.build_map_index
+        ~builder:state.builder
+        artifact_path
     in
-    let lookup_artifact =
-      LazyBuckBuilder.lookup_artifact ~index:state.build_map_index ~builder:state.builder
+    let lookup_artifact source_path =
+      LazyBuckBuilder.lookup_artifact
+        ~index:state.build_map_index
+        ~builder:state.builder
+        source_path
     in
     let build_map_may_change source_path_events =
       (* NOTE: This is a very conservative heuristic. We only skip rebuild when all edits are
