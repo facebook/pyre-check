@@ -71,7 +71,7 @@ let test_forward context =
         global my_global
         my_global, y = 2, 3
     |}
-    [ (* TODO (T142189949): leaks should be detected for tuple deconstruction into a global *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -79,7 +79,19 @@ let test_forward context =
         global my_global
         x, my_global = 2, 3
     |}
-    [ (* TODO (T142189949): leaks should be detected for tuple deconstruction into a global *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        (my_global, my_global), my_global = (1, 2), 3
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global`.";
+      "Global leak [3100]: Data is leaked to global `test.my_global`.";
+      "Global leak [3100]: Data is leaked to global `test.my_global`.";
+    ];
   assert_global_leak_errors
     {|
       my_global: int = 1
