@@ -886,6 +886,17 @@ let test_check_constructors context =
        `BoundMethod[typing.Callable(Foo.__init__)[[Named(self, Foo), Named(x, int), Named(y, \
        str)], Foo], Foo]`.";
     ];
+  assert_type_errors
+    {|
+      class Foo:
+         x: str = ""
+         def __init__(self) -> None:
+             self.x: int = 1
+     |}
+    [
+      "Illegal annotation target [35]: Target `self.x` cannot be annotated as it shadows the \
+       class-level annotation of `str` with `int`.";
+    ];
   ()
 
 

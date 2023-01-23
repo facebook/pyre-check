@@ -275,6 +275,10 @@ and unsupported_operand_kind =
     }
 
 and illegal_annotation_target_kind =
+  | InconsistentConstructorAnnotation of {
+      attribute_annotation: Type.t;
+      class_annotation: Type.t;
+    }
   | InvalidExpression
   | Reassignment
 
@@ -1139,6 +1143,13 @@ let rec messages ~concise ~signature location kind =
       let reason =
         match kind with
         | InvalidExpression -> ""
+        | InconsistentConstructorAnnotation { class_annotation; attribute_annotation } ->
+            Format.asprintf
+              " as it shadows the class-level annotation of `%a` with `%a`"
+              Type.pp
+              class_annotation
+              Type.pp
+              attribute_annotation
         | Reassignment -> " after it is first declared"
       in
       [

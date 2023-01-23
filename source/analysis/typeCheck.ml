@@ -98,6 +98,19 @@ let error_and_location_from_typed_dictionary_mismatch
   define_location, Error.TypedDictionaryInitializationError mismatch
 
 
+let incompatible_annotation_with_attribute_error ~define ~explicit ~original_annotation attribute =
+  match original_annotation, AnnotatedAttribute.initialized attribute with
+  | Some original, AnnotatedAttribute.OnClass when explicit && Define.is_constructor define ->
+      let class_annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
+      if not (Type.equal original class_annotation) then
+        Some
+          Error.(
+            InconsistentConstructorAnnotation { attribute_annotation = original; class_annotation })
+      else
+        None
+  | _ -> None
+
+
 let errors_from_not_found
     ?(callee_base_expression = None)
     ~callable
@@ -4623,7 +4636,7 @@ module State (Context : Context) = struct
                           class_name
                       in
                       match attribute with
-                      | Some attribute ->
+                      | Some attribute -> (
                           if is_illegal_attribute_annotation attribute then
                             (* Non-self attributes may not be annotated. *)
                             ( emit_error
@@ -4674,7 +4687,22 @@ module State (Context : Context) = struct
                                      }),
                               true )
                           else
-                            errors, true
+                            match
+                              incompatible_annotation_with_attribute_error
+                                ~define
+                                ~explicit
+                                ~original_annotation
+                                attribute
+                            with
+                            | Some inconsistent_constructor_annotation ->
+                                ( emit_error
+                                    ~errors
+                                    ~location
+                                    ~kind:
+                                      (Error.IllegalAnnotationTarget
+                                         { target; kind = inconsistent_constructor_annotation }),
+                                  false )
+                            | None -> errors, true)
                       | None ->
                           if
                             insufficiently_annotated

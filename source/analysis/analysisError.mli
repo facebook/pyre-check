@@ -241,6 +241,10 @@ and unsupported_operand_kind =
     }
 
 and illegal_annotation_target_kind =
+  | InconsistentConstructorAnnotation of {
+      attribute_annotation: Type.t;
+      class_annotation: Type.t;
+    }
   | InvalidExpression
   | Reassignment
 
