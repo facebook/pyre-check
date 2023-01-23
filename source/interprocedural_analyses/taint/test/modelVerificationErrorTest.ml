@@ -246,17 +246,17 @@ let test_invalid_model_query context =
   in
   assert_equal
     ~printer:ident
-    "/a/b.pysa:-1: ModelQuery `invalid_model_query` output no models."
+    "/a/b.pysa:2: ModelQuery `invalid_model_query` output no models."
     error_message;
   assert_json
     ~expected:
       {|
         {
           "description": "ModelQuery `invalid_model_query` output no models.",
-          "line": -1,
-          "column": -1,
-          "stop_line": -1,
-          "stop_column": -1,
+          "line": 2,
+          "column": 0,
+          "stop_line": 7,
+          "stop_column": 1,
           "path": "/a/b.pysa",
           "code": 41
         }

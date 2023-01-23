@@ -147,14 +147,11 @@ module ModelQueryRegistryMap = struct
 
 
   let check_errors ~model_query_results ~queries =
-    let model_query_names_and_path =
-      List.map queries ~f:(fun query -> query.ModelQuery.name, query.ModelQuery.path)
-    in
     let errors =
-      List.filter_map model_query_names_and_path ~f:(fun (model_query_name, model_query_path) ->
-          let models = get model_query_results model_query_name in
+      List.filter_map queries ~f:(fun query ->
+          let models = get model_query_results query.ModelQuery.name in
           Statistics.log_model_query_outputs
-            ~model_query_name
+            ~model_query_name:query.name
             ~generated_models_count:(Registry.size (Option.value models ~default:Registry.empty))
             ();
           match models with
@@ -163,9 +160,9 @@ module ModelQueryRegistryMap = struct
               Some
                 {
                   ModelVerificationError.kind =
-                    ModelVerificationError.NoOutputFromModelQuery model_query_name;
-                  location = Ast.Location.any;
-                  path = model_query_path;
+                    ModelVerificationError.NoOutputFromModelQuery query.name;
+                  location = query.location;
+                  path = query.path;
                 })
     in
     Statistics.flush ();
