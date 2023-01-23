@@ -707,6 +707,56 @@ let rec process_request ~type_environment ~build_system request =
           };
       }
     in
+    let setup_and_execute_model_queries ~taint_configuration model_queries =
+      let scheduler_wrapper scheduler =
+        let cache =
+          Taint.Cache.load ~scheduler ~configuration ~taint_configuration ~enabled:false
+        in
+        let initial_callables =
+          Taint.Cache.initial_callables cache (fun () ->
+              let timer = Timer.start () in
+              let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
+              let initial_callables =
+                Interprocedural.FetchCallables.from_qualifiers
+                  ~scheduler
+                  ~configuration
+                  ~environment:type_environment
+                  ~include_unit_tests:false
+                  ~qualifiers
+              in
+              Statistics.performance
+                ~name:"Fetched initial callables to analyze"
+                ~phase_name:"Fetching initial callables to analyze"
+                ~timer
+                ();
+              initial_callables)
+        in
+        let qualifiers =
+          Analysis.TypeEnvironment.ReadOnly.module_tracker type_environment
+          |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
+        in
+        let class_hierarchy_graph =
+          Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+            ~scheduler
+            ~environment:type_environment
+            ~qualifiers
+        in
+        Taint.ModelQueryExecution.generate_models_from_queries
+          ~resolution:global_resolution
+          ~scheduler
+          ~class_hierarchy_graph:
+            (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
+          ~source_sink_filter:None
+          ~verbose:false
+          ~callables_and_stubs:
+            (Interprocedural.FetchCallables.get_callables_and_stubs initial_callables)
+          ~stubs:
+            (Interprocedural.Target.HashSet.of_list
+               (Interprocedural.FetchCallables.get_stubs initial_callables))
+          model_queries
+      in
+      Scheduler.with_scheduler ~configuration ~f:scheduler_wrapper
+    in
     let module_of_path path =
       let relative_path =
         let { Configuration.Analysis.local_root = root; _ } = configuration in
@@ -1018,62 +1068,8 @@ let rec process_request ~type_environment ~build_system request =
                          query_name
                          (PyrePath.show path))
                   else
-                    let get_models_for_query scheduler =
-                      let cache =
-                        Taint.Cache.load
-                          ~scheduler
-                          ~configuration
-                          ~taint_configuration
-                          ~enabled:false
-                      in
-                      let initial_callables =
-                        Taint.Cache.initial_callables cache (fun () ->
-                            let timer = Timer.start () in
-                            let qualifiers =
-                              ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
-                            in
-                            let initial_callables =
-                              Interprocedural.FetchCallables.from_qualifiers
-                                ~scheduler
-                                ~configuration
-                                ~environment:type_environment
-                                ~include_unit_tests:false
-                                ~qualifiers
-                            in
-                            Statistics.performance
-                              ~name:"Fetched initial callables to analyze"
-                              ~phase_name:"Fetching initial callables to analyze"
-                              ~timer
-                              ();
-                            initial_callables)
-                      in
-                      let qualifiers =
-                        Analysis.TypeEnvironment.ReadOnly.module_tracker type_environment
-                        |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
-                      in
-                      let class_hierarchy_graph =
-                        Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
-                          ~scheduler
-                          ~environment:type_environment
-                          ~qualifiers
-                      in
-                      Taint.ModelQueryExecution.generate_models_from_queries
-                        ~resolution:global_resolution
-                        ~scheduler
-                        ~class_hierarchy_graph:
-                          (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap
-                             class_hierarchy_graph)
-                        ~source_sink_filter:None
-                        ~verbose:false
-                        ~callables_and_stubs:
-                          (Interprocedural.FetchCallables.get_callables_and_stubs initial_callables)
-                        ~stubs:
-                          (Interprocedural.Target.HashSet.of_list
-                             (Interprocedural.FetchCallables.get_stubs initial_callables))
-                        rules
-                    in
                     let models_and_names, errors =
-                      Scheduler.with_scheduler ~configuration ~f:get_models_for_query
+                      setup_and_execute_model_queries ~taint_configuration rules
                     in
                     let to_json (callable, model) =
                       `Assoc
