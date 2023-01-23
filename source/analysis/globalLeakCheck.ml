@@ -53,6 +53,9 @@ module State (Context : Context) = struct
     let rec forward_target { Node.value; location } =
       match value with
       | Expression.Name (Name.Identifier target) -> error_on_global_target ~location target
+      | Expression.Name (Name.Attribute { base; _ }) ->
+          Log.dump "Name.Attribute %s" ([%show: Expression.t] base);
+          forward_target base
       | Expression.Tuple values -> List.iter ~f:forward_target values
       (* TODO (T142189949): do we want to error on passing a global into a function? *)
       | _ -> ()

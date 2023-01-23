@@ -295,7 +295,7 @@ let test_object_global_leaks context =
       def foo():
         my_global.x = 2
     |}
-    [ (* TODO (T142189949): leaks should be detected on object attribute mutations *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -312,6 +312,24 @@ let test_object_global_leaks context =
         my_global.set_x(2)
     |}
     [ (* TODO (T142189949): leaks should be detected on object attribute mutations *) ];
+  assert_global_leak_errors
+    {|
+      class MyClass:
+        y: int
+        def __init__(self, y: int) -> None:
+          self.y = y
+
+      class MyClass2:
+        x: MyClass
+        def __init__(self, x: MyClass) -> None:
+          self.x = x
+
+      my_global: MyClass2 = MyClass2(MyClass(1))
+
+      def foo():
+        my_global.x.y = 3
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
     class MyClass:
