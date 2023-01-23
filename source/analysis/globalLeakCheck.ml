@@ -49,6 +49,17 @@ module State (Context : Context) = struct
 
   let errors () = Context.error_map |> LocalErrorMap.all_errors
 
+  let forward_assignment ~error_on_global_target expression =
+    let rec forward_target { Node.value; location } =
+      match value with
+      | Expression.Name (Name.Identifier target) -> error_on_global_target ~location target
+      | Expression.Tuple values -> List.iter ~f:forward_target values
+      (* TODO (T142189949): do we want to error on passing a global into a function? *)
+      | _ -> ()
+    in
+    forward_target expression
+
+
   let forward ~statement_key state ~statement:{ Node.value; _ } =
     let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
       Context.define
@@ -62,30 +73,22 @@ module State (Context : Context) = struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)
     in
+    let error_on_global_target ~location target =
+      let reference = Reference.create target |> Reference.delocalize in
+      if Resolution.is_global resolution ~reference then
+        let error =
+          Error.create
+            ~location:(Location.with_module ~module_reference:Context.qualifier location)
+            ~kind:(Error.GlobalLeak { global_name = reference })
+            ~define:Context.define
+        in
+        LocalErrorMap.append Context.error_map ~statement_key ~error
+      else
+        ()
+    in
     match value with
     | Statement.Assert _ -> ()
-    | Assign { target; _ } ->
-        let error_on_global_target ~location target =
-          let reference = Reference.create target |> Reference.delocalize in
-          if Resolution.is_global resolution ~reference then
-            let error =
-              Error.create
-                ~location:(Location.with_module ~module_reference:Context.qualifier location)
-                ~kind:(Error.GlobalLeak { global_name = reference })
-                ~define:Context.define
-            in
-            LocalErrorMap.append Context.error_map ~statement_key ~error
-          else
-            ()
-        in
-        let rec forward_target value =
-          match value with
-          | { Node.value = Expression.Name (Name.Identifier target); location } ->
-              error_on_global_target target ~location
-          | { Node.value = Expression.Tuple values; _ } -> List.iter ~f:forward_target values
-          | _ -> ()
-        in
-        forward_target target
+    | Assign { target; _ } -> forward_assignment ~error_on_global_target target
     | Delete _ -> ()
     | Expression _ -> ()
     | Raise _ -> ()
