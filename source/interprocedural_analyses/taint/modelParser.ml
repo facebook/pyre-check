@@ -3219,7 +3219,16 @@ let rec parse_statement
       >>| fun unexpected_models ->
       [
         ParsedQuery
-          { ModelQuery.find; where; models; name; location; expected_models; unexpected_models };
+          {
+            ModelQuery.find;
+            where;
+            models;
+            name;
+            path;
+            location;
+            expected_models;
+            unexpected_models;
+          };
       ]
   | { Node.location; _ } ->
       Error [model_verification_error ~path ~location (UnexpectedStatement statement)]

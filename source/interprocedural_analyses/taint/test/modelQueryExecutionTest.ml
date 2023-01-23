@@ -115,6 +115,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -131,6 +132,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [FullyQualifiedNameConstraint (Equals "foo")];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -147,6 +149,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [FullyQualifiedNameConstraint (Equals "test.foo")];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -163,6 +166,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -179,6 +183,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Equals "foo")];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -195,6 +200,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Equals "test.foo")];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -214,6 +220,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
@@ -235,6 +242,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
@@ -258,6 +266,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -276,6 +285,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
@@ -295,6 +305,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -323,6 +334,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [AllParameters { excludes = []; taint = [TaintAnnotation (source "Test")] }];
         find = Method;
@@ -348,6 +360,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [AllParameters { excludes = ["x"]; taint = [TaintAnnotation (source "Test")] }];
         find = Method;
@@ -370,6 +383,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [AllParameters { excludes = ["y"]; taint = [TaintAnnotation (source "Test")] }];
         find = Method;
@@ -394,6 +408,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -423,6 +438,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -452,6 +468,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -485,6 +502,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -521,6 +539,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -550,6 +569,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -578,6 +598,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -606,6 +627,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -638,6 +660,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -673,6 +696,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -702,6 +726,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -730,6 +755,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models =
           [
@@ -758,6 +784,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [Parameter { where = []; taint = [TaintAnnotation (source "Test")] }];
         find = Function;
@@ -786,6 +813,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint IsAnnotatedTypeConstraint];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -802,6 +830,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint IsAnnotatedTypeConstraint];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -818,6 +847,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint IsAnnotatedTypeConstraint];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -834,6 +864,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -850,6 +881,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -867,6 +899,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyOf
@@ -890,6 +923,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyOf
@@ -913,6 +947,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         models =
           [
@@ -946,6 +981,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         models =
           [
@@ -975,6 +1011,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AllOf
@@ -999,6 +1036,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AllOf
@@ -1022,6 +1060,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AllOf
@@ -1046,6 +1085,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         models =
           [
@@ -1079,6 +1119,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         models =
           [
@@ -1112,6 +1153,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint IsAnnotatedTypeConstraint];
         models =
           [
@@ -1135,6 +1177,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         models =
           [
@@ -1166,6 +1209,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         models =
           [
@@ -1194,6 +1238,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyParameterConstraint
@@ -1229,6 +1274,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyParameterConstraint (AnnotationConstraint (NameConstraint (Equals "int")))];
         models =
           [
@@ -1258,6 +1304,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint (NameConstraint (Equals "int"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1275,6 +1322,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint (NameConstraint (Equals "int"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1292,6 +1340,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "str")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1309,6 +1358,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "str")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1325,6 +1375,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint IsAnnotatedTypeConstraint];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1341,6 +1392,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "foo")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1370,6 +1422,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1398,6 +1451,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1425,6 +1479,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1453,6 +1508,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1474,6 +1530,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyDecoratorConstraint
@@ -1498,6 +1555,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "app.route")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1525,6 +1583,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1553,6 +1612,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Equals "test.d1"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -1580,6 +1640,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyDecoratorConstraint
@@ -1622,6 +1683,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyDecoratorConstraint
@@ -1664,6 +1726,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyDecoratorConstraint
@@ -1707,6 +1770,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyDecoratorConstraint
@@ -1750,6 +1814,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyDecoratorConstraint
@@ -1800,6 +1865,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyDecoratorConstraint
@@ -1850,6 +1916,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             AnyDecoratorConstraint
@@ -1896,6 +1963,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
@@ -1918,6 +1986,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
@@ -1941,6 +2010,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Method;
@@ -1966,6 +2036,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [ClassConstraint (DecoratorConstraint (NameConstraint (Matches (Re2.create_exn "d2"))))];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1992,6 +2063,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [ClassConstraint (DecoratorConstraint (NameConstraint (Matches (Re2.create_exn "4"))))];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -2019,6 +2091,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2061,6 +2134,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2098,6 +2172,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2117,6 +2192,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
         models = [Attribute [TaintAnnotation (sink "Test")]];
         find = Attribute;
@@ -2136,6 +2212,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2155,6 +2232,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2179,6 +2257,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2205,6 +2284,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2227,6 +2307,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnnotationConstraint (NameConstraint (Equals "int"))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2245,6 +2326,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnnotationConstraint (NameConstraint (Equals "int"))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2271,6 +2353,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2297,6 +2380,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2323,6 +2407,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2343,6 +2428,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnnotationConstraint IsAnnotatedTypeConstraint];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2363,6 +2449,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [AnnotationConstraint IsAnnotatedTypeConstraint];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
@@ -2382,6 +2469,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
@@ -2403,6 +2491,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
@@ -2425,6 +2514,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -2447,6 +2537,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")));
@@ -2473,6 +2564,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint (NameConstraint (Matches (Re2.create_exn "C")));
@@ -2495,6 +2587,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -2517,6 +2610,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             Not
@@ -2544,6 +2638,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             Not
@@ -2571,6 +2666,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             Not
@@ -2600,6 +2696,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2626,6 +2723,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2652,6 +2750,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2680,6 +2779,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             Not
@@ -2709,6 +2809,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             Not
@@ -2738,6 +2839,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             Not
@@ -2767,6 +2869,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             Not
@@ -2796,6 +2899,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2822,6 +2926,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2848,6 +2953,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2876,6 +2982,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2904,6 +3011,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2932,6 +3040,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2960,6 +3069,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -2988,6 +3098,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3016,6 +3127,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3048,6 +3160,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3083,6 +3196,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3118,6 +3232,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3153,6 +3268,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3188,6 +3304,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3223,6 +3340,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3258,6 +3376,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3293,6 +3412,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3328,6 +3448,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3363,6 +3484,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where =
           [
             ClassConstraint
@@ -3388,6 +3510,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_foo";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "foo"))];
         models = [Global [TaintAnnotation (source "Test")]];
         find = Global;
@@ -3404,6 +3527,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_bar";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "bar"))];
         models = [Global [TaintAnnotation (source "Test")]];
         find = Global;
@@ -3420,6 +3544,7 @@ let test_generated_annotations context =
       {
         location = Ast.Location.any;
         name = "get_baz";
+        path = None;
         where = [NameConstraint (Matches (Re2.create_exn "baz"))];
         models = [Global [TaintAnnotation (source "Test")]];
         find = Global;
@@ -3444,6 +3569,7 @@ let test_partition_cache_queries _ =
     {
       ModelQuery.location = { start = { line = 0; column = 0 }; stop = { line = 0; column = 0 } };
       name = "empty";
+      path = None;
       where = [];
       find = Method;
       models = [];
@@ -3557,6 +3683,7 @@ let test_generated_cache context =
         {
           location = Ast.Location.any;
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           models =
             [
@@ -3590,6 +3717,7 @@ let test_generated_cache context =
         {
           location = Ast.Location.any;
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           models =
             [
@@ -3637,6 +3765,7 @@ let test_generated_cache context =
         {
           location = Ast.Location.any;
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           models =
             [
@@ -3675,6 +3804,7 @@ let test_generated_cache context =
         {
           location = Ast.Location.any;
           name = "get_foo";
+          path = None;
           where = [FullyQualifiedNameConstraint (Matches (Re2.create_exn "C.foo"))];
           models =
             [

@@ -4789,6 +4789,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -4820,6 +4821,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -4851,6 +4853,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Equals "foo")];
           find = Function;
           models =
@@ -4882,6 +4885,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [FullyQualifiedNameConstraint (Equals "test.foo")];
           find = Function;
           models =
@@ -4913,6 +4917,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               NameConstraint (Matches (Re2.create_exn "foo"));
@@ -4948,6 +4953,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -4981,6 +4987,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [FullyQualifiedNameConstraint (Equals "test.foo")];
           find = Function;
           models =
@@ -5014,6 +5021,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -5047,6 +5055,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [ReturnConstraint IsAnnotatedTypeConstraint];
           find = Function;
           models =
@@ -5078,6 +5087,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
           find = Function;
           models =
@@ -5112,6 +5122,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "foo_finders";
+          path = None;
           where =
             [
               AnyOf
@@ -5153,6 +5164,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "foo_finders";
+          path = None;
           where =
             [
               AllOf
@@ -5192,6 +5204,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -5227,6 +5240,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -5262,6 +5276,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -5301,6 +5316,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
           find = Function;
           models =
@@ -5340,6 +5356,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
           find = Function;
           models =
@@ -5374,6 +5391,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [ClassConstraint (NameConstraint (Equals "Foo"))];
           find = Method;
           models =
@@ -5407,6 +5425,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [ClassConstraint (FullyQualifiedNameConstraint (Equals "test.Foo"))];
           find = Method;
           models =
@@ -5440,6 +5459,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               ClassConstraint
@@ -5477,6 +5497,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               ClassConstraint
@@ -5512,6 +5533,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               ClassConstraint
@@ -5547,6 +5569,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               ClassConstraint
@@ -5582,6 +5605,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               ClassConstraint
@@ -5617,6 +5641,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [ClassConstraint (NameConstraint (Matches (Re2.create_exn "Foo.*")))];
           find = Method;
           models =
@@ -5650,6 +5675,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               ClassConstraint
@@ -5687,6 +5713,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               ClassConstraint
@@ -5724,6 +5751,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "foo")))];
           find = Method;
           models =
@@ -5755,6 +5783,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo")))];
           find = Method;
@@ -5787,6 +5816,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               AnyDecoratorConstraint
@@ -5826,6 +5856,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               AnyDecoratorConstraint
@@ -5871,6 +5902,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
+          path = None;
           where =
             [
               AnyDecoratorConstraint
@@ -5934,6 +5966,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 19; column = 1 } };
           name = "get_POST_annotated_sources";
+          path = None;
           where = [AnyDecoratorConstraint (NameConstraint (Matches (Re2.create_exn "api_view")))];
           find = Function;
           models =
@@ -5998,6 +6031,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -6040,6 +6074,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -6086,6 +6121,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 14; column = 1 } };
           name = "get_foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -6167,6 +6203,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 26; column = 1 } };
           name = "get_parent_of_d1_decorator_sources";
+          path = None;
           where =
             [
               ClassConstraint
@@ -6260,6 +6297,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 27; column = 1 } };
           name = "get_parent_of_d1_decorator_transitive_sources";
+          path = None;
           where =
             [
               ClassConstraint
@@ -6320,6 +6358,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Global;
           models =
@@ -6351,6 +6390,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Global;
           models =
@@ -6384,6 +6424,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo";
+          path = None;
           where = [ReadFromCache { kind = "thrift"; name = "cache:name" }];
           find = Method;
           models =
@@ -6418,6 +6459,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "foo";
+          path = None;
           where =
             [
               AnyOf
@@ -6459,6 +6501,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "foo";
+          path = None;
           where =
             [
               AllOf
@@ -6497,6 +6540,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Method;
           models =
@@ -6533,6 +6577,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "foo"))];
           find = Function;
           models =
@@ -6561,6 +6606,7 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo";
+          path = None;
           where = [NameConstraint (Matches (Re2.create_exn "^foo(?P<x>.*)bar(?P<y>.*)$"))];
           find = Function;
           models =
