@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides the logic for the `pyre rage` command, which collects
+information that may be useful for debugging problems with Pyre (e.g. logs
+from the client and daemon, recent repository history) and prints it to
+standard output so that it can be uploaded in a bug report.
 """
 
 
