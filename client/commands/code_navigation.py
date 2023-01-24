@@ -148,7 +148,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     async def send_open_state(self) -> None:
         results = await asyncio.gather(
             *[
-                self.daemon_querier.handle_file_opened(path, document.code)
+                self.querier.handle_file_opened(path, document.code)
                 for path, document in self.server_state.opened_documents.items()
             ]
         )

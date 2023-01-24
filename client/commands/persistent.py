@@ -500,7 +500,7 @@ async def run_persistent(
                 ),
             )
         ),
-        querier=daemon_querier,
+        querier=querier,
     )
     return await server.run()
 
