@@ -59,13 +59,6 @@ module TriggeredSinkHashMap : sig
 
   val mem : t -> Sinks.partial_sink -> bool
 
-  val add
-    :  t ->
-    triggered_sink:Sinks.partial_sink ->
-    extra_trace:Domains.ExtraTraceFirstHop.t ->
-    issue_handles:Domains.IssueHandleSet.t ->
-    unit
-
   val find : t -> Sinks.partial_sink -> BackwardTaint.t option
 end
 
