@@ -215,6 +215,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~source_tree
       ~sink_tree
       ~define:FunctionContext.definition
+      ~taint_configuration:FunctionContext.taint_configuration
 
 
   let generate_issues () =
@@ -537,7 +538,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree;
             (* Check for issues for combined source rules. *)
             check_triggered_flows
-              ~taint_configuration:FunctionContext.taint_configuration
               ~triggered_sinks_for_call
               ~sink_handle:handle
               ~location

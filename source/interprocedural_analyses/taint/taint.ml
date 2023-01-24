@@ -15,6 +15,7 @@ module SourceSinkFilter = SourceSinkFilter
 module TaintConfiguration = TaintConfiguration
 module PartialSinkConverter = PartialSinkConverter
 module Domains = Domains
+module MultiSourcePostProcessing = MultiSourcePostProcessing
 module Sanitize = Sanitize
 module SanitizeTransform = SanitizeTransform
 module SanitizeTransformSet = SanitizeTransformSet

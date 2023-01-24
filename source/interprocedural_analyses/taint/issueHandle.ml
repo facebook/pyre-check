@@ -109,3 +109,4 @@ end
 
 include T
 module Map = Map.Make (T)
+module Set = Caml.Set.Make (T)

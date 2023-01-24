@@ -270,6 +270,11 @@ module Make (Analysis : ANALYSIS) = struct
 
     let get_result callable = SharedResults.get callable |> Option.value ~default:Result.empty
 
+    let set_result callable result =
+      SharedResults.remove_batch (KeySet.singleton callable);
+      SharedResults.add callable result
+
+
     let get_is_partial callable =
       match SharedFixpoint.get callable with
       | Some { is_partial; _ } -> is_partial
@@ -650,6 +655,8 @@ module Make (Analysis : ANALYSIS) = struct
   let get_model (FixpointReached _) target = State.get_model target
 
   let get_result (FixpointReached _) target = State.get_result target
+
+  let set_result (FixpointReached _) target result = State.set_result target result
 
   let get_iterations (FixpointReached { iterations }) = iterations
 

@@ -43,3 +43,5 @@ val master_handle : t -> string
 val name : string
 
 module Map : Core.Map.S with type Key.t = t
+
+module Set : Caml.Set.S with type elt = t

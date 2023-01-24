@@ -121,3 +121,32 @@ module Candidates : sig
     define:Define.t Node.t ->
     issue list
 end
+
+module MultiSource : sig
+  type issue = t
+
+  (* Whether an issue is related with a multi-source rule. *)
+  val is_multi_source : issue -> bool
+
+  (* Whether the combination of the given issue alongwith other issues that it relates to
+     constitutes all issues required for reporting an issue of the corresponding multi-source rule.
+     If so, return the related issues. Otherwise, return None. Fact: There exists a valid issue for
+     a multi-source rule iff. there exists an issue that is complete. *)
+  val is_complete
+    :  taint_configuration:TaintConfiguration.Heap.t ->
+    issue_handle_map:t IssueHandle.Map.t ->
+    issue ->
+    issue list option
+
+  val is_main_issue : taint_configuration:TaintConfiguration.Heap.t -> issue -> bool
+
+  val get_first_sink_hops : issue -> ExtraTraceFirstHop.Set.t
+
+  val get_first_source_hops : issue -> ExtraTraceFirstHop.Set.t
+
+  val attach_extra_traces
+    :  source_traces:ExtraTraceFirstHop.Set.t ->
+    sink_traces:ExtraTraceFirstHop.Set.t ->
+    issue ->
+    issue
+end
