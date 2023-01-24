@@ -410,9 +410,9 @@ module TriggeredSinkHashMap = struct
       in
       (* Handles of the issues that are created when creating the triggered sinks *)
       BackwardTaint.transform
-        Domains.IssueHandleSet.Self
+        IssueHandleSet.Self
         Map
-        ~f:(Domains.IssueHandleSet.join issue_handles)
+        ~f:(IssueHandleSet.join issue_handles)
         triggered_sink
     in
     let update = function
@@ -634,14 +634,14 @@ let get_name_and_detailed_message
   | None -> failwith "issue with code that has no rule"
   | Some { name; message_format; transforms; _ } ->
       let sources =
-        Domains.ForwardTaint.kinds flow.source_taint
+        ForwardTaint.kinds flow.source_taint
         |> List.map ~f:Sources.discard_transforms
         |> List.dedup_and_sort ~compare:Sources.compare
         |> List.map ~f:Sources.show
         |> String.concat ~sep:", "
       in
       let sinks =
-        Domains.BackwardTaint.kinds flow.sink_taint
+        BackwardTaint.kinds flow.sink_taint
         |> List.map ~f:Sinks.discard_transforms
         |> List.dedup_and_sort ~compare:Sinks.compare
         |> List.map ~f:Sinks.show
@@ -673,14 +673,14 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lo
   let callable_name = Target.external_name issue.handle.callable in
   let _, message = get_name_and_detailed_message ~taint_configuration issue in
   let source_traces =
-    Domains.ForwardTaint.to_json
+    ForwardTaint.to_json
       ~expand_overrides
       ~is_valid_callee
       ~filename_lookup:(Some filename_lookup)
       issue.flow.source_taint
   in
   let sink_traces =
-    Domains.BackwardTaint.to_json
+    BackwardTaint.to_json
       ~expand_overrides
       ~is_valid_callee
       ~filename_lookup:(Some filename_lookup)
