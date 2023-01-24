@@ -4,7 +4,15 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides shared logic for logging events - mainly
+error information - in Pyre language servers (whenever telemetry is
+enabled, which it is not by default in open-source Pyre).
+
+Be default these logs go to the table pyre_lsp_events.
+
+Note that this Pyre-side logging is distinct from editor-handled language
+server telemetry, which (when enabled) is accomplished by sending special
+json messages to the editor, which is responsible for loggign them.
 """
 
 
