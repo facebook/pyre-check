@@ -138,14 +138,15 @@ def user_controlled_input_wrapper():
     return user_controlled_input()
 
 
-def demonstrate_triggered_context_2(vc):
+def demonstrate_triggered_context_more_hops(vc):
+    # More hops enable showing the source trace as a subtrace
     id = user_controlled_input_wrapper()
     Node.get(id).send(vc)
 
 
-def multiple_source_traces():
+def issue_with_triggered_context_more_hops():
     vc = permissive_context()
-    demonstrate_triggered_context_2(vc)
+    demonstrate_triggered_context_more_hops(vc)
 
 
 class A:
