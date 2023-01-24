@@ -3925,6 +3925,72 @@ Unexpected statement: `food(y)`
     |}
     ();
 
+  (* Test cls.any_parent clause in model queries *)
+  assert_valid_model
+    ~source:{|
+      @d("1")
+      class A:
+        def foo(x):
+          ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "valid_model",
+        find = "methods",
+        where = [
+            cls.any_parent(cls.decorator(arguments.contains("1"), name.matches("d")))
+        ],
+        model = Returns(TaintSource[A])
+      )
+    |}
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+      def bar(z):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = [
+            cls.any_parent(Decorator(arguments.contains("1"), name.matches("d")))
+        ],
+        model = Parameters(TaintSource[A])
+      )
+    |}
+    ~expect:
+      {|Unsupported callee for class constraint: `Decorator(arguments.contains("1"), name.matches("d"))`|}
+    ();
+  assert_valid_model
+    ~source:{|
+      @d("1")
+      class A:
+        def foo(x):
+          ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "valid_model",
+        find = "methods",
+        where = [
+            cls.any_parent(
+              AnyOf(
+                cls.decorator(arguments.contains("1"), name.matches("d")),
+                cls.name.matches("A")
+              )
+            )
+        ],
+        model = Returns(TaintSource[A])
+      )
+    |}
+    ();
+
   (* Test Decorator clause in model queries *)
   assert_valid_model
     ~source:{|
@@ -4355,6 +4421,20 @@ Unexpected statement: `food(y)`
     |}
     ~expect:
       "`cls.any_child` is not a valid constraint for model queries with find clause of kind \
+       `globals`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "globals",
+        where = cls.any_parent(Decorator(name.matches("d"))),
+        model = GlobalModel(TaintSource[X])
+      )
+    |}
+    ~expect:
+      "`cls.any_parent` is not a valid constraint for model queries with find clause of kind \
        `globals`."
     ();
   assert_invalid_model
@@ -6304,6 +6384,101 @@ let test_query_parsing context =
                              ];
                          ];
                      is_transitive = true;
+                     includes_self = false;
+                   });
+              NameConstraint (Matches (Re2.create_exn "\\.__init__$"));
+            ];
+          find = Method;
+          models =
+            [
+              Parameter
+                {
+                  where =
+                    [
+                      ParameterConstraint.Not (ParameterConstraint.NameConstraint (Equals "self"));
+                      ParameterConstraint.Not (ParameterConstraint.NameConstraint (Equals "a"));
+                    ];
+                  taint =
+                    [
+                      TaintAnnotation
+                        (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    ];
+                };
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  (* AnyParent *)
+  assert_queries
+    ~source:
+      {|@d1
+      class Foo:
+        def __init__(self, a, b):
+          ...
+      @d1
+      class Bar(Foo):
+        def __init__(self, a, b):
+          ...
+      @d1
+      class Baz:
+        def __init__(self, a, b):
+          ...|}
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+      name = "get_parent_of_d1_decorator_sources",
+      find = "methods",
+      where = [
+        cls.any_parent(
+          AllOf(
+            cls.decorator(
+              name.matches("d1")
+            ),
+            AnyOf(
+              Not(cls.name.matches("Foo")),
+              cls.name.matches("Baz")
+            )
+          ),
+          is_transitive=False,
+          includes_self=False
+        ),
+        name.matches("\.__init__$")
+      ],
+      model = [
+        Parameters(TaintSource[Test], where=[
+            Not(name.equals("self")),
+            Not(name.equals("a"))
+        ])
+      ]
+    )
+    |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 27; column = 1 } };
+          name = "get_parent_of_d1_decorator_sources";
+          path = None;
+          where =
+            [
+              ClassConstraint
+                (ClassConstraint.AnyParentConstraint
+                   {
+                     class_constraint =
+                       ClassConstraint.AllOf
+                         [
+                           ClassConstraint.DecoratorConstraint
+                             (NameConstraint (Matches (Re2.create_exn "d1")));
+                           ClassConstraint.AnyOf
+                             [
+                               ClassConstraint.Not
+                                 (ClassConstraint.NameConstraint (Matches (Re2.create_exn "Foo")));
+                               ClassConstraint.NameConstraint (Matches (Re2.create_exn "Baz"));
+                             ];
+                         ];
+                     is_transitive = false;
                      includes_self = false;
                    });
               NameConstraint (Matches (Re2.create_exn "\\.__init__$"));

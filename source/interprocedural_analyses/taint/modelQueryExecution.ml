@@ -451,6 +451,24 @@ let rec find_children ~class_hierarchy_graph ~is_transitive ~includes_self class
   child_name_set
 
 
+let find_parents ~resolution ~is_transitive ~includes_self class_name =
+  let parents =
+    if is_transitive then
+      Analysis.ClassHierarchy.successors (GlobalResolution.class_hierarchy resolution) class_name
+    else
+      Analysis.ClassHierarchy.immediate_parents
+        (GlobalResolution.class_hierarchy resolution)
+        class_name
+  in
+  let parents =
+    if includes_self then
+      class_name :: parents
+    else
+      parents
+  in
+  parents
+
+
 let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captures ~name = function
   | ModelQuery.ClassConstraint.AnyOf constraints ->
       List.exists
@@ -483,6 +501,16 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captur
     ->
       find_children ~class_hierarchy_graph ~is_transitive ~includes_self name
       |> ClassHierarchyGraph.ClassNameSet.exists (fun name ->
+             class_matches_constraint
+               ~resolution
+               ~name
+               ~class_hierarchy_graph
+               ~name_captures
+               class_constraint)
+  | ModelQuery.ClassConstraint.AnyParentConstraint
+      { class_constraint; is_transitive; includes_self } ->
+      find_parents ~resolution ~is_transitive ~includes_self name
+      |> List.exists ~f:(fun name ->
              class_matches_constraint
                ~resolution
                ~name

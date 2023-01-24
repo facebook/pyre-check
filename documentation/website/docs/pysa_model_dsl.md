@@ -712,7 +712,7 @@ ModelQuery(
 )
 ```
 
-Similar to the `cls.extends` constraint, the default behavior is that it will only match if the current class is equal to or is a direct subclass of the specified class. For example, with classes:
+Similar to the `cls.extends` constraint, the default behavior is that it will only match if any immediate children (or itself) of the class of the method or attribute matches against the inner clause. For example, with classes:
 ```python
 class Foo:
   def __init__(self, a, b):
@@ -778,6 +778,115 @@ ModelQuery(
 ```
 
 This query will model `Foo.__init__`, `Bar.__init__` but NOT `Baz.__init__`.
+
+:::tip
+
+We recommend to always specify both `is_transitive` and `includes_self` to avoid confusion.
+
+:::
+
+### `cls.any_parent` clause
+
+The `cls.any_parent` clause is used to model entities when any parent of the current class meets the specified constraints.
+
+The arguments for this clause are any combination of valid class constraints (`cls.name.equals`, `cls.name.matches`, `cls.fully_qualified_name.equals`, `cls.fully_qualified_name.matches`, `cls.extends`, `cls.decorator`) and logical clauses (`AnyOf`, `AllOf`, `Not`), along with the optional `is_transitive` and `includes_self` clauses.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_children_of_d1_decorator_sources",
+  find = "methods",
+  where = [
+    cls.any_parent(
+      cls.decorator(
+        fully_qualified_name.matches("d1"),
+        arguments.contains(2)
+      )
+    ),
+    name.equals("__init__")
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[
+        Not(name.equals("self")),
+        Not(name.equals("a"))
+    ])
+  ]
+)
+```
+
+Similar to the `cls.extends` constraint, the default behavior is that it will only match if any immediate parent (or itself) of the class of the method or attribute matches against the inner clause. For example, with classes:
+```python
+@d1(2)
+class Foo:
+  def __init__(self, a, b):
+     ...
+
+class Bar(Foo):
+  def __init__(self, a, b):
+    ...
+
+class Baz(Bar):
+  def __init__(self, a, b):
+    ...
+```
+
+The above query will only model the methods `Bar.__init__` and `Foo.__init__`, since `Foo` is an immediate parent of `Bar`, and `Foo` is considered to extend itself. However, it will not model `Baz.__init__`, since `Foo` is not an immediate parent of `Baz`.
+
+If you would like to model a class and all transitive parents, you can use the `is_transitive` flag.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_transitive_children_of_d1_decorator_sources",
+  find = "attributes",
+  where = [
+    cls.any_parent(
+      cls.decorator(
+        fully_qualified_name.matches("d1"),
+        arguments.contains(2)
+      ),
+      is_transitive=True
+    ),
+    name.equals("__init__")
+  ],
+  ...
+)
+```
+
+This query will model `Foo.__init__`, `Bar.__init__` and `Baz.__init__`.
+
+If you would like to model all parents of a class excluding itself, you can use the `includes_self` flag.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_transitive_parent_of_d1_decorator_sources",
+  find = "attributes",
+  where = [
+    cls.any_parent(
+      cls.decorator(
+        fully_qualified_name.matches("d1"),
+        arguments.contains(2)
+      ),
+      is_transitive=True,
+      includes_self=False
+    ),
+    name.equals("__init__")
+  ],
+  ...
+)
+```
+
+This query will model `Bar.__init__`, `Baz.__init__` but NOT `Foo.__init__`.
+
+:::tip
+
+We recommend to always specify both `is_transitive` and `includes_self` to avoid confusion.
+
+:::
 
 ### `Not` clauses
 

@@ -396,6 +396,11 @@ module ModelQuery = struct
           is_transitive: bool;
           includes_self: bool;
         }
+      | AnyParentConstraint of {
+          class_constraint: t;
+          is_transitive: bool;
+          includes_self: bool;
+        }
     [@@deriving equal, show]
   end
 

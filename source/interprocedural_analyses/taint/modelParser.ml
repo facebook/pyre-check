@@ -1345,7 +1345,7 @@ let parse_includes_self ~path ~location includes_self_expression =
         (model_verification_error ~path ~location (InvalidIncludesSelf includes_self_expression))
 
 
-let parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments =
+let parse_class_hierarchy_options ~path ~location ~callee ~arguments =
   let open Core.Result in
   match arguments with
   | { Call.Argument.value = first_parameter; _ } :: remaining_arguments ->
@@ -1376,7 +1376,7 @@ let parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments =
 
 let parse_class_extends_clause ~path ~location ~callee ~arguments =
   let open Core.Result in
-  parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments
+  parse_class_hierarchy_options ~path ~location ~callee ~arguments
   >>= fun (first_parameter, is_transitive, includes_self) ->
   match Node.value first_parameter with
   | Expression.Constant (Constant.String { StringLiteral.value = class_name; _ }) ->
@@ -1471,11 +1471,18 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
         >>= fun decorator_constraint ->
         Ok (ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint)
     | ["cls"; "any_child"], _ ->
-        parse_class_extends_or_any_child_clause ~path ~location ~callee ~arguments
+        parse_class_hierarchy_options ~path ~location ~callee ~arguments
         >>= fun (constraint_expression, is_transitive, includes_self) ->
         parse_class_constraint ~path ~location constraint_expression
         >>| fun class_constraint ->
         ModelQuery.ClassConstraint.AnyChildConstraint
+          { class_constraint; is_transitive; includes_self }
+    | ["cls"; "any_parent"], _ ->
+        parse_class_hierarchy_options ~path ~location ~callee ~arguments
+        >>= fun (constraint_expression, is_transitive, includes_self) ->
+        parse_class_constraint ~path ~location constraint_expression
+        >>| fun class_constraint ->
+        ModelQuery.ClassConstraint.AnyParentConstraint
           { class_constraint; is_transitive; includes_self }
     | ["AnyOf"], _ ->
         List.map arguments ~f:(fun { Call.Argument.value; _ } ->

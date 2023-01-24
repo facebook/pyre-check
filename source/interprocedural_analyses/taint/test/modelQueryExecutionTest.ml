@@ -3502,6 +3502,359 @@ let test_generated_annotations context =
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+
+  (* Test cls.any_parent *)
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = false;
+                   includes_self = true;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = false;
+                   includes_self = true;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = false;
+                   includes_self = true;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = false;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = false;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = false;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = true;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = true;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = true;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(): ...
+      @decorator
+      class B(A):
+        def foo(): ...
+      class C(B):
+        def foo(): ...
+      class D(C):
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        path = None;
+        where =
+          [
+            ClassConstraint
+              (AnyParentConstraint
+                 {
+                   class_constraint = DecoratorConstraint (NameConstraint (Equals "decorator"));
+                   is_transitive = true;
+                   includes_self = false;
+                 });
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+
   assert_generated_annotations_for_globals
     ~source:{|
       foo = []
