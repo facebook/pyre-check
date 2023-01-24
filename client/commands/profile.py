@@ -4,7 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Logic for the `pyre profile` command, which (depending on the
+`--profile-output` flag) will summarize or display the raw logs
+produced when running `pyre --enable-profiling` in various ways.
+
+For example, `pyre profile --profile-output=trace_event` will
+print the profiling data transformed into a format readable by
+TraceEvent tools like Perfetto or the Chrome tracevent tool to
+standard output.
 """
 
 
