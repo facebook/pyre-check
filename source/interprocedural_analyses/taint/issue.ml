@@ -723,6 +723,7 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lo
 module MultiSource = struct
   type issue = t
 
+  (* Get all triggered sink kinds from the sink taint of the issue. *)
   let get_triggered_sinks { flow = { Flow.sink_taint; _ }; _ } =
     BackwardTaint.fold
       BackwardTaint.kind
@@ -730,27 +731,26 @@ module MultiSource = struct
         (* For now, if a partial sink is transformed, we do not consider it as a sink for a
            multi-source rule. *)
         match Sinks.discard_sanitize_transforms sink with
-        | Sinks.TriggeredPartialSink partial_sink -> partial_sink :: sofar
+        | Sinks.TriggeredPartialSink _ as partial_sink -> Sinks.Set.add partial_sink sofar
         | _ -> sofar)
-      ~init:[]
+      ~init:Sinks.Set.empty
       sink_taint
 
 
-  let is_multi_source issue = not (List.is_empty (get_triggered_sinks issue))
+  let is_multi_source issue = not (Sinks.Set.is_empty (get_triggered_sinks issue))
 
-  let get_triggered_sink issue =
-    match get_triggered_sinks issue with
-    | [] -> None
-    | [matched_triggered_sink] -> Some matched_triggered_sink
-    | matched_triggered_sink :: remaining ->
-        (* TODO(T143332940) Handle all triggered sinks. *)
-        Log.warning
-          "More than one triggered sinks in a issue: %s. Ignore all but the first triggered sink: \
-           %s"
-          (IssueHandle.show issue.handle)
-          (List.map remaining ~f:(fun triggered_sink -> Sinks.show_partial_sink triggered_sink)
-          |> String.concat ~sep:"; ");
-        Some matched_triggered_sink
+  (* Get all triggered sink kind labels from the sink taint of the issue that match the given sink
+     kind. *)
+  let get_triggered_sink_labels ~sink_kind issue =
+    get_triggered_sinks issue
+    |> Sinks.Set.elements
+    |> List.filter_map ~f:(function
+           | Sinks.TriggeredPartialSink { Sinks.kind; label } ->
+               if String.equal kind sink_kind then
+                 Some label
+               else
+                 None
+           | _ -> failwith "Expect triggered sinks")
 
 
   (* Get issue handles sharing the same partial sink kind with `triggered_sink`. *)
@@ -770,63 +770,54 @@ module MultiSource = struct
       sink_taint
 
 
-  (* Whether the combination of the given issue alongwith other issues that it relates to
-     constitutes all issues required for reporting an issue of the corresponding multi-source rule.
-     If so, return the related issues. Otherwise, return None. Fact: There exists a valid issue for
-     a multi-source rule iff. there exists an issue that is complete. *)
-  let is_complete ~taint_configuration ~issue_handle_map issue =
-    match get_triggered_sink issue with
-    | Some matched_triggered_sink ->
-        (* Issues that are known to be related to the given issue, due to sharing the same partial
-           sink kind. *)
-        let related_issue_handles =
-          get_issue_handles ~triggered_sink:matched_triggered_sink issue
-        in
-        let related_issues =
-          related_issue_handles
-          |> IssueHandleSet.elements
-          |> List.map ~f:(IssueHandle.Map.find_exn issue_handle_map)
-        in
-        let related_issue_labels =
-          List.map
-            ~f:(fun related_issue ->
-              match get_triggered_sink related_issue with
-              | Some matched_triggered_sink -> matched_triggered_sink.Sinks.label
-              | None -> failwith "Expected the related issue to have a triggered sink")
-            related_issues
-        in
-        (* All known issues whose sinks are `matched_triggered_sink`. *)
-        let matched_labels = matched_triggered_sink.Sinks.label :: related_issue_labels in
-        let { TaintConfiguration.Heap.partial_sink_labels; _ } = taint_configuration in
-        let { TaintConfiguration.PartialSinkLabelsMap.main; secondary } =
-          TaintConfiguration.PartialSinkLabelsMap.find_opt
-            matched_triggered_sink.Sinks.kind
-            partial_sink_labels
-          |> Option.value_exn
-        in
-        if
-          String.Set.equal
-            (String.Set.of_list matched_labels)
-            (String.Set.of_list [main; secondary])
-        then
-          (* If all known issues happen to contain all the required labels for reporting an issue
-             with `matched_triggered_sink`, return the related issues. *)
-          Some related_issues
-        else
-          None
-    | None -> None
+  (* When the combination of the given issue alongwith other issues that it relates to (under the
+     same partial sink kind) constitutes all issues required for reporting an issue of the
+     corresponding multi-source rule, return a pair of the partial sink kind and the related issues.
+     Fact: There exists a valid issue for a multi-source rule iff. there exists a non-empty set of
+     related issues (under a partial sink kind). *)
+  let find_related_issues ~taint_configuration ~issue_handle_map issue =
+    let is_related ~triggered_sink:{ Sinks.kind; label } ~main_label ~secondary_label related_issue =
+      let missing_label = if String.equal main_label label then secondary_label else main_label in
+      get_triggered_sink_labels ~sink_kind:kind related_issue
+      |> List.exists ~f:(String.equal missing_label)
+    in
+    let accumulate_related_issues triggered_sink so_far =
+      match triggered_sink with
+      | Sinks.TriggeredPartialSink triggered_sink ->
+          (* Issues that are known to be related to the given issue, due to sharing the same partial
+             sink kind and matching the labels under this partial sink kind. *)
+          let { TaintConfiguration.Heap.partial_sink_labels; _ } = taint_configuration in
+          let {
+            TaintConfiguration.PartialSinkLabelsMap.main = main_label;
+            secondary = secondary_label;
+          }
+            =
+            TaintConfiguration.PartialSinkLabelsMap.find_opt triggered_sink.kind partial_sink_labels
+            |> Option.value_exn
+          in
+          let related_issues =
+            get_issue_handles ~triggered_sink issue
+            |> IssueHandleSet.elements
+            |> List.map ~f:(IssueHandle.Map.find_exn issue_handle_map)
+            |> List.filter ~f:(is_related ~triggered_sink ~main_label ~secondary_label)
+          in
+          Sinks.Map.add (Sinks.TriggeredPartialSink triggered_sink) related_issues so_far
+      | _ -> so_far
+    in
+    Sinks.Set.fold accumulate_related_issues (get_triggered_sinks issue) Sinks.Map.empty
 
 
-  let is_main_issue ~taint_configuration issue =
-    let is_main_issue { Sinks.kind; label } =
+  let is_main_issue ~sink ~taint_configuration issue =
+    let is_main_label ~kind label =
       let { TaintConfiguration.Heap.partial_sink_labels; _ } = taint_configuration in
       match TaintConfiguration.PartialSinkLabelsMap.find_opt kind partial_sink_labels with
       | Some { main; _ } -> String.equal main label
       | None -> false
     in
-    match get_triggered_sink issue with
-    | Some matched_triggered_sink -> is_main_issue matched_triggered_sink
-    | None -> false
+    match sink with
+    | Sinks.TriggeredPartialSink { kind; _ } ->
+        get_triggered_sink_labels ~sink_kind:kind issue |> List.exists ~f:(is_main_label ~kind)
+    | _ -> false
 
 
   let get_first_sink_hops { flow = { Flow.sink_taint; _ }; _ } =

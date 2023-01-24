@@ -121,17 +121,18 @@ module MultiSource : sig
   (* Whether an issue is related with a multi-source rule. *)
   val is_multi_source : issue -> bool
 
-  (* Whether the combination of the given issue alongwith other issues that it relates to
-     constitutes all issues required for reporting an issue of the corresponding multi-source rule.
-     If so, return the related issues. Otherwise, return None. Fact: There exists a valid issue for
-     a multi-source rule iff. there exists an issue that is complete. *)
-  val is_complete
+  (* When the combination of the given issue alongwith other issues that it relates to (under the
+     same partial sink kind) constitutes all issues required for reporting an issue of the
+     corresponding multi-source rule, return a pair of the partial sink kind and the related issues.
+     Fact: There exists a valid issue for a multi-source rule iff. there exists a non-empty set of
+     related issues (under a partial sink kind). *)
+  val find_related_issues
     :  taint_configuration:TaintConfiguration.Heap.t ->
     issue_handle_map:t IssueHandle.Map.t ->
     issue ->
-    issue list option
+    issue list Sinks.Map.t
 
-  val is_main_issue : taint_configuration:TaintConfiguration.Heap.t -> issue -> bool
+  val is_main_issue : sink:Sinks.t -> taint_configuration:TaintConfiguration.Heap.t -> issue -> bool
 
   val get_first_sink_hops : issue -> ExtraTraceFirstHop.Set.t
 
