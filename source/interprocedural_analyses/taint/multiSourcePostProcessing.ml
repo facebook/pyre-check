@@ -29,19 +29,12 @@ let collect_main_issues ~taint_configuration ~issue_handle_map =
   let is_main_issue issue = MultiSource.is_main_issue ~taint_configuration issue in
   let accumulate so_far ~all_issues =
     let main_issues, secondary_issues = List.partition_tf ~f:is_main_issue all_issues in
-    let main_issue =
-      match main_issues with
-      | [] -> failwith "Expected at least one main issue."
-      | [main_issue] -> main_issue
-      | main_issue :: _ ->
-          Log.warning
-            "Expect exactly one main issue. However, we get the following issues: %s"
-            (List.map main_issues ~f:(fun issue -> IssueHandle.show issue.handle)
-            |> String.concat ~sep:"\n");
-          main_issue
-    in
-    List.fold secondary_issues ~init:so_far ~f:(fun so_far secondary_issue ->
-        IssueHandle.Map.add_multi so_far ~key:main_issue.handle ~data:secondary_issue.handle)
+    if List.is_empty main_issues then
+      failwith "Expected at least one main issue."
+    else
+      List.cartesian_product main_issues secondary_issues
+      |> List.fold ~init:so_far ~f:(fun so_far (main_issue, secondary_issue) ->
+             IssueHandle.Map.add_multi so_far ~key:main_issue.handle ~data:secondary_issue.handle)
   in
   let accumulate_per_issue so_far issue =
     match MultiSource.is_complete ~taint_configuration ~issue_handle_map issue with
