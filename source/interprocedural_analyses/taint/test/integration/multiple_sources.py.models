@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.combine_tainted_user_and_dangerous_vc",
-    "callable_line": 27,
+    "callable_line": 29,
     "code": 4321,
-    "line": 30,
+    "line": 32,
     "start": 4,
     "end": 16,
     "filename": "multiple_sources.py",
@@ -30,10 +30,10 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 30, "start": 13, "end": 15 } ],
+            "tito_positions": [ { "line": 32, "start": 13, "end": 15 } ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 28,
+              "line": 30,
               "start": 9,
               "end": 32
             }
@@ -47,13 +47,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of the secondary flow: PermissiveContext",
-                "origin": { "line": 29, "start": 9, "end": 29 },
+                "origin": { "line": 31, "start": 9, "end": 29 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledAndVC[vc]]",
-                "origin": { "line": 30, "start": 22, "end": 24 },
+                "origin": { "line": 32, "start": 22, "end": 24 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
               }
@@ -63,7 +63,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 30,
+              "line": 32,
               "start": 4,
               "end": 16
             }
@@ -91,9 +91,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_sanitizer",
-    "callable_line": 124,
+    "callable_line": 126,
     "code": 4322,
-    "line": 127,
+    "line": 129,
     "start": 34,
     "end": 54,
     "filename": "multiple_sources.py",
@@ -113,7 +113,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 127,
+              "line": 129,
               "start": 34,
               "end": 54
             }
@@ -127,13 +127,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of the secondary flow: TestA",
-                "origin": { "line": 125, "start": 8, "end": 18 },
+                "origin": { "line": 127, "start": 8, "end": 18 },
                 "leaf_kind": "TestA",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[ExpectsEitherTest[a]]",
-                "origin": { "line": 127, "start": 31, "end": 32 },
+                "origin": { "line": 129, "start": 31, "end": 32 },
                 "leaf_kind": "TriggeredPartialSink[ExpectsEitherTest[a]]",
                 "trace_kind": "sink"
               }
@@ -148,7 +148,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 127,
+              "line": 129,
               "start": 34,
               "end": 54
             }
@@ -170,9 +170,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.issue_with_test_a_and_b",
-    "callable_line": 84,
+    "callable_line": 86,
     "code": 4322,
-    "line": 85,
+    "line": 88,
     "start": 43,
     "end": 63,
     "filename": "multiple_sources.py",
@@ -192,86 +192,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 85,
-              "start": 43,
-              "end": 63
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "extra_traces": [
-              {
-                "message": "Source trace of the secondary flow: TestA",
-                "origin": { "line": 85, "start": 31, "end": 41 },
-                "leaf_kind": "TestA",
-                "trace_kind": "source"
-              },
-              {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[ExpectsEitherTest[a]]",
-                "origin": { "line": 85, "start": 31, "end": 41 },
-                "leaf_kind": "TriggeredPartialSink[ExpectsEitherTest[a]]",
-                "trace_kind": "sink"
-              }
-            ],
-            "kinds": [
-              {
-                "multi_source_issue_handles": [
-                  "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(test):7e5c60adb20041982eed596330e80722"
-                ],
-                "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]"
-              }
-            ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 85,
-              "start": 43,
-              "end": 63
-            }
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "multiple_sources.combines_tests_and_context",
-      "index": 0,
-      "parameter": "formal(vc)"
-    },
-    "master_handle": "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):2952b352e0a37aa627ef7429212a7ad1"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources.issue_with_test_a_and_b",
-    "callable_line": 84,
-    "code": 4322,
-    "line": 86,
-    "start": 43,
-    "end": 63,
-    "filename": "multiple_sources.py",
-    "message": "TestA or TestB and permissive context combine",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "multiple_sources.permissive_context" }
-                ],
-                "kind": "PermissiveContext"
-              }
-            ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 86,
+              "line": 88,
               "start": 43,
               "end": 63
             }
@@ -285,13 +206,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of the secondary flow: TestB",
-                "origin": { "line": 86, "start": 31, "end": 41 },
+                "origin": { "line": 88, "start": 31, "end": 41 },
                 "leaf_kind": "TestB",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[ExpectsEitherTest[a]]",
-                "origin": { "line": 86, "start": 31, "end": 41 },
+                "origin": { "line": 88, "start": 31, "end": 41 },
                 "leaf_kind": "TriggeredPartialSink[ExpectsEitherTest[a]]",
                 "trace_kind": "sink"
               }
@@ -306,7 +227,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 86,
+              "line": 88,
               "start": 43,
               "end": 63
             }
@@ -327,10 +248,89 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "multiple_sources.issue_with_test_a_and_b",
+    "callable_line": 86,
+    "code": 4322,
+    "line": 87,
+    "start": 43,
+    "end": 63,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.permissive_context" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 87,
+              "start": 43,
+              "end": 63
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace of the secondary flow: TestA",
+                "origin": { "line": 87, "start": 31, "end": 41 },
+                "leaf_kind": "TestA",
+                "trace_kind": "source"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[ExpectsEitherTest[a]]",
+                "origin": { "line": 87, "start": 31, "end": 41 },
+                "leaf_kind": "TriggeredPartialSink[ExpectsEitherTest[a]]",
+                "trace_kind": "sink"
+              }
+            ],
+            "kinds": [
+              {
+                "multi_source_issue_handles": [
+                  "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(test):7e5c60adb20041982eed596330e80722"
+                ],
+                "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 87,
+              "start": 43,
+              "end": 63
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.combines_tests_and_context",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):2952b352e0a37aa627ef7429212a7ad1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "multiple_sources.issue_with_triggered_input",
-    "callable_line": 43,
+    "callable_line": 45,
     "code": 4321,
-    "line": 45,
+    "line": 47,
     "start": 32,
     "end": 34,
     "filename": "multiple_sources.py",
@@ -350,7 +350,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 44,
+              "line": 46,
               "start": 9,
               "end": 32
             }
@@ -364,13 +364,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of the secondary flow: PermissiveContext",
-                "origin": { "line": 39, "start": 9, "end": 29 },
+                "origin": { "line": 41, "start": 9, "end": 29 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledAndVC[vc]]",
-                "origin": { "line": 40, "start": 22, "end": 24 },
+                "origin": { "line": 42, "start": 22, "end": 24 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
               }
@@ -393,7 +393,7 @@
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 45,
+                "line": 47,
                 "start": 32,
                 "end": 34
               },
@@ -418,6 +418,211 @@
       "parameter": "formal(id)"
     },
     "master_handle": "multiple_sources.issue_with_triggered_input:4321:0:Call|multiple_sources.demonstrate_triggered_input|0|formal(id):8a70cfef2676b9104e0817e743936160"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.muliple_main_issues_1",
+    "callable_line": 161,
+    "code": 4321,
+    "line": 163,
+    "start": 22,
+    "end": 45,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.user_controlled_input" }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 163,
+              "start": 22,
+              "end": 45
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace of the secondary flow: PermissiveContext",
+                "origin": { "line": 163, "start": 47, "end": 67 },
+                "leaf_kind": "PermissiveContext",
+                "trace_kind": "source"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledAndVC[vc]]",
+                "origin": { "line": 163, "start": 47, "end": 67 },
+                "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
+                "trace_kind": "sink"
+              }
+            ],
+            "kinds": [
+              {
+                "multi_source_issue_handles": [
+                  "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.A.multi_sink|0|formal(permissive_context):58b71672d9a693c4b0936affaa2b0d93"
+                ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[id]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 163,
+              "start": 22,
+              "end": 45
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.B.multi_sink",
+      "index": 0,
+      "parameter": "formal(user_controlled)"
+    },
+    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.B.multi_sink|0|formal(user_controlled):97d331ea2a489aaae712a662df8866db"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.muliple_main_issues_1",
+    "callable_line": 161,
+    "code": 4321,
+    "line": 163,
+    "start": 22,
+    "end": 45,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.user_controlled_input" }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 163,
+              "start": 22,
+              "end": 45
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace of the secondary flow: PermissiveContext",
+                "origin": { "line": 163, "start": 47, "end": 67 },
+                "leaf_kind": "PermissiveContext",
+                "trace_kind": "source"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledAndVC[vc]]",
+                "origin": { "line": 163, "start": 47, "end": 67 },
+                "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
+                "trace_kind": "sink"
+              }
+            ],
+            "kinds": [
+              { "kind": "TriggeredPartialSink[UserControlledAndVC[id]]" }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 163,
+              "start": 22,
+              "end": 45
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.A.multi_sink",
+      "index": 0,
+      "parameter": "formal(user_controlled)"
+    },
+    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.A.multi_sink|0|formal(user_controlled):506d7bd4af2843d885905838f38e3e8d"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.A.multi_sink",
+    "sinks": [
+      {
+        "port": "formal(permissive_context)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(user_controlled)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.B.multi_sink",
+    "sinks": [
+      {
+        "port": "formal(permissive_context)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(user_controlled)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -465,7 +670,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 16, "start": 19, "end": 21 } ],
+            "tito_positions": [ { "line": 18, "start": 19, "end": 21 } ],
             "tito": null
           }
         ]
@@ -577,7 +782,7 @@
         "port": "formal(vc)",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -590,7 +795,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 35,
+              "line": 37,
               "start": 22,
               "end": 24
             }
@@ -604,9 +809,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_context",
-    "callable_line": 33,
+    "callable_line": 35,
     "code": 4321,
-    "line": 35,
+    "line": 37,
     "start": 4,
     "end": 16,
     "filename": "multiple_sources.py",
@@ -631,10 +836,10 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 35, "start": 13, "end": 15 } ],
+            "tito_positions": [ { "line": 37, "start": 13, "end": 15 } ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 34,
+              "line": 36,
               "start": 9,
               "end": 32
             }
@@ -648,14 +853,14 @@
             "extra_traces": [
               {
                 "message": "Source trace of the secondary flow: PermissiveContext",
-                "origin": { "line": 49, "start": 9, "end": 29 },
+                "origin": { "line": 51, "start": 9, "end": 29 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "call": {
-                  "position": { "line": 50, "start": 34, "end": 36 },
+                  "position": { "line": 52, "start": 34, "end": 36 },
                   "resolves_to": [
                     "multiple_sources.demonstrate_triggered_context"
                   ],
@@ -670,7 +875,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 35,
+              "line": 37,
               "start": 4,
               "end": 16
             }
@@ -703,7 +908,7 @@
         "port": "formal(vc)",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -716,7 +921,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 141,
+              "line": 143,
               "start": 22,
               "end": 24
             }
@@ -730,9 +935,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_context_2",
-    "callable_line": 139,
+    "callable_line": 141,
     "code": 4321,
-    "line": 141,
+    "line": 143,
     "start": 4,
     "end": 16,
     "filename": "multiple_sources.py",
@@ -758,11 +963,11 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 141, "start": 13, "end": 15 } ],
+            "tito_positions": [ { "line": 143, "start": 13, "end": 15 } ],
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
-                "line": 140,
+                "line": 142,
                 "start": 9,
                 "end": 40
               },
@@ -781,14 +986,14 @@
             "extra_traces": [
               {
                 "message": "Source trace of the secondary flow: PermissiveContext",
-                "origin": { "line": 145, "start": 9, "end": 29 },
+                "origin": { "line": 147, "start": 9, "end": 29 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "call": {
-                  "position": { "line": 146, "start": 36, "end": 38 },
+                  "position": { "line": 148, "start": 36, "end": 38 },
                   "resolves_to": [
                     "multiple_sources.demonstrate_triggered_context_2"
                   ],
@@ -803,7 +1008,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 141,
+              "line": 143,
               "start": 4,
               "end": 16
             }
@@ -836,7 +1041,7 @@
         "port": "formal(id)",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -852,10 +1057,10 @@
               { "first-index": "<unknown>" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 40, "start": 13, "end": 15 } ],
+            "tito_positions": [ { "line": 42, "start": 13, "end": 15 } ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 40,
+              "line": 42,
               "start": 4,
               "end": 16
             }
@@ -863,6 +1068,151 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.multiple_triggered_context",
+    "sinks": [
+      {
+        "port": "formal(vc)",
+        "taint": [
+          {
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "multi_source_issue_handles": [
+                  "multiple_sources.multiple_triggered_context:4321:0:Call|multiple_sources.Node.send|0|formal(self):a2be6d22a1aa8362f6500da78375547f"
+                ],
+                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 174,
+              "start": 23,
+              "end": 25
+            }
+          },
+          {
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "multi_source_issue_handles": [
+                  "multiple_sources.multiple_triggered_context:4321:0:Call|multiple_sources.Node.send|1|formal(self):9c1d7ba0ef713f59efda3f6d1469d2a5"
+                ],
+                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 176,
+              "start": 23,
+              "end": 25
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.multiple_triggered_context",
+    "callable_line": 172,
+    "code": 4321,
+    "line": 174,
+    "start": 4,
+    "end": 17,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.user_controlled_input" }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 174, "start": 13, "end": 16 } ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 173,
+              "start": 10,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace of the secondary flow: PermissiveContext",
+                "origin": { "line": 168, "start": 9, "end": 29 },
+                "leaf_kind": "PermissiveContext",
+                "trace_kind": "source"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledAndVC[vc]]",
+                "call": {
+                  "position": { "line": 169, "start": 31, "end": 33 },
+                  "resolves_to": [
+                    "multiple_sources.multiple_triggered_context"
+                  ],
+                  "port": "formal(vc)"
+                },
+                "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
+                "trace_kind": "sink"
+              }
+            ],
+            "kinds": [
+              { "kind": "TriggeredPartialSink[UserControlledAndVC[id]]" }
+            ],
+            "origin": {
+              "filename": "multiple_sources.py",
+              "line": 174,
+              "start": 4,
+              "end": 17
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.Node.send",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "multiple_sources.multiple_triggered_context:4321:0:Call|multiple_sources.Node.send|0|formal(self):a2be6d22a1aa8362f6500da78375547f"
   }
 }
 {
@@ -1014,7 +1364,7 @@
             ],
             "origin": {
               "filename": "multiple_sources.py",
-              "line": 136,
+              "line": 138,
               "start": 11,
               "end": 34
             }
