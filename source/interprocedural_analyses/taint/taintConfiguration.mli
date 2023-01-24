@@ -45,8 +45,8 @@ end
 (* A map from partial sink kinds to the related labels *)
 module PartialSinkLabelsMap : sig
   type labels = {
-    all_labels: string list;
-    main_label: string;
+    main: string;
+    secondary: string;
   }
 
   type t

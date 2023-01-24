@@ -318,7 +318,7 @@ let test_combined_source_rules _ =
   assert_equal (List.hd_exn configuration.rules).code 2001;
   assert_equal
     (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels)
-    ["C", { TaintConfiguration.PartialSinkLabelsMap.all_labels = ["a"; "b"]; main_label = "b" }];
+    ["C", { TaintConfiguration.PartialSinkLabelsMap.main = "b"; secondary = "a" }];
   let configuration =
     assert_parse
       {|
@@ -344,10 +344,7 @@ let test_combined_source_rules _ =
   assert_equal configuration.sinks [];
   assert_equal
     (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels)
-    [
-      ( "CombinedSink",
-        { TaintConfiguration.PartialSinkLabelsMap.all_labels = ["a"; "b"]; main_label = "a" } );
-    ];
+    ["CombinedSink", { TaintConfiguration.PartialSinkLabelsMap.main = "a"; secondary = "b" }];
   assert_equal
     ~printer:(List.to_string ~f:Rule.show)
     ~cmp:(List.equal [%compare.equal: Rule.t])

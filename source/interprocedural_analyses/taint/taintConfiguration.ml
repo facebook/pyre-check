@@ -276,9 +276,10 @@ module PartialSinkLabelsMap = struct
   include SerializableStringMap
 
   type labels = {
-    all_labels: string list;
-    main_label: string;
+    main: string;
+    secondary: string;
   }
+  [@@deriving eq, show]
 
   type t = labels SerializableStringMap.t
 
@@ -289,15 +290,14 @@ module PartialSinkLabelsMap = struct
         | Some value, None
         | None, Some value ->
             Some value
-        | ( Some { all_labels = left_all_labels; main_label = left_main_label },
-            Some { all_labels = right_all_labels; main_label = right_main_label } ) ->
-            if String.equal left_main_label right_main_label then
-              Some { all_labels = left_all_labels @ right_all_labels; main_label = left_main_label }
+        | Some left, Some right ->
+            if equal_labels left right then
+              Some left
             else
               Format.sprintf
-                "when merging, main labels are different: %s %s"
-                left_main_label
-                right_main_label
+                "Merging different labels: %s %s"
+                (show_labels left)
+                (show_labels right)
               |> failwith
         | None, None -> None)
       left
@@ -976,25 +976,28 @@ let from_json_list source_json_list =
           if PartialSinkLabelsMap.mem partial_sink partial_sink_labels then
             Result.Error [Error.create ~path ~kind:(Error.PartialSinkDuplicate partial_sink)]
           else
-            let main_label =
+            let main =
               match json_string_member ~path "main_trace_source" json with
               | Ok main_trace_source -> main_trace_source
               | Error _ -> first
             in
+            let secondary = if String.equal first main then second else first in
             let partial_sink_labels =
               PartialSinkLabelsMap.set
                 partial_sink_labels
                 ~key:partial_sink
-                ~data:{ PartialSinkLabelsMap.all_labels = [first; second]; main_label }
+                ~data:{ PartialSinkLabelsMap.main; secondary }
             in
             let create_partial_sink label sink =
               match PartialSinkLabelsMap.find_opt sink partial_sink_labels with
-              | Some { all_labels; _ } when not (List.mem ~equal:String.equal all_labels label) ->
+              | Some { main; secondary }
+                when not (String.equal main label || String.equal secondary label) ->
                   Result.Error
                     [
                       Error.create
                         ~path
-                        ~kind:(Error.InvalidLabelMultiSink { label; sink; labels = all_labels });
+                        ~kind:
+                          (Error.InvalidLabelMultiSink { label; sink; labels = [main; secondary] });
                     ]
               | None -> Result.Error [Error.create ~path ~kind:(Error.InvalidMultiSink sink)]
               | _ -> Ok { Sinks.kind = sink; label }

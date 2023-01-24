@@ -826,13 +826,17 @@ module MultiSource = struct
         (* All known issues whose sinks are `matched_triggered_sink`. *)
         let matched_labels = matched_triggered_sink.Sinks.label :: related_issue_labels in
         let { TaintConfiguration.Heap.partial_sink_labels; _ } = taint_configuration in
-        let { TaintConfiguration.PartialSinkLabelsMap.all_labels; _ } =
+        let { TaintConfiguration.PartialSinkLabelsMap.main; secondary } =
           TaintConfiguration.PartialSinkLabelsMap.find_opt
             matched_triggered_sink.Sinks.kind
             partial_sink_labels
           |> Option.value_exn
         in
-        if String.Set.equal (String.Set.of_list matched_labels) (String.Set.of_list all_labels) then
+        if
+          String.Set.equal
+            (String.Set.of_list matched_labels)
+            (String.Set.of_list [main; secondary])
+        then
           (* If all known issues happen to contain all the required labels for reporting an issue
              with `matched_triggered_sink`, return the related issues. *)
           Some related_issues
@@ -845,7 +849,7 @@ module MultiSource = struct
     let is_main_issue { Sinks.kind; label } =
       let { TaintConfiguration.Heap.partial_sink_labels; _ } = taint_configuration in
       match TaintConfiguration.PartialSinkLabelsMap.find_opt kind partial_sink_labels with
-      | Some { main_label; _ } -> String.equal main_label label
+      | Some { main; _ } -> String.equal main label
       | None -> false
     in
     match get_triggered_sink issue with

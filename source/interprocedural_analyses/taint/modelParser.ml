@@ -658,8 +658,8 @@ let rec parse_annotations
                       kind
                       taint_configuration.partial_sink_labels
                   with
-                  | Some { TaintConfiguration.PartialSinkLabelsMap.all_labels; _ } ->
-                      if List.mem all_labels label ~equal:String.equal then
+                  | Some { TaintConfiguration.PartialSinkLabelsMap.main; secondary } ->
+                      if String.equal secondary label || String.equal main label then
                         Ok (Sinks.PartialSink { kind; label })
                       else
                         Error
@@ -668,7 +668,7 @@ let rec parse_annotations
                                 "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
                                 label
                                 kind
-                                (String.concat all_labels ~sep:", ")))
+                                (String.concat [main; secondary] ~sep:", ")))
                   | None ->
                       Error
                         (annotation_error (Format.sprintf "Unrecognized partial sink `%s`." kind)))
