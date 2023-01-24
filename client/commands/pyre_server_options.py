@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module describes all of the flags that control behavior of a Pyre
+language server - for example, the location of the backend binary and
+which features to enable.
 """
 
 
