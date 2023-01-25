@@ -403,8 +403,9 @@ let help () =
            to a list of all types for that path."
     | ValidateTaintModels _ ->
         Some
-          "validate_taint_models('optional path'): Validates models and returns errors. Defaults \
-           to model path in configuration if no parameter is passed in."
+          "validate_taint_models('optional path', verify_dsl=<bool>): Validates models and returns \
+           errors. Defaults to model path in configuration if no parameter is passed in, and \
+           verify_dsl=False. Pass in verify_dsl=True to validate ModelQueries as well."
     | Help _ -> None
   in
   let path = PyrePath.current_working_directory () in
