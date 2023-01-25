@@ -64,6 +64,8 @@ def wrapper(id, vc):
 def no_issue_with_wrapper_call():
     id = user_controlled_input()
     vc = permissive_context()
+    # Since we do not propagate the untriggered partial sinks,
+    # we miss the issue here
     wrapper(id, vc)
 
 
@@ -175,3 +177,15 @@ def multiple_triggered_context(vc):
     Node.get(id1).send(vc)
     id2 = user_controlled_input()
     Node.get(id2).send(vc)
+
+
+def false_negative_triggered_context(vc):
+    id = user_controlled_input()
+    # Since we do not propagate the untriggered partial sinks,
+    # we do not trigger a partial sink here
+    wrapper(id, vc)
+
+
+def no_issue_with_wrapper_call_2():
+    vc = permissive_context()
+    false_negative_triggered_context(vc)
