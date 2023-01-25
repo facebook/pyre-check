@@ -297,6 +297,23 @@ class ClientTypeErrorHandler:
             await _publish_diagnostics(self.client_output_channel, path, diagnostics)
         self.server_state.last_diagnostic_update_timer.reset()
 
+    async def show_overlay_type_errors(
+        self,
+        path: Path,
+        type_errors: Sequence[error.Error],
+    ) -> None:
+        # TODO(T143476592) We currently do not change `last_diagnostic_update_timer`
+        # on unsaved-changes type errors. Once unsaved-changes + type errors is closer
+        # to full release we should make sure this is sensible in terms of how we use
+        # telemetry.
+        LOG.info(
+            f"Refreshing type errors at path {path}. "
+            f"Total number of type errors is {len(type_errors)}."
+        )
+        diagnostics_by_path = type_errors_to_diagnostics(type_errors)
+        diagnostics = diagnostics_by_path.get(path, [])
+        await _publish_diagnostics(self.client_output_channel, path, diagnostics)
+
 
 READY_MESSAGE: str = "Pyre has completed an incremental check and is currently watching on further source changes."
 READY_SHORT: str = "Pyre Ready"
@@ -482,6 +499,10 @@ async def run_persistent(
     querier = daemon_querier.PersistentDaemonQuerier(
         server_state=server_state,
     )
+    client_type_error_handler = ClientTypeErrorHandler(
+        stdout, server_state, remote_logging
+    )
+
     server = pyre_language_server.PyreLanguageServer(
         input_channel=stdin,
         output_channel=stdout,
@@ -495,12 +516,11 @@ async def run_persistent(
                     stdout, server_state
                 ),
                 querier=querier,
-                client_type_error_handler=ClientTypeErrorHandler(
-                    stdout, server_state, remote_logging
-                ),
+                client_type_error_handler=client_type_error_handler,
             )
         ),
         querier=querier,
+        client_type_error_handler=client_type_error_handler,
     )
     return await server.run()
 

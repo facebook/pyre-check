@@ -10,12 +10,22 @@ The response typically will be generated through the Pyre daemon, and the name P
 because it illustrates that this is the intermediary between the Language server and the Pyre daemon.
 """
 
+from __future__ import annotations
 
 import dataclasses
 import logging
 import random
 from pathlib import Path
-from typing import ClassVar, Dict, Generic, List, Optional, TypeVar, Union
+from typing import (
+    ClassVar,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    TYPE_CHECKING,
+    TypeVar,
+    Union,
+)
 
 from .. import json_rpc, log, timer
 
@@ -25,6 +35,9 @@ from . import background, commands, daemon_querier, find_symbols, server_state a
 from .daemon_query import DaemonQueryFailure
 
 from .server_state import OpenedDocumentState
+
+if TYPE_CHECKING:
+    from . import persistent
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
@@ -124,6 +137,7 @@ class PyreLanguageServer:
     server_state: state.ServerState
 
     querier: daemon_querier.AbstractDaemonQuerier
+    client_type_error_handler: persistent.ClientTypeErrorHandler
 
     async def write_telemetry(
         self,
@@ -269,6 +283,19 @@ class PyreLanguageServer:
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
+    async def send_overlay_type_errors(
+        self,
+        document_path: Path,
+    ) -> None:
+        await self.update_overlay_if_needed(document_path)
+        result = await self.querier.get_type_errors(document_path)
+        if isinstance(result, DaemonQueryFailure):
+            return
+        await self.client_type_error_handler.show_overlay_type_errors(
+            path=document_path,
+            type_errors=result,
+        )
+
     async def process_did_change_request(
         self,
         parameters: lsp.DidChangeTextDocumentParameters,
@@ -299,6 +326,13 @@ class PyreLanguageServer:
             is_dirty=True,
             pyre_code_updated=False,
         )
+        if (
+            process_unsaved_changes
+            and self.get_language_server_features().type_errors.is_enabled()
+        ):
+            await self.send_overlay_type_errors(
+                document_path=document_path,
+            )
         await self.write_telemetry(
             {
                 "type": "LSP",

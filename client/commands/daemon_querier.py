@@ -22,7 +22,7 @@ from typing import List, Optional, Union
 
 from libcst.metadata import CodeRange
 
-from .. import dataclasses_json_extensions as json_mixins
+from .. import dataclasses_json_extensions as json_mixins, error
 
 from ..language_server import (
     code_navigation_request,
@@ -164,6 +164,13 @@ class AbstractDaemonQuerier(abc.ABC):
         self.socket_path: Path = server_state.server_options.get_socket_path()
 
     @abc.abstractmethod
+    async def get_type_errors(
+        self,
+        path: Path,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def get_type_coverage(
         self,
         path: Path,
@@ -255,6 +262,22 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             return None
         else:
             return len(response.response) > 0
+
+    async def get_type_errors(
+        self,
+        path: Path,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
+        overlay_id = self._get_overlay_id(path)
+        if overlay_id is None:
+            return daemon_query.DaemonQueryFailure(
+                "Invalid attempt to run a get_type_errors overlay request"
+                "in a language server without unsaved changes support."
+            )
+        return await daemon_query.attempt_async_overlay_type_errors(
+            socket_path=self.socket_path,
+            source_code_path=path,
+            overlay_id=overlay_id,
+        )
 
     async def get_type_coverage(
         self,
@@ -390,6 +413,12 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
 
 
 class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
+    async def get_type_errors(
+        self,
+        path: Path,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
+        raise NotImplementedError()
+
     async def get_type_coverage(
         self,
         path: Path,

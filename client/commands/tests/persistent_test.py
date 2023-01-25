@@ -1160,6 +1160,23 @@ class PyreServerTest(testslide.TestCase):
             ),
         )
 
+    def _expect_diagnostics(
+        self,
+        uri: str,
+        diagnostics: List[lsp.Diagnostic],
+    ) -> Callable[[str], None]:
+        def expectation(actual_json_string: str) -> None:
+            actual_output = json.loads(actual_json_string)
+            self.assertEqual(actual_output["method"], "textDocument/publishDiagnostics")
+            parameters = actual_output["params"]
+            self.assertEqual(parameters["uri"], uri)
+            self.assertEqual(
+                parameters["diagnostics"],
+                [diagnostic.to_dict() for diagnostic in diagnostics],
+            )
+
+        return expectation
+
     def _expect_telemetry_event(
         self,
         operation: str,
@@ -1226,6 +1243,141 @@ class PyreServerTest(testslide.TestCase):
                 ]
             else:
                 expectations = []
+            self._assert_output_messages(
+                output_writer,
+                expectations,
+            )
+
+    @setup.async_test
+    async def test_did_change__with_type_errors(self) -> None:
+        unsaved_file_content = "# some example code"
+        tracked_path = Path("/tracked.py")
+        for enabled_telemetry_event in (True, False):
+            querier = server_setup.MockDaemonQuerier(
+                mock_type_errors=[
+                    error.Error(
+                        line=1,
+                        column=1,
+                        stop_line=2,
+                        stop_column=2,
+                        path=Path("/tracked.py"),
+                        code=42,
+                        name="name",
+                        description="description",
+                    ),
+                ]
+            )
+            server, output_writer = await server_setup.create_server_for_request_test(
+                opened_documents={
+                    tracked_path: OpenedDocumentState(
+                        code=unsaved_file_content,
+                    )
+                },
+                querier=querier,
+                server_options=server_setup.create_server_options(
+                    enabled_telemetry_event=enabled_telemetry_event,
+                    language_server_features=LanguageServerFeatures(
+                        unsaved_changes=UnsavedChangesAvailability.ENABLED,
+                    ),
+                ),
+            )
+            await server.process_did_change_request(
+                parameters=lsp.DidChangeTextDocumentParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                    ),
+                    content_changes=[lsp.ContentChange(text=unsaved_file_content)],
+                ),
+            )
+            # When unsaved changes is not enabled, we should send no requests.
+            self.assertEqual(
+                querier.requests,
+                [
+                    {"path": tracked_path, "code": unsaved_file_content},
+                ],
+            )
+            expect_diagnostics = self._expect_diagnostics(
+                uri="file:///tracked.py",
+                diagnostics=[
+                    lsp.Diagnostic(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=0, character=1),
+                            end=lsp.LspPosition(line=1, character=2),
+                        ),
+                        message="description",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    )
+                ],
+            )
+            if enabled_telemetry_event:
+                expectations = [
+                    expect_diagnostics,
+                    self._expect_telemetry_event(
+                        operation="didChange",
+                        result=None,
+                    ),
+                ]
+            else:
+                expectations = [expect_diagnostics]
+            self._assert_output_messages(
+                output_writer,
+                expectations,
+            )
+
+    @setup.async_test
+    async def test_did_change__no_type_errors(self) -> None:
+        tracked_path = Path("/tracked.py")
+        for enabled_telemetry_event in (True, False):
+            querier = server_setup.MockDaemonQuerier(
+                mock_type_errors=[],
+            )
+            server, output_writer = await server_setup.create_server_for_request_test(
+                opened_documents={
+                    tracked_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
+                },
+                querier=querier,
+                server_options=server_setup.create_server_options(
+                    enabled_telemetry_event=enabled_telemetry_event,
+                    language_server_features=LanguageServerFeatures(
+                        unsaved_changes=UnsavedChangesAvailability.ENABLED,
+                    ),
+                ),
+            )
+            await server.process_did_change_request(
+                parameters=lsp.DidChangeTextDocumentParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                    ),
+                    content_changes=[
+                        lsp.ContentChange(text=server_setup.DEFAULT_FILE_CONTENTS)
+                    ],
+                ),
+            )
+            # When unsaved changes is not enabled, we should send no requests.
+            self.assertEqual(
+                querier.requests,
+                [
+                    {"path": tracked_path, "code": server_setup.DEFAULT_FILE_CONTENTS},
+                ],
+            )
+            expect_diagnostics = self._expect_diagnostics(
+                uri="file:///tracked.py",
+                diagnostics=[],
+            )
+            if enabled_telemetry_event:
+                expectations = [
+                    expect_diagnostics,
+                    self._expect_telemetry_event(
+                        operation="didChange",
+                        result=None,
+                    ),
+                ]
+            else:
+                expectations = [expect_diagnostics]
             self._assert_output_messages(
                 output_writer,
                 expectations,

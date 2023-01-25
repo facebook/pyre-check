@@ -238,6 +238,10 @@ def create_pyre_language_server(
         server_state=server_state,
         daemon_manager=daemon_manager,
         querier=querier,
+        client_type_error_handler=ClientTypeErrorHandler(
+            client_output_channel=output_channel,
+            server_state=server_state,
+        ),
     )
 
 

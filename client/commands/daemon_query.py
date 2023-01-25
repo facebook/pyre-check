@@ -23,13 +23,14 @@ import json
 import logging
 from pathlib import Path
 
-from typing import Optional, Type, TypeVar, Union
+from typing import List, Optional, Type, TypeVar, Union
 
 import dataclasses_json
 
-from .. import dataclasses_json_extensions as json_mixins
+from .. import dataclasses_json_extensions as json_mixins, error
 
 from ..language_server import daemon_connection
+from . import incremental
 from .query_response import InvalidQueryResponse, Response
 
 
@@ -109,4 +110,37 @@ async def attempt_typed_async_query(
     ) as exception:
         return DaemonQueryFailure(
             f"When interpretting response type: {response_type.__name__} got: {type(exception).__name__}({exception})"
+        )
+
+
+async def attempt_async_overlay_type_errors(
+    socket_path: Path,
+    source_code_path: Path,
+    overlay_id: str,
+) -> Union[List[error.Error], DaemonQueryFailure]:
+    """
+    In order to type check unsaved changes, we need to get type errors for one
+    specific module in an overlay.
+
+    We cannot use `attempt_async_query` for this because the output types are
+    not quite compatible, but otherwise the logic works the same.
+    """
+    response_text = await daemon_connection.attempt_send_async_raw_request(
+        socket_path=socket_path,
+        request=json.dumps(
+            [
+                "GetOverlayTypeErrors",
+                {"path": str(source_code_path), "overlay_id": overlay_id},
+            ]
+        ),
+    )
+    if isinstance(response_text, daemon_connection.DaemonConnectionFailure):
+        return DaemonQueryFailure(
+            f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.error_message})"
+        )
+    try:
+        return incremental.parse_type_error_response(response_text)
+    except incremental.InvalidServerResponse as exception:
+        return DaemonQueryFailure(
+            f"In attempt async query with response_text, parsing led to uncaught error: ({exception})"
         )
