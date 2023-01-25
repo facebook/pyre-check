@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Iterator, List
+from typing import Callable, Iterator, List, Optional
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -1163,14 +1163,15 @@ class PyreServerTest(testslide.TestCase):
     def _expect_telemetry_event(
         self,
         operation: str,
-        result: object,
+        result: Optional[object],
     ) -> Callable[[str], None]:
         def expectation(actual_json_string: str) -> None:
             actual_telemetry = json.loads(actual_json_string)
             self.assertEqual(actual_telemetry["method"], "telemetry/event")
             telemetry_params = actual_telemetry["params"]
             self.assertEqual(telemetry_params["operation"], operation)
-            self.assertEqual(telemetry_params["response"], result)
+            if result is not None:
+                self.assertEqual(telemetry_params["response"], result)
 
         return expectation
 
@@ -1186,6 +1187,49 @@ class PyreServerTest(testslide.TestCase):
         for raw_message, expectation in zip(output_writer.items(), expectations):
             json_string = server_setup.extract_json_from_json_rpc_message(raw_message)
             expectation(json_string)
+
+    @setup.async_test
+    async def test_did_change__basic(self) -> None:
+        tracked_path = Path("/tracked.py")
+        for enabled_telemetry_event in (True, False):
+            querier = server_setup.MockDaemonQuerier()
+            server, output_writer = await server_setup.create_server_for_request_test(
+                opened_documents={
+                    tracked_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
+                },
+                querier=querier,
+                server_options=server_setup.create_server_options(
+                    enabled_telemetry_event=enabled_telemetry_event
+                ),
+            )
+            await server.process_did_change_request(
+                parameters=lsp.DidChangeTextDocumentParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                    ),
+                    content_changes=[lsp.ContentChange(text="reveal_type(1)")],
+                ),
+            )
+            # When unsaved changes is not enabled, we should send no requests.
+            self.assertEqual(
+                querier.requests,
+                [],
+            )
+            if enabled_telemetry_event:
+                expectations = [
+                    self._expect_telemetry_event(
+                        operation="didChange",
+                        result=None,
+                    ),
+                ]
+            else:
+                expectations = []
+            self._assert_output_messages(
+                output_writer,
+                expectations,
+            )
 
     @setup.async_test
     async def test_hover__basic(self) -> None:
