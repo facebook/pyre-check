@@ -66,7 +66,7 @@ from ..persistent import (
     type_errors_to_diagnostics,
 )
 
-from ..pyre_language_server import PyreLanguageServer, read_lsp_request
+from ..pyre_language_server import read_lsp_request
 from ..pyre_server_options import PyreServerOptions
 from ..server_state import OpenedDocumentState, ServerState
 from ..tests import server_setup
@@ -540,7 +540,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         fake_task_manager = background.TaskManager(
             server_setup.WaitForeverBackgroundTask()
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=server_setup.mock_server_state,
@@ -568,7 +568,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         fake_task_manager = background.TaskManager(
             server_setup.WaitForeverBackgroundTask()
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
@@ -600,7 +600,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         fake_task_manager = background.TaskManager(
             server_setup.WaitForeverBackgroundTask()
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
@@ -632,7 +632,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         fake_task_manager = background.TaskManager(
             server_setup.WaitForeverBackgroundTask()
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
@@ -665,7 +665,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         fake_task_manager = background.TaskManager(
             server_setup.WaitForeverBackgroundTask()
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
@@ -945,7 +945,7 @@ class PyreServerTest(testslide.TestCase):
                 json_rpc.Request(method="exit", parameters=None),
             ]
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=input_channel,
             output_channel=create_memory_text_writer(),
             server_state=server_state,
@@ -967,7 +967,7 @@ class PyreServerTest(testslide.TestCase):
                 json_rpc.Request(method="exit", parameters=None),
             ]
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=input_channel,
             output_channel=create_memory_text_writer(),
             server_state=server_state,
@@ -987,7 +987,7 @@ class PyreServerTest(testslide.TestCase):
                 json_rpc.Request(method="shutdown", parameters=None),
             ]
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             # Feed only a shutdown request to input channel
             input_channel=input_channel,
             # Always rasing in the output channel
@@ -1006,7 +1006,7 @@ class PyreServerTest(testslide.TestCase):
     async def test_exit_gracefully_on_channel_closure(self) -> None:
         server_state = server_setup.mock_server_state
         noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             # Feed nothing to input channel
             input_channel=create_memory_text_reader(""),
             # Always rasing in the output channel
@@ -1024,7 +1024,7 @@ class PyreServerTest(testslide.TestCase):
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = server_setup.mock_server_state
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=server_state,
@@ -1081,7 +1081,7 @@ class PyreServerTest(testslide.TestCase):
                 default_message="pyre is on fire",
             )
         )
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
@@ -1116,7 +1116,7 @@ class PyreServerTest(testslide.TestCase):
             server_setup.WaitForeverBackgroundTask()
         )
         querier = server_setup.MockDaemonQuerier(mock_type_coverage=None)
-        server = PyreLanguageServer(
+        server = server_setup.create_pyre_language_server(
             input_channel=create_memory_text_reader(""),
             output_channel=AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,

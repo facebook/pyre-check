@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-from ... import identifiers, json_rpc
+from ... import error, identifiers, json_rpc
 
 from ...language_server import protocol as lsp
 
@@ -26,6 +26,7 @@ from ...language_server.features import LanguageServerFeatures, TypeCoverageAvai
 from .. import backend_arguments, background, start
 from ..daemon_querier import AbstractDaemonQuerier
 from ..daemon_query import DaemonQueryFailure
+from ..persistent import ClientTypeErrorHandler
 from ..pyre_language_server import PyreLanguageServer
 from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 from ..server_state import OpenedDocumentState, ServerState
@@ -137,16 +138,24 @@ class ExceptionRaisingBytesWriter(AsyncBytesWriter):
 class MockDaemonQuerier(AbstractDaemonQuerier):
     def __init__(
         self,
+        mock_type_errors: Optional[List[error.Error]] = None,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
         mock_hover_response: Optional[lsp.LspHoverResponse] = None,
         mock_definition_response: Optional[List[lsp.LspLocation]] = None,
         mock_references_response: Optional[List[lsp.LspLocation]] = None,
     ) -> None:
         self.requests: List[object] = []
+        self.mock_type_errors = mock_type_errors
         self.mock_type_coverage = mock_type_coverage
         self.mock_hover_response = mock_hover_response
         self.mock_definition_response = mock_definition_response
         self.mock_references_response = mock_references_response
+
+    async def get_type_errors(
+        self,
+        path: Path,
+    ) -> Union[DaemonQueryFailure, List[error.Error]]:
+        return self.mock_type_errors or []
 
     async def get_type_coverage(
         self,
@@ -216,6 +225,22 @@ mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
 mock_server_state: ServerState = ServerState(server_options=mock_initial_server_options)
 
 
+def create_pyre_language_server(
+    input_channel: AsyncTextReader,
+    output_channel: AsyncTextWriter,
+    server_state: ServerState,
+    daemon_manager: background.TaskManager,
+    querier: AbstractDaemonQuerier,
+) -> PyreLanguageServer:
+    return PyreLanguageServer(
+        input_channel=input_channel,
+        output_channel=output_channel,
+        server_state=server_state,
+        daemon_manager=daemon_manager,
+        querier=querier,
+    )
+
+
 async def create_server_for_request_test(
     opened_documents: Dict[Path, OpenedDocumentState],
     querier: MockDaemonQuerier,
@@ -224,13 +249,15 @@ async def create_server_for_request_test(
     # set up the system under test
     fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
     output_writer: MemoryBytesWriter = MemoryBytesWriter()
-    server = PyreLanguageServer(
+    output_channel = AsyncTextWriter(output_writer)
+    server_state = ServerState(
+        server_options=server_options,
+        opened_documents=opened_documents,
+    )
+    server = create_pyre_language_server(
         input_channel=create_memory_text_reader(""),
-        output_channel=AsyncTextWriter(output_writer),
-        server_state=ServerState(
-            server_options=server_options,
-            opened_documents=opened_documents,
-        ),
+        output_channel=output_channel,
+        server_state=server_state,
         daemon_manager=fake_task_manager,
         querier=querier,
     )
