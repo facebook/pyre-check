@@ -313,9 +313,15 @@ def _parse_position(position_json: Dict[str, Any]) -> Position:
 
 def get_invalid_taint_models(
     pyre_connection: PyreConnection,
+    verify_dsl: bool = False,
 ) -> List[InvalidModel]:
     errors: List[InvalidModel] = []
-    response = pyre_connection.query_server("validate_taint_models()")
+    # TODO(T143503449): Combine into one f-string after fbcode pyre version upgrade
+    response = pyre_connection.query_server(
+        "validate_taint_models(verify_dsl=True)"
+        if verify_dsl
+        else "validate_taint_models()"
+    )
     if "response" in response and "errors" in response["response"]:
         found_errors = response["response"]["errors"]
         for error in found_errors:
