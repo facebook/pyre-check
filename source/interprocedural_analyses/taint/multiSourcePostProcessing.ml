@@ -68,7 +68,7 @@ let update_multi_source_issues ~taint_configuration ~callables ~fixpoint_state =
     let sink_traces = Issue.MultiSource.get_first_sink_hops secondary_issue in
     Issue.MultiSource.attach_extra_traces ~source_traces ~sink_traces issue_so_far
   in
-  let update _ issue =
+  let update_multi_source_issue issue =
     if not (Issue.MultiSource.is_multi_source issue) then
       Some issue
     else
@@ -78,9 +78,19 @@ let update_multi_source_issues ~taint_configuration ~callables ~fixpoint_state =
           Some (List.fold secondary_issue_handles ~init:issue ~f:attach_secondary_issue)
       | None -> (* This is a secondary issue that needs to be deleted. *) None
   in
-  List.iter
-    ~f:(fun callable ->
-      let issues = Fixpoint.get_result fixpoint_state callable in
-      let issues = IssueHandle.SerializableMap.filter_map update issues in
-      Fixpoint.set_result fixpoint_state callable issues)
-    callables
+  let issues =
+    IssueHandle.SerializableMap.data issue_handle_map
+    |> List.filter_map ~f:update_multi_source_issue
+  in
+  let callables_to_issues =
+    List.fold issues ~init:Target.Map.empty ~f:(fun so_far issue ->
+        Target.Map.add_multi ~key:issue.Issue.handle.callable ~data:issue so_far)
+  in
+  let update_issues_for_callable (callable, issues) =
+    issues
+    |> List.fold ~init:[] ~f:(fun so_far issue -> (issue.Issue.handle, issue) :: so_far)
+    |> IssueHandle.SerializableMap.of_alist_exn
+    |> Fixpoint.set_result fixpoint_state callable
+  in
+  Fixpoint.clear_results fixpoint_state;
+  List.iter (Target.Map.to_alist callables_to_issues) ~f:update_issues_for_callable

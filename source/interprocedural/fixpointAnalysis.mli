@@ -188,6 +188,8 @@ module Make (Analysis : ANALYSIS) : sig
 
   val set_result : t -> Target.t -> Analysis.Result.t -> unit
 
+  val clear_results : t -> unit
+
   val get_model : t -> Target.t -> Analysis.Model.t option
 
   val get_iterations : t -> int
