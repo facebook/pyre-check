@@ -42,6 +42,10 @@ let assert_type_error_count_for_module ?overlay_id ~module_name ~expected client
   assert_type_error_count client ?overlay_id ~expected ~module_:(Request.Module.OfName module_name)
 
 
+let assert_type_error_count_for_path ?overlay_id ~path ~expected client =
+  assert_type_error_count client ?overlay_id ~expected ~module_:(Request.Module.OfPath path)
+
+
 let test_no_op_server context =
   ScratchProject.setup ~context ~include_typeshed_stubs:false []
   |> ScratchProject.test_server_with_one_connection ~f:(fun _ -> Lwt.return_unit)

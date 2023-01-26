@@ -21,16 +21,6 @@ module ServerInternal = struct
   }
 end
 
-let default_lookup_artifact source_path =
-  (* TODO: Add support for Buck path translation. *)
-  [SourcePath.raw source_path |> ArtifactPath.create]
-
-
-let default_lookup_source artifact_path =
-  (* TODO: Add support for Buck path translation. *)
-  Some (ArtifactPath.raw artifact_path |> SourcePath.create)
-
-
 let get_overlay ~environment overlay_id =
   match overlay_id with
   | None -> Result.Ok (OverlaidEnvironment.root environment)
@@ -40,7 +30,7 @@ let get_overlay ~environment overlay_id =
       | None -> Result.Error (Response.ErrorKind.OverlayNotFound { overlay_id }))
 
 
-let get_modules ~module_tracker module_ =
+let get_modules ~module_tracker ~build_system module_ =
   let modules =
     match module_ with
     | Request.Module.OfName name ->
@@ -54,33 +44,34 @@ let get_modules ~module_tracker module_ =
         Server.PathLookup.modules_of_source_path
           source_path
           ~module_tracker
-          ~lookup_artifact:default_lookup_artifact
+          ~lookup_artifact:(BuildSystem.lookup_artifact build_system)
   in
   match modules with
   | [] -> Result.Error (Response.ErrorKind.ModuleNotTracked { module_ })
   | _ -> Result.Ok modules
 
 
-let get_type_errors_in_overlay ~overlay module_ =
+let get_type_errors_in_overlay ~overlay ~build_system module_ =
   let open Result in
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
-  get_modules ~module_tracker module_
+  get_modules ~module_tracker ~build_system module_
   >>| fun modules ->
   ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers overlay modules
   |> List.sort ~compare:AnalysisError.compare
   |> List.map
        ~f:
          (Server.RequestHandler.instantiate_error
-            ~lookup_source:default_lookup_source
+            ~lookup_source:(BuildSystem.lookup_source build_system)
             ~show_error_traces:false
             ~module_tracker)
 
 
-let handle_get_type_errors ~module_ ~overlay_id { State.environment; _ } =
+let handle_get_type_errors ~module_ ~overlay_id { State.environment; build_system; _ } =
   let open Result in
   get_overlay ~environment overlay_id
   >>= fun overlay ->
-  get_type_errors_in_overlay ~overlay module_ >>| fun type_errors -> Response.TypeErrors type_errors
+  get_type_errors_in_overlay ~overlay ~build_system module_
+  >>| fun type_errors -> Response.TypeErrors type_errors
 
 
 let get_hover_content_for_module ~overlay ~position module_reference =
@@ -88,18 +79,18 @@ let get_hover_content_for_module ~overlay ~position module_reference =
   LocationBasedLookup.hover_info_for_position ~type_environment ~module_reference position
 
 
-let get_hover_in_overlay ~overlay ~position module_ =
+let get_hover_in_overlay ~overlay ~build_system ~position module_ =
   let open Result in
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
-  get_modules ~module_tracker module_
+  get_modules ~module_tracker ~build_system module_
   >>| List.map ~f:(get_hover_content_for_module ~overlay ~position)
 
 
-let handle_hover ~module_ ~position ~overlay_id { State.environment; _ } =
+let handle_hover ~module_ ~position ~overlay_id { State.environment; build_system; _ } =
   let open Result in
   get_overlay ~environment overlay_id
   >>= fun overlay ->
-  get_hover_in_overlay ~overlay ~position module_
+  get_hover_in_overlay ~overlay ~build_system ~position module_
   >>| fun contents ->
   Response.(
     Hover
@@ -109,38 +100,43 @@ let handle_hover ~module_ ~position ~overlay_id { State.environment; _ } =
       })
 
 
-let get_location_of_definition_for_module ~overlay ~position module_reference =
+let get_location_of_definition_for_module ~overlay ~build_system ~position module_reference =
   let open Option in
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
   let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
   LocationBasedLookup.location_of_definition ~type_environment ~module_reference position
   >>= fun { Ast.Location.WithModule.module_reference; start; stop } ->
   Server.PathLookup.instantiate_path
-    ~lookup_source:default_lookup_source
+    ~lookup_source:(BuildSystem.lookup_source build_system)
     ~module_tracker
     module_reference
   >>| fun path -> { Response.DefinitionLocation.path; range = { Ast.Location.start; stop } }
 
 
-let get_location_of_definition_in_overlay ~overlay ~position module_ =
+let get_location_of_definition_in_overlay ~overlay ~build_system ~position module_ =
   let open Result in
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
-  get_modules ~module_tracker module_
-  >>| List.filter_map ~f:(get_location_of_definition_for_module ~overlay ~position)
+  get_modules ~module_tracker ~build_system module_
+  >>| List.filter_map ~f:(get_location_of_definition_for_module ~overlay ~build_system ~position)
 
 
-let handle_location_of_definition ~module_ ~position ~overlay_id { State.environment; _ } =
+let handle_location_of_definition
+    ~module_
+    ~position
+    ~overlay_id
+    { State.environment; build_system; _ }
+  =
   let open Result in
   get_overlay ~environment overlay_id
   >>= fun overlay ->
-  get_location_of_definition_in_overlay ~overlay ~position module_
+  get_location_of_definition_in_overlay ~overlay ~build_system ~position module_
   >>| fun definitions -> Response.(LocationOfDefinition { definitions })
 
 
 let handle_superclasses
     ~class_:{ Request.ClassExpression.module_; qualified_name }
     ~overlay_id
-    { State.environment; _ }
+    { State.environment; build_system; _ }
   =
   let open Result in
   get_overlay ~environment overlay_id
@@ -166,7 +162,7 @@ let handle_superclasses
     | None -> None
   in
 
-  get_modules ~module_tracker module_
+  get_modules ~module_tracker ~build_system module_
   >>= fun modules ->
   (* `get_modules` is guaranteed to evaluate to a non-empty module. *)
   let module_ = List.hd_exn modules in
@@ -199,13 +195,18 @@ let with_broadcast_busy_checking ~subscriptions ~overlay_id f =
   Lwt.return result
 
 
-let handle_local_update ~module_ ~content ~overlay_id ~subscriptions { State.environment; _ }
+let handle_local_update
+    ~module_
+    ~content
+    ~overlay_id
+    ~subscriptions
+    { State.environment; build_system; _ }
     : Response.t Lwt.t
   =
   let module_tracker =
     OverlaidEnvironment.root environment |> ErrorsEnvironment.ReadOnly.module_tracker
   in
-  match get_modules ~module_tracker module_ with
+  match get_modules ~module_tracker ~build_system module_ with
   | Result.Error kind -> Lwt.return (Response.Error kind)
   | Result.Ok modules ->
       let code_updates =

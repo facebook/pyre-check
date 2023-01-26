@@ -7,6 +7,8 @@
 
 open Base
 open OUnit2
+module Request = CodeNavigationServer.Testing.Request
+module Response = CodeNavigationServer.Testing.Response
 module BuildSystem = CodeNavigationServer.BuildSystem
 
 let assert_artifact_events_equal ~context ~expected actual =
@@ -23,6 +25,25 @@ let create_buck_build_system_for_testing ~source_root ~artifact_root ~construct_
   |> Buck.Builder.Lazy.create ~source_root ~artifact_root
   |> BuildSystem.Initializer.buck ~artifact_root
   |> BuildSystem.Initializer.initialize
+
+
+let create_build_system_initializer_for_testing
+    ?update_working_set
+    ?update_sources
+    ?lookup_source
+    ?lookup_artifact
+    ?(cleanup = fun () -> ())
+    ()
+  =
+  let initialize () =
+    BuildSystem.create_for_testing
+      ?update_working_set
+      ?update_sources
+      ?lookup_source
+      ?lookup_artifact
+      ()
+  in
+  BuildSystem.Initializer.create_for_testing ~initialize ~cleanup ()
 
 
 let test_buck_update_working_set context =
@@ -175,10 +196,126 @@ let test_buck_update_sources context =
   Lwt.return_unit
 
 
+let test_build_system_path_lookup context =
+  let project =
+    let build_system_initializer =
+      (* We create a fake build system that always translate artifacts with name "a.py" into sources
+         with name "b.py" under the same directory *)
+      let lookup_source artifact_path =
+        let raw_path = ArtifactPath.raw artifact_path in
+        if String.equal (PyrePath.last raw_path) "a.py" then
+          PyrePath.create_relative ~root:(PyrePath.get_directory raw_path) ~relative:"b.py"
+          |> SourcePath.create
+          |> Option.some
+        else
+          None
+      in
+      let lookup_artifact source_path =
+        let raw_path = SourcePath.raw source_path in
+        if String.equal (PyrePath.last raw_path) "b.py" then
+          [
+            PyrePath.create_relative ~root:(PyrePath.get_directory raw_path) ~relative:"a.py"
+            |> ArtifactPath.create;
+          ]
+        else
+          []
+      in
+      create_build_system_initializer_for_testing ~lookup_source ~lookup_artifact ()
+    in
+    ScratchProject.setup
+      ~context
+      ~build_system_initializer
+      ["a.py", "x: float = 4.2\nreveal_type(x)"]
+  in
+  let root = ScratchProject.source_root_of project in
+  let path_a = PyrePath.create_relative ~root ~relative:"a.py" in
+  let path_b = PyrePath.create_relative ~root ~relative:"b.py" in
+  let expected_error =
+    Analysis.AnalysisError.Instantiated.of_yojson
+      (`Assoc
+        [
+          "line", `Int 2;
+          "column", `Int 0;
+          "stop_line", `Int 2;
+          "stop_column", `Int 11;
+          (* Paths in type errors always refer to source paths *)
+          "path", `String (PyrePath.absolute path_b);
+          "code", `Int (-1);
+          "name", `String "Revealed type";
+          "description", `String "Revealed type [-1]: Revealed type for `x` is `float`.";
+          "long_description", `String "Revealed type [-1]: Revealed type for `x` is `float`.";
+          "concise_description", `String "Revealed type [-1]: Revealed type for `x` is `float`.";
+          (* Note how the module qualifier a does not match the file path b.py due to build system
+             path translation *)
+          "define", `String "a.$toplevel";
+        ])
+    |> Result.ok_or_failwith
+  in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        (* Server should not be aware of `a.py` on type error query *)
+        ScratchProject.ClientConnection.assert_error_response
+          ~request:
+            Request.(
+              Query
+                (Query.GetTypeErrors
+                   { module_ = Module.OfPath (PyrePath.absolute path_a); overlay_id = None }))
+          ~kind:"ModuleNotTracked";
+        (* Server should not be aware of `a.py` on gotodef query *)
+        ScratchProject.ClientConnection.assert_error_response
+          ~request:
+            Request.(
+              Query
+                (Query.LocationOfDefinition
+                   {
+                     module_ = Module.OfPath (PyrePath.absolute path_a);
+                     overlay_id = None;
+                     position = BasicTest.position 2 12;
+                   }))
+          ~kind:"ModuleNotTracked";
+        (* Server should be aware of `b.py` on type error query *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Query
+                (Query.GetTypeErrors
+                   { module_ = Module.OfPath (PyrePath.absolute path_b); overlay_id = None }))
+          ~expected:(Response.TypeErrors [expected_error]);
+        (* Server should be aware of `b.py` on gotodef query *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              (* This location points to `x` in "reveal_type(x)" *)
+              Query
+                (Query.LocationOfDefinition
+                   {
+                     overlay_id = None;
+                     module_ = Module.OfPath (PyrePath.absolute path_b);
+                     position = BasicTest.position 2 12;
+                   }))
+          ~expected:
+            Response.(
+              LocationOfDefinition
+                {
+                  definitions =
+                    [
+                      {
+                        DefinitionLocation.path = PyrePath.absolute path_b;
+                        range = BasicTest.range 1 0 1 1;
+                      };
+                    ];
+                });
+      ]
+
+
 let () =
   "build_system_test"
   >::: [
          "test_buck_updaet_working_set" >:: OUnitLwt.lwt_wrapper test_buck_update_working_set;
          "test_buck_update_sources" >:: OUnitLwt.lwt_wrapper test_buck_update_sources;
+         "test_build_system_path_lookup" >:: OUnitLwt.lwt_wrapper test_build_system_path_lookup;
        ]
   |> Test.run
