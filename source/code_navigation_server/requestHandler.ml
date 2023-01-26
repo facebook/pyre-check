@@ -298,6 +298,22 @@ let get_artifact_path_event { Request.FileUpdateEvent.kind; path } =
   PyrePath.create_absolute path |> ArtifactPath.create |> ArtifactPath.Event.create ~kind
 
 
+let handle_non_critical_file_update ~subscriptions ~environment artifact_path_events =
+  match artifact_path_events with
+  | [] -> Lwt.return_unit
+  | _ ->
+      let run_file_update () =
+        let configuration =
+          OverlaidEnvironment.root environment
+          |> ErrorsEnvironment.ReadOnly.controls
+          |> EnvironmentControls.configuration
+        in
+        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+            OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
+      in
+      with_broadcast_busy_checking ~subscriptions ~overlay_id:None run_file_update
+
+
 let handle_file_update
     ~events
     ~subscriptions
@@ -312,21 +328,16 @@ let handle_file_update
         List.map events ~f:get_artifact_path_event
       in
       let%lwt () =
-        match artifact_path_events with
-        | [] -> Lwt.return_unit
-        | _ ->
-            let run_file_update () =
-              let configuration =
-                OverlaidEnvironment.root environment
-                |> ErrorsEnvironment.ReadOnly.controls
-                |> EnvironmentControls.configuration
-              in
-              Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-                  OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
-            in
-            with_broadcast_busy_checking ~subscriptions ~overlay_id:None run_file_update
+        handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
       in
       Lwt.return_ok Response.Ok
+
+
+let handle_working_set_update ~subscriptions { State.environment; build_system; open_files } =
+  let%lwt artifact_path_events =
+    OpenFiles.open_files open_files |> BuildSystem.update_working_set build_system
+  in
+  handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
 
 
 let response_from_result = function
@@ -390,12 +401,14 @@ let handle_command ~server:{ ServerInternal.state; subscriptions; properties } =
   | Request.Command.FileOpened { path; content; overlay_id } ->
       let f state =
         let%lwt response = handle_file_opened ~path ~content ~overlay_id ~subscriptions state in
+        let%lwt () = handle_working_set_update ~subscriptions state in
         Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f
   | Request.Command.FileClosed { path; overlay_id } ->
       let f state =
         let%lwt response = handle_file_closed ~path ~overlay_id ~subscriptions state in
+        let%lwt () = handle_working_set_update ~subscriptions state in
         Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f

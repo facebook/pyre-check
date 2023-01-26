@@ -20,10 +20,23 @@ let assert_artifact_events_equal ~context ~expected actual =
     (List.sort ~compare:ArtifactPath.Event.compare actual)
 
 
-let create_buck_build_system_for_testing ~source_root ~artifact_root ~construct_build_map () =
+let create_buck_build_system_initializer_for_testing
+    ~source_root
+    ~artifact_root
+    ~construct_build_map
+    ()
+  =
   Buck.Interface.Lazy.create_for_testing ~construct_build_map ()
   |> Buck.Builder.Lazy.create ~source_root ~artifact_root
   |> BuildSystem.Initializer.buck ~artifact_root
+
+
+let create_buck_build_system_for_testing ~source_root ~artifact_root ~construct_build_map () =
+  create_buck_build_system_initializer_for_testing
+    ~source_root
+    ~artifact_root
+    ~construct_build_map
+    ()
   |> BuildSystem.Initializer.initialize
 
 
@@ -311,11 +324,122 @@ let test_build_system_path_lookup context =
       ]
 
 
+let assert_module_not_tracked module_ =
+  ScratchProject.ClientConnection.assert_error_response
+    ~request:Request.(Query (Query.GetTypeErrors { module_; overlay_id = None }))
+    ~kind:"ModuleNotTracked"
+
+
+let assert_module_path_not_tracked path =
+  assert_module_not_tracked (Request.Module.OfPath (PyrePath.absolute path))
+
+
+let test_build_system_open_close context =
+  let source_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let artifact_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let raw_source_path0 = PyrePath.create_relative ~root:source_root ~relative:"source0.py" in
+  let raw_source_path1 = PyrePath.create_relative ~root:source_root ~relative:"source1.py" in
+  File.create raw_source_path0 ~content:"reveal_type(0)" |> File.write;
+  File.create raw_source_path1 ~content:"reveal_type(1)\nreveal_type(2)" |> File.write;
+
+  let project =
+    let build_system_initializer =
+      let construct_build_map working_set =
+        let mappings = [] in
+        let mappings =
+          if List.exists working_set ~f:(String.equal "source0.py") then
+            ("artifact0.py", "source0.py") :: mappings
+          else
+            mappings
+        in
+        let mappings =
+          if List.exists working_set ~f:(String.equal "source1.py") then
+            ("artifact1.py", "source1.py") :: mappings
+          else
+            mappings
+        in
+        Buck.BuildMap.(Partial.of_alist_exn mappings |> create) |> Lwt.return
+      in
+      create_buck_build_system_initializer_for_testing
+        ~source_root
+        ~artifact_root
+        ~construct_build_map
+        ()
+    in
+    ScratchProject.setup
+      ~context
+      ~source_root:artifact_root
+      ~filter_directories:[source_root]
+      ~build_system_initializer
+      []
+  in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        (* Initially nothing exists *)
+        assert_module_path_not_tracked raw_source_path0;
+        assert_module_path_not_tracked raw_source_path1;
+        (* Open source0.py *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.FileOpened
+                   { path = PyrePath.absolute raw_source_path0; content = None; overlay_id = None }))
+          ~expected:Response.Ok;
+        BasicTest.assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~expected:1;
+        assert_module_path_not_tracked raw_source_path1;
+        (* Open source1.py *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.FileOpened
+                   { path = PyrePath.absolute raw_source_path1; content = None; overlay_id = None }))
+          ~expected:Response.Ok;
+        BasicTest.assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~expected:2;
+        BasicTest.assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~expected:1;
+        (* Close source0.py *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.FileClosed { path = PyrePath.absolute raw_source_path0; overlay_id = None }))
+          ~expected:Response.Ok;
+        assert_module_path_not_tracked raw_source_path0;
+        BasicTest.assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~expected:2;
+        (* Close source1.py *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.FileClosed { path = PyrePath.absolute raw_source_path1; overlay_id = None }))
+          ~expected:Response.Ok;
+        assert_module_path_not_tracked raw_source_path0;
+        assert_module_path_not_tracked raw_source_path1;
+      ]
+
+
 let () =
   "build_system_test"
   >::: [
          "test_buck_updaet_working_set" >:: OUnitLwt.lwt_wrapper test_buck_update_working_set;
          "test_buck_update_sources" >:: OUnitLwt.lwt_wrapper test_buck_update_sources;
          "test_build_system_path_lookup" >:: OUnitLwt.lwt_wrapper test_build_system_path_lookup;
+         "test_build_system_open_close" >:: OUnitLwt.lwt_wrapper test_build_system_open_close;
        ]
   |> Test.run
