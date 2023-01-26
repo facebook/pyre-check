@@ -466,6 +466,9 @@ module Testing : sig
         | Idle
             (** This response is sent when the code navigation server is done processing a
                 outstanding incremental update request in the background. *)
+        | BusyBuilding
+            (** This response is sent when the code navigation server is about to start performing
+                an incremental build system update. *)
         | BusyChecking of { overlay_id: string option }
             (** This response is sent when the code navigation server is about to start performing
                 an incremental update request.

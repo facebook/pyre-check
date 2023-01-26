@@ -103,6 +103,11 @@ let test_server_subscription_busy_file_update context =
     let%lwt () = Lwt_mvar.put mailbox "subscribed" in
     let%lwt () =
       ScratchProject.ClientConnection.assert_subscription_response
+        ~expected:Response.(ServerStatus Status.BusyBuilding)
+        connection
+    in
+    let%lwt () =
+      ScratchProject.ClientConnection.assert_subscription_response
         ~expected:Response.(ServerStatus (Status.BusyChecking { overlay_id = None }))
         connection
     in

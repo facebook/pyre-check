@@ -41,6 +41,7 @@ end
 module Status = struct
   type t =
     | Idle
+    | BusyBuilding
     | BusyChecking of { overlay_id: string option }
     | Stop of { message: string }
   [@@deriving sexp, compare, yojson { strict = false }]

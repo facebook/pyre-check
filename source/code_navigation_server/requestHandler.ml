@@ -182,17 +182,23 @@ let handle_superclasses
     Response.Superclasses { superclasses } |> Result.return
 
 
-let with_broadcast_busy_checking ~subscriptions ~overlay_id f =
+let with_broadcast ~subscriptions ~status f =
   let%lwt () =
-    Subscriptions.broadcast
-      subscriptions
-      ~response:(lazy Response.(ServerStatus (Status.BusyChecking { overlay_id })))
+    Subscriptions.broadcast subscriptions ~response:(lazy Response.(ServerStatus status))
   in
-  let result = f () in
+  let%lwt result = f () in
   let%lwt () =
     Subscriptions.broadcast subscriptions ~response:(lazy Response.(ServerStatus Status.Idle))
   in
   Lwt.return result
+
+
+let with_broadcast_busy_checking ~subscriptions ~overlay_id f =
+  with_broadcast ~subscriptions ~status:(Response.Status.BusyChecking { overlay_id }) f
+
+
+let with_broadcast_busy_building ~subscriptions f =
+  with_broadcast ~subscriptions ~status:Response.Status.BusyBuilding f
 
 
 let handle_local_update
@@ -228,6 +234,7 @@ let handle_local_update
         | _ ->
             let run_local_update () =
               OverlaidEnvironment.update_overlay_with_code environment ~code_updates overlay_id
+              |> Lwt.return
             in
             let%lwt _ =
               with_broadcast_busy_checking
@@ -320,6 +327,7 @@ let handle_non_critical_file_update ~subscriptions ~environment artifact_path_ev
         in
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
             OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
+        |> Lwt.return
       in
       with_broadcast_busy_checking ~subscriptions ~overlay_id:None run_file_update
 
@@ -334,6 +342,11 @@ let handle_file_update
   | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)
   | None ->
       let source_path_events = List.map events ~f:get_source_path_event in
+      let%lwt () =
+        Subscriptions.broadcast
+          subscriptions
+          ~response:(lazy Response.(ServerStatus Status.BusyBuilding))
+      in
       let%lwt changed_artifacts_from_rebuild =
         let working_set = OpenFiles.open_files open_files in
         BuildSystem.update_sources build_system source_path_events ~working_set
@@ -352,7 +365,8 @@ let handle_file_update
 
 let handle_working_set_update ~subscriptions { State.environment; build_system; open_files } =
   let%lwt artifact_path_events =
-    OpenFiles.open_files open_files |> BuildSystem.update_working_set build_system
+    with_broadcast_busy_building ~subscriptions (fun () ->
+        OpenFiles.open_files open_files |> BuildSystem.update_working_set build_system)
   in
   handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
 
