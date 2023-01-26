@@ -288,14 +288,24 @@ let handle_file_closed ~path ~overlay_id ~subscriptions ({ State.open_files; _ }
 
 let get_raw_path { Request.FileUpdateEvent.path; _ } = PyrePath.create_absolute path
 
+let get_source_path_event_kind = function
+  | Request.FileUpdateEvent.Kind.CreatedOrChanged -> SourcePath.Event.Kind.CreatedOrChanged
+  | Request.FileUpdateEvent.Kind.Deleted -> SourcePath.Event.Kind.Deleted
+
+
+let get_source_path_event { Request.FileUpdateEvent.kind; path } =
+  let kind = get_source_path_event_kind kind in
+  PyrePath.create_absolute path |> SourcePath.create |> SourcePath.Event.create ~kind
+
+
 let get_artifact_path_event_kind = function
-  | Request.FileUpdateEvent.Kind.CreatedOrChanged -> ArtifactPath.Event.Kind.CreatedOrChanged
-  | Request.FileUpdateEvent.Kind.Deleted -> ArtifactPath.Event.Kind.Deleted
+  | SourcePath.Event.Kind.CreatedOrChanged -> ArtifactPath.Event.Kind.CreatedOrChanged
+  | SourcePath.Event.Kind.Deleted -> ArtifactPath.Event.Kind.Deleted
 
 
-let get_artifact_path_event { Request.FileUpdateEvent.kind; path } =
+let get_artifact_path_event ~build_system { SourcePath.Event.kind; path } =
   let kind = get_artifact_path_event_kind kind in
-  PyrePath.create_absolute path |> ArtifactPath.create |> ArtifactPath.Event.create ~kind
+  BuildSystem.lookup_artifact build_system path |> List.map ~f:(ArtifactPath.Event.create ~kind)
 
 
 let handle_non_critical_file_update ~subscriptions ~environment artifact_path_events =
@@ -318,14 +328,21 @@ let handle_file_update
     ~events
     ~subscriptions
     ~properties:{ Server.ServerProperties.critical_files; _ }
-    { State.environment; _ }
+    { State.environment; build_system; open_files }
   =
   match Server.CriticalFile.find critical_files ~within:(List.map events ~f:get_raw_path) with
   | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)
   | None ->
+      let source_path_events = List.map events ~f:get_source_path_event in
+      let%lwt changed_artifacts_from_rebuild =
+        let working_set = OpenFiles.open_files open_files in
+        BuildSystem.update_sources build_system source_path_events ~working_set
+      in
+      let changed_artifacts_from_source =
+        List.concat_map source_path_events ~f:(get_artifact_path_event ~build_system)
+      in
       let artifact_path_events =
-        (* TODO: Add support for Buck path translation. *)
-        List.map events ~f:get_artifact_path_event
+        List.append changed_artifacts_from_rebuild changed_artifacts_from_source
       in
       let%lwt () =
         handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
