@@ -1223,14 +1223,23 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           (List.length read_from_cache_queries)
           QueryKind.query_kind_name
       in
-      generate_models_from_read_cache_queries_on_targets
-        ~verbose
-        ~resolution
-        ~class_hierarchy_graph
-        ~source_sink_filter
-        ~stubs
-        ~cache
-        read_from_cache_queries
+      let results =
+        generate_models_from_read_cache_queries_on_targets
+          ~verbose
+          ~resolution
+          ~class_hierarchy_graph
+          ~source_sink_filter
+          ~stubs
+          ~cache
+          read_from_cache_queries
+      in
+      let () =
+        Log.info
+          "Generated %d models from cached %s model queries."
+          (List.length (ModelQueryRegistryMap.get_models results))
+          QueryKind.query_kind_name
+      in
+      results
     in
 
     let model_query_results_regular_queries =
@@ -1240,15 +1249,24 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           (List.length regular_queries)
           QueryKind.query_kind_name
       in
-      generate_models_from_regular_queries_on_targets_with_multiprocessing
-        ~verbose
-        ~resolution
-        ~scheduler
-        ~class_hierarchy_graph
-        ~source_sink_filter
-        ~stubs
-        ~targets
-        regular_queries
+      let results =
+        generate_models_from_regular_queries_on_targets_with_multiprocessing
+          ~verbose
+          ~resolution
+          ~scheduler
+          ~class_hierarchy_graph
+          ~source_sink_filter
+          ~stubs
+          ~targets
+          regular_queries
+      in
+      let () =
+        Log.info
+          "Generated %d models from regular %s model queries."
+          (List.length (ModelQueryRegistryMap.get_models results))
+          QueryKind.query_kind_name
+      in
+      results
     in
 
     ModelQueryRegistryMap.merge
