@@ -5,6 +5,79 @@
     "callable": "string_conversion.analyze_implicit_call",
     "callable_line": 108,
     "code": 5001,
+    "line": 114,
+    "start": 9,
+    "end": 15,
+    "filename": "string_conversion.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 114, "start": 12, "end": 13 } ],
+            "origin": {
+              "filename": "string_conversion.py",
+              "line": 110,
+              "start": 10,
+              "end": 21
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": {
+              "filename": "string_conversion.py",
+              "line": 114,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "string_conversion.analyze_implicit_call:5001:0:Call|eval|1|formal(arg):60c3fc42d556350aebd2ae733337759f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.analyze_implicit_call",
+    "callable_line": 108,
+    "code": 5001,
     "line": 112,
     "start": 9,
     "end": 20,
@@ -73,79 +146,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "string_conversion.analyze_implicit_call:5001:0:Call|eval|0|formal(arg):47162a06740e61b2ff38aff07e5fd6fb"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "string_conversion.analyze_implicit_call",
-    "callable_line": 108,
-    "code": 5001,
-    "line": 114,
-    "start": 9,
-    "end": 15,
-    "filename": "string_conversion.py",
-    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 114, "start": 12, "end": 13 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 110,
-              "start": 10,
-              "end": 21
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 114,
-              "start": 9,
-              "end": 15
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "tainted" },
-      { "always-via": "format-string" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "eval",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "string_conversion.analyze_implicit_call:5001:0:Call|eval|1|formal(arg):60c3fc42d556350aebd2ae733337759f"
   }
 }
 {

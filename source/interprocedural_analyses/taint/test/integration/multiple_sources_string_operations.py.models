@@ -86,9 +86,9 @@
     "callable": "multiple_sources_string_operations.string_operations",
     "callable_line": 25,
     "code": 4323,
-    "line": 32,
-    "start": 12,
-    "end": 27,
+    "line": 29,
+    "start": 17,
+    "end": 32,
     "filename": "multiple_sources_string_operations.py",
     "message": "Potential SQL strings together with user controlled data flow into string operations",
     "traces": [
@@ -128,7 +128,7 @@
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringSQL[sql]]",
-                "origin": { "line": 32, "start": 4, "end": 9 },
+                "origin": { "line": 29, "start": 4, "end": 9 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringSQL[sql]]",
                 "trace_kind": "sink"
               }
@@ -136,16 +136,16 @@
             "kinds": [
               {
                 "multi_source_issue_handles": [
-                  "multiple_sources_string_operations.string_operations:4323:0:Call|str.__add__|0|formal(self):15548d8dcf134784a1068a013ab3b52e"
+                  "multiple_sources_string_operations.string_operations:4323:0:Call|str.format|0|formal(self):92d72541ec88425dab392b4ca7f9693f"
                 ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringSQL[ucdata]]"
               }
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 32,
-              "start": 12,
-              "end": 27
+              "line": 29,
+              "start": 17,
+              "end": 32
             }
           }
         ]
@@ -154,11 +154,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "str.__add__",
+      "callee": "str.format",
       "index": 0,
-      "parameter": "formal(other)"
+      "parameter": "formal(*rest0)"
     },
-    "master_handle": "multiple_sources_string_operations.string_operations:4323:0:Call|str.__add__|0|formal(other):824fee63fe33327b00aaaac45e460e91"
+    "master_handle": "multiple_sources_string_operations.string_operations:4323:0:Call|str.format|0|formal(*rest0):fe95daae2f38ab0e87a9e3b2db1a6d64"
   }
 }
 {
@@ -326,9 +326,9 @@
     "callable": "multiple_sources_string_operations.string_operations",
     "callable_line": 25,
     "code": 4323,
-    "line": 29,
-    "start": 17,
-    "end": 32,
+    "line": 32,
+    "start": 12,
+    "end": 27,
     "filename": "multiple_sources_string_operations.py",
     "message": "Potential SQL strings together with user controlled data flow into string operations",
     "traces": [
@@ -368,7 +368,7 @@
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringSQL[sql]]",
-                "origin": { "line": 29, "start": 4, "end": 9 },
+                "origin": { "line": 32, "start": 4, "end": 9 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringSQL[sql]]",
                 "trace_kind": "sink"
               }
@@ -376,16 +376,16 @@
             "kinds": [
               {
                 "multi_source_issue_handles": [
-                  "multiple_sources_string_operations.string_operations:4323:0:Call|str.format|0|formal(self):92d72541ec88425dab392b4ca7f9693f"
+                  "multiple_sources_string_operations.string_operations:4323:0:Call|str.__add__|0|formal(self):15548d8dcf134784a1068a013ab3b52e"
                 ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringSQL[ucdata]]"
               }
             ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
-              "line": 29,
-              "start": 17,
-              "end": 32
+              "line": 32,
+              "start": 12,
+              "end": 27
             }
           }
         ]
@@ -394,11 +394,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "str.format",
+      "callee": "str.__add__",
       "index": 0,
-      "parameter": "formal(*rest0)"
+      "parameter": "formal(other)"
     },
-    "master_handle": "multiple_sources_string_operations.string_operations:4323:0:Call|str.format|0|formal(*rest0):fe95daae2f38ab0e87a9e3b2db1a6d64"
+    "master_handle": "multiple_sources_string_operations.string_operations:4323:0:Call|str.__add__|0|formal(other):824fee63fe33327b00aaaac45e460e91"
   }
 }
 {

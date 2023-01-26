@@ -112,7 +112,7 @@ module Candidates : sig
     :  t ->
     taint_configuration:TaintConfiguration.Heap.t ->
     define:Define.t Node.t ->
-    issue list
+    issue IssueHandle.SerializableMap.t
 end
 
 module MultiSource : sig
@@ -128,7 +128,7 @@ module MultiSource : sig
      related issues (under a partial sink kind). *)
   val find_related_issues
     :  taint_configuration:TaintConfiguration.Heap.t ->
-    issue_handle_map:t IssueHandle.Map.t ->
+    issue_handle_map:t IssueHandle.SerializableMap.t ->
     issue ->
     issue list Sinks.Map.t
 

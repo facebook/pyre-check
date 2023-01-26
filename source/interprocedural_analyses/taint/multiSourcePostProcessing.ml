@@ -10,16 +10,15 @@ module Target = Interprocedural.Target
 
 (* A map from issue handles to issues. *)
 let issue_handle_map ~callables ~fixpoint_state =
-  let accumulate issue_handle_map issue =
-    (* TODO(T140234367): Fail if multiple issues map to the same issue handle. We have integration
-       tests that demonstrate this problem. *)
-    IssueHandle.Map.set issue_handle_map ~key:issue.Issue.handle ~data:issue
+  let union handle _ _ =
+    Format.asprintf "Multiple issues share the same issue handle: %s" (IssueHandle.show handle)
+    |> failwith
   in
   let accumulate_issue_handles issue_handle_map callable =
-    let issues = Fixpoint.get_result fixpoint_state callable in
-    List.fold issues ~init:issue_handle_map ~f:accumulate
+    Fixpoint.get_result fixpoint_state callable
+    |> IssueHandle.SerializableMap.union union issue_handle_map
   in
-  List.fold callables ~f:accumulate_issue_handles ~init:IssueHandle.Map.empty
+  List.fold callables ~f:accumulate_issue_handles ~init:IssueHandle.SerializableMap.empty
 
 
 (* Return a map from main issues (which will be attached with the secondary issues) to secondary
@@ -40,7 +39,10 @@ let collect_main_issues ~taint_configuration ~issue_handle_map =
       else
         List.cartesian_product main_issues secondary_issues
         |> List.fold ~init:so_far ~f:(fun so_far (main_issue, secondary_issue) ->
-               IssueHandle.Map.add_multi so_far ~key:main_issue.handle ~data:secondary_issue.handle)
+               IssueHandle.SerializableMap.add_multi
+                 ~key:main_issue.handle
+                 ~data:secondary_issue.handle
+                 so_far)
   in
   let accumulate_per_issue so_far issue =
     Sinks.Map.fold
@@ -48,8 +50,8 @@ let collect_main_issues ~taint_configuration ~issue_handle_map =
       (MultiSource.find_related_issues ~taint_configuration ~issue_handle_map issue)
       so_far
   in
-  IssueHandle.Map.data issue_handle_map
-  |> List.fold ~init:IssueHandle.Map.empty ~f:accumulate_per_issue
+  IssueHandle.SerializableMap.data issue_handle_map
+  |> List.fold ~init:IssueHandle.SerializableMap.empty ~f:accumulate_per_issue
 
 
 (* For a multi-source rule, only keep its main issue, based on the taint configuration.
@@ -59,16 +61,18 @@ let update_multi_source_issues ~taint_configuration ~callables ~fixpoint_state =
   let issue_handle_map = issue_handle_map ~callables ~fixpoint_state in
   let main_issues = collect_main_issues ~taint_configuration ~issue_handle_map in
   let attach_secondary_issue issue_so_far secondary_issue_handle =
-    let secondary_issue = IssueHandle.Map.find_exn issue_handle_map secondary_issue_handle in
+    let secondary_issue =
+      IssueHandle.SerializableMap.find secondary_issue_handle issue_handle_map
+    in
     let source_traces = Issue.MultiSource.get_first_source_hops secondary_issue in
     let sink_traces = Issue.MultiSource.get_first_sink_hops secondary_issue in
     Issue.MultiSource.attach_extra_traces ~source_traces ~sink_traces issue_so_far
   in
-  let update issue =
+  let update _ issue =
     if not (Issue.MultiSource.is_multi_source issue) then
       Some issue
     else
-      match IssueHandle.Map.find main_issues issue.handle with
+      match IssueHandle.SerializableMap.find_opt issue.handle main_issues with
       | Some secondary_issue_handles ->
           (* This is a main issue that needs to be attached with a secondary issue. *)
           Some (List.fold secondary_issue_handles ~init:issue ~f:attach_secondary_issue)
@@ -77,6 +81,6 @@ let update_multi_source_issues ~taint_configuration ~callables ~fixpoint_state =
   List.iter
     ~f:(fun callable ->
       let issues = Fixpoint.get_result fixpoint_state callable in
-      let issues = List.filter_map issues ~f:update in
+      let issues = IssueHandle.SerializableMap.filter_map update issues in
       Fixpoint.set_result fixpoint_state callable issues)
     callables

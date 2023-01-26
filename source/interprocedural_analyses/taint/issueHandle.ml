@@ -108,5 +108,5 @@ module T = struct
 end
 
 include T
-module Map = Map.Make (T)
+module SerializableMap = Data_structures.SerializableMap.Make (T)
 module Set = Caml.Set.Make (T)

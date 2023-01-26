@@ -22,4 +22,4 @@ val run
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->
   unit ->
-  Model.Forward.t * Issue.t list * Issue.TriggeredSinkLocationMap.t
+  Model.Forward.t * Issue.t IssueHandle.SerializableMap.t * Issue.TriggeredSinkLocationMap.t

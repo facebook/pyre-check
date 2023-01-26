@@ -17,75 +17,6 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "multi_subkind.source_b" } ],
-                "kind": "SourceA[KindB]"
-              }
-            ],
-            "origin": {
-              "filename": "multi_subkind.py",
-              "line": 31,
-              "start": 13,
-              "end": 23
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" }, { "first-index": "b" }
-                ],
-                "leaves": [ { "name": "multi_subkind.sink_b" } ],
-                "length": 1,
-                "kind": "SinkA[KindB]"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "multi_subkind.py",
-                "line": 32,
-                "start": 15,
-                "end": 16
-              },
-              "resolves_to": [ "multi_subkind.multi_sink" ],
-              "port": "formal(d)[b]"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "has": "first-index" }, { "first-index": "b" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "multi_subkind.multi_sink",
-      "index": 0,
-      "parameter": "formal(d)"
-    },
-    "master_handle": "multi_subkind.issue:1000:0:Call|multi_subkind.multi_sink|0|formal(d):58ce21d125b38395a964fbad39de0b2d"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multi_subkind.issue",
-    "callable_line": 28,
-    "code": 1000,
-    "line": 32,
-    "start": 15,
-    "end": 16,
-    "filename": "multi_subkind.py",
-    "message": "source A to sink A",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
                 "leaves": [ { "name": "multi_subkind.source_a" } ],
                 "kind": "SourceA[KindA]"
               }
@@ -93,6 +24,20 @@
             "origin": {
               "filename": "multi_subkind.py",
               "line": 30,
+              "start": 13,
+              "end": 23
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "multi_subkind.source_b" } ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
+            "origin": {
+              "filename": "multi_subkind.py",
+              "line": 31,
               "start": 13,
               "end": 23
             }
@@ -123,11 +68,37 @@
               "resolves_to": [ "multi_subkind.multi_sink" ],
               "port": "formal(d)[a]"
             }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "b" }
+                ],
+                "leaves": [ { "name": "multi_subkind.sink_b" } ],
+                "length": 1,
+                "kind": "SinkA[KindB]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multi_subkind.py",
+                "line": 32,
+                "start": 15,
+                "end": 16
+              },
+              "resolves_to": [ "multi_subkind.multi_sink" ],
+              "port": "formal(d)[b]"
+            }
           }
         ]
       }
     ],
-    "features": [ { "has": "first-index" }, { "first-index": "a" } ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "b" },
+      { "first-index": "a" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "multi_subkind.multi_sink",

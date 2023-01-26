@@ -80,7 +80,9 @@ let assert_fixpoint
     (Fixpoint.get_iterations fixpoint_state)
     ~printer:Int.to_string;
   let get_model = Fixpoint.get_model fixpoint_state in
-  let get_errors = Fixpoint.get_result fixpoint_state in
+  let get_errors callable =
+    Fixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
+  in
   let () =
     List.iter
       ~f:(check_expectation ~type_environment ~taint_configuration ~get_model ~get_errors)

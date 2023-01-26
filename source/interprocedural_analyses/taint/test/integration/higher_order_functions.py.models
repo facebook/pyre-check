@@ -80,9 +80,9 @@
     "callable": "higher_order_functions.test_conditional_apply_forward",
     "callable_line": 112,
     "code": 5002,
-    "line": 113,
+    "line": 118,
     "start": 15,
-    "end": 61,
+    "end": 62,
     "filename": "higher_order_functions.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -102,12 +102,12 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "lambda" }
             ],
-            "tito_positions": [ { "line": 113, "start": 33, "end": 45 } ],
+            "tito_positions": [ { "line": 118, "start": 39, "end": 51 } ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 113,
-              "start": 33,
-              "end": 45
+              "line": 118,
+              "start": 39,
+              "end": 51
             }
           }
         ]
@@ -125,9 +125,9 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 113,
+              "line": 118,
               "start": 15,
-              "end": 61
+              "end": 62
             }
           }
         ]
@@ -143,10 +143,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 0,
+      "index": 3,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.test_conditional_apply_forward:5002:0:Call|_test_sink|0|formal(arg):92e77d5b50c5acc056876ffbfe57f28b"
+    "master_handle": "higher_order_functions.test_conditional_apply_forward:5002:0:Call|_test_sink|3|formal(arg):0f1ec80077a9c274a969c0a5dec62e99"
   }
 }
 {
@@ -305,9 +305,9 @@
     "callable": "higher_order_functions.test_conditional_apply_forward",
     "callable_line": 112,
     "code": 5002,
-    "line": 118,
+    "line": 113,
     "start": 15,
-    "end": 62,
+    "end": 61,
     "filename": "higher_order_functions.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -327,12 +327,12 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "lambda" }
             ],
-            "tito_positions": [ { "line": 118, "start": 39, "end": 51 } ],
+            "tito_positions": [ { "line": 113, "start": 33, "end": 45 } ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 118,
-              "start": 39,
-              "end": 51
+              "line": 113,
+              "start": 33,
+              "end": 45
             }
           }
         ]
@@ -350,9 +350,9 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 118,
+              "line": 113,
               "start": 15,
-              "end": 62
+              "end": 61
             }
           }
         ]
@@ -368,10 +368,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 3,
+      "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.test_conditional_apply_forward:5002:0:Call|_test_sink|3|formal(arg):0f1ec80077a9c274a969c0a5dec62e99"
+    "master_handle": "higher_order_functions.test_conditional_apply_forward:5002:0:Call|_test_sink|0|formal(arg):92e77d5b50c5acc056876ffbfe57f28b"
   }
 }
 {

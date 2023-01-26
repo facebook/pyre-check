@@ -446,80 +446,6 @@
     "callable_line": 185,
     "code": 5002,
     "line": 187,
-    "start": 11,
-    "end": 14,
-    "filename": "properties.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 186, "start": 27, "end": 41 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 186,
-              "start": 27,
-              "end": 41
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 187,
-                "start": 11,
-                "end": 14
-              },
-              "resolves_to": [ "properties.PropertyCallable.attribute" ],
-              "port": "formal(self)[z]"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "properties.PropertyCallable.attribute",
-      "index": 0,
-      "parameter": "formal(self)"
-    },
-    "master_handle": "properties.test_property_callable:5002:0:Call|properties.PropertyCallable.attribute|0|formal(self):22359ed2d4ad35d3c5f1cebbdbd55bac"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "properties.test_property_callable",
-    "callable_line": 185,
-    "code": 5002,
-    "line": 187,
     "start": 25,
     "end": 39,
     "filename": "properties.py",
@@ -665,6 +591,80 @@
       "parameter": "formal(self)"
     },
     "master_handle": "properties.test_property_callable:5002:0:Call|properties.PropertyCallableReturn.__call__|0|formal(self):4eec40b251db6623ac7b4f3ccb768535"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_property_callable",
+    "callable_line": 185,
+    "code": 5002,
+    "line": 187,
+    "start": 11,
+    "end": 14,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 186, "start": 27, "end": 41 } ],
+            "origin": {
+              "filename": "properties.py",
+              "line": 186,
+              "start": 27,
+              "end": 41
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "properties.py",
+                "line": 187,
+                "start": 11,
+                "end": 14
+              },
+              "resolves_to": [ "properties.PropertyCallable.attribute" ],
+              "port": "formal(self)[z]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "properties.PropertyCallable.attribute",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "properties.test_property_callable:5002:0:Call|properties.PropertyCallable.attribute|0|formal(self):22359ed2d4ad35d3c5f1cebbdbd55bac"
   }
 }
 {

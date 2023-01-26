@@ -69,6 +69,7 @@ let extract_errors ~scheduler ~taint_configuration ~callables ~fixpoint_state =
     List.map
       ~f:(fun callable ->
         Fixpoint.get_result fixpoint_state callable
+        |> IssueHandle.SerializableMap.data
         |> List.map ~f:(Issue.to_error ~taint_configuration))
       callables
     |> List.concat_no_order
@@ -123,7 +124,7 @@ let fetch_and_externalize
   let model =
     Fixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
   in
-  let result = Fixpoint.get_result fixpoint_state callable in
+  let result = Fixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data in
   externalize
     ~taint_configuration
     ~fixpoint_state

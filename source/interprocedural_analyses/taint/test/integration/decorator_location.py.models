@@ -157,83 +157,6 @@
     "callable": "decorator_location.main",
     "callable_line": 98,
     "code": 5002,
-    "line": 101,
-    "start": 8,
-    "end": 22,
-    "filename": "decorator_location.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 101,
-              "start": 8,
-              "end": 22
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 101,
-                "start": 8,
-                "end": 22
-              },
-              "resolves_to": [ "decorator_location.baz" ],
-              "port": "formal(x)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "decorator_location.baz",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.baz|0|formal(x):e305d13e20261144972c6aebbaa0efa9"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator_location.main",
-    "callable_line": 98,
-    "code": 5002,
     "line": 99,
     "start": 8,
     "end": 22,
@@ -303,6 +226,83 @@
       "parameter": "formal(x)"
     },
     "master_handle": "decorator_location.main:5002:0:Call|decorator_location.foo|0|formal(x):f6ed7fba11687138661e229d5d1ba9ce"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 98,
+    "code": 5002,
+    "line": 101,
+    "start": 8,
+    "end": 22,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "decorator_location.py",
+              "line": 101,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "decorator_location.py",
+                "line": 101,
+                "start": 8,
+                "end": 22
+              },
+              "resolves_to": [ "decorator_location.baz" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.baz",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.baz|0|formal(x):e305d13e20261144972c6aebbaa0efa9"
   }
 }
 {

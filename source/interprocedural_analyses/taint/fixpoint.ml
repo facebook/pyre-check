@@ -70,9 +70,9 @@ module Analysis = struct
   end
 
   module Result = struct
-    type t = Issue.t list
+    type t = Issue.t IssueHandle.SerializableMap.t
 
-    let empty = []
+    let empty = IssueHandle.SerializableMap.empty
   end
 
   let initial_model = Model.empty_model
@@ -205,7 +205,7 @@ module Analysis = struct
     let qualifier = Option.value ~default:qualifier module_reference in
     if Model.ModeSet.contains Model.Mode.SkipAnalysis modes then
       let () = Log.info "Skipping taint analysis of %a" Interprocedural.Target.pp_pretty callable in
-      [], previous_model
+      Result.empty, previous_model
     else
       analyze_define_with_sanitizers_and_modes
         ~taint_configuration

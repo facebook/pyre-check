@@ -344,10 +344,10 @@ let generate_issues
      * The configuration might have multiple rules with the same code due to
      * multi source-sink rules, hence we need to merge issues here. *)
     let update = function
-      | None -> issue
-      | Some previous_issue -> join previous_issue issue
+      | None -> Some issue
+      | Some previous_issue -> Some (join previous_issue issue)
     in
-    IssueHandle.Map.update map issue.handle ~f:update
+    IssueHandle.SerializableMap.update issue.handle update map
   in
   if taint_configuration.TaintConfiguration.Heap.lineage_analysis then
     (* Create different issues for same access path, e.g, Issue{[a] -> [b]}, Issue {[c] -> [d]}. *)
@@ -356,8 +356,8 @@ let generate_issues
     List.fold taint_configuration.rules ~init:[] ~f:apply_rule_separate_access_path
   else (* Create single issue for same access path, e.g, Issue{[a],[c] -> [b], [d]}. *)
     List.filter_map ~f:apply_rule_merge_access_path taint_configuration.rules
-    |> List.fold ~init:IssueHandle.Map.empty ~f:group_by_handle
-    |> IssueHandle.Map.data
+    |> List.fold ~init:IssueHandle.SerializableMap.empty ~f:group_by_handle
+    |> IssueHandle.SerializableMap.data
 
 
 (* A map from triggered sink kinds (which is a string) to the triggered sink taints to propagate in
@@ -559,11 +559,19 @@ module Candidates = struct
 
 
   let generate_issues candidates ~taint_configuration ~define =
+    let add_or_merge_issue issues_so_far new_issue =
+      IssueHandle.SerializableMap.update
+        new_issue.handle
+        (function
+          | Some existing_issue -> Some (join existing_issue new_issue)
+          | None -> Some new_issue)
+        issues_so_far
+    in
     let accumulate ~key:_ ~data:candidate issues =
       let new_issues = generate_issues ~taint_configuration ~define candidate in
-      List.rev_append new_issues issues
+      List.fold new_issues ~init:issues ~f:add_or_merge_issue
     in
-    CandidateKey.Table.fold candidates ~f:accumulate ~init:[]
+    CandidateKey.Table.fold candidates ~f:accumulate ~init:IssueHandle.SerializableMap.empty
 end
 
 type features = {
@@ -798,7 +806,8 @@ module MultiSource = struct
           let related_issues =
             get_issue_handles ~triggered_sink issue
             |> IssueHandleSet.elements
-            |> List.map ~f:(IssueHandle.Map.find_exn issue_handle_map)
+            |> List.map ~f:(fun issue_handle ->
+                   IssueHandle.SerializableMap.find issue_handle issue_handle_map)
             |> List.filter ~f:(is_related ~triggered_sink ~main_label ~secondary_label)
           in
           Sinks.Map.add (Sinks.TriggeredPartialSink triggered_sink) related_issues so_far

@@ -55,6 +55,7 @@ let test_no_errors _ =
     let taint_configuration = TaintConfiguration.Heap.default in
     let errors =
       Candidates.generate_issues candidates ~taint_configuration ~define
+      |> IssueHandle.SerializableMap.data
       |> List.map ~f:(to_error ~taint_configuration)
     in
     assert_equal
@@ -112,6 +113,7 @@ let test_errors _ =
     let taint_configuration = TaintConfiguration.Heap.default in
     let errors =
       Candidates.generate_issues candidates ~taint_configuration ~define
+      |> IssueHandle.SerializableMap.data
       |> List.map ~f:(to_error ~taint_configuration)
     in
     assert_equal
