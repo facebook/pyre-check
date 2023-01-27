@@ -86,8 +86,10 @@ if __name__ == "__main__":
                     output = file.read()
 
         except subprocess.CalledProcessError as exception:
-            LOG.error(f"`pyre analyze` failed:\n{exception.output.decode()}")
-            sys.exit(1)
+            LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
+            sys.stdout.write(exception.output.decode())
+            sys.exit(exception.returncode)
+
         expected = ""
         with open("result.json") as file:
             expected = file.read()
@@ -95,8 +97,8 @@ if __name__ == "__main__":
         if normalized_json_dump(expected) != normalized_json_dump(output):
             with open("result.actual", "w") as file:
                 file.write(normalized_json_dump(output))
-            LOG.error("Output differs from expected:")
+            sys.stdout.write("Output differs from expected:\n")
             subprocess.run(["diff", "-u", "result.json", "result.actual"])
-            sys.exit(1)
+            sys.exit(30)  # ExitCode.TEST_COMPARISON_DIFFERS
 
         LOG.info("Run produced expected results")

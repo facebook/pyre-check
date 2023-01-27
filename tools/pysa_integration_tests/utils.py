@@ -10,6 +10,8 @@ TODO(T132414938) Add a module-level docstring
 
 from __future__ import annotations
 
+import enum
+
 import json
 import logging
 import subprocess
@@ -27,6 +29,12 @@ class PyreErrorException(Exception):
     """
 
     pass
+
+
+class ExitCode(enum.IntEnum):
+    # 1-29 reserved for pyre and pysa client, see client/commands/commands.py
+    TEST_COMPARISON_DIFFERS = 30
+    TEST_MODEL_VERIFICATION_ERROR = 31
 
 
 def normalized_json_dump(
@@ -112,34 +120,18 @@ def compare_results(
         )
         expected_invariant_results_path.write_text(normalized_expected_results)
 
-        result = subprocess.run(
+        sys.stdout.write("Output differs from expected:\n")
+        subprocess.run(
             [
                 "diff",
                 "-u",
                 expected_invariant_results_path,
                 actual_invariant_results_path,
-            ],
-            text=True,
-            stdout=subprocess.PIPE,
+            ]
         )
-        friendly_exit(
-            "Output differs from expected:",
-            result.stdout,
-            "output-differs-from-expected",
-        )
+        sys.exit(ExitCode.TEST_COMPARISON_DIFFERS.value)
     else:
         LOG.info("Run produced expected results")
-
-
-def friendly_exit(error_message: str, logs: str, suggested_hash: str) -> None:
-    """
-    Error function to print error message using LOG and exit
-    """
-    LOG.error("----BEGIN PYSA INTEGRATION TEST ERROR----")
-    LOG.error(error_message)
-    LOG.error(logs)
-    LOG.error("----END PYSA INTEGRATION TEST ERROR----")
-    sys.exit(1)
 
 
 def run_pysa_integration_test(
@@ -183,11 +175,9 @@ def run_pysa_integration_test(
         if save_results_to is not None:
             pysa_results = (save_results_to / "errors.json").read_text()
     except subprocess.CalledProcessError as exception:
-        friendly_exit(
-            "Command failed with output:",
-            exception.stdout,
-            "found-x-model-verification-error",
-        )
+        LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
+        sys.stdout.write(exception.output.decode())
+        sys.exit(exception.returncode)
 
     (current_directory / "raw_results.json").write_text(pysa_results)
 
