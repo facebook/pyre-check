@@ -301,10 +301,16 @@ let rec matches_decorator_constraint ~name_captures ~decorator = function
       not (matches_decorator_constraint ~name_captures ~decorator decorator_constraint)
   | ModelQuery.DecoratorConstraint.NameConstraint name_constraint ->
       let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
-      matches_name_constraint ~name_captures ~name_constraint (Reference.last decorator_name)
+      matches_name_constraint
+        ~name_captures
+        ~name_constraint
+        (decorator_name |> Reference.delocalize |> Reference.last)
   | ModelQuery.DecoratorConstraint.FullyQualifiedNameConstraint name_constraint ->
       let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
-      matches_name_constraint ~name_captures ~name_constraint (Reference.show decorator_name)
+      matches_name_constraint
+        ~name_captures
+        ~name_constraint
+        (decorator_name |> Reference.delocalize |> Reference.show)
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
       let { Statement.Decorator.arguments = decorator_arguments; _ } = decorator in
       let split_arguments =

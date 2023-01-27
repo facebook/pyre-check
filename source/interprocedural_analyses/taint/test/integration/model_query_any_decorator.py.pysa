@@ -60,3 +60,16 @@ ModelQuery(
     Returns(TaintSource[Test])
   ]
 )
+
+ModelQuery(
+  name = "get_model_query_any_decorator_local_variable_method_decorator",
+  find = "functions",
+  where = [
+    Decorator(
+      fully_qualified_name.equals("model_query_any_decorator.app.decorator"),
+    )
+  ],
+  model = [
+    Returns(TaintSource[Test])
+  ]
+)

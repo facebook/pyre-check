@@ -118,3 +118,16 @@ def test5_noalarm1():
 @test5_d1(arg1, 3, 2, 4, arg3="Foo")
 def test5_noalarm2():
     return None
+
+
+class Application:
+    def decorator(self, f, *args, **kwargs):
+        pass
+
+
+app = Application()
+
+
+@app.decorator
+def test_local_variable_method_decorator():
+    return None

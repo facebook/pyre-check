@@ -95,3 +95,15 @@
     ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test_local_variable_method_decorator",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
