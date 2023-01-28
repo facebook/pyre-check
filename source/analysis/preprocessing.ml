@@ -561,6 +561,18 @@ module Qualify (Context : QualifyContext) = struct
                         | qualified -> Name qualified
                     in
                     scope, name
+                | Call
+                    ({
+                       callee =
+                         {
+                           Node.value =
+                             Name (Name.Attribute { Name.Attribute.attribute = "__getitem__"; _ });
+                           _;
+                         } as callee;
+                       _;
+                     } as call) ->
+                    let scope, callee = qualify_assignment_target ~scope callee in
+                    scope, Call { call with callee }
                 | target -> scope, target
               in
               scope, { target with Node.value }

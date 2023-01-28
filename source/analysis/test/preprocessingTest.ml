@@ -518,6 +518,24 @@ let test_qualify_source _ =
     {|
       [*$local_qualifier$a, $local_qualifier$b] = [1]
     |};
+  assert_qualify
+    {|
+      a = [1, 2, 3]
+      a[0], b = 4, 5
+    |}
+    {|
+      $local_qualifier$a = [1, 2, 3]
+      ($local_qualifier$a[0], $local_qualifier$b) = 4, 5
+    |};
+  assert_qualify
+    {|
+      a = [[1], [2]]
+      a[0][0], b = 4, 5
+    |}
+    {|
+      $local_qualifier$a = [[1], [2]]
+      ($local_qualifier$a[0][0], $local_qualifier$b) = 4, 5
+    |};
 
   (* Qualify walrus assignments. *)
   (* TODO(T53600647): Qualify `a`. *)
