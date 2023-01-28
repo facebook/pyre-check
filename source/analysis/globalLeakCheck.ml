@@ -137,6 +137,8 @@ module State (Context : Context) = struct
     | Delete _ -> ()
     | Expression _ -> ()
     | Raise _ -> ()
+    | Return { expression = Some expression; _ } ->
+        forward_expression ~error_on_global_target expression
     | Return _ -> ()
     (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
     | If _

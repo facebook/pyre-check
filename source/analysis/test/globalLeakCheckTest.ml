@@ -554,6 +554,13 @@ let test_recursive_coverage context =
         my_global.get(0)[1] = 5
     |}
     [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def setdefault_global_dict() -> None:
+        return my_global.setdefault(1, "a")
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 
   ()
 
