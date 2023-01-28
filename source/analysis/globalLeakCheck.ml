@@ -49,18 +49,59 @@ module State (Context : Context) = struct
 
   let errors () = Context.error_map |> LocalErrorMap.all_errors
 
-  let forward_assignment ~error_on_global_target expression =
-    let rec forward_target { Node.value; location } =
-      match value with
-      | Expression.Name (Name.Identifier target) -> error_on_global_target ~location target
-      | Expression.Name (Name.Attribute { base; _ }) ->
-          Log.dump "Name.Attribute %s" ([%show: Expression.t] base);
-          forward_target base
-      | Expression.Tuple values -> List.iter ~f:forward_target values
-      (* TODO (T142189949): do we want to error on passing a global into a function? *)
-      | _ -> ()
+  let is_known_mutation_method identifier =
+    match identifier with
+    (* list mutators *)
+    | "append"
+    | "insert"
+    | "extend"
+    (* dict mutators *)
+    | "setdefault"
+    (* set mutators *)
+    | "add"
+    | "intersection_update"
+    | "difference_update"
+    | "symmetric_difference_update"
+    (* mutators for multiple of the above *)
+    | "update"
+    | "__setitem__"
+    (* mutators for objects *)
+    | "__setattr__" ->
+        true
+    | _ -> false
+
+
+  let rec forward_expression
+      ~error_on_global_target
+      ?(is_mutable_expression = false)
+      { Node.value; location }
+    =
+    let forward_expression ?(is_mutable_expression = is_mutable_expression) =
+      forward_expression ~error_on_global_target ~is_mutable_expression
     in
-    forward_target expression
+    match value with
+    (* interesting cases *)
+    | Expression.Name (Name.Identifier target) ->
+        if is_mutable_expression then
+          error_on_global_target ~location target
+    | Name (Name.Attribute { base; attribute; _ }) ->
+        let is_mutable_expression = is_mutable_expression or is_known_mutation_method attribute in
+        forward_expression ~is_mutable_expression base
+    | Call { callee; arguments } ->
+        forward_expression callee;
+        List.iter ~f:(fun { value; _ } -> forward_expression value) arguments
+    | _ -> ()
+
+
+  and forward_assignment_target ~error_on_global_target ({ Node.value; location } as expression) =
+    let forward_assignment_target = forward_assignment_target ~error_on_global_target in
+    match value with
+    (* interesting cases *)
+    | Expression.Name (Name.Identifier target) -> error_on_global_target ~location target
+    | Name (Name.Attribute { base; _ }) -> forward_assignment_target base
+    | Tuple values -> List.iter ~f:forward_assignment_target values
+    | Call _ -> forward_expression ~error_on_global_target ~is_mutable_expression:true expression
+    | _ -> ()
 
 
   let forward ~statement_key state ~statement:{ Node.value; _ } =
@@ -78,7 +119,8 @@ module State (Context : Context) = struct
     in
     let error_on_global_target ~location target =
       let reference = Reference.create target |> Reference.delocalize in
-      if Resolution.is_global resolution ~reference then
+      let is_global = Resolution.is_global resolution ~reference in
+      if is_global then
         let error =
           Error.create
             ~location:(Location.with_module ~module_reference:Context.qualifier location)
@@ -91,7 +133,7 @@ module State (Context : Context) = struct
     in
     match value with
     | Statement.Assert _ -> ()
-    | Assign { target; _ } -> forward_assignment ~error_on_global_target target
+    | Assign { target; _ } -> forward_assignment_target ~error_on_global_target target
     | Delete _ -> ()
     | Expression _ -> ()
     | Raise _ -> ()
