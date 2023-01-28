@@ -133,7 +133,9 @@ module State (Context : Context) = struct
     in
     match value with
     | Statement.Assert _ -> ()
-    | Assign { target; _ } -> forward_assignment_target ~error_on_global_target target
+    | Assign { target; value; _ } ->
+        forward_assignment_target ~error_on_global_target target;
+        forward_expression ~error_on_global_target value
     | Delete _ -> ()
     | Expression _ -> ()
     | Raise _ -> ()

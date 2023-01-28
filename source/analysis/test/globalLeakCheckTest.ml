@@ -537,7 +537,7 @@ let test_recursive_coverage context =
         global my_global
         a = my_global.append(123)
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[List[int]] = [[]]
