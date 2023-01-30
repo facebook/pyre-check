@@ -308,7 +308,8 @@ labels to its sources:
        "sources": { "url": "UserControlled", "creds": "Credentials" },
        "partial_sink": "UserControlledRequestWithCreds",
        "code": 1,
-       "message_format": "Credentials leaked through requests"
+       "message_format": "Credentials leaked through requests",
+       "main_trace_source": "url",
     }
   ]
 }
@@ -330,6 +331,16 @@ def requests.api.get(
 
 With the above configuration, Pysa can detect cases where `UserControlled` flows
 into `url` and `Credentials` flow into `params` *at the same time*.
+
+The optional attribute `main_trace_source` can be used to specify which flow should be shown as the main flow in the SAPP UI. For example, in the above rule, the flow from source `UserControlled` to sink `UserControlledRequestWithCreds` is the main flow.
+
+The SAPP UI only shows a single flow at a time. However, an issue for a combined source rule corresponds to two flows. For example, for the above rule, an issue is filed only if there exist
+- One flow from source `UserControlled` to sink `UserControlledRequestWithCreds`, and
+- Another flow from source `Credentials` to sink `UserControlledRequestWithCreds`.
+
+For combined source issues, Pysa will always show the main flow, and provide the secondary flow as a subtrace that can be expanded in the UI.
+
+When attribute `main_trace_source` is missing, Pysa treat the sources under the first tag as the main sources.
 
 ## Prevent Inferring Models with `SkipAnalysis`
 
