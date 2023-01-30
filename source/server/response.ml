@@ -23,6 +23,10 @@ module ServerStatus = struct
   [@@deriving sexp, compare, to_yojson]
 end
 
+module IncrementalTelemetry = struct
+  type t = { overall_duration_ms: int } [@@deriving sexp, compare, to_yojson]
+end
+
 type t =
   | Ok
   | Error of string
@@ -37,4 +41,5 @@ type t =
   | StatusUpdate of ServerStatus.t
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Query of Query.Response.t
+  | IncrementalTelemetry of IncrementalTelemetry.t
 [@@deriving sexp, compare, to_yojson]
