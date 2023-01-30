@@ -2360,7 +2360,12 @@ let build_whole_program_call_graph
     in
     Scheduler.map_reduce
       scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_size
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunk_size:2000
+           ())
       ~initial:WholeProgramCallGraph.empty
       ~map:(fun _ callables ->
         List.fold callables ~init:WholeProgramCallGraph.empty ~f:build_call_graph)
