@@ -80,7 +80,11 @@ def _parse_code_navigation_error_subscription(response: object) -> Error:
     return Error(message=error_message)
 
 
-Body = Union[TypeErrors, StatusUpdate, Error]
+class IncrementalTelemetry:
+    pass
+
+
+Body = Union[TypeErrors, StatusUpdate, Error, IncrementalTelemetry]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -112,6 +116,9 @@ class Response:
                         return Response(body=_parse_status_update_subscription(body[1]))
                     elif tag == "Error":
                         return Response(body=_parse_error_subscription(body[1]))
+                    elif tag == "IncrementalTelemetry":
+                        return Response(body=IncrementalTelemetry())
+
             raise incremental.InvalidServerResponse(
                 f"Unexpected JSON subscription from server: {response_json}"
             )
@@ -135,6 +142,8 @@ class Response:
                 return Response(body=_parse_type_error_subscription(body))
             elif tag == "Error":
                 return Response(body=_parse_code_navigation_error_subscription(body))
+            elif tag == "IncrementalTelemetry":
+                return Response(body=IncrementalTelemetry())
             raise incremental.InvalidServerResponse(
                 f"Invalid tag from code navigation server response: {tag}"
             )

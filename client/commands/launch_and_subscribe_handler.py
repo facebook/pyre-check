@@ -169,6 +169,8 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             await self.handle_status_update_subscription(subscription_body)
         elif isinstance(subscription_body, subscription.Error):
             await self.handle_error_subscription(subscription_body)
+        elif isinstance(subscription_body, subscription.IncrementalTelemetry):
+            pass
 
     async def _run_subscription_loop(
         self,
