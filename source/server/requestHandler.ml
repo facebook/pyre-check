@@ -86,6 +86,10 @@ let create_info_response
     }
 
 
+let create_telemetry_response overall_timer =
+  lazy (Response.IncrementalTelemetry { overall_duration_ms = Timer.stop_in_ms overall_timer })
+
+
 let create_source_path_event path =
   let kind =
     if PyrePath.file_exists path then
@@ -122,6 +126,7 @@ let process_incremental_update_request
       Subscription.batch_send subscriptions ~response:(lazy (Response.Error message))
       >>= fun () -> Stop.stop_waiting_server reason
   | None ->
+      let overall_timer = Timer.start () in
       let source_path_events = List.map paths ~f:create_source_path_event in
       let create_status_update_response status = lazy (Response.StatusUpdate status) in
       let create_type_errors_response =
@@ -162,6 +167,8 @@ let process_incremental_update_request
       List.filter subscriptions ~f:(fun x -> not (Subscription.wants_type_errors x))
       |> Subscription.batch_send
            ~response:(create_status_update_response Response.ServerStatus.Ready)
+      >>= fun () ->
+      Subscription.batch_send ~response:(create_telemetry_response overall_timer) subscriptions
       >>= fun () -> Lwt.return state
 
 

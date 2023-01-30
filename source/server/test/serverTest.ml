@@ -61,6 +61,16 @@ module Client = struct
     return_unit
 
 
+  let assert_telemetry_response { input_channel; _ } =
+    let open Lwt in
+    Lwt_io.read_line input_channel
+    >>= fun actual ->
+    assert_bool
+      ("Expected a telemetry response over subscription, but got " ^ actual)
+      (String.is_substring ~substring:"IncrementalTelemetry" actual);
+    return_unit
+
+
   let close { input_channel; output_channel; _ } =
     let open Lwt in
     Lwt_io.close input_channel >>= fun () -> Lwt_io.close output_channel

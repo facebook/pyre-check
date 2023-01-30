@@ -430,6 +430,7 @@ let test_subscription_responses_with_type_errors client =
   Client.assert_subscription_response
     client
     ~expected:{ Subscription.Response.name = "foo"; body = Response.TypeErrors [error] }
+  >>= fun () -> Client.assert_telemetry_response client
 
 
 let test_subscription_responses_no_type_errors client =
@@ -464,7 +465,7 @@ let test_subscription_responses_no_type_errors client =
     |> Lwt_io.write_line output_channel
   in
   Lwt_io.with_connection socket_address send_incremental_update
-  (* We should get rebuild and recheck notifications *)
+  (* We should get rebuild, recheck, ready, and telemetry notifications *)
   >>= fun () ->
   Client.assert_subscription_response
     client
@@ -480,25 +481,7 @@ let test_subscription_responses_no_type_errors client =
     client
     ~expected:
       { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Ready) }
-  (* Send a second update (this is the easiest way to verify that there is no type errors
-     response *)
-  >>= fun () ->
-  Lwt_io.with_connection socket_address send_incremental_update
-  >>= fun () ->
-  Client.assert_subscription_response
-    client
-    ~expected:
-      { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Rebuilding) }
-  >>= fun () ->
-  Client.assert_subscription_response
-    client
-    ~expected:
-      { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Rechecking) }
-  >>= fun () ->
-  Client.assert_subscription_response
-    client
-    ~expected:
-      { Subscription.Response.name = "foo"; body = Response.(StatusUpdate ServerStatus.Ready) }
+  >>= fun () -> Client.assert_telemetry_response client
 
 
 let test_subscription_responses context =

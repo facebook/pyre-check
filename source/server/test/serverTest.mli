@@ -30,6 +30,8 @@ module Client : sig
 
   val assert_subscription_response : expected:Subscription.Response.t -> t -> unit Lwt.t
 
+  val assert_telemetry_response : t -> unit Lwt.t
+
   val close : t -> unit Lwt.t
 end
 
