@@ -121,6 +121,7 @@ def compare_results(
         expected_invariant_results_path.write_text(normalized_expected_results)
 
         sys.stdout.write("Output differs from expected:\n")
+        sys.stdout.flush()
         subprocess.run(
             [
                 "diff",
