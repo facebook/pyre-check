@@ -15,6 +15,9 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 
+LOG: logging.Logger = logging.getLogger(__name__)
+
+
 def normalized_json_dump(normalized: List[Dict[str, Any]]):
     normalized = sorted(
         normalized,
@@ -32,10 +35,15 @@ def run_and_check_output(
     command: List[str],
     expected: List[Dict[str, Any]],
     output_file_name: str = "result.actual",
-) -> bool:
-    output_str = normalized_json_dump(
-        json.loads(subprocess.check_output(command).decode())
-    )
+) -> int:
+    try:
+        output = subprocess.check_output(command).decode()
+    except subprocess.CalledProcessError as exception:
+        LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
+        sys.stdout.write(exception.output.decode())
+        return exception.returncode
+
+    output_str = normalized_json_dump(json.loads(output))
     expected_str = normalized_json_dump(expected)
 
     if output_str != expected_str:
@@ -43,19 +51,20 @@ def run_and_check_output(
             file.write(output_str)
         with open("result.expected", "w") as file:
             file.write(expected_str)
-        logging.error("Output differs from expected:")
-        subprocess.run(["diff", "result.expected", output_file_name])
-        return False
+        sys.stdout.write("Output differs from expected:\n")
+        sys.stdout.flush()
+        subprocess.run(["diff", "-u", "result.expected", output_file_name])
+        return 30  # ExitCode.TEST_COMPARISON_DIFFERS
     else:
-        return True
+        return 0
 
 
 def run_test_no_cache(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
     # Run Pysa without the cache argument.
-    logging.info("Testing with no --use-cache flag:")
-    result = run_and_check_output(
+    LOG.info("Testing with no --use-cache flag:")
+    returncode = run_and_check_output(
         [
             "pyre",
             "--typeshed",
@@ -67,10 +76,10 @@ def run_test_no_cache(
         expected,
         "result.no_cache",
     )
-    if result:
-        logging.info("Run produced expected results\n")
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
     else:
-        sys.exit(1)
+        sys.exit(returncode)
 
 
 def run_test_cache_first_and_second_runs(
@@ -84,8 +93,8 @@ def run_test_cache_first_and_second_runs(
 
     # Run Pysa with the cache argument for the first time. This should create
     # the cache file and save state to it since the file doesn't exist already.
-    logging.info("Testing behavior with --use-cache flag on initial run:")
-    result = run_and_check_output(
+    LOG.info("Testing behavior with --use-cache flag on initial run:")
+    returncode = run_and_check_output(
         [
             "pyre",
             "--typeshed",
@@ -98,15 +107,15 @@ def run_test_cache_first_and_second_runs(
         expected,
         "result.cache1",
     )
-    if result:
-        logging.info("Run produced expected results\n")
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
     else:
-        sys.exit(1)
+        sys.exit(returncode)
 
     # Run Pysa with the cache argument for the second time. Since the file
     # exists, Pysa should load the saved state from the file.
-    logging.info("Testing behavior with --use-cache on subsequent runs:")
-    result = run_and_check_output(
+    LOG.info("Testing behavior with --use-cache on subsequent runs:")
+    returncode = run_and_check_output(
         [
             "pyre",
             "--typeshed",
@@ -119,16 +128,16 @@ def run_test_cache_first_and_second_runs(
         expected,
         "result.cache2",
     )
-    if result:
-        logging.info("Run produced expected results\n")
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
     else:
-        sys.exit(1)
+        sys.exit(returncode)
 
 
 def run_test_invalid_cache_file(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
-    logging.info("Testing fallback behavior with invalid cache file:")
+    LOG.info("Testing fallback behavior with invalid cache file:")
 
     # Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
     # cache file. Pysa should fall back to doing a clean run.
@@ -139,7 +148,7 @@ def run_test_invalid_cache_file(
         pass
     (cache_path / "sharedmem").touch()
 
-    result = run_and_check_output(
+    returncode = run_and_check_output(
         [
             "pyre",
             "--typeshed",
@@ -153,10 +162,10 @@ def run_test_invalid_cache_file(
         "result.cache3",
     )
 
-    if result:
-        logging.info("Run produced expected results\n")
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
     else:
-        sys.exit(1)
+        sys.exit(returncode)
 
 
 def run_test_changed_pysa_file(
@@ -164,7 +173,7 @@ def run_test_changed_pysa_file(
 ) -> None:
     # Run Pysa after adding a new Pysa model and ensure the cache is not
     # invalidated.
-    logging.info("Testing cache is not invalidated after .pysa file change:")
+    LOG.info("Testing cache is not invalidated after .pysa file change:")
 
     test_model_path = Path("test_taint/PYSA_CACHE_TEST__tmp_model.pysa")
     try:
@@ -174,7 +183,7 @@ def run_test_changed_pysa_file(
 
     test_model_path.touch()
 
-    result = run_and_check_output(
+    returncode = run_and_check_output(
         [
             "pyre",
             "--typeshed",
@@ -192,15 +201,13 @@ def run_test_changed_pysa_file(
     try:
         test_model_path.unlink()
     except FileNotFoundError:
-        logging.warning(
-            f"Could not clean up {test_model_path.absolute()} after test run."
-        )
+        LOG.warning(f"Could not clean up {test_model_path.absolute()} after test run.")
         pass
 
-    if result:
-        logging.info("Run produced expected results\n")
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
     else:
-        sys.exit(1)
+        sys.exit(returncode)
 
 
 def run_test_changed_taint_config_file(
@@ -208,7 +215,7 @@ def run_test_changed_taint_config_file(
 ) -> None:
     # Run Pysa after adding a new Pysa model and ensure the cache is not
     # invalidated.
-    logging.info("Testing cache is not invalidated after taint.config change:")
+    LOG.info("Testing cache is not invalidated after taint.config change:")
 
     test_taint_config = Path("test_taint/taint.config")
     try:
@@ -227,7 +234,7 @@ def run_test_changed_taint_config_file(
             "}"
         )
 
-    result = run_and_check_output(
+    returncode = run_and_check_output(
         [
             "pyre",
             "--typeshed",
@@ -245,15 +252,15 @@ def run_test_changed_taint_config_file(
     try:
         test_taint_config.unlink()
     except FileNotFoundError:
-        logging.warning(
+        LOG.warning(
             f"Could not clean up {test_taint_config.absolute()} after test run."
         )
         pass
 
-    if result:
-        logging.info("Run produced expected results\n")
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
     else:
-        sys.exit(1)
+        sys.exit(returncode)
 
 
 def run_test_changed_models(
@@ -261,7 +268,7 @@ def run_test_changed_models(
 ) -> None:
     # Run Pysa after adding a new Pysa model and ensure the cache is not
     # invalidated.
-    logging.info("Testing results after models change:")
+    LOG.info("Testing results after models change:")
 
     # Remove a test taint file
     test_model_path = Path("test_taint/sanitize.pysa")
@@ -269,7 +276,7 @@ def run_test_changed_models(
     try:
         test_model_path.unlink()
     except FileNotFoundError:
-        logging.warning(f"Could not remove up {test_model_path.absolute()}.")
+        LOG.warning(f"Could not remove up {test_model_path.absolute()}.")
         pass
 
     # Expected should have an additional issue from removing the sanitizer
@@ -285,7 +292,7 @@ def run_test_changed_models(
         "stop_line": 20,
     }
 
-    result = run_and_check_output(
+    returncode = run_and_check_output(
         [
             "pyre",
             "--typeshed",
@@ -302,10 +309,10 @@ def run_test_changed_models(
     # Restore the original model file
     open(test_model_path, "w").write(original_content)
 
-    if result:
-        logging.info("Run produced expected results\n")
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
     else:
-        sys.exit(1)
+        sys.exit(returncode)
 
 
 def run_test_changed_source_files(
@@ -314,7 +321,7 @@ def run_test_changed_source_files(
     # Run Pysa after adding a new file to test cache invalidation.
     # Pysa should detect that the source has chagned and fall back
     # to doing a clean run.
-    logging.info("Testing cache invalidation after source files change:")
+    LOG.info("Testing cache invalidation after source files change:")
 
     new_file_path = Path("PYSA_CACHE_TEST__tmp_file.py")
     try:
@@ -324,7 +331,7 @@ def run_test_changed_source_files(
 
     new_file_path.touch()
 
-    result = run_and_check_output(
+    returncode = run_and_check_output(
         [
             "pyre",
             "--typeshed",
@@ -342,15 +349,13 @@ def run_test_changed_source_files(
     try:
         new_file_path.unlink()
     except FileNotFoundError:
-        logging.warning(
-            f"Could not clean up {new_file_path.absolute()} after test run."
-        )
+        LOG.warning(f"Could not clean up {new_file_path.absolute()} after test run.")
         pass
 
-    if result:
-        logging.info("Run produced expected results\n")
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
     else:
-        sys.exit(1)
+        sys.exit(returncode)
 
 
 def run_tests() -> None:
@@ -360,15 +365,19 @@ def run_tests() -> None:
 
     # Switch to directory of this script.
     os.chdir(os.path.dirname(__file__))
-    logging.info("Running in `%s`", os.getcwd())
+    LOG.info("Running in `%s`", os.getcwd())
 
     cache_path = Path(".pyre/.pysa_cache")
-    logging.info(f"Cache file path: {cache_path.resolve()}")
+    LOG.info(f"Cache file path: {cache_path.resolve()}")
 
     # Extract typeshed.
     with tempfile.TemporaryDirectory() as directory:
-        logging.info(f"Extracting typeshed into `{directory}`...")
-        subprocess.check_call(["unzip", "../typeshed/typeshed.zip", "-d", directory])
+        LOG.info(f"Extracting typeshed into `{directory}`...")
+        subprocess.check_call(
+            ["unzip", "../typeshed/typeshed.zip", "-d", directory],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         typeshed_path = f"{directory}/typeshed-master"
 
         expected = None
@@ -383,7 +392,7 @@ def run_tests() -> None:
             run_test_changed_models(typeshed_path, cache_path, expected)
             run_test_changed_source_files(typeshed_path, cache_path, expected)
 
-        logging.info("All runs produced expected output.")
+        LOG.info("All runs produced expected output.")
 
 
 if __name__ == "__main__":
