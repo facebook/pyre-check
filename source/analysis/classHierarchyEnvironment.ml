@@ -262,7 +262,11 @@ let update_this_and_all_preceding_environments
     Edges.update_this_and_all_preceding_environments edges ~scheduler ast_environment_trigger
   in
   let read_only = read_only this_environment in
-  if ReadOnly.controls read_only |> EnvironmentControls.debug then
+  let controls = ReadOnly.controls read_only in
+  if
+    EnvironmentControls.debug controls
+    && not (EnvironmentControls.use_lazy_module_tracking controls)
+  then
     ReadOnly.check_integrity read_only;
   result
 
