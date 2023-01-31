@@ -858,30 +858,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         self.assertTrue(len(client_messages) == 0)
 
     @setup.async_test
-    async def test_save_adds_path_to_queue(self) -> None:
-        test_path = Path("/root/test.py")
-        api = server_setup.create_pyre_language_server_api(
-            output_channel=create_memory_text_writer(),
-            server_state=ServerState(
-                server_options=server_setup.mock_initial_server_options,
-                opened_documents={
-                    test_path: OpenedDocumentState(
-                        code=server_setup.DEFAULT_FILE_CONTENTS
-                    )
-                },
-            ),
-            querier=server_setup.MockDaemonQuerier(),
-        )
-        await api.process_did_save_request(
-            lsp.DidSaveTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                )
-            )
-        )
-        await asyncio.sleep(0)
-
-    @setup.async_test
     async def test_connections_lost(self) -> None:
         test_path = Path("/foo.py")
         server_state = ServerState(
@@ -995,6 +971,30 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 
 
 class PyreLanguageServerApiTest(testslide.TestCase):
+    @setup.async_test
+    async def test_save_adds_path_to_queue(self) -> None:
+        test_path = Path("/root/test.py")
+        api = server_setup.create_pyre_language_server_api(
+            output_channel=create_memory_text_writer(),
+            server_state=ServerState(
+                server_options=server_setup.mock_initial_server_options,
+                opened_documents={
+                    test_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
+                },
+            ),
+            querier=server_setup.MockDaemonQuerier(),
+        )
+        await api.process_did_save_request(
+            lsp.DidSaveTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                )
+            )
+        )
+        await asyncio.sleep(0)
+
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = server_setup.mock_server_state
