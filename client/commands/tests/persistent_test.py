@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Iterator, List, Optional
+from typing import Callable, Iterator, List, Optional, Union
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -535,129 +535,125 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
         self.assertTrue(len(client_messages) == 0)
 
-    @setup.async_test
-    async def test_open_triggers_pyre_restart(self) -> None:
-        fake_task_manager = background.TaskManager(
-            server_setup.WaitForeverBackgroundTask()
-        )
-        server = server_setup.create_pyre_language_server(
-            input_channel=create_memory_text_reader(""),
-            output_channel=create_memory_text_writer(),
-            server_state=server_setup.mock_server_state,
-            daemon_manager=fake_task_manager,
-            querier=server_setup.MockDaemonQuerier(),
-        )
-        self.assertFalse(fake_task_manager.is_task_running())
-
-        test_path = Path("/foo.py")
-        await server.process_open_request(
-            lsp.DidOpenTextDocumentParameters(
-                text_document=lsp.TextDocumentItem(
-                    language_id="python",
-                    text="",
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                    version=0,
-                )
-            )
-        )
-        await asyncio.sleep(0)
-        self.assertTrue(fake_task_manager.is_task_running())
+    @staticmethod
+    def _by_name_parameters(
+        parameters: Union[
+            lsp.DidSaveTextDocumentParameters, lsp.DidOpenTextDocumentParameters
+        ],
+    ) -> json_rpc.ByNameParameters:
+        return json_rpc.ByNameParameters(values=json.loads(parameters.to_json()))
 
     @setup.async_test
-    async def test_open_triggers_pyre_restart__limit_reached(self) -> None:
-        fake_task_manager = background.TaskManager(
-            server_setup.WaitForeverBackgroundTask()
-        )
-        server = server_setup.create_pyre_language_server(
-            input_channel=create_memory_text_reader(""),
-            output_channel=create_memory_text_writer(),
-            server_state=ServerState(
-                server_options=server_setup.mock_initial_server_options,
-                consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
-            ),
-            daemon_manager=fake_task_manager,
-            querier=server_setup.MockDaemonQuerier(),
-        )
-        self.assertFalse(fake_task_manager.is_task_running())
-
+    async def test_handle_request_triggers_restart(self) -> None:
+        """
+        Check that the handle_request method restarts the daemon on some
+        example requests.
+        """
         test_path = Path("/foo.py")
-        await server.process_open_request(
-            lsp.DidOpenTextDocumentParameters(
-                text_document=lsp.TextDocumentItem(
-                    language_id="python",
-                    text="",
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                    version=0,
-                )
-            )
-        )
-        await asyncio.sleep(0)
-        self.assertFalse(fake_task_manager.is_task_running())
-
-    @setup.async_test
-    async def test_save_triggers_pyre_restart(self) -> None:
-        test_path = Path("/foo.py")
-        fake_task_manager = background.TaskManager(
-            server_setup.WaitForeverBackgroundTask()
-        )
-        server = server_setup.create_pyre_language_server(
-            input_channel=create_memory_text_reader(""),
-            output_channel=create_memory_text_writer(),
-            server_state=ServerState(
-                server_options=server_setup.mock_initial_server_options,
-                opened_documents={
-                    test_path: OpenedDocumentState(
-                        code=server_setup.DEFAULT_FILE_CONTENTS
+        for request in [
+            json_rpc.Request(
+                method="textDocument/didSave",
+                parameters=self._by_name_parameters(
+                    lsp.DidSaveTextDocumentParameters(
+                        text_document=lsp.TextDocumentIdentifier(
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                        )
                     )
-                },
+                ),
             ),
-            daemon_manager=fake_task_manager,
-            querier=server_setup.MockDaemonQuerier(),
-        )
-        self.assertFalse(fake_task_manager.is_task_running())
-
-        await server.process_did_save_request(
-            lsp.DidSaveTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                )
+            json_rpc.Request(
+                method="textDocument/didSave",
+                parameters=self._by_name_parameters(
+                    lsp.DidOpenTextDocumentParameters(
+                        text_document=lsp.TextDocumentItem(
+                            language_id="python",
+                            text="",
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                            version=0,
+                        )
+                    )
+                ),
+            ),
+        ]:
+            fake_task_manager = background.TaskManager(
+                server_setup.WaitForeverBackgroundTask()
             )
-        )
-        await asyncio.sleep(0)
-        self.assertTrue(fake_task_manager.is_task_running())
+            server = server_setup.create_pyre_language_server(
+                input_channel=create_memory_text_reader(""),
+                output_channel=create_memory_text_writer(),
+                server_state=ServerState(
+                    server_options=server_setup.mock_initial_server_options,
+                    opened_documents={
+                        test_path: OpenedDocumentState(
+                            code=server_setup.DEFAULT_FILE_CONTENTS
+                        )
+                    },
+                ),
+                daemon_manager=fake_task_manager,
+                querier=server_setup.MockDaemonQuerier(),
+            )
+            self.assertFalse(fake_task_manager.is_task_running())
+
+            await server.handle_request(request)
+            await asyncio.sleep(0)
+            self.assertTrue(fake_task_manager.is_task_running())
 
     @setup.async_test
-    async def test_save_triggers_pyre_restart__limit_reached(self) -> None:
+    async def test_handle_request_triggers_restart__limit_reached(self) -> None:
+        """
+        Check on some example requests that, if we've reached our restart limit,
+        we skip trying to restart the daemon connection.
+        """
         test_path = Path("/foo.py")
-        fake_task_manager = background.TaskManager(
-            server_setup.WaitForeverBackgroundTask()
-        )
-        server = server_setup.create_pyre_language_server(
-            input_channel=create_memory_text_reader(""),
-            output_channel=create_memory_text_writer(),
-            server_state=ServerState(
-                server_options=server_setup.mock_initial_server_options,
-                opened_documents={
-                    test_path: OpenedDocumentState(
-                        code=server_setup.DEFAULT_FILE_CONTENTS
+        for request in [
+            json_rpc.Request(
+                method="textDocument/didSave",
+                parameters=self._by_name_parameters(
+                    lsp.DidSaveTextDocumentParameters(
+                        text_document=lsp.TextDocumentIdentifier(
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                        )
                     )
-                },
-                consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+                ),
             ),
-            daemon_manager=fake_task_manager,
-            querier=server_setup.MockDaemonQuerier(),
-        )
-        self.assertFalse(fake_task_manager.is_task_running())
-
-        await server.process_did_save_request(
-            lsp.DidSaveTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                )
+            json_rpc.Request(
+                method="textDocument/didSave",
+                parameters=self._by_name_parameters(
+                    lsp.DidOpenTextDocumentParameters(
+                        text_document=lsp.TextDocumentItem(
+                            language_id="python",
+                            text="",
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                            version=0,
+                        )
+                    )
+                ),
+            ),
+        ]:
+            fake_task_manager = background.TaskManager(
+                server_setup.WaitForeverBackgroundTask()
             )
-        )
-        await asyncio.sleep(0)
-        self.assertFalse(fake_task_manager.is_task_running())
+            server = server_setup.create_pyre_language_server(
+                input_channel=create_memory_text_reader(""),
+                output_channel=create_memory_text_writer(),
+                server_state=ServerState(
+                    server_options=server_setup.mock_initial_server_options,
+                    opened_documents={
+                        test_path: OpenedDocumentState(
+                            code=server_setup.DEFAULT_FILE_CONTENTS
+                        )
+                    },
+                    consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+                ),
+                daemon_manager=fake_task_manager,
+                querier=server_setup.MockDaemonQuerier(),
+            )
+            self.assertFalse(fake_task_manager.is_task_running())
+
+            print(request)
+            await server.handle_request(request)
+            await asyncio.sleep(0)
+            self.assertFalse(fake_task_manager.is_task_running())
 
     @setup.async_test
     async def test_save_adds_path_to_queue(self) -> None:
