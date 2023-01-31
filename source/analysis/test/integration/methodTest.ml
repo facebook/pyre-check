@@ -1265,6 +1265,78 @@ let test_check_behavioral_subtyping__weakened_precondition context =
     ];
   assert_type_errors
     {|
+      class A:
+        def test(self) -> int:
+            return 5
+
+      class B(A):
+        def test(self, n: int) -> int:
+            return n
+    |}
+    [
+      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. "
+      ^ "Could not find parameter `n` in overridden signature.";
+    ];
+  assert_type_errors
+    {|
+      class A:
+        def test(self) -> int:
+            return 5
+
+      class B(A):
+        def test(self, x: int, y: str) -> int:
+            return x
+    |}
+    [
+      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. "
+      ^ "Could not find parameter `x` in overridden signature.";
+      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. "
+      ^ "Could not find parameter `y` in overridden signature.";
+    ];
+  assert_type_errors
+    {|
+      class A():
+          def bar(self, x: int) -> int:
+              return x
+
+      class B(A):
+          def bar(self, x: int, y: str) -> int:
+              return x
+    |}
+    [
+      "Inconsistent override [14]: `test.B.bar` overrides method defined in `A` inconsistently. "
+      ^ "Could not find parameter `y` in overridden signature.";
+    ];
+  assert_type_errors
+    {|
+      class A():
+          def foo(self, x: int, /, a: int, *, z: int) -> int:
+              return x
+
+      class B(A):
+          def foo(self, x: int, /, a: int, y: str, *, z: int) -> int:
+              return x
+    |}
+    [
+      "Inconsistent override [14]: `test.B.foo` overrides method defined in `A` inconsistently. "
+      ^ "Could not find parameter `y` in overridden signature.";
+    ];
+  assert_type_errors
+    {|
+      class A():
+          def foo(self, x: int, /, y: str) -> int:
+              return x
+
+      class B(A):
+          def foo(self, x: int, /, y: str, *, z: str) -> int:
+              return x
+    |}
+    [
+      "Inconsistent override [14]: `test.B.foo` overrides method defined in `A` inconsistently. "
+      ^ "Could not find parameter `z` in overridden signature.";
+    ];
+  assert_type_errors
+    {|
       class Foo():
         def foo(self, a: int) -> None: ...
       class Bar(Foo):
@@ -1289,25 +1361,31 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       class Bar(Foo):
         def foo(self, a) -> None: pass
     |}
-    ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
+    [
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
+      ^ "Could not find parameter `a` in overridden signature.";
+      "Missing parameter annotation [2]: Parameter `a` has no type specified.";
+    ];
   assert_type_errors
     {|
       class Foo():
-        def foo(self, a) -> None: ...
+        def foo(self, n) -> None: ...
       class Bar(Foo):
-        def foo(self, a: int) -> None: pass
+        def foo(self, n: int) -> None: pass
     |}
-    ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
+    ["Missing parameter annotation [2]: Parameter `n` has no type specified."];
   assert_type_errors
     {|
-      class Foo():
+      class A():
         def foo(self, a: int) -> None: pass
-      class Bar(Foo):
+      class B(A):
         def foo(self, b: int) -> None: pass
     |}
     [
-      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
+      "Inconsistent override [14]: `test.B.foo` overrides method defined in `A` inconsistently. "
       ^ "Could not find parameter `a` in overriding signature.";
+      "Inconsistent override [14]: `test.B.foo` overrides method defined in `A` inconsistently. "
+      ^ "Could not find parameter `b` in overridden signature.";
     ];
   assert_type_errors
     ~show_error_traces:true

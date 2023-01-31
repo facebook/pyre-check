@@ -6334,6 +6334,46 @@ module State (Context : Context) = struct
                                          (Error.NotFound overridden_parameter);
                                    })
                     in
+                    let error_on_extra_parameter ~errors ~overriding_parameter =
+                      let overridden_parameters_undefined =
+                        match overridden_base_attribute_annotation with
+                        | Type.Callable
+                            {
+                              Type.Callable.implementation =
+                                { parameters = Type.Record.Callable.Undefined; _ };
+                              _;
+                            } ->
+                            true
+                        | _ -> false
+                      in
+                      let must_be_present =
+                        match overriding_parameter with
+                        | Type.Callable.RecordParameter.PositionalOnly _ -> true
+                        | Type.Callable.RecordParameter.KeywordOnly _ -> true
+                        | Type.Callable.RecordParameter.Named _ -> true
+                        | _ -> false
+                      in
+                      if
+                        (not must_be_present)
+                        || overridden_parameters_undefined
+                        || Type.Callable.Parameter.default overriding_parameter
+                      then
+                        errors
+                      else
+                        emit_error
+                          ~errors
+                          ~location
+                          ~kind:
+                            (Error.InconsistentOverride
+                               {
+                                 overridden_method = StatementDefine.unqualified_name define;
+                                 override_kind = Method;
+                                 parent = Attribute.parent overridden_attribute |> Reference.create;
+                                 override =
+                                   Error.StrengthenedPrecondition
+                                     (Error.ExtraNonDefaultParameter overriding_parameter);
+                               })
+                    in
                     let check_parameter index errors = function
                       | `Both (overridden_parameter, overriding_parameter) -> (
                           match
@@ -6357,7 +6397,10 @@ module State (Context : Context) = struct
                           | Some expected ->
                               validate_match ~errors ~index ~overridden_parameter ~expected None
                           | None -> errors)
-                      | `Right _ -> errors
+                      | `Right overriding_parameter -> (
+                          match Type.Callable.RecordParameter.annotation overriding_parameter with
+                          | Some _ -> error_on_extra_parameter ~errors ~overriding_parameter
+                          | None -> errors)
                     in
                     let overridden_parameters =
                       Type.Callable.Overload.parameters implementation |> Option.value ~default:[]
