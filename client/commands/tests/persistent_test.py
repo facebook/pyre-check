@@ -1979,14 +1979,14 @@ def patch_connect_async(
         yield mock
 
 
-class RequestHandlerTest(testslide.TestCase):
+class DaemonQuerierTest(testslide.TestCase):
     @setup.async_test
     async def test_get_type_coverage__basic(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentDaemonQuerier(
+            querier = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=False
                 ),
@@ -1997,7 +1997,7 @@ class RequestHandlerTest(testslide.TestCase):
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager.get_type_coverage(path=test_path)
+                result = await querier.get_type_coverage(path=test_path)
             self.assertEqual(len(memory_bytes_writer.items()), 1)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
@@ -2011,7 +2011,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__bad_json(self) -> None:
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 strict_default=False
             ),
@@ -2019,7 +2019,7 @@ class RequestHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_type_coverage(
+            result = await querier.get_type_coverage(
                 path=Path("test.py"),
             )
             self.assertTrue(result is None)
@@ -2030,7 +2030,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentDaemonQuerier(
+            querier = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=True
                 ),
@@ -2040,7 +2040,7 @@ class RequestHandlerTest(testslide.TestCase):
             )
             output_channel = AsyncTextWriter(MemoryBytesWriter())
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager.get_type_coverage(path=test_path)
+                result = await querier.get_type_coverage(path=test_path)
             self.assertTrue(result is not None)
             self.assertTrue(not isinstance(result, DaemonQueryFailure))
             self.assertEqual(len(result.uncovered_ranges), 0)
@@ -2048,7 +2048,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__not_typechecked(self) -> None:
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 strict_default=False
             ),
@@ -2056,7 +2056,7 @@ class RequestHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_type_coverage(path=Path("test.py"))
+            result = await querier.get_type_coverage(path=Path("test.py"))
         self.assertTrue(result is not None)
         self.assertTrue(not isinstance(result, DaemonQueryFailure))
         self.assertEqual(result.covered_percent, 0.0)
@@ -2071,7 +2071,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentDaemonQuerier(
+            querier = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
@@ -2085,7 +2085,7 @@ class RequestHandlerTest(testslide.TestCase):
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager.get_type_coverage(path=test_path)
+                result = await querier.get_type_coverage(path=test_path)
             self.assertEqual(len(memory_bytes_writer.items()), 2)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
@@ -2103,7 +2103,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentDaemonQuerier(
+            querier = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=False,
                     language_server_features=LanguageServerFeatures(
@@ -2117,7 +2117,7 @@ class RequestHandlerTest(testslide.TestCase):
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager.get_type_coverage(
+                result = await querier.get_type_coverage(
                     path=test_path,
                 )
             self.assertEqual(len(memory_bytes_writer.items()), 2)
@@ -2133,7 +2133,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_get_type_coverage__expression_level__bad_json(self) -> None:
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 strict_default=False,
                 language_server_features=LanguageServerFeatures(
@@ -2146,7 +2146,7 @@ class RequestHandlerTest(testslide.TestCase):
         )
         output_channel = AsyncTextWriter(MemoryBytesWriter())
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_type_coverage(
+            result = await querier.get_type_coverage(
                 path=Path("test.py"),
             )
             self.assertTrue(result is None)
@@ -2157,7 +2157,7 @@ class RequestHandlerTest(testslide.TestCase):
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            pyre_query_manager = PersistentDaemonQuerier(
+            querier = PersistentDaemonQuerier(
                 server_state=server_setup.create_server_state_with_options(
                     strict_default=True,
                     language_server_features=LanguageServerFeatures(
@@ -2170,7 +2170,7 @@ class RequestHandlerTest(testslide.TestCase):
             )
             output_channel = AsyncTextWriter(MemoryBytesWriter())
             with patch_connect_async(input_channel, output_channel):
-                result = await pyre_query_manager.get_type_coverage(
+                result = await querier.get_type_coverage(
                     path=test_path,
                 )
             self.assertTrue(result is not None)
@@ -2181,7 +2181,7 @@ class RequestHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_hover(self) -> None:
         json_output = """{ "response": {"value": "foo.bar.Bar", "docstring": "test docstring"} }"""
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2194,7 +2194,7 @@ class RequestHandlerTest(testslide.TestCase):
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_hover(
+            result = await querier.get_hover(
                 path=Path("bar.py"), position=lsp.PyrePosition(line=42, character=10)
             )
 
@@ -2214,7 +2214,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_hover__bad_json(self) -> None:
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2226,7 +2226,7 @@ class RequestHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_hover(
+            result = await querier.get_hover(
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=42, character=10),
             )
@@ -2253,7 +2253,7 @@ class RequestHandlerTest(testslide.TestCase):
             ]
         }
         """
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2266,7 +2266,7 @@ class RequestHandlerTest(testslide.TestCase):
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_async(input_channel, output_channel):
-            response = await pyre_query_manager.get_definition_locations(
+            response = await querier.get_definition_locations(
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=42, character=10),
             )
@@ -2293,7 +2293,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_definition_location__bad_json(self) -> None:
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2305,7 +2305,7 @@ class RequestHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_definition_locations(
+            result = await querier.get_definition_locations(
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=42, character=10),
             )
@@ -2313,7 +2313,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_definition_location__error_response(self) -> None:
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     hover=HoverAvailability.ENABLED
@@ -2327,7 +2327,7 @@ class RequestHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_definition_locations(
+            result = await querier.get_definition_locations(
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=4, character=10),
             )
@@ -2372,7 +2372,7 @@ class RequestHandlerTest(testslide.TestCase):
             ]
         }
         """
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     references=ReferencesAvailability.ENABLED,
@@ -2385,7 +2385,7 @@ class RequestHandlerTest(testslide.TestCase):
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_reference_locations(
+            result = await querier.get_reference_locations(
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=42, character=10),
             )
@@ -2419,7 +2419,7 @@ class RequestHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_references__bad_json(self) -> None:
-        pyre_query_manager = PersistentDaemonQuerier(
+        querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
                     references=ReferencesAvailability.ENABLED,
@@ -2430,7 +2430,7 @@ class RequestHandlerTest(testslide.TestCase):
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
         with patch_connect_async(input_channel, output_channel):
-            result = await pyre_query_manager.get_reference_locations(
+            result = await querier.get_reference_locations(
                 path=Path("bar.py"),
                 position=lsp.PyrePosition(line=42, character=10),
             )
