@@ -438,7 +438,7 @@ let test_object_global_leaks context =
   ()
 
 
-let test_invalid_global_statements context =
+let test_global_statements context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     {|
@@ -535,6 +535,16 @@ let test_invalid_global_statements context =
         my_local = my_global.x
     |}
     [ (* TODO (T142189949): should this be allowed? *) ];
+  assert_global_leak_errors {|
+      print(5)
+    |} [];
+  assert_global_leak_errors
+    {|
+      async def test() -> None:
+        print("Hello")
+        yield
+    |}
+    [];
 
   ()
 
@@ -611,7 +621,7 @@ let () =
          "dict_global_leaks" >:: test_dict_global_leaks;
          "set_global_leaks" >:: test_set_global_leaks;
          "object_global_leaks" >:: test_object_global_leaks;
-         "invalid_global_statements" >:: test_invalid_global_statements;
+         "global_statements" >:: test_global_statements;
          "recursive_coverage" >:: test_recursive_coverage;
        ]
   |> Test.run

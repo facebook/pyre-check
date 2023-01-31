@@ -101,6 +101,10 @@ module State (Context : Context) = struct
     | Call { callee; arguments } ->
         forward_expression callee;
         List.iter ~f:(fun { value; _ } -> forward_expression value) arguments
+    (* non-recursive cases *)
+    | Expression.Constant _
+    | Yield None ->
+        ()
     | _ -> ()
 
 
@@ -121,6 +125,10 @@ module State (Context : Context) = struct
           ~error_on_global_target
           ~is_mutable_expression:true
           expression
+    (* non-recursive cases *)
+    | Expression.Constant _
+    | Yield None ->
+        ()
     | _ -> ()
 
 
