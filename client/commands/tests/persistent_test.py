@@ -72,7 +72,7 @@ from ..server_state import OpenedDocumentState, ServerState
 from ..tests import server_setup
 
 
-class PersistentTest(testslide.TestCase):
+class ReadLspRequestTest(testslide.TestCase):
     @setup.async_test
     async def test_read_lsp_request_success(self) -> None:
         expected_request = json_rpc.Request(
@@ -123,6 +123,8 @@ class PersistentTest(testslide.TestCase):
         # Two messages for two failed reads
         self.assertEqual(len(bytes_writer.items()), 2)
 
+
+class InitializeTest(testslide.TestCase):
     @setup.async_test
     async def test_try_initialize_success(self) -> None:
         input_channel = await server_setup.create_input_channel_with_requests(
