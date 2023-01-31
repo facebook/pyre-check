@@ -182,6 +182,7 @@ let test_list_global_leaks context =
     [];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: List[int] = []
       def foo():
         my_global.append(123)
@@ -189,6 +190,7 @@ let test_list_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: List[int] = []
       def foo():
         my_global.append
@@ -211,6 +213,7 @@ let test_list_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: List[int] = []
       def insert_global_list() -> None:
         my_global.insert(0, 1)
@@ -218,6 +221,7 @@ let test_list_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: List[int] = []
       def extend_global_list() -> None:
         local_list = [1]
@@ -264,6 +268,7 @@ let test_dict_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Dict[str, int] = {}
       def update_global_dict() -> None:
         local_dict = {"a": 1, "b": 2}
@@ -272,6 +277,7 @@ let test_dict_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Dict[str, int] = {}
       def setdefault_global_dict() -> None:
         my_global.setdefault("a", 1)
@@ -294,6 +300,7 @@ let test_set_global_leaks context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Set[int] = set()
       def add_global_set() -> None:
         my_global.add(1)
@@ -301,6 +308,7 @@ let test_set_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Set[int] = set()
       def update_my_global() -> None:
         my_global.update({15})
@@ -316,6 +324,7 @@ let test_set_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Set[int] = set()
       def intersection_update_my_global() -> None:
         my_global.intersection_update({50, 23})
@@ -331,6 +340,7 @@ let test_set_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Set[int] = set()
       def difference_update_my_global() -> None:
         my_global.difference_update({39, 180})
@@ -346,6 +356,7 @@ let test_set_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Set[int] = set()
       def symmetric_difference_update_my_global() -> None:
         my_global.symmetric_difference_update({1, 2, 3})
@@ -532,14 +543,15 @@ let test_recursive_coverage context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: List[int] = []
       def foo():
-        global my_global
         print(my_global.append(123))
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: List[int] = []
       def foo():
         global my_global
@@ -548,6 +560,7 @@ let test_recursive_coverage context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: List[List[int]] = [[]]
       def foo():
         global my_global
@@ -564,6 +577,7 @@ let test_recursive_coverage context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Dict[str, int] = {}
       def setdefault_global_dict() -> None:
         return my_global.setdefault(1, "a")
@@ -571,6 +585,7 @@ let test_recursive_coverage context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Dict[str, int] = {}
       def setdefault_global_dict() -> None:
         raise Exception(my_global.setdefault("a", 1))
@@ -578,6 +593,7 @@ let test_recursive_coverage context =
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
+      from typing import *
       my_global: Dict[str, int] = {}
       def setdefault_global_dict() -> None:
         raise Exception() from Exception(my_global.setdefault("a", 1))

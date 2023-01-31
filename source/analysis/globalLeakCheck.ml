@@ -49,35 +49,44 @@ module State (Context : Context) = struct
 
   let errors () = Context.error_map |> LocalErrorMap.all_errors
 
-  let is_known_mutation_method identifier =
-    match identifier with
-    (* list mutators *)
-    | "append"
-    | "insert"
-    | "extend"
-    (* dict mutators *)
-    | "setdefault"
-    (* set mutators *)
-    | "add"
-    | "intersection_update"
-    | "difference_update"
-    | "symmetric_difference_update"
-    (* mutators for multiple of the above *)
-    | "update"
-    | "__setitem__"
-    (* mutators for objects *)
-    | "__setattr__" ->
-        true
-    | _ -> false
+  let known_mutation_methods =
+    String.Set.of_list
+      [
+        "list.append";
+        "list.insert";
+        "list.extend";
+        "dict.setdefault";
+        "dict.update";
+        "set.add";
+        "set.update";
+        "set.intersection_update";
+        "set.difference_update";
+        "set.symmetric_difference_update";
+      ]
+
+
+  let is_known_mutation_method ~resolution expression identifier =
+    let is_blocklisted_method () =
+      let expression_type =
+        Resolution.resolve_expression_to_type resolution expression
+        |> Type.class_name
+        |> Reference.show
+      in
+      String.Set.mem known_mutation_methods (expression_type ^ "." ^ identifier)
+    in
+    String.equal identifier "__setitem__"
+    or String.equal identifier "__setattr__"
+    or is_blocklisted_method ()
 
 
   let rec forward_expression
       ~error_on_global_target
+      ~resolution
       ?(is_mutable_expression = false)
       { Node.value; location }
     =
     let forward_expression ?(is_mutable_expression = is_mutable_expression) =
-      forward_expression ~error_on_global_target ~is_mutable_expression
+      forward_expression ~error_on_global_target ~is_mutable_expression ~resolution
     in
     match value with
     (* interesting cases *)
@@ -85,7 +94,9 @@ module State (Context : Context) = struct
         if is_mutable_expression then
           error_on_global_target ~location target
     | Name (Name.Attribute { base; attribute; _ }) ->
-        let is_mutable_expression = is_mutable_expression or is_known_mutation_method attribute in
+        let is_mutable_expression =
+          is_mutable_expression or is_known_mutation_method ~resolution base attribute
+        in
         forward_expression ~is_mutable_expression base
     | Call { callee; arguments } ->
         forward_expression callee;
@@ -93,14 +104,23 @@ module State (Context : Context) = struct
     | _ -> ()
 
 
-  and forward_assignment_target ~error_on_global_target ({ Node.value; location } as expression) =
-    let forward_assignment_target = forward_assignment_target ~error_on_global_target in
+  and forward_assignment_target
+      ~error_on_global_target
+      ~resolution
+      ({ Node.value; location } as expression)
+    =
+    let forward_assignment_target = forward_assignment_target ~error_on_global_target ~resolution in
     match value with
     (* interesting cases *)
     | Expression.Name (Name.Identifier target) -> error_on_global_target ~location target
     | Name (Name.Attribute { base; _ }) -> forward_assignment_target base
     | Tuple values -> List.iter ~f:forward_assignment_target values
-    | Call _ -> forward_expression ~error_on_global_target ~is_mutable_expression:true expression
+    | Call _ ->
+        forward_expression
+          ~resolution
+          ~error_on_global_target
+          ~is_mutable_expression:true
+          expression
     | _ -> ()
 
 
@@ -131,11 +151,11 @@ module State (Context : Context) = struct
       else
         ()
     in
-    let forward_expression = forward_expression ~error_on_global_target in
+    let forward_expression = forward_expression ~resolution ~error_on_global_target in
     match value with
     | Statement.Assert _ -> ()
     | Assign { target; value; _ } ->
-        forward_assignment_target ~error_on_global_target target;
+        forward_assignment_target ~resolution ~error_on_global_target target;
         forward_expression value
     | Expression expression -> forward_expression expression
     | Raise { expression; from } ->
