@@ -178,14 +178,14 @@ let test_list_global_leaks context =
       def foo():
         my_global.append(123)
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[int] = []
       def foo():
         my_global.append
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function access *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -200,14 +200,14 @@ let test_list_global_leaks context =
       def foo():
         my_global[0] = 123
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[int] = []
       def insert_global_list() -> None:
         my_global.insert(0, 1)
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -215,7 +215,7 @@ let test_list_global_leaks context =
         local_list = [1]
         my_global.extend(local_list)
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -253,7 +253,7 @@ let test_dict_global_leaks context =
       def foo():
         my_global["x"] = 1
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -261,14 +261,14 @@ let test_dict_global_leaks context =
         local_dict = {"a": 1, "b": 2}
         my_global.update(local_dict)
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
       def setdefault_global_dict() -> None:
         my_global.setdefault("a", 1)
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -290,14 +290,14 @@ let test_set_global_leaks context =
       def add_global_set() -> None:
         my_global.add(1)
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Set[int] = set()
       def update_my_global() -> None:
         my_global.update({15})
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Set[int] = set()
@@ -312,7 +312,7 @@ let test_set_global_leaks context =
       def intersection_update_my_global() -> None:
         my_global.intersection_update({50, 23})
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Set[int] = set()
@@ -327,7 +327,7 @@ let test_set_global_leaks context =
       def difference_update_my_global() -> None:
         my_global.difference_update({39, 180})
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Set[int] = set()
@@ -342,7 +342,7 @@ let test_set_global_leaks context =
       def symmetric_difference_update_my_global() -> None:
         my_global.symmetric_difference_update({1, 2, 3})
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Set[int] = set()
@@ -529,7 +529,7 @@ let test_recursive_coverage context =
         global my_global
         print(my_global.append(123))
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -545,7 +545,7 @@ let test_recursive_coverage context =
         global my_global
         my_global[0].append(1)
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: List[List[int]] = [[]]
@@ -553,7 +553,7 @@ let test_recursive_coverage context =
         global my_global
         my_global.get(0)[1] = 5
     |}
-    [ (* TODO (T142189949): leaks should be detected for global mutable function calls *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}

@@ -136,8 +136,8 @@ module State (Context : Context) = struct
     | Assign { target; value; _ } ->
         forward_assignment_target ~error_on_global_target target;
         forward_expression ~error_on_global_target value
+    | Expression expression -> forward_expression ~error_on_global_target expression
     | Delete _ -> ()
-    | Expression _ -> ()
     | Raise _ -> ()
     | Return { expression = Some expression; _ } ->
         forward_expression ~error_on_global_target expression
