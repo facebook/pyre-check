@@ -116,7 +116,8 @@ def parse_events(input_string: str) -> List[Event]:
 
 
 class StatisticsOverTime:
-    _data: List[Tuple[str, int]] = []
+    def __init__(self) -> None:
+        self._data: List[Tuple[str, int]] = []
 
     def add(self, line: str) -> None:
         dividers = [
