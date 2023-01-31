@@ -35,11 +35,15 @@ let update_artifacts ~source_root ~artifact_root difference =
 
 
 let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map () =
+  let open Lwt.Infix in
   let difference =
     Log.info "Calculating the scope of the re-build...";
     BuildMap.difference ~original:old_build_map new_build_map
   in
   update_artifacts ~source_root ~artifact_root difference
+  >>= fun result ->
+  Log.info "Rebuild completed. %d artifacts were changed" (List.length result);
+  Lwt.return result
 
 
 let to_relative_path ~root path = PyrePath.get_relative_to_root ~root ~path
