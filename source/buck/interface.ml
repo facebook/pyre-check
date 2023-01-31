@@ -614,8 +614,9 @@ module Lazy = struct
       target_patterns
     =
     match target_patterns with
-    | [] -> Lwt.return "{}"
+    | [] -> Lwt.return BuildMap.(Partial.empty |> create)
     | _ ->
+        let open Lwt.Infix in
         List.concat
           [
             (* Location of the BXL builder. *)
@@ -628,14 +629,14 @@ module Lazy = struct
             List.bind target_patterns ~f:(fun source_path -> ["--source"; source_path]);
           ]
         |> Raw.V2.bxl ?mode ?isolation_prefix raw
+        >>= fun output -> Lwt.return (parse_bxl_output output)
 
 
   let construct_build_map_with_options ~bxl_builder ~buck_options source_paths =
     let open Lwt.Infix in
     Log.info "Building Buck source databases for %d sources..." (List.length source_paths);
     run_bxl_for_targets ~bxl_builder ~buck_options source_paths
-    >>= fun output ->
-    let build_map = parse_bxl_output output in
+    >>= fun build_map ->
     Log.info "Loaded source databases";
     Lwt.return build_map
 
