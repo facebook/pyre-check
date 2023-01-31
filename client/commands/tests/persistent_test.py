@@ -544,9 +544,9 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         return json_rpc.ByNameParameters(values=json.loads(parameters.to_json()))
 
     @setup.async_test
-    async def test_handle_request_triggers_restart(self) -> None:
+    async def test_dispatch_request_triggers_restart(self) -> None:
         """
-        Check that the handle_request method restarts the daemon on some
+        Check that the dispatch_request method restarts the daemon on some
         example requests.
         """
         test_path = Path("/foo.py")
@@ -594,12 +594,12 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             )
             self.assertFalse(fake_task_manager.is_task_running())
 
-            await server.handle_request(request)
+            await server.dispatch_request(request)
             await asyncio.sleep(0)
             self.assertTrue(fake_task_manager.is_task_running())
 
     @setup.async_test
-    async def test_handle_request_triggers_restart__limit_reached(self) -> None:
+    async def test_dispatch_request_triggers_restart__limit_reached(self) -> None:
         """
         Check on some example requests that, if we've reached our restart limit,
         we skip trying to restart the daemon connection.
@@ -651,7 +651,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             self.assertFalse(fake_task_manager.is_task_running())
 
             print(request)
-            await server.handle_request(request)
+            await server.dispatch_request(request)
             await asyncio.sleep(0)
             self.assertFalse(fake_task_manager.is_task_running())
 

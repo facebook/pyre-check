@@ -709,7 +709,7 @@ class PyreLanguageServer:
                 " has been reached."
             )
 
-    async def handle_request(
+    async def dispatch_request(
         self, request: json_rpc.Request
     ) -> Optional[commands.ExitCode]:
         """
@@ -807,7 +807,7 @@ class PyreLanguageServer:
             LOG.debug(f"Received LSP request: {log.truncate(str(request), 400)}")
 
             try:
-                return_code = await self.handle_request(request)
+                return_code = await self.dispatch_request(request)
                 if return_code is not None:
                     return return_code
             except json_rpc.JSONRPCException as json_rpc_error:
