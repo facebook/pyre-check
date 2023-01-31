@@ -1041,9 +1041,6 @@ class PyreLanguageServerApiTest(testslide.TestCase):
     async def test_type_coverage_request(self) -> None:
         test_path = Path("/foo")
         output_writer = MemoryBytesWriter()
-        fake_daemon_manager = background.TaskManager(
-            server_setup.WaitForeverBackgroundTask()
-        )
         querier = server_setup.MockDaemonQuerier(
             mock_type_coverage=lsp.TypeCoverageResponse(
                 covered_percent=42.42,
@@ -1080,9 +1077,6 @@ class PyreLanguageServerApiTest(testslide.TestCase):
     async def test_type_coverage_request__None_response(self) -> None:
         test_path = Path("/foo")
         output_writer = MemoryBytesWriter()
-        fake_daemon_manager = background.TaskManager(
-            server_setup.WaitForeverBackgroundTask()
-        )
         querier = server_setup.MockDaemonQuerier(mock_type_coverage=None)
         api = server_setup.create_pyre_language_server_api(
             output_channel=AsyncTextWriter(output_writer),
