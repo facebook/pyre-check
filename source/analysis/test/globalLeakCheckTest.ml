@@ -56,6 +56,14 @@ let test_global_assignment context =
         inner()
     |}
     [];
+  assert_global_leak_errors {|
+      def foo():
+        raise Exception()
+    |} [];
+  assert_global_leak_errors {|
+      def foo():
+        raise Exception() from Exception()
+    |} [];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -559,6 +567,20 @@ let test_recursive_coverage context =
       my_global: Dict[str, int] = {}
       def setdefault_global_dict() -> None:
         return my_global.setdefault(1, "a")
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def setdefault_global_dict() -> None:
+        raise Exception(my_global.setdefault("a", 1))
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def setdefault_global_dict() -> None:
+        raise Exception() from Exception(my_global.setdefault("a", 1))
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 

@@ -131,16 +131,18 @@ module State (Context : Context) = struct
       else
         ()
     in
+    let forward_expression = forward_expression ~error_on_global_target in
     match value with
     | Statement.Assert _ -> ()
     | Assign { target; value; _ } ->
         forward_assignment_target ~error_on_global_target target;
-        forward_expression ~error_on_global_target value
-    | Expression expression -> forward_expression ~error_on_global_target expression
+        forward_expression value
+    | Expression expression -> forward_expression expression
+    | Raise { expression; from } ->
+        Option.iter ~f:forward_expression expression;
+        Option.iter ~f:forward_expression from
+    | Return { expression = Some expression; _ } -> forward_expression expression
     | Delete _ -> ()
-    | Raise _ -> ()
-    | Return { expression = Some expression; _ } ->
-        forward_expression ~error_on_global_target expression
     | Return _ -> ()
     (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
     | If _
