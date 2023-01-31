@@ -703,13 +703,13 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             ),
             querier=server_setup.MockDaemonQuerier(),
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rebuilding")
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rechecking")
         )
-        await server_handler.handle_type_error_subscription(
+        await server_handler.handle_type_error_event(
             subscription.TypeErrors(
                 errors=[
                     error.Error(
@@ -770,13 +770,13 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             ),
             querier=server_setup.MockDaemonQuerier(),
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rebuilding")
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rechecking")
         )
-        await server_handler.handle_type_error_subscription(
+        await server_handler.handle_type_error_event(
             subscription.TypeErrors(
                 errors=[
                     error.Error(
@@ -816,7 +816,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             querier=server_setup.MockDaemonQuerier(),
         )
         with self.assertRaises(PyreDaemonShutdown):
-            await server_handler.handle_error_subscription(
+            await server_handler.handle_error_event(
                 subscription.Error(message="Doom Eternal")
             )
 
@@ -845,10 +845,10 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             ),
             querier=server_setup.MockDaemonQuerier(),
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rebuilding")
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rechecking")
         )
 
@@ -887,10 +887,10 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             ),
             querier=server_setup.MockDaemonQuerier(),
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rebuilding")
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rechecking")
         )
 

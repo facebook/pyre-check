@@ -80,7 +80,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
         return self.server_state.server_options.language_server_features.type_errors
 
-    async def handle_type_error_subscription(
+    async def handle_type_error_event(
         self, type_error_subscription: subscription.TypeErrors
     ) -> None:
         # We currently do not broadcast any type errors on the CodeNav server - the intent is to be
@@ -90,7 +90,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             "The Pyre code navigation server is not expected to broadcast type errors at the moment."
         )
 
-    async def handle_status_update_subscription(
+    async def handle_status_update_event(
         self, status_update_subscription: subscription.StatusUpdate
     ) -> None:
         if not self.get_type_errors_availability().is_disabled():
@@ -127,9 +127,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
                 level=lsp.MessageType.INFO,
             )
 
-    async def handle_error_subscription(
-        self, error_subscription: subscription.Error
-    ) -> None:
+    async def handle_error_event(self, error_subscription: subscription.Error) -> None:
         message = error_subscription.message
         LOG.info(f"Received error from subscription channel: {message}")
         raise launch_and_subscribe_handler.PyreDaemonShutdown(message)

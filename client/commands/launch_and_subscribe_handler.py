@@ -85,21 +85,23 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         self.subscription_response_parser = subscription_response_parser
 
     @abc.abstractmethod
-    async def handle_type_error_subscription(
+    async def handle_type_error_event(
         self,
         type_error_subscription: subscription.TypeErrors,
     ) -> None:
         pass
 
     @abc.abstractmethod
-    async def handle_status_update_subscription(
-        self, status_update_subscription: subscription.StatusUpdate
+    async def handle_status_update_event(
+        self,
+        status_update_subscription: subscription.StatusUpdate,
     ) -> None:
         pass
 
     @abc.abstractmethod
-    async def handle_error_subscription(
-        self, error_subscription: subscription.Error
+    async def handle_error_event(
+        self,
+        error_subscription: subscription.Error,
     ) -> None:
         pass
 
@@ -164,11 +166,11 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
         self, subscription_body: subscription.Body
     ) -> None:
         if isinstance(subscription_body, subscription.TypeErrors):
-            await self.handle_type_error_subscription(subscription_body)
+            await self.handle_type_error_event(subscription_body)
         elif isinstance(subscription_body, subscription.StatusUpdate):
-            await self.handle_status_update_subscription(subscription_body)
+            await self.handle_status_update_event(subscription_body)
         elif isinstance(subscription_body, subscription.Error):
-            await self.handle_error_subscription(subscription_body)
+            await self.handle_error_event(subscription_body)
         elif isinstance(subscription_body, subscription.IncrementalTelemetry):
             pass
 

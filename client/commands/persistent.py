@@ -348,7 +348,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
             remote_logging,
         )
 
-    async def handle_type_error_subscription(
+    async def handle_type_error_event(
         self,
         type_error_subscription: subscription.TypeErrors,
     ) -> None:
@@ -364,7 +364,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
             level=lsp.MessageType.INFO,
         )
 
-    async def handle_status_update_subscription(
+    async def handle_status_update_event(
         self,
         status_update_subscription: subscription.StatusUpdate,
     ) -> None:
@@ -392,9 +392,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
                 level=lsp.MessageType.INFO,
             )
 
-    async def handle_error_subscription(
-        self, error_subscription: subscription.Error
-    ) -> None:
+    async def handle_error_event(self, error_subscription: subscription.Error) -> None:
         message = error_subscription.message
         LOG.info(f"Received error from subscription channel: {message}")
         raise launch_and_subscribe_handler.PyreDaemonShutdown(message)

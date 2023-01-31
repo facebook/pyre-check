@@ -44,13 +44,13 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             ),
             querier=server_setup.MockDaemonQuerier(),
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="BusyBuilding")
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="BusyChecking")
         )
-        await server_handler.handle_status_update_subscription(
+        await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Idle")
         )
 
