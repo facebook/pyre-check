@@ -126,14 +126,12 @@ class QueryResultWithDurations(Generic[QueryResultType]):
 
 
 @dataclasses.dataclass(frozen=True)
-class PyreLanguageServer:
-    # I/O Channels
-    input_channel: connections.AsyncTextReader
+class PyreLanguageServerApi:
+    # Channel to send responses to the editor
     output_channel: connections.AsyncTextWriter
 
-    # inside this task manager is a PyreDaemonLaunchAndSubscribeHandler
-    daemon_manager: background.TaskManager
-    # NOTE: The fields inside `server_state` are mutable and can be changed by `daemon_manager`
+    # NOTE: The fields inside `server_state` are mutable and can be changed by the background
+    # task.
     server_state: state.ServerState
 
     querier: daemon_querier.AbstractDaemonQuerier
@@ -690,6 +688,38 @@ class PyreLanguageServer:
             json_rpc.SuccessResponse(id=request_id, activity_key=None, result=None),
         )
 
+
+class CodeNavigationServerApi(PyreLanguageServerApi):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class PyreLanguageServerDispatcher:
+    """
+    The dispatcher provides the top-level, "foreground" logic for a Pyre
+    language server. Its only job is to read requests from standard input,
+    parse them, and dispatch to the appropriate lower-level logic.
+
+    There are two compontents to which we might dispatch:
+    - We'll dispatch to the PyreLanguageServerApi for all request handling,
+      which includes querying the daemon, sending responses to the client,
+      and reporting telemetry.
+    - We also may check that the background task used to start/restart the
+      daemon and get type error notifications over subscriptions is alive.
+      The daemon can go down, for example if a critical file change occurs,
+      so it is important for us to periodically check whether it is up.
+    """
+
+    # I/O channels. Output channel is used *exclusively* to report parse errors.
+    input_channel: connections.AsyncTextReader
+    output_channel: connections.AsyncTextWriter
+
+    # State: used *exclusively* to track restart failures.
+    server_state: state.ServerState
+
+    daemon_manager: background.TaskManager
+    api: PyreLanguageServerApi
+
     async def wait_for_exit(self) -> commands.ExitCode:
         await _wait_for_exit(self.input_channel, self.output_channel)
         return commands.ExitCode.SUCCESS
@@ -723,10 +753,10 @@ class PyreLanguageServer:
             )
             return commands.ExitCode.FAILURE
         elif request.method == "shutdown":
-            await self.process_shutdown_request(request.id)
+            await self.api.process_shutdown_request(request.id)
             return await self.wait_for_exit()
         elif request.method == "textDocument/definition":
-            await self.process_definition_request(
+            await self.api.process_definition_request(
                 lsp.DefinitionParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
@@ -736,7 +766,7 @@ class PyreLanguageServer:
             if not self.daemon_manager.is_task_running():
                 await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/didOpen":
-            await self.process_open_request(
+            await self.api.process_open_request(
                 lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
@@ -745,7 +775,7 @@ class PyreLanguageServer:
             if not self.daemon_manager.is_task_running():
                 await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/didChange":
-            await self.process_did_change_request(
+            await self.api.process_did_change_request(
                 lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 )
@@ -753,13 +783,13 @@ class PyreLanguageServer:
             if not self.daemon_manager.is_task_running():
                 await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/didClose":
-            await self.process_close_request(
+            await self.api.process_close_request(
                 lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 )
             )
         elif request.method == "textDocument/didSave":
-            await self.process_did_save_request(
+            await self.api.process_did_save_request(
                 lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
@@ -768,7 +798,7 @@ class PyreLanguageServer:
             if not self.daemon_manager.is_task_running():
                 await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/hover":
-            await self.process_hover_request(
+            await self.api.process_hover_request(
                 lsp.HoverParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
@@ -776,7 +806,7 @@ class PyreLanguageServer:
                 request.activity_key,
             )
         elif request.method == "textDocument/typeCoverage":
-            await self.process_type_coverage_request(
+            await self.api.process_type_coverage_request(
                 lsp.TypeCoverageParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
@@ -784,7 +814,7 @@ class PyreLanguageServer:
                 request.activity_key,
             )
         elif request.method == "textDocument/documentSymbol":
-            await self.process_document_symbols_request(
+            await self.api.process_document_symbols_request(
                 lsp.DocumentSymbolsParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
@@ -792,7 +822,7 @@ class PyreLanguageServer:
                 request.activity_key,
             )
         elif request.method == "textDocument/references":
-            await self.process_find_all_references_request(
+            await self.api.process_find_all_references_request(
                 lsp.ReferencesParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
@@ -843,7 +873,3 @@ class PyreLanguageServer:
             return commands.ExitCode.SUCCESS
         finally:
             await self.daemon_manager.ensure_task_stop()
-
-
-class CodeNavigationServer(PyreLanguageServer):
-    pass

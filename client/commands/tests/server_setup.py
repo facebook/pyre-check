@@ -27,7 +27,8 @@ from .. import backend_arguments, background, start
 from ..daemon_querier import AbstractDaemonQuerier
 from ..daemon_query import DaemonQueryFailure
 from ..persistent import ClientTypeErrorHandler
-from ..pyre_language_server import PyreLanguageServer
+
+from ..pyre_language_server import PyreLanguageServerApi, PyreLanguageServerDispatcher
 from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 from ..server_state import OpenedDocumentState, ServerState
 
@@ -225,18 +226,14 @@ mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
 mock_server_state: ServerState = ServerState(server_options=mock_initial_server_options)
 
 
-def create_pyre_language_server(
-    input_channel: AsyncTextReader,
+def create_pyre_language_server_api(
     output_channel: AsyncTextWriter,
     server_state: ServerState,
-    daemon_manager: background.TaskManager,
     querier: AbstractDaemonQuerier,
-) -> PyreLanguageServer:
-    return PyreLanguageServer(
-        input_channel=input_channel,
+) -> PyreLanguageServerApi:
+    return PyreLanguageServerApi(
         output_channel=output_channel,
         server_state=server_state,
-        daemon_manager=daemon_manager,
         querier=querier,
         client_type_error_handler=ClientTypeErrorHandler(
             client_output_channel=output_channel,
@@ -245,28 +242,46 @@ def create_pyre_language_server(
     )
 
 
-async def create_server_for_request_test(
+def create_pyre_language_server_api_and_output(
     opened_documents: Dict[Path, OpenedDocumentState],
     querier: MockDaemonQuerier,
     server_options: PyreServerOptions = mock_initial_server_options,
-) -> Tuple[PyreLanguageServer, MemoryBytesWriter]:
-    # set up the system under test
-    fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+) -> Tuple[PyreLanguageServerApi, MemoryBytesWriter]:
     output_writer: MemoryBytesWriter = MemoryBytesWriter()
     output_channel = AsyncTextWriter(output_writer)
     server_state = ServerState(
         server_options=server_options,
         opened_documents=opened_documents,
     )
-    server = create_pyre_language_server(
-        input_channel=create_memory_text_reader(""),
+    api = create_pyre_language_server_api(
         output_channel=output_channel,
         server_state=server_state,
-        daemon_manager=fake_task_manager,
         querier=querier,
     )
-    await fake_task_manager.ensure_task_running()
-    return server, output_writer
+    return api, output_writer
+
+
+def create_pyre_language_server_dispatcher(
+    input_channel: AsyncTextReader,
+    server_state: ServerState,
+    daemon_manager: background.TaskManager,
+    querier: MockDaemonQuerier,
+) -> Tuple[PyreLanguageServerDispatcher, MemoryBytesWriter]:
+    output_writer: MemoryBytesWriter = MemoryBytesWriter()
+    output_channel = AsyncTextWriter(output_writer)
+    api = create_pyre_language_server_api(
+        output_channel=output_channel,
+        server_state=server_state,
+        querier=querier,
+    )
+    dispatcher = PyreLanguageServerDispatcher(
+        input_channel=input_channel,
+        output_channel=output_channel,
+        server_state=server_state,
+        daemon_manager=daemon_manager,
+        api=api,
+    )
+    return dispatcher, output_writer
 
 
 def extract_json_from_json_rpc_message(

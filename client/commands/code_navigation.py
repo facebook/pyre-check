@@ -228,7 +228,7 @@ async def async_run_code_navigation_client(
     client_type_error_handler = persistent.ClientTypeErrorHandler(
         stdout, server_state, remote_logging
     )
-    server = pyre_language_server.PyreLanguageServer(
+    server = pyre_language_server.PyreLanguageServerDispatcher(
         input_channel=stdin,
         output_channel=stdout,
         server_state=server_state,
@@ -244,8 +244,12 @@ async def async_run_code_navigation_client(
                 client_type_error_handler=client_type_error_handler,
             )
         ),
-        querier=querier,
-        client_type_error_handler=client_type_error_handler,
+        api=pyre_language_server.PyreLanguageServerApi(
+            output_channel=stdout,
+            server_state=server_state,
+            querier=querier,
+            client_type_error_handler=client_type_error_handler,
+        ),
     )
     return await server.run()
 

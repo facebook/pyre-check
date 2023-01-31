@@ -578,9 +578,8 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             fake_task_manager = background.TaskManager(
                 server_setup.WaitForeverBackgroundTask()
             )
-            server = server_setup.create_pyre_language_server(
+            dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
                 input_channel=create_memory_text_reader(""),
-                output_channel=create_memory_text_writer(),
                 server_state=ServerState(
                     server_options=server_setup.mock_initial_server_options,
                     opened_documents={
@@ -594,7 +593,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             )
             self.assertFalse(fake_task_manager.is_task_running())
 
-            await server.dispatch_request(request)
+            await dispatcher.dispatch_request(request)
             await asyncio.sleep(0)
             self.assertTrue(fake_task_manager.is_task_running())
 
@@ -633,9 +632,8 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             fake_task_manager = background.TaskManager(
                 server_setup.WaitForeverBackgroundTask()
             )
-            server = server_setup.create_pyre_language_server(
+            dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
                 input_channel=create_memory_text_reader(""),
-                output_channel=create_memory_text_writer(),
                 server_state=ServerState(
                     server_options=server_setup.mock_initial_server_options,
                     opened_documents={
@@ -651,18 +649,14 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             self.assertFalse(fake_task_manager.is_task_running())
 
             print(request)
-            await server.dispatch_request(request)
+            await dispatcher.dispatch_request(request)
             await asyncio.sleep(0)
             self.assertFalse(fake_task_manager.is_task_running())
 
     @setup.async_test
     async def test_save_adds_path_to_queue(self) -> None:
         test_path = Path("/root/test.py")
-        fake_task_manager = background.TaskManager(
-            server_setup.WaitForeverBackgroundTask()
-        )
-        server = server_setup.create_pyre_language_server(
-            input_channel=create_memory_text_reader(""),
+        api = server_setup.create_pyre_language_server_api(
             output_channel=create_memory_text_writer(),
             server_state=ServerState(
                 server_options=server_setup.mock_initial_server_options,
@@ -672,14 +666,9 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                     )
                 },
             ),
-            daemon_manager=fake_task_manager,
             querier=server_setup.MockDaemonQuerier(),
         )
-
-        # Save should add path to query even if the server is already running.
-        await fake_task_manager.ensure_task_running()
-
-        await server.process_did_save_request(
+        await api.process_did_save_request(
             lsp.DidSaveTextDocumentParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
@@ -934,22 +923,19 @@ class PyreServerTest(testslide.TestCase):
     @setup.async_test
     async def test_exit(self) -> None:
         server_state = server_setup.mock_server_state
-        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
         input_channel = await server_setup.create_input_channel_with_requests(
             [
                 json_rpc.Request(method="shutdown", parameters=None),
                 json_rpc.Request(method="exit", parameters=None),
             ]
         )
-        server = server_setup.create_pyre_language_server(
+        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
             input_channel=input_channel,
-            output_channel=create_memory_text_writer(),
             server_state=server_state,
-            daemon_manager=noop_task_manager,
             querier=server_setup.MockDaemonQuerier(),
+            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
         )
-
-        exit_code = await server.run()
+        exit_code = await dispatcher.run()
         self.assertEqual(exit_code, 0)
 
     @setup.async_test
@@ -963,15 +949,13 @@ class PyreServerTest(testslide.TestCase):
                 json_rpc.Request(method="exit", parameters=None),
             ]
         )
-        server = server_setup.create_pyre_language_server(
+        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
             input_channel=input_channel,
-            output_channel=create_memory_text_writer(),
             server_state=server_state,
-            daemon_manager=noop_task_manager,
             querier=server_setup.MockDaemonQuerier(),
+            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
         )
-
-        exit_code = await server.run()
+        exit_code = await dispatcher.run()
         self.assertEqual(exit_code, 0)
 
     @setup.async_test
@@ -983,54 +967,42 @@ class PyreServerTest(testslide.TestCase):
                 json_rpc.Request(method="shutdown", parameters=None),
             ]
         )
-        server = server_setup.create_pyre_language_server(
-            # Feed only a shutdown request to input channel
+        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
             input_channel=input_channel,
-            # Always rasing in the output channel
-            output_channel=AsyncTextWriter(
-                server_setup.ExceptionRaisingBytesWriter(ConnectionResetError())
-            ),
             server_state=server_state,
-            daemon_manager=noop_task_manager,
             querier=server_setup.MockDaemonQuerier(),
+            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
         )
-
-        exit_code = await server.run()
+        exit_code = await dispatcher.run()
         self.assertEqual(exit_code, 0)
 
     @setup.async_test
     async def test_exit_gracefully_on_channel_closure(self) -> None:
         server_state = server_setup.mock_server_state
         noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
-        server = server_setup.create_pyre_language_server(
+        dispatcher, output_writer = server_setup.create_pyre_language_server_dispatcher(
             # Feed nothing to input channel
             input_channel=create_memory_text_reader(""),
-            # Always rasing in the output channel
-            output_channel=AsyncTextWriter(
-                server_setup.ExceptionRaisingBytesWriter(ConnectionResetError())
-            ),
             server_state=server_state,
             daemon_manager=noop_task_manager,
             querier=server_setup.MockDaemonQuerier(),
         )
-
-        exit_code = await server.run()
+        exit_code = await dispatcher.run()
         self.assertEqual(exit_code, 0)
+        self.assertEqual(len(output_writer.items()), 0)
 
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = server_setup.mock_server_state
-        server = server_setup.create_pyre_language_server(
-            input_channel=create_memory_text_reader(""),
+        api = server_setup.create_pyre_language_server_api(
             output_channel=create_memory_text_writer(),
             server_state=server_state,
-            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
             querier=server_setup.MockDaemonQuerier(),
         )
         test_path0 = Path("/foo/bar")
         test_path1 = Path("/foo/baz")
 
-        await server.process_open_request(
+        await api.process_open_request(
             lsp.DidOpenTextDocumentParameters(
                 text_document=lsp.TextDocumentItem(
                     language_id="python",
@@ -1042,7 +1014,7 @@ class PyreServerTest(testslide.TestCase):
         )
         self.assertIn(test_path0, server_state.opened_documents)
 
-        await server.process_open_request(
+        await api.process_open_request(
             lsp.DidOpenTextDocumentParameters(
                 text_document=lsp.TextDocumentItem(
                     language_id="python",
@@ -1054,7 +1026,7 @@ class PyreServerTest(testslide.TestCase):
         )
         self.assertIn(test_path1, server_state.opened_documents)
 
-        await server.process_close_request(
+        await api.process_close_request(
             lsp.DidCloseTextDocumentParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path0).unparse()
@@ -1077,14 +1049,12 @@ class PyreServerTest(testslide.TestCase):
                 default_message="pyre is on fire",
             )
         )
-        server = server_setup.create_pyre_language_server(
-            input_channel=create_memory_text_reader(""),
+        api = server_setup.create_pyre_language_server_api(
             output_channel=AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
-            daemon_manager=fake_daemon_manager,
             querier=querier,
         )
-        await server.process_type_coverage_request(
+        await api.process_type_coverage_request(
             lsp.TypeCoverageParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
@@ -1112,14 +1082,12 @@ class PyreServerTest(testslide.TestCase):
             server_setup.WaitForeverBackgroundTask()
         )
         querier = server_setup.MockDaemonQuerier(mock_type_coverage=None)
-        server = server_setup.create_pyre_language_server(
-            input_channel=create_memory_text_reader(""),
+        api = server_setup.create_pyre_language_server_api(
             output_channel=AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
-            daemon_manager=fake_daemon_manager,
             querier=querier,
         )
-        await server.process_type_coverage_request(
+        await api.process_type_coverage_request(
             lsp.TypeCoverageParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
@@ -1206,7 +1174,10 @@ class PyreServerTest(testslide.TestCase):
         tracked_path = Path("/tracked.py")
         for enabled_telemetry_event in (True, False):
             querier = server_setup.MockDaemonQuerier()
-            server, output_writer = await server_setup.create_server_for_request_test(
+            (
+                api,
+                output_writer,
+            ) = server_setup.create_pyre_language_server_api_and_output(
                 opened_documents={
                     tracked_path: OpenedDocumentState(
                         code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1217,7 +1188,7 @@ class PyreServerTest(testslide.TestCase):
                     enabled_telemetry_event=enabled_telemetry_event
                 ),
             )
-            await server.process_did_change_request(
+            await api.process_did_change_request(
                 parameters=lsp.DidChangeTextDocumentParameters(
                     text_document=lsp.TextDocumentIdentifier(
                         uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1263,7 +1234,10 @@ class PyreServerTest(testslide.TestCase):
                     ),
                 ]
             )
-            server, output_writer = await server_setup.create_server_for_request_test(
+            (
+                api,
+                output_writer,
+            ) = server_setup.create_pyre_language_server_api_and_output(
                 opened_documents={
                     tracked_path: OpenedDocumentState(
                         code=unsaved_file_content,
@@ -1277,7 +1251,7 @@ class PyreServerTest(testslide.TestCase):
                     ),
                 ),
             )
-            await server.process_did_change_request(
+            await api.process_did_change_request(
                 parameters=lsp.DidChangeTextDocumentParameters(
                     text_document=lsp.TextDocumentIdentifier(
                         uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1329,7 +1303,10 @@ class PyreServerTest(testslide.TestCase):
             querier = server_setup.MockDaemonQuerier(
                 mock_type_errors=[],
             )
-            server, output_writer = await server_setup.create_server_for_request_test(
+            (
+                api,
+                output_writer,
+            ) = server_setup.create_pyre_language_server_api_and_output(
                 opened_documents={
                     tracked_path: OpenedDocumentState(
                         code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1343,7 +1320,7 @@ class PyreServerTest(testslide.TestCase):
                     ),
                 ),
             )
-            await server.process_did_change_request(
+            await api.process_did_change_request(
                 parameters=lsp.DidChangeTextDocumentParameters(
                     text_document=lsp.TextDocumentIdentifier(
                         uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1391,7 +1368,10 @@ class PyreServerTest(testslide.TestCase):
             querier = server_setup.MockDaemonQuerier(
                 mock_hover_response=expected_response,
             )
-            server, output_writer = await server_setup.create_server_for_request_test(
+            (
+                api,
+                output_writer,
+            ) = server_setup.create_pyre_language_server_api_and_output(
                 opened_documents={
                     tracked_path: OpenedDocumentState(
                         code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1402,7 +1382,7 @@ class PyreServerTest(testslide.TestCase):
                     enabled_telemetry_event=enabled_telemetry_event
                 ),
             )
-            await server.process_hover_request(
+            await api.process_hover_request(
                 parameters=lsp.HoverParameters(
                     text_document=lsp.TextDocumentIdentifier(
                         uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1453,7 +1433,10 @@ class PyreServerTest(testslide.TestCase):
             querier = server_setup.MockDaemonQuerier(
                 mock_hover_response=expected_response,
             )
-            server, output_writer = await server_setup.create_server_for_request_test(
+            (
+                api,
+                output_writer,
+            ) = server_setup.create_pyre_language_server_api_and_output(
                 opened_documents={
                     tracked_path: OpenedDocumentState(
                         code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1467,7 +1450,7 @@ class PyreServerTest(testslide.TestCase):
                     ),
                 ),
             )
-            await server.process_hover_request(
+            await api.process_hover_request(
                 parameters=lsp.HoverParameters(
                     text_document=lsp.TextDocumentIdentifier(
                         uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1513,7 +1496,7 @@ class PyreServerTest(testslide.TestCase):
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
         querier = server_setup.MockDaemonQuerier()
-        server, output_writer = await server_setup.create_server_for_request_test(
+        api, output_writer = server_setup.create_pyre_language_server_api_and_output(
             opened_documents={
                 tracked_path: OpenedDocumentState(
                     code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1521,7 +1504,7 @@ class PyreServerTest(testslide.TestCase):
             },
             querier=querier,
         )
-        await server.process_hover_request(
+        await api.process_hover_request(
             parameters=lsp.HoverParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(untracked_path).unparse(),
@@ -1560,7 +1543,10 @@ class PyreServerTest(testslide.TestCase):
             querier = server_setup.MockDaemonQuerier(
                 mock_definition_response=expected_response,
             )
-            server, output_writer = await server_setup.create_server_for_request_test(
+            (
+                api,
+                output_writer,
+            ) = server_setup.create_pyre_language_server_api_and_output(
                 opened_documents={
                     tracked_path: OpenedDocumentState(
                         code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1571,7 +1557,7 @@ class PyreServerTest(testslide.TestCase):
                     enabled_telemetry_event=enabled_telemetry_event
                 ),
             )
-            await server.process_definition_request(
+            await api.process_definition_request(
                 parameters=lsp.DefinitionParameters(
                     text_document=lsp.TextDocumentIdentifier(
                         uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1628,7 +1614,10 @@ class PyreServerTest(testslide.TestCase):
             querier = server_setup.MockDaemonQuerier(
                 mock_definition_response=expected_response,
             )
-            server, output_writer = await server_setup.create_server_for_request_test(
+            (
+                api,
+                output_writer,
+            ) = server_setup.create_pyre_language_server_api_and_output(
                 opened_documents={
                     tracked_path: OpenedDocumentState(
                         code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1642,7 +1631,7 @@ class PyreServerTest(testslide.TestCase):
                     ),
                 ),
             )
-            await server.process_definition_request(
+            await api.process_definition_request(
                 parameters=lsp.DefinitionParameters(
                     text_document=lsp.TextDocumentIdentifier(
                         uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1700,7 +1689,7 @@ class PyreServerTest(testslide.TestCase):
         querier = server_setup.MockDaemonQuerier(
             mock_definition_response=expected_telemetry_response,
         )
-        server, output_writer = await server_setup.create_server_for_request_test(
+        api, output_writer = server_setup.create_pyre_language_server_api_and_output(
             opened_documents={
                 tracked_path: OpenedDocumentState(
                     code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1714,7 +1703,7 @@ class PyreServerTest(testslide.TestCase):
                 ),
             ),
         )
-        await server.process_definition_request(
+        await api.process_definition_request(
             parameters=lsp.DefinitionParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1754,7 +1743,7 @@ class PyreServerTest(testslide.TestCase):
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
         querier = server_setup.MockDaemonQuerier()
-        server, output_writer = await server_setup.create_server_for_request_test(
+        api, output_writer = server_setup.create_pyre_language_server_api_and_output(
             opened_documents={
                 tracked_path: OpenedDocumentState(
                     code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1762,7 +1751,7 @@ class PyreServerTest(testslide.TestCase):
             },
             querier=querier,
         )
-        await server.process_definition_request(
+        await api.process_definition_request(
             parameters=lsp.DefinitionParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(untracked_path).unparse(),
@@ -1794,7 +1783,7 @@ class PyreServerTest(testslide.TestCase):
         querier = server_setup.MockDaemonQuerier(
             mock_references_response=expected_response,
         )
-        server, output_writer = await server_setup.create_server_for_request_test(
+        api, output_writer = server_setup.create_pyre_language_server_api_and_output(
             opened_documents={
                 tracked_path: OpenedDocumentState(
                     code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1802,7 +1791,7 @@ class PyreServerTest(testslide.TestCase):
             },
             querier=querier,
         )
-        await server.process_find_all_references_request(
+        await api.process_find_all_references_request(
             lsp.ReferencesParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
@@ -1837,7 +1826,7 @@ class PyreServerTest(testslide.TestCase):
         untracked_path = Path("/not_tracked.py")
         lsp_line = 3
         querier = server_setup.MockDaemonQuerier()
-        server, output_writer = await server_setup.create_server_for_request_test(
+        api, output_writer = server_setup.create_pyre_language_server_api_and_output(
             opened_documents={
                 tracked_path: OpenedDocumentState(
                     code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1845,7 +1834,7 @@ class PyreServerTest(testslide.TestCase):
             },
             querier=querier,
         )
-        await server.process_find_all_references_request(
+        await api.process_find_all_references_request(
             lsp.ReferencesParameters(
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(untracked_path).unparse(),
@@ -1866,7 +1855,10 @@ class PyreServerTest(testslide.TestCase):
             temporary_file.write(b"def foo(x):\n  pass\n")
             temporary_file.flush()
             test_path = Path(temporary_file.name)
-            server, output_writer = await server_setup.create_server_for_request_test(
+            (
+                api,
+                output_writer,
+            ) = server_setup.create_pyre_language_server_api_and_output(
                 opened_documents={
                     test_path: OpenedDocumentState(
                         code=server_setup.DEFAULT_FILE_CONTENTS
@@ -1874,7 +1866,7 @@ class PyreServerTest(testslide.TestCase):
                 },
                 querier=server_setup.MockDaemonQuerier(),
             )
-            await server.process_document_symbols_request(
+            await api.process_document_symbols_request(
                 lsp.DocumentSymbolsParameters(
                     text_document=lsp.TextDocumentIdentifier(uri=test_path.as_uri())
                 ),
