@@ -98,12 +98,10 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
     ) -> None:
         pass
 
-    @abc.abstractmethod
-    async def handle_error_event(
-        self,
-        error_subscription: subscription.Error,
-    ) -> None:
-        pass
+    async def handle_error_event(self, error_subscription: subscription.Error) -> None:
+        message = error_subscription.message
+        LOG.info(f"Received error from subscription channel: {message}")
+        raise PyreDaemonShutdown(message)
 
     @abc.abstractmethod
     async def _subscribe(
