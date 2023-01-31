@@ -313,6 +313,137 @@ class InitializeTest(testslide.TestCase):
         self.assertIsInstance(result, InitializationExit)
 
 
+class DiagnosticHelperFunctionsTest(testslide.TestCase):
+    def test_type_diagnostics(self) -> None:
+        self.assertEqual(
+            type_error_to_diagnostic(
+                error.Error(
+                    line=1,
+                    column=1,
+                    stop_line=2,
+                    stop_column=2,
+                    path=Path("/derp.py"),
+                    code=42,
+                    name="name",
+                    description="description",
+                )
+            ),
+            lsp.Diagnostic(
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=0, character=1),
+                    end=lsp.LspPosition(line=1, character=2),
+                ),
+                message="description",
+                severity=lsp.DiagnosticSeverity.ERROR,
+                code=None,
+                source="Pyre",
+            ),
+        )
+        self.assertDictEqual(
+            type_errors_to_diagnostics(
+                [
+                    error.Error(
+                        line=1,
+                        column=1,
+                        stop_line=2,
+                        stop_column=2,
+                        path=Path("/foo.py"),
+                        code=42,
+                        name="foo_name",
+                        description="foo_description",
+                    ),
+                    error.Error(
+                        line=2,
+                        column=2,
+                        stop_line=3,
+                        stop_column=3,
+                        path=Path("/foo.py"),
+                        code=43,
+                        name="foo_name2",
+                        description="foo_description2",
+                    ),
+                    error.Error(
+                        line=4,
+                        column=4,
+                        stop_line=5,
+                        stop_column=5,
+                        path=Path("/bar.py"),
+                        code=44,
+                        name="bar_name",
+                        description="bar_description",
+                    ),
+                ]
+            ),
+            {
+                Path("/foo.py"): [
+                    lsp.Diagnostic(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=0, character=1),
+                            end=lsp.LspPosition(line=1, character=2),
+                        ),
+                        message="foo_description",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    ),
+                    lsp.Diagnostic(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=2),
+                            end=lsp.LspPosition(line=2, character=3),
+                        ),
+                        message="foo_description2",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    ),
+                ],
+                Path("/bar.py"): [
+                    lsp.Diagnostic(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=4),
+                            end=lsp.LspPosition(line=4, character=5),
+                        ),
+                        message="bar_description",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    )
+                ],
+            },
+        )
+
+    def test_coverage_diagnostics(self) -> None:
+        self.assertEqual(
+            uncovered_range_to_diagnostic(
+                CodeRange(
+                    CodePosition(line=1, column=1), CodePosition(line=2, column=2)
+                )
+            ),
+            lsp.Diagnostic(
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=0, character=1),
+                    end=lsp.LspPosition(line=1, character=2),
+                ),
+                message=(
+                    "This function is not type checked. "
+                    "Consider adding parameter or return type annotations."
+                ),
+            ),
+        )
+
+    def test_coverage_percentage(self) -> None:
+        coverage_result = to_coverage_result(
+            CoveredAndUncoveredLines({1, 2}, {3, 4}),
+            uncovered_ranges=[
+                CodeRange(
+                    CodePosition(line=3, column=3), CodePosition(line=4, column=4)
+                )
+            ],
+        )
+        self.assertEqual(coverage_result.covered_percent, 50.0)
+        self.assertEqual(len(coverage_result.uncovered_ranges), 1)
+
+
 class PyreLanguageServerDispatcherTest(testslide.TestCase):
     @staticmethod
     def _by_name_parameters(
@@ -749,135 +880,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             )
         )
         await asyncio.sleep(0)
-
-    def test_type_diagnostics(self) -> None:
-        self.assertEqual(
-            type_error_to_diagnostic(
-                error.Error(
-                    line=1,
-                    column=1,
-                    stop_line=2,
-                    stop_column=2,
-                    path=Path("/derp.py"),
-                    code=42,
-                    name="name",
-                    description="description",
-                )
-            ),
-            lsp.Diagnostic(
-                range=lsp.LspRange(
-                    start=lsp.LspPosition(line=0, character=1),
-                    end=lsp.LspPosition(line=1, character=2),
-                ),
-                message="description",
-                severity=lsp.DiagnosticSeverity.ERROR,
-                code=None,
-                source="Pyre",
-            ),
-        )
-        self.assertDictEqual(
-            type_errors_to_diagnostics(
-                [
-                    error.Error(
-                        line=1,
-                        column=1,
-                        stop_line=2,
-                        stop_column=2,
-                        path=Path("/foo.py"),
-                        code=42,
-                        name="foo_name",
-                        description="foo_description",
-                    ),
-                    error.Error(
-                        line=2,
-                        column=2,
-                        stop_line=3,
-                        stop_column=3,
-                        path=Path("/foo.py"),
-                        code=43,
-                        name="foo_name2",
-                        description="foo_description2",
-                    ),
-                    error.Error(
-                        line=4,
-                        column=4,
-                        stop_line=5,
-                        stop_column=5,
-                        path=Path("/bar.py"),
-                        code=44,
-                        name="bar_name",
-                        description="bar_description",
-                    ),
-                ]
-            ),
-            {
-                Path("/foo.py"): [
-                    lsp.Diagnostic(
-                        range=lsp.LspRange(
-                            start=lsp.LspPosition(line=0, character=1),
-                            end=lsp.LspPosition(line=1, character=2),
-                        ),
-                        message="foo_description",
-                        severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
-                        source="Pyre",
-                    ),
-                    lsp.Diagnostic(
-                        range=lsp.LspRange(
-                            start=lsp.LspPosition(line=1, character=2),
-                            end=lsp.LspPosition(line=2, character=3),
-                        ),
-                        message="foo_description2",
-                        severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
-                        source="Pyre",
-                    ),
-                ],
-                Path("/bar.py"): [
-                    lsp.Diagnostic(
-                        range=lsp.LspRange(
-                            start=lsp.LspPosition(line=3, character=4),
-                            end=lsp.LspPosition(line=4, character=5),
-                        ),
-                        message="bar_description",
-                        severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
-                        source="Pyre",
-                    )
-                ],
-            },
-        )
-
-    def test_coverage_diagnostics(self) -> None:
-        self.assertEqual(
-            uncovered_range_to_diagnostic(
-                CodeRange(
-                    CodePosition(line=1, column=1), CodePosition(line=2, column=2)
-                )
-            ),
-            lsp.Diagnostic(
-                range=lsp.LspRange(
-                    start=lsp.LspPosition(line=0, character=1),
-                    end=lsp.LspPosition(line=1, character=2),
-                ),
-                message=(
-                    "This function is not type checked. "
-                    "Consider adding parameter or return type annotations."
-                ),
-            ),
-        )
-
-    def test_coverage_percentage(self) -> None:
-        coverage_result = to_coverage_result(
-            CoveredAndUncoveredLines({1, 2}, {3, 4}),
-            uncovered_ranges=[
-                CodeRange(
-                    CodePosition(line=3, column=3), CodePosition(line=4, column=4)
-                )
-            ],
-        )
-        self.assertEqual(coverage_result.covered_percent, 50.0)
-        self.assertEqual(len(coverage_result.uncovered_ranges), 1)
 
     @setup.async_test
     async def test_connections_lost(self) -> None:
