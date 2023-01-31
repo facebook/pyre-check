@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import abc
 import asyncio
 import json
 import sys
@@ -442,6 +443,45 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
         )
         self.assertEqual(coverage_result.covered_percent, 50.0)
         self.assertEqual(len(coverage_result.uncovered_ranges), 1)
+
+    def test_path_to_coverage_response(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
+            path = Path(temporary_file.name)
+            source = """
+            def uncovered(x):
+                print(x)
+            """
+            path.write_text(textwrap.dedent(source))
+            self.assertEqual(
+                lsp.TypeCoverageResponse(
+                    covered_percent=50.0,
+                    uncovered_ranges=[
+                        lsp.Diagnostic(
+                            range=lsp.LspRange(
+                                start=lsp.LspPosition(line=1, character=0),
+                                end=lsp.LspPosition(line=2, character=12),
+                            ),
+                            message="This function is not type checked. Consider adding parameter or return type annotations.",
+                            severity=None,
+                            code=None,
+                            source=None,
+                        )
+                    ],
+                    default_message="Consider adding type annotations.",
+                ),
+                path_to_coverage_response(path, strict_default=False),
+            )
+
+    def test_path_to_coverage_response__invalid_syntax(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
+            path = Path(temporary_file.name)
+            source = """
+            def invalid_syntax
+            """
+            path.write_text(textwrap.dedent(source))
+            self.assertIsNone(
+                path_to_coverage_response(path, strict_default=False),
+            )
 
 
 class PyreLanguageServerDispatcherTest(testslide.TestCase):
@@ -970,135 +1010,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         )
 
 
-class PyreLanguageServerApiTest(testslide.TestCase):
-    @setup.async_test
-    async def test_save_adds_path_to_queue(self) -> None:
-        test_path = Path("/root/test.py")
-        api = server_setup.create_pyre_language_server_api(
-            output_channel=create_memory_text_writer(),
-            server_state=ServerState(
-                server_options=server_setup.mock_initial_server_options,
-                opened_documents={
-                    test_path: OpenedDocumentState(
-                        code=server_setup.DEFAULT_FILE_CONTENTS
-                    )
-                },
-            ),
-            querier=server_setup.MockDaemonQuerier(),
-        )
-        await api.process_did_save_request(
-            lsp.DidSaveTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                )
-            )
-        )
-        await asyncio.sleep(0)
-
-    @setup.async_test
-    async def test_open_close(self) -> None:
-        server_state = server_setup.mock_server_state
-        api = server_setup.create_pyre_language_server_api(
-            output_channel=create_memory_text_writer(),
-            server_state=server_state,
-            querier=server_setup.MockDaemonQuerier(),
-        )
-        test_path0 = Path("/foo/bar")
-        test_path1 = Path("/foo/baz")
-
-        await api.process_open_request(
-            lsp.DidOpenTextDocumentParameters(
-                text_document=lsp.TextDocumentItem(
-                    language_id="python",
-                    text="",
-                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse(),
-                    version=0,
-                )
-            )
-        )
-        self.assertIn(test_path0, server_state.opened_documents)
-
-        await api.process_open_request(
-            lsp.DidOpenTextDocumentParameters(
-                text_document=lsp.TextDocumentItem(
-                    language_id="python",
-                    text="",
-                    uri=lsp.DocumentUri.from_file_path(test_path1).unparse(),
-                    version=0,
-                )
-            )
-        )
-        self.assertIn(test_path1, server_state.opened_documents)
-
-        await api.process_close_request(
-            lsp.DidCloseTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse()
-                )
-            )
-        )
-        self.assertNotIn(test_path0, server_state.opened_documents)
-
-    @setup.async_test
-    async def test_type_coverage_request(self) -> None:
-        test_path = Path("/foo")
-        output_writer = MemoryBytesWriter()
-        querier = server_setup.MockDaemonQuerier(
-            mock_type_coverage=lsp.TypeCoverageResponse(
-                covered_percent=42.42,
-                uncovered_ranges=[],
-                default_message="pyre is on fire",
-            )
-        )
-        api = server_setup.create_pyre_language_server_api(
-            output_channel=AsyncTextWriter(output_writer),
-            server_state=server_setup.mock_server_state,
-            querier=querier,
-        )
-        await api.process_type_coverage_request(
-            lsp.TypeCoverageParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                )
-            ),
-            request_id=1,
-        )
-        self.assertEqual(
-            querier.requests,
-            [{"path": test_path}],
-        )
-        self.assertEqual(
-            output_writer.items(),
-            [
-                b'Content-Length: 124\r\n\r\n{"jsonrpc": "2.0", "id": 1, "result": {"coveredPe'
-                b'rcent": 42.42, "uncoveredRanges": [], "defaultMessage": "pyre is on fire"}}'
-            ],
-        )
-
-    @setup.async_test
-    async def test_type_coverage_request__None_response(self) -> None:
-        test_path = Path("/foo")
-        output_writer = MemoryBytesWriter()
-        querier = server_setup.MockDaemonQuerier(mock_type_coverage=None)
-        api = server_setup.create_pyre_language_server_api(
-            output_channel=AsyncTextWriter(output_writer),
-            server_state=server_setup.mock_server_state,
-            querier=querier,
-        )
-        await api.process_type_coverage_request(
-            lsp.TypeCoverageParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                )
-            ),
-            request_id=1,
-        )
-        self.assertEqual(
-            querier.requests,
-            [{"path": test_path}],
-        )
-        self.assertEqual(output_writer.items(), [])
-
+class ApiTestCase(testslide.TestCase, abc.ABC):
     def _assert_json_equal(
         self,
         actual_json_string: str,
@@ -1167,6 +1079,140 @@ class PyreLanguageServerApiTest(testslide.TestCase):
             json_string = server_setup.extract_json_from_json_rpc_message(raw_message)
             expectation(json_string)
 
+
+class SaveAndOpenTest(ApiTestCase):
+    @setup.async_test
+    async def test_save_adds_path_to_queue(self) -> None:
+        test_path = Path("/root/test.py")
+        api = server_setup.create_pyre_language_server_api(
+            output_channel=create_memory_text_writer(),
+            server_state=ServerState(
+                server_options=server_setup.mock_initial_server_options,
+                opened_documents={
+                    test_path: OpenedDocumentState(
+                        code=server_setup.DEFAULT_FILE_CONTENTS
+                    )
+                },
+            ),
+            querier=server_setup.MockDaemonQuerier(),
+        )
+        await api.process_did_save_request(
+            lsp.DidSaveTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                )
+            )
+        )
+        await asyncio.sleep(0)
+
+    @setup.async_test
+    async def test_open_close(self) -> None:
+        server_state = server_setup.mock_server_state
+        api = server_setup.create_pyre_language_server_api(
+            output_channel=create_memory_text_writer(),
+            server_state=server_state,
+            querier=server_setup.MockDaemonQuerier(),
+        )
+        test_path0 = Path("/foo/bar")
+        test_path1 = Path("/foo/baz")
+
+        await api.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse(),
+                    version=0,
+                )
+            )
+        )
+        self.assertIn(test_path0, server_state.opened_documents)
+
+        await api.process_open_request(
+            lsp.DidOpenTextDocumentParameters(
+                text_document=lsp.TextDocumentItem(
+                    language_id="python",
+                    text="",
+                    uri=lsp.DocumentUri.from_file_path(test_path1).unparse(),
+                    version=0,
+                )
+            )
+        )
+        self.assertIn(test_path1, server_state.opened_documents)
+
+        await api.process_close_request(
+            lsp.DidCloseTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path0).unparse()
+                )
+            )
+        )
+        self.assertNotIn(test_path0, server_state.opened_documents)
+
+
+class TypeCoverageTest(ApiTestCase):
+    @setup.async_test
+    async def test_type_coverage_request(self) -> None:
+        test_path = Path("/foo")
+        output_writer = MemoryBytesWriter()
+        querier = server_setup.MockDaemonQuerier(
+            mock_type_coverage=lsp.TypeCoverageResponse(
+                covered_percent=42.42,
+                uncovered_ranges=[],
+                default_message="pyre is on fire",
+            )
+        )
+        api = server_setup.create_pyre_language_server_api(
+            output_channel=AsyncTextWriter(output_writer),
+            server_state=server_setup.mock_server_state,
+            querier=querier,
+        )
+        await api.process_type_coverage_request(
+            lsp.TypeCoverageParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                )
+            ),
+            request_id=1,
+        )
+        self.assertEqual(
+            querier.requests,
+            [{"path": test_path}],
+        )
+        self.assertEqual(
+            output_writer.items(),
+            [
+                b'Content-Length: 124\r\n\r\n{"jsonrpc": "2.0", "id": 1, "result": {"coveredPe'
+                b'rcent": 42.42, "uncoveredRanges": [], "defaultMessage": "pyre is on fire"}}'
+            ],
+        )
+
+    @setup.async_test
+    async def test_type_coverage_request__None_response(self) -> None:
+        test_path = Path("/foo")
+        output_writer = MemoryBytesWriter()
+        querier = server_setup.MockDaemonQuerier(mock_type_coverage=None)
+        api = server_setup.create_pyre_language_server_api(
+            output_channel=AsyncTextWriter(output_writer),
+            server_state=server_setup.mock_server_state,
+            querier=querier,
+        )
+        await api.process_type_coverage_request(
+            lsp.TypeCoverageParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                )
+            ),
+            request_id=1,
+        )
+        self.assertEqual(
+            querier.requests,
+            [{"path": test_path}],
+        )
+        self.assertEqual(output_writer.items(), [])
+
+
+class DidChangeTest(ApiTestCase):
     @setup.async_test
     async def test_did_change__basic(self) -> None:
         tracked_path = Path("/tracked.py")
@@ -1354,6 +1400,8 @@ class PyreLanguageServerApiTest(testslide.TestCase):
                 expectations,
             )
 
+
+class HoverTest(ApiTestCase):
     @setup.async_test
     async def test_hover__basic(self) -> None:
         tracked_path = Path("/tracked.py")
@@ -1523,6 +1571,8 @@ class PyreLanguageServerApiTest(testslide.TestCase):
             ],
         )
 
+
+class DefinitionTest(ApiTestCase):
     @setup.async_test
     async def test_definition__basic(self) -> None:
         tracked_path = Path("/tracked.py")
@@ -1764,6 +1814,8 @@ class PyreLanguageServerApiTest(testslide.TestCase):
             [self._expect_success_message([])],
         )
 
+
+class ReferencesTest(ApiTestCase):
     @setup.async_test
     async def test_references__basic(self) -> None:
         tracked_path = Path("/tracked.py")
@@ -1846,6 +1898,8 @@ class PyreLanguageServerApiTest(testslide.TestCase):
             output_writer, [self._expect_success_message(result=[])]
         )
 
+
+class DocumentSymbolsTest(ApiTestCase):
     @setup.async_test
     async def test_document_symbols_request(self) -> None:
         self.maxDiff = None
@@ -1902,45 +1956,6 @@ class PyreLanguageServerApiTest(testslide.TestCase):
                         ],
                     )
                 ],
-            )
-
-    def test_path_to_coverage_response(self) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
-            path = Path(temporary_file.name)
-            source = """
-            def uncovered(x):
-                print(x)
-            """
-            path.write_text(textwrap.dedent(source))
-            self.assertEqual(
-                lsp.TypeCoverageResponse(
-                    covered_percent=50.0,
-                    uncovered_ranges=[
-                        lsp.Diagnostic(
-                            range=lsp.LspRange(
-                                start=lsp.LspPosition(line=1, character=0),
-                                end=lsp.LspPosition(line=2, character=12),
-                            ),
-                            message="This function is not type checked. Consider adding parameter or return type annotations.",
-                            severity=None,
-                            code=None,
-                            source=None,
-                        )
-                    ],
-                    default_message="Consider adding type annotations.",
-                ),
-                path_to_coverage_response(path, strict_default=False),
-            )
-
-    def test_path_to_coverage_response__invalid_syntax(self) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
-            path = Path(temporary_file.name)
-            source = """
-            def invalid_syntax
-            """
-            path.write_text(textwrap.dedent(source))
-            self.assertIsNone(
-                path_to_coverage_response(path, strict_default=False),
             )
 
 
