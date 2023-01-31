@@ -160,10 +160,6 @@ class PyreLanguageServer:
     def get_language_server_features(self) -> features.LanguageServerFeatures:
         return self.server_state.server_options.language_server_features
 
-    async def wait_for_exit(self) -> commands.ExitCode:
-        await _wait_for_exit(self.input_channel, self.output_channel)
-        return commands.ExitCode.SUCCESS
-
     async def update_overlay_if_needed(self, document_path: Path) -> float:
         """
         Send an overlay update to the daemon if three conditions are met:
@@ -688,14 +684,15 @@ class PyreLanguageServer:
             ),
         )
 
-    async def process_shutdown_request(
-        self, request_id: Union[int, str, None]
-    ) -> commands.ExitCode:
+    async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         await lsp.write_json_rpc_ignore_connection_error(
             self.output_channel,
             json_rpc.SuccessResponse(id=request_id, activity_key=None, result=None),
         )
-        return await self.wait_for_exit()
+
+    async def wait_for_exit(self) -> commands.ExitCode:
+        await _wait_for_exit(self.input_channel, self.output_channel)
+        return commands.ExitCode.SUCCESS
 
     async def _try_restart_pyre_daemon(self) -> None:
         if (
@@ -721,9 +718,13 @@ class PyreLanguageServer:
 
         """
         if request.method == "exit":
+            LOG.info(
+                "Recieved exit request without a shutdown request, exiting as FAILURE."
+            )
             return commands.ExitCode.FAILURE
         elif request.method == "shutdown":
-            return await self.process_shutdown_request(request.id)
+            await self.process_shutdown_request(request.id)
+            return await self.wait_for_exit()
         elif request.method == "textDocument/definition":
             await self.process_definition_request(
                 lsp.DefinitionParameters.from_json_rpc_parameters(
