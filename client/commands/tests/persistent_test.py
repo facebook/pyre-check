@@ -311,6 +311,195 @@ class PersistentTest(testslide.TestCase):
         self.assertIsInstance(result, InitializationExit)
 
 
+class PyreLanguageServerDispatcherTest(testslide.TestCase):
+    @staticmethod
+    def _by_name_parameters(
+        parameters: Union[
+            lsp.DidSaveTextDocumentParameters, lsp.DidOpenTextDocumentParameters
+        ],
+    ) -> json_rpc.ByNameParameters:
+        return json_rpc.ByNameParameters(values=json.loads(parameters.to_json()))
+
+    @setup.async_test
+    async def test_exit(self) -> None:
+        server_state = server_setup.mock_server_state
+        input_channel = await server_setup.create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+                json_rpc.Request(method="exit", parameters=None),
+            ]
+        )
+        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
+            input_channel=input_channel,
+            server_state=server_state,
+            querier=server_setup.MockDaemonQuerier(),
+            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
+        )
+        exit_code = await dispatcher.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_exit_unknown_request_after_shutdown(self) -> None:
+        server_state = server_setup.mock_server_state
+        input_channel = await server_setup.create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+                json_rpc.Request(method="derp", parameters=None),
+                json_rpc.Request(method="exit", parameters=None),
+            ]
+        )
+        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
+            input_channel=input_channel,
+            server_state=server_state,
+            querier=server_setup.MockDaemonQuerier(),
+            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
+        )
+        exit_code = await dispatcher.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_exit_gracefully_after_shutdown(self) -> None:
+        server_state = server_setup.mock_server_state
+        input_channel = await server_setup.create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+            ]
+        )
+        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
+            input_channel=input_channel,
+            server_state=server_state,
+            querier=server_setup.MockDaemonQuerier(),
+            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
+        )
+        exit_code = await dispatcher.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_exit_gracefully_on_channel_closure(self) -> None:
+        server_state = server_setup.mock_server_state
+        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
+        dispatcher, output_writer = server_setup.create_pyre_language_server_dispatcher(
+            # Feed nothing to input channel
+            input_channel=create_memory_text_reader(""),
+            server_state=server_state,
+            daemon_manager=noop_task_manager,
+            querier=server_setup.MockDaemonQuerier(),
+        )
+        exit_code = await dispatcher.run()
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(output_writer.items()), 0)
+
+    @setup.async_test
+    async def test_dispatch_request_triggers_restart(self) -> None:
+        """
+        Check that the dispatch_request method restarts the daemon on some
+        example requests.
+        """
+        test_path = Path("/foo.py")
+        for request in [
+            json_rpc.Request(
+                method="textDocument/didSave",
+                parameters=self._by_name_parameters(
+                    lsp.DidSaveTextDocumentParameters(
+                        text_document=lsp.TextDocumentIdentifier(
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                        )
+                    )
+                ),
+            ),
+            json_rpc.Request(
+                method="textDocument/didSave",
+                parameters=self._by_name_parameters(
+                    lsp.DidOpenTextDocumentParameters(
+                        text_document=lsp.TextDocumentItem(
+                            language_id="python",
+                            text="",
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                            version=0,
+                        )
+                    )
+                ),
+            ),
+        ]:
+            fake_task_manager = background.TaskManager(
+                server_setup.WaitForeverBackgroundTask()
+            )
+            dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
+                input_channel=create_memory_text_reader(""),
+                server_state=ServerState(
+                    server_options=server_setup.mock_initial_server_options,
+                    opened_documents={
+                        test_path: OpenedDocumentState(
+                            code=server_setup.DEFAULT_FILE_CONTENTS
+                        )
+                    },
+                ),
+                daemon_manager=fake_task_manager,
+                querier=server_setup.MockDaemonQuerier(),
+            )
+            self.assertFalse(fake_task_manager.is_task_running())
+
+            await dispatcher.dispatch_request(request)
+            await asyncio.sleep(0)
+            self.assertTrue(fake_task_manager.is_task_running())
+
+    @setup.async_test
+    async def test_dispatch_request_triggers_restart__limit_reached(self) -> None:
+        """
+        Check on some example requests that, if we've reached our restart limit,
+        we skip trying to restart the daemon connection.
+        """
+        test_path = Path("/foo.py")
+        for request in [
+            json_rpc.Request(
+                method="textDocument/didSave",
+                parameters=self._by_name_parameters(
+                    lsp.DidSaveTextDocumentParameters(
+                        text_document=lsp.TextDocumentIdentifier(
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                        )
+                    )
+                ),
+            ),
+            json_rpc.Request(
+                method="textDocument/didSave",
+                parameters=self._by_name_parameters(
+                    lsp.DidOpenTextDocumentParameters(
+                        text_document=lsp.TextDocumentItem(
+                            language_id="python",
+                            text="",
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                            version=0,
+                        )
+                    )
+                ),
+            ),
+        ]:
+            fake_task_manager = background.TaskManager(
+                server_setup.WaitForeverBackgroundTask()
+            )
+            dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
+                input_channel=create_memory_text_reader(""),
+                server_state=ServerState(
+                    server_options=server_setup.mock_initial_server_options,
+                    opened_documents={
+                        test_path: OpenedDocumentState(
+                            code=server_setup.DEFAULT_FILE_CONTENTS
+                        )
+                    },
+                    consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+                ),
+                daemon_manager=fake_task_manager,
+                querier=server_setup.MockDaemonQuerier(),
+            )
+            self.assertFalse(fake_task_manager.is_task_running())
+
+            print(request)
+            await dispatcher.dispatch_request(request)
+            await asyncio.sleep(0)
+            self.assertFalse(fake_task_manager.is_task_running())
+
+
 class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_subscription_protocol(self) -> None:
@@ -534,124 +723,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 
         client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
         self.assertTrue(len(client_messages) == 0)
-
-    @staticmethod
-    def _by_name_parameters(
-        parameters: Union[
-            lsp.DidSaveTextDocumentParameters, lsp.DidOpenTextDocumentParameters
-        ],
-    ) -> json_rpc.ByNameParameters:
-        return json_rpc.ByNameParameters(values=json.loads(parameters.to_json()))
-
-    @setup.async_test
-    async def test_dispatch_request_triggers_restart(self) -> None:
-        """
-        Check that the dispatch_request method restarts the daemon on some
-        example requests.
-        """
-        test_path = Path("/foo.py")
-        for request in [
-            json_rpc.Request(
-                method="textDocument/didSave",
-                parameters=self._by_name_parameters(
-                    lsp.DidSaveTextDocumentParameters(
-                        text_document=lsp.TextDocumentIdentifier(
-                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                        )
-                    )
-                ),
-            ),
-            json_rpc.Request(
-                method="textDocument/didSave",
-                parameters=self._by_name_parameters(
-                    lsp.DidOpenTextDocumentParameters(
-                        text_document=lsp.TextDocumentItem(
-                            language_id="python",
-                            text="",
-                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                            version=0,
-                        )
-                    )
-                ),
-            ),
-        ]:
-            fake_task_manager = background.TaskManager(
-                server_setup.WaitForeverBackgroundTask()
-            )
-            dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
-                input_channel=create_memory_text_reader(""),
-                server_state=ServerState(
-                    server_options=server_setup.mock_initial_server_options,
-                    opened_documents={
-                        test_path: OpenedDocumentState(
-                            code=server_setup.DEFAULT_FILE_CONTENTS
-                        )
-                    },
-                ),
-                daemon_manager=fake_task_manager,
-                querier=server_setup.MockDaemonQuerier(),
-            )
-            self.assertFalse(fake_task_manager.is_task_running())
-
-            await dispatcher.dispatch_request(request)
-            await asyncio.sleep(0)
-            self.assertTrue(fake_task_manager.is_task_running())
-
-    @setup.async_test
-    async def test_dispatch_request_triggers_restart__limit_reached(self) -> None:
-        """
-        Check on some example requests that, if we've reached our restart limit,
-        we skip trying to restart the daemon connection.
-        """
-        test_path = Path("/foo.py")
-        for request in [
-            json_rpc.Request(
-                method="textDocument/didSave",
-                parameters=self._by_name_parameters(
-                    lsp.DidSaveTextDocumentParameters(
-                        text_document=lsp.TextDocumentIdentifier(
-                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                        )
-                    )
-                ),
-            ),
-            json_rpc.Request(
-                method="textDocument/didSave",
-                parameters=self._by_name_parameters(
-                    lsp.DidOpenTextDocumentParameters(
-                        text_document=lsp.TextDocumentItem(
-                            language_id="python",
-                            text="",
-                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                            version=0,
-                        )
-                    )
-                ),
-            ),
-        ]:
-            fake_task_manager = background.TaskManager(
-                server_setup.WaitForeverBackgroundTask()
-            )
-            dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
-                input_channel=create_memory_text_reader(""),
-                server_state=ServerState(
-                    server_options=server_setup.mock_initial_server_options,
-                    opened_documents={
-                        test_path: OpenedDocumentState(
-                            code=server_setup.DEFAULT_FILE_CONTENTS
-                        )
-                    },
-                    consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
-                ),
-                daemon_manager=fake_task_manager,
-                querier=server_setup.MockDaemonQuerier(),
-            )
-            self.assertFalse(fake_task_manager.is_task_running())
-
-            print(request)
-            await dispatcher.dispatch_request(request)
-            await asyncio.sleep(0)
-            self.assertFalse(fake_task_manager.is_task_running())
 
     @setup.async_test
     async def test_save_adds_path_to_queue(self) -> None:
@@ -919,78 +990,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         )
 
 
-class PyreServerTest(testslide.TestCase):
-    @setup.async_test
-    async def test_exit(self) -> None:
-        server_state = server_setup.mock_server_state
-        input_channel = await server_setup.create_input_channel_with_requests(
-            [
-                json_rpc.Request(method="shutdown", parameters=None),
-                json_rpc.Request(method="exit", parameters=None),
-            ]
-        )
-        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
-            input_channel=input_channel,
-            server_state=server_state,
-            querier=server_setup.MockDaemonQuerier(),
-            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
-        )
-        exit_code = await dispatcher.run()
-        self.assertEqual(exit_code, 0)
-
-    @setup.async_test
-    async def test_exit_unknown_request_after_shutdown(self) -> None:
-        server_state = server_setup.mock_server_state
-        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
-        input_channel = await server_setup.create_input_channel_with_requests(
-            [
-                json_rpc.Request(method="shutdown", parameters=None),
-                json_rpc.Request(method="derp", parameters=None),
-                json_rpc.Request(method="exit", parameters=None),
-            ]
-        )
-        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
-            input_channel=input_channel,
-            server_state=server_state,
-            querier=server_setup.MockDaemonQuerier(),
-            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
-        )
-        exit_code = await dispatcher.run()
-        self.assertEqual(exit_code, 0)
-
-    @setup.async_test
-    async def test_exit_gracefully_after_shutdown(self) -> None:
-        server_state = server_setup.mock_server_state
-        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
-        input_channel = await server_setup.create_input_channel_with_requests(
-            [
-                json_rpc.Request(method="shutdown", parameters=None),
-            ]
-        )
-        dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
-            input_channel=input_channel,
-            server_state=server_state,
-            querier=server_setup.MockDaemonQuerier(),
-            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
-        )
-        exit_code = await dispatcher.run()
-        self.assertEqual(exit_code, 0)
-
-    @setup.async_test
-    async def test_exit_gracefully_on_channel_closure(self) -> None:
-        server_state = server_setup.mock_server_state
-        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
-        dispatcher, output_writer = server_setup.create_pyre_language_server_dispatcher(
-            # Feed nothing to input channel
-            input_channel=create_memory_text_reader(""),
-            server_state=server_state,
-            daemon_manager=noop_task_manager,
-            querier=server_setup.MockDaemonQuerier(),
-        )
-        exit_code = await dispatcher.run()
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(len(output_writer.items()), 0)
-
+class PyreLanguageServerApiTest(testslide.TestCase):
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = server_setup.mock_server_state
