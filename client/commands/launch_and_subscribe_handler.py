@@ -399,16 +399,13 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             self.server_state.server_last_status = state.ServerStatus.DISCONNECTED
             raise
         finally:
-            log_lsp_event._log_lsp_event(
-                remote_logging=self.remote_logging,
-                event=log_lsp_event.LSPEvent.DISCONNECTED,
-                integers={"duration": int(session_timer.stop_in_millisecond())},
-                normals={
-                    **self._auxiliary_logging_info(server_options),
-                    **(
-                        {"exception": error_message}
-                        if error_message is not None
-                        else {}
-                    ),
-                },
-            )
+            if error_message is not None:
+                log_lsp_event._log_lsp_event(
+                    remote_logging=self.remote_logging,
+                    event=log_lsp_event.LSPEvent.DISCONNECTED,
+                    integers={"duration": int(session_timer.stop_in_millisecond())},
+                    normals={
+                        **self._auxiliary_logging_info(server_options),
+                        "exception": error_message,
+                    },
+                )
