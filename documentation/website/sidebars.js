@@ -105,8 +105,9 @@ module.exports = {
       ],
     },
     {
-      'Development Tips': [
+      'User Docs': [
         'pysa-false-negatives',
+        'pysa-explore',
         'pysa-coverage',
         'pysa-tips',
       ],
@@ -194,11 +195,10 @@ module.exports = {
     }),
     'pysa-additional-resources',
     ...fbInternalOnly(['fb/pysa-cross-repo-taint-exchange']),
-    'pysa-explore',
     ...fbInternalOnly(['fb/pysa-ig-integration-test']),
     ...fbInternalOnly([
       {
-        'Pysa Developer Docs': [
+        'Developer Docs': [
           'fb/pysa-deployment',
           'fb/pysa-sandcastle-internals',
           'fb/pysa-oncall-runbook',
@@ -211,7 +211,7 @@ module.exports = {
     ]),
     ...fbInternalOnly([
       {
-        'Pysa Roadmaps': [
+        'Roadmaps': [
           'fb/pysa_roadmaps/pysa-h2-2022',
           'fb/pysa_roadmaps/pysa-h1-2022',
           'fb/pysa_roadmaps/pysa-h2-2021',
