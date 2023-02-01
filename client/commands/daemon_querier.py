@@ -503,8 +503,6 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         overlay_id = self._get_overlay_id(path)
-        if overlay_id is None:
-            return "Ok"
         file_opened = code_navigation_request.FileOpened(
             path=path,
             overlay_id=overlay_id,
@@ -519,8 +517,6 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         overlay_id = self._get_overlay_id(path)
-        if overlay_id is None:
-            return "Ok"
         file_closed = code_navigation_request.FileClosed(
             overlay_id=overlay_id, path=path
         )
