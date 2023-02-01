@@ -16,7 +16,6 @@ from ...language_server.connections import (
     AsyncBytesWriter,
     AsyncTextReader,
     AsyncTextWriter,
-    create_memory_text_reader,
     MemoryBytesReader,
     MemoryBytesWriter,
 )
