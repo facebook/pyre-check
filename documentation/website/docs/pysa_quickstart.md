@@ -108,7 +108,7 @@ We've provided you with some filters in SAPP to help you find a small subset of 
 
  - [Introduction to Pysa](pysa_basics.md)
  - [DEF CON 28 Pysa Tutorial](https://www.youtube.com/watch?v=8I3zlvtpOww)
- - [Pysa Debugging Tips](pysa_false_negatives.md)
+ - [Pysa Debugging False Positives and Negatives](pysa_false_positives_negatives.md)
  - [SAPP Documentation](https://github.com/facebook/sapp#readme)
 
 ## Common Issues

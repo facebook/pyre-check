@@ -1,11 +1,32 @@
 ---
-id: pysa-false-negatives
-title: Debugging False Negatives
-sidebar_label: Debugging False Negatives
+id: pysa-false-positives-negatives
+title: Debugging False Positives and False Negatives
+sidebar_label: Debugging False Positives and False Negatives
 ---
 
-False Negatives occur when there is a legitimate flow of tainted data from a
+**False Positives** occur when Pysa finds an issue that is not valid, either because
+the flow cannot actually happen or because it is not a security risk.
+
+**False Negatives** occur when there is a legitimate flow of tainted data from a
 source to a sink, but Pysa fails to catch it.
+
+## Common Causes of False Positives
+
+### Taint collapsing
+
+Pysa uses a set of heuristics in order to make the analysis scale to millions
+of lines of code. The main heuristic is called taint collapsing, which happens
+when Pysa is tracking too many attributes of an object or keys of a dictionary.
+To avoid blowing up, Pysa will collapse taint, and assume the whole object is
+tainted. Pysa will use sane defaults, but heuristics can be [tuned using
+command line options or a taint configuration
+file](pysa_advanced.md##tune-the-taint-tree-width-and-depth).
+
+Taint collapsing also happens when taint flows through a function that Pysa does
+not have the code for. To be sound, it assumes functions without code
+automatically propagate taint on arguments to their return value. This can be
+avoided by providing a model for these functions using
+[`@SkipObscure`](pysa_advanced.md##obscure-models).
 
 ## Common Causes of False Negatives
 
@@ -52,7 +73,6 @@ Without type information on `bar`, Pysa will be unable to figure out how to
 dispatch the call and the flow will be lost:
 
 ```python
-
 from django.http import HttpRequest
 
 class Runner:
@@ -90,24 +110,39 @@ The best workaround is to avoid using globals in your code. If a refactor isn't
 possible, but you do know what globals should be considered tainted, you can
 explicitly declare the global tainted in your `.pysa` files.
 
-## Methodology for Debugging False Negatives
+## Methodology for Debugging False Positives and False Negatives
 
-1. Identify the flow you expect to see
-   1. Source
-   1. Sink
-   1. Every function call/return that propagates the tainted data from the
-      source to the sink
-   1. Every variable that the tainted data passes through, within the identified
-      functions. This usually includes the parameter which initially received
-      the taint, and then 0 or more local variables that hold the tainted data
-      as it is transformed in some way.
-1. Add a [`reveal_taint`](pysa_tips.md#reveal_taintyour_variable) and
-   [`reveal_type`](pysa_tips.md#reveal_typeyour_variable) statement to each of
-   the variables identified in the previous step
-1. Run Pysa using the same command you used when the false negative manifested,
-   but also include the `--noninteractive` flag (eg. `pyre --noninteractive
-   analyze`)
-1. Start following the flow from source to sink in your code, and find the
+There are two recommended ways to debug false positives and false negatives.
+
+If the analysis is reasonably fast on your code, or that you are able to
+reproduce the false positive or false negative on a smaller code, you can use
+the [reveal_taint](#reveal-taint-approach) approach.
+
+If, instead, the analysis is slow on your code (say, more than 5 minutes) and
+that you are unable to reproduce on a small example, you can use the [model
+explorer](#model-explorer-approach) approach.
+
+In all cases, you should first:
+
+1. Identify the flow you expect to see (or not see):
+   - Source
+   - Sink
+   - Every function call/return that propagates the tainted data from the source
+     to the sink
+   - Every variable that the tainted data passes through, within the identified
+     functions. This usually includes the parameter which initially received
+     the taint, and then 0 or more local variables that hold the tainted data
+     as it is transformed in some way.
+
+### Reveal taint approach
+
+This approach is based on the magic functions
+[`reveal_taint`](pysa_tips.md#reveal_taintyour_variable) and
+[`reveal_type`](pysa_tips.md#reveal_typeyour_variable).
+
+2. Add a `reveal_taint` and `reveal_type` statement to each of the variables
+   that must be tainted (or not), as identified in step 1.
+3. Start following the flow from source to sink in your code, and find the
    corresponding output for each `reveal_taint` statement.
    - Note that each time Pysa analyzes a function (could be many times), it will
      dump the latest taint information, so **the last instance of `reveal_taint`
@@ -120,18 +155,40 @@ explicitly declare the global tainted in your `.pysa` files.
      `UserControlled`) you care about appearing in the `Revealed forward taint`
      output, or the sink name (eg. `RemoteCodeExecution`) you care about in the
      `Revealed backward taint` output.
-   1. For each `reveal_taint`, following the flow of tainted data from source to
+   - For each `reveal_taint`, following the flow of tainted data from source to
       sink, locate the output in the logs that reveals the taint (eg.
       `integration_test.reveal_taint:20:4-20:16: Revealed forward taint for
       ``command``:`).
-   1. If you see your source or sink name in the output, then go back to 1) and
+   - If you see your source or sink name in the output, then go back to 1) and
       carry on with the next `reveal_taint` statement. If you *do not* see the
       source or sink name, then that means the cause of the false negative is
       likely between your previous `reveal_taint` and the one you're currently
       looking at. Refer to the "Commom Causes of False Negatives" section above
       for ideas on the cause, and how to fix it.
 
-### Example
+### Model explorer approach
+
+This approach uses the [Pysa Model Explorer](pysa_explore.md) to interactively
+explore the taint output results.
+
+2. Perform a full run using the `--save-results-to` parameters.
+3. Start the [Pysa Model Explorer](pysa_explore.md). For each function or method
+   identified in step 1, retrieve the fully qualified name of the callable using
+   `callables_containing`, then use `print_model(<fully-qualified-name>)`.
+   - If the return variable should be tainted, you should see a source on the
+     `result` port.
+   - If an argument should be tainted, you should see a sink on a port named
+     `formal(<argument-name>)`.
+   - This should allow you to figure out in which callable the taint is
+     incorrectly lost (for a false negative) or where the taint is incorrectly
+     kept (for a false positive).
+   - If you still don't know what is wrong, you can try to add a
+     [`pyre_dump`](pysa_tips.md#pyre_dump) call in a given callable, and run
+     pysa again. This will produce very verbose logs, which might be hard to
+     navigate.
+
+
+### Example using `reveal_taint`
 
 Pysa will not be able to detect a vulnerability in the following code:
 ```python
@@ -158,7 +215,6 @@ Folling the above debugging steps we identify the flow of data from beginning to
 end, and add debugging statements:
 
 ```python
-
 from django.http import HttpRequest, HttpResponse
 
 class Runner:

@@ -106,7 +106,7 @@ module.exports = {
     },
     {
       'User Docs': [
-        'pysa-false-negatives',
+        'pysa-false-positives-negatives',
         'pysa-explore',
         'pysa-coverage',
         'pysa-tips',
