@@ -88,6 +88,11 @@ module State (Context : Context) = struct
     let forward_expression ?(is_mutable_expression = is_mutable_expression) =
       forward_expression ~error_on_global_target ~is_mutable_expression ~resolution
     in
+    let forward_generator { Comprehension.Generator.target; iterator; conditions; _ } =
+      forward_expression target;
+      forward_expression iterator;
+      List.iter ~f:forward_expression conditions
+    in
     match value with
     (* interesting cases *)
     | Expression.Name (Name.Identifier target) ->
@@ -122,6 +127,17 @@ module State (Context : Context) = struct
     | WalrusOperator { target; value } ->
         forward_assignment_target ~error_on_global_target ~resolution target;
         forward_expression value
+    | Dictionary { entries; keywords } ->
+        let forward_entries { Dictionary.Entry.key; value } =
+          forward_expression key;
+          forward_expression value
+        in
+        List.iter ~f:forward_entries entries;
+        List.iter ~f:forward_expression keywords
+    | DictionaryComprehension { element = { key; value }; generators } ->
+        forward_expression key;
+        forward_expression value;
+        List.iter ~f:forward_generator generators
     | _ -> ()
 
 
@@ -146,12 +162,14 @@ module State (Context : Context) = struct
     | Yield _
     | Starred (Twice _)
     | YieldFrom _
+    | Set _
+    | Dictionary _
+    | DictionaryComprehension _
     | WalrusOperator _ ->
         ()
     | Starred (Once expression) -> forward_assignment_target expression
     | List expressions
-    | Tuple expressions
-    | Set expressions ->
+    | Tuple expressions ->
         List.iter ~f:forward_assignment_target expressions
     | BooleanOperator { left; right; _ }
     | ComparisonOperator { left; right; _ } ->
