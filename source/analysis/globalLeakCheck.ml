@@ -143,6 +143,12 @@ module State (Context : Context) = struct
     | SetComprehension { element; generators } ->
         forward_expression element;
         List.iter ~f:forward_generator generators
+    | FormatString substrings ->
+        let forward_format_string = function
+          | Substring.Format expression -> forward_expression expression
+          | _ -> ()
+        in
+        List.iter ~f:forward_format_string substrings
     | _ -> ()
 
 
@@ -173,6 +179,7 @@ module State (Context : Context) = struct
     | Generator _
     | ListComprehension _
     | SetComprehension _
+    | FormatString _
     | WalrusOperator _ ->
         ()
     | Starred (Once expression) -> forward_assignment_target expression

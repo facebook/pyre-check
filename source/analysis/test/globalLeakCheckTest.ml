@@ -784,6 +784,14 @@ let test_global_statements context =
         my_global.setdefault("a", 1) == 5
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        a = "hello"
+        f"{a} world: {my_global.setdefault('a', 1) == 5}"
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 
   ()
 
