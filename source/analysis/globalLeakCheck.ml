@@ -101,11 +101,9 @@ module State (Context : Context) = struct
     | Call { callee; arguments } ->
         forward_expression callee;
         List.iter ~f:(fun { value; _ } -> forward_expression value) arguments
-    (* non-recursive cases *)
     | Expression.Constant _
     | Yield None ->
         ()
-    (* singular expression recursive cases *)
     | Await expression
     | Yield (Some expression)
     | YieldFrom expression
@@ -113,11 +111,17 @@ module State (Context : Context) = struct
     | Starred (Once expression)
     | Starred (Twice expression) ->
         forward_expression expression
-    (* list expression recursive cases *)
     | List expressions
     | Set expressions
     | Tuple expressions ->
         List.iter ~f:forward_expression expressions
+    | BooleanOperator { left; right; _ }
+    | ComparisonOperator { left; right; _ } ->
+        forward_expression left;
+        forward_expression right
+    | WalrusOperator { target; value } ->
+        forward_assignment_target ~error_on_global_target ~resolution target;
+        forward_expression value
     | _ -> ()
 
 
@@ -128,7 +132,6 @@ module State (Context : Context) = struct
     =
     let forward_assignment_target = forward_assignment_target ~error_on_global_target ~resolution in
     match value with
-    (* interesting cases *)
     | Expression.Name (Name.Identifier target) -> error_on_global_target ~location target
     | Name (Name.Attribute { base; _ }) -> forward_assignment_target base
     | Call _ ->
@@ -137,21 +140,23 @@ module State (Context : Context) = struct
           ~error_on_global_target
           ~is_mutable_expression:true
           expression
-    (* non-recursive or unreachable cases *)
     | Constant _
     | UnaryOperator _
     | Await _
     | Yield _
     | Starred (Twice _)
-    | YieldFrom _ ->
+    | YieldFrom _
+    | WalrusOperator _ ->
         ()
-    (* singular expression recursive cases *)
     | Starred (Once expression) -> forward_assignment_target expression
-    (* list expression recursive cases *)
     | List expressions
     | Tuple expressions
     | Set expressions ->
         List.iter ~f:forward_assignment_target expressions
+    | BooleanOperator { left; right; _ }
+    | ComparisonOperator { left; right; _ } ->
+        forward_assignment_target left;
+        forward_assignment_target right
     | _ -> ()
 
 

@@ -78,6 +78,22 @@ let test_global_assignment context =
       my_global: int = 1
       def foo():
         global my_global
+        my_global = a = 2
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        a = my_global = 2
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
         x, y = 2, 3
     |}
     [];
@@ -131,10 +147,28 @@ let test_global_assignment context =
     {|
       my_global: int = 1
       def foo():
-         if my_global := 0:
-           pass
+        global my_global
+        my_local = [1, my_global := 2, 3]
     |}
-    [ (* TODO (T142189949): leaks should be detected on walrus operator assignment to globals *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        if my_global := (a := 3):
+          print("hi")
+    |}
+    [ (* TODO (T142189949): leaks should be detected on walrus mutations in if statements *) ];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        if a := (my_global := 3):
+          print("hi")
+    |}
+    [ (* TODO (T142189949): leaks should be detected on walrus mutations in if statements *) ];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -640,7 +674,34 @@ let test_global_statements context =
       def test() -> None:
         global my_global
         await async_func(my_global.setdefault("a", 1))
-
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        my_global.setdefault("a", 1) and True
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        True or my_global.setdefault("a", 1)
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        5 > my_global.setdefault("a", 1)
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        my_global.setdefault("a", 1) == 5
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 
@@ -731,6 +792,30 @@ let test_recursive_coverage context =
       "Global leak [3100]: Data is leaked to global `test.my_global`.";
       "Global leak [3100]: Data is leaked to global `test.my_global`.";
     ];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        my_local = [1, 2, 3]
+        my_local[my_global.setdefault("a", 1)] = 0
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        my_local = [1, 2, 3]
+        my_local[my_global.setdefault("a", 1) < 5] = 0
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        my_local = [1, 2, 3]
+        my_local[my_global.setdefault("a", 1) and True] = 0
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 
   ()
 
