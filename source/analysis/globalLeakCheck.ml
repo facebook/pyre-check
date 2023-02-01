@@ -113,6 +113,11 @@ module State (Context : Context) = struct
     | Starred (Once expression)
     | Starred (Twice expression) ->
         forward_expression expression
+    (* list expression recursive cases *)
+    | List expressions
+    | Set expressions
+    | Tuple expressions ->
+        List.iter ~f:forward_expression expressions
     | _ -> ()
 
 
@@ -126,7 +131,6 @@ module State (Context : Context) = struct
     (* interesting cases *)
     | Expression.Name (Name.Identifier target) -> error_on_global_target ~location target
     | Name (Name.Attribute { base; _ }) -> forward_assignment_target base
-    | Tuple values -> List.iter ~f:forward_assignment_target values
     | Call _ ->
         forward_expression
           ~resolution
@@ -143,6 +147,11 @@ module State (Context : Context) = struct
         ()
     (* singular expression recursive cases *)
     | Starred (Once expression) -> forward_assignment_target expression
+    (* list expression recursive cases *)
+    | List expressions
+    | Tuple expressions
+    | Set expressions ->
+        List.iter ~f:forward_assignment_target expressions
     | _ -> ()
 
 
