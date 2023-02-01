@@ -159,6 +159,14 @@ let test_global_assignment context =
         (my_global["x"], y) = 1, 2
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: List[int] = []
+      def foo():
+        global my_global
+        a, *my_global = [1, 2, 3]
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 
   ()
 
@@ -250,6 +258,16 @@ let test_list_global_leaks context =
         my_global.copy()
     |}
     [];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def test() -> None:
+        global my_global
+        [
+          *my_global.setdefault("x", [1])
+        ]
+    |}
+    [ (* TODO (T142189949): leaks should be detected on starred list expressions *) ];
 
   ()
 
@@ -287,6 +305,16 @@ let test_dict_global_leaks context =
         my_global |= local_dict
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def test() -> None:
+        global my_global
+        {
+          **my_global.setdefault("x", {"a": 1})
+        }
+    |}
+    [ (* TODO (T142189949): leaks should be detected on starred dict expressions *) ];
 
   ()
 
@@ -535,6 +563,29 @@ let test_global_statements context =
         yield
     |}
     [];
+  assert_global_leak_errors
+    {|
+      async def test() -> int:
+        yield from (i for i in range(10))
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def test() -> None:
+        global my_global
+        ~my_global.setdefault("a", 1)
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def test() -> None:
+        global my_global
+        await async_func(my_global.setdefault("a", 1))
+
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 
   ()
 
@@ -591,6 +642,14 @@ let test_recursive_coverage context =
       my_global: Dict[str, int] = {}
       def setdefault_global_dict() -> None:
         raise Exception() from Exception(my_global.setdefault("a", 1))
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def test() -> None:
+        global my_global
+        yield my_global.setdefault("a", 1)
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 

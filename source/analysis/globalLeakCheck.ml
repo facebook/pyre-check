@@ -105,6 +105,14 @@ module State (Context : Context) = struct
     | Expression.Constant _
     | Yield None ->
         ()
+    (* singular expression recursive cases *)
+    | Await expression
+    | Yield (Some expression)
+    | YieldFrom expression
+    | UnaryOperator { operand = expression; _ }
+    | Starred (Once expression)
+    | Starred (Twice expression) ->
+        forward_expression expression
     | _ -> ()
 
 
@@ -125,10 +133,16 @@ module State (Context : Context) = struct
           ~error_on_global_target
           ~is_mutable_expression:true
           expression
-    (* non-recursive cases *)
-    | Expression.Constant _
-    | Yield None ->
+    (* non-recursive or unreachable cases *)
+    | Constant _
+    | UnaryOperator _
+    | Await _
+    | Yield _
+    | Starred (Twice _)
+    | YieldFrom _ ->
         ()
+    (* singular expression recursive cases *)
+    | Starred (Once expression) -> forward_assignment_target expression
     | _ -> ()
 
 
