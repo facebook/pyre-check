@@ -351,6 +351,38 @@ let test_list_global_leaks context =
         ls = (1, my_global.setdefault("a", 2), 3)
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo() -> None:
+        global my_global
+        ls = [i for i in range(my_global.setdefault("a", 1))]
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo() -> None:
+        global my_global
+        ls = [my_global.setdefault("a", 1) for _ in range(10)]
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo() -> None:
+        global my_global
+        ls = [i for i in range(10) if i == my_global.setdefault("a", 1)]
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo() -> None:
+        global my_global
+        generator = (i for i in range(my_global.setdefault("a", 1)))
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 
   ()
 
@@ -517,6 +549,14 @@ let test_set_global_leaks context =
       def foo() -> None:
         global my_global
         ls = {1, my_global.setdefault("a", 2), 3}
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo() -> None:
+        global my_global
+        ls = {i for i in range(my_global.setdefault("a", 1))}
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 

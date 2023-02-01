@@ -138,6 +138,11 @@ module State (Context : Context) = struct
         forward_expression key;
         forward_expression value;
         List.iter ~f:forward_generator generators
+    | Generator { element; generators }
+    | ListComprehension { element; generators }
+    | SetComprehension { element; generators } ->
+        forward_expression element;
+        List.iter ~f:forward_generator generators
     | _ -> ()
 
 
@@ -165,6 +170,9 @@ module State (Context : Context) = struct
     | Set _
     | Dictionary _
     | DictionaryComprehension _
+    | Generator _
+    | ListComprehension _
+    | SetComprehension _
     | WalrusOperator _ ->
         ()
     | Starred (Once expression) -> forward_assignment_target expression
