@@ -594,7 +594,7 @@ module ModelQuery = struct
 
   let unique_identifier = function
     | { name; path = None; _ } -> name
-    | { name; path = Some path; _ } -> PyrePath.get_suffix_path path ^ "/" ^ name
+    | { name; path = Some path; _ } -> Format.sprintf "%s/%s" (PyrePath.get_suffix_path path) name
 end
 
 type t = {
