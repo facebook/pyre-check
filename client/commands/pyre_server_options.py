@@ -42,7 +42,6 @@ class PyreServerOptions:
     strict_default: bool
     excludes: Sequence[str]
     flavor: identifiers.PyreFlavor
-    enabled_telemetry_event: bool = False
 
     def get_socket_path(self) -> Path:
         return daemon_socket.get_socket_path(
@@ -54,7 +53,6 @@ class PyreServerOptions:
     def create(
         start_command_argument: command_arguments.StartArguments,
         configuration: frontend_configuration.Base,
-        enabled_telemetry_event: bool,
         language_server_features: features.LanguageServerFeatures,
     ) -> PyreServerOptions:
         binary_location = configuration.get_binary_location(download_if_needed=True)
@@ -81,21 +79,18 @@ class PyreServerOptions:
             strict_default=configuration.is_strict(),
             excludes=configuration.get_excludes(),
             flavor=start_command_argument.flavor,
-            enabled_telemetry_event=enabled_telemetry_event,
         )
 
     @staticmethod
     def create_reader(
         start_command_argument: command_arguments.StartArguments,
         read_frontend_configuration: FrontendConfigurationReader,
-        enabled_telemetry_event: bool,
         language_server_features: features.LanguageServerFeatures,
     ) -> PyreServerOptionsReader:
         def read() -> PyreServerOptions:
             return PyreServerOptions.create(
                 start_command_argument=start_command_argument,
                 configuration=read_frontend_configuration(),
-                enabled_telemetry_event=enabled_telemetry_event,
                 language_server_features=language_server_features,
             )
 

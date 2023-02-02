@@ -27,6 +27,7 @@ from ...language_server.features import (
     DefinitionAvailability,
     LanguageServerFeatures,
     StatusUpdatesAvailability,
+    TelemetryAvailability,
     TypeErrorsAvailability,
     UnsavedChangesAvailability,
 )
@@ -1131,7 +1132,10 @@ class DidChangeTest(ApiTestCase):
     @setup.async_test
     async def test_did_change__basic(self) -> None:
         tracked_path = Path("/tracked.py")
-        for enabled_telemetry_event in (True, False):
+        for telemetry in (
+            TelemetryAvailability.ENABLED,
+            TelemetryAvailability.DISABLED,
+        ):
             querier = server_setup.MockDaemonQuerier()
             (
                 api,
@@ -1144,7 +1148,9 @@ class DidChangeTest(ApiTestCase):
                 },
                 querier=querier,
                 server_options=server_setup.create_server_options(
-                    enabled_telemetry_event=enabled_telemetry_event
+                    language_server_features=LanguageServerFeatures(
+                        telemetry=telemetry
+                    ),
                 ),
             )
             await api.process_did_change_request(
@@ -1160,7 +1166,7 @@ class DidChangeTest(ApiTestCase):
                 querier.requests,
                 [],
             )
-            if enabled_telemetry_event:
+            if telemetry.is_enabled():
                 expectations = [
                     self._expect_telemetry_event(
                         operation="didChange",
@@ -1178,7 +1184,10 @@ class DidChangeTest(ApiTestCase):
     async def test_did_change__with_type_errors(self) -> None:
         unsaved_file_content = "# some example code"
         tracked_path = Path("/tracked.py")
-        for enabled_telemetry_event in (True, False):
+        for telemetry in (
+            TelemetryAvailability.ENABLED,
+            TelemetryAvailability.DISABLED,
+        ):
             querier = server_setup.MockDaemonQuerier(
                 mock_type_errors=[
                     error.Error(
@@ -1204,9 +1213,9 @@ class DidChangeTest(ApiTestCase):
                 },
                 querier=querier,
                 server_options=server_setup.create_server_options(
-                    enabled_telemetry_event=enabled_telemetry_event,
                     language_server_features=LanguageServerFeatures(
                         unsaved_changes=UnsavedChangesAvailability.ENABLED,
+                        telemetry=telemetry,
                     ),
                 ),
             )
@@ -1240,7 +1249,7 @@ class DidChangeTest(ApiTestCase):
                     )
                 ],
             )
-            if enabled_telemetry_event:
+            if telemetry.is_enabled():
                 expectations = [
                     expect_diagnostics,
                     self._expect_telemetry_event(
@@ -1258,7 +1267,10 @@ class DidChangeTest(ApiTestCase):
     @setup.async_test
     async def test_did_change__no_type_errors(self) -> None:
         tracked_path = Path("/tracked.py")
-        for enabled_telemetry_event in (True, False):
+        for telemetry in (
+            TelemetryAvailability.ENABLED,
+            TelemetryAvailability.DISABLED,
+        ):
             querier = server_setup.MockDaemonQuerier(
                 mock_type_errors=[],
             )
@@ -1273,9 +1285,9 @@ class DidChangeTest(ApiTestCase):
                 },
                 querier=querier,
                 server_options=server_setup.create_server_options(
-                    enabled_telemetry_event=enabled_telemetry_event,
                     language_server_features=LanguageServerFeatures(
                         unsaved_changes=UnsavedChangesAvailability.ENABLED,
+                        telemetry=telemetry,
                     ),
                 ),
             )
@@ -1300,7 +1312,7 @@ class DidChangeTest(ApiTestCase):
                 uri="file:///tracked.py",
                 diagnostics=[],
             )
-            if enabled_telemetry_event:
+            if telemetry.is_enabled():
                 expectations = [
                     expect_diagnostics,
                     self._expect_telemetry_event(
@@ -1325,7 +1337,10 @@ class HoverTest(ApiTestCase):
         expected_response = lsp.LspHoverResponse(
             contents=server_setup.DEFAULT_FILE_CONTENTS
         )
-        for enabled_telemetry_event in (True, False):
+        for telemetry in (
+            TelemetryAvailability.ENABLED,
+            TelemetryAvailability.DISABLED,
+        ):
             querier = server_setup.MockDaemonQuerier(
                 mock_hover_response=expected_response,
             )
@@ -1340,7 +1355,9 @@ class HoverTest(ApiTestCase):
                 },
                 querier=querier,
                 server_options=server_setup.create_server_options(
-                    enabled_telemetry_event=enabled_telemetry_event
+                    language_server_features=LanguageServerFeatures(
+                        telemetry=telemetry
+                    ),
                 ),
             )
             await api.process_hover_request(
@@ -1367,7 +1384,7 @@ class HoverTest(ApiTestCase):
             expect_correct_response = self._expect_success_message(
                 raw_expected_response
             )
-            if enabled_telemetry_event:
+            if telemetry.is_enabled():
                 expectations = [
                     expect_correct_response,
                     self._expect_telemetry_event(
@@ -1390,7 +1407,10 @@ class HoverTest(ApiTestCase):
         expected_response = lsp.LspHoverResponse(
             contents=server_setup.DEFAULT_FILE_CONTENTS
         )
-        for enabled_telemetry_event in (True, False):
+        for telemetry in (
+            TelemetryAvailability.ENABLED,
+            TelemetryAvailability.DISABLED,
+        ):
             querier = server_setup.MockDaemonQuerier(
                 mock_hover_response=expected_response,
             )
@@ -1405,9 +1425,9 @@ class HoverTest(ApiTestCase):
                 },
                 querier=querier,
                 server_options=server_setup.create_server_options(
-                    enabled_telemetry_event=enabled_telemetry_event,
                     language_server_features=LanguageServerFeatures(
                         unsaved_changes=UnsavedChangesAvailability.ENABLED,
+                        telemetry=telemetry,
                     ),
                 ),
             )
@@ -1436,7 +1456,7 @@ class HoverTest(ApiTestCase):
             expect_correct_response = self._expect_success_message(
                 raw_expected_response
             )
-            if enabled_telemetry_event:
+            if telemetry.is_enabled():
                 expectations = [
                     expect_correct_response,
                     self._expect_telemetry_event(
@@ -1502,7 +1522,10 @@ class DefinitionTest(ApiTestCase):
                 ),
             )
         ]
-        for enabled_telemetry_event in (True, False):
+        for telemetry in (
+            TelemetryAvailability.ENABLED,
+            TelemetryAvailability.DISABLED,
+        ):
             querier = server_setup.MockDaemonQuerier(
                 mock_definition_response=expected_response,
             )
@@ -1517,7 +1540,9 @@ class DefinitionTest(ApiTestCase):
                 },
                 querier=querier,
                 server_options=server_setup.create_server_options(
-                    enabled_telemetry_event=enabled_telemetry_event
+                    language_server_features=LanguageServerFeatures(
+                        telemetry=telemetry
+                    ),
                 ),
             )
             await api.process_definition_request(
@@ -1544,7 +1569,7 @@ class DefinitionTest(ApiTestCase):
             expect_correct_response = self._expect_success_message(
                 raw_expected_response
             )
-            if enabled_telemetry_event:
+            if telemetry.is_enabled():
                 expectations = [
                     expect_correct_response,
                     self._expect_telemetry_event(
@@ -1573,7 +1598,10 @@ class DefinitionTest(ApiTestCase):
                 ),
             )
         ]
-        for enabled_telemetry_event in (True, False):
+        for telemetry in (
+            TelemetryAvailability.ENABLED,
+            TelemetryAvailability.DISABLED,
+        ):
             querier = server_setup.MockDaemonQuerier(
                 mock_definition_response=expected_response,
             )
@@ -1588,9 +1616,9 @@ class DefinitionTest(ApiTestCase):
                 },
                 querier=querier,
                 server_options=server_setup.create_server_options(
-                    enabled_telemetry_event=enabled_telemetry_event,
                     language_server_features=LanguageServerFeatures(
-                        unsaved_changes=UnsavedChangesAvailability.ENABLED
+                        unsaved_changes=UnsavedChangesAvailability.ENABLED,
+                        telemetry=telemetry,
                     ),
                 ),
             )
@@ -1619,7 +1647,7 @@ class DefinitionTest(ApiTestCase):
             expect_correct_response = self._expect_success_message(
                 raw_expected_response
             )
-            if enabled_telemetry_event:
+            if telemetry.is_enabled():
                 expectations = [
                     expect_correct_response,
                     self._expect_telemetry_event(
@@ -1660,9 +1688,9 @@ class DefinitionTest(ApiTestCase):
             },
             querier=querier,
             server_options=server_setup.create_server_options(
-                enabled_telemetry_event=True,
                 language_server_features=LanguageServerFeatures(
-                    definition=DefinitionAvailability.SHADOW
+                    definition=DefinitionAvailability.SHADOW,
+                    telemetry=TelemetryAvailability.ENABLED,
                 ),
             ),
         )

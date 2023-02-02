@@ -143,7 +143,7 @@ class PyreLanguageServerApi:
         activity_key: Optional[Dict[str, object]],
     ) -> None:
         should_write_telemetry = (
-            self.server_state.server_options.enabled_telemetry_event
+            self.server_state.server_options.language_server_features.telemetry.is_enabled()
         )
         if should_write_telemetry:
             await lsp.write_json_rpc_ignore_connection_error(

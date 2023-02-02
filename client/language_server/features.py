@@ -63,6 +63,7 @@ class TypeCoverageAvailability(enum.Enum):
     EXPRESSION_LEVEL = "expression_level"
 
 
+# User-facing features
 HoverAvailability = _Availability
 DefinitionAvailability = _AvailabilityWithShadow
 ReferencesAvailability = _Availability
@@ -70,6 +71,9 @@ DocumentSymbolsAvailability = _Availability
 StatusUpdatesAvailability = _Availability
 TypeErrorsAvailability = _Availability
 UnsavedChangesAvailability = _Availability
+
+# Telemetry: is the editor able to forward events somewhere?
+TelemetryAvailability = _Availability
 
 
 @dataclasses.dataclass(frozen=True)
@@ -82,6 +86,7 @@ class LanguageServerFeatures:
     type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
     type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
+    telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED
 
     def capabilities(self) -> Dict[str, bool]:
         return {

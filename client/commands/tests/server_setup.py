@@ -48,7 +48,6 @@ DEFAULT_FEATURES: LanguageServerFeatures = LanguageServerFeatures(
 DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
 DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
-DEFAULT_ENABLE_TELEMETRY: bool = False
 DEFAULT_FILE_CONTENTS: str = "```\nfoo.Foo\n```"
 
 
@@ -60,7 +59,6 @@ def create_server_options(
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
-    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> PyreServerOptions:
     return PyreServerOptions(
         binary,
@@ -70,7 +68,6 @@ def create_server_options(
         strict_default,
         excludes if excludes else [],
         flavor,
-        enabled_telemetry_event,
     )
 
 
@@ -82,7 +79,6 @@ def _create_server_options(
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
-    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> PyreServerOptionsReader:
     return lambda: create_server_options(
         binary,
@@ -92,7 +88,6 @@ def _create_server_options(
         strict_default,
         excludes,
         flavor,
-        enabled_telemetry_event,
     )
 
 
@@ -104,7 +99,6 @@ def create_server_state_with_options(
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
-    enabled_telemetry_event: bool = DEFAULT_ENABLE_TELEMETRY,
 ) -> ServerState:
     return ServerState(
         create_server_options(
@@ -115,7 +109,6 @@ def create_server_state_with_options(
             strict_default,
             excludes,
             flavor,
-            enabled_telemetry_event,
         )
     )
 

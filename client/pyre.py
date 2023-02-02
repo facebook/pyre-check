@@ -957,7 +957,6 @@ def persistent(
                     command_argument, base_directory
                 )
             ),
-            enabled_telemetry_event=False,
             language_server_features=language_server_features.LanguageServerFeatures(
                 hover=language_server_features.HoverAvailability(hover),
                 definition=language_server_features.DefinitionAvailability(definition),
@@ -977,6 +976,7 @@ def persistent(
                 unsaved_changes=language_server_features.UnsavedChangesAvailability(
                     unsaved_changes
                 ),
+                telemetry=language_server_features.TelemetryAvailability.DISABLED,
             ),
         ),
         remote_logging=commands.backend_arguments.RemoteLogging.create(
