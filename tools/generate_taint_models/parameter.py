@@ -9,8 +9,11 @@ from typing import NamedTuple, Optional
 
 class Parameter(NamedTuple):
     class Kind(Enum):
+        # pyre-fixme[20]: Argument `value` expected.
         ARG = auto()
+        # pyre-fixme[20]: Argument `value` expected.
         VARARG = auto()
+        # pyre-fixme[20]: Argument `value` expected.
         KWARG = auto()
 
     name: str

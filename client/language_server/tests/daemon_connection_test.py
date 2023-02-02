@@ -36,6 +36,8 @@ class MockAsyncContextManager(AsyncContextManager[T]):
     async def __aenter__(self) -> T:
         return self.value
 
+    # pyre-fixme[14]: `__aexit__` overrides method defined in `AsyncContextManager`
+    #  inconsistently.
     async def __aexit__(
         self,
         typ: Optional[Type[BaseException]],

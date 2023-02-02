@@ -390,8 +390,6 @@ def pyre(
     type=str,
     help="Dump the call graph in the given file.",
 )
-# pyre-fixme[56]: Pyre was not able to infer the type of argument `os.path.abspath`
-#  to decorator factory `click.option`.
 @click.option("--repository-root", type=os.path.abspath)
 @click.option(
     "--rule",
@@ -1076,8 +1074,6 @@ def query(
 
 
 @pyre.command()
-# pyre-fixme[56]: Pyre was not able to infer the type of argument `os.path.abspath`
-#  to decorator factory `click.option`.
 @click.option(
     "--output-file",
     type=os.path.abspath,

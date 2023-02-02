@@ -44,6 +44,8 @@ class GraphQLSourceGenerator(ModelGenerator[CallableModel]):
 
         for graphql_module in graphql_modules:
             for path in os.listdir(
+                # pyre-fixme[6]: For 1st argument expected `PathLike[Variable[AnyStr
+                #  <: [str, bytes]]]` but got `Optional[str]`.
                 os.path.dirname(import_module(graphql_module).__file__)
             ):
                 if path.endswith(".py") and path != "__init__.py":
