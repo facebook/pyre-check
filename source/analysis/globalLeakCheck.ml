@@ -149,6 +149,12 @@ module State (Context : Context) = struct
           | _ -> ()
         in
         List.iter ~f:forward_format_string substrings
+    | Lambda { parameters; body } ->
+        let forward_parameters { Node.value = { Parameter.value; _ }; _ } =
+          Option.iter ~f:forward_expression value
+        in
+        List.iter ~f:forward_parameters parameters;
+        forward_expression body
     | _ -> ()
 
 
@@ -180,6 +186,7 @@ module State (Context : Context) = struct
     | ListComprehension _
     | SetComprehension _
     | FormatString _
+    | Lambda _
     | WalrusOperator _ ->
         ()
     | Starred (Once expression) -> forward_assignment_target expression
