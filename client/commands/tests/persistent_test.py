@@ -605,6 +605,161 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
             self.assertFalse(fake_task_manager.is_task_running())
 
 
+class ClientTypeErrorHandlerTest(testslide.TestCase):
+    @setup.async_test
+    async def test_clear_type_errors_for_client(self) -> None:
+        server_state = server_setup.create_server_state_with_options()
+        server_state.diagnostics = {
+            Path("foo.py"): [],
+        }
+        bytes_writer = MemoryBytesWriter()
+        client_output_channel = AsyncTextWriter(bytes_writer)
+
+        error_handler = ClientTypeErrorHandler(
+            client_output_channel=client_output_channel,
+            server_state=server_state,
+        )
+        await error_handler.clear_type_errors_for_client()
+
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        self.assertEqual(len(client_messages), 1)
+        print(client_messages)
+        message = client_messages[0]
+        self.assertIn("textDocument/publishDiagnostics", message)
+        self.assertIn('{"uri": "file:///foo.py", "diagnostics": []}}', message)
+
+    @setup.async_test
+    async def test_update_type_errors_and_show_type_errors_to_client(self) -> None:
+        server_state = server_setup.create_server_state_with_options()
+        bytes_writer = MemoryBytesWriter()
+        client_output_channel = AsyncTextWriter(bytes_writer)
+
+        error_handler = ClientTypeErrorHandler(
+            client_output_channel=client_output_channel,
+            server_state=server_state,
+        )
+        error_handler.update_type_errors(
+            [
+                error.Error(
+                    line=1,
+                    column=1,
+                    stop_line=2,
+                    stop_column=2,
+                    path=Path("derp.py"),
+                    code=42,
+                    name="name",
+                    description="first error",
+                ),
+                error.Error(
+                    line=1,
+                    column=1,
+                    stop_line=2,
+                    stop_column=2,
+                    path=Path("derp.py"),
+                    code=42,
+                    name="name",
+                    description="second error",
+                ),
+            ]
+        )
+        await error_handler.show_type_errors_to_client()
+
+        self.assertDictEqual(
+            server_state.diagnostics,
+            {
+                Path("derp.py"): [
+                    lsp.Diagnostic(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=0, character=1),
+                            end=lsp.LspPosition(line=1, character=2),
+                        ),
+                        message="first error",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    ),
+                    lsp.Diagnostic(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=0, character=1),
+                            end=lsp.LspPosition(line=1, character=2),
+                        ),
+                        message="second error",
+                        severity=lsp.DiagnosticSeverity.ERROR,
+                        code=None,
+                        source="Pyre",
+                    ),
+                ]
+            },
+        )
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        print(client_messages)
+        self.assertEqual(len(client_messages), 1)
+        message = client_messages[0]
+        self.assertIn("textDocument/publishDiagnostics", message)
+
+    @setup.async_test
+    async def test_show_overlay_type_errors__non_empty(self) -> None:
+        server_state = server_setup.create_server_state_with_options()
+        bytes_writer = MemoryBytesWriter()
+        client_output_channel = AsyncTextWriter(bytes_writer)
+
+        error_handler = ClientTypeErrorHandler(
+            client_output_channel=client_output_channel,
+            server_state=server_state,
+        )
+        await error_handler.show_overlay_type_errors(
+            Path("derp.py"),
+            [
+                error.Error(
+                    line=1,
+                    column=1,
+                    stop_line=2,
+                    stop_column=2,
+                    path=Path("derp.py"),
+                    code=42,
+                    name="name",
+                    description="first error",
+                ),
+                error.Error(
+                    line=1,
+                    column=1,
+                    stop_line=2,
+                    stop_column=2,
+                    path=Path("derp.py"),
+                    code=42,
+                    name="name",
+                    description="second error",
+                ),
+            ],
+        )
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        print(client_messages)
+        self.assertEqual(len(client_messages), 1)
+        message = client_messages[0]
+        self.assertIn("textDocument/publishDiagnostics", message)
+        self.assertIn("derp.py", message)
+        self.assertIn("first error", message)
+
+    @setup.async_test
+    async def test_show_overlay_type_errors__empty(self) -> None:
+        server_state = server_setup.create_server_state_with_options()
+        bytes_writer = MemoryBytesWriter()
+        client_output_channel = AsyncTextWriter(bytes_writer)
+
+        error_handler = ClientTypeErrorHandler(
+            client_output_channel=client_output_channel,
+            server_state=server_state,
+        )
+        await error_handler.show_overlay_type_errors(Path("derp.py"), [])
+        client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
+        print(client_messages)
+        self.assertEqual(len(client_messages), 1)
+        message = client_messages[0]
+        self.assertIn("textDocument/publishDiagnostics", message)
+        self.assertIn("derp.py", message)
+        self.assertIn('"diagnostics": []', message)
+
+
 class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_subscription_protocol(self) -> None:
