@@ -29,6 +29,7 @@ status updates, and error messages.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import logging
 import os
 import traceback
@@ -257,16 +258,11 @@ class ClientStatusMessageHandler:
         )
 
 
+@dataclasses.dataclass(frozen=True)
 class ClientTypeErrorHandler:
-    def __init__(
-        self,
-        client_output_channel: connections.AsyncTextWriter,
-        server_state: ServerState,
-        remote_logging: Optional[backend_arguments.RemoteLogging] = None,
-    ) -> None:
-        self.client_output_channel = client_output_channel
-        self.remote_logging = remote_logging
-        self.server_state = server_state
+    client_output_channel: connections.AsyncTextWriter
+    server_state: ServerState
+    remote_logging: Optional[backend_arguments.RemoteLogging] = None
 
     def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
         LOG.info(
