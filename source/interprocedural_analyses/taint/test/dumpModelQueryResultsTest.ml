@@ -492,7 +492,163 @@ let test_dump_model_query_results context =
   }
 ]|}
   in
-
+  (* Test functions *)
+  let _ =
+    initialize
+      ~models_source:
+        {|
+      ModelQuery(
+        name = "get_foo",
+        find = "functions",
+        where = name.matches("foo"),
+        model = Returns(TaintSource[Test])
+      )
+      ModelQuery(
+        name = "get_bar",
+        find = "functions",
+        where = name.matches("bar"),
+        model = Returns(TaintSource[Test])
+      )
+      ModelQuery(
+        name = "get_fooo",
+        find = "functions",
+        where = name.matches("fooo"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+      ~context
+      ~taint_configuration:configuration
+      {|
+      def foo1(): ...
+      def foo2(): ...
+      def bar(): ...
+      def barfooo(): ...
+      |}
+      ~model_path:(PyrePath.create_absolute "/a/b.pysa")
+      ~expected_dump_string:
+        {|[
+  {
+    "/a/b.pysa/get_bar": [
+      {
+        "callable": "test.bar",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.bar",
+            "sources": [
+              {
+                "port": "result",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      },
+      {
+        "callable": "test.barfooo",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.barfooo",
+            "sources": [
+              {
+                "port": "result",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "/a/b.pysa/get_foo": [
+      {
+        "callable": "test.barfooo",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.barfooo",
+            "sources": [
+              {
+                "port": "result",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      },
+      {
+        "callable": "test.foo1",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.foo1",
+            "sources": [
+              {
+                "port": "result",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      },
+      {
+        "callable": "test.foo2",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.foo2",
+            "sources": [
+              {
+                "port": "result",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "/a/b.pysa/get_fooo": [
+      {
+        "callable": "test.barfooo",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.barfooo",
+            "sources": [
+              {
+                "port": "result",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      }
+    ]
+  }
+]|}
+  in
   ()
 
 

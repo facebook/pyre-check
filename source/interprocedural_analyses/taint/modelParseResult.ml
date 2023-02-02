@@ -591,6 +591,10 @@ module ModelQuery = struct
     unexpected_models: ExpectedModel.t list;
   }
   [@@deriving show, equal]
+
+  let unique_identifier = function
+    | { name; path = None; _ } -> name
+    | { name; path = Some path; _ } -> PyrePath.get_suffix_path path ^ "/" ^ name
 end
 
 type t = {

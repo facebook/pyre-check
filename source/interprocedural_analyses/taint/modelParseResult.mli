@@ -336,6 +336,8 @@ module ModelQuery : sig
     unexpected_models: ExpectedModel.t list;
   }
   [@@deriving show, equal]
+
+  val unique_identifier : t -> string
 end
 
 type t = {

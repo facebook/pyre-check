@@ -10,7 +10,7 @@ module ModelQueryRegistryMap : sig
 
   val empty : t
 
-  val add : t -> model_query_name:string -> registry:Registry.t -> t
+  val add : t -> model_query_identifier:string -> registry:Registry.t -> t
 
   val get : t -> string -> Registry.t option
 
@@ -18,9 +18,9 @@ module ModelQueryRegistryMap : sig
 
   val to_alist : t -> (string * Registry.t) list
 
-  val mapi : t -> f:(model_query_name:string -> models:Registry.t -> Registry.t) -> t
+  val mapi : t -> f:(model_query_identifier:string -> models:Registry.t -> Registry.t) -> t
 
-  val get_model_query_names : t -> string list
+  val get_model_query_identifiers : t -> string list
 
   val get_models : t -> Registry.t list
 
