@@ -806,6 +806,27 @@ let test_global_statements context =
         a = lambda x = my_global.setdefault("a", 1): x
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        a = my_global.setdefault("a", 1) if False else 3
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        a = 1 if my_global.setdefault("a", 1) else 2
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        a = 1 if True else my_global.setdefault("a", 1)
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 
   ()
 
@@ -916,6 +937,13 @@ let test_recursive_coverage context =
       def foo():
         my_local = [1, 2, 3]
         my_local[my_global.setdefault("a", 1) and True] = 0
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        a = (1 if my_global.setdefault("a", 1) else 2) if True else 4
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
 

@@ -155,7 +155,10 @@ module State (Context : Context) = struct
         in
         List.iter ~f:forward_parameters parameters;
         forward_expression body
-    | _ -> ()
+    | Ternary { target; test; alternative } ->
+        forward_expression test;
+        forward_expression target;
+        forward_expression alternative
 
 
   and forward_assignment_target
@@ -187,6 +190,7 @@ module State (Context : Context) = struct
     | SetComprehension _
     | FormatString _
     | Lambda _
+    | Ternary _
     | WalrusOperator _ ->
         ()
     | Starred (Once expression) -> forward_assignment_target expression
@@ -197,7 +201,6 @@ module State (Context : Context) = struct
     | ComparisonOperator { left; right; _ } ->
         forward_assignment_target left;
         forward_assignment_target right
-    | _ -> ()
 
 
   let forward ~statement_key state ~statement:{ Node.value; _ } =
