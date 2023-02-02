@@ -189,11 +189,12 @@ async def async_run_code_navigation_client(
     )
     stdin, stdout = await connections.create_async_stdin_stdout()
     initialize_result = await initialization.async_try_initialize_loop(
-        initial_server_options,
         stdin,
         stdout,
         remote_logging,
-        process_initialize_request,
+        compute_initialize_result=lambda parameters: process_initialize_request(
+            parameters, initial_server_options.language_server_features
+        ),
     )
     if isinstance(initialize_result, initialization.InitializationExit):
         return 0

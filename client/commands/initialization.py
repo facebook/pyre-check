@@ -59,16 +59,15 @@ class InitializationExit:
     pass
 
 
-ProcessInitializeRequestCallable: TypeAlias = Callable[
-    [InitializeParameters, LanguageServerFeatures], InitializeResult
+ComputeInitializeResultCallable: TypeAlias = Callable[
+    [InitializeParameters], InitializeResult
 ]
 
 
 async def async_try_initialize(
     input_channel: connections.AsyncTextReader,
     output_channel: connections.AsyncTextWriter,
-    server_options: pyre_server_options.PyreServerOptions,
-    process_initialize_request: ProcessInitializeRequestCallable,
+    compute_initialize_result: ComputeInitializeResultCallable,
 ) -> Union[InitializationSuccess, InitializationFailure, InitializationExit]:
     """
     Read an LSP message from the input channel and try to initialize an LSP
@@ -107,9 +106,7 @@ async def async_try_initialize(
             request_parameters
         )
 
-        result = process_initialize_request(
-            initialize_parameters, server_options.language_server_features
-        )
+        result = compute_initialize_result(initialize_parameters)
         await lsp.write_json_rpc_ignore_connection_error(
             output_channel,
             json_rpc.SuccessResponse(
@@ -160,15 +157,14 @@ async def async_try_initialize(
 
 
 async def async_try_initialize_loop(
-    server_options: PyreServerOptions,
     input_channel: connections.AsyncTextReader,
     output_channel: connections.AsyncTextWriter,
     remote_logging: Optional[backend_arguments.RemoteLogging],
-    process_initialize_request: ProcessInitializeRequestCallable,
+    compute_initialize_result: ComputeInitializeResultCallable,
 ) -> InitializationSuccess | InitializationExit:
     while True:
         initialize_result = await async_try_initialize(
-            input_channel, output_channel, server_options, process_initialize_request
+            input_channel, output_channel, compute_initialize_result
         )
         if isinstance(initialize_result, InitializationExit):
             LOG.info("Received exit request before initialization.")

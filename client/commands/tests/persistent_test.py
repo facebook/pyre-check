@@ -143,8 +143,10 @@ class InitializeTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             AsyncTextWriter(bytes_writer),
-            server_setup.mock_initial_server_options,
-            process_initialize_request,
+            compute_initialize_result=lambda parameters: process_initialize_request(
+                parameters,
+                server_setup.DEFAULT_FEATURES,
+            ),
         )
         self.assertIsInstance(result, InitializationSuccess)
         self.assertEqual(len(bytes_writer.items()), 1)
@@ -158,8 +160,10 @@ class InitializeTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            server_setup.mock_initial_server_options,
-            process_initialize_request,
+            compute_initialize_result=lambda parameters: process_initialize_request(
+                parameters,
+                server_setup.DEFAULT_FEATURES,
+            ),
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -172,8 +176,10 @@ class InitializeTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            server_setup.mock_initial_server_options,
-            process_initialize_request,
+            compute_initialize_result=lambda parameters: process_initialize_request(
+                parameters,
+                server_setup.DEFAULT_FEATURES,
+            ),
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -208,8 +214,10 @@ class InitializeTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            server_setup.mock_initial_server_options,
-            process_initialize_request,
+            compute_initialize_result=lambda parameters: process_initialize_request(
+                parameters,
+                server_setup.DEFAULT_FEATURES,
+            ),
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -222,8 +230,10 @@ class InitializeTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            server_setup.mock_initial_server_options,
-            process_initialize_request,
+            compute_initialize_result=lambda parameters: process_initialize_request(
+                parameters,
+                server_setup.DEFAULT_FEATURES,
+            ),
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -257,8 +267,10 @@ class InitializeTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            server_setup.mock_initial_server_options,
-            process_initialize_request,
+            compute_initialize_result=lambda parameters: process_initialize_request(
+                parameters,
+                server_setup.DEFAULT_FEATURES,
+            ),
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -284,8 +296,10 @@ class InitializeTest(testslide.TestCase):
         result = await async_try_initialize(
             input_channel,
             output_channel,
-            server_setup.mock_initial_server_options,
-            process_initialize_request,
+            compute_initialize_result=lambda parameters: process_initialize_request(
+                parameters,
+                server_setup.DEFAULT_FEATURES,
+            ),
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -294,8 +308,10 @@ class InitializeTest(testslide.TestCase):
         result = await async_try_initialize(
             create_memory_text_reader(""),
             create_memory_text_writer(),
-            server_setup.mock_initial_server_options,
-            process_initialize_request,
+            compute_initialize_result=lambda parameters: process_initialize_request(
+                parameters,
+                server_setup.DEFAULT_FEATURES,
+            ),
         )
         self.assertIsInstance(result, InitializationExit)
 
