@@ -199,12 +199,7 @@ module TaintKindsWithFeatures = struct
     >>| fun features -> { kinds = left.kinds @ right.kinds; features }
 
 
-  let concat list =
-    let ( >>= ) = Core.Result.( >>= ) in
-    List.fold
-      ~f:(fun sofar kinds_with_features -> sofar >>= fun sofar -> join sofar kinds_with_features)
-      ~init:(Ok empty)
-      list
+  let concat list = List.fold_result ~f:join ~init:empty list
 end
 
 module SanitizeAnnotation = struct

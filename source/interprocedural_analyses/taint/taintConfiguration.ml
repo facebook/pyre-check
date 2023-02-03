@@ -940,9 +940,7 @@ let from_json_list source_json_list =
     List.map ~f:parse_rule rules |> Result.combine_errors |> Result.map_error ~f:List.concat
   in
   let parse_combined_source_rules ~allowed_sources (path, json) =
-    let parse_combined_source_rule sofar json =
-      sofar
-      >>= fun (rules, partial_sink_converter, partial_sink_labels) ->
+    let parse_combined_source_rule (rules, partial_sink_converter, partial_sink_labels) json =
       json_string_member ~path "name" json
       >>= fun name ->
       json_string_member ~path "message_format" json
@@ -1033,8 +1031,8 @@ let from_json_list source_json_list =
       | _ -> Result.Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)]
     in
     array_member ~path "combined_source_rules" json
-    >>= List.fold
-          ~init:(Ok ([], SerializableStringMap.empty, SerializableStringMap.empty))
+    >>= List.fold_result
+          ~init:([], SerializableStringMap.empty, SerializableStringMap.empty)
           ~f:parse_combined_source_rule
   in
   let parse_implicit_sinks ~allowed_sinks (path, json) =

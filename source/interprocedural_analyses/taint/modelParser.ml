@@ -1349,9 +1349,7 @@ let parse_class_hierarchy_options ~path ~location ~callee ~arguments =
   let open Core.Result in
   match arguments with
   | { Call.Argument.value = first_parameter; _ } :: remaining_arguments ->
-      let parse_optional_arguments sofar argument =
-        sofar
-        >>= fun (is_transitive, includes_self) ->
+      let parse_optional_arguments (is_transitive, includes_self) argument =
         match argument with
         | { Call.Argument.name = Some { Node.value = "is_transitive"; _ }; value } ->
             parse_is_transitive ~path ~location value >>| fun value -> value, includes_self
@@ -1364,7 +1362,7 @@ let parse_class_hierarchy_options ~path ~location ~callee ~arguments =
                  ~location
                  (InvalidModelQueryClauseArguments { callee; arguments }))
       in
-      List.fold ~f:parse_optional_arguments remaining_arguments ~init:(Ok (false, true))
+      List.fold_result ~f:parse_optional_arguments remaining_arguments ~init:(false, true)
       >>| fun (is_transitive, includes_self) -> first_parameter, is_transitive, includes_self
   | _ ->
       Error
@@ -3395,9 +3393,7 @@ let create_callable_model_from_annotations
             | _ -> None)
       >>= fun callable_annotation ->
       let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
-      List.fold annotations ~init:(Ok default_model) ~f:(fun accumulator model_annotation ->
-          accumulator
-          >>= fun accumulator ->
+      List.fold_result annotations ~init:default_model ~f:(fun accumulator model_annotation ->
           add_taint_annotation_to_model
             ~path:None
             ~location:Location.any
@@ -3411,9 +3407,7 @@ let create_callable_model_from_annotations
 
 let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filter annotations =
   let open Core.Result in
-  List.fold annotations ~init:(Ok Model.empty_model) ~f:(fun accumulator annotation ->
-      accumulator
-      >>= fun accumulator ->
+  List.fold_result annotations ~init:Model.empty_model ~f:(fun accumulator annotation ->
       let model_annotation =
         match annotation with
         | TaintAnnotation.Source _ -> Ok (ModelAnnotation.ReturnAnnotation annotation)
