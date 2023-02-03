@@ -26,18 +26,15 @@ from typing_extensions import TypeAlias
 
 from .. import identifiers, json_rpc, log
 from ..language_server import connections, protocol as lsp
-from ..language_server.features import LanguageServerFeatures
 from ..language_server.protocol import InitializeParameters, InitializeResult
 
 from . import (
     backend_arguments,
     log_lsp_event,
     pyre_language_server,
-    pyre_server_options,
     server_event,
     start,
 )
-from .pyre_server_options import PyreServerOptions
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
