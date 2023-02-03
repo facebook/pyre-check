@@ -2223,8 +2223,7 @@ let test_invalid_models context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|The model query arguments for `ModelQuery(find = "functions", where = name.matches("foo"), model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ~expect:{|Missing required parameter `name` in model query.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2235,8 +2234,7 @@ let test_invalid_models context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|The model query arguments for `ModelQuery(name = "invalid_model", where = name.matches("foo"), model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ~expect:{|Missing required parameter `find` in model query.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2247,8 +2245,7 @@ let test_invalid_models context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|The model query arguments for `ModelQuery(name = "invalid_model", find = "functions", model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ~expect:{|Missing required parameter `where` in model query.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2259,8 +2256,7 @@ let test_invalid_models context =
         where = name.matches("foo")
       )
     |}
-    ~expect:
-      {|The model query arguments for `ModelQuery(name = "invalid_model", find = "functions", where = name.matches("foo"))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ~expect:{|Missing required parameter `model` in model query.|}
     ();
   assert_invalid_model
     ~source:{|
@@ -3715,7 +3711,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments for `ModelQuery(name = "invalid_model", fnid = "functions", where = name.matches("foo"), model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+      {|Unsupported named parameter `fnid` in model query (expected: name, find, where, model, expected_models, unexpected_models).|}
     ();
   assert_invalid_model
     ~model_source:
@@ -3728,8 +3724,7 @@ let test_invalid_models context =
         model = Returns(TaintSource[Test])
       )
     |}
-    ~expect:
-      {|The model query arguments for `ModelQuery(name = "invalid_model", find = "functions", find = "functions", where = name.matches("foo"), model = Returns(TaintSource[Test]))` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ~expect:{|Duplicate parameter `find` in model query.|}
     ();
 
   (* Test expected_models and unexpected_models clauses *)
@@ -3749,8 +3744,7 @@ let test_invalid_models context =
         ]
       )
     |}
-    ~expect:
-      {|The model query arguments for `ModelQuery(name = "invalid_model", find = "functions", where = name.matches("foo"), model = Returns(TaintSource[Test]), expected_models = ["def test.food() -> TaintSource[Test]: ..."], expected_models = ["def test.food() -> TaintSource[Test]: ..."])` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ~expect:{|Duplicate parameter `expected_models` in model query.|}
     ();
   assert_invalid_model
     ~source:{|

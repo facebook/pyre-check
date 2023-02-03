@@ -2757,6 +2757,65 @@ let parse_models ~resolution ~taint_configuration ~source_sink_filter ~callables
   >>| List.filter_map ~f:(fun x -> x)
 
 
+module ModelQueryArguments = struct
+  type t = {
+    name: string;
+    find_clause: Expression.t;
+    where_clause: Expression.t;
+    model_clause: Expression.t;
+    expected_models_clause: Expression.t option;
+    unexpected_models_clause: Expression.t option;
+  }
+
+  let parse_arguments ~path ~location arguments =
+    let open Core.Result in
+    let required_arguments = ["name"; "find"; "where"; "model"] in
+    let valid_arguments = "expected_models" :: "unexpected_models" :: required_arguments in
+    let parse_argument arguments = function
+      | { Call.Argument.name = None; value = argument } ->
+          Error (model_verification_error ~path ~location (ModelQueryUnnamedParameter argument))
+      | { Call.Argument.name = Some { Node.value = name; _ }; value = argument } ->
+          if Option.is_some (String.Map.find arguments name) then
+            Error (model_verification_error ~path ~location (ModelQueryDuplicateParameter name))
+          else if not (List.mem ~equal:String.equal valid_arguments name) then
+            Error
+              (model_verification_error ~path ~location (ModelQueryUnsupportedNamedParameter name))
+          else
+            Ok (String.Map.set ~key:name ~data:argument arguments)
+    in
+    let check_required_argument arguments required_argument =
+      if Option.is_some (String.Map.find arguments required_argument) then
+        Ok arguments
+      else
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (ModelQueryMissingRequiredParameter required_argument))
+    in
+    let parse_name_argument = function
+      | { Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ }); _ }
+        ->
+          Ok name
+      | argument ->
+          Error (model_verification_error ~path ~location (InvalidModelQueryNameClause argument))
+    in
+    List.fold_result ~f:parse_argument ~init:String.Map.empty arguments
+    >>= fun arguments ->
+    List.fold_result ~f:check_required_argument ~init:arguments required_arguments
+    >>= fun arguments ->
+    parse_name_argument (String.Map.find_exn arguments "name")
+    >>| fun name ->
+    {
+      name;
+      find_clause = String.Map.find_exn arguments "find";
+      where_clause = String.Map.find_exn arguments "where";
+      model_clause = String.Map.find_exn arguments "model";
+      expected_models_clause = String.Map.find arguments "expected_models";
+      unexpected_models_clause = String.Map.find arguments "unexpected_models";
+    }
+end
+
 let rec parse_statement
     ~resolution
     ~path
@@ -3152,59 +3211,16 @@ let rec parse_statement
         | Ok result -> Ok result
         | Error error -> Error [error]
       in
-      let clauses =
-        match arguments with
-        | {
-            Call.Argument.name = Some { Node.value = "name"; _ };
-            value =
-              {
-                Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
-                _;
-              };
-          }
-          :: { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause }
-          :: { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause }
-          :: { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause }
-          :: remaining_arguments ->
-            Ok ((name, find_clause, where_clause, model_clause), remaining_arguments)
-        | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses statement)]
-      in
-      let clauses =
-        clauses
-        >>= fun (required_arguments, remaining_arguments) ->
-        match remaining_arguments with
-        | [
-         {
-           Call.Argument.name = Some { Node.value = "expected_models"; _ };
-           value = expected_models_clause;
-         };
-        ] ->
-            Ok (required_arguments, Some expected_models_clause, None)
-        | [
-         {
-           Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
-           value = unexpected_models_clause;
-         };
-        ] ->
-            Ok (required_arguments, None, Some unexpected_models_clause)
-        | [
-         {
-           Call.Argument.name = Some { Node.value = "expected_models"; _ };
-           value = expected_models_clause;
-         };
-         {
-           Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
-           value = unexpected_models_clause;
-         };
-        ] ->
-            Ok (required_arguments, Some expected_models_clause, Some unexpected_models_clause)
-        | [] -> Ok (required_arguments, None, None)
-        | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses statement)]
-      in
-      clauses
-      >>= fun ( (name, find_clause, where_clause, model_clause),
-                expected_models_clause,
-                unexpected_models_clause ) ->
+      ModelQueryArguments.parse_arguments ~path ~location arguments
+      |> as_result_error_list
+      >>= fun {
+                ModelQueryArguments.name;
+                find_clause;
+                where_clause;
+                model_clause;
+                expected_models_clause;
+                unexpected_models_clause;
+              } ->
       parse_find_clause ~path find_clause
       |> as_result_error_list
       >>= fun find ->
