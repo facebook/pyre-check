@@ -1,9 +1,12 @@
---- typeshed-master/stdlib/enum.pyi	2022-08-08 00:00:00.000000000 -0700
-+++ enum.pyi	2022-08-08 00:00:00.000000000 -0700
-@@ -113,32 +113,6 @@
-     # Simple value lookup
-     @overload  # type: ignore[override]
-     def __call__(cls: type[_EnumMemberT], value: Any, names: None = ...) -> _EnumMemberT: ...
+--- typeshed-master/stdlib/enum.pyi	2023-02-02 14:54:02.697195041 -0800
++++ enum.pyi	2023-02-02 15:39:21.547855145 -0800
+@@ -109,35 +109,6 @@
+     def __members__(self: type[_EnumMemberT]) -> types.MappingProxyType[str, _EnumMemberT]: ...
+     def __len__(self) -> int: ...
+     def __bool__(self) -> Literal[True]: ...
+-    # Simple value lookup
+-    @overload  # type: ignore[override]
+-    def __call__(cls: type[_EnumMemberT], value: Any, names: None = ...) -> _EnumMemberT: ...
 -    # Functional Enum API
 -    if sys.version_info >= (3, 11):
 -        @overload
