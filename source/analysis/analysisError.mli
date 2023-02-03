@@ -124,7 +124,6 @@ and invalid_argument =
 and precondition_mismatch =
   | Found of mismatch
   | NotFound of Type.t Type.Callable.Parameter.t
-  | ExtraNonDefaultParameter of Type.t Type.Callable.Parameter.t
 
 and override =
   | StrengthenedPrecondition of precondition_mismatch

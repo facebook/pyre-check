@@ -158,7 +158,6 @@ and invalid_argument =
 and precondition_mismatch =
   | Found of mismatch
   | NotFound of Type.t Type.Callable.Parameter.t
-  | ExtraNonDefaultParameter of Type.t Type.Callable.Parameter.t
 
 and override =
   | StrengthenedPrecondition of precondition_mismatch
@@ -1417,15 +1416,6 @@ let rec messages ~concise ~signature location kind =
               | _ -> Type.Callable.Parameter.show_concise parameter
             in
             Format.asprintf "Could not find parameter `%s` in overriding signature." parameter
-        | StrengthenedPrecondition (ExtraNonDefaultParameter parameter) ->
-            let parameter =
-              match parameter with
-              | KeywordOnly { name; _ }
-              | Named { name; _ } ->
-                  Format.asprintf "%a" pp_identifier name
-              | _ -> Type.Callable.Parameter.show_concise parameter
-            in
-            Format.asprintf "Could not find parameter `%s` in overridden signature." parameter
       in
       [
         Format.asprintf
@@ -2961,7 +2951,6 @@ let due_to_analysis_limitations { kind; _ } =
   | IllegalAnnotationTarget _
   | IncompatibleAsyncGeneratorReturnType _
   | IncompatibleConstructorAnnotation _
-  | InconsistentOverride { override = StrengthenedPrecondition (ExtraNonDefaultParameter _); _ }
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | InvalidArgument (VariableArgumentsWithUnpackableType _)
   | InvalidDecoration _
@@ -3242,9 +3231,7 @@ let join ~resolution left right =
             let mismatch = join_mismatch left_mismatch right_mismatch in
             InconsistentOverride { left with override = StrengthenedPrecondition (Found mismatch) }
         | NotFound _, _ -> InconsistentOverride left
-        | _, NotFound _ -> InconsistentOverride right
-        | _, ExtraNonDefaultParameter _ -> InconsistentOverride left
-        | ExtraNonDefaultParameter _, _ -> InconsistentOverride left)
+        | _, NotFound _ -> InconsistentOverride right)
     | ( InconsistentOverride ({ override = WeakenedPostcondition left_mismatch; _ } as left),
         InconsistentOverride { override = WeakenedPostcondition right_mismatch; _ } ) ->
         let mismatch = join_mismatch left_mismatch right_mismatch in
@@ -4065,20 +4052,6 @@ let dequalify
             parent = dequalify_reference parent;
             overridden_method = dequalify_identifier overridden_method;
             override = WeakenedPostcondition (dequalify_mismatch mismatch);
-          }
-    | InconsistentOverride
-        ({
-           override = StrengthenedPrecondition (ExtraNonDefaultParameter parameter);
-           parent;
-           overridden_method;
-           _;
-         } as inconsistent_override) ->
-        InconsistentOverride
-          {
-            inconsistent_override with
-            parent = dequalify_reference parent;
-            overridden_method = dequalify_identifier overridden_method;
-            override = StrengthenedPrecondition (ExtraNonDefaultParameter parameter);
           }
     | InvalidDecoration expression -> InvalidDecoration expression
     | TupleConcatenationError expressions -> TupleConcatenationError expressions

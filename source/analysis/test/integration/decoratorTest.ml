@@ -497,10 +497,6 @@ let test_check_user_decorators context =
       reveal_type(D.f)
     |}
     [
-      "Inconsistent override [14]: `test.D.f` overrides method defined in `C` inconsistently. "
-      ^ "Could not find parameter `self` in overridden signature.";
-      "Inconsistent override [14]: `test.D.f` overrides method defined in `C` inconsistently. "
-      ^ "Could not find parameter `y` in overridden signature.";
       "Revealed type [-1]: Revealed type for `test.C.f` is `typing.Callable[[C, int], None]`.";
       "Revealed type [-1]: Revealed type for `test.D.f` is `typing.Callable(D.f)[[Named(self, D), \
        Named(y, int)], None]`.";
