@@ -2758,6 +2758,7 @@ let parse_models ~resolution ~taint_configuration ~source_sink_filter ~callables
 module ModelQueryArguments = struct
   type t = {
     name: string;
+    logging_group_name: string option;
     find_clause: Expression.t;
     where_clause: Expression.t;
     model_clause: Expression.t;
@@ -2768,7 +2769,9 @@ module ModelQueryArguments = struct
   let parse_arguments ~path ~location arguments =
     let open Core.Result in
     let required_arguments = ["name"; "find"; "where"; "model"] in
-    let valid_arguments = "expected_models" :: "unexpected_models" :: required_arguments in
+    let valid_arguments =
+      "expected_models" :: "unexpected_models" :: "logging_group_name" :: required_arguments
+    in
     let parse_argument arguments = function
       | { Call.Argument.name = None; value = argument } ->
           Error (model_verification_error ~path ~location (ModelQueryUnnamedParameter argument))
@@ -2803,9 +2806,17 @@ module ModelQueryArguments = struct
     List.fold_result ~f:check_required_argument ~init:arguments required_arguments
     >>= fun arguments ->
     parse_name_argument (String.Map.find_exn arguments "name")
-    >>| fun name ->
+    >>= fun name ->
+    String.Map.find arguments "logging_group_name"
+    |> Option.map ~f:parse_name_argument
+    |> (function
+         | None -> Ok None
+         | Some (Ok name) -> Ok (Some name)
+         | Some (Error error) -> Error error)
+    >>| fun logging_group_name ->
     {
       name;
+      logging_group_name;
       find_clause = String.Map.find_exn arguments "find";
       where_clause = String.Map.find_exn arguments "where";
       model_clause = String.Map.find_exn arguments "model";
@@ -3213,6 +3224,7 @@ let rec parse_statement
       |> as_result_error_list
       >>= fun {
                 ModelQueryArguments.name;
+                logging_group_name;
                 find_clause;
                 where_clause;
                 model_clause;
@@ -3245,6 +3257,7 @@ let rec parse_statement
             where;
             models;
             name;
+            logging_group_name;
             path;
             location;
             expected_models;

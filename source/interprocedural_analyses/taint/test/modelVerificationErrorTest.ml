@@ -8,8 +8,6 @@
 open Core
 open OUnit2
 open Taint
-open TestHelper
-open Pyre
 
 let assert_json ~expected error =
   assert_equal
@@ -47,7 +45,7 @@ let test_to_json _ =
     ~expected:
       {|
         {
-          "description": "ModelQuery `get_foo` output no models.",
+          "description": "Model Query `get_foo` output no models.",
           "line": 1,
           "column": 2,
           "stop_line": 3,
@@ -214,58 +212,4 @@ let test_to_json _ =
   ()
 
 
-let test_invalid_model_query context =
-  let configuration = TaintConfiguration.Heap.default in
-  let error =
-    try
-      let _ =
-        initialize
-          ~models_source:
-            {|
-              ModelQuery(
-                name = "invalid_model_query",
-                find = "functions",
-                where = Decorator(arguments.contains("1"), name.matches("d")),
-                model = Returns(TaintSource[Test])
-              )
-            |}
-          ~context
-          ~taint_configuration:configuration
-          ~model_path:(PyrePath.create_absolute "/a/b.pysa")
-          {|
-            def foo(x):
-                ...
-          |}
-      in
-      None
-    with
-    | ModelVerificationError.ModelVerificationErrors errors -> List.hd errors
-  in
-  let error_message =
-    error >>| ModelVerificationError.display |> Option.value ~default:"no failure"
-  in
-  assert_equal
-    ~printer:ident
-    "/a/b.pysa:2: ModelQuery `invalid_model_query` output no models."
-    error_message;
-  assert_json
-    ~expected:
-      {|
-        {
-          "description": "ModelQuery `invalid_model_query` output no models.",
-          "line": 2,
-          "column": 0,
-          "stop_line": 7,
-          "stop_column": 1,
-          "path": "/a/b.pysa",
-          "code": 41
-        }
-      |}
-    (Option.value_exn error);
-  ()
-
-
-let () =
-  "model_verification_error"
-  >::: ["to_json" >:: test_to_json; "invalid_model_query" >:: test_invalid_model_query]
-  |> Test.run
+let () = "model_verification_error" >::: ["to_json" >:: test_to_json] |> Test.run

@@ -228,11 +228,18 @@ let event
 let log_model_query_outputs
     ?(flush = false)
     ?(section = `Info)
+    ~is_group
     ~model_query_name
     ~generated_models_count
     ()
   =
-  Log.log ~section "Model Query `%s` generated %d models." model_query_name generated_models_count;
+  let group_text = if is_group then " group" else "" in
+  Log.log
+    ~section
+    "Model Query%s `%s` generated %d models."
+    group_text
+    model_query_name
+    generated_models_count;
   let integers = ["models_generated", generated_models_count] in
   let normals = ["model_query_name", model_query_name] in
   sample ~integers ~normals () |> log ~flush "perfpipe_pysa_dsl_model_query_output"

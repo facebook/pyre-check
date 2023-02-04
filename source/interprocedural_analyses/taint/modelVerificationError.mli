@@ -136,6 +136,7 @@ type kind =
     }
   | DuplicateNameClauses of string
   | NoOutputFromModelQuery of string
+  | NoOutputFromModelQueryGroup of string
   | ExpectedModelsAreMissing of {
       model_query_name: string;
       models: string list;

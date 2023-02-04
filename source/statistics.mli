@@ -58,6 +58,7 @@ val event
 val log_model_query_outputs
   :  ?flush:bool ->
   ?section:Log.section ->
+  is_group:bool ->
   model_query_name:string ->
   generated_models_count:int ->
   unit ->

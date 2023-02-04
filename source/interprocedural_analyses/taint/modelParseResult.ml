@@ -581,6 +581,7 @@ module ModelQuery = struct
     models: Model.t list;
     find: Find.t;
     name: string;
+    logging_group_name: string option;
     path: PyrePath.t option;
     expected_models: ExpectedModel.t list;
     unexpected_models: ExpectedModel.t list;

@@ -140,6 +140,7 @@ type kind =
     }
   | DuplicateNameClauses of string
   | NoOutputFromModelQuery of string
+  | NoOutputFromModelQueryGroup of string
   | ExpectedModelsAreMissing of {
       model_query_name: string;
       models: string list;
@@ -423,7 +424,9 @@ let description error =
         \   query names should be unique within each file."
         name
   | NoOutputFromModelQuery model_query_name ->
-      Format.sprintf "ModelQuery `%s` output no models." model_query_name
+      Format.sprintf "Model Query `%s` output no models." model_query_name
+  | NoOutputFromModelQueryGroup logging_group_name ->
+      Format.sprintf "Model Query group `%s` output no models." logging_group_name
   | ExpectedModelsAreMissing { model_query_name; models } ->
       let starting_string =
         Format.sprintf
@@ -559,6 +562,7 @@ let code { kind; _ } =
   | ModelQueryMissingRequiredParameter _ -> 64
   | ModelQueryDuplicateParameter _ -> 65
   | InvalidModelQueryNameClause _ -> 66
+  | NoOutputFromModelQueryGroup _ -> 67
 
 
 let display { kind = error; path; location } =
