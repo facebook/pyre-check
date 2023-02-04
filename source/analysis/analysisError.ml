@@ -493,6 +493,14 @@ module ReadOnly = struct
             method_name = dequalify_reference method_name;
           }
     | other -> other
+
+
+  let is_ignorable_error = function
+    | IncompatibleParameterType { callee = Some callee; _ }
+    | CallingMutatingMethodOnReadOnly { method_name = callee; _ } ->
+        Set.exists Recognized.readonly_modules_to_ignore ~f:(fun module_ ->
+            Reference.is_prefix ~prefix:(Reference.create module_) callee)
+    | _ -> false
 end
 
 type invalid_decoration =
@@ -3715,12 +3723,18 @@ let filter ~resolution errors =
           | _ -> false)
       | _ -> false
     in
+    let is_ignorable_readonly_error = function
+      | { kind = ReadOnlynessMismatch readonly_error_kind; _ } ->
+          ReadOnly.is_ignorable_error readonly_error_kind
+      | _ -> false
+    in
     is_stub_error error
     || is_mock_error error
     || is_unnecessary_missing_annotation_error error
     || is_unknown_callable_error error
     || is_callable_attribute_error error
     || is_invalid_abstract_error error
+    || is_ignorable_readonly_error error
   in
   List.filter ~f:(fun error -> not (should_filter error)) errors
 

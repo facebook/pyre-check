@@ -25,3 +25,5 @@ val lazy_import_functions : String.Set.t
 val allowlisted_callable_class_decorators : String.Set.t
 
 val readonly_entrypoint_decorators : String.Set.t
+
+val readonly_modules_to_ignore : String.Set.t

@@ -1107,6 +1107,60 @@ let test_return_type context =
   ()
 
 
+let test_ignored_module context =
+  (* Get errors with unnecessary errors filtered out, which is what end-users see. *)
+  let assert_filtered_type_errors = assert_default_type_errors ~context in
+  (* Don't error when calling a "mutating" method on a readonly object from an ignored module. This
+     allows us to gradually annotate the methods in that module as `ReadOnly`. *)
+  assert_filtered_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_module_to_ignore import Foo
+
+      def main(foo: ReadOnly[Foo]) -> None:
+        foo.some_method(42)
+    |}
+    [];
+  (* Don't error when passing a readonly argument to a method or function defined in an ignored
+     module. *)
+  assert_filtered_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_module_to_ignore import Foo
+
+      def main(readonly_int: ReadOnly[int]) -> None:
+        Foo().some_method(readonly_int)
+    |}
+    [];
+  assert_filtered_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_module_to_ignore import some_function
+
+      def main(readonly_int: ReadOnly[int]) -> None:
+        some_function(readonly_int)
+    |}
+    [];
+  (* Show errors in user-defined code that uses types from the ignored module. *)
+  assert_filtered_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_module_to_ignore import Foo
+
+      def user_function_expects_mutable_foo(foo: Foo) -> None: ...
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        user_function_expects_mutable_foo(readonly_foo)
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call \
+       `test.user_function_expects_mutable_foo`, for 1st positional argument, expected \
+       `readonly_module_to_ignore.Foo` but got \
+       `pyre_extensions.ReadOnly[readonly_module_to_ignore.Foo]`.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -1123,5 +1177,6 @@ let () =
          "captured_variables_for_specially_decorated_functions"
          >:: test_captured_variable_for_specially_decorated_functions;
          "return_type" >:: test_return_type;
+         "ignored_module" >:: test_ignored_module;
        ]
   |> Test.run

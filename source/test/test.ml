@@ -1033,6 +1033,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def readonly_entrypoint(f: F) -> F: ...
 |}
       );
+      ( "readonly_module_to_ignore.pyi",
+        {|
+          class Foo:
+            def some_method(self, x: int) -> None: ...
+
+          def some_function(x: int) -> None: ...
+|}
+      );
     ]
   in
   [

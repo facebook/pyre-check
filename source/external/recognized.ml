@@ -38,3 +38,6 @@ let allowlisted_callable_class_decorators = String.Set.of_list ["functools._lru_
 
 let readonly_entrypoint_decorators =
   String.Set.of_list ["readonly_stubs_for_testing.readonly_entrypoint"]
+
+
+let readonly_modules_to_ignore = String.Set.of_list ["readonly_module_to_ignore"]
