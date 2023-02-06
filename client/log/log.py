@@ -115,7 +115,6 @@ class TimedStreamHandler(logging.StreamHandler):
             ]
         )
 
-    # pyre-fixme[14]: `emit` overrides method defined in `Handler` inconsistently.
     def emit(self, record: logging.LogRecord, age: Optional[float] = None) -> None:
         suffix = ""
         color: Optional[str] = None
