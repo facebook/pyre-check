@@ -208,7 +208,9 @@ module State (Context : Context) = struct
        [foo] as in the true-branch. We can either ignore it here or de-duplicate it in the error
        map. We ignore it here instead. *)
     match origin with
-    | Assert.Origin.If { true_branch = false; _ } -> ()
+    | Assert.Origin.If { true_branch = false; _ }
+    | Assert.Origin.While { true_branch = false; _ } ->
+        ()
     | _ -> forward_expression ~resolution ~error_on_global_target test
 
 

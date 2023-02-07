@@ -918,6 +918,48 @@ let test_global_statements context =
           my_local = 3
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global_t`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 0
+      def foo():
+        while True:
+          my_global += 1
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      my_global: int = 0
+      def foo():
+        while True:
+          my_local += 1
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      my_global: int = 0
+      def foo():
+        global my_global
+        while True:
+          my_global += 1
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 0
+      def foo():
+        global my_global
+        while my_global := 3:
+          print("hi")
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 0
+      def foo():
+        while my_global := 3:
+          print("hi")
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   ()
 
 
