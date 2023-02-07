@@ -1001,6 +1001,57 @@ let test_global_statements context =
           print("hi")
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      def foo() -> None:
+        with open("hello", "r") as f:
+          print("hi")
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      def foo() -> None:
+        with open("hello", "r") as f, open("world", "r") as f1:
+          print("hi")
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        global my_global
+        with open("hello", "r") as f:
+          my_global = 2
+          print("hi")
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        global my_global
+        with open("hello", "r") as my_global:
+          print("hi")
+    |}
+    [ (* TODO (T142189949): leaks should be detected on writes to global in a with alias *) ];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        global my_global
+        with open("hello", "r") as f, open("world", "r") as f1:
+          my_global = 2
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        global my_global
+        with open("hello", "r") as my_global, open("world", "r") as f1:
+          print("hi")
+    |}
+    [ (* TODO (T142189949): leaks should be detected on writes to global in a with alias *) ];
   ()
 
 
