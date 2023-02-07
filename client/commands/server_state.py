@@ -13,9 +13,7 @@ should be aware a change to this state could affect other modules that interact 
 import dataclasses
 import enum
 from pathlib import Path
-from typing import Dict, List
-
-from .. import timer
+from typing import Dict, Final, List
 
 from ..language_server import protocol as lsp
 from . import pyre_server_options
@@ -39,6 +37,17 @@ class OpenedDocumentState:
 
 
 @dataclasses.dataclass
+class DaemonStatus:
+    _status: ServerStatus = ServerStatus.NOT_CONNECTED
+
+    def set(self, new_status: ServerStatus) -> None:
+        self._status = new_status
+
+    def get(self) -> ServerStatus:
+        return self._status
+
+
+@dataclasses.dataclass
 class ServerState:
     # State that can only change on config reload
     server_options: pyre_server_options.PyreServerOptions
@@ -55,4 +64,6 @@ class ServerState:
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
-    server_last_status: ServerStatus = ServerStatus.NOT_CONNECTED
+
+    # The daemon status is not reassignable, but has internal mutable state
+    daemon_status: Final[DaemonStatus] = dataclasses.field(default_factory=DaemonStatus)

@@ -256,7 +256,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
                     **self._auxiliary_logging_info(server_options),
                 },
             )
-            self.server_state.server_last_status = state.ServerStatus.READY
+            self.server_state.daemon_status.set(state.ServerStatus.READY)
             await self.subscribe(input_channel, output_channel)
 
     async def launch_and_subscribe(
@@ -286,7 +286,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             level=lsp.MessageType.WARNING,
             fallback_to_notification=True,
         )
-        self.server_state.server_last_status = state.ServerStatus.STARTING
+        self.server_state.daemon_status.set(state.ServerStatus.STARTING)
         start_status = await async_start_pyre_server(
             server_options.binary,
             start_arguments,
@@ -389,14 +389,14 @@ class PyreDaemonLaunchAndSubscribeHandler(background.Task):
             await self.launch_and_subscribe(server_options)
         except asyncio.CancelledError:
             error_message = "Explicit termination request"
-            self.server_state.server_last_status = state.ServerStatus.DISCONNECTED
+            self.server_state.daemon_status.set(state.ServerStatus.DISCONNECTED)
             raise
         except PyreDaemonShutdown as error:
             error_message = f"Pyre server shutdown: {error}"
-            self.server_state.server_last_status = state.ServerStatus.DISCONNECTED
+            self.server_state.daemon_status.set(state.ServerStatus.DISCONNECTED)
         except BaseException:
             error_message = traceback.format_exc()
-            self.server_state.server_last_status = state.ServerStatus.DISCONNECTED
+            self.server_state.daemon_status.set(state.ServerStatus.DISCONNECTED)
             raise
         finally:
             if error_message is not None:

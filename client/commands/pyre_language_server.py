@@ -293,7 +293,7 @@ class PyreLanguageServerApi:
             self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
         error_message = None
-        server_status_before = self.server_state.server_last_status.value
+        server_status_before = self.server_state.daemon_status.get().value
         did_change_timer = timer.Timer()
         code_changes = str(
             "".join(
@@ -322,8 +322,8 @@ class PyreLanguageServerApi:
                 ),
                 "duration_ms": did_change_timer.stop_in_millisecond(),
                 "server_status_before": str(server_status_before),
-                "server_status_after": self.server_state.server_last_status.value,
-                "server_state_start_status": self.server_state.server_last_status.value,
+                "server_status_after": self.server_state.daemon_status.get().value,
+                "server_state_start_status": self.server_state.daemon_status.get().value,
                 "error_message": error_message,
                 "overlays_enabled": process_unsaved_changes,
             },
@@ -364,9 +364,7 @@ class PyreLanguageServerApi:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "server_state_start_status": str(
-                    self.server_state.server_last_status.value
-                ),
+                "server_state_start_status": self.server_state.daemon_status.get().value,
             },
             activity_key,
         )
@@ -384,7 +382,7 @@ class PyreLanguageServerApi:
             )
         document_path = document_path.resolve()
         type_coverage_timer = timer.Timer()
-        server_status_before = self.server_state.server_last_status.value
+        server_status_before = self.server_state.daemon_status.get().value
         response = await self.querier.get_type_coverage(path=document_path)
         if response is not None:
             await lsp.write_json_rpc(
@@ -405,8 +403,8 @@ class PyreLanguageServerApi:
                     self.server_state.opened_documents
                 ),
                 "server_status_before": str(server_status_before),
-                "server_status_after": self.server_state.server_last_status.value,
-                "server_state_start_status": self.server_state.server_last_status.value,
+                "server_status_after": self.server_state.daemon_status.get().value,
+                "server_state_start_status": self.server_state.daemon_status.get().value,
                 "coverage_type": self.get_language_server_features().type_coverage.value,
             },
             activity_key,
@@ -441,7 +439,7 @@ class PyreLanguageServerApi:
             )
         else:
             hover_timer = timer.Timer()
-            server_status_before = self.server_state.server_last_status.value
+            server_status_before = self.server_state.daemon_status.get().value
             await self.update_overlay_if_needed(document_path)
             result = await self.querier.get_hover(
                 path=document_path,
@@ -479,8 +477,8 @@ class PyreLanguageServerApi:
                         self.server_state.opened_documents
                     ),
                     "server_status_before": str(server_status_before),
-                    "server_status_after": self.server_state.server_last_status.value,
-                    "server_state_start_status": self.server_state.server_last_status.value,
+                    "server_status_after": self.server_state.daemon_status.get().value,
+                    "server_state_start_status": self.server_state.daemon_status.get().value,
                     "error_message": error_message,
                     "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                 },
@@ -546,7 +544,7 @@ class PyreLanguageServerApi:
                     result=lsp.LspLocation.cached_schema().dump([], many=True),
                 ),
             )
-        server_status_before = self.server_state.server_last_status.value
+        server_status_before = self.server_state.daemon_status.get().value
         shadow_mode = self.get_language_server_features().definition.is_shadow()
         # In shadow mode, we need to return an empty response immediately
         if shadow_mode:
@@ -598,8 +596,8 @@ class PyreLanguageServerApi:
                     self.server_state.opened_documents
                 ),
                 "server_status_before": str(server_status_before),
-                "server_status_after": self.server_state.server_last_status.value,
-                "server_state_start_status": self.server_state.server_last_status.value,
+                "server_status_after": self.server_state.daemon_status.get().value,
+                "server_state_start_status": self.server_state.daemon_status.get().value,
                 "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                 "error_message": error_message,
                 "is_dirty": self.server_state.opened_documents[document_path].is_dirty,
