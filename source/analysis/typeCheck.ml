@@ -5083,7 +5083,14 @@ module State (Context : Context) = struct
     match value with
     | Statement.Assign { Assign.target; annotation; value } ->
         forward_assignment ~resolution ~location ~target ~annotation ~value
-    | Assert { Assert.test; origin; _ } -> forward_assert ~resolution ~origin test
+    | Assert { Assert.test; origin; message } ->
+        let message_errors =
+          Option.value
+            ~default:[]
+            (message >>| forward_expression ~resolution >>| fun { Resolved.errors; _ } -> errors)
+        in
+        let resolution, errors = forward_assert ~resolution ~origin test in
+        resolution, message_errors @ errors
     | Delete expressions ->
         let process_expression (resolution, errors_sofar) expression =
           let { Resolved.resolution; errors; _ } = forward_expression ~resolution expression in

@@ -176,6 +176,12 @@ let test_check_assert context =
           pass
    |}
     [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        assert True, 5 + "f"
+   |}
+    ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."];
   ()
 
 
