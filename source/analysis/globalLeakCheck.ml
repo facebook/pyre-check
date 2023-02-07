@@ -310,11 +310,7 @@ let global_leak_errors ~type_environment ~qualifier define =
   |> Option.value ~default:[]
 
 
-(* TODO: Use this function to limit by entrypoints in the future. *)
-let should_run_analysis ~type_environment:_ _ = true
-
-let check_define ~type_environment ~qualifier define =
-  if should_run_analysis ~type_environment define then
-    global_leak_errors ~type_environment ~qualifier define
-  else
-    []
+let check_qualifier ~type_environment qualifier =
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+  GlobalResolution.define_body global_resolution qualifier
+  >>| fun define -> global_leak_errors ~type_environment ~qualifier define

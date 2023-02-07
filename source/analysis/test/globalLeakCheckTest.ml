@@ -10,13 +10,19 @@ open OUnit2
 open Analysis
 open Test
 
-let run_check_module
-    ~type_environment
-    ({ Ast.Source.module_path = { Ast.ModulePath.qualifier; _ }; _ } as source)
-  =
+let run_check_module ~type_environment source =
   source
   |> Preprocessing.defines ~include_toplevels:false ~include_nested:true
-  |> List.map ~f:(GlobalLeakCheck.check_define ~type_environment ~qualifier)
+  |> List.map
+       ~f:(fun
+            {
+              Ast.Node.value =
+                { Ast.Statement.Define.signature = { Ast.Statement.Define.Signature.name; _ }; _ };
+              _;
+            }
+          -> name)
+  |> List.map ~f:(GlobalLeakCheck.check_qualifier ~type_environment)
+  |> List.map ~f:Caml.Option.get
   |> List.concat
 
 

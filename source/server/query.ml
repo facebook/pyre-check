@@ -1024,23 +1024,18 @@ let rec process_request ~type_environment ~build_system request =
 
         let results = List.concat_map paths ~f:extract_paths |> List.map ~f:find_resolved_types in
         Single (Base.ExpressionLevelCoverageResponse results)
-    | GlobalLeaks name -> (
-        match GlobalResolution.define_body global_resolution name with
-        | Some define ->
-            let errors =
-              Analysis.GlobalLeakCheck.check_define ~type_environment ~qualifier:name define
-            in
-            let lookup =
-              GlobalResolution.module_tracker global_resolution
-              |> ModuleTracker.ReadOnly.lookup_relative_path
-            in
-            let instantiated_errors =
-              List.map
-                ~f:(fun error -> AnalysisError.instantiate ~show_error_traces:true ~lookup error)
-                errors
-            in
-            Single (Base.Errors instantiated_errors)
-        | None -> Error (Format.sprintf "No entrypoint definition for `%s`" (Reference.show name)))
+    | GlobalLeaks qualifier ->
+        let lookup =
+          GlobalResolution.module_tracker global_resolution
+          |> ModuleTracker.ReadOnly.lookup_relative_path
+        in
+        Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
+        >>| List.map ~f:(fun error ->
+                AnalysisError.instantiate ~show_error_traces:true ~lookup error)
+        >>| (fun errors -> Single (Base.Errors errors))
+        |> Option.value
+             ~default:
+               (Error (Format.sprintf "No qualifier found for `%s`" (Reference.show qualifier)))
     | Help help_list -> Single (Base.Help help_list)
     | HoverInfoForPosition { path; position } ->
         module_of_path path

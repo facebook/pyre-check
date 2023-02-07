@@ -8,8 +8,7 @@
 open Ast
 module Error = AnalysisError
 
-val check_define
+val check_qualifier
   :  type_environment:TypeEnvironment.ReadOnly.t ->
-  qualifier:Reference.t ->
-  Statement.Define.t Node.t ->
-  Error.t list
+  Reference.t ->
+  Error.t list option
