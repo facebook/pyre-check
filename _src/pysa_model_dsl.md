@@ -1394,3 +1394,27 @@ Be careful when using regular expression captures. If the capture group is not f
 :::
 
 Note that we do not support numbered capture groups, e.g `Foo(.*)`.
+
+## Logging group clauses
+
+The `logging_group_name` clause specifies that the model query should be considered part of the given group for logging purposes.
+This is useful when auto generating large amounts of model queries.
+When verbose logging is enabled (`-n`), Pysa will print a single line `Model Query group 'XXX' generated YYY models` instead of printing one line per model query in the group.
+
+For instance:
+```python
+ModelQuery(
+  name = "generated_dangerous_foo",
+  logging_group_name = "generated_dangerous",
+  find = "methods",
+  where = read_from_cache(kind="annotated", name="foo"),
+  model = ...
+)
+ModelQuery(
+  name = "generated_dangerous_bar",
+  logging_group_name = "generated_dangerous",
+  find = "methods",
+  where = read_from_cache(kind="annotated", name="bar"),
+  model = ...
+)
+```
