@@ -818,31 +818,28 @@ let rec process_request ~type_environment ~build_system request =
     in
     let open Response in
     let get_program_call_graph () =
-      let get_callgraph module_qualifier =
+      let get_callgraph callgraph_map module_qualifier =
         let callees
+            callgraph_map
             {
               Node.value =
                 { Statement.Define.signature = { Statement.Define.Signature.name = caller; _ }; _ };
               _;
             }
           =
-          let instantiate =
-            Location.WithModule.instantiate
-              ~lookup:(ModuleTracker.ReadOnly.lookup_relative_path module_tracker)
-          in
           Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
-          |> List.map ~f:(fun { Callgraph.callee; locations } ->
-                 { Base.callee; locations = List.map locations ~f:instantiate })
-          |> fun callees -> { Base.caller = Reference.delocalize caller; callees }
+          |> fun callees ->
+          Reference.Map.change callgraph_map (Reference.delocalize caller) ~f:(fun old_callees ->
+              Option.value ~default:[] old_callees |> fun old_callees -> Some (old_callees @ callees))
         in
         let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
         AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
         >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false ~include_nested:true
-        >>| List.map ~f:callees
-        |> Option.value ~default:[]
+        >>| List.fold_left ~init:callgraph_map ~f:callees
+        |> Option.value ~default:callgraph_map
       in
       let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
-      List.concat_map qualifiers ~f:get_callgraph
+      List.fold_left qualifiers ~f:get_callgraph ~init:Reference.Map.empty
     in
     match request with
     | Request.Attributes annotation ->
@@ -954,7 +951,21 @@ let rec process_request ~type_environment ~build_system request =
         in
         List.concat_map module_or_class_names ~f:defines_of_module
         |> fun defines -> Single (Base.FoundDefines defines)
-    | DumpCallGraph -> get_program_call_graph () |> fun result -> Single (Base.Callgraph result)
+    | DumpCallGraph ->
+        let create_response_with_caller ~key:caller ~data:callees response =
+          let instantiate =
+            Location.WithModule.instantiate
+              ~lookup:(ModuleTracker.ReadOnly.lookup_relative_path module_tracker)
+          in
+          List.map
+            ~f:(fun { Callgraph.callee; locations } ->
+              { Base.callee; locations = List.map locations ~f:instantiate })
+            callees
+          |> fun callees -> { Base.caller; callees } :: response
+        in
+        get_program_call_graph ()
+        |> Reference.Map.fold ~f:create_response_with_caller ~init:[]
+        |> fun result -> Single (Base.Callgraph result)
     | ExpressionLevelCoverage paths ->
         let read_text_file path =
           try In_channel.read_lines path |> List.map ~f:(fun x -> Result.Ok x) with

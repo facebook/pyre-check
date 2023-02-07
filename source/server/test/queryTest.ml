@@ -3162,23 +3162,10 @@ let test_dump_call_graph context =
           {
             "response": {
               "typing.Iterable.__iter__": [],
+              "str.substr": [],
+              "str.lower": [],
+              "pyre_extensions.override": [],
               "pyre_extensions.generic.Generic.__class_getitem__": [],
-              "bar.bar2": [],
-              "bar.bar2.inner": [
-                {
-                  "locations": [
-                    {
-                      "path": "bar.py",
-                      "start": { "line": 8, "column": 11 },
-                      "stop": { "line": 8, "column": 14 }
-                    }
-                  ],
-                  "kind": "function",
-                  "target": "bar.bar"
-                }
-              ],
-              "bar.bar": [],
-              "contextlib.ContextManager.__enter__": [],
               "foo.not_called": [
                 {
                   "locations": [
@@ -3231,13 +3218,26 @@ let test_dump_call_graph context =
                   "target": "foo.foo2"
                 }
               ],
-              "pyre_extensions.override": [],
               "dict.items": [],
-              "dict.add_both": [],
               "dict.add_value": [],
               "dict.add_key": [],
-              "str.substr": [],
-              "str.lower": []
+              "dict.add_both": [],
+              "contextlib.ContextManager.__enter__": [],
+              "bar.bar2.inner": [
+                {
+                  "locations": [
+                    {
+                      "path": "bar.py",
+                      "start": { "line": 8, "column": 11 },
+                      "stop": { "line": 8, "column": 14 }
+                    }
+                  ],
+                  "kind": "function",
+                  "target": "bar.bar"
+                }
+              ],
+              "bar.bar2": [],
+              "bar.bar": []
             }
           }
     |}
