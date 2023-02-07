@@ -55,7 +55,4 @@ class ServerState:
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
-    last_diagnostic_update_timer: timer.Timer = dataclasses.field(
-        default_factory=timer.Timer
-    )
     server_last_status: ServerStatus = ServerStatus.NOT_CONNECTED

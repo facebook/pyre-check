@@ -279,29 +279,16 @@ class ClientTypeErrorHandler:
     async def clear_type_errors_for_client(self) -> None:
         for path in self.server_state.diagnostics:
             await _publish_diagnostics(self.client_output_channel, path, [])
-        last_update_timer = self.server_state.last_diagnostic_update_timer
-        log_lsp_event._log_lsp_event(
-            self.remote_logging,
-            log_lsp_event.LSPEvent.COVERED,
-            integers={"duration": int(last_update_timer.stop_in_millisecond())},
-        )
-        # Reset the timestamp to avoid duplicate counting
-        last_update_timer.reset()
 
     async def show_type_errors_to_client(self) -> None:
         for path, diagnostics in self.server_state.diagnostics.items():
             await _publish_diagnostics(self.client_output_channel, path, diagnostics)
-        self.server_state.last_diagnostic_update_timer.reset()
 
     async def show_overlay_type_errors(
         self,
         path: Path,
         type_errors: Sequence[error.Error],
     ) -> None:
-        # TODO(T143476592) We currently do not change `last_diagnostic_update_timer`
-        # on unsaved-changes type errors. Once unsaved-changes + type errors is closer
-        # to full release we should make sure this is sensible in terms of how we use
-        # telemetry.
         LOG.info(
             f"Refreshing type errors at path {path}. "
             f"Total number of type errors is {len(type_errors)}."
