@@ -13,7 +13,9 @@ should be aware a change to this state could affect other modules that interact 
 import dataclasses
 import enum
 from pathlib import Path
-from typing import Dict, Final, List
+from typing import Dict, Final, List, Optional
+
+from .. import timer
 
 from ..language_server import protocol as lsp
 from . import pyre_server_options
@@ -39,12 +41,22 @@ class OpenedDocumentState:
 @dataclasses.dataclass
 class DaemonStatus:
     _status: ServerStatus = ServerStatus.NOT_CONNECTED
+    _not_ready_timer: Optional[timer.Timer] = None
 
     def set(self, new_status: ServerStatus) -> None:
+        if new_status == ServerStatus.READY:
+            self._not_ready_timer = None
+        elif self._not_ready_timer is None:
+            self._not_ready_timer = timer.Timer()
         self._status = new_status
 
     def get(self) -> ServerStatus:
         return self._status
+
+    def milliseconds_not_ready(self) -> int:
+        if self._not_ready_timer is None:
+            return 0
+        return int(self._not_ready_timer.stop_in_millisecond())
 
 
 @dataclasses.dataclass

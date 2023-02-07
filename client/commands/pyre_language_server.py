@@ -289,12 +289,15 @@ class PyreLanguageServerApi:
         if document_path not in self.server_state.opened_documents:
             return
 
+        time_since_last_ready_ms = (
+            self.server_state.daemon_status.milliseconds_not_ready()
+        )
+        did_change_timer = timer.Timer()
         process_unsaved_changes = (
             self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
         error_message = None
         server_status_before = self.server_state.daemon_status.get().value
-        did_change_timer = timer.Timer()
         code_changes = str(
             "".join(
                 [content_change.text for content_change in parameters.content_changes]
@@ -321,6 +324,7 @@ class PyreLanguageServerApi:
                     self.server_state.opened_documents
                 ),
                 "duration_ms": did_change_timer.stop_in_millisecond(),
+                "time_since_last_ready_ms": time_since_last_ready_ms,
                 "server_status_before": str(server_status_before),
                 "server_status_after": self.server_state.daemon_status.get().value,
                 "server_state_start_status": self.server_state.daemon_status.get().value,
@@ -381,6 +385,9 @@ class PyreLanguageServerApi:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         document_path = document_path.resolve()
+        time_since_last_ready_ms = (
+            self.server_state.daemon_status.milliseconds_not_ready()
+        )
         type_coverage_timer = timer.Timer()
         server_status_before = self.server_state.daemon_status.get().value
         response = await self.querier.get_type_coverage(path=document_path)
@@ -399,6 +406,7 @@ class PyreLanguageServerApi:
                 "operation": "typeCoverage",
                 "filePath": str(document_path),
                 "duration_ms": type_coverage_timer.stop_in_millisecond(),
+                "time_since_last_ready_ms": time_since_last_ready_ms,
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
@@ -438,6 +446,9 @@ class PyreLanguageServerApi:
                 ),
             )
         else:
+            time_since_last_ready_ms = (
+                self.server_state.daemon_status.milliseconds_not_ready()
+            )
             hover_timer = timer.Timer()
             server_status_before = self.server_state.daemon_status.get().value
             await self.update_overlay_if_needed(document_path)
@@ -473,6 +484,7 @@ class PyreLanguageServerApi:
                     "nonEmpty": len(result.contents) > 0,
                     "response": raw_result,
                     "duration_ms": hover_timer.stop_in_millisecond(),
+                    "time_since_last_ready_ms": time_since_last_ready_ms,
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
@@ -534,6 +546,9 @@ class PyreLanguageServerApi:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        time_since_last_ready_ms = (
+            self.server_state.daemon_status.milliseconds_not_ready()
+        )
         document_path = document_path.resolve()
         if document_path not in self.server_state.opened_documents:
             return await lsp.write_json_rpc(
@@ -590,6 +605,7 @@ class PyreLanguageServerApi:
                 "count": len(output_result),
                 "response": output_result,
                 "duration_ms": result_with_durations.overall_duration,
+                "time_since_last_ready_ms": time_since_last_ready_ms,
                 "overlay_update_duration": result_with_durations.overlay_update_duration,
                 "query_duration": result_with_durations.query_duration,
                 "server_state_open_documents_count": len(
