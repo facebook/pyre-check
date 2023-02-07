@@ -159,7 +159,7 @@ let test_global_assignment context =
         if my_global := (a := 3):
           print("hi")
     |}
-    [ (* TODO (T142189949): leaks should be detected on walrus mutations in if statements *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -168,7 +168,7 @@ let test_global_assignment context =
         if a := (my_global := 3):
           print("hi")
     |}
-    [ (* TODO (T142189949): leaks should be detected on walrus mutations in if statements *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -827,7 +827,97 @@ let test_global_statements context =
         a = 1 if True else my_global.setdefault("a", 1)
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
-
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        if my_global == 1:
+          my_global = 3
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        if my_global == 1:
+          my_global = 3
+        else:
+          my_global = 4
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        if my_global := 3:
+          my_global = 3
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        if my_global := (a := 3):
+          print("hi")
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        if True:
+          my_global = 2
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        if True:
+          my_global = 2
+        else:
+          my_local = 3
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        if True:
+          my_local = 2
+        else:
+          my_global = 3
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo():
+        global my_global
+        if True:
+          my_local = 2
+        elif my_global == 1:
+          my_global = 3
+        else:
+          my_local = 4
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      my_global: int = 0
+      my_global_t: int = 1
+      def foo():
+        global my_global
+        if True:
+          my_local = 2
+        elif my_global_t := 3:
+          my_local = 3
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global_t`."];
   ()
 
 

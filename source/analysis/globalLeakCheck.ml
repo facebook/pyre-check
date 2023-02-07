@@ -203,6 +203,15 @@ module State (Context : Context) = struct
         forward_assignment_target right
 
 
+  and forward_assert ~resolution ~error_on_global_target ?(origin = Assert.Origin.Assertion) test =
+    (* Ignore global errors from the [assert (not foo)] in the else-branch because it's the same
+       [foo] as in the true-branch. We can either ignore it here or de-duplicate it in the error
+       map. We ignore it here instead. *)
+    match origin with
+    | Assert.Origin.If { true_branch = false; _ } -> ()
+    | _ -> forward_expression ~resolution ~error_on_global_target test
+
+
   let forward ~statement_key state ~statement:{ Node.value; _ } =
     let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
       Context.define
@@ -232,7 +241,8 @@ module State (Context : Context) = struct
     in
     let forward_expression = forward_expression ~resolution ~error_on_global_target in
     match value with
-    | Statement.Assert _ -> ()
+    | Statement.Assert { test; origin; _ } ->
+        forward_assert ~resolution ~error_on_global_target ~origin test
     | Assign { target; value; _ } ->
         forward_assignment_target ~resolution ~error_on_global_target target;
         forward_expression value
