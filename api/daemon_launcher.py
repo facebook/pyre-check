@@ -5,8 +5,15 @@
 
 import abc
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Optional, Union
+from typing import Union
+
+from pyre_extensions import override
+
+from ..client import command_arguments, identifiers
+
+from ..client.commands import frontend_configuration, initialization, start
+
+FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CODE_NAVIGATION
 
 
 @dataclass
@@ -19,34 +26,74 @@ class StartFailure:
     message: str
 
 
-class DaemonLauncherConfiguration(abc.ABC):
+class PyreServerStarterBase(abc.ABC):
     @abc.abstractmethod
-    def get_global_root(self) -> Path:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_remote_logger(self) -> Optional[str]:
-        raise NotImplementedError()
-
-
-class DaemonLauncher:
-    """
-    The DaemonLauncher is the API for starting up a pyre backend daemon. This API differs from the PyreDaemonLaunchAndSubscribeHandler since it is not a background task and will exit the subscription immediately once establishing a connection instead of sending LSP messages.
-    It is also only for the code navigation server.
-    """
-
-    async def start_server(
+    async def run(
         self,
-        daemon_launcher_configuration: DaemonLauncherConfiguration,
-    ) -> Union[StartedServerInfo, StartFailure]:
-        return StartFailure("Unimplemented")
-
-    async def stop_server(
-        self,
-    ) -> None:
-        """Stops the server completely. If any other clients are relying on this server as well, it will kill their connection so use sparingly."""
+        binary_location: str,
+        configuration: frontend_configuration.Base,
+        flavor: identifiers.PyreFlavor,
+    ) -> Union[
+        initialization.StartSuccess,
+        initialization.BuckStartFailure,
+        initialization.OtherStartFailure,
+    ]:
         raise NotImplementedError()
+
+
+class PyreServerStarter(PyreServerStarterBase):
+    @override
+    async def run(
+        self,
+        binary_location: str,
+        configuration: frontend_configuration.Base,
+        flavor: identifiers.PyreFlavor,
+    ) -> Union[
+        initialization.StartSuccess,
+        initialization.BuckStartFailure,
+        initialization.OtherStartFailure,
+    ]:
+        command_argument = command_arguments.CommandArguments(
+            binary=str(configuration.get_binary_location())
+        )
+        start_arguments = command_arguments.StartArguments.create(
+            command_argument=command_argument,
+            flavor=FLAVOR,
+            skip_initial_type_check=True,
+            use_lazy_module_tracking=True,
+        )
+        pyre_arguments = start.create_server_arguments(
+            configuration,
+            start_arguments,
+        )
+        return await initialization.async_start_pyre_server(
+            binary_location,
+            pyre_arguments,
+            flavor,
+        )
+
+
+async def _start_server(
+    configuration: frontend_configuration.Base,
+    server_starter: PyreServerStarterBase,
+) -> Union[StartedServerInfo, StartFailure]:
+    server_start_status = await server_starter.run(
+        str(configuration.get_binary_location(True)),
+        configuration,
+        FLAVOR,
+    )
+    if not isinstance(server_start_status, initialization.StartSuccess):
+        return StartFailure(server_start_status.message)
+    else:
+        return StartedServerInfo()
+
+
+async def start_server(
+    configuration: frontend_configuration.Base,
+) -> Union[StartedServerInfo, StartFailure]:
+    return await _start_server(configuration, PyreServerStarter())
+
+
+async def stop_server() -> None:
+    """Stops the server completely. If any other clients are relying on this server as well, it will kill their connection so use sparingly."""
+    raise NotImplementedError()
