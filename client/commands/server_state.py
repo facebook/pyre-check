@@ -13,7 +13,9 @@ should be aware a change to this state could affect other modules that interact 
 import dataclasses
 import enum
 from pathlib import Path
-from typing import Dict, Final, List, Optional
+from typing import Dict, List, Optional
+
+from typing_extensions import Final
 
 from .. import timer
 
