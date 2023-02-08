@@ -4,8 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
-# Test the support of tracking taints from SQL-like strings to string
-# operations, which uses multi-source rules and implicit sources
+# Test the support of tracking flows from normal sources to implicit sinks
+# that are introduced onto expressions based on their runtime values (such as
+# SQL strings). Under the hood, the analysis leverages the multi-source rules.
 
 def user_controlled_input():
     return "evil"
@@ -34,9 +35,6 @@ def string_operations(arg) -> None:
 
     query % user_controlled  # Issue here
 
-    f"{query} {user_controlled}"  # Should see an issue, but fine to ignore
-    f"{user_controlled} {query}"  # Should see an issue, but fine to ignore
-
     global_query.format(user_controlled)  # Should see an issue
 
     # Should see an issue
@@ -44,3 +42,43 @@ def string_operations(arg) -> None:
 
 
 global_query = ""  # Even with this reset, we should see an issue above
+
+
+def format_string_issue():
+    query: str = "SELECT"
+    user_controlled = user_controlled_input()
+    f"{query}{user_controlled}"  # TODO(T144475492): False negative
+
+
+def format_string_triggered_user_controlled(arg):
+    query: str = "SELECT"
+    f"{query}{arg}"
+
+
+def format_string_issue_with_triggered_user_controlled():
+    user_controlled = user_controlled_input()
+    # TODO(T144475492): False negative
+    format_string_triggered_user_controlled(user_controlled)
+
+
+def format_string_triggered_sql(arg):
+    user_controlled = user_controlled_input()
+    f"{user_controlled}{arg}"
+
+
+def format_string_issue_with_triggered_sql():
+    query: str = "SELECT"
+    # TODO(T144475492): False negative
+    format_string_triggered_sql(query)
+
+
+def format_string_multiple_triggered_user_controlled(arg1, arg2):
+    f"{arg1} SELECT {arg2}"
+
+
+def format_string_issue_with_multiple_triggered_user_controlled():
+    user_controlled = user_controlled_input()
+    # TODO(T144475492): False negative
+    format_string_multiple_triggered_user_controlled(user_controlled, 0)
+    # TODO(T144475492): False negative
+    format_string_multiple_triggered_user_controlled(0, user_controlled)

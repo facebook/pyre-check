@@ -1,7 +1,14 @@
 @generated
 Call dependencies
+multiple_sources_string_operations.format_string_issue_with_multiple_triggered_user_controlled (fun) -> [multiple_sources_string_operations.format_string_multiple_triggered_user_controlled (fun) multiple_sources_string_operations.user_controlled_input (fun)]
+multiple_sources_string_operations.format_string_issue_with_triggered_sql (fun) -> [multiple_sources_string_operations.format_string_triggered_sql (fun)]
+multiple_sources_string_operations.format_string_issue_with_triggered_user_controlled (fun) -> [multiple_sources_string_operations.format_string_triggered_user_controlled (fun) multiple_sources_string_operations.user_controlled_input (fun)]
+multiple_sources_string_operations.format_string_multiple_triggered_user_controlled (fun) -> []
+multiple_sources_string_operations.format_string_triggered_user_controlled (fun) -> [str::__str__ (method)]
 multiple_sources_string_operations.$toplevel (fun) -> []
-multiple_sources_string_operations.string_operations (fun) -> [multiple_sources_string_operations.user_controlled_input (fun) str::__add__ (method) str::__mod__ (method) str::__str__ (method) str::format (method)]
+multiple_sources_string_operations.format_string_issue (fun) -> [multiple_sources_string_operations.user_controlled_input (fun) str::__str__ (method)]
+multiple_sources_string_operations.format_string_triggered_sql (fun) -> [multiple_sources_string_operations.user_controlled_input (fun)]
+multiple_sources_string_operations.string_operations (fun) -> [multiple_sources_string_operations.user_controlled_input (fun) str::__add__ (method) str::__mod__ (method) str::format (method)]
 multiple_sources_string_operations.user_controlled_input (fun) -> []
 multiple_sources_string_operations.DatabaseSchemaEditor::$class_toplevel (method) -> []
 multiple_sources_string_operations.DatabaseSchemaEditor::string_operations (method) -> [multiple_sources_string_operations.user_controlled_input (fun) str::format (method)]
