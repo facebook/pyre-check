@@ -1039,7 +1039,7 @@ let test_global_statements context =
         with open("hello", "r") as my_global:
           print("hi")
     |}
-    [ (* TODO (T142189949): leaks should be detected on writes to global in a with alias *) ];
+    ["Global leak [3100]: Data is leaked to global `my_global`."];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1057,7 +1057,7 @@ let test_global_statements context =
         with open("hello", "r") as my_global, open("world", "r") as f1:
           print("hi")
     |}
-    [ (* TODO (T142189949): leaks should be detected on writes to global in a with alias *) ];
+    ["Global leak [3100]: Data is leaked to global `my_global`."];
   ()
 
 
@@ -1237,7 +1237,7 @@ let test_recursive_coverage context =
         except Exception as my_global:
           my_local = 2
     |}
-    [];
+    ["Global leak [3100]: Data is leaked to global `my_global`."];
   assert_global_leak_errors
     {|
       my_global: int = 1
