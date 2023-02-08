@@ -6,7 +6,7 @@
 
 import unittest
 
-from ..analyze_issue_trace import CallGraph
+from ..analyze_leaks import CallGraph
 
 
 class AnalyzeIssueTraceTest(unittest.TestCase):

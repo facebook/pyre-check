@@ -150,20 +150,48 @@ def load_json_from_file(file_handle: TextIO, file_name: str) -> object:
         raise ValueError(f"Error loading {file_name} as JSON") from e
 
 
-@click.command()
+@click.group()
+def analyze() -> None:
+    """
+    Performs analyses over Pyre's results using a call graph and list of entrypoints.
+    """
+    pass
+
+
+@analyze.command()
+@click.argument("call_graph_file", type=click.File("r"))
+@click.argument("entrypoints_file", type=click.File("r"))
+def leaks(call_graph_file: TextIO, entrypoints_file: TextIO) -> None:
+    """
+    Find global leaks for the given entrypoints and their transitive callees.
+
+    The output of this script will be a JSON object containing two keys:
+    - `global_leaks`: any global leaks that are returned from `pyre query "global_leaks(...)"` for
+        callables checked.
+    - `errors`: any errors that occurred during the analysis, for example, a definition not
+        found for a callable
+
+    CALL_GRAPH_FILE: a file containing a JSON dict mapping caller qualified paths
+        to a list of callee qualified paths
+    ENTRYPOINTS_FILE: a file containing a JSON list of qualified paths for entrypoints
+    """
+    pass
+
+
+@analyze.command()
 @click.argument("issues_file", type=click.File("r"))
 @click.argument("call_graph_file", type=click.File("r"))
 @click.argument("entrypoints_file", type=click.File("r"))
-def main(
+def trace(
     issues_file: TextIO,
     call_graph_file: TextIO,
     entrypoints_file: TextIO,
 ) -> None:
     """
-    Get a list of Pysa traces in ISSUES_FILE, given a CALL_GRAPH_FILE and ENTRYPOINTS_FILE.
+    Get a list of traces from callable to entrypoint.
 
-    The output of this script will be a JSON dictionary mapping a callee to a list of strings
-    representing the path from the callee to an entrypoint. The values of the output dictionary
+    The output of this script will be a JSON object mapping a callee to a list of strings
+    representing the path from the callee to an entrypoint. The values of the output object
     will be one of the following:
     - List[str]: the path from the callee to the entrypoint
     - empty List: no path mapping the callee to any entrypoint
@@ -190,4 +218,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    analyze()
