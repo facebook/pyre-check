@@ -941,6 +941,24 @@ let from_json_list source_json_list =
     |> Result.map_error ~f:(fun _ ->
            Error.create ~path ~kind:(Error.UnsupportedTransform transform))
   in
+  let module RuleCommonAttributes = struct
+    (* Common attributes between different kinds of rules. *)
+    type t = {
+      name: string;
+      message_format: string;
+      code: int;
+    }
+
+    let parse ~path json =
+      json_string_member ~path "name" json
+      >>= fun name ->
+      json_string_member ~path "message_format" json
+      >>= fun message_format ->
+      json_integer_member ~path "code" json
+      >>= fun code ->
+      validate_code_uniqueness ~path code >>= fun () -> Result.Ok { name; message_format; code }
+  end
+  in
   let parse_rules ~allowed_sources ~allowed_sinks ~allowed_transforms (path, json) =
     let parse_rule json =
       let required_keys = ["name"; "code"; "sources"; "sinks"; "message_format"] in
@@ -971,14 +989,9 @@ let from_json_list source_json_list =
       List.map ~f:(parse_transform_reference ~path ~allowed_transforms) transforms
       |> Result.combine_errors
       >>= fun transforms ->
-      json_string_member ~path "name" json
-      >>= fun name ->
-      json_string_member ~path "message_format" json
-      >>= fun message_format ->
-      json_integer_member ~path "code" json
-      >>= fun code ->
-      validate_code_uniqueness ~path code
-      >>| fun () -> { Rule.sources; sinks; transforms; name; code; message_format }
+      RuleCommonAttributes.parse ~path json
+      >>= fun { name; message_format; code } ->
+      Result.Ok { Rule.sources; sinks; transforms; name; code; message_format }
     in
     array_member ~path "rules" json
     >>= fun rules ->
@@ -990,14 +1003,8 @@ let from_json_list source_json_list =
       { CombinedSourceRules.generated_combined_rules; partial_sink_converter; partial_sink_labels }
       json
     =
-    json_string_member ~path "name" json
-    >>= fun name ->
-    json_string_member ~path "message_format" json
-    >>= fun message_format ->
-    json_integer_member ~path "code" json
-    >>= fun code ->
-    validate_code_uniqueness ~path code
-    >>= fun () ->
+    RuleCommonAttributes.parse ~path json
+    >>= fun { name; message_format; code } ->
     let sources = Json.Util.member "sources" json in
     let keys = Json.Util.keys sources in
     match keys with
