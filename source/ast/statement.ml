@@ -665,7 +665,11 @@ end = struct
 
     let is_final_method signature = has_decorator signature "typing.final"
 
-    let is_override_method signature = has_decorator signature "pyre_extensions.override"
+    let is_override_method signature =
+      has_decorator signature "typing.override"
+      || has_decorator signature "typing_extensions.override"
+      || has_decorator signature "pyre_extensions.override"
+
 
     let is_dunder_method signature =
       let name = unqualified_name signature in

@@ -2610,7 +2610,7 @@ let test_check_override_decorator context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
-     from pyre_extensions import override
+     from typing import override
 
      class Foo:
        def different_method(self, input: int) -> int:
@@ -2627,7 +2627,7 @@ let test_check_override_decorator context =
     ];
   assert_type_errors
     {|
-     from pyre_extensions import override
+     from typing import override
 
      class Foo:
        @staticmethod
@@ -2645,7 +2645,7 @@ let test_check_override_decorator context =
     ];
   assert_type_errors
     {|
-     from pyre_extensions import override
+     from typing import override
 
      class Foo:
        @classmethod
@@ -2660,7 +2660,7 @@ let test_check_override_decorator context =
     [];
   assert_type_errors
     {|
-     from pyre_extensions import override
+     from typing import override
 
      @override
      def foo(input: int) -> int:
@@ -2672,7 +2672,7 @@ let test_check_override_decorator context =
     ];
   assert_type_errors
     {|
-      from pyre_extensions import override
+      from typing import override
 
       def foo_outer(input: int) -> int:
         @override
@@ -2688,7 +2688,7 @@ let test_check_override_decorator context =
     ];
   assert_type_errors
     {|
-     from pyre_extensions import override
+     from typing import override
 
      class Foo1:
        def foo(self, input: int) -> int:
@@ -2704,7 +2704,7 @@ let test_check_override_decorator context =
     [];
   assert_type_errors
     {|
-     from pyre_extensions import override
+     from typing import override
 
      class Foo:
        def foo(self, input: int) -> str:
@@ -2719,7 +2719,7 @@ let test_check_override_decorator context =
          needs to be checked. *) ];
   assert_type_errors
     {|
-     from pyre_extensions import override
+     from typing import override
 
      class Foo:
        foo: int = 3
@@ -2729,6 +2729,24 @@ let test_check_override_decorator context =
        foo: str = "hello world"
     |}
     ["Parsing failure [404]: invalid syntax"];
+  assert_type_errors
+    {|
+     import typing_extensions
+     import pyre_extensions
+
+     class Bar:
+       @pyre_extensions.override
+       def method0(self) -> None: ...
+
+       @pyre_extensions.override
+       def method1(self) -> None: ...
+    |}
+    [
+      "Invalid override [40]: `test.Bar.method0` is decorated with @override, but no method of the \
+       same name exists in superclasses of `Bar`.";
+      "Invalid override [40]: `test.Bar.method1` is decorated with @override, but no method of the \
+       same name exists in superclasses of `Bar`.";
+    ];
   ()
 
 

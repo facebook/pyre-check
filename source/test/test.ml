@@ -1080,6 +1080,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           Literal: _SpecialForm = ...
           # TypedDict is a (non-subscriptable) special form.
           TypedDict: object
+          def override(f: _F) -> _F: ...
 
         Callable: _SpecialForm = ...
         Protocol: _SpecialForm = ...
@@ -1482,7 +1483,13 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |};
     ( "typing_extensions.pyi",
       {|
-        from typing import Final as Final, ParamSpec as ParamSpec, _SpecialForm, overload as overload
+        from typing import (
+          _SpecialForm,
+          Final as Final,
+          ParamSpec as ParamSpec,
+          overload as overload,
+          override as override
+        )
         Literal: _SpecialForm = ...
         LiteralString: _SpecialForm = ...
 
