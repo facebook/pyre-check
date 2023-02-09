@@ -5347,9 +5347,7 @@ module State (Context : Context) = struct
           errors
       in
       let check_override_decorator errors =
-        let override_decorator_name = "pyre_extensions.override" in
-        let has_override_decorator = StatementDefine.has_decorator define override_decorator_name in
-        if has_override_decorator then
+        if StatementDefine.is_override_method define then
           match define with
           | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
               let possibly_overridden_attribute =

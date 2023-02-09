@@ -408,6 +408,8 @@ and Define : sig
 
     val is_final_method : t -> bool
 
+    val is_override_method : t -> bool
+
     val is_class_method : t -> bool
 
     val is_class_property : t -> bool
@@ -495,6 +497,8 @@ and Define : sig
   val is_static_method : t -> bool
 
   val is_final_method : t -> bool
+
+  val is_override_method : t -> bool
 
   val is_class_method : t -> bool
 
@@ -660,6 +664,8 @@ end = struct
 
 
     let is_final_method signature = has_decorator signature "typing.final"
+
+    let is_override_method signature = has_decorator signature "pyre_extensions.override"
 
     let is_dunder_method signature =
       let name = unqualified_name signature in
@@ -858,6 +864,8 @@ end = struct
   let is_static_method { signature; _ } = Signature.is_static_method signature
 
   let is_final_method { signature; _ } = Signature.is_final_method signature
+
+  let is_override_method { signature; _ } = Signature.is_override_method signature
 
   let is_dunder_method { signature; _ } = Signature.is_dunder_method signature
 

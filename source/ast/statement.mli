@@ -161,6 +161,8 @@ and Define : sig
 
     val is_final_method : t -> bool
 
+    val is_override_method : t -> bool
+
     val is_class_method : t -> bool
 
     val is_class_property : t -> bool
@@ -242,6 +244,8 @@ and Define : sig
   val is_static_method : t -> bool
 
   val is_final_method : t -> bool
+
+  val is_override_method : t -> bool
 
   val is_class_method : t -> bool
 
