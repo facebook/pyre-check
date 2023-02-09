@@ -581,7 +581,7 @@ class PyreLanguageServerApi:
             error_message = result.error_message
             output_result = []
         else:
-            error_message = "None"
+            error_message = None
             output_result = result
         # Unless we are in shadow mode, we send the response as output
         if not shadow_mode:
