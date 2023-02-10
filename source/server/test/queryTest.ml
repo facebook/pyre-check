@@ -3270,8 +3270,15 @@ let test_global_leaks context =
           def nested_run():
               def do_the_thing():
                   glob.append(1)
-
               do_the_thing()
+
+
+          def nested_run_2():
+              def do_the_thing_2():
+                  def another_nest():
+                     glob.append(2)
+                  another_nest()
+              do_the_thing_2()
 
 
           def immediate_example():
@@ -3305,9 +3312,9 @@ let test_global_leaks context =
             "response": {
               "errors": [
                 {
-                  "line": 14,
+                  "line": 21,
                   "column": 4,
-                  "stop_line": 14,
+                  "stop_line": 21,
                   "stop_column": 8,
                   "path": "*",
                   "code": 3100,
@@ -3327,6 +3334,52 @@ let test_global_leaks context =
           {
             "response": {
               "errors": []
+            }
+          }
+        |}
+      );
+      ( "global_leaks(foo.nested_run.do_the_thing)",
+        {|
+          {
+            "response": {
+              "errors": [
+                {
+                  "line": 8,
+                  "column": 8,
+                  "stop_line": 8,
+                  "stop_column": 12,
+                  "path": "*",
+                  "code": 3100,
+                  "name": "Global leak",
+                  "description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
+                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
+                  "concise_description": "Global leak [3100]: Data is leaked to global `glob`.",
+                  "define": "foo.nested_run.do_the_thing"
+                }
+              ]
+            }
+          }
+        |}
+      );
+      ( "global_leaks(foo.nested_run_2.do_the_thing_2.another_nest)",
+        {|
+          {
+            "response": {
+              "errors": [
+                {
+                  "line": 15,
+                  "column": 11,
+                  "stop_line": 15,
+                  "stop_column": 15,
+                  "path": "*",
+                  "code": 3100,
+                  "name": "Global leak",
+                  "description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
+                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
+                  "concise_description": "Global leak [3100]: Data is leaked to global `glob`.",
+                  "define": "foo.nested_run_2.do_the_thing_2.another_nest"
+                }
+              ]
             }
           }
         |}
