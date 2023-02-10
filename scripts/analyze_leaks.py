@@ -5,6 +5,7 @@
 
 import json
 import sys
+import subprocess
 from collections import defaultdict, deque
 from typing import cast, Collection, Deque, Dict, List, Optional, Set, TextIO
 
@@ -228,6 +229,19 @@ class CallGraph:
             return results
         except json.JSONDecodeError as e:
             raise RuntimeError("Pyre query returned non-JSON response") from e
+
+    def find_issues(self) -> Dict[str, List[object]]:
+        all_callables = self.get_all_callees()
+        query = self.prepare_issues_for_query(all_callables)
+
+        pyre_process = subprocess.run(
+            ["pyre", "-n", "query", query], capture_output=True, text=True
+        )
+
+        if pyre_process.returncode != 0:
+            raise Exception("Pyre returned nonzero exit code", pyre_process.stderr)
+
+        return self.analyze_pyre_query_results(pyre_process.stdout)
 
 
 def load_json_from_file(file_handle: TextIO, file_name: str) -> object:
