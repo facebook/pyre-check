@@ -433,3 +433,119 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         expected_query = "batch(global_leaks(f1), global_leaks(f2), global_leaks(f3))"
 
         self.assertEqual(result_query, expected_query)
+
+    def test_analyze_pyre_query_results(self) -> None:
+        example_pyre_stdout = """
+        {
+            "response": [
+                {"error": "we failed to find your callable"},
+                {
+                    "response": {
+                        "errors": [{"error_msg": "found an error for you", "location": "your_location"}]
+                    }
+                },
+                {"error": "we failed to find your callable 2"},
+                {
+                    "response": {
+                        "errors": [{"error_msg": "found an error for you2", "location": "your_location2"}]
+                    }
+                }
+            ]
+        }
+        """
+
+        results = CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+        expected_results = {
+            "global_leaks": [
+                {"error_msg": "found an error for you", "location": "your_location"},
+                {"error_msg": "found an error for you2", "location": "your_location2"},
+            ],
+            "errors": [
+                "we failed to find your callable",
+                "we failed to find your callable 2",
+            ],
+        }
+
+        print(results)
+        print(expected_results)
+
+        self.assertEqual(results, expected_results)
+
+    def test_analyze_pyre_query_results_non_json(self) -> None:
+        example_pyre_stdout = """
+            this is not a valid response
+        """
+
+        try:
+            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            self.fail("should have thrown")
+        except RuntimeError:
+            pass
+
+    def test_analyze_pyre_query_results_not_top_level_dict(self) -> None:
+        example_pyre_stdout = """
+            ["this is a list"]
+        """
+
+        try:
+            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            self.fail("should have thrown")
+        except RuntimeError:
+            pass
+
+    def test_analyze_pyre_query_results_no_response_present(self) -> None:
+        example_pyre_stdout = """
+            {"not a response": 1}
+        """
+
+        try:
+            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            self.fail("should have thrown")
+        except RuntimeError:
+            pass
+
+    def test_analyze_pyre_query_results_response_not_a_list(self) -> None:
+        example_pyre_stdout = """
+            {"response": 1}
+        """
+
+        try:
+            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            self.fail("should have thrown")
+        except RuntimeError:
+            pass
+
+    def test_analyze_pyre_query_results_response_batch_response_not_a_dict(
+        self,
+    ) -> None:
+        example_pyre_stdout = """
+            {
+                "response": [
+                    123
+                ]
+            }
+        """
+
+        try:
+            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            self.fail("should have thrown")
+        except RuntimeError:
+            pass
+
+    def test_analyze_pyre_query_results_response_batch_response_no_nested_error_or_response(
+        self,
+    ) -> None:
+        example_pyre_stdout = """
+            {
+                "response": {
+                    "not_error": 123,
+                    "not_response": 456
+                }
+            }
+        """
+
+        try:
+            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            self.fail("should have thrown")
+        except RuntimeError:
+            pass

@@ -190,6 +190,45 @@ class CallGraph:
         single_callee_query = [f"global_leaks({callee})" for callee in callees]
         return "batch(" + ", ".join(single_callee_query) + ")"
 
+    @staticmethod
+    def analyze_pyre_query_results(pyre_stdout: str) -> Dict[str, List[object]]:
+        results = {"global_leaks": [], "errors": []}
+        try:
+            pyre_results = json.loads(pyre_stdout)
+            if not isinstance(pyre_results, dict):
+                raise RuntimeError(
+                    f"Expected dict for Pyre query results, got {type(pyre_results)}: {pyre_results}"
+                )
+            if "response" not in pyre_results:
+                raise RuntimeError(
+                    "`response` key not in Pyre query results", pyre_results
+                )
+            if not isinstance(pyre_results["response"], list):
+                response = pyre_results["response"]
+                raise RuntimeError(
+                    f"Expected response value type to be list, got {type(response)}: {response}"
+                )
+            for query_response in pyre_results["response"]:
+                if not isinstance(query_response, dict):
+                    raise RuntimeError(
+                        f"Expected dict for pyre response list type, got {type(query_response)}: {query_response}"
+                    )
+                elif "error" in query_response:
+                    results["errors"].append(query_response["error"])
+                elif (
+                    "response" in query_response
+                    and "errors" in query_response["response"]
+                ):
+                    results["global_leaks"] += query_response["response"]["errors"]
+                else:
+                    raise RuntimeError(
+                        "Unexpected response from Pyre query", query_response
+                    )
+
+            return results
+        except json.JSONDecodeError as e:
+            raise RuntimeError("Pyre query returned non-JSON response") from e
+
 
 def load_json_from_file(file_handle: TextIO, file_name: str) -> object:
     try:
