@@ -349,6 +349,11 @@ class PyreLanguageServerApi:
         if document_path not in self.server_state.opened_documents:
             return
 
+        time_since_last_ready_ms = (
+            self.server_state.daemon_status.milliseconds_not_ready()
+        )
+        server_status_before = self.server_state.daemon_status.get().value
+
         code_changes = self.server_state.opened_documents[document_path].code
 
         self.server_state.opened_documents[document_path] = OpenedDocumentState(
@@ -368,7 +373,12 @@ class PyreLanguageServerApi:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
+                "server_status_before": str(server_status_before),
+                "time_since_last_ready_ms": time_since_last_ready_ms,
                 "server_state_start_status": self.server_state.daemon_status.get().value,
+                # We don't do any blocking work on didSave, but analytics are easier if
+                # we avoid needlessly introducing NULL values.
+                "duration_ms": 0,
             },
             activity_key,
         )
