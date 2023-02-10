@@ -21,10 +21,8 @@ class CallGraph:
     entrypoints: Set[str]
 
     def __init__(self, call_graph: object, entrypoints: object) -> None:
-        self.validate_call_graph(call_graph)
-        self.call_graph = self.json_to_call_graph(
-            cast(Dict[str, List[str]], call_graph)
-        )
+        call_graph = self.validate_call_graph(call_graph)
+        self.call_graph = self.json_to_call_graph(call_graph)
         self.dependency_graph = self.create_dependency_graph(self.call_graph)
 
         self.entrypoints = self.validate_and_get_entrypoints(
@@ -60,21 +58,52 @@ class CallGraph:
                 f"Expected {level} value in {from_file} file to be a list, got: {type(json_list)}"
             )
 
-        for i, entrypoint in enumerate(json_list):
-            if not isinstance(entrypoint, str):
+        for i, value in enumerate(json_list):
+            if not isinstance(value, str):
                 raise ValueError(
-                    f"Expected {level} list value in {from_file} at position {i} to be a string, got: {type(entrypoint)}"
+                    f"Expected {level} list value in {from_file} at position {i} to be a string, \
+                    got: {type(value)}: {value}"
                 )
 
     @staticmethod
-    def validate_call_graph(call_graph: object) -> None:
+    def validate_call_graph(call_graph: object) -> Dict[str, List[str]]:
+        result: Dict[str, List[str]] = defaultdict(lambda: list())
         if not isinstance(call_graph, Dict):
             raise ValueError(
                 f"Call graph structure in call graph file is not a JSON dict: {type(call_graph)}"
             )
 
         for caller, callees in call_graph.items():
-            CallGraph.validate_json_list(callees, "CALL_GRAPH_FILE", caller)
+            if not isinstance(callees, list):
+                raise ValueError(
+                    f"Expected value for caller {caller} to be list of callers with location, got {type(callees)}: {callees}"
+                )
+            for callee in callees:
+                if isinstance(callee, str):
+                    result[caller].append(callee)
+                elif isinstance(callee, dict):
+                    target = callee.get("target", None)
+                    direct_target = callee.get("direct_target", None)
+                    if target is None and direct_target is None:
+                        raise ValueError(
+                            f"Expected callee dict to have key `target` or `direct_target`: {callee}"
+                        )
+                    if target and isinstance(target, str):
+                        result[caller].append(target)
+                    elif direct_target and isinstance(direct_target, str):
+                        result[caller].append(direct_target)
+                    else:
+                        target_type = (
+                            type(target) if target is not None else type(direct_target)
+                        )
+                        raise ValueError(
+                            f"Expected callee dict to have key `target` or `direct_target` with type str, got {target_type}"
+                        )
+                else:
+                    raise ValueError(
+                        f"Expected value for individual callee to be a string or dict of callee with location, got {type(callee)}: {callee}"
+                    )
+        return result
 
     @staticmethod
     def validate_and_get_entrypoints(
@@ -134,7 +163,7 @@ class CallGraph:
     def find_traces_for_callees(
         self, callees: Collection[str]
     ) -> Dict[str, Optional[Trace]]:
-        result = {}
+        result: Dict[str, Optional[Trace]] = {}
         for callee in callees:
             if callee in self.dependency_graph and callee not in result:
                 result[callee] = self.find_shortest_trace_to_entrypoint(callee)
@@ -171,8 +200,11 @@ def leaks(call_graph_file: TextIO, entrypoints_file: TextIO) -> None:
     - `errors`: any errors that occurred during the analysis, for example, a definition not
         found for a callable
 
-    CALL_GRAPH_FILE: a file containing a JSON dict mapping caller qualified paths
-        to a list of callee qualified paths
+    CALL_GRAPH_FILE: a file containing either:
+      - a JSON dict mapping caller qualified paths to a list of callee qualified paths (can be
+        return from `pyre analyze --dump-call-graph ...`)
+      - a JSON dict mapping caller qualified paths to a list of callee
+        objects returned from `pyre query "dump_call_graph()"`
     ENTRYPOINTS_FILE: a file containing a JSON list of qualified paths for entrypoints
     """
     pass

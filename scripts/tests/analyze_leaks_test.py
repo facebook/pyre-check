@@ -10,7 +10,7 @@ from ..analyze_leaks import CallGraph
 
 
 class AnalyzeIssueTraceTest(unittest.TestCase):
-    def test_load_call_graph_happy_path(self) -> None:
+    def test_load_pysa_call_graph_happy_path(self) -> None:
         call_graph = {
             "my_module.my_function": [
                 "something_that.my_function_calls",
@@ -21,6 +21,29 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         }
 
         CallGraph.validate_call_graph(call_graph)
+        result = CallGraph.json_to_call_graph(call_graph)
+
+        self.assertEqual(len(result), 2)
+        self.assertSetEqual(result["something_that.my_function_calls"], {"int.__str__"})
+        self.assertSetEqual(
+            result["my_module.my_function"],
+            {"something_that.my_function_calls", "builtins.print"},
+        )
+
+    def test_load_pyre_call_graph_happy_path(self) -> None:
+        call_graph = {
+            "my_module.my_function": [
+                {
+                    "keys_we_dont_need": [1, 2, 3],
+                    "target": "something_that.my_function_calls",
+                },
+                {"target": "builtins.print"},
+                {"direct_target": "my_module.my_function"},
+            ],
+            "something_that.my_function_calls": [{"direct_target": "int.__str__"}],
+        }
+
+        call_graph = CallGraph.validate_call_graph(call_graph)
         result = CallGraph.json_to_call_graph(call_graph)
 
         self.assertEqual(len(result), 2)
@@ -50,6 +73,33 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
 
     def test_load_call_graph_bad_callees(self) -> None:
         call_graph = {"caller": [1, 2, 3]}
+
+        try:
+            CallGraph.validate_call_graph(call_graph)
+            self.fail("should have thrown")
+        except ValueError:
+            pass
+
+    def test_load_call_graph_bad_callees_dict_keys(self) -> None:
+        call_graph = {"caller": {"callee": 123}}
+
+        try:
+            CallGraph.validate_call_graph(call_graph)
+            self.fail("should have thrown")
+        except ValueError:
+            pass
+
+    def test_load_call_graph_bad_callees_dict_target(self) -> None:
+        call_graph = {"caller": {"target": 123}}
+
+        try:
+            CallGraph.validate_call_graph(call_graph)
+            self.fail("should have thrown")
+        except ValueError:
+            pass
+
+    def test_load_call_graph_bad_callees_dict_direct_target(self) -> None:
+        call_graph = {"caller": {"direct_target": 123}}
 
         try:
             CallGraph.validate_call_graph(call_graph)
