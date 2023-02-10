@@ -326,8 +326,6 @@ class PyreLanguageServerApi:
                 "duration_ms": did_change_timer.stop_in_millisecond(),
                 "time_since_last_ready_ms": time_since_last_ready_ms,
                 "server_status_before": str(server_status_before),
-                "server_status_after": self.server_state.daemon_status.get().value,
-                "server_state_start_status": self.server_state.daemon_status.get().value,
                 "error_message": error_message,
                 "overlays_enabled": process_unsaved_changes,
             },
@@ -375,7 +373,6 @@ class PyreLanguageServerApi:
                 ),
                 "server_status_before": str(server_status_before),
                 "time_since_last_ready_ms": time_since_last_ready_ms,
-                "server_state_start_status": self.server_state.daemon_status.get().value,
                 # We don't do any blocking work on didSave, but analytics are easier if
                 # we avoid needlessly introducing NULL values.
                 "duration_ms": 0,
@@ -421,8 +418,6 @@ class PyreLanguageServerApi:
                     self.server_state.opened_documents
                 ),
                 "server_status_before": str(server_status_before),
-                "server_status_after": self.server_state.daemon_status.get().value,
-                "server_state_start_status": self.server_state.daemon_status.get().value,
                 "coverage_type": self.get_language_server_features().type_coverage.value,
             },
             activity_key,
@@ -499,8 +494,6 @@ class PyreLanguageServerApi:
                         self.server_state.opened_documents
                     ),
                     "server_status_before": str(server_status_before),
-                    "server_status_after": self.server_state.daemon_status.get().value,
-                    "server_state_start_status": self.server_state.daemon_status.get().value,
                     "error_message": error_message,
                     "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                 },
@@ -622,8 +615,6 @@ class PyreLanguageServerApi:
                     self.server_state.opened_documents
                 ),
                 "server_status_before": str(server_status_before),
-                "server_status_after": self.server_state.daemon_status.get().value,
-                "server_state_start_status": self.server_state.daemon_status.get().value,
                 "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                 "error_message": error_message,
                 "is_dirty": self.server_state.opened_documents[document_path].is_dirty,
