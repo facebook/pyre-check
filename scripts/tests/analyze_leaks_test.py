@@ -369,3 +369,59 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             self.fail("should have thrown")
         except ValueError:
             pass
+
+    def test_get_all_callees_empty(self) -> None:
+        entrypoints_list = []
+        call_graph = CallGraph({"f1": ["f2", "f3"], "f2": ["f1"]}, entrypoints_list)
+
+        callees = call_graph.get_all_callees()
+
+        self.assertEqual(callees, set())
+
+    def test_get_all_callees_f1(self) -> None:
+        entrypoints_list = ["f1"]
+        call_graph = CallGraph(
+            {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}, entrypoints_list
+        )
+
+        callees = call_graph.get_all_callees()
+
+        self.assertEqual(callees, {"f1", "f2", "f3"})
+
+    def test_get_all_callees_f2(self) -> None:
+        entrypoints_list = ["f2"]
+        call_graph = CallGraph(
+            {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}, entrypoints_list
+        )
+
+        callees = call_graph.get_all_callees()
+
+        self.assertEqual(callees, {"f1", "f2", "f3"})
+
+    def test_get_all_callees_f3(self) -> None:
+        entrypoints_list = ["f3"]
+        call_graph = CallGraph(
+            {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}, entrypoints_list
+        )
+
+        callees = call_graph.get_all_callees()
+
+        self.assertEqual(callees, {"f3"})
+
+    def test_get_all_callees_multiple(self) -> None:
+        entrypoints_list = ["f1", "f4"]
+        call_graph = CallGraph(
+            {
+                "f1": ["f2", "f3"],
+                "f2": ["f1"],
+                "f3": ["f3"],
+                "f4": ["f5"],
+                "f5": ["print"],
+                "f6": [],
+            },
+            entrypoints_list,
+        )
+
+        callees = call_graph.get_all_callees()
+
+        self.assertEqual(callees, {"f1", "f2", "f3", "f4", "f5", "print"})

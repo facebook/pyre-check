@@ -171,6 +171,20 @@ class CallGraph:
                 result[callee] = None
         return result
 
+    def get_all_callees(self) -> Set[str]:
+        transitive_callees = set()
+        stack = list(self.entrypoints)
+
+        while stack:
+            callable = stack.pop()
+            if callable in transitive_callees:
+                continue
+            transitive_callees.add(callable)
+            if callable in self.call_graph:
+                stack += self.call_graph[callable]
+
+        return transitive_callees
+
 
 def load_json_from_file(file_handle: TextIO, file_name: str) -> object:
     try:
