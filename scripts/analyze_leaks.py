@@ -185,6 +185,11 @@ class CallGraph:
 
         return transitive_callees
 
+    @staticmethod
+    def prepare_issues_for_query(callees: Collection[str]) -> str:
+        single_callee_query = [f"global_leaks({callee})" for callee in callees]
+        return "batch(" + ", ".join(single_callee_query) + ")"
+
 
 def load_json_from_file(file_handle: TextIO, file_name: str) -> object:
     try:

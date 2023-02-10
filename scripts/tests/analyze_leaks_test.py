@@ -425,3 +425,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         callees = call_graph.get_all_callees()
 
         self.assertEqual(callees, {"f1", "f2", "f3", "f4", "f5", "print"})
+
+    def test_prepare_issues_for_query(self) -> None:
+        callees = ["f1", "f2", "f3"]
+
+        result_query = CallGraph.prepare_issues_for_query(callees)
+        expected_query = "batch(global_leaks(f1), global_leaks(f2), global_leaks(f3))"
+
+        self.assertEqual(result_query, expected_query)
