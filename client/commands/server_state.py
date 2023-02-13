@@ -9,6 +9,7 @@ can be accessed in one place. Note that this state is mutable and a singleton, s
 should be aware a change to this state could affect other modules that interact with this state.
 """
 
+from __future__ import annotations
 
 import dataclasses
 import enum
@@ -34,6 +35,18 @@ class ConnectionStatus(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
+class DaemonStatus:
+    connection_status: ConnectionStatus
+    milliseconds_since_ready: float
+
+    def as_telemetry_dict(self) -> Dict[str, float | str]:
+        return {
+            "server_state_before": self.connection_status.value,
+            "time_since_last_ready_ms": self.milliseconds_since_ready,
+        }
+
+
+@dataclasses.dataclass(frozen=True)
 class OpenedDocumentState:
     code: str
     is_dirty: bool = False
@@ -42,7 +55,7 @@ class OpenedDocumentState:
 
 @dataclasses.dataclass
 class DaemonStatusTracker:
-    _status: ConnectionStatus = ConnectionStatus.NOT_CONNECTED
+    _connection_status: ConnectionStatus = ConnectionStatus.NOT_CONNECTED
     _not_ready_timer: Optional[timer.Timer] = None
 
     def set_status(self, new_status: ConnectionStatus) -> None:
@@ -50,15 +63,17 @@ class DaemonStatusTracker:
             self._not_ready_timer = None
         elif self._not_ready_timer is None:
             self._not_ready_timer = timer.Timer()
-        self._status = new_status
+        self._connection_status = new_status
 
-    def get_status(self) -> ConnectionStatus:
-        return self._status
-
-    def milliseconds_not_ready(self) -> int:
-        if self._not_ready_timer is None:
-            return 0
-        return int(self._not_ready_timer.stop_in_millisecond())
+    def get_status(self) -> DaemonStatus:
+        return DaemonStatus(
+            connection_status=self._connection_status,
+            milliseconds_since_ready=(
+                0
+                if self._not_ready_timer is None
+                else self._not_ready_timer.stop_in_millisecond()
+            ),
+        )
 
 
 @dataclasses.dataclass

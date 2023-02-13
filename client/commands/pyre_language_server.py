@@ -289,11 +289,9 @@ class PyreLanguageServerApi:
         if document_path not in self.server_state.opened_documents:
             return
 
-        time_since_last_ready_ms = (
-            self.server_state.status_tracker.milliseconds_not_ready()
-        )
-        server_status_before = self.server_state.status_tracker.get_status().value
+        daemon_status_before = self.server_state.status_tracker.get_status()
         did_change_timer = timer.Timer()
+
         process_unsaved_changes = (
             self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
         )
@@ -324,10 +322,9 @@ class PyreLanguageServerApi:
                     self.server_state.opened_documents
                 ),
                 "duration_ms": did_change_timer.stop_in_millisecond(),
-                "time_since_last_ready_ms": time_since_last_ready_ms,
-                "server_status_before": str(server_status_before),
                 "error_message": error_message,
                 "overlays_enabled": process_unsaved_changes,
+                **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
         )
@@ -347,10 +344,7 @@ class PyreLanguageServerApi:
         if document_path not in self.server_state.opened_documents:
             return
 
-        time_since_last_ready_ms = (
-            self.server_state.status_tracker.milliseconds_not_ready()
-        )
-        server_status_before = self.server_state.status_tracker.get_status().value
+        daemon_status_before = self.server_state.status_tracker.get_status()
 
         code_changes = self.server_state.opened_documents[document_path].code
 
@@ -371,11 +365,10 @@ class PyreLanguageServerApi:
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "server_status_before": str(server_status_before),
-                "time_since_last_ready_ms": time_since_last_ready_ms,
                 # We don't do any blocking work on didSave, but analytics are easier if
                 # we avoid needlessly introducing NULL values.
                 "duration_ms": 0,
+                **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
         )
@@ -392,11 +385,10 @@ class PyreLanguageServerApi:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         document_path = document_path.resolve()
-        time_since_last_ready_ms = (
-            self.server_state.status_tracker.milliseconds_not_ready()
-        )
-        server_status_before = self.server_state.status_tracker.get_status().value
+
+        daemon_status_before = self.server_state.status_tracker.get_status()
         type_coverage_timer = timer.Timer()
+
         response = await self.querier.get_type_coverage(path=document_path)
         if response is not None:
             await lsp.write_json_rpc(
@@ -413,12 +405,8 @@ class PyreLanguageServerApi:
                 "operation": "typeCoverage",
                 "filePath": str(document_path),
                 "duration_ms": type_coverage_timer.stop_in_millisecond(),
-                "time_since_last_ready_ms": time_since_last_ready_ms,
-                "server_state_open_documents_count": len(
-                    self.server_state.opened_documents
-                ),
-                "server_status_before": str(server_status_before),
                 "coverage_type": self.get_language_server_features().type_coverage.value,
+                **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
         )
@@ -451,11 +439,9 @@ class PyreLanguageServerApi:
                 ),
             )
         else:
-            time_since_last_ready_ms = (
-                self.server_state.status_tracker.milliseconds_not_ready()
-            )
-            server_status_before = self.server_state.status_tracker.get_status().value
+            daemon_status_before = self.server_state.status_tracker.get_status()
             hover_timer = timer.Timer()
+
             await self.update_overlay_if_needed(document_path)
             result = await self.querier.get_hover(
                 path=document_path,
@@ -489,13 +475,12 @@ class PyreLanguageServerApi:
                     "nonEmpty": len(result.contents) > 0,
                     "response": raw_result,
                     "duration_ms": hover_timer.stop_in_millisecond(),
-                    "time_since_last_ready_ms": time_since_last_ready_ms,
                     "server_state_open_documents_count": len(
                         self.server_state.opened_documents
                     ),
-                    "server_status_before": str(server_status_before),
                     "error_message": error_message,
                     "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
+                    **daemon_status_before.as_telemetry_dict(),
                 },
                 activity_key,
             )
@@ -559,10 +544,7 @@ class PyreLanguageServerApi:
                     result=lsp.LspLocation.cached_schema().dump([], many=True),
                 ),
             )
-        time_since_last_ready_ms = (
-            self.server_state.status_tracker.milliseconds_not_ready()
-        )
-        server_status_before = self.server_state.status_tracker.get_status().value
+        daemon_status_before = self.server_state.status_tracker.get_status()
         shadow_mode = self.get_language_server_features().definition.is_shadow()
         # In shadow mode, we need to return an empty response immediately
         if shadow_mode:
@@ -608,17 +590,16 @@ class PyreLanguageServerApi:
                 "count": len(output_result),
                 "response": output_result,
                 "duration_ms": result_with_durations.overall_duration,
-                "time_since_last_ready_ms": time_since_last_ready_ms,
                 "overlay_update_duration": result_with_durations.overlay_update_duration,
                 "query_duration": result_with_durations.query_duration,
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "server_status_before": str(server_status_before),
                 "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                 "error_message": error_message,
                 "is_dirty": self.server_state.opened_documents[document_path].is_dirty,
                 "truncated_file_contents": source_code_if_sampled,
+                **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
         )
