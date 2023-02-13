@@ -339,7 +339,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         self.client_type_error_handler.update_type_errors(
             type_error_subscription.errors
         )
-        self.server_state.status_tracker.set_status(state.ServerStatus.READY)
+        self.server_state.status_tracker.set_status(state.ConnectionStatus.READY)
         await self.client_type_error_handler.show_type_errors_to_client()
         await self.client_status_message_handler.log_and_show_status_message_to_client(
             READY_MESSAGE,
@@ -355,7 +355,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
             await self.client_type_error_handler.clear_type_errors_for_client()
         if status_update_subscription.kind == "Rebuilding":
             self.server_state.status_tracker.set_status(
-                state.ServerStatus.BUCK_BUILDING
+                state.ConnectionStatus.BUCK_BUILDING
             )
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "Pyre is busy rebuilding the project for type checking...",
@@ -364,7 +364,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
             )
         elif status_update_subscription.kind == "Rechecking":
             self.server_state.status_tracker.set_status(
-                state.ServerStatus.INCREMENTAL_CHECK
+                state.ConnectionStatus.INCREMENTAL_CHECK
             )
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "Pyre is busy re-type-checking the project...",
@@ -372,7 +372,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
                 level=lsp.MessageType.WARNING,
             )
         elif status_update_subscription.kind == "Ready":
-            self.server_state.status_tracker.set_status(state.ServerStatus.READY)
+            self.server_state.status_tracker.set_status(state.ConnectionStatus.READY)
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 READY_MESSAGE,
                 short_message=READY_SHORT,

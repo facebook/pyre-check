@@ -23,7 +23,7 @@ from ..language_server import protocol as lsp
 from . import pyre_server_options
 
 
-class ServerStatus(enum.Enum):
+class ConnectionStatus(enum.Enum):
     READY = "READY"
     DISCONNECTED = "DISCONNECTED"
     NOT_CONNECTED = "NOT_CONNECTED"
@@ -42,17 +42,17 @@ class OpenedDocumentState:
 
 @dataclasses.dataclass
 class DaemonStatusTracker:
-    _status: ServerStatus = ServerStatus.NOT_CONNECTED
+    _status: ConnectionStatus = ConnectionStatus.NOT_CONNECTED
     _not_ready_timer: Optional[timer.Timer] = None
 
-    def set_status(self, new_status: ServerStatus) -> None:
-        if new_status == ServerStatus.READY:
+    def set_status(self, new_status: ConnectionStatus) -> None:
+        if new_status == ConnectionStatus.READY:
             self._not_ready_timer = None
         elif self._not_ready_timer is None:
             self._not_ready_timer = timer.Timer()
         self._status = new_status
 
-    def get_status(self) -> ServerStatus:
+    def get_status(self) -> ConnectionStatus:
         return self._status
 
     def milliseconds_not_ready(self) -> int:

@@ -96,7 +96,9 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         if not self.get_type_errors_availability().is_disabled():
             await self.client_type_error_handler.clear_type_errors_for_client()
         if status_update_subscription.kind == "Stop":
-            self.server_state.status_tracker.set_status(state.ServerStatus.DISCONNECTED)
+            self.server_state.status_tracker.set_status(
+                state.ConnectionStatus.DISCONNECTED
+            )
             self.client_status_message_handler.log(
                 "The Pyre code-navigation server has stopped.",
                 short_message="Pyre code-nav (stopped)",
@@ -107,7 +109,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             )
         elif status_update_subscription.kind == "BusyBuilding":
             self.server_state.status_tracker.set_status(
-                state.ServerStatus.BUCK_BUILDING
+                state.ConnectionStatus.BUCK_BUILDING
             )
             self.client_status_message_handler.log(
                 "The Pyre code-navigation server is busy re-building the project...",
@@ -116,7 +118,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             )
         elif status_update_subscription.kind == "BusyChecking":
             self.server_state.status_tracker.set_status(
-                state.ServerStatus.INCREMENTAL_CHECK
+                state.ConnectionStatus.INCREMENTAL_CHECK
             )
             self.client_status_message_handler.log(
                 "The Pyre code-navigation server is busy re-type-checking the project...",
@@ -124,7 +126,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
                 level=lsp.MessageType.WARNING,
             )
         elif status_update_subscription.kind == "Idle":
-            self.server_state.status_tracker.set_status(state.ServerStatus.READY)
+            self.server_state.status_tracker.set_status(state.ConnectionStatus.READY)
             self.client_status_message_handler.log(
                 READY_MESSAGE,
                 short_message=READY_SHORT,
