@@ -41,18 +41,18 @@ class OpenedDocumentState:
 
 
 @dataclasses.dataclass
-class DaemonStatus:
+class DaemonStatusTracker:
     _status: ServerStatus = ServerStatus.NOT_CONNECTED
     _not_ready_timer: Optional[timer.Timer] = None
 
-    def set(self, new_status: ServerStatus) -> None:
+    def set_status(self, new_status: ServerStatus) -> None:
         if new_status == ServerStatus.READY:
             self._not_ready_timer = None
         elif self._not_ready_timer is None:
             self._not_ready_timer = timer.Timer()
         self._status = new_status
 
-    def get(self) -> ServerStatus:
+    def get_status(self) -> ServerStatus:
         return self._status
 
     def milliseconds_not_ready(self) -> int:
@@ -80,4 +80,6 @@ class ServerState:
     )
 
     # The daemon status is not reassignable, but has internal mutable state
-    daemon_status: Final[DaemonStatus] = dataclasses.field(default_factory=DaemonStatus)
+    status_tracker: Final[DaemonStatusTracker] = dataclasses.field(
+        default_factory=DaemonStatusTracker
+    )
