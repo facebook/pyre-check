@@ -4579,6 +4579,23 @@ let test_model_query_error context =
         ]
       |}
     ();
+  (* No error on WriteToCache queries. *)
+  assert_json_error
+    ~queries:
+      {|
+        ModelQuery(
+          name = "invalid_model_query",
+          find = "functions",
+          where = Decorator(arguments.contains("1"), name.matches("d")),
+          model = WriteToCache(kind="cache", name=f"name")
+        )
+      |}
+    ~source:{|
+        def foo(x):
+            ...
+      |}
+    ~expected:"[]"
+    ();
   ()
 
 

@@ -221,6 +221,13 @@ module ModelQueryRegistryMap = struct
       else
         errors
     in
+    (* Exclude `WriteToCache` queries since they don't produce models. *)
+    let queries =
+      List.filter
+        ~f:(fun { ModelQuery.models; _ } ->
+          not (List.exists ~f:ModelQuery.Model.is_write_to_cache models))
+        queries
+    in
     let logging_group_map, errors =
       List.fold ~f:count_models ~init:(String.Map.empty, []) queries
     in
