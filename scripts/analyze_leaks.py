@@ -3,17 +3,88 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import abc
 import json
 import sys
 import subprocess
 from collections import defaultdict, deque
-from typing import cast, Collection, Deque, Dict, List, Optional, Set, TextIO
+from typing import cast, Collection, Deque, Dict, List, Optional, Set, TextIO, Union
 
 import click
 from typing_extensions import TypeAlias
 
 
 Trace: TypeAlias = List[str]
+JSON = Union[Dict[str, "JSON"], List["JSON"], str, int, float, bool, None]
+
+
+class InputFormat(abc.ABC):
+    call_graph: JSON
+
+    def __init__(self, call_graph: JSON) -> None:
+        self.call_graph = call_graph
+
+    call_graph: JSON
+
+    @abc.abstractmethod
+    def validate_callees(self, callees: List[JSON]) -> Set[str]:
+        ...
+
+    def to_call_graph(self) -> Dict[str, Set[str]]:
+        result = {}
+        call_graph = self.call_graph
+        if not isinstance(call_graph, Dict):
+            raise ValueError(
+                f"Call graph structure in call graph file is not a JSON dict: {type(call_graph)}"
+            )
+
+        for caller, callees in call_graph.items():
+            if not isinstance(callees, list):
+                raise ValueError(
+                    f"Expected value for caller {caller} to be list of callers with location, got {type(callees)}: {callees}"
+                )
+            result[caller] = self.validate_callees(callees) - {caller}
+        return result
+
+
+class PysaCallGraphInputFormat(InputFormat):
+    def validate_callees(self, callees: List[JSON]) -> Set[str]:
+        result = set()
+        for callee in callees:
+            if not isinstance(callee, str):
+                raise ValueError(
+                    f"Expected value for individual callee to be a string, got {type(callee)}: {callee}"
+                )
+            result.add(callee)
+        return result
+
+
+class PyreCallGraphInputFormat(InputFormat):
+    def validate_callees(self, callees: List[JSON]) -> Set[str]:
+        result = set()
+        for callee in callees:
+            if not isinstance(callee, dict):
+                raise ValueError(
+                    f"Expected value for individual callee to be a dict of callee with location, got {type(callee)}: {callee}"
+                )
+            if "target" not in callee and "direct_target" not in callee:
+                raise ValueError(
+                    f"Expected callee dict to have key `target` or `direct_target`: {callee}"
+                )
+            if "target" in callee and isinstance(callee["target"], str):
+                result.add(callee["target"])
+            elif "direct_target" in callee and isinstance(callee["direct_target"], str):
+                result.add(callee["direct_target"])
+            else:
+                target_type = (
+                    type(callee["target"])
+                    if "target" in callee
+                    else type(callee["direct_target"])
+                )
+                raise ValueError(
+                    f"Expected callee dict to have key `target` or `direct_target` with type str, got {target_type}"
+                )
+        return result
 
 
 class CallGraph:
@@ -21,26 +92,13 @@ class CallGraph:
     dependency_graph: Dict[str, Set[str]]
     entrypoints: Set[str]
 
-    def __init__(self, call_graph: object, entrypoints: object) -> None:
-        call_graph = self.validate_call_graph(call_graph)
-        self.call_graph = self.json_to_call_graph(call_graph)
+    def __init__(self, call_graph: InputFormat, entrypoints: JSON) -> None:
+        self.call_graph = call_graph.to_call_graph()
         self.dependency_graph = self.create_dependency_graph(self.call_graph)
 
         self.entrypoints = self.validate_and_get_entrypoints(
             entrypoints, set(self.call_graph)
         )
-
-    @staticmethod
-    def json_to_call_graph(call_graph: Dict[str, List[str]]) -> Dict[str, Set[str]]:
-        nodes = defaultdict(lambda: set())
-
-        for caller, callees in call_graph.items():
-            nodes[caller] = set(callees)
-
-            # skip self calls, since they're irrelevant for trace purposes
-            nodes[caller] -= {caller}
-
-        return nodes
 
     @staticmethod
     def create_dependency_graph(call_graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
@@ -53,7 +111,7 @@ class CallGraph:
         return nodes
 
     @staticmethod
-    def validate_json_list(json_list: object, from_file: str, level: str) -> None:
+    def validate_json_list(json_list: JSON, from_file: str, level: str) -> None:
         if not isinstance(json_list, list):
             raise ValueError(
                 f"Expected {level} value in {from_file} file to be a list, got: {type(json_list)}"
@@ -67,48 +125,8 @@ class CallGraph:
                 )
 
     @staticmethod
-    def validate_call_graph(call_graph: object) -> Dict[str, List[str]]:
-        result: Dict[str, List[str]] = defaultdict(lambda: list())
-        if not isinstance(call_graph, Dict):
-            raise ValueError(
-                f"Call graph structure in call graph file is not a JSON dict: {type(call_graph)}"
-            )
-
-        for caller, callees in call_graph.items():
-            if not isinstance(callees, list):
-                raise ValueError(
-                    f"Expected value for caller {caller} to be list of callers with location, got {type(callees)}: {callees}"
-                )
-            for callee in callees:
-                if isinstance(callee, str):
-                    result[caller].append(callee)
-                elif isinstance(callee, dict):
-                    target = callee.get("target", None)
-                    direct_target = callee.get("direct_target", None)
-                    if target is None and direct_target is None:
-                        raise ValueError(
-                            f"Expected callee dict to have key `target` or `direct_target`: {callee}"
-                        )
-                    if target and isinstance(target, str):
-                        result[caller].append(target)
-                    elif direct_target and isinstance(direct_target, str):
-                        result[caller].append(direct_target)
-                    else:
-                        target_type = (
-                            type(target) if target is not None else type(direct_target)
-                        )
-                        raise ValueError(
-                            f"Expected callee dict to have key `target` or `direct_target` with type str, got {target_type}"
-                        )
-                else:
-                    raise ValueError(
-                        f"Expected value for individual callee to be a string or dict of callee with location, got {type(callee)}: {callee}"
-                    )
-        return result
-
-    @staticmethod
     def validate_and_get_entrypoints(
-        entrypoints_json: object, known_callers: Set[str]
+        entrypoints_json: JSON, known_callers: Set[str]
     ) -> Set[str]:
         entrypoints = set()
         CallGraph.validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top level")
@@ -244,7 +262,7 @@ class CallGraph:
         return self.analyze_pyre_query_results(pyre_process.stdout)
 
 
-def load_json_from_file(file_handle: TextIO, file_name: str) -> object:
+def load_json_from_file(file_handle: TextIO, file_name: str) -> JSON:
     try:
         return json.load(file_handle)
     except json.JSONDecodeError as e:
@@ -262,7 +280,15 @@ def analyze() -> None:
 @analyze.command()
 @click.argument("call_graph_file", type=click.File("r"))
 @click.argument("entrypoints_file", type=click.File("r"))
-def leaks(call_graph_file: TextIO, entrypoints_file: TextIO) -> None:
+@click.option(
+    "--call_graph_kind",
+    type=click.Choice(["pyre", "pysa"], case_sensitive=False),
+    default="pyre",
+    help="The format of the call_graph_file, see CALL_GRAPH_FILE for more info.",
+)
+def leaks(
+    call_graph_file: TextIO, entrypoints_file: TextIO, call_graph_kind: str
+) -> None:
     """
     Find global leaks for the given entrypoints and their transitive callees.
 
@@ -282,7 +308,13 @@ def leaks(call_graph_file: TextIO, entrypoints_file: TextIO) -> None:
     call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
     entrypoints = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
 
-    call_graph = CallGraph(call_graph_data, entrypoints)
+    input_format = (
+        PyreCallGraphInputFormat(call_graph_data)
+        if call_graph_kind == "pyre"
+        else PysaCallGraphInputFormat(call_graph_data)
+    )
+
+    call_graph = CallGraph(input_format, entrypoints)
 
     issues = call_graph.find_issues()
     print(json.dumps(issues))
@@ -292,10 +324,17 @@ def leaks(call_graph_file: TextIO, entrypoints_file: TextIO) -> None:
 @click.argument("issues_file", type=click.File("r"))
 @click.argument("call_graph_file", type=click.File("r"))
 @click.argument("entrypoints_file", type=click.File("r"))
+@click.option(
+    "--call_graph_kind",
+    type=click.Choice(["pyre", "pysa"], case_sensitive=False),
+    default="pyre",
+    help="The format of the call_graph_file, see CALL_GRAPH_FILE for more info.",
+)
 def trace(
     issues_file: TextIO,
     call_graph_file: TextIO,
     entrypoints_file: TextIO,
+    call_graph_kind: str,
 ) -> None:
     """
     Get a list of traces from callable to entrypoint.
@@ -319,7 +358,13 @@ def trace(
     call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
     entrypoints = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
 
-    call_graph = CallGraph(call_graph_data, entrypoints)
+    input_format = (
+        PyreCallGraphInputFormat(call_graph_data)
+        if call_graph_kind == "pyre"
+        else PysaCallGraphInputFormat(call_graph_data)
+    )
+
+    call_graph = CallGraph(input_format, entrypoints)
 
     CallGraph.validate_json_list(issues, "ISSUES_FILE", "top level")
     found_paths = call_graph.find_traces_for_callees(cast(List[str], issues))
