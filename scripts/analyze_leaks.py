@@ -279,7 +279,13 @@ def leaks(call_graph_file: TextIO, entrypoints_file: TextIO) -> None:
         objects returned from `pyre query "dump_call_graph()"`
     ENTRYPOINTS_FILE: a file containing a JSON list of qualified paths for entrypoints
     """
-    pass
+    call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
+    entrypoints = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
+
+    call_graph = CallGraph(call_graph_data, entrypoints)
+
+    issues = call_graph.find_issues()
+    print(json.dumps(issues))
 
 
 @analyze.command()
