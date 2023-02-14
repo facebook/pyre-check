@@ -8,39 +8,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional, Set
 
-from ..client import (
-    command_arguments,
-    configuration as configuration_module,
-    daemon_socket,
-    find_directories,
-    identifiers,
-)
 from ..client.language_server import code_navigation_request, daemon_connection
 
-
-def codenav_connection(project_root: Path) -> CodeNavConnection:
-    command_argument = command_arguments.CommandArguments()
-    base_directory = project_root.resolve()
-    configuration = configuration_module.create_overridden_configuration(
-        command_argument,
-        base_directory,
-        find_directories.CODENAV_CONFIGURATION_FILE,
-    )
-    return CodeNavConnection(command_argument, configuration)
+from . import daemon_launcher
 
 
 class CodeNavConnection:
     def __init__(
         self,
-        command_argument: command_arguments.CommandArguments,
-        configuration: configuration_module.Configuration,
+        server_info: daemon_launcher.StartedServerInfo,
     ) -> None:
-        self.command_argument = command_argument
-        self.configuration = configuration
-        self.socket_path: Path = daemon_socket.get_socket_path(
-            configuration.project_identifier,
-            flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
-        )
+        self.server_info = server_info
         # All open files must be resolved to full paths before getting added here.
         self.open_files: Set[Path] = set()
 
@@ -55,7 +33,7 @@ class CodeNavConnection:
             class_=class_expression, overlay_id=None
         )
         response = await code_navigation_request.async_handle_superclasses(
-            self.socket_path, superclasses_request
+            self.server_info.socket_path, superclasses_request
         )
         if isinstance(response, daemon_connection.DaemonConnectionFailure):
             # For now, we don't try to initialize a server when unable to connect. In the future,
@@ -77,7 +55,7 @@ class CodeNavConnection:
             path=path, content=None, overlay_id=None
         )
         response = await code_navigation_request.async_handle_file_opened(
-            self.socket_path, request
+            self.server_info.socket_path, request
         )
         if isinstance(response, daemon_connection.DaemonConnectionFailure):
             return response
@@ -90,7 +68,7 @@ class CodeNavConnection:
         self.open_files.remove(path)
         request = code_navigation_request.FileClosed(path=path, overlay_id=None)
         response = await code_navigation_request.async_handle_file_closed(
-            self.socket_path, request
+            self.server_info.socket_path, request
         )
         if isinstance(response, daemon_connection.DaemonConnectionFailure):
             return response
