@@ -127,10 +127,10 @@ let initialize_shared_memory environment_controls =
 
 let initialize_server_state ~build_system_initializer ~environment_controls () =
   initialize_shared_memory environment_controls;
+  let build_system = BuildSystem.Initializer.initialize build_system_initializer in
   let environment =
     Analysis.ErrorsEnvironment.create environment_controls |> Analysis.OverlaidEnvironment.create
   in
-  let build_system = BuildSystem.Initializer.initialize build_system_initializer in
   let open_files = OpenFiles.create () in
   { State.environment; build_system; open_files }
 
