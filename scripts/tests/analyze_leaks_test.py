@@ -56,56 +56,38 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
     def test_load_call_graph_bad_root(self) -> None:
         call_graph = ["1234"]
 
-        try:
+        with self.assertRaises(ValueError):
             CallGraph.validate_call_graph(call_graph)
-            self.fail("should have thrown")
-        except ValueError:
-            pass
 
     def test_load_call_graph_bad_callers(self) -> None:
         call_graph = {"caller": 1234}
 
-        try:
+        with self.assertRaises(ValueError):
             CallGraph.validate_call_graph(call_graph)
-            self.fail("should have thrown")
-        except ValueError:
-            pass
 
     def test_load_call_graph_bad_callees(self) -> None:
         call_graph = {"caller": [1, 2, 3]}
 
-        try:
+        with self.assertRaises(ValueError):
             CallGraph.validate_call_graph(call_graph)
-            self.fail("should have thrown")
-        except ValueError:
-            pass
 
     def test_load_call_graph_bad_callees_dict_keys(self) -> None:
         call_graph = {"caller": {"callee": 123}}
 
-        try:
+        with self.assertRaises(ValueError):
             CallGraph.validate_call_graph(call_graph)
-            self.fail("should have thrown")
-        except ValueError:
-            pass
 
     def test_load_call_graph_bad_callees_dict_target(self) -> None:
         call_graph = {"caller": {"target": 123}}
 
-        try:
+        with self.assertRaises(ValueError):
             CallGraph.validate_call_graph(call_graph)
-            self.fail("should have thrown")
-        except ValueError:
-            pass
 
     def test_load_call_graph_bad_callees_dict_direct_target(self) -> None:
         call_graph = {"caller": {"direct_target": 123}}
 
-        try:
+        with self.assertRaises(ValueError):
             CallGraph.validate_call_graph(call_graph)
-            self.fail("should have thrown")
-        except ValueError:
-            pass
 
     def test_create_dependency_graph(self) -> None:
         call_graph = {
@@ -355,20 +337,14 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
     def test_validate_entrypoints_file_bad_root(self) -> None:
         entrypoints_list = {"not_a_list": True}
 
-        try:
+        with self.assertRaises(ValueError):
             CallGraph({"my.entrypoint.one": ["print"]}, entrypoints_list)
-            self.fail("should have thrown")
-        except ValueError:
-            pass
 
     def test_validate_entrypoints_file_bad_list_elements(self) -> None:
         entrypoints_list = [True, 1]
 
-        try:
+        with self.assertRaises(ValueError):
             CallGraph({"my.entrypoint.one": ["print"]}, entrypoints_list)
-            self.fail("should have thrown")
-        except ValueError:
-            pass
 
     def test_get_all_callees_empty(self) -> None:
         entrypoints_list = []
@@ -476,44 +452,32 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             this is not a valid response
         """
 
-        try:
+        with self.assertRaises(RuntimeError):
             CallGraph.analyze_pyre_query_results(example_pyre_stdout)
-            self.fail("should have thrown")
-        except RuntimeError:
-            pass
 
     def test_analyze_pyre_query_results_not_top_level_dict(self) -> None:
         example_pyre_stdout = """
             ["this is a list"]
         """
 
-        try:
+        with self.assertRaises(RuntimeError):
             CallGraph.analyze_pyre_query_results(example_pyre_stdout)
-            self.fail("should have thrown")
-        except RuntimeError:
-            pass
 
     def test_analyze_pyre_query_results_no_response_present(self) -> None:
         example_pyre_stdout = """
             {"not a response": 1}
         """
 
-        try:
+        with self.assertRaises(RuntimeError):
             CallGraph.analyze_pyre_query_results(example_pyre_stdout)
-            self.fail("should have thrown")
-        except RuntimeError:
-            pass
 
     def test_analyze_pyre_query_results_response_not_a_list(self) -> None:
         example_pyre_stdout = """
             {"response": 1}
         """
 
-        try:
+        with self.assertRaises(RuntimeError):
             CallGraph.analyze_pyre_query_results(example_pyre_stdout)
-            self.fail("should have thrown")
-        except RuntimeError:
-            pass
 
     def test_analyze_pyre_query_results_response_batch_response_not_a_dict(
         self,
@@ -526,11 +490,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             }
         """
 
-        try:
+        with self.assertRaises(RuntimeError):
             CallGraph.analyze_pyre_query_results(example_pyre_stdout)
-            self.fail("should have thrown")
-        except RuntimeError:
-            pass
 
     def test_analyze_pyre_query_results_response_batch_response_no_nested_error_or_response(
         self,
@@ -544,8 +505,5 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             }
         """
 
-        try:
+        with self.assertRaises(RuntimeError):
             CallGraph.analyze_pyre_query_results(example_pyre_stdout)
-            self.fail("should have thrown")
-        except RuntimeError:
-            pass
