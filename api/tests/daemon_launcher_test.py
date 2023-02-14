@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Union
 
 from pyre_extensions import override
+from tools.pyre.client import daemon_socket
 
 from ...client import configuration as configuration_module, identifiers
 
@@ -28,6 +29,9 @@ class FakeFrontendConfiguration(frontend_configuration.OpenSource):
         self.configuration = configuration_module.Configuration(
             "test", Path("test"), "test", targets=[]
         )
+
+    def get_project_identifier(self) -> str:
+        return "test"
 
 
 class SuccessfulPyreServerStarter(PyreServerStarterBase):
@@ -63,10 +67,18 @@ class FailedPyreServerStarter(PyreServerStarterBase):
 class DaemonLauncherTest(unittest.TestCase):
     @setup.async_test
     async def test_successful_start(self) -> None:
-        result = await _start_server(
-            FakeFrontendConfiguration(), SuccessfulPyreServerStarter()
+        configuration = FakeFrontendConfiguration()
+        result = await _start_server(configuration, SuccessfulPyreServerStarter())
+        assert isinstance(result, StartedServerInfo)
+        self.assertEqual(
+            result,
+            StartedServerInfo(
+                daemon_socket.get_socket_path(
+                    configuration.get_project_identifier(),
+                    flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
+                ),
+            ),
         )
-        self.assertEqual(result, StartedServerInfo())
 
     @setup.async_test
     async def test_failed_start(self) -> None:

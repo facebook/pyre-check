@@ -5,11 +5,14 @@
 
 import abc
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Union
 
 from pyre_extensions import override
+from tools.pyre.client.commands import stop
+from tools.pyre.client.language_server import connections
 
-from ..client import command_arguments, identifiers
+from ..client import command_arguments, daemon_socket, identifiers
 
 from ..client.commands import frontend_configuration, initialization, start
 
@@ -18,7 +21,7 @@ FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CODE_NAVIGATION
 
 @dataclass
 class StartedServerInfo:
-    pass
+    socket_path: Path
 
 
 @dataclass
@@ -85,7 +88,12 @@ async def _start_server(
     if not isinstance(server_start_status, initialization.StartSuccess):
         return StartFailure(server_start_status.message)
     else:
-        return StartedServerInfo()
+        return StartedServerInfo(
+            daemon_socket.get_socket_path(
+                configuration.get_project_identifier(),
+                flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
+            ),
+        )
 
 
 async def start_server(
@@ -94,6 +102,12 @@ async def start_server(
     return await _start_server(configuration, PyreServerStarter())
 
 
-async def stop_server() -> None:
+async def stop_server(server_info: StartedServerInfo) -> None:
     """Stops the server completely. If any other clients are relying on this server as well, it will kill their connection so use sparingly."""
-    raise NotImplementedError()
+    with connections.connect(server_info.socket_path) as (
+        input_channel,
+        output_channel,
+    ):
+        output_channel.write(f"{stop.stop_message(FLAVOR)}\n")
+        # Wait for the server to shutdown on its side
+        input_channel.read()
