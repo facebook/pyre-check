@@ -8,7 +8,6 @@ This module contains the definition of code navigation requests and an API to co
 to a corresponding code navigation request. Also contains an API that sends a given request to the code navigation
 server and gets a response.
 """
-from __future__ import annotations
 
 import abc
 import dataclasses
@@ -17,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 import dataclasses_json
+from marshmallow import fields
 
 from .. import dataclasses_json_extensions as json_mixins
 
@@ -25,16 +25,16 @@ from . import daemon_connection, protocol as lsp
 from .protocol import PyreHoverResponse
 
 
-class Module(abc.ABC):
+class Module(abc.ABC, fields.Field):
     @staticmethod
-    def module_to_json(module: Module) -> List[object]:
+    def module_to_json(module: "Module") -> List[object]:
         if isinstance(module, ModuleOfName):
             return ["OfName", module.name]
         assert isinstance(module, ModuleOfPath)
         return ["OfPath", f"{module.path}"]
 
     @staticmethod
-    def module_from_json(module_json: List[object]) -> Module:
+    def module_from_json(module_json: List[object]) -> "Module":
         if not isinstance(module_json, list):
             raise AssertionError("JSON is not a list")
         if (
@@ -203,7 +203,9 @@ class FileClosed:
 class ClassExpression(json_mixins.SnakeCaseAndExcludeJsonMixin):
     module: Module = dataclasses.field(
         metadata=dataclasses_json.config(
-            encoder=Module.module_to_json, decoder=Module.module_from_json
+            encoder=Module.module_to_json,
+            decoder=Module.module_from_json,
+            mm_field=fields.Field(),
         )
     )
     qualified_name: str
@@ -212,7 +214,7 @@ class ClassExpression(json_mixins.SnakeCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class SuperclassesRequest:
     class_: ClassExpression
-    overlay_id: str | None
+    overlay_id: Optional[str]
 
     def to_json(self) -> List[object]:
         return [
@@ -235,7 +237,7 @@ ResponseKind = TypeVar("ResponseKind", bound=json_mixins.CamlCaseAndExcludeJsonM
 
 def parse_response(
     response: Dict[str, Any], response_type: Type[ResponseKind]
-) -> ResponseKind | ErrorResponse:
+) -> Union[ResponseKind, ErrorResponse]:
     try:
         return response_type.cached_schema().load(response)
     except AssertionError as error:
@@ -246,7 +248,7 @@ def parse_response(
 
 def parse_raw_response(
     raw_response: str, expected_response_kind: str, response_type: Type[ResponseKind]
-) -> ResponseKind | ErrorResponse:
+) -> Union[ResponseKind, ErrorResponse]:
     try:
         response = json.loads(raw_response)
         if (
@@ -297,7 +299,7 @@ async def async_handle_definition_request(
 
 async def async_handle_local_update(
     socket_path: Path, local_update: LocalUpdate
-) -> str | daemon_connection.DaemonConnectionFailure:
+) -> Union[str, daemon_connection.DaemonConnectionFailure]:
     raw_command = json.dumps(["Command", local_update.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_command
@@ -307,7 +309,7 @@ async def async_handle_local_update(
 
 async def async_handle_file_opened(
     socket_path: Path, file_opened: FileOpened
-) -> str | daemon_connection.DaemonConnectionFailure:
+) -> Union[str, daemon_connection.DaemonConnectionFailure]:
     raw_command = json.dumps(["Command", file_opened.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_command
@@ -317,7 +319,7 @@ async def async_handle_file_opened(
 
 async def async_handle_file_closed(
     socket_path: Path, file_closed: FileClosed
-) -> str | daemon_connection.DaemonConnectionFailure:
+) -> Union[str, daemon_connection.DaemonConnectionFailure]:
     raw_command = json.dumps(["Command", file_closed.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_command
@@ -328,7 +330,7 @@ async def async_handle_file_closed(
 async def async_handle_superclasses(
     socket_path: Path,
     superclasses: SuperclassesRequest,
-) -> str | daemon_connection.DaemonConnectionFailure:
+) -> Union[str, daemon_connection.DaemonConnectionFailure]:
     raw_command = json.dumps(["Query", superclasses.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_command

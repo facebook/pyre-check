@@ -9,6 +9,8 @@ from pathlib import Path
 
 import testslide
 
+from marshmallow import ValidationError
+
 from .. import code_navigation_request, protocol as lsp
 
 
@@ -114,20 +116,12 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             ),
         )
 
-        # Note that there's a type error here in the TypedDict, but we happily parse it in our json_mixins, even
-        # with the cached_schema().
+        # Note that there's a type error here in the TypedDict
         response = {"contents": [{"value": 32, "docstring": None}]}
-        self.assertEqual(
+        with self.assertRaises(ValidationError):
             code_navigation_request.parse_response(
                 response, response_type=code_navigation_request.HoverResponse
             ),
-            code_navigation_request.HoverResponse(
-                contents=[
-                    # pyre-ignore[6]: This is documenting a known type error, see comments in test above.
-                    lsp.PyreHoverResponse(value=32)
-                ]
-            ),
-        )
 
     def test_definition_response(self) -> None:
         response = {
