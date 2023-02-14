@@ -430,7 +430,7 @@ class PyreLanguageServerApi:
         document_path = document_path.resolve()
 
         if document_path not in self.server_state.opened_documents:
-            await lsp.write_json_rpc(
+            return await lsp.write_json_rpc(
                 self.output_channel,
                 json_rpc.SuccessResponse(
                     id=request_id,
@@ -438,52 +438,49 @@ class PyreLanguageServerApi:
                     result=lsp.LspHoverResponse.empty().to_dict(),
                 ),
             )
-        else:
-            daemon_status_before = self.server_state.status_tracker.get_status()
-            hover_timer = timer.Timer()
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        hover_timer = timer.Timer()
 
-            await self.update_overlay_if_needed(document_path)
-            result = await self.querier.get_hover(
-                path=document_path,
-                position=parameters.position.to_pyre_position(),
+        await self.update_overlay_if_needed(document_path)
+        result = await self.querier.get_hover(
+            path=document_path,
+            position=parameters.position.to_pyre_position(),
+        )
+        error_message = None
+        if isinstance(result, DaemonQueryFailure):
+            LOG.info(
+                daemon_failure_string("hover", str(type(result)), result.error_message)
             )
-            error_message = None
-            if isinstance(result, DaemonQueryFailure):
-                LOG.info(
-                    daemon_failure_string(
-                        "hover", str(type(result)), result.error_message
-                    )
-                )
-                error_message = result.error_message
-                result = lsp.LspHoverResponse.empty()
-            raw_result = lsp.LspHoverResponse.cached_schema().dump(
-                result,
-            )
-            await lsp.write_json_rpc(
-                self.output_channel,
-                json_rpc.SuccessResponse(
-                    id=request_id,
-                    activity_key=activity_key,
-                    result=raw_result,
+            error_message = result.error_message
+            result = lsp.LspHoverResponse.empty()
+        raw_result = lsp.LspHoverResponse.cached_schema().dump(
+            result,
+        )
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                activity_key=activity_key,
+                result=raw_result,
+            ),
+        )
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "hover",
+                "filePath": str(document_path),
+                "nonEmpty": len(result.contents) > 0,
+                "response": raw_result,
+                "duration_ms": hover_timer.stop_in_millisecond(),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
                 ),
-            )
-            await self.write_telemetry(
-                {
-                    "type": "LSP",
-                    "operation": "hover",
-                    "filePath": str(document_path),
-                    "nonEmpty": len(result.contents) > 0,
-                    "response": raw_result,
-                    "duration_ms": hover_timer.stop_in_millisecond(),
-                    "server_state_open_documents_count": len(
-                        self.server_state.opened_documents
-                    ),
-                    "error_message": error_message,
-                    "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
-                    **daemon_status_before.as_telemetry_dict(),
-                },
-                activity_key,
-            )
+                "error_message": error_message,
+                "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
+                **daemon_status_before.as_telemetry_dict(),
+            },
+            activity_key,
+        )
 
     async def _get_definition_result(
         self, document_path: Path, position: lsp.LspPosition
