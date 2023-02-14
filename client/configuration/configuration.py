@@ -789,6 +789,20 @@ class Configuration:
             return site_roots
         return get_default_site_roots()
 
+    def expand_and_get_typeshed_search_paths(
+        self,
+    ) -> List[search_path_module.Element]:
+        typeshed_root = self.get_typeshed_respecting_override()
+        if typeshed_root is None:
+            return []
+
+        return [
+            search_path_module.SimpleElement(str(element))
+            for element in find_directories.find_typeshed_search_paths(
+                Path(typeshed_root)
+            )
+        ]
+
     def expand_and_get_existent_search_paths(
         self,
     ) -> List[search_path_module.Element]:
@@ -801,18 +815,7 @@ class Configuration:
             self.site_package_search_strategy, site_roots
         )
 
-        typeshed_root = self.get_typeshed_respecting_override()
-        if typeshed_root is None:
-            return existent_paths + site_packages_paths
-
-        typeshed_paths: List[search_path_module.Element] = [
-            search_path_module.SimpleElement(str(element))
-            for element in find_directories.find_typeshed_search_paths(
-                Path(typeshed_root)
-            )
-        ]
-
-        return existent_paths + site_packages_paths + typeshed_paths
+        return existent_paths + site_packages_paths
 
     def expand_and_get_existent_source_directories(
         self,

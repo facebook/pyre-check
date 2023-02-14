@@ -220,7 +220,10 @@ class OpenSource(Base):
     def get_existent_search_paths(
         self,
     ) -> List[configuration_module.search_path.Element]:
-        return self.configuration.expand_and_get_existent_search_paths()
+        return (
+            self.configuration.expand_and_get_existent_search_paths()
+            + self.configuration.expand_and_get_typeshed_search_paths()
+        )
 
     def get_existent_source_directories(
         self,

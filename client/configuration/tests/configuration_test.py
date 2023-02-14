@@ -746,6 +746,27 @@ class ConfigurationTest(testslide.TestCase):
                 ).expand_and_get_existent_search_paths(),
                 [
                     SimpleElement(str(root_path / "a")),
+                ],
+            )
+
+    def test_typeshed_existent_search_path(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a"])
+            ensure_directories_exists(
+                root_path, ["typeshed/stdlib", "typeshed/stubs/foo"]
+            )
+
+            self.assertListEqual(
+                Configuration(
+                    project_root="irrelevant",
+                    dot_pyre_directory=Path(".pyre"),
+                    search_path=[
+                        SimpleRawElement(str(root_path / "a")),
+                    ],
+                    typeshed=str(root_path / "typeshed"),
+                ).expand_and_get_typeshed_search_paths(),
+                [
                     SimpleElement(str(root_path / "typeshed/stdlib")),
                     SimpleElement(str(root_path / "typeshed/stubs/foo")),
                 ],
