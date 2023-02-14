@@ -19,12 +19,15 @@ JSON = Union[Dict[str, "JSON"], List["JSON"], str, int, float, bool, None]
 
 
 class InputFormat(abc.ABC):
-    call_graph: JSON
+    call_graph: Dict[str, JSON]
 
     def __init__(self, call_graph: JSON) -> None:
-        self.call_graph = call_graph
+        if not isinstance(call_graph, Dict):
+            raise ValueError(
+                f"Call graph structure in call graph file is not a JSON dict: {type(call_graph)}"
+            )
 
-    call_graph: JSON
+        self.call_graph = call_graph
 
     @abc.abstractmethod
     def validate_callees(self, callees: List[JSON]) -> Set[str]:
@@ -33,10 +36,6 @@ class InputFormat(abc.ABC):
     def to_call_graph(self) -> Dict[str, Set[str]]:
         result = {}
         call_graph = self.call_graph
-        if not isinstance(call_graph, Dict):
-            raise ValueError(
-                f"Call graph structure in call graph file is not a JSON dict: {type(call_graph)}"
-            )
 
         for caller, callees in call_graph.items():
             if not isinstance(callees, list):
@@ -45,6 +44,9 @@ class InputFormat(abc.ABC):
                 )
             result[caller] = self.validate_callees(callees) - {caller}
         return result
+
+    def get_keys(self) -> Set[str]:
+        return set(self.call_graph)
 
 
 class PysaCallGraphInputFormat(InputFormat):
@@ -87,18 +89,39 @@ class PyreCallGraphInputFormat(InputFormat):
         return result
 
 
+class Entrypoints:
+    entrypoints: Set[str]
+
+    def __init__(self, entrypoints_json: JSON, known_callers: Set[str]) -> None:
+        self.entrypoints = set()
+
+        validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top-level")
+
+        for entrypoint in cast(List[str], entrypoints_json):
+            if entrypoint in known_callers:
+                self.entrypoints.add(entrypoint)
+                continue
+
+            # if the entrypoint is not found in the call graph, then try truncating the last part of the qualified name and retry
+            parent_function = ".".join(entrypoint.split(".")[:-1])
+            if parent_function in known_callers:
+                self.entrypoints.add(parent_function)
+            else:
+                print(
+                    f"Unknown entrypoint {entrypoint} and parent function {parent_function}, skipping...",
+                    file=sys.stderr,
+                )
+
+
 class CallGraph:
     call_graph: Dict[str, Set[str]]
     dependency_graph: Dict[str, Set[str]]
-    entrypoints: Set[str]
+    entrypoints: Entrypoints
 
-    def __init__(self, call_graph: InputFormat, entrypoints: JSON) -> None:
+    def __init__(self, call_graph: InputFormat, entrypoints: Entrypoints) -> None:
         self.call_graph = call_graph.to_call_graph()
         self.dependency_graph = self.create_dependency_graph(self.call_graph)
-
-        self.entrypoints = self.validate_and_get_entrypoints(
-            entrypoints, set(self.call_graph)
-        )
+        self.entrypoints = entrypoints
 
     @staticmethod
     def create_dependency_graph(call_graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
@@ -111,43 +134,6 @@ class CallGraph:
         return nodes
 
     @staticmethod
-    def validate_json_list(json_list: JSON, from_file: str, level: str) -> None:
-        if not isinstance(json_list, list):
-            raise ValueError(
-                f"Expected {level} value in {from_file} file to be a list, got: {type(json_list)}"
-            )
-
-        for i, value in enumerate(json_list):
-            if not isinstance(value, str):
-                raise ValueError(
-                    f"Expected {level} list value in {from_file} at position {i} to be a string, \
-                    got: {type(value)}: {value}"
-                )
-
-    @staticmethod
-    def validate_and_get_entrypoints(
-        entrypoints_json: JSON, known_callers: Set[str]
-    ) -> Set[str]:
-        entrypoints = set()
-        CallGraph.validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top level")
-
-        for entrypoint in cast(List[str], entrypoints_json):
-            if entrypoint in known_callers:
-                entrypoints.add(entrypoint)
-                continue
-
-            # if the entrypoint is not found in the call graph, then try truncating the last part of the qualified name and retry
-            parent_function = ".".join(entrypoint.split(".")[:-1])
-            if parent_function in known_callers:
-                entrypoints.add(parent_function)
-            else:
-                print(
-                    f"Unknown entrypoint {entrypoint} and parent function {parent_function}, skipping...",
-                    file=sys.stderr,
-                )
-        return entrypoints
-
-    @staticmethod
     def node_path_to_str(node_path: Trace) -> str:
         return " -> ".join(node_path)
 
@@ -155,7 +141,7 @@ class CallGraph:
         return self.call_graph[caller]
 
     def find_shortest_trace_to_entrypoint(self, start_call: str) -> Optional[Trace]:
-        if start_call in self.entrypoints:
+        if start_call in self.entrypoints.entrypoints:
             return [start_call]
 
         queue: Deque[Trace] = deque([[start_call]])
@@ -172,7 +158,7 @@ class CallGraph:
 
                 next_node_path = current_node_path + [caller]
 
-                if caller in self.entrypoints:
+                if caller in self.entrypoints.entrypoints:
                     return next_node_path
 
                 queue.append(next_node_path)
@@ -192,7 +178,7 @@ class CallGraph:
 
     def get_all_callees(self) -> Set[str]:
         transitive_callees = set()
-        stack = list(self.entrypoints)
+        stack = list(self.entrypoints.entrypoints)
 
         while stack:
             callable = stack.pop()
@@ -262,6 +248,20 @@ class CallGraph:
         return self.analyze_pyre_query_results(pyre_process.stdout)
 
 
+def validate_json_list(json_list: JSON, from_file: str, level: str) -> None:
+    if not isinstance(json_list, list):
+        raise ValueError(
+            f"Expected {level} value in {from_file} file to be a list, got: {type(json_list)}"
+        )
+
+    for i, value in enumerate(json_list):
+        if not isinstance(value, str):
+            raise ValueError(
+                f"Expected {level} list value in {from_file} at position {i} to be a string, \
+                    got: {type(value)}: {value}"
+            )
+
+
 def load_json_from_file(file_handle: TextIO, file_name: str) -> JSON:
     try:
         return json.load(file_handle)
@@ -306,13 +306,15 @@ def leaks(
     ENTRYPOINTS_FILE: a file containing a JSON list of qualified paths for entrypoints
     """
     call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
-    entrypoints = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
+    entrypoints_json = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
 
     input_format = (
         PyreCallGraphInputFormat(call_graph_data)
         if call_graph_kind == "pyre"
         else PysaCallGraphInputFormat(call_graph_data)
     )
+
+    entrypoints = Entrypoints(entrypoints_json, input_format.get_keys())
 
     call_graph = CallGraph(input_format, entrypoints)
 
@@ -356,7 +358,7 @@ def trace(
 
     issues = load_json_from_file(issues_file, "ISSUES_FILE")
     call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
-    entrypoints = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
+    entrypoints_json = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
 
     input_format = (
         PyreCallGraphInputFormat(call_graph_data)
@@ -364,9 +366,11 @@ def trace(
         else PysaCallGraphInputFormat(call_graph_data)
     )
 
+    entrypoints = Entrypoints(entrypoints_json, input_format.get_keys())
+
     call_graph = CallGraph(input_format, entrypoints)
 
-    CallGraph.validate_json_list(issues, "ISSUES_FILE", "top level")
+    validate_json_list(issues, "ISSUES_FILE", "top level")
     found_paths = call_graph.find_traces_for_callees(cast(List[str], issues))
 
     print(json.dumps(found_paths))

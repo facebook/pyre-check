@@ -8,6 +8,7 @@ import unittest
 
 from ..analyze_leaks import (
     CallGraph,
+    Entrypoints,
     JSON,
     PyreCallGraphInputFormat,
     PysaCallGraphInputFormat,
@@ -61,14 +62,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
     def test_load_call_graph_bad_root(self) -> None:
         call_graph: JSON = ["1234"]
 
-        pyre_call_graph = PyreCallGraphInputFormat(call_graph)
-        pysa_call_graph = PysaCallGraphInputFormat(call_graph)
+        with self.assertRaises(ValueError):
+            PyreCallGraphInputFormat(call_graph)
 
         with self.assertRaises(ValueError):
-            pyre_call_graph.to_call_graph()
-
-        with self.assertRaises(ValueError):
-            pysa_call_graph.to_call_graph()
+            PysaCallGraphInputFormat(call_graph)
 
     def test_load_call_graph_bad_callers(self) -> None:
         call_graph: JSON = {"caller": 1234}
@@ -180,10 +178,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "unrelated.call": ["int"],
             },
         )
-        call_graph = CallGraph(
-            input_format,
-            ["function.start"],
-        )
+        entrypoints = Entrypoints(["function.start"], input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
@@ -208,10 +204,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.three": ["print"],
             },
         )
-        call_graph = CallGraph(
-            input_format,
-            ["function.one"],
-        )
+        entrypoints = Entrypoints(["function.one"], input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         trace = call_graph.find_shortest_trace_to_entrypoint(
             "this_function_does_not_exist",
@@ -231,10 +225,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.three": ["print"],
             },
         )
-        call_graph = CallGraph(
-            input_format,
-            ["function.start"],
-        )
+        entrypoints = Entrypoints(["function.start"], input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
@@ -262,10 +254,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "unrelated.call_2": ["int"],
             },
         )
-        call_graph = CallGraph(
-            input_format,
-            ["function.start"],
-        )
+        entrypoints = Entrypoints(["function.start"], input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
@@ -291,10 +281,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "unrelated.call_2": ["int"],
             },
         )
-        call_graph = CallGraph(
-            input_format,
-            ["function.start"],
-        )
+        entrypoints = Entrypoints(["function.start"], input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
@@ -320,10 +308,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "unrelated.call_2": ["int"],
             },
         )
-        call_graph = CallGraph(
-            input_format,
-            ["function.start"],
-        )
+        entrypoints = Entrypoints(["function.start"], input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         trace = call_graph.find_shortest_trace_to_entrypoint("function.one")
 
@@ -341,10 +327,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.two": ["print"],
             },
         )
-        call_graph = CallGraph(
-            input_format,
-            ["function.start"],
-        )
+        entrypoints = Entrypoints(["function.start"], input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         trace = call_graph.find_shortest_trace_to_entrypoint("print")
 
@@ -360,10 +344,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "function.start": ["function.start"],
             },
         )
-        call_graph = CallGraph(
-            input_format,
-            ["function.start"],
-        )
+        entrypoints = Entrypoints(["function.start"], input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         trace = call_graph.find_shortest_trace_to_entrypoint("function.start")
 
@@ -383,9 +365,12 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "unrelated.call_2": ["int"],
             },
         )
+        entrypoints = Entrypoints(
+            ["function.start", "function.one"], input_format.get_keys()
+        )
         call_graph = CallGraph(
             input_format,
-            ["function.start", "function.one"],
+            entrypoints,
         )
 
         trace = call_graph.find_shortest_trace_to_entrypoint("print")
@@ -399,28 +384,29 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
     def test_validate_entrypoints_file_happy_path(self) -> None:
         entrypoints_list: JSON = ["my.entrypoint.one", "doesnt.exist"]
         input_format = PysaCallGraphInputFormat({"my.entrypoint.one": ["print"]})
-        call_graph = CallGraph(input_format, entrypoints_list)
+        entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
 
-        self.assertSetEqual(call_graph.entrypoints, {"my.entrypoint.one"})
+        self.assertSetEqual(entrypoints.entrypoints, {"my.entrypoint.one"})
 
     def test_validate_entrypoints_file_bad_root(self) -> None:
         entrypoints_list: JSON = {"not_a_list": True}
 
         with self.assertRaises(ValueError):
             input_format = PysaCallGraphInputFormat({"my.entrypoint.one": ["print"]})
-            CallGraph(input_format, entrypoints_list)
+            Entrypoints(entrypoints_list, input_format.get_keys())
 
     def test_validate_entrypoints_file_bad_list_elements(self) -> None:
         entrypoints_list: JSON = [True, 1]
 
         with self.assertRaises(ValueError):
             input_format = PysaCallGraphInputFormat({"my.entrypoint.one": ["print"]})
-            CallGraph(input_format, entrypoints_list)
+            Entrypoints(entrypoints_list, input_format.get_keys())
 
     def test_get_all_callees_empty(self) -> None:
         entrypoints_list: JSON = []
         input_format = PysaCallGraphInputFormat({"f1": ["f2", "f3"], "f2": ["f1"]})
-        call_graph = CallGraph(input_format, entrypoints_list)
+        entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         callees = call_graph.get_all_callees()
 
@@ -431,7 +417,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         input_format = PysaCallGraphInputFormat(
             {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}
         )
-        call_graph = CallGraph(input_format, entrypoints_list)
+        entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         callees = call_graph.get_all_callees()
 
@@ -442,7 +429,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         input_format = PysaCallGraphInputFormat(
             {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}
         )
-        call_graph = CallGraph(input_format, entrypoints_list)
+        entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         callees = call_graph.get_all_callees()
 
@@ -453,7 +441,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         input_format = PysaCallGraphInputFormat(
             {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}
         )
-        call_graph = CallGraph(input_format, entrypoints_list)
+        entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
+        call_graph = CallGraph(input_format, entrypoints)
 
         callees = call_graph.get_all_callees()
 
@@ -471,9 +460,10 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "f6": [],
             },
         )
+        entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(
             input_format,
-            entrypoints_list,
+            entrypoints,
         )
 
         callees = call_graph.get_all_callees()
