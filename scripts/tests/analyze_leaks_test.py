@@ -8,6 +8,7 @@ import unittest
 
 from ..analyze_leaks import (
     CallGraph,
+    DependencyGraph,
     Entrypoints,
     JSON,
     PyreCallGraphInputFormat,
@@ -129,18 +130,20 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             pysa_call_graph.to_call_graph()
 
     def test_create_dependency_graph(self) -> None:
-        call_graph = {
-            "parent.function.one": {
+        call_graph_json: JSON = {
+            "parent.function.one": [
                 "child_function.one",
                 "child_function.two",
                 "child_function.three",
-            },
-            "parent.function.two": {
+            ],
+            "parent.function.two": [
                 "child_function.one",
                 "child_function.two",
-            },
-            "child_function.one": {"child_function.two"},
+            ],
+            "child_function.one": ["child_function.two"],
         }
+
+        input_format = PysaCallGraphInputFormat(call_graph_json)
 
         expected_dependency_graph = {
             "child_function.one": {
@@ -157,14 +160,15 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         }
 
-        actual_dependency_graph = CallGraph.create_dependency_graph(call_graph)
+        actual_dependency_graph = DependencyGraph(input_format, Entrypoints([], set()))
 
         self.assertSetEqual(
-            set(actual_dependency_graph), set(expected_dependency_graph)
+            set(actual_dependency_graph.dependency_graph),
+            set(expected_dependency_graph),
         )
         for callee, expected_callers in expected_dependency_graph.items():
             with self.subTest(f"Callee: {callee}"):
-                actual_callers = actual_dependency_graph[callee]
+                actual_callers = actual_dependency_graph.dependency_graph[callee]
 
                 self.assertSetEqual(actual_callers, expected_callers)
 
@@ -179,9 +183,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         )
         entrypoints = Entrypoints(["function.start"], input_format.get_keys())
-        call_graph = CallGraph(input_format, entrypoints)
+        dependency_graph = DependencyGraph(input_format, entrypoints)
 
-        trace = call_graph.find_shortest_trace_to_entrypoint("print")
+        trace = dependency_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -205,9 +209,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         )
         entrypoints = Entrypoints(["function.one"], input_format.get_keys())
-        call_graph = CallGraph(input_format, entrypoints)
+        dependency_graph = DependencyGraph(input_format, entrypoints)
 
-        trace = call_graph.find_shortest_trace_to_entrypoint(
+        trace = dependency_graph.find_shortest_trace_to_entrypoint(
             "this_function_does_not_exist",
         )
 
@@ -226,9 +230,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         )
         entrypoints = Entrypoints(["function.start"], input_format.get_keys())
-        call_graph = CallGraph(input_format, entrypoints)
+        dependency_graph = DependencyGraph(input_format, entrypoints)
 
-        trace = call_graph.find_shortest_trace_to_entrypoint("print")
+        trace = dependency_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -255,9 +259,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         )
         entrypoints = Entrypoints(["function.start"], input_format.get_keys())
-        call_graph = CallGraph(input_format, entrypoints)
+        dependency_graph = DependencyGraph(input_format, entrypoints)
 
-        trace = call_graph.find_shortest_trace_to_entrypoint("print")
+        trace = dependency_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -282,9 +286,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         )
         entrypoints = Entrypoints(["function.start"], input_format.get_keys())
-        call_graph = CallGraph(input_format, entrypoints)
+        dependency_graph = DependencyGraph(input_format, entrypoints)
 
-        trace = call_graph.find_shortest_trace_to_entrypoint("print")
+        trace = dependency_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -309,9 +313,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         )
         entrypoints = Entrypoints(["function.start"], input_format.get_keys())
-        call_graph = CallGraph(input_format, entrypoints)
+        dependency_graph = DependencyGraph(input_format, entrypoints)
 
-        trace = call_graph.find_shortest_trace_to_entrypoint("function.one")
+        trace = dependency_graph.find_shortest_trace_to_entrypoint("function.one")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -328,9 +332,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         )
         entrypoints = Entrypoints(["function.start"], input_format.get_keys())
-        call_graph = CallGraph(input_format, entrypoints)
+        dependency_graph = DependencyGraph(input_format, entrypoints)
 
-        trace = call_graph.find_shortest_trace_to_entrypoint("print")
+        trace = dependency_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -345,9 +349,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         )
         entrypoints = Entrypoints(["function.start"], input_format.get_keys())
-        call_graph = CallGraph(input_format, entrypoints)
+        dependency_graph = DependencyGraph(input_format, entrypoints)
 
-        trace = call_graph.find_shortest_trace_to_entrypoint("function.start")
+        trace = dependency_graph.find_shortest_trace_to_entrypoint("function.start")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -368,12 +372,12 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints = Entrypoints(
             ["function.start", "function.one"], input_format.get_keys()
         )
-        call_graph = CallGraph(
+        dependency_graph = DependencyGraph(
             input_format,
             entrypoints,
         )
 
-        trace = call_graph.find_shortest_trace_to_entrypoint("print")
+        trace = dependency_graph.find_shortest_trace_to_entrypoint("print")
 
         self.assertIsNotNone(trace)
         self.assertListEqual(
@@ -402,17 +406,17 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             input_format = PysaCallGraphInputFormat({"my.entrypoint.one": ["print"]})
             Entrypoints(entrypoints_list, input_format.get_keys())
 
-    def test_get_all_callees_empty(self) -> None:
+    def test_get_transitive_callees_empty(self) -> None:
         entrypoints_list: JSON = []
         input_format = PysaCallGraphInputFormat({"f1": ["f2", "f3"], "f2": ["f1"]})
         entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(input_format, entrypoints)
 
-        callees = call_graph.get_all_callees()
+        callees = call_graph.get_transitive_callees()
 
         self.assertEqual(callees, set())
 
-    def test_get_all_callees_f1(self) -> None:
+    def test_get_transitive_callees_f1(self) -> None:
         entrypoints_list: JSON = ["f1"]
         input_format = PysaCallGraphInputFormat(
             {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}
@@ -420,11 +424,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(input_format, entrypoints)
 
-        callees = call_graph.get_all_callees()
+        callees = call_graph.get_transitive_callees()
 
         self.assertEqual(callees, {"f1", "f2", "f3"})
 
-    def test_get_all_callees_f2(self) -> None:
+    def test_get_transitive_callees_f2(self) -> None:
         entrypoints_list: JSON = ["f2"]
         input_format = PysaCallGraphInputFormat(
             {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}
@@ -432,11 +436,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(input_format, entrypoints)
 
-        callees = call_graph.get_all_callees()
+        callees = call_graph.get_transitive_callees()
 
         self.assertEqual(callees, {"f1", "f2", "f3"})
 
-    def test_get_all_callees_f3(self) -> None:
+    def test_get_transitive_callees_f3(self) -> None:
         entrypoints_list: JSON = ["f3"]
         input_format = PysaCallGraphInputFormat(
             {"f1": ["f2", "f3"], "f2": ["f1"], "f3": ["f3"]}
@@ -444,11 +448,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(input_format, entrypoints)
 
-        callees = call_graph.get_all_callees()
+        callees = call_graph.get_transitive_callees()
 
         self.assertEqual(callees, {"f3"})
 
-    def test_get_all_callees_multiple(self) -> None:
+    def test_get_transitive_callees_multiple(self) -> None:
         entrypoints_list: JSON = ["f1", "f4"]
         input_format = PysaCallGraphInputFormat(
             {
@@ -466,7 +470,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             entrypoints,
         )
 
-        callees = call_graph.get_all_callees()
+        callees = call_graph.get_transitive_callees()
 
         self.assertEqual(callees, {"f1", "f2", "f3", "f4", "f5", "print"})
 

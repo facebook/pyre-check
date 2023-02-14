@@ -113,32 +113,32 @@ class Entrypoints:
                 )
 
 
-class CallGraph:
-    call_graph: Dict[str, Set[str]]
+class DependencyGraph:
     dependency_graph: Dict[str, Set[str]]
     entrypoints: Entrypoints
 
-    def __init__(self, call_graph: InputFormat, entrypoints: Entrypoints) -> None:
-        self.call_graph = call_graph.to_call_graph()
-        self.dependency_graph = self.create_dependency_graph(self.call_graph)
+    def __init__(self, input_call_graph: InputFormat, entrypoints: Entrypoints) -> None:
         self.entrypoints = entrypoints
-
-    @staticmethod
-    def create_dependency_graph(call_graph: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
-        nodes = defaultdict(lambda: set())
+        self.dependency_graph = defaultdict(lambda: set())
+        call_graph = input_call_graph.to_call_graph()
 
         for caller, callees in call_graph.items():
             for callee in callees:
-                nodes[callee].add(caller)
+                if caller == callee:
+                    # skip self-references
+                    continue
+                self.dependency_graph[callee].add(caller)
 
-        return nodes
-
-    @staticmethod
-    def node_path_to_str(node_path: Trace) -> str:
-        return " -> ".join(node_path)
-
-    def callees(self, caller: str) -> Set[str]:
-        return self.call_graph[caller]
+    def find_traces_for_callees(
+        self, callees: Collection[str]
+    ) -> Dict[str, Optional[Trace]]:
+        result = {}
+        for callee in callees:
+            if callee in self.dependency_graph and callee not in result:
+                result[callee] = self.find_shortest_trace_to_entrypoint(callee)
+            elif callee not in result:
+                result[callee] = None
+        return result
 
     def find_shortest_trace_to_entrypoint(self, start_call: str) -> Optional[Trace]:
         if start_call in self.entrypoints.entrypoints:
@@ -165,18 +165,20 @@ class CallGraph:
 
         return []
 
-    def find_traces_for_callees(
-        self, callees: Collection[str]
-    ) -> Dict[str, Optional[Trace]]:
-        result: Dict[str, Optional[Trace]] = {}
-        for callee in callees:
-            if callee in self.dependency_graph and callee not in result:
-                result[callee] = self.find_shortest_trace_to_entrypoint(callee)
-            elif callee not in result:
-                result[callee] = None
-        return result
+    @staticmethod
+    def node_path_to_str(node_path: Trace) -> str:
+        return " -> ".join(node_path)
 
-    def get_all_callees(self) -> Set[str]:
+
+class CallGraph:
+    call_graph: Dict[str, Set[str]]
+    entrypoints: Entrypoints
+
+    def __init__(self, call_graph: InputFormat, entrypoints: Entrypoints) -> None:
+        self.call_graph = call_graph.to_call_graph()
+        self.entrypoints = entrypoints
+
+    def get_transitive_callees(self) -> Set[str]:
         transitive_callees = set()
         stack = list(self.entrypoints.entrypoints)
 
@@ -235,7 +237,7 @@ class CallGraph:
             raise RuntimeError("Pyre query returned non-JSON response") from e
 
     def find_issues(self) -> Dict[str, List[object]]:
-        all_callables = self.get_all_callees()
+        all_callables = self.get_transitive_callees()
         query = self.prepare_issues_for_query(all_callables)
 
         pyre_process = subprocess.run(
@@ -368,10 +370,10 @@ def trace(
 
     entrypoints = Entrypoints(entrypoints_json, input_format.get_keys())
 
-    call_graph = CallGraph(input_format, entrypoints)
+    dependency_graph = DependencyGraph(input_format, entrypoints)
 
     validate_json_list(issues, "ISSUES_FILE", "top level")
-    found_paths = call_graph.find_traces_for_callees(cast(List[str], issues))
+    found_paths = dependency_graph.find_traces_for_callees(cast(List[str], issues))
 
     print(json.dumps(found_paths))
 
