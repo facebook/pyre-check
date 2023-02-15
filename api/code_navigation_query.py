@@ -3,6 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""
+This module contains logic for querying a socket connection to a
+Pyre code-navigation daemon. See ./daemon_launcher.py for how to
+start and stop such daemons.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
