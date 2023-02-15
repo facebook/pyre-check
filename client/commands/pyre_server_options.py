@@ -54,6 +54,7 @@ class PyreServerOptions:
         start_command_argument: command_arguments.StartArguments,
         configuration: frontend_configuration.Base,
         language_server_features: features.LanguageServerFeatures,
+        unsaved_changes_only: bool = False,
     ) -> PyreServerOptions:
         binary_location = configuration.get_binary_location(download_if_needed=True)
         if binary_location is None:
@@ -65,7 +66,7 @@ class PyreServerOptions:
             configuration,
             start_command_argument,
         )
-        if start_arguments.watchman_root is None:
+        if start_arguments.watchman_root is None and not unsaved_changes_only:
             raise commands.ClientException(
                 "Cannot locate a `watchman` root. Pyre's server will not function "
                 "properly."
