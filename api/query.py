@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains logic for transforming the raw output of Pyre queries
+into structured Pythonic data structure.
 """
 
 

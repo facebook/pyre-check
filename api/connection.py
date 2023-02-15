@@ -5,7 +5,13 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module contains logic for a Python API to query Pyre
+daemons. This API is based on shelling out to the `pyre query`
+command.
+
+NOTE: we are in the process of building out a new API based on
+socket connections and using the better-typed interface to
+code-navigation deamons.
 """
 
 
