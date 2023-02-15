@@ -69,6 +69,10 @@ type transform =
   | TSeq of transform list
   | TNone : transform
 
+exception AbstractDomainException of string
+
+let raise_exception str = raise (AbstractDomainException str)
+
 module type S = sig
   type t [@@deriving show]
 
@@ -212,13 +216,13 @@ end) : BASE with type t := D.t = struct
   let unhandled_part (type a) (part : a part) what =
     let part_name = part_name part in
     Format.sprintf "In %s: unknown part %s in %s" (D.introspect (Name D.Self)) part_name what
-    |> failwith
+    |> raise_exception
 
 
   let unhandled_context (type a) (part : a part) what =
     let part_name = part_name part in
     Format.sprintf "In %s: unknown context %s in %s" (D.introspect (Name D.Self)) part_name what
-    |> failwith
+    |> raise_exception
 
 
   let unhandled_part_op (type a b f k) (part : a part) (op : (k, a, f, b) operation) what =
@@ -230,7 +234,7 @@ end) : BASE with type t := D.t = struct
       part_name
       op_name
       what
-    |> failwith
+    |> raise_exception
 
 
   let transform : type a b f. a part -> ([ `Transform ], a, f, b) operation -> f:f -> D.t -> D.t =
