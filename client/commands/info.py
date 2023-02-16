@@ -22,7 +22,7 @@ from .. import (
     identifiers,
     version,
 )
-from . import commands, frontend_configuration
+from . import commands, frontend_configuration, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -66,8 +66,12 @@ class Info(dataclasses_json.DataClassJsonMixin):
             log_directory
             / identifiers.PyreFlavor.CODE_NAVIGATION.server_log_subdirectory()
         )
-        current_server_logs = server_log_directory / "server.stderr"
-        codenav_current_server_log = codenav_server_log_directory / "server.stderr"
+        current_server_logs = start.deamon_current_log_path(
+            server_log_directory, flavor
+        )
+        codenav_current_server_log = start.deamon_current_log_path(
+            codenav_server_log_directory, identifiers.PyreFlavor.CODE_NAVIGATION
+        )
         client_version = version.__version__
         try:
             binary_version = configuration.get_binary_version()
