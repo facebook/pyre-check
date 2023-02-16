@@ -49,7 +49,10 @@ let test_check_tuple context =
       def foo() -> typing.Tuple[int, str]:
         return (1, "string", 3)
     |}
-    ["Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[int, str, int]`."];
+    [
+      "Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[int, str, int]`. \
+       Expected has length 2, but actual has length 3.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -115,6 +118,18 @@ let test_check_tuple context =
     ["Incompatible return type [7]: Expected `Tuple[str, int]` but got `List[Union[int, str]]`."];
   assert_type_errors
     {|
+      import typing
+      def foo(x: typing.Tuple[int, str]) -> None:
+        pass
+
+      foo((1, 2))
+    |}
+    [
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
+       `Tuple[int, str]` but got `Tuple[int, int]`.";
+    ];
+  assert_type_errors
+    {|
       def derp() -> int:
         a, b = [1,2,3]
         return a + b
@@ -174,7 +189,10 @@ let test_check_tuple context =
       def foo() -> typing.Tuple[int, str]:
         return ()
     |}
-    ["Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[]`."];
+    [
+      "Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[]`. Expected has \
+       length 2, but actual has length 0.";
+    ];
   assert_type_errors
     {|
       import typing

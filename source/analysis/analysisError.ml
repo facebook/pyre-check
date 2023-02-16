@@ -1109,6 +1109,25 @@ let rec messages ~concise ~signature location kind =
     else
       Format.asprintf "In %s, for %s," callee parameter
   in
+  let get_mismatch_explanation expected actual =
+    let expected_message = Format.asprintf "`%a`" pp_type expected in
+    let actual_message = Format.asprintf "`%a`" pp_type actual in
+    match expected, actual with
+    | ( Type.Parametric { parameters = expected_members; name = "Tuple" },
+        Type.Parametric { parameters = actual_members; name = "Tuple" } ) ->
+        let expected_length = List.length expected_members in
+        let actual_length = List.length actual_members in
+        if expected_length = actual_length then
+          expected_message, actual_message, ""
+        else
+          ( expected_message,
+            actual_message,
+            Format.sprintf
+              " Expected has length %d, but actual has length %d."
+              expected_length
+              actual_length )
+    | _ -> expected_message, actual_message, ""
+  in
   let kind = weaken_literals kind in
   let kind = simplify_kind kind in
   match kind with
@@ -1252,7 +1271,7 @@ let rec messages ~concise ~signature location kind =
         position;
         callee;
         mismatch = { actual; expected; due_to_invariance; _ };
-      } -> (
+      } ->
       let trace =
         if due_to_invariance then
           [Format.asprintf "This call might modify the type of the parameter."; invariance_message]
@@ -1260,15 +1279,22 @@ let rec messages ~concise ~signature location kind =
           []
       in
       let target = incompatible_parameter_target ~keyword_argument_name ~position ~callee in
-      match Option.map ~f:Reference.as_list callee with
-      | Some ["int"; "__add__"]
-      | Some ["int"; "__sub__"]
-      | Some ["int"; "__mul__"]
-      | Some ["int"; "__floordiv__"] ->
-          Format.asprintf "%s expected `int` but got `%a`." target pp_type actual :: trace
-      | _ ->
-          Format.asprintf "%s expected `%a` but got `%a`." target pp_type expected pp_type actual
-          :: trace)
+      let expected_message, actual_message, explanation =
+        match Option.map ~f:Reference.as_list callee with
+        | Some ["int"; "__add__"]
+        | Some ["int"; "__sub__"]
+        | Some ["int"; "__mul__"]
+        | Some ["int"; "__floordiv__"] ->
+            "`int`", Format.asprintf "`%a`" pp_type actual, ""
+        | _ -> get_mismatch_explanation expected actual
+      in
+      Format.sprintf
+        "%s expected %s but got %s.%s"
+        target
+        expected_message
+        actual_message
+        explanation
+      :: trace
   | IncompatibleConstructorAnnotation _ when concise -> ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->
       [
@@ -1300,16 +1326,16 @@ let rec messages ~concise ~signature location kind =
             define_location.Location.start.Location.line
             (if due_to_invariance then " " ^ invariance_message else "")
         in
-        let message =
+        let expected_message, actual_message, explanation =
           if is_implicit then
-            Format.asprintf
-              "Expected `%a` but got implicit return value of `None`."
-              pp_type
-              expected
+            Format.asprintf "`%a`" pp_type expected, "implicit return value of `None`", ""
           else
-            Format.asprintf "Expected `%a` but got `%a`." pp_type expected pp_type actual
+            get_mismatch_explanation expected actual
         in
-        [message; trace]
+        [
+          Format.sprintf "Expected %s but got %s.%s" expected_message actual_message explanation;
+          trace;
+        ]
   | IncompatibleAttributeType
       {
         parent;
