@@ -701,7 +701,7 @@ class Configuration:
                 else {}
             ),
             "excludes": list(self.excludes),
-            "extensions": list(self.extensions),
+            "extensions": [extension.to_json() for extension in self.extensions],
             "ignore_all_errors": list(self.ignore_all_errors),
             **(
                 {"isolation_prefix": isolation_prefix}

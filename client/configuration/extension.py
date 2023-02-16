@@ -23,6 +23,7 @@ to resolve to `package/module.custom_py`.
 
 
 import dataclasses
+import json
 
 from . import exceptions
 
@@ -56,3 +57,11 @@ class Element:
                     include_suffix_in_module_qualifier=include_suffix_in_module_qualifier,
                 )
         raise exceptions.InvalidConfiguration(f"Invalid extension element: {json}")
+
+    def to_json(self) -> str:
+        return json.dumps(
+            {
+                "suffix": self.suffix,
+                "include_suffix_in_module_qualifier": self.include_suffix_in_module_qualifier,
+            }
+        )

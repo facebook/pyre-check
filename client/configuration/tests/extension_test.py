@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
+
 import testslide
 
 from ..exceptions import InvalidConfiguration
@@ -33,4 +35,10 @@ class ElementTest(testslide.TestCase):
         )
         assert_extension_raises(
             {"suffix": ".pyi", "include_suffix_in_module_qualifier": []},
+        )
+
+    def test_to_json(self) -> None:
+        self.assertEqual(
+            Element(suffix=".pyi", include_suffix_in_module_qualifier=True).to_json(),
+            json.dumps({"suffix": ".pyi", "include_suffix_in_module_qualifier": True}),
         )
