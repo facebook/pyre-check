@@ -287,8 +287,6 @@ class Errors:
                 path.write_text(output)
             except SkippingGeneratedFileException:
                 LOG.warning(f"Skipping generated file at {path_to_suppress}")
-            except SkippingUnparseableFileException:
-                LOG.warning(f"Skipping unparseable file at {path_to_suppress}")
             except LineBreakParsingException:
                 LOG.warning(
                     f"Skipping file with unparseable line breaks at {path_to_suppress}"
@@ -382,10 +380,6 @@ def _split_across_lines(
 
 
 class SkippingGeneratedFileException(Exception):
-    pass
-
-
-class SkippingUnparseableFileException(Exception):
     pass
 
 
@@ -653,6 +647,20 @@ def _relocate_errors_inside_format_strings(
     )
 
 
+def _find_first_non_comment_line_for_unparseable_file(lines: List[str]) -> List[str]:
+    first_empty_line = 0
+    for index, line in enumerate(lines):
+        stripped_line = line.lstrip()
+        if not stripped_line.startswith("#"):
+            first_empty_line = index
+            break
+    return (
+        lines[:first_empty_line]
+        + ["# pyre-ignore-all-errors[404]"]
+        + lines[first_empty_line:]
+    )
+
+
 def _suppress_errors(
     input: str,
     errors: LineToErrors,
@@ -670,7 +678,9 @@ def _suppress_errors(
     if any(
         error["code"] == "404" for error_list in errors.values() for error in error_list
     ):
-        raise SkippingUnparseableFileException()
+        new_lines = _find_first_non_comment_line_for_unparseable_file(lines)
+        output = "\n".join(new_lines)
+        return output
 
     errors = _relocate_errors_inside_format_strings(errors, input)
 

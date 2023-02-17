@@ -24,7 +24,6 @@ from ..errors import (
     LineBreakParsingException,
     PartialErrorSuppression,
     SkippingGeneratedFileException,
-    SkippingUnparseableFileException,
 )
 
 
@@ -319,12 +318,23 @@ class ErrorsTest(unittest.TestCase):
             """,
         )
 
-        # Skip files with parse errors.
-        with self.assertRaises(SkippingUnparseableFileException):
-            _suppress_errors(
-                "input", {1: [{"code": "404", "description": "description"}]}
-            )
+        # Ignore all errors in files with parse errors.
+        self.assertSuppressErrors(
+            {1: [{"code": "404", "description": "description"}]},
+            """
+            # this is an unparseable file
 
+            def foo()
+                pass
+            """,
+            """
+            # this is an unparseable file
+            # pyre-ignore-all-errors[404]
+
+            def foo()
+                pass
+            """,
+        )
         # Skip generated files.
         with self.assertRaises(SkippingGeneratedFileException):
             _suppress_errors("# @" "generated", {})
