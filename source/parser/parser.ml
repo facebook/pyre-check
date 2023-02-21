@@ -448,7 +448,10 @@ module ParserToAst = struct
               body = List.map ~f:convert_statement body;
               orelse = List.map ~f:convert_statement orelse;
             }
-      | Import { from; imports } -> AstStatement.Import { from; imports }
+      | Import { from = None; imports } -> AstStatement.Import { from = None; imports }
+      (* TODO(T145739378) Add location information on from *)
+      | Import { from = Some from; imports } ->
+          AstStatement.Import { from = Some (Node.create_with_default_location from); imports }
       | Nonlocal identifiers -> AstStatement.Nonlocal identifiers
       | Pass -> AstStatement.Pass
       | Raise { expression; from } ->

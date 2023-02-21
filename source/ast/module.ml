@@ -174,7 +174,7 @@ let create
   let legacy_aliased_exports =
     let rec aliased_exports aliases { Node.value; _ } =
       match value with
-      | Statement.Import { Import.from = Some from; imports } ->
+      | Statement.Import { Import.from = Some { Node.value = from; _ }; imports } ->
           let from = ModulePath.expand_relative_import module_path ~from in
           let export aliases { Node.value = { Import.name; alias }; _ } =
             let alias =

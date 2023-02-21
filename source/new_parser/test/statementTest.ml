@@ -8,6 +8,7 @@
 open Base
 open OUnit2
 open Test
+open Ast
 open Ast.Expression
 open Ast.Statement
 
@@ -207,49 +208,70 @@ let test_import _ =
       ~expected:
         [
           +Statement.Import
-             { Import.from = Some !&"a"; imports = [+{ Import.name = !&"b"; alias = None }] };
+             {
+               Import.from = Some (Node.create_with_default_location !&"a");
+               imports = [+{ Import.name = !&"b"; alias = None }];
+             };
         ];
     assert_parsed
       "from a import *"
       ~expected:
         [
           +Statement.Import
-             { Import.from = Some !&"a"; imports = [+{ Import.name = !&"*"; alias = None }] };
+             {
+               Import.from = Some (Node.create_with_default_location !&"a");
+               imports = [+{ Import.name = !&"*"; alias = None }];
+             };
         ];
     assert_parsed
       "from . import b"
       ~expected:
         [
           +Statement.Import
-             { Import.from = Some !&"."; imports = [+{ Import.name = !&"b"; alias = None }] };
+             {
+               Import.from = Some (Node.create_with_default_location !&".");
+               imports = [+{ Import.name = !&"b"; alias = None }];
+             };
         ];
     assert_parsed
       "from ...foo import b"
       ~expected:
         [
           +Statement.Import
-             { Import.from = Some !&"...foo"; imports = [+{ Import.name = !&"b"; alias = None }] };
+             {
+               Import.from = Some (Node.create_with_default_location !&"...foo");
+               imports = [+{ Import.name = !&"b"; alias = None }];
+             };
         ];
     assert_parsed
       "from .....foo import b"
       ~expected:
         [
           +Statement.Import
-             { Import.from = Some !&".....foo"; imports = [+{ Import.name = !&"b"; alias = None }] };
+             {
+               Import.from = Some (Node.create_with_default_location !&".....foo");
+               imports = [+{ Import.name = !&"b"; alias = None }];
+             };
         ];
     assert_parsed
       "from .a import b"
       ~expected:
         [
           +Statement.Import
-             { Import.from = Some !&".a"; imports = [+{ Import.name = !&"b"; alias = None }] };
+             {
+               Import.from = Some (Node.create_with_default_location !&".a");
+               imports = [+{ Import.name = !&"b"; alias = None }];
+             };
         ];
     assert_parsed
       "from ..a import b"
       ~expected:
         [
           +Statement.Import
-             { Import.from = Some !&"..a"; imports = [+{ Import.name = !&"b"; alias = None }] };
+             {
+               Import.from = Some (Node.create_with_default_location !&"..a");
+               imports = [+{ Import.name = !&"b"; alias = None }];
+             };
         ];
     assert_parsed
       "from a import (b, c)"
@@ -257,7 +279,7 @@ let test_import _ =
         [
           +Statement.Import
              {
-               Import.from = Some !&"a";
+               Import.from = Some (Node.create_with_default_location !&"a");
                imports =
                  [+{ Import.name = !&"b"; alias = None }; +{ Import.name = !&"c"; alias = None }];
              };
@@ -267,7 +289,10 @@ let test_import _ =
       ~expected:
         [
           +Statement.Import
-             { Import.from = Some !&"a.b"; imports = [+{ Import.name = !&"c"; alias = None }] };
+             {
+               Import.from = Some (Node.create_with_default_location !&"a.b");
+               imports = [+{ Import.name = !&"c"; alias = None }];
+             };
         ];
     assert_parsed
       "from f import a as b, c, d as e"
@@ -275,7 +300,7 @@ let test_import _ =
         [
           +Statement.Import
              {
-               Import.from = Some !&"f";
+               Import.from = Some (Node.create_with_default_location !&"f");
                imports =
                  [
                    +{ Import.name = !&"a"; alias = Some "b" };

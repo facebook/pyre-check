@@ -134,7 +134,7 @@ module Collector = struct
             :: sofar
           in
           List.fold imports ~init:globals ~f:collect_module_import
-      | Import { Import.from = Some from; imports } ->
+      | Import { Import.from = Some { Node.value = from; _ }; imports } ->
           let collect_name_import sofar { Node.value = { Import.name = target; alias }; _ } =
             (* `target` must be an unqualified identifier *)
             match Reference.show target with

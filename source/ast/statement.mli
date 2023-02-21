@@ -26,7 +26,7 @@ module Import : sig
   [@@deriving compare, sexp, show, hash]
 
   type t = {
-    from: Reference.t option;
+    from: Reference.t Node.t option;
     imports: import Node.t list;
   }
   [@@deriving compare, sexp, show, hash]

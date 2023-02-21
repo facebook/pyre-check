@@ -986,7 +986,12 @@ let statement =
     let dots = List.init level ~f:(fun _ -> ".") |> String.concat ~sep:"" in
     let from_module_name = Option.value module_ ~default:"" in
     let from = Caml.Format.sprintf "%s%s" dots from_module_name |> Ast.Reference.create in
-    [Statement.Import { Import.imports = names; from = Some from } |> Node.create ~location]
+    (* TODO(T145739378) Add location information on from *)
+    [
+      Statement.Import
+        { Import.imports = names; from = Some (Node.create_with_default_location from) }
+      |> Node.create ~location;
+    ]
   in
   let global ~location ~names ~context:_ = [Statement.Global names |> Node.create ~location] in
   let nonlocal ~location ~names ~context:_ = [Statement.Nonlocal names |> Node.create ~location] in

@@ -23,11 +23,15 @@ let expand_relative_imports
     let statement qualifier { Node.location; value } =
       let value =
         match value with
-        | Statement.Import { Import.from = Some from; imports }
+        | Statement.Import { Import.from = Some { Node.value = from; location }; imports }
           when (not (String.equal (Reference.show from) "builtins"))
                && not (String.equal (Reference.show from) "future.builtins") ->
             Statement.Import
-              { Import.from = Some (ModulePath.expand_relative_import module_path ~from); imports }
+              {
+                Import.from =
+                  Some (Node.create ~location (ModulePath.expand_relative_import module_path ~from));
+                imports;
+              }
         | _ -> value
       in
       qualifier, [{ Node.location; value }]
@@ -784,7 +788,7 @@ module Qualify (Context : QualifyContext) = struct
                 body;
                 orelse;
               } )
-      | Import { Import.from = Some from; imports }
+      | Import { Import.from = Some { Node.value = from; _ }; imports }
         when not (String.equal (Reference.show from) "builtins") ->
           let import aliases { Node.value = { Import.name; alias }; _ } =
             match alias with
@@ -1937,7 +1941,7 @@ let dequalify_map ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as so
             | None -> map
           in
           List.fold_left imports ~f:add_import ~init:map, [statement]
-      | Import { Import.from = Some from; imports } ->
+      | Import { Import.from = Some { Node.value = from; _ }; imports } ->
           let add_import map { Node.value = { Import.name; alias }; _ } =
             match alias with
             | Some alias ->
@@ -2064,7 +2068,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
             [
               Statement.Import
                 {
-                  from = Some (Reference.create from_literal);
+                  from = Some (Node.create_with_default_location (Reference.create from_literal));
                   imports =
                     [
                       {
@@ -4017,7 +4021,11 @@ let expand_import_python_calls ({ Source.module_path = { ModulePath.qualifier; _
               let formatted_from_name =
                 String.substr_replace_all ~pattern:"/" ~with_:"." from_name
               in
-              { Import.from = Some (Reference.create formatted_from_name); imports }
+              {
+                Import.from =
+                  Some (Node.create_with_default_location (Reference.create formatted_from_name));
+                imports;
+              }
             in
             Statement.Import (create_import from_name)
         | _ -> value

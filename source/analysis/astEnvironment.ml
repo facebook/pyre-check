@@ -122,7 +122,7 @@ module ReadOnly = struct
             | Statement.Import { Import.from = Some from; imports }
               when List.exists imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
                        String.equal (Reference.show name) "*") ->
-                from :: collected_imports
+                Node.value from :: collected_imports
             | _ -> collected_imports
         end)
         in
@@ -161,7 +161,7 @@ module ReadOnly = struct
             match starred_import with
             | Some _ ->
                 let expanded_import =
-                  match get_transitive_exports from with
+                  match get_transitive_exports (Node.value from) with
                   | [] -> []
                   | exports ->
                       List.map exports ~f:(fun name ->

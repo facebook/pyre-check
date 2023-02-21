@@ -5184,7 +5184,7 @@ module State (Context : Context) = struct
                       match GlobalResolution.is_suppressed_module global_resolution name with
                       | true -> None
                       | false -> Some (Error.UndefinedModule name)))
-          | Some from -> (
+          | Some { Node.value = from; _ } -> (
               match GlobalResolution.get_module_metadata global_resolution from with
               | None ->
                   if GlobalResolution.is_suppressed_module global_resolution from then

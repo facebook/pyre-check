@@ -195,7 +195,7 @@ module Binding = struct
         let binding_of_import sofar { Node.value = { Import.alias; name }; location } =
           let import_status =
             match from with
-            | Some from -> Kind.Import.From from
+            | Some { Node.value = from; _ } -> Kind.Import.From from
             | None -> Kind.Import.Module
           in
           match alias with

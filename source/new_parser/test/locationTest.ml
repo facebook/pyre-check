@@ -1858,6 +1858,7 @@ let test_if_locations _ =
   PyreNewParser.with_context do_test
 
 
+(* TODO(T145739378) Add location information on from *)
 let test_import_locations _ =
   let do_test context =
     let assert_parsed = assert_parsed ~context in
@@ -1870,7 +1871,7 @@ let test_import_locations _ =
             ~stop:(1, 15)
             (Statement.Import
                {
-                 Import.from = Some !&"a";
+                 Import.from = Some (Node.create_with_default_location !&"a");
                  imports = [node ~start:(1, 14) ~stop:(1, 15) { Import.name = !&"*"; alias = None }];
                });
         ];
@@ -1883,7 +1884,7 @@ let test_import_locations _ =
             ~stop:(1, 22)
             (Statement.Import
                {
-                 Import.from = Some !&".....foo";
+                 Import.from = Some (Node.create_with_default_location !&".....foo");
                  imports = [node ~start:(1, 21) ~stop:(1, 22) { Import.name = !&"b"; alias = None }];
                });
         ];
@@ -1896,7 +1897,7 @@ let test_import_locations _ =
             ~stop:(1, 20)
             (Statement.Import
                {
-                 Import.from = Some !&"a";
+                 Import.from = Some (Node.create_with_default_location !&"a");
                  imports =
                    [
                      node ~start:(1, 15) ~stop:(1, 16) { Import.name = !&"b"; alias = None };
@@ -1913,7 +1914,7 @@ let test_import_locations _ =
             ~stop:(1, 31)
             (Statement.Import
                {
-                 Import.from = Some !&"f";
+                 Import.from = Some (Node.create_with_default_location !&"f");
                  imports =
                    [
                      node ~start:(1, 14) ~stop:(1, 20) { Import.name = !&"a"; alias = Some "b" };

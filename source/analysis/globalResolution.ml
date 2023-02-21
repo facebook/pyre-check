@@ -389,7 +389,7 @@ let source_is_unit_test resolution ~source =
       let has_pytest_prefix = Reference.is_prefix ~prefix:(Reference.create "pytest") in
       let is_pytest_import { Node.value; _ } =
         match value with
-        | Statement.Import { from = Some from; _ } when has_pytest_prefix from -> true
+        | Statement.Import { from = Some { Node.value; _ }; _ } when has_pytest_prefix value -> true
         | Statement.Import { imports; _ }
           when List.exists imports ~f:(fun { Node.value = { name; _ }; _ } ->
                    has_pytest_prefix name) ->

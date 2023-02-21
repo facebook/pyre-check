@@ -283,7 +283,7 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
           let visit_import { Node.value = { Import.name; _ }; location = import_location } =
             let qualifier =
               match from with
-              | Some from -> from
+              | Some { Node.value = reference; _ } -> reference
               | None -> Reference.empty
             in
             let create_qualified_expression ~location =
@@ -562,7 +562,7 @@ module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionD
             let visit_import { Node.value = { Import.name; _ }; location = import_location } =
               let qualifier =
                 match from with
-                | Some from -> from
+                | Some { Node.value = reference; _ } -> reference
                 | None -> Reference.empty
               in
               let create_qualified_expression ~location =

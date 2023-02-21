@@ -61,7 +61,7 @@ module Import = struct
   [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
-    from: Reference.t option;
+    from: Reference.t Node.t option;
     imports: import Node.t list;
   }
   [@@deriving compare, sexp, show, hash, to_yojson]
@@ -72,7 +72,10 @@ module Import = struct
       | x when not (Int.equal x 0) -> x
       | _ -> [%compare: Reference.t] left.name right.name
     in
-    match Option.compare [%compare: Reference.t] left.from right.from with
+    let location_insensitive_compare_from left right =
+      [%compare: Reference.t] (Node.value left) (Node.value right)
+    in
+    match Option.compare location_insensitive_compare_from left.from right.from with
     | x when not (Int.equal x 0) -> x
     | _ ->
         List.compare
@@ -1801,8 +1804,10 @@ module PrettyPrinter = struct
         match from with
         | None -> Format.fprintf formatter "@[<v>import %a@]" pp_imports imports
         | Some from ->
-            Format.fprintf formatter "@[<v>from %a import %a@]" Reference.pp from pp_imports imports
-        )
+            let pp_from formatter { Node.value = reference; _ } =
+              Format.fprintf formatter "%a" Reference.pp reference
+            in
+            Format.fprintf formatter "@[<v>from %a import %a@]" pp_from from pp_imports imports)
     | Match _ -> Format.fprintf formatter "%s" "match"
     | Nonlocal nonlocal_list -> pp_list formatter pp_name "," nonlocal_list
     | Pass -> Format.fprintf formatter "%s" "pass"

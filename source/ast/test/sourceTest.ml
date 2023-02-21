@@ -264,7 +264,7 @@ let test_expand_relative_import _ =
   let assert_export ~relative ~from ~expected =
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with
-      | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
+      | { Node.value = Import { Import.from = Some { Node.value = from; _ }; _ }; _ } -> from
       | _ -> failwith "Could not parse import"
     in
     let module_path = Source.create ~relative [] |> fun { Source.module_path; _ } -> module_path in
