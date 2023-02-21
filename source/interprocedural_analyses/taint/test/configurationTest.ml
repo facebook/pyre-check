@@ -9,6 +9,7 @@ open Core
 open OUnit2
 open Taint
 open Pyre
+open Data_structures
 module Result = Core.Result
 
 let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configuration =
@@ -62,6 +63,14 @@ let assert_parse_error ~errors configuration =
         List.map ~f:TaintConfiguration.Error.show_kind errors |> String.concat ~sep:"\n"
   in
   assert_equal ~printer (Error errors) configuration
+
+
+let assert_rules_equal ~actual ~expected =
+  assert_equal
+    ~printer:(List.to_string ~f:Rule.show)
+    ~cmp:(List.equal [%compare.equal: Rule.t])
+    actual
+    expected
 
 
 let named name = { AnnotationParser.name; kind = Named }
@@ -271,6 +280,33 @@ let test_combined_source_rules _ =
         ]
       }
     |};
+  assert_parse_error
+    ~errors:
+      [
+        TaintConfiguration.Error.UnexpectedJsonType
+          {
+            json = `Int 123;
+            message = "Expected a string or an array of strings";
+            section = Some "a";
+          };
+      ]
+    {|
+      { sources: [
+          { name: "A" },
+          { name: "B" }
+        ],
+        combined_source_rules: [
+          {
+             name: "test combined rule",
+             sources: {"a": 123, "b": "B"},
+             sinks: ["C"],
+             partial_sink: "CombinedSink",
+             code: 2001,
+             message_format: "some form"
+          }
+        ]
+      }
+    |};
   let configuration =
     assert_parse
       {|
@@ -293,32 +329,31 @@ let test_combined_source_rules _ =
   in
   assert_equal configuration.sources [named "A"; named "B"];
   assert_equal configuration.sinks [];
-  assert_equal
-    ~printer:(List.to_string ~f:Rule.show)
-    ~cmp:(List.equal [%compare.equal: Rule.t])
-    configuration.rules
-    [
-      {
-        Rule.sources = [Sources.NamedSource "A"];
-        sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "a" }];
-        transforms = [];
-        code = 2001;
-        message_format = "some form";
-        name = "test combined rule";
-      };
-      {
-        Rule.sources = [Sources.NamedSource "B"];
-        sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "b" }];
-        transforms = [];
-        code = 2001;
-        message_format = "some form";
-        name = "test combined rule";
-      };
-    ];
+  assert_rules_equal
+    ~actual:configuration.rules
+    ~expected:
+      [
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "a" }];
+          transforms = [];
+          code = 2001;
+          message_format = "some form";
+          name = "test combined rule";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "B"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "b" }];
+          transforms = [];
+          code = 2001;
+          message_format = "some form";
+          name = "test combined rule";
+        };
+      ];
   assert_equal (List.hd_exn configuration.rules).code 2001;
   assert_equal
-    (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels)
-    ["C", { TaintConfiguration.PartialSinkLabelsMap.main = "b"; secondary = "a" }];
+    ["C", { TaintConfiguration.PartialSinkLabelsMap.main = "b"; secondary = "a" }]
+    (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels);
   let configuration =
     assert_parse
       {|
@@ -345,28 +380,27 @@ let test_combined_source_rules _ =
   assert_equal
     (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels)
     ["CombinedSink", { TaintConfiguration.PartialSinkLabelsMap.main = "a"; secondary = "b" }];
-  assert_equal
-    ~printer:(List.to_string ~f:Rule.show)
-    ~cmp:(List.equal [%compare.equal: Rule.t])
-    configuration.rules
-    [
-      {
-        Rule.sources = [Sources.NamedSource "A"];
-        sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "a" }];
-        transforms = [];
-        code = 2001;
-        message_format = "some form";
-        name = "test combined rule";
-      };
-      {
-        Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
-        sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "b" }];
-        transforms = [];
-        code = 2001;
-        message_format = "some form";
-        name = "test combined rule";
-      };
-    ];
+  assert_rules_equal
+    ~actual:configuration.rules
+    ~expected:
+      [
+        {
+          Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "b" }];
+          transforms = [];
+          code = 2001;
+          message_format = "some form";
+          name = "test combined rule";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "a" }];
+          transforms = [];
+          code = 2001;
+          message_format = "some form";
+          name = "test combined rule";
+        };
+      ];
   assert_equal (List.hd_exn configuration.rules).code 2001;
   assert_parse_error
     ~errors:[TaintConfiguration.Error.PartialSinkDuplicate "C"]
@@ -393,6 +427,111 @@ let test_combined_source_rules _ =
         ]
       }
     |}
+
+
+let test_string_combine_rules _ =
+  (* `main_sources` must exist *)
+  assert_parse_error
+    ~errors:
+      [
+        TaintConfiguration.Error.UnexpectedJsonType
+          {
+            json = `Null;
+            message = "Expected a string or an array of strings";
+            section = Some "main_sources";
+          };
+      ]
+    {|
+      { sources: [],
+        string_combine_rules: [
+          {
+             name: "",
+             code: 2001,
+             message_format: ""
+          }
+        ]
+      }
+    |};
+  (* `secondary_sources` must exist *)
+  assert_parse_error
+    ~errors:
+      [
+        TaintConfiguration.Error.UnexpectedJsonType
+          {
+            json = `Null;
+            message = "Expected a string or an array of strings";
+            section = Some "secondary_sources";
+          };
+      ]
+    {|
+      { sources: [
+          { name: "A" }
+        ],
+        string_combine_rules: [
+          {
+             name: "",
+             main_sources: "A",
+             code: 2001,
+             message_format: ""
+          }
+        ]
+      }
+    |};
+  let configuration =
+    assert_parse
+      {|
+    { sources: [
+        { name: "A" },
+        { name: "B" },
+        { name: "C" }
+      ],
+      sinks: [],
+      string_combine_rules: [
+        {
+           name: "rule name",
+           main_sources: "A",
+           secondary_sources: ["B", "C"],
+           partial_sink: "UserDefinedPartialSink",
+           code: 2001,
+           message_format: "rule message"
+        }
+      ]
+    }
+  |}
+  in
+  assert_equal configuration.sources [named "A"; named "B"; named "C"];
+  assert_equal
+    [
+      ( "UserDefinedPartialSink",
+        { TaintConfiguration.PartialSinkLabelsMap.main = "main"; secondary = "secondary" } );
+    ]
+    (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels);
+  assert_rules_equal
+    ~actual:configuration.rules
+    ~expected:
+      [
+        {
+          Rule.sources = [Sources.NamedSource "A"];
+          sinks = [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "main" }];
+          transforms = [];
+          code = 2001;
+          message_format = "rule message";
+          name = "rule name";
+        };
+        {
+          Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
+          sinks =
+            [Sinks.TriggeredPartialSink { kind = "UserDefinedPartialSink"; label = "secondary" }];
+          transforms = [];
+          code = 2001;
+          message_format = "rule message";
+          name = "rule name";
+        };
+      ];
+  assert_equal
+    ~cmp:SerializableStringSet.equal
+    configuration.string_combine_partial_sinks
+    (SerializableStringSet.singleton "UserDefinedPartialSink")
 
 
 let test_lineage_analysis _ =
@@ -1602,6 +1741,7 @@ let () =
   "configuration"
   >::: [
          "combined_source_rules" >:: test_combined_source_rules;
+         "string_combine_rules" >:: test_string_combine_rules;
          "implicit_sources" >:: test_implicit_sources;
          "implicit_sinks" >:: test_implicit_sinks;
          "invalid_sink" >:: test_invalid_sink;

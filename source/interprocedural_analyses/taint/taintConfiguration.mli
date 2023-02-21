@@ -6,6 +6,7 @@
  *)
 
 open Core
+open Data_structures
 
 type literal_string_sink = {
   pattern: Re2.t;
@@ -78,6 +79,7 @@ module Heap : sig
     implicit_sources: implicit_sources;
     partial_sink_converter: PartialSinkConverter.t;
     partial_sink_labels: PartialSinkLabelsMap.t;
+    string_combine_partial_sinks: SerializableStringSet.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;

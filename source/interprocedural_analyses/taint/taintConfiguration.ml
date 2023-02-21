@@ -361,6 +361,7 @@ module CombinedSourceRules = struct
     generated_combined_rules: Rule.t list;
     partial_sink_converter: PartialSinkConverter.t;
     partial_sink_labels: PartialSinkLabelsMap.t;
+    string_combine_partial_sinks: SerializableStringSet.t;
   }
 
   let empty =
@@ -368,6 +369,7 @@ module CombinedSourceRules = struct
       generated_combined_rules = [];
       partial_sink_converter = PartialSinkConverter.empty;
       partial_sink_labels = PartialSinkLabelsMap.empty;
+      string_combine_partial_sinks = SerializableStringSet.empty;
     }
 
 
@@ -376,11 +378,13 @@ module CombinedSourceRules = struct
         generated_combined_rules = generated_combined_rules_left;
         partial_sink_converter = partial_sink_converter_left;
         partial_sink_labels = partial_sink_labels_left;
+        string_combine_partial_sinks = string_combine_partial_sinks_left;
       }
       {
         generated_combined_rules = generated_combined_rules_right;
         partial_sink_converter = partial_sink_converter_right;
         partial_sink_labels = partial_sink_labels_right;
+        string_combine_partial_sinks = string_combine_partial_sinks_right;
       }
     =
     {
@@ -390,6 +394,10 @@ module CombinedSourceRules = struct
         PartialSinkConverter.merge partial_sink_converter_left partial_sink_converter_right;
       partial_sink_labels =
         PartialSinkLabelsMap.merge partial_sink_labels_left partial_sink_labels_right;
+      string_combine_partial_sinks =
+        SerializableStringSet.union
+          string_combine_partial_sinks_left
+          string_combine_partial_sinks_right;
     }
 
 
@@ -430,6 +438,7 @@ module Heap = struct
     implicit_sources: implicit_sources;
     partial_sink_converter: PartialSinkConverter.t;
     partial_sink_labels: PartialSinkLabelsMap.t;
+    string_combine_partial_sinks: SerializableStringSet.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;
@@ -448,10 +457,11 @@ module Heap = struct
       features = [];
       rules = [];
       filtered_rule_codes = None;
-      partial_sink_converter = SerializableStringMap.empty;
       implicit_sinks = empty_implicit_sinks;
       implicit_sources = empty_implicit_sources;
+      partial_sink_converter = SerializableStringMap.empty;
       partial_sink_labels = PartialSinkLabelsMap.empty;
+      string_combine_partial_sinks = SerializableStringSet.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
@@ -602,10 +612,11 @@ module Heap = struct
         ];
       rules;
       filtered_rule_codes = None;
-      partial_sink_converter = SerializableStringMap.empty;
-      partial_sink_labels = PartialSinkLabelsMap.empty;
       implicit_sinks = empty_implicit_sinks;
       implicit_sources = empty_implicit_sources;
+      partial_sink_converter = SerializableStringMap.empty;
+      partial_sink_labels = PartialSinkLabelsMap.empty;
+      string_combine_partial_sinks = SerializableStringSet.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
@@ -997,110 +1008,223 @@ let from_json_list source_json_list =
     >>= fun rules ->
     List.map ~f:parse_rule rules |> Result.combine_errors |> Result.map_error ~f:List.concat
   in
+  let module CombinedSourceRuleSources = struct
+    type t = {
+      main_sources: Sources.t list;
+      secondary_sources: Sources.t list;
+      main_label: string;
+      secondary_label: string;
+    }
+
+    let parse_sources ~allowed_sources ~path ~section json =
+      (match Json.Util.member section json with
+      | `String source -> Result.Ok [source]
+      | `List sources -> Result.Ok (List.map ~f:Json.Util.to_string sources)
+      | unsupported ->
+          Result.Error
+            [
+              Error.create
+                ~path
+                ~kind:
+                  (Error.UnexpectedJsonType
+                     {
+                       json = unsupported;
+                       message = "Expected a string or an array of strings";
+                       section = Some section;
+                     });
+            ])
+      >>= fun sources ->
+      List.map ~f:(parse_source_reference ~path ~allowed_sources) sources |> Result.combine_errors
+
+
+    let parse_combined_source_rule ~allowed_sources ~path json =
+      let sources = Json.Util.member "sources" json in
+      let keys = Json.Util.keys sources in
+      match keys with
+      | [first_tag; second_tag] ->
+          parse_sources ~allowed_sources ~path ~section:first_tag sources
+          >>= fun first_sources ->
+          parse_sources ~allowed_sources ~path ~section:second_tag sources
+          >>= fun second_sources ->
+          let main_label =
+            match json_string_member ~path "main_trace_source" json with
+            | Ok main_trace_source -> main_trace_source
+            | Error _ -> first_tag
+          in
+          let secondary_label, main_sources, secondary_sources =
+            if String.equal first_tag main_label then
+              second_tag, first_sources, second_sources
+            else
+              first_tag, second_sources, first_sources
+          in
+          Result.Ok { main_sources; secondary_sources; main_label; secondary_label }
+      | _ -> Result.Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)]
+
+
+    let parse_string_combine_rule ~allowed_sources ~path json =
+      parse_sources ~allowed_sources ~path ~section:"main_sources" json
+      >>= fun main_sources ->
+      parse_sources ~allowed_sources ~path ~section:"secondary_sources" json
+      >>= fun secondary_sources ->
+      Result.Ok
+        { main_sources; secondary_sources; main_label = "main"; secondary_label = "secondary" }
+  end
+  in
+  let create_combined_source_rules_and_update_partial_sinks
+      ~partial_sink
+      ~partial_sink_converter
+      ~partial_sink_labels
+      ~rule_common_attributues:{ RuleCommonAttributes.name; message_format; code }
+      ~combined_source_rule_sources:
+        { CombinedSourceRuleSources.main_sources; secondary_sources; main_label; secondary_label }
+      ~path
+    =
+    (* Register partial sinks. *)
+    (if
+     (* Disallow using the same partial sink in multiple multi-source rules *)
+     PartialSinkLabelsMap.mem partial_sink partial_sink_labels
+    then
+       Result.Error [Error.create ~path ~kind:(Error.PartialSinkDuplicate partial_sink)]
+    else
+      let partial_sink_labels =
+        PartialSinkLabelsMap.set
+          partial_sink_labels
+          ~key:partial_sink
+          ~data:{ PartialSinkLabelsMap.main = main_label; secondary = secondary_label }
+      in
+      Result.Ok partial_sink_labels)
+    >>= fun partial_sink_labels ->
+    (* Create partial sinks. *)
+    (let create_partial_sink label sink =
+       match PartialSinkLabelsMap.find_opt sink partial_sink_labels with
+       | Some { PartialSinkLabelsMap.main; secondary }
+         when not (String.equal main label || String.equal secondary label) ->
+           Result.Error
+             [
+               Error.create
+                 ~path
+                 ~kind:(Error.InvalidLabelMultiSink { label; sink; labels = [main; secondary] });
+             ]
+       | None -> Result.Error [Error.create ~path ~kind:(Error.InvalidMultiSink sink)]
+       | _ -> Ok { Sinks.kind = sink; label }
+     in
+     create_partial_sink main_label partial_sink
+     >>= fun main_sink ->
+     create_partial_sink secondary_label partial_sink
+     >>| fun secondary_sink -> main_sink, secondary_sink)
+    >>= fun (main_sink, secondary_sink) ->
+    let main_rule =
+      {
+        Rule.sources = secondary_sources;
+        sinks = [Sinks.TriggeredPartialSink secondary_sink];
+        transforms = [];
+        name;
+        code;
+        message_format;
+      }
+    in
+    let secondary_rule =
+      {
+        Rule.sources = main_sources;
+        sinks = [Sinks.TriggeredPartialSink main_sink];
+        transforms = [];
+        name;
+        code;
+        message_format;
+      }
+    in
+    let partial_sink_converter =
+      PartialSinkConverter.add
+        partial_sink_converter
+        ~first_sources:main_sources
+        ~first_sink:main_sink
+        ~second_sources:secondary_sources
+        ~second_sink:secondary_sink
+    in
+    Result.Ok (main_rule, secondary_rule, partial_sink_converter, partial_sink_labels)
+  in
   let parse_combined_source_rule
       ~path
       ~allowed_sources
-      { CombinedSourceRules.generated_combined_rules; partial_sink_converter; partial_sink_labels }
+      {
+        CombinedSourceRules.generated_combined_rules;
+        partial_sink_converter;
+        partial_sink_labels;
+        string_combine_partial_sinks;
+      }
       json
     =
     RuleCommonAttributes.parse ~path json
-    >>= fun { name; message_format; code } ->
-    let sources = Json.Util.member "sources" json in
-    let keys = Json.Util.keys sources in
-    match keys with
-    | [first; second] ->
-        let parse_sources sources =
-          (match sources with
-          | `String source -> Result.Ok [source]
-          | `List _ -> json_string_list ~path sources
-          | _ -> Result.Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)])
-          >>= fun sources ->
-          List.map ~f:(parse_source_reference ~path ~allowed_sources) sources
-          |> Result.combine_errors
-        in
-        Json.Util.member first sources
-        |> parse_sources
-        >>= fun first_sources ->
-        Json.Util.member second sources
-        |> parse_sources
-        >>= fun second_sources ->
-        json_string_member ~path "partial_sink" json
-        >>= fun partial_sink ->
-        (* Disallow using the same partial sink in multiple multi-source rules *)
-        if PartialSinkLabelsMap.mem partial_sink partial_sink_labels then
-          Result.Error [Error.create ~path ~kind:(Error.PartialSinkDuplicate partial_sink)]
-        else
-          let main =
-            match json_string_member ~path "main_trace_source" json with
-            | Ok main_trace_source -> main_trace_source
-            | Error _ -> first
-          in
-          let secondary = if String.equal first main then second else first in
-          let partial_sink_labels =
-            PartialSinkLabelsMap.set
-              partial_sink_labels
-              ~key:partial_sink
-              ~data:{ PartialSinkLabelsMap.main; secondary }
-          in
-          let create_partial_sink label sink =
-            match PartialSinkLabelsMap.find_opt sink partial_sink_labels with
-            | Some { main; secondary }
-              when not (String.equal main label || String.equal secondary label) ->
-                Result.Error
-                  [
-                    Error.create
-                      ~path
-                      ~kind:
-                        (Error.InvalidLabelMultiSink { label; sink; labels = [main; secondary] });
-                  ]
-            | None -> Result.Error [Error.create ~path ~kind:(Error.InvalidMultiSink sink)]
-            | _ -> Ok { Sinks.kind = sink; label }
-          in
-          create_partial_sink first partial_sink
-          >>= fun first_sink ->
-          create_partial_sink second partial_sink
-          >>| fun second_sink ->
-          let new_rules =
-            [
-              {
-                Rule.sources = second_sources;
-                sinks = [Sinks.TriggeredPartialSink second_sink];
-                transforms = [];
-                name;
-                code;
-                message_format;
-              };
-              {
-                Rule.sources = first_sources;
-                sinks = [Sinks.TriggeredPartialSink first_sink];
-                transforms = [];
-                name;
-                code;
-                message_format;
-              };
-            ]
-          in
-          let partial_sink_converter =
-            PartialSinkConverter.add
-              partial_sink_converter
-              ~first_sources
-              ~first_sink
-              ~second_sources
-              ~second_sink
-          in
-          {
-            CombinedSourceRules.generated_combined_rules =
-              List.rev_append new_rules generated_combined_rules;
-            partial_sink_converter;
-            partial_sink_labels;
-          }
-    | _ -> Result.Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)]
+    >>= fun rule_common_attributues ->
+    CombinedSourceRuleSources.parse_combined_source_rule ~allowed_sources ~path json
+    >>= fun combined_source_rule_sources ->
+    json_string_member ~path "partial_sink" json
+    >>= fun partial_sink ->
+    create_combined_source_rules_and_update_partial_sinks
+      ~partial_sink
+      ~partial_sink_converter
+      ~partial_sink_labels
+      ~rule_common_attributues
+      ~combined_source_rule_sources
+      ~path
+    >>= fun (main_rule, secondary_rule, partial_sink_converter, partial_sink_labels) ->
+    Result.Ok
+      {
+        CombinedSourceRules.generated_combined_rules =
+          main_rule :: secondary_rule :: generated_combined_rules;
+        partial_sink_converter;
+        partial_sink_labels;
+        string_combine_partial_sinks;
+      }
   in
   let parse_combined_source_rules ~allowed_sources (path, json) =
     array_member ~path "combined_source_rules" json
     >>= List.fold_result
           ~init:CombinedSourceRules.empty
           ~f:(parse_combined_source_rule ~path ~allowed_sources)
+  in
+  let parse_string_combine_rule
+      ~path
+      ~allowed_sources
+      {
+        CombinedSourceRules.generated_combined_rules;
+        partial_sink_converter;
+        partial_sink_labels;
+        string_combine_partial_sinks;
+      }
+      json
+    =
+    RuleCommonAttributes.parse ~path json
+    >>= fun rule_common_attributues ->
+    CombinedSourceRuleSources.parse_string_combine_rule ~allowed_sources ~path json
+    >>= fun combined_source_rule_sources ->
+    json_string_member ~path "partial_sink" json
+    >>= fun partial_sink ->
+    create_combined_source_rules_and_update_partial_sinks
+      ~partial_sink
+      ~partial_sink_converter
+      ~partial_sink_labels
+      ~rule_common_attributues
+      ~combined_source_rule_sources
+      ~path
+    >>= fun (main_rule, secondary_rule, partial_sink_converter, partial_sink_labels) ->
+    let string_combine_partial_sinks =
+      SerializableStringSet.add partial_sink string_combine_partial_sinks
+    in
+    Result.Ok
+      {
+        CombinedSourceRules.generated_combined_rules =
+          main_rule :: secondary_rule :: generated_combined_rules;
+        partial_sink_converter;
+        partial_sink_labels;
+        string_combine_partial_sinks;
+      }
+  in
+  let parse_string_combine_rules ~allowed_sources (path, json) =
+    array_member ~path "string_combine_rules" json
+    >>= List.fold_result
+          ~init:CombinedSourceRules.empty
+          ~f:(parse_string_combine_rule ~path ~allowed_sources)
   in
   let parse_implicit_sinks ~allowed_sinks (path, json) =
     match member "implicit_sinks" json with
@@ -1194,8 +1318,18 @@ let from_json_list source_json_list =
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>= fun combined_source_rules ->
-  let { CombinedSourceRules.generated_combined_rules; partial_sink_converter; partial_sink_labels } =
-    CombinedSourceRules.merge_list combined_source_rules
+  List.map source_json_list ~f:(parse_string_combine_rules ~allowed_sources:sources)
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>= fun string_combine_rules ->
+  let {
+    CombinedSourceRules.generated_combined_rules;
+    partial_sink_converter;
+    partial_sink_labels;
+    string_combine_partial_sinks;
+  }
+    =
+    CombinedSourceRules.merge_list (List.rev_append string_combine_rules combined_source_rules)
   in
 
   let merge_implicit_sinks left right =
@@ -1282,10 +1416,11 @@ let from_json_list source_json_list =
     features;
     rules;
     filtered_rule_codes = None;
-    partial_sink_converter;
     implicit_sinks;
     implicit_sources;
+    partial_sink_converter;
     partial_sink_labels;
+    string_combine_partial_sinks;
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints =
