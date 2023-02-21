@@ -1071,6 +1071,28 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.Foo.my_method"; node_id = 0; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:{|
+        from typing import Callable
+        #                    ^- cursor
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "typing.Callable");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:{|
+        from typing import Callable
+        #        ^- cursor
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "typing");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 

@@ -570,7 +570,13 @@ module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionD
               in
               create_qualified_expression ~location:import_location |> visit_using_precondition_info
             in
-            List.iter imports ~f:visit_import
+            let visit_from = function
+              | Some { Node.value = from; location } ->
+                  visit_using_precondition_info (Ast.Expression.from_reference ~location from)
+              | None -> ()
+            in
+            List.iter imports ~f:visit_import;
+            visit_from from
         | _ -> visit_statement ~state statement
     in
     let state = ref state in
