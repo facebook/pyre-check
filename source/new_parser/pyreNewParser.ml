@@ -8,6 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open Base
+open Ast
 module Context = PyreAst.Parser.Context
 module Error = PyreAst.Parser.Error
 
@@ -985,11 +986,20 @@ let statement =
   let import_from ~location ~module_ ~names ~level ~context:_ =
     let dots = List.init level ~f:(fun _ -> ".") |> String.concat ~sep:"" in
     let from_module_name = Option.value module_ ~default:"" in
-    let from = Caml.Format.sprintf "%s%s" dots from_module_name |> Ast.Reference.create in
-    (* TODO(T145739378) Add location information on from *)
+    let from_text = Caml.Format.sprintf "%s%s" dots from_module_name in
+    let from = from_text |> Ast.Reference.create in
+    let new_location =
+      match location with
+      | Location.{ start = { line; column }; _ } ->
+          (* Add 5 characters for 'from ' *)
+          {
+            Location.start = { line; column = column + 5 };
+            stop = { line; column = column + 5 + String.length from_text };
+          }
+    in
     [
       Statement.Import
-        { Import.imports = names; from = Some (Node.create_with_default_location from) }
+        { Import.imports = names; from = Some (Node.create ~location:new_location from) }
       |> Node.create ~location;
     ]
   in

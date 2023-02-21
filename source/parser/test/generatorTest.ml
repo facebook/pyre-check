@@ -5158,7 +5158,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&"a");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
            imports = [+{ Import.name = !&"b"; alias = None }];
          };
     ];
@@ -5167,7 +5167,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&"a");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
            imports = [+{ Import.name = !&"*"; alias = None }];
          };
     ];
@@ -5176,7 +5176,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&".");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&".");
            imports = [+{ Import.name = !&"b"; alias = None }];
          };
     ];
@@ -5185,7 +5185,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&"...foo");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 11) !&"...foo");
            imports = [+{ Import.name = !&"b"; alias = None }];
          };
     ];
@@ -5194,7 +5194,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&".....foo");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 13) !&".....foo");
            imports = [+{ Import.name = !&"b"; alias = None }];
          };
     ];
@@ -5203,7 +5203,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&".a");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 7) !&".a");
            imports = [+{ Import.name = !&"b"; alias = None }];
          };
     ];
@@ -5212,7 +5212,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&"..a");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"..a");
            imports = [+{ Import.name = !&"b"; alias = None }];
          };
     ];
@@ -5221,7 +5221,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&"a");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
            imports =
              [+{ Import.name = !&"b"; alias = None }; +{ Import.name = !&"c"; alias = None }];
          };
@@ -5231,7 +5231,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&"a.b");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a.b");
            imports = [+{ Import.name = !&"c"; alias = None }];
          };
     ];
@@ -5240,7 +5240,7 @@ let test_import _ =
     [
       +Statement.Import
          {
-           Import.from = Some (Node.create_with_default_location !&"f");
+           Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"f");
            imports =
              [
                +{ Import.name = !&"a"; alias = Some "b" };

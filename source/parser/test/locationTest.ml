@@ -1891,7 +1891,6 @@ let test_if_locations _ =
     ]
 
 
-(* TODO(T145739378) Add location information on from *)
 let test_import_locations _ =
   assert_source_locations
     "from a import *"
@@ -1901,7 +1900,7 @@ let test_import_locations _ =
         ~stop:(1, 15)
         (Statement.Import
            {
-             Import.from = Some (Node.create_with_default_location !&"a");
+             Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
              imports = [node ~start:(1, 14) ~stop:(1, 15) { Import.name = !&"*"; alias = None }];
            });
     ];
@@ -1913,7 +1912,7 @@ let test_import_locations _ =
         ~stop:(1, 22)
         (Statement.Import
            {
-             Import.from = Some (Node.create_with_default_location !&".....foo");
+             Import.from = Some (node ~start:(1, 5) ~stop:(1, 13) !&".....foo");
              imports = [node ~start:(1, 21) ~stop:(1, 22) { Import.name = !&"b"; alias = None }];
            });
     ];
@@ -1925,7 +1924,7 @@ let test_import_locations _ =
         ~stop:(1, 20)
         (Statement.Import
            {
-             Import.from = Some (Node.create_with_default_location !&"a");
+             Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
              imports =
                [
                  node ~start:(1, 15) ~stop:(1, 16) { Import.name = !&"b"; alias = None };
@@ -1941,7 +1940,7 @@ let test_import_locations _ =
         ~stop:(1, 31)
         (Statement.Import
            {
-             Import.from = Some (Node.create_with_default_location !&"f");
+             Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"f");
              imports =
                [
                  node ~start:(1, 14) ~stop:(1, 20) { Import.name = !&"a"; alias = Some "b" };

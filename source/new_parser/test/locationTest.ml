@@ -1858,7 +1858,6 @@ let test_if_locations _ =
   PyreNewParser.with_context do_test
 
 
-(* TODO(T145739378) Add location information on from *)
 let test_import_locations _ =
   let do_test context =
     let assert_parsed = assert_parsed ~context in
@@ -1871,7 +1870,7 @@ let test_import_locations _ =
             ~stop:(1, 15)
             (Statement.Import
                {
-                 Import.from = Some (Node.create_with_default_location !&"a");
+                 Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
                  imports = [node ~start:(1, 14) ~stop:(1, 15) { Import.name = !&"*"; alias = None }];
                });
         ];
@@ -1884,7 +1883,7 @@ let test_import_locations _ =
             ~stop:(1, 22)
             (Statement.Import
                {
-                 Import.from = Some (Node.create_with_default_location !&".....foo");
+                 Import.from = Some (node ~start:(1, 5) ~stop:(1, 13) !&".....foo");
                  imports = [node ~start:(1, 21) ~stop:(1, 22) { Import.name = !&"b"; alias = None }];
                });
         ];
@@ -1897,7 +1896,7 @@ let test_import_locations _ =
             ~stop:(1, 20)
             (Statement.Import
                {
-                 Import.from = Some (Node.create_with_default_location !&"a");
+                 Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
                  imports =
                    [
                      node ~start:(1, 15) ~stop:(1, 16) { Import.name = !&"b"; alias = None };
@@ -1914,7 +1913,7 @@ let test_import_locations _ =
             ~stop:(1, 31)
             (Statement.Import
                {
-                 Import.from = Some (Node.create_with_default_location !&"f");
+                 Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"f");
                  imports =
                    [
                      node ~start:(1, 14) ~stop:(1, 20) { Import.name = !&"a"; alias = Some "b" };
@@ -1939,6 +1938,20 @@ let test_import_locations _ =
                      node ~start:(1, 15) ~stop:(1, 16) { Import.name = !&"c"; alias = None };
                      node ~start:(1, 18) ~stop:(1, 24) { Import.name = !&"d"; alias = Some "e" };
                    ];
+               });
+        ];
+    (* Note two spaces before `a`: Invalid location *)
+    assert_parsed
+      "from  a import b"
+      ~expected:
+        [
+          node
+            ~start:(1, 0)
+            ~stop:(1, 16)
+            (Statement.Import
+               {
+                 Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
+                 imports = [node ~start:(1, 15) ~stop:(1, 16) { Import.name = !&"b"; alias = None }];
                });
         ]
   in
