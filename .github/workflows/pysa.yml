@@ -45,8 +45,14 @@ jobs:
           echo "PYRE_BINARY=$GITHUB_WORKSPACE/source/_build/default/main.exe" >> $GITHUB_ENV
           echo "PYRE_TYPESHED=$GITHUB_WORKSPACE/typeshed/typeshed-master/" >> $GITHUB_ENV
 
-      - name: Run and test pysa output
+      - name: Set up for pysa tests
         run: |
           cd ./documentation/deliberately_vulnerable_flask_app
           . ./setup.sh
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          limit-access-to-actor: true
+      - name: Execute pysa tests
+        run: |
           ./run_integration_tests.sh
