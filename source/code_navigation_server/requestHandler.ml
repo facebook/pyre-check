@@ -135,18 +135,14 @@ let handle_location_of_definition
 
 let handle_superclasses
     ~class_:{ Request.ClassExpression.module_; qualified_name }
-    ~overlay_id
     { State.environment; build_system; _ }
   =
   let open Result in
-  get_overlay ~environment overlay_id
-  >>= fun overlay ->
+  let root_environment = OverlaidEnvironment.root environment in
   let global_resolution =
-    overlay
-    |> ErrorsEnvironment.ReadOnly.type_environment
+    ErrorsEnvironment.ReadOnly.type_environment root_environment
     |> TypeEnvironment.ReadOnly.global_resolution
   in
-  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
   let to_class_expression superclass =
     (* TODO(T139769506): Instead of this hack where we assume `a.b.c` is a module when looking at
        `a.b.c.D`, we need to either fix qualification or use the DefineNames shared memory table to
@@ -162,6 +158,7 @@ let handle_superclasses
     | None -> None
   in
 
+  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker root_environment in
   get_modules ~module_tracker ~build_system module_
   >>= fun modules ->
   (* `get_modules` is guaranteed to evaluate to a non-empty module. *)
@@ -419,9 +416,9 @@ let handle_query
           relative_local_root = PyrePath.get_relative_to_root ~root:project_root ~path:local_root;
         }
       |> Lwt.return
-  | Request.Query.Superclasses { class_; overlay_id } ->
+  | Request.Query.Superclasses { class_ } ->
       let f state =
-        let response = handle_superclasses ~class_ ~overlay_id state |> response_from_result in
+        let response = handle_superclasses ~class_ state |> response_from_result in
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f

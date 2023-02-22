@@ -381,10 +381,7 @@ module Testing : sig
         | GetInfo
             (** A query that asks for server metadata, intended to be consumed by the `pyre servers`
                 command. *)
-        | Superclasses of {
-            class_: ClassExpression.t;
-            overlay_id: string option;
-          }
+        | Superclasses of { class_: ClassExpression.t }
             (** A query that asks the server to return the superclasses of a given class. The server
                 will send back a {!Response.Superclasses} response as result if a class matching the
                 fully qualified name is found. Only class names that are found in the type

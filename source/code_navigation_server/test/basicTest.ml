@@ -571,7 +571,6 @@ let test_superclasses context =
                    {
                      class_ =
                        { ClassExpression.module_ = Module.OfName "test"; qualified_name = "C" };
-                     overlay_id = None;
                    }))
           ~expected:
             Response.(
@@ -591,7 +590,6 @@ let test_superclasses context =
                    {
                      class_ =
                        { ClassExpression.module_ = Module.OfName "test"; qualified_name = "D" };
-                     overlay_id = None;
                    }))
           ~expected:
             Response.(
@@ -613,7 +611,6 @@ let test_superclasses context =
                    {
                      class_ =
                        { ClassExpression.module_ = Module.OfName "test"; qualified_name = "E" };
-                     overlay_id = None;
                    }))
           ~expected:
             Response.(
@@ -641,7 +638,6 @@ let test_superclasses context =
                          ClassExpression.module_ = Module.OfName "missing_module";
                          qualified_name = "C";
                        };
-                     overlay_id = None;
                    }))
           ~expected:
             Response.(
@@ -659,7 +655,6 @@ let test_superclasses context =
                          ClassExpression.module_ = Module.OfName "test";
                          qualified_name = "CDoesNotExist";
                        };
-                     overlay_id = None;
                    }))
           ~expected:
             Response.(
@@ -689,30 +684,6 @@ let test_superclasses context =
                          ClassExpression.module_ = Module.OfName "test";
                          qualified_name = "OnlyInOverlay";
                        };
-                     overlay_id = Some "foo";
-                   }))
-          ~expected:
-            Response.(
-              Superclasses
-                {
-                  superclasses =
-                    [
-                      Request.
-                        { ClassExpression.module_ = Module.OfName ""; qualified_name = "object" };
-                    ];
-                });
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Query
-                (Query.Superclasses
-                   {
-                     class_ =
-                       {
-                         ClassExpression.module_ = Module.OfName "test";
-                         qualified_name = "OnlyInOverlay";
-                       };
-                     overlay_id = None;
                    }))
           ~expected:
             Response.(

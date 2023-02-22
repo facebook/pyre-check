@@ -214,12 +214,11 @@ class ClassExpression(json_mixins.SnakeCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class SuperclassesRequest:
     class_: ClassExpression
-    overlay_id: Optional[str]
 
     def to_json(self) -> List[object]:
         return [
             "Superclasses",
-            {"class": self.class_.to_dict(), "overlay_id": self.overlay_id},
+            {"class": self.class_.to_dict()},
         ]
 
 

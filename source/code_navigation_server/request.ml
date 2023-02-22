@@ -80,10 +80,7 @@ module Query = struct
         overlay_id: string option;
       }
     | GetInfo (* Poll the server's state. *)
-    | Superclasses of {
-        class_: ClassExpression.t; [@key "class"]
-        overlay_id: string option;
-      }
+    | Superclasses of { class_: ClassExpression.t [@key "class"] }
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 

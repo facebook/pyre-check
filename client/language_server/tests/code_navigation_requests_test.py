@@ -214,7 +214,6 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             class_=code_navigation_request.ClassExpression(
                 module=code_navigation_request.ModuleOfName("a"), qualified_name="C"
             ),
-            overlay_id=None,
         )
         self.assertEqual(
             superclasses_request.to_json(),
@@ -222,7 +221,6 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 "Superclasses",
                 {
                     "class": {"module": ["OfName", "a"], "qualified_name": "C"},
-                    "overlay_id": None,
                 },
             ],
         )
