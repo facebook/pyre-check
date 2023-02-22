@@ -1297,6 +1297,26 @@ let test_recursive_coverage context =
           my_global = 1
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global`."];
+  assert_global_leak_errors
+    {|
+      def nested_run():
+          def do_the_thing():
+              my_local.append(1)
+
+          do_the_thing()
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      my_global: List[int] = []
+
+      def nested_run():
+          def do_the_thing():
+              my_global.append(1)
+
+          do_the_thing()
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global`."];
   ()
 
 
