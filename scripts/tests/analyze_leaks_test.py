@@ -483,24 +483,32 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         self.assertEqual(result_query, expected_query)
 
     def test_analyze_pyre_query_results(self) -> None:
-        example_pyre_stdout = """
-        {
+        example_pyre_stdout = {
             "response": [
                 {"error": "we failed to find your callable"},
                 {
                     "response": {
-                        "errors": [{"error_msg": "found an error for you", "location": "your_location"}]
+                        "errors": [
+                            {
+                                "error_msg": "found an error for you",
+                                "location": "your_location",
+                            }
+                        ]
                     }
                 },
                 {"error": "we failed to find your callable 2"},
                 {
                     "response": {
-                        "errors": [{"error_msg": "found an error for you2", "location": "your_location2"}]
+                        "errors": [
+                            {
+                                "error_msg": "found an error for you2",
+                                "location": "your_location2",
+                            }
+                        ]
                     }
-                }
+                },
             ]
         }
-        """
 
         results = CallGraph.analyze_pyre_query_results(example_pyre_stdout)
         expected_results = {
