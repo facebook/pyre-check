@@ -84,6 +84,11 @@ module Candidate = struct
     key: CandidateKey.t;
   }
 
+  let is_empty = function
+    | { flows = []; _ } -> true
+    | _ -> false
+
+
   let join { flows = left_flows; key } { flows = right_flows; _ } =
     { flows = List.rev_append left_flows right_flows; key }
 end
@@ -439,14 +444,17 @@ let compute_triggered_flows
     ~define
   =
   let partial_sinks =
-    BackwardState.Tree.fold
-      BackwardTaint.kind
-      ~f:(fun sink sofar ->
-        match Sinks.extract_partial_sink sink with
-        | Some partial_sink -> partial_sink :: sofar
-        | None -> sofar)
-      ~init:[]
-      sink_tree
+    if ForwardState.Tree.is_bottom source_tree then
+      []
+    else
+      BackwardState.Tree.fold
+        BackwardTaint.kind
+        ~f:(fun sink sofar ->
+          match Sinks.extract_partial_sink sink with
+          | Some partial_sink -> partial_sink :: sofar
+          | None -> sofar)
+        ~init:[]
+        sink_tree
   in
   let sources =
     if List.is_empty partial_sinks then
@@ -468,7 +476,7 @@ let compute_triggered_flows
          * - Case B: We have just found the first issue. We will propagate the triggered sink, which
          * may eventually lead to finding a second issue.
          *)
-        let ({ Candidate.flows; _ } as candidate) =
+        let candidate =
           let related_issues =
             TriggeredSinkHashMap.get_issue_handles triggered_sinks_for_call partial_sink
           in
@@ -487,7 +495,7 @@ let compute_triggered_flows
                     (Sinks.TriggeredPartialSink partial_sink)
                     frame))
         in
-        if List.is_empty flows then
+        if Candidate.is_empty candidate then
           candidates
         else
           let issues = generate_issues ~taint_configuration ~define candidate in
@@ -519,9 +527,10 @@ module Candidates = struct
   let create () = CandidateKey.Table.create ()
 
   let add_candidate candidates ({ Candidate.key; _ } as candidate) =
-    CandidateKey.Table.update candidates key ~f:(function
-        | None -> candidate
-        | Some current_candidate -> Candidate.join current_candidate candidate)
+    if not (Candidate.is_empty candidate) then
+      CandidateKey.Table.update candidates key ~f:(function
+          | None -> candidate
+          | Some current_candidate -> Candidate.join current_candidate candidate)
 
 
   (* Check for issues in flows from the `source_tree` to the `sink_tree`, updating
