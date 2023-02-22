@@ -36,6 +36,9 @@
       "site-package": "libcst"
     },
     {
+      "site-package": "marshmallow"
+    },
+    {
       "site-package": "psutil"
     },
     {
