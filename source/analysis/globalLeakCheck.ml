@@ -233,10 +233,11 @@ module State (Context : Context) = struct
       let reference = Reference.create target |> Reference.delocalize in
       let is_global = Context.is_global ~resolution (Reference.create target) in
       if is_global then
+        let target_type = Resolution.resolve_reference resolution (Reference.create target) in
         let error =
           Error.create
             ~location:(Location.with_module ~module_reference:Context.qualifier location)
-            ~kind:(Error.GlobalLeak { global_name = reference })
+            ~kind:(Error.GlobalLeak { global_name = reference; global_type = target_type })
             ~define:Context.define
         in
         LocalErrorMap.append Context.error_map ~statement_key ~error

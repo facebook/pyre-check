@@ -198,7 +198,10 @@ and unawaited_awaitable = {
   expression: Expression.t;
 }
 
-and leak_to_global = { global_name: Reference.t }
+and leak_to_global = {
+  global_name: Reference.t;
+  global_type: Type.t;
+}
 
 and undefined_import =
   | UndefinedModule of Reference.t

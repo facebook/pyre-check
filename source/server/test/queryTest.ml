@@ -3319,9 +3319,9 @@ let test_global_leaks context =
                   "path": "*",
                   "code": 3100,
                   "name": "Global leak",
-                  "description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
-                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
-                  "concise_description": "Global leak [3100]: Data is leaked to global `glob`.",
+                  "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
+                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
+                  "concise_description": "Global leak [3100]: Data is leaked to global `glob` of type `typing.List[int]`.",
                   "define": "foo.immediate_example"
                 }
               ]
@@ -3351,9 +3351,9 @@ let test_global_leaks context =
                   "path": "*",
                   "code": 3100,
                   "name": "Global leak",
-                  "description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
-                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
-                  "concise_description": "Global leak [3100]: Data is leaked to global `glob`.",
+                  "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
+                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
+                  "concise_description": "Global leak [3100]: Data is leaked to global `glob` of type `typing.List[int]`.",
                   "define": "foo.nested_run.do_the_thing"
                 }
               ]
@@ -3374,9 +3374,9 @@ let test_global_leaks context =
                   "path": "*",
                   "code": 3100,
                   "name": "Global leak",
-                  "description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
-                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob`.",
-                  "concise_description": "Global leak [3100]: Data is leaked to global `glob`.",
+                  "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
+                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
+                  "concise_description": "Global leak [3100]: Data is leaked to global `glob` of type `typing.List[int]`.",
                   "define": "foo.nested_run_2.do_the_thing_2.another_nest"
                 }
               ]

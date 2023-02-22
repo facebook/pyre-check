@@ -232,7 +232,10 @@ and unawaited_awaitable = {
   expression: Expression.t;
 }
 
-and leak_to_global = { global_name: Reference.t }
+and leak_to_global = {
+  global_name: Reference.t;
+  global_type: Type.t;
+}
 
 and undefined_import =
   | UndefinedModule of Reference.t
@@ -1163,8 +1166,15 @@ let rec messages ~concise ~signature location kind =
   | ParserFailure message -> [message]
   | DeadStore name -> [Format.asprintf "Value assigned to `%a` is never used." pp_identifier name]
   | Deobfuscation source -> [Format.asprintf "\n%a" Source.pp source]
-  | GlobalLeak { global_name } ->
-      [Format.asprintf "Data is leaked to global `%a`." pp_reference global_name]
+  | GlobalLeak { global_name; global_type } ->
+      [
+        Format.asprintf
+          "Data is leaked to global `%a` of type `%a`."
+          pp_reference
+          global_name
+          Type.pp
+          global_type;
+      ]
   | IllegalAnnotationTarget _ when concise -> ["Target cannot be annotated."]
   | IllegalAnnotationTarget { target; kind } ->
       let reason =
