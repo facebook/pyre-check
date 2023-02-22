@@ -8,9 +8,8 @@ from pathlib import Path
 from typing import Union
 
 from pyre_extensions import override
-from tools.pyre.client import daemon_socket
 
-from ...client import configuration as configuration_module, identifiers
+from ...client import configuration as configuration_module, daemon_socket, identifiers
 
 from ...client.commands import frontend_configuration, initialization
 
