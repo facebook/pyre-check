@@ -15,12 +15,11 @@ from pathlib import Path
 from typing import Union
 
 from pyre_extensions import override
-from tools.pyre.client.commands import stop
-from tools.pyre.client.language_server import connections
 
 from ..client import command_arguments, daemon_socket, identifiers
 
-from ..client.commands import frontend_configuration, initialization, start
+from ..client.commands import frontend_configuration, initialization, start, stop
+from ..client.language_server import connections
 
 FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CODE_NAVIGATION
 LOG: logging.Logger = logging.getLogger(__name__)
