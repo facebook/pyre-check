@@ -1,5 +1,15 @@
 # Playground
 
+This code is the backend for the Pyre Playground. The Playground, which can
+be found at [pyre-check.org/play](https://pyre-check.org/play/), has two
+components:
+- A frontend for editing code and displaying errors; the code for that is
+  in `documentation/website/src/patges/play.js`
+- A backend to actually check code snippets. For this we use a flask server,
+  running under gunicorn with an nginx forward proxy. Each flask worker
+  writes snippets into a temporary file and gets type errors from a `pyre
+  incremental` process.
+
 ## Setting up in an Ubuntu machine.
 
 In a fresh ubuntu machine (it has been tested most recently against
