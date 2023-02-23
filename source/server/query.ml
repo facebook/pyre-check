@@ -955,7 +955,7 @@ let rec process_request ~type_environment ~build_system request =
         let create_response_with_caller ~key:caller ~data:callees response =
           let instantiate =
             Location.WithModule.instantiate
-              ~lookup:(ModuleTracker.ReadOnly.lookup_relative_path module_tracker)
+              ~lookup:(PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker)
           in
           List.map
             ~f:(fun { Callgraph.callee; locations } ->

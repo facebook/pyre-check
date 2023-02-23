@@ -3155,10 +3155,16 @@ let test_dump_call_graph context =
   let custom_source_root =
     OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
+  let set_path_in_json json =
+    let root_str = PyrePath.show custom_source_root in
+    Format.sprintf json root_str root_str root_str root_str root_str
+  in
+
   let queries_and_expected_responses =
     [
       ( "dump_call_graph()",
-        {|
+        set_path_in_json
+          {|
           {
             "response": {
               "typing.Iterable.__iter__": [],
@@ -3170,7 +3176,7 @@ let test_dump_call_graph context =
                 {
                   "locations": [
                     {
-                      "path": "foo.py",
+                      "path": "%s/foo.py",
                       "start": { "line": 10, "column": 2 },
                       "stop": { "line": 10, "column": 7 }
                     }
@@ -3184,7 +3190,7 @@ let test_dump_call_graph context =
                 {
                   "locations": [
                     {
-                      "path": "foo.py",
+                      "path": "%s/foo.py",
                       "start": { "line": 4, "column": 9 },
                       "stop": { "line": 4, "column": 16 }
                     }
@@ -3198,7 +3204,7 @@ let test_dump_call_graph context =
                 {
                   "locations": [
                     {
-                      "path": "foo.py",
+                      "path": "%s/foo.py",
                       "start": { "line": 4, "column": 19 },
                       "stop": { "line": 4, "column": 23 }
                     }
@@ -3209,7 +3215,7 @@ let test_dump_call_graph context =
                 {
                   "locations": [
                     {
-                      "path": "foo.py",
+                      "path": "%s/foo.py",
                       "start": { "line": 4, "column": 9 },
                       "stop": { "line": 4, "column": 13 }
                     }
@@ -3227,7 +3233,7 @@ let test_dump_call_graph context =
                 {
                   "locations": [
                     {
-                      "path": "bar.py",
+                      "path": "%s/bar.py",
                       "start": { "line": 8, "column": 11 },
                       "stop": { "line": 8, "column": 14 }
                     }
