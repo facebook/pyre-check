@@ -231,12 +231,29 @@ module State (Context : Context) = struct
     in
     let error_on_global_target ~location target =
       let reference = Reference.create target |> Reference.delocalize in
+      let rec get_module_qualifier qualifier =
+        let module_tracker = GlobalResolution.module_tracker Context.global_resolution in
+        let qualifier_prefix = Reference.prefix qualifier in
+        match
+          ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier, qualifier_prefix
+        with
+        (* we couldn't find a module from the given qualifier *)
+        | _, None -> Reference.empty
+        (* we found the module *)
+        | true, _ -> qualifier
+        (* we haven't found a module yet *)
+        | _, Some prefix -> get_module_qualifier prefix
+      in
       let is_global = Context.is_global ~resolution (Reference.create target) in
       if is_global then
         let target_type = Resolution.resolve_reference resolution (Reference.create target) in
         let error =
           Error.create
-            ~location:(Location.with_module ~module_reference:Context.qualifier location)
+            ~location:
+              (Location.with_module
+                 ~module_reference:
+                   (get_module_qualifier (Context.qualifier |> Reference.delocalize))
+                 location)
             ~kind:(Error.GlobalLeak { global_name = reference; global_type = target_type })
             ~define:Context.define
         in

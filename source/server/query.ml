@@ -1026,8 +1026,8 @@ let rec process_request ~type_environment ~build_system request =
         Single (Base.ExpressionLevelCoverageResponse results)
     | GlobalLeaks qualifier ->
         let lookup =
-          GlobalResolution.module_tracker global_resolution
-          |> ModuleTracker.ReadOnly.lookup_relative_path
+          let module_tracker = GlobalResolution.module_tracker global_resolution in
+          PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker
         in
         Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
         >>| List.map ~f:(fun error ->

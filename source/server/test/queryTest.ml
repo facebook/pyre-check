@@ -3295,6 +3295,8 @@ let test_global_leaks context =
   let custom_source_root =
     OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
+  let temp_file_name = PyrePath.append custom_source_root ~element:"foo.py" in
+  let set_path_in_json json = Format.sprintf json (PyrePath.show temp_file_name) in
   let queries_and_expected_responses =
     [
       ( "global_leaks(foo.get_these)",
@@ -3307,7 +3309,8 @@ let test_global_leaks context =
         |}
       );
       ( "global_leaks(foo.immediate_example)",
-        {|
+        set_path_in_json
+          {|
           {
             "response": {
               "errors": [
@@ -3316,7 +3319,7 @@ let test_global_leaks context =
                   "column": 4,
                   "stop_line": 21,
                   "stop_column": 8,
-                  "path": "*",
+                  "path": "%s",
                   "code": 3100,
                   "name": "Global leak",
                   "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
@@ -3339,7 +3342,8 @@ let test_global_leaks context =
         |}
       );
       ( "global_leaks(foo.nested_run.do_the_thing)",
-        {|
+        set_path_in_json
+          {|
           {
             "response": {
               "errors": [
@@ -3348,7 +3352,7 @@ let test_global_leaks context =
                   "column": 8,
                   "stop_line": 8,
                   "stop_column": 12,
-                  "path": "*",
+                  "path": "%s",
                   "code": 3100,
                   "name": "Global leak",
                   "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
@@ -3362,7 +3366,8 @@ let test_global_leaks context =
         |}
       );
       ( "global_leaks(foo.nested_run_2.do_the_thing_2.another_nest)",
-        {|
+        set_path_in_json
+          {|
           {
             "response": {
               "errors": [
@@ -3371,7 +3376,7 @@ let test_global_leaks context =
                   "column": 11,
                   "stop_line": 15,
                   "stop_column": 15,
-                  "path": "*",
+                  "path": "%s",
                   "code": 3100,
                   "name": "Global leak",
                   "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
