@@ -60,6 +60,31 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             {"something_that.my_function_calls", "builtins.print"},
         )
 
+    def test_load_pyre_call_graph_happy_path_with_response(self) -> None:
+        json_call_graph: JSON = {
+            "response": {
+                "my_module.my_function": [
+                    {
+                        "keys_we_dont_need": [1, 2, 3],
+                        "target": "something_that.my_function_calls",
+                    },
+                    {"target": "builtins.print"},
+                    {"direct_target": "my_module.my_function"},
+                ],
+                "something_that.my_function_calls": [{"direct_target": "int.__str__"}],
+            }
+        }
+
+        call_graph = PyreCallGraphInputFormat(json_call_graph)
+        result = call_graph.to_call_graph()
+
+        self.assertEqual(len(result), 2)
+        self.assertSetEqual(result["something_that.my_function_calls"], {"int.__str__"})
+        self.assertSetEqual(
+            result["my_module.my_function"],
+            {"something_that.my_function_calls", "builtins.print"},
+        )
+
     def test_load_call_graph_bad_root(self) -> None:
         call_graph: JSON = ["1234"]
 

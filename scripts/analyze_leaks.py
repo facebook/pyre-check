@@ -32,7 +32,7 @@ class InputFormat(abc.ABC):
     call_graph: Dict[str, JSON]
 
     def __init__(self, call_graph: JSON) -> None:
-        if not isinstance(call_graph, Dict):
+        if not isinstance(call_graph, dict):
             raise ValueError(
                 f"Call graph structure in call graph file is not a JSON dict: {type(call_graph)}"
             )
@@ -72,6 +72,16 @@ class PysaCallGraphInputFormat(InputFormat):
 
 
 class PyreCallGraphInputFormat(InputFormat):
+    def __init__(self, call_graph: JSON) -> None:
+        super().__init__(call_graph)
+        if "response" in self.call_graph:
+            response = self.call_graph["response"]
+            if not isinstance(response, dict):
+                raise ValueError(
+                    f"PyreCallGraphInputFormat expected call graph to have type dict for response key, got {type(response)}: {response}"
+                )
+            self.call_graph: Dict[str, JSON] = response
+
     def validate_callees(self, callees: List[JSON]) -> Set[str]:
         result = set()
         for callee in callees:
