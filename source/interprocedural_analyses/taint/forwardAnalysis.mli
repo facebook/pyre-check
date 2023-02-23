@@ -12,6 +12,7 @@ open Statement
 val run
   :  ?profiler:TaintProfiler.t ->
   taint_configuration:TaintConfiguration.Heap.t ->
+  string_combine_partial_sink_tree:Domains.BackwardState.Tree.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
   qualifier:Reference.t ->

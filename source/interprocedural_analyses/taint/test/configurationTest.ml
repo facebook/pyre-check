@@ -9,7 +9,6 @@ open Core
 open OUnit2
 open Taint
 open Pyre
-open Data_structures
 module Result = Core.Result
 
 let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configuration =
@@ -529,9 +528,9 @@ let test_string_combine_rules _ =
         };
       ];
   assert_equal
-    ~cmp:SerializableStringSet.equal
+    ~cmp:TaintConfiguration.StringOperationPartialSinks.equal
     configuration.string_combine_partial_sinks
-    (SerializableStringSet.singleton "UserDefinedPartialSink")
+    (TaintConfiguration.StringOperationPartialSinks.singleton "UserDefinedPartialSink")
 
 
 let test_lineage_analysis _ =

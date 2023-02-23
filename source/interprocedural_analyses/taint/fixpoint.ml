@@ -130,6 +130,8 @@ module Analysis = struct
           ForwardAnalysis.run
             ~profiler
             ~taint_configuration
+            ~string_combine_partial_sink_tree:
+              (CallModel.string_combine_partial_sink_tree taint_configuration)
             ~environment:type_environment
             ~class_interval_graph
             ~qualifier

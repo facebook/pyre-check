@@ -97,3 +97,5 @@ module ExtraTraceForTransforms : sig
 end
 
 val transform_tito_depth_breadcrumb : BackwardTaint.t -> int
+
+val string_combine_partial_sink_tree : TaintConfiguration.Heap.t -> BackwardState.Tree.t

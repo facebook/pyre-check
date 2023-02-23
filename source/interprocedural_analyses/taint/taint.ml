@@ -43,3 +43,4 @@ module ExitStatus = ExitStatus
 module Fixpoint = Fixpoint
 module Registry = Registry
 module Cache = Cache
+module CallModel = CallModel

@@ -65,10 +65,13 @@ let assert_taint ?models ?models_source ~context source expect =
         ~define:(Ast.Node.value define)
     in
     let cfg = Cfg.create define.value in
+    let taint_configuration = TaintConfiguration.Heap.default in
     let forward, _errors, _ =
       ForwardAnalysis.run
         ?profiler:None
-        ~taint_configuration:TaintConfiguration.Heap.default
+        ~taint_configuration
+        ~string_combine_partial_sink_tree:
+          (Taint.CallModel.string_combine_partial_sink_tree taint_configuration)
         ~environment:type_environment
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.get_for_testing_only ())
         ~qualifier

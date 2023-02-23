@@ -355,3 +355,12 @@ end
 let transform_tito_depth_breadcrumb tito_taint =
   let length = BackwardTaint.fold TraceLength.Self ~f:min ~init:Int.max_value tito_taint in
   Features.Breadcrumb.TransformTitoDepth (length + 1) |> Features.BreadcrumbInterned.intern
+
+
+let string_combine_partial_sink_tree { TaintConfiguration.Heap.string_combine_partial_sinks; _ } =
+  let create_sink_taint sink = BackwardTaint.singleton CallInfo.declaration sink Frame.initial in
+  TaintConfiguration.StringOperationPartialSinks.get_partial_sinks string_combine_partial_sinks
+  |> List.map ~f:create_sink_taint
+  |> List.reduce ~f:BackwardTaint.join
+  |> Option.value ~default:BackwardTaint.bottom
+  |> BackwardState.Tree.create_leaf

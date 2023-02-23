@@ -44,10 +44,23 @@ def string_operations(arg) -> None:
 global_query = ""  # Even with this reset, we should see an issue above
 
 
+def format_string_issue_string_literal():
+    user_controlled = user_controlled_input()
+    f"SELECT{user_controlled}"
+
+
+def format_string_multiple_issues_string_literal():
+    user_controlled = user_controlled_input()
+    f"SELECT{user_controlled}"
+    f"SELECT{user_controlled}"
+
+
 def format_string_issue():
     query: str = "SELECT"
     user_controlled = user_controlled_input()
-    f"{query}{user_controlled}"  # TODO(T144475492): False negative
+    f"{query}{user_controlled}"
+    x = 0
+    f"{query}{user_controlled}{x}"
 
 
 def format_string_triggered_user_controlled(arg):

@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Data_structures
 
 type literal_string_sink = {
   pattern: Re2.t;
@@ -63,6 +62,16 @@ module PartialSinkConverter : sig
   type t
 end
 
+module StringOperationPartialSinks : sig
+  type t
+
+  val equal : t -> t -> bool
+
+  val singleton : string -> t
+
+  val get_partial_sinks : t -> Sinks.t list
+end
+
 (** Taint configuration, stored in the ocaml heap. *)
 module Heap : sig
   type t = {
@@ -79,7 +88,7 @@ module Heap : sig
     implicit_sources: implicit_sources;
     partial_sink_converter: PartialSinkConverter.t;
     partial_sink_labels: PartialSinkLabelsMap.t;
-    string_combine_partial_sinks: SerializableStringSet.t;
+    string_combine_partial_sinks: StringOperationPartialSinks.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;

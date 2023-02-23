@@ -355,13 +355,29 @@ module PartialSinkConverter = struct
     | _ -> None
 end
 
+module StringOperationPartialSinks = struct
+  include SerializableStringSet
+
+  let main_label = "main"
+
+  let secondary_label = "secondary"
+
+  let get_partial_sinks kinds =
+    let accumulate_sink_kinds kind so_far =
+      Sinks.PartialSink { kind; label = main_label }
+      :: Sinks.PartialSink { kind; label = secondary_label }
+      :: so_far
+    in
+    SerializableStringSet.fold accumulate_sink_kinds kinds []
+end
+
 (* The result of parsing combined source rules. *)
 module CombinedSourceRules = struct
   type t = {
     generated_combined_rules: Rule.t list;
     partial_sink_converter: PartialSinkConverter.t;
     partial_sink_labels: PartialSinkLabelsMap.t;
-    string_combine_partial_sinks: SerializableStringSet.t;
+    string_combine_partial_sinks: StringOperationPartialSinks.t;
   }
 
   let empty =
@@ -369,7 +385,7 @@ module CombinedSourceRules = struct
       generated_combined_rules = [];
       partial_sink_converter = PartialSinkConverter.empty;
       partial_sink_labels = PartialSinkLabelsMap.empty;
-      string_combine_partial_sinks = SerializableStringSet.empty;
+      string_combine_partial_sinks = StringOperationPartialSinks.empty;
     }
 
 
@@ -395,7 +411,7 @@ module CombinedSourceRules = struct
       partial_sink_labels =
         PartialSinkLabelsMap.merge partial_sink_labels_left partial_sink_labels_right;
       string_combine_partial_sinks =
-        SerializableStringSet.union
+        StringOperationPartialSinks.union
           string_combine_partial_sinks_left
           string_combine_partial_sinks_right;
     }
@@ -438,7 +454,7 @@ module Heap = struct
     implicit_sources: implicit_sources;
     partial_sink_converter: PartialSinkConverter.t;
     partial_sink_labels: PartialSinkLabelsMap.t;
-    string_combine_partial_sinks: SerializableStringSet.t;
+    string_combine_partial_sinks: StringOperationPartialSinks.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;
@@ -461,7 +477,7 @@ module Heap = struct
       implicit_sources = empty_implicit_sources;
       partial_sink_converter = SerializableStringMap.empty;
       partial_sink_labels = PartialSinkLabelsMap.empty;
-      string_combine_partial_sinks = SerializableStringSet.empty;
+      string_combine_partial_sinks = StringOperationPartialSinks.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
@@ -616,7 +632,7 @@ module Heap = struct
       implicit_sources = empty_implicit_sources;
       partial_sink_converter = SerializableStringMap.empty;
       partial_sink_labels = PartialSinkLabelsMap.empty;
-      string_combine_partial_sinks = SerializableStringSet.empty;
+      string_combine_partial_sinks = StringOperationPartialSinks.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
@@ -1067,7 +1083,12 @@ let from_json_list source_json_list =
       parse_sources ~allowed_sources ~path ~section:"secondary_sources" json
       >>= fun secondary_sources ->
       Result.Ok
-        { main_sources; secondary_sources; main_label = "main"; secondary_label = "secondary" }
+        {
+          main_sources;
+          secondary_sources;
+          main_label = StringOperationPartialSinks.main_label;
+          secondary_label = StringOperationPartialSinks.secondary_label;
+        }
   end
   in
   let create_combined_source_rules_and_update_partial_sinks
@@ -1209,7 +1230,7 @@ let from_json_list source_json_list =
       ~path
     >>= fun (main_rule, secondary_rule, partial_sink_converter, partial_sink_labels) ->
     let string_combine_partial_sinks =
-      SerializableStringSet.add partial_sink string_combine_partial_sinks
+      StringOperationPartialSinks.add partial_sink string_combine_partial_sinks
     in
     Result.Ok
       {
