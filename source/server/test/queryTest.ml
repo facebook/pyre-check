@@ -3157,7 +3157,7 @@ let test_dump_call_graph context =
   in
   let set_path_in_json json =
     let root_str = PyrePath.show custom_source_root in
-    Format.sprintf json root_str root_str root_str root_str root_str
+    Format.sprintf json root_str root_str root_str root_str root_str root_str
   in
 
   let queries_and_expected_responses =
@@ -3242,7 +3242,19 @@ let test_dump_call_graph context =
                   "target": "bar.bar"
                 }
               ],
-              "bar.bar2": [],
+              "bar.bar2": [
+                {
+                  "locations": [
+                    {
+                      "path": "%s/bar.py",
+                      "start": { "line": 10, "column": 9 },
+                      "stop": { "line": 10, "column": 14 }
+                    }
+                  ],
+                  "kind": "function",
+                  "target": "bar.bar2.inner"
+                }
+              ],
               "bar.bar": []
             }
           }

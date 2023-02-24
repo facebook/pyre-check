@@ -206,7 +206,11 @@ module DefaultBuilder : Builder = struct
       | None, defines ->
           List.map defines ~f:(function
               | Named define -> Some (Function define)
-              | _ -> None)
+              | Anonymous -> (
+                  match callee.value with
+                  | Expression.Name (Name.Identifier target) ->
+                      Some (Function (Reference.create target |> Reference.delocalize))
+                  | _ -> None))
           |> Option.all
           |> Option.value ~default:[]
       | _ -> []
