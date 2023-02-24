@@ -467,6 +467,14 @@ module FindNarrowestSpanningExpression (PositionData : PositionData) = struct
           use_postcondition_info;
         }
         :: state
+    | Visit.Argument { argument = { location; _ }; callee }
+      when Location.contains ~location PositionData.position ->
+        {
+          symbol_with_definition = Expression callee;
+          cfg_data = PositionData.cfg_data;
+          use_postcondition_info;
+        }
+        :: state
     | _ -> state
 
 
@@ -577,6 +585,7 @@ module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionD
             in
             List.iter imports ~f:visit_import;
             visit_from from
+        | Expression expression -> visit_using_precondition_info expression
         | _ -> visit_statement ~state statement
     in
     let state = ref state in

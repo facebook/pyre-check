@@ -8,10 +8,18 @@
 open Core
 open Expression
 
+module Argument : sig
+  type t = {
+    argument: Identifier.t Node.t;
+    (* the callee this argument is of. it's used for find-definition *)
+    callee: expression Node.t;
+  }
+end
+
 type node =
   | Expression of Expression.t
   | Statement of Statement.t
-  | Argument of Identifier.t Node.t
+  | Argument of Argument.t
   | Parameter of Parameter.t
   | Reference of Reference.t Node.t
   | Substring of Substring.t

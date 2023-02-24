@@ -12,10 +12,18 @@ open Pyre
 open Expression
 open Statement
 
+module Argument = struct
+  type t = {
+    argument: Identifier.t Node.t;
+    (* the callee this argument is of. it's used for find-definition *)
+    callee: expression Node.t;
+  }
+end
+
 type node =
   | Expression of Expression.t
   | Statement of Statement.t
-  | Argument of Identifier.t Node.t
+  | Argument of Argument.t
   | Parameter of Parameter.t
   | Reference of Reference.t Node.t
   | Substring of Substring.t
@@ -80,7 +88,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Call { Call.callee; arguments } ->
           visit_expression callee;
           let visit_argument { Call.Argument.value; name } =
-            name >>| (fun name -> visit_node ~state ~visitor (Argument name)) |> ignore;
+            name
+            >>| (fun name -> visit_node ~state ~visitor (Argument { argument = name; callee }))
+            |> ignore;
             visit_expression value
           in
           List.iter arguments ~f:visit_argument
@@ -466,7 +476,7 @@ let collect_locations source =
         let predicate = function
           | Expression node -> Some (Node.location node)
           | Statement node -> Some (Node.location node)
-          | Argument node -> Some (Node.location node)
+          | Argument { argument; _ } -> Some (Node.location argument)
           | Parameter node -> Some (Node.location node)
           | Reference node -> Some (Node.location node)
           | Substring (Substring.Format node) -> Some (Node.location node)

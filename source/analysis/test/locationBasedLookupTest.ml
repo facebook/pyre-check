@@ -1093,6 +1093,18 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:{|
+        import foo
+        foo(abc=5)
+        #     ^- cursor
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "foo");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -1105,7 +1117,10 @@ let test_resolve_definition_for_symbol context =
 
       def return_str() -> str:
           return "hello"
-    |} );
+      def contains_kw_args(foo: str, **kwargs) -> str:
+          return "hello"
+    |}
+      );
     ]
   in
   let module_reference = !&"test" in
@@ -1651,6 +1666,24 @@ let test_resolve_definition_for_symbol context =
         # No definition found.
     |}
     (Some "dataclasses:6:0-6:46");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        from library import contains_kw_args
+
+        contains_kw_args(foo="test")
+        #                 ^- cursor
+      |}
+    (Some "library:6:0-7:18");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        from library import contains_kw_args
+
+        contains_kw_args(kw="test")
+        #                 ^- cursor
+      |}
+    (Some "library:6:0-7:18");
   ()
 
 
