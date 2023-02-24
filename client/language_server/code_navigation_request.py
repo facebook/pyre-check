@@ -9,13 +9,10 @@ to a corresponding code navigation request. Also contains an API that sends a gi
 server and gets a response.
 """
 
-import abc
 import dataclasses
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
-
-from marshmallow import fields
 
 from .. import dataclasses_json_extensions as json_mixins
 
@@ -24,47 +21,9 @@ from . import daemon_connection, protocol as lsp
 from .protocol import PyreHoverResponse
 
 
-class Module(abc.ABC, fields.Field):
-    @staticmethod
-    def module_to_json(module: "Module") -> List[object]:
-        if isinstance(module, ModuleOfName):
-            return ["OfName", module.name]
-        assert isinstance(module, ModuleOfPath)
-        return ["OfPath", f"{module.path}"]
-
-    @staticmethod
-    def module_from_json(module_json: List[object]) -> "Module":
-        if not isinstance(module_json, list):
-            raise AssertionError("JSON is not a list")
-        if (
-            len(module_json) != 2
-            or module_json[0] not in ("OfName", "OfPath")
-            or not isinstance(module_json[1], str)
-        ):
-            raise AssertionError(
-                'JSON must be a list of form ["OfName"/"OfPath", module]'
-            )
-        if module_json[0] == "OfName":
-            return ModuleOfName(name=str(module_json[1]))
-        return ModuleOfPath(path=Path(str(module_json[1])))
-
-    def to_json(self) -> List[object]:
-        return Module.module_to_json(self)
-
-
-@dataclasses.dataclass(frozen=True)
-class ModuleOfName(Module):
-    name: str
-
-
-@dataclasses.dataclass(frozen=True)
-class ModuleOfPath(Module):
-    path: Path
-
-
 @dataclasses.dataclass(frozen=True)
 class HoverRequest:
-    module: Module
+    path: str
     overlay_id: Optional[str]
     position: lsp.PyrePosition
 
@@ -72,7 +31,7 @@ class HoverRequest:
         return [
             "Hover",
             {
-                "module": self.module.to_json(),
+                "path": self.path,
                 "overlay_id": self.overlay_id,
                 "position": {
                     "line": self.position.line,
@@ -84,7 +43,7 @@ class HoverRequest:
 
 @dataclasses.dataclass(frozen=True)
 class LocationOfDefinitionRequest:
-    module: Module
+    path: str
     overlay_id: Optional[str]
     position: lsp.PyrePosition
 
@@ -92,7 +51,7 @@ class LocationOfDefinitionRequest:
         return [
             "LocationOfDefinition",
             {
-                "module": self.module.to_json(),
+                "path": self.path,
                 "overlay_id": self.overlay_id,
                 "position": {
                     "line": self.position.line,
@@ -151,7 +110,7 @@ class LocationOfDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class LocalUpdate:
-    module: Module
+    path: str
     content: str
     overlay_id: str
 
@@ -159,7 +118,7 @@ class LocalUpdate:
         return [
             "LocalUpdate",
             {
-                "module": self.module.to_json(),
+                "path": self.path,
                 "content": self.content,
                 "overlay_id": self.overlay_id,
             },

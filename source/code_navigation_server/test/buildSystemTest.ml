@@ -248,8 +248,8 @@ let test_build_system_path_lookup context =
       ["a.py", "x: float = 4.2\nreveal_type(x)"]
   in
   let root = ScratchProject.source_root_of project in
-  let path_a = PyrePath.create_relative ~root ~relative:"a.py" in
-  let path_b = PyrePath.create_relative ~root ~relative:"b.py" in
+  let path_a = PyrePath.create_relative ~root ~relative:"a.py" |> PyrePath.absolute in
+  let path_b = PyrePath.create_relative ~root ~relative:"b.py" |> PyrePath.absolute in
   let expected_error =
     Analysis.AnalysisError.Instantiated.of_yojson
       (`Assoc
@@ -259,7 +259,7 @@ let test_build_system_path_lookup context =
           "stop_line", `Int 2;
           "stop_column", `Int 11;
           (* Paths in type errors always refer to source paths *)
-          "path", `String (PyrePath.absolute path_b);
+          "path", `String path_b;
           "code", `Int (-1);
           "name", `String "Revealed type";
           "description", `String "Revealed type [-1]: Revealed type for `x` is `float`.";
@@ -278,11 +278,7 @@ let test_build_system_path_lookup context =
       [
         (* Server should not be aware of `a.py` on type error query *)
         ScratchProject.ClientConnection.assert_error_response
-          ~request:
-            Request.(
-              Query
-                (Query.GetTypeErrors
-                   { module_ = Module.OfPath (PyrePath.absolute path_a); overlay_id = None }))
+          ~request:Request.(Query (Query.GetTypeErrors { path = path_a; overlay_id = None }))
           ~kind:"ModuleNotTracked";
         (* Server should not be aware of `a.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_error_response
@@ -290,19 +286,11 @@ let test_build_system_path_lookup context =
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   {
-                     module_ = Module.OfPath (PyrePath.absolute path_a);
-                     overlay_id = None;
-                     position = BasicTest.position 2 12;
-                   }))
+                   { path = path_a; overlay_id = None; position = BasicTest.position 2 12 }))
           ~kind:"ModuleNotTracked";
         (* Server should be aware of `b.py` on type error query *)
         ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Query
-                (Query.GetTypeErrors
-                   { module_ = Module.OfPath (PyrePath.absolute path_b); overlay_id = None }))
+          ~request:Request.(Query (Query.GetTypeErrors { path = path_b; overlay_id = None }))
           ~expected:(Response.TypeErrors [expected_error]);
         (* Server should be aware of `b.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_response
@@ -311,34 +299,22 @@ let test_build_system_path_lookup context =
               (* This location points to `x` in "reveal_type(x)" *)
               Query
                 (Query.LocationOfDefinition
-                   {
-                     overlay_id = None;
-                     module_ = Module.OfPath (PyrePath.absolute path_b);
-                     position = BasicTest.position 2 12;
-                   }))
+                   { overlay_id = None; path = path_b; position = BasicTest.position 2 12 }))
           ~expected:
             Response.(
               LocationOfDefinition
                 {
                   definitions =
-                    [
-                      {
-                        DefinitionLocation.path = PyrePath.absolute path_b;
-                        range = BasicTest.range 1 0 1 1;
-                      };
-                    ];
+                    [{ DefinitionLocation.path = path_b; range = BasicTest.range 1 0 1 1 }];
                 });
       ]
 
 
-let assert_module_not_tracked module_ =
-  ScratchProject.ClientConnection.assert_error_response
-    ~request:Request.(Query (Query.GetTypeErrors { module_; overlay_id = None }))
-    ~kind:"ModuleNotTracked"
-
-
 let assert_module_path_not_tracked path =
-  assert_module_not_tracked (Request.Module.OfPath (PyrePath.absolute path))
+  ScratchProject.ClientConnection.assert_error_response
+    ~request:
+      Request.(Query (Query.GetTypeErrors { path = PyrePath.absolute path; overlay_id = None }))
+    ~kind:"ModuleNotTracked"
 
 
 let test_build_system_open_close context =
@@ -498,7 +474,6 @@ let test_build_system_file_update context =
         BasicTest.assert_type_error_count_for_path
           ~path:(PyrePath.absolute raw_source_path1)
           ~expected:2;
-        BasicTest.assert_type_error_count_for_module ~module_name:"artifact0" ~expected:2;
         (* Update build map *)
         (fun _ ->
           update_flag := true;
@@ -523,11 +498,9 @@ let test_build_system_file_update context =
         BasicTest.assert_type_error_count_for_path
           ~path:(PyrePath.absolute raw_source_path0)
           ~expected:1;
-        BasicTest.assert_type_error_count_for_module ~module_name:"artifact0" ~expected:1;
         BasicTest.assert_type_error_count_for_path
           ~path:(PyrePath.absolute raw_source_path1)
           ~expected:2;
-        BasicTest.assert_type_error_count_for_module ~module_name:"artifact1" ~expected:2;
       ]
 
 

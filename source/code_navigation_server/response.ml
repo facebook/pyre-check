@@ -12,7 +12,7 @@ open Base
 module ErrorKind = struct
   type t =
     | InvalidRequest of string
-    | ModuleNotTracked of { module_: Request.Module.t [@key "module"] }
+    | ModuleNotTracked of { path: string }
     | OverlayNotFound of { overlay_id: string }
     | UntrackedFileClosed of { path: string }
   [@@deriving sexp, compare, yojson { strict = false }]

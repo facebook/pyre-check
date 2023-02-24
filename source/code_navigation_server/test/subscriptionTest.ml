@@ -139,6 +139,10 @@ let test_server_subscription_busy_file_update context =
 
 
 let test_server_subscription_busy_local_update context =
+  let project = ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", ""] in
+  let root = ScratchProject.source_root_of project in
+  let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+
   (* This is used to ensure mutator always run after subscription is established *)
   let mailbox = Lwt_mvar.create_empty () in
   let subscriber connection =
@@ -169,17 +173,17 @@ let test_server_subscription_busy_local_update context =
           Command
             (Command.LocalUpdate
                {
-                 module_ = Module.OfName "test";
+                 path = PyrePath.absolute test_path;
                  content = Some "reveal_type(42)";
                  overlay_id = "foo";
                }))
     in
     Lwt.return_unit
   in
-  ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", ""]
-  |> ScratchProject.test_server_with
-       ~style:ScratchProject.ClientConnection.Style.Concurrent
-       ~clients:[subscriber; mutator]
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Concurrent
+    ~clients:[subscriber; mutator]
 
 
 let test_server_subscription_stop context =

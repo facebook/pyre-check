@@ -16,11 +16,11 @@ let range start_line start_column stop_line stop_column =
   { Ast.Location.start = position start_line start_column; stop = position stop_line stop_column }
 
 
-let assert_type_error_count ?overlay_id ~module_ ~expected client =
+let assert_type_error_count ?overlay_id ~path ~expected client =
   let%lwt raw_response =
     ScratchProject.ClientConnection.send_request
       client
-      Request.(Query (Query.GetTypeErrors { module_; overlay_id }))
+      Request.(Query (Query.GetTypeErrors { path; overlay_id }))
   in
   match Yojson.Safe.from_string raw_response with
   | `List [`String "TypeErrors"; `List errors] ->
@@ -38,12 +38,8 @@ let assert_type_error_count ?overlay_id ~module_ ~expected client =
       assert_failure message
 
 
-let assert_type_error_count_for_module ?overlay_id ~module_name ~expected client =
-  assert_type_error_count client ?overlay_id ~expected ~module_:(Request.Module.OfName module_name)
-
-
 let assert_type_error_count_for_path ?overlay_id ~path ~expected client =
-  assert_type_error_count client ?overlay_id ~expected ~module_:(Request.Module.OfPath path)
+  assert_type_error_count client ?overlay_id ~expected ~path
 
 
 let test_no_op_server context =
@@ -110,10 +106,10 @@ let test_get_type_errors_request context =
         ])
     |> Result.ok_or_failwith
   in
-  let assert_type_errors_for_module ~module_ client =
+  let assert_type_errors ~path client =
     ScratchProject.ClientConnection.assert_response
       client
-      ~request:Request.(Query (Query.GetTypeErrors { overlay_id = None; module_ }))
+      ~request:Request.(Query (Query.GetTypeErrors { overlay_id = None; path }))
       ~expected:(Response.TypeErrors [expected_error])
   in
   ScratchProject.test_server_with
@@ -121,27 +117,17 @@ let test_get_type_errors_request context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_errors_for_module ~module_:(Request.Module.OfName "test");
-        assert_type_errors_for_module ~module_:(Request.Module.OfPath (PyrePath.absolute test_path));
+        assert_type_errors ~path:(PyrePath.absolute test_path);
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(
-              Query
-                (Query.GetTypeErrors { overlay_id = None; module_ = Module.OfName "doesnotexist" }))
+            Request.(Query (Query.GetTypeErrors { overlay_id = None; path = "/doesnotexist.py" }))
           ~kind:"ModuleNotTracked";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.GetTypeErrors
-                   { overlay_id = None; module_ = Module.OfPath "/doesnotexist.py" }))
-          ~kind:"ModuleNotTracked";
-        ScratchProject.ClientConnection.assert_error_response
-          ~request:
-            Request.(
-              Query
-                (Query.GetTypeErrors
-                   { overlay_id = Some "doesnotexist"; module_ = Module.OfName "test" }))
+                   { overlay_id = Some "doesnotexist"; path = PyrePath.absolute test_path }))
           ~kind:"OverlayNotFound";
       ]
 
@@ -159,7 +145,7 @@ let test_file_opened_and_closed_request context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count_for_module ~module_name:"test" ~expected:1;
+        assert_type_error_count_for_path ~path:test_path ~expected:1;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -171,26 +157,26 @@ let test_file_opened_and_closed_request context =
                      overlay_id = Some "foo";
                    }))
           ~expected:Response.Ok;
-        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Command (Command.FileClosed { path = "/untracked/file.py"; overlay_id = Some "foo" }))
           ~expected:
             (Response.Error (Response.ErrorKind.UntrackedFileClosed { path = "/untracked/file.py" }));
-        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Command
                 (Command.FileClosed { path = test_path; overlay_id = Some "untracked overlay id" }))
           ~expected:(Response.Error (Response.ErrorKind.UntrackedFileClosed { path = test_path }));
-        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileClosed { path = test_path; overlay_id = Some "foo" }))
           ~expected:Response.Ok;
-        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:1;
+        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:1;
         (* Now that foo is no longer tracked as an open file, this should error. *)
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -200,58 +186,57 @@ let test_file_opened_and_closed_request context =
 
 
 let test_local_update_request context =
-  ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
-  |> ScratchProject.test_server_with
-       ~style:ScratchProject.ClientConnection.Style.Sequential
-       ~clients:
-         [
-           assert_type_error_count_for_module ~module_name:"test" ~expected:1;
-           ScratchProject.ClientConnection.assert_response
-             ~request:
-               Request.(
-                 Command
-                   (Command.LocalUpdate
-                      {
-                        module_ = Module.OfName "test";
-                        content = Some "reveal_type(43)\nreveal_type(44)";
-                        overlay_id = "foo";
-                      }))
-             ~expected:Response.Ok;
-           assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
-           ScratchProject.ClientConnection.assert_error_response
-             ~request:
-               Request.(
-                 Command
-                   (Command.LocalUpdate
-                      {
-                        module_ = Module.OfName "doesnotexist";
-                        content = Some "";
-                        overlay_id = "foo";
-                      }))
-             ~kind:"ModuleNotTracked";
-           ScratchProject.ClientConnection.assert_response
-             ~request:
-               Request.(
-                 Command
-                   (Command.LocalUpdate
-                      {
-                        module_ = Module.OfName "test";
-                        content = Some "reveal_type(43)\nreveal_type(44)\nreveal_type(45)";
-                        overlay_id = "bar";
-                      }))
-             ~expected:Response.Ok;
-           assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"bar" ~expected:3;
-           assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:2;
-           assert_type_error_count_for_module ~module_name:"test" ~expected:1;
-           ScratchProject.ClientConnection.assert_response
-             ~request:
-               Request.(
-                 Command
-                   (Command.LocalUpdate
-                      { module_ = Module.OfName "test"; content = None; overlay_id = "foo" }))
-             ~expected:Response.Ok;
-           assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:1;
-         ]
+  let project =
+    ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "reveal_type(42)"]
+  in
+  let root = ScratchProject.source_root_of project in
+  let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        assert_type_error_count_for_path ~path:test_path ~expected:1;
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.LocalUpdate
+                   {
+                     path = test_path;
+                     content = Some "reveal_type(43)\nreveal_type(44)";
+                     overlay_id = "foo";
+                   }))
+          ~expected:Response.Ok;
+        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
+        ScratchProject.ClientConnection.assert_error_response
+          ~request:
+            Request.(
+              Command
+                (Command.LocalUpdate
+                   { path = "/doesnotexist"; content = Some ""; overlay_id = "foo" }))
+          ~kind:"ModuleNotTracked";
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.LocalUpdate
+                   {
+                     path = test_path;
+                     content = Some "reveal_type(43)\nreveal_type(44)\nreveal_type(45)";
+                     overlay_id = "bar";
+                   }))
+          ~expected:Response.Ok;
+        assert_type_error_count_for_path ~path:test_path ~overlay_id:"bar" ~expected:3;
+        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~expected:1;
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command (Command.LocalUpdate { path = test_path; content = None; overlay_id = "foo" }))
+          ~expected:Response.Ok;
+        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:1;
+      ]
 
 
 let test_file_update_request context =
@@ -266,7 +251,7 @@ let test_file_update_request context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count_for_module ~module_name:"test" ~expected:1;
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~expected:1;
         (fun _ ->
           PyrePath.remove test_path;
           Lwt.return_unit);
@@ -280,9 +265,7 @@ let test_file_update_request context =
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
-              Query
-                (Query.GetTypeErrors
-                   { overlay_id = None; module_ = Module.OfPath (PyrePath.absolute test_path) }))
+              Query (Query.GetTypeErrors { overlay_id = None; path = PyrePath.absolute test_path }))
           ~kind:"ModuleNotTracked";
         (fun _ ->
           File.create test2_path ~content:"reveal_type(43)\nreveal_type(44)" |> File.write;
@@ -297,7 +280,7 @@ let test_file_update_request context =
                        { kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
                    ]))
           ~expected:Response.Ok;
-        assert_type_error_count_for_module ~module_name:"test2" ~expected:2;
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test2_path) ~expected:2;
       ]
 
 
@@ -309,25 +292,29 @@ let test_file_and_local_update context =
       ["test.py", "reveal_type(42)\nreveal_type(43)"; "test2.py", ""]
   in
   let root = ScratchProject.source_root_of project in
+  let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
   let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count_for_module ~module_name:"test" ~expected:2;
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Command
                 (Command.LocalUpdate
                    {
-                     module_ = Module.OfName "test";
+                     path = PyrePath.absolute test_path;
                      content = Some "from test2 import x";
                      overlay_id = "foo";
                    }))
           ~expected:Response.Ok;
-        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:1;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute test_path)
+          ~overlay_id:"foo"
+          ~expected:1;
         (fun _ ->
           File.create test2_path ~content:"x: int = 42" |> File.write;
           Lwt.return_unit);
@@ -341,7 +328,10 @@ let test_file_and_local_update context =
                        { kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
                    ]))
           ~expected:Response.Ok;
-        assert_type_error_count_for_module ~module_name:"test" ~overlay_id:"foo" ~expected:0;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute test_path)
+          ~overlay_id:"foo"
+          ~expected:0;
       ]
 
 
@@ -350,7 +340,7 @@ let test_hover_request context =
     ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "x: float = 4.2"]
   in
   let root = ScratchProject.source_root_of project in
-  let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+  let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
@@ -360,30 +350,20 @@ let test_hover_request context =
           ~request:
             Request.(
               (* This location point to empty space. *)
-              Query
-                (Query.Hover
-                   { overlay_id = None; module_ = Module.OfName "test"; position = position 1 2 }))
+              Query (Query.Hover { overlay_id = None; path = test_path; position = position 1 2 }))
           ~expected:
             Response.(Hover { contents = HoverContent.[{ value = None; docstring = None }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
-              Query
-                (Query.Hover
-                   { overlay_id = None; module_ = Module.OfName "test"; position = position 1 0 }))
+              Query (Query.Hover { overlay_id = None; path = test_path; position = position 1 0 }))
           ~expected:
             Response.(
               Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
-              Query
-                (Query.Hover
-                   {
-                     overlay_id = None;
-                     module_ = Module.OfPath (PyrePath.absolute test_path);
-                     position = position 1 0;
-                   }))
+              Query (Query.Hover { overlay_id = None; path = test_path; position = position 1 0 }))
           ~expected:
             Response.(
               Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
@@ -392,33 +372,14 @@ let test_hover_request context =
             Request.(
               Query
                 (Query.Hover
-                   {
-                     overlay_id = None;
-                     module_ = Module.OfName "doesnotexist";
-                     position = position 1 0;
-                   }))
+                   { overlay_id = None; path = "/doesnotexist.py"; position = position 1 0 }))
           ~kind:"ModuleNotTracked";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.Hover
-                   {
-                     overlay_id = None;
-                     module_ = Module.OfPath "/doesnotexist.py";
-                     position = position 1 0;
-                   }))
-          ~kind:"ModuleNotTracked";
-        ScratchProject.ClientConnection.assert_error_response
-          ~request:
-            Request.(
-              Query
-                (Query.Hover
-                   {
-                     overlay_id = Some "doesnotexist";
-                     module_ = Module.OfName "test";
-                     position = position 1 0;
-                   }))
+                   { overlay_id = Some "doesnotexist"; path = test_path; position = position 1 0 }))
           ~kind:"OverlayNotFound";
       ]
 
@@ -431,8 +392,8 @@ let test_location_of_definition_request context =
       ["test.py", "x: int = 42"; "test2.py", "import test\ny: int = test.x"]
   in
   let root = ScratchProject.source_root_of project in
-  let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
-  let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
+  let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
+  let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" |> PyrePath.absolute in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
@@ -444,7 +405,7 @@ let test_location_of_definition_request context =
               (* This location points to an empty space *)
               Query
                 (Query.LocationOfDefinition
-                   { overlay_id = None; module_ = Module.OfName "test2"; position = position 2 8 }))
+                   { overlay_id = None; path = test2_path; position = position 2 8 }))
           ~expected:Response.(LocationOfDefinition { definitions = [] });
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -452,73 +413,34 @@ let test_location_of_definition_request context =
               (* This location points to `test.x` *)
               Query
                 (Query.LocationOfDefinition
-                   { overlay_id = None; module_ = Module.OfName "test2"; position = position 2 14 }))
+                   { overlay_id = None; path = test2_path; position = position 2 14 }))
           ~expected:
             Response.(
               LocationOfDefinition
-                {
-                  definitions =
-                    [
-                      {
-                        DefinitionLocation.path = PyrePath.absolute test_path;
-                        range = range 1 0 1 1;
-                      };
-                    ];
-                });
+                { definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   {
-                     overlay_id = None;
-                     module_ = Module.OfPath (PyrePath.absolute test2_path);
-                     position = position 2 14;
-                   }))
+                   { overlay_id = None; path = test2_path; position = position 2 14 }))
           ~expected:
             Response.(
               LocationOfDefinition
-                {
-                  definitions =
-                    [
-                      {
-                        DefinitionLocation.path = PyrePath.absolute test_path;
-                        range = range 1 0 1 1;
-                      };
-                    ];
-                });
+                { definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }] });
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   {
-                     overlay_id = None;
-                     module_ = Module.OfName "doesnotexist";
-                     position = position 1 0;
-                   }))
+                   { overlay_id = None; path = "/doesnotexist.py"; position = position 1 0 }))
           ~kind:"ModuleNotTracked";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   {
-                     overlay_id = None;
-                     module_ = Module.OfPath "/doesnotexist.py";
-                     position = position 1 0;
-                   }))
-          ~kind:"ModuleNotTracked";
-        ScratchProject.ClientConnection.assert_error_response
-          ~request:
-            Request.(
-              Query
-                (Query.LocationOfDefinition
-                   {
-                     overlay_id = Some "doesnotexist";
-                     module_ = Module.OfName "test";
-                     position = position 1 0;
-                   }))
+                   { overlay_id = Some "doesnotexist"; path = test_path; position = position 1 0 }))
           ~kind:"OverlayNotFound";
       ]
 
@@ -715,20 +637,18 @@ let test_watchman_integration context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count_for_module ~module_name:"test" ~expected:0;
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~expected:0;
         (fun _ ->
           File.create ~content:"reveal_type(42)" test_path |> File.write;
           Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]));
-        assert_type_error_count_for_module ~module_name:"test" ~expected:1;
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~expected:1;
         (fun _ ->
           PyrePath.remove test_path;
           Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]));
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
-              Query
-                (Query.GetTypeErrors
-                   { overlay_id = None; module_ = Module.OfPath (PyrePath.absolute test_path) }))
+              Query (Query.GetTypeErrors { overlay_id = None; path = PyrePath.absolute test_path }))
           ~kind:"ModuleNotTracked";
       ]
 

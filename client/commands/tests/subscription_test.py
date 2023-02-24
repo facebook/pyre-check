@@ -186,11 +186,9 @@ class SubscriptionTest(testslide.TestCase):
             ),
         )
         assert_parsed(
-            json.dumps(
-                ["Error", ["ModuleNotTracked", {"module": ["OfPath", "a/b.py"]}]]
-            ),
+            json.dumps(["Error", ["ModuleNotTracked", {"path": "a/b.py"}]]),
             expected=Response(
-                body=Error(message='ModuleNotTracked: {"module": ["OfPath", "a/b.py"]}')
+                body=Error(message='ModuleNotTracked: {"path": "a/b.py"}')
             ),
         )
         assert_parsed(

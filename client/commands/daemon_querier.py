@@ -431,7 +431,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
         hover_request = code_navigation_request.HoverRequest(
-            module=code_navigation_request.ModuleOfPath(path),
+            path=str(path),
             overlay_id=self._get_overlay_id(path),
             position=position,
         )
@@ -456,7 +456,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
-            module=code_navigation_request.ModuleOfPath(path),
+            path=str(path),
             overlay_id=self._get_overlay_id(path),
             position=position,
         )
@@ -490,7 +490,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             )
         local_update = code_navigation_request.LocalUpdate(
             overlay_id=overlay_id,
-            module=code_navigation_request.ModuleOfPath(path),
+            path=str(path),
             content=code,
         )
         return await code_navigation_request.async_handle_local_update(

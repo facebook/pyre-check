@@ -17,7 +17,7 @@ from .. import code_navigation_request, protocol as lsp
 class CodeNavigationRequestsTest(testslide.TestCase):
     def test_serialize_request(self) -> None:
         hover_request = code_navigation_request.HoverRequest(
-            module=code_navigation_request.ModuleOfPath(Path("/a/b.py")),
+            path="/a/b.py",
             overlay_id=None,
             position=lsp.PyrePosition(line=1, character=2),
         )
@@ -26,7 +26,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             [
                 "Hover",
                 {
-                    "module": ["OfPath", "/a/b.py"],
+                    "path": "/a/b.py",
                     "overlay_id": None,
                     "position": {"line": 1, "column": 2},
                 },
@@ -34,7 +34,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         )
 
         hover_request = code_navigation_request.HoverRequest(
-            module=code_navigation_request.ModuleOfPath(Path("/a/b.py")),
+            path="/a/b.py",
             overlay_id="overlay_key",
             position=lsp.PyrePosition(line=1, character=2),
         )
@@ -43,14 +43,14 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             [
                 "Hover",
                 {
-                    "module": ["OfPath", "/a/b.py"],
+                    "path": "/a/b.py",
                     "overlay_id": "overlay_key",
                     "position": {"line": 1, "column": 2},
                 },
             ],
         )
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
-            module=code_navigation_request.ModuleOfPath(Path("/a/b.py")),
+            path="/a/b.py",
             overlay_id="overlay_key",
             position=lsp.PyrePosition(line=1, character=2),
         )
@@ -59,7 +59,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             [
                 "LocationOfDefinition",
                 {
-                    "module": ["OfPath", "/a/b.py"],
+                    "path": "/a/b.py",
                     "overlay_id": "overlay_key",
                     "position": {"line": 1, "column": 2},
                 },
@@ -159,7 +159,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
 
     def test_local_update_json(self) -> None:
         local_update = code_navigation_request.LocalUpdate(
-            module=code_navigation_request.ModuleOfPath(Path("/a/b.py")),
+            path="/a/b.py",
             content="def foo() -> int: pass\n",
             overlay_id="/a/b.py 1234",
         )
@@ -168,7 +168,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             [
                 "LocalUpdate",
                 {
-                    "module": ["OfPath", "/a/b.py"],
+                    "path": "/a/b.py",
                     "content": "def foo() -> int: pass\n",
                     "overlay_id": "/a/b.py 1234",
                 },
