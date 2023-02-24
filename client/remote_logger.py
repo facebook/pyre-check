@@ -17,7 +17,7 @@ import time
 from enum import Enum
 from typing import Mapping, Optional
 
-from .configuration import Configuration  # noqa
+from .configuration import Configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -62,3 +62,28 @@ def log(
         subprocess.run([logger, category.value], input=statistics)
     except Exception:
         LOG.warning("Unable to log using `%s`", logger)
+
+
+def log_with_configuration(
+    category: LoggerCategory,
+    configuration: Configuration,
+    integers: Optional[Mapping[str, Optional[int]]] = None,
+    normals: Optional[Mapping[str, Optional[str]]] = None,
+) -> None:
+    logger = configuration.logger
+    if logger is None:
+        return
+    log(
+        category=category,
+        logger=logger,
+        integers=integers,
+        normals={
+            **(normals or {}),
+            "project_root": configuration.project_root,
+            "root": configuration.relative_local_root,
+            "version": configuration.get_version_hash_respecting_override()
+            or "unversioned",
+            "oncall": configuration.oncall or "",
+            "configuration": str(configuration),
+        },
+    )
