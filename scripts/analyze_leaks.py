@@ -8,7 +8,18 @@ import json
 import sys
 import os
 from collections import defaultdict, deque
-from typing import cast, Collection, Deque, Dict, List, Optional, Set, TextIO, Union
+from typing import (
+    cast,
+    Collection,
+    Deque,
+    Dict,
+    List,
+    Optional,
+    Set,
+    TextIO,
+    Union,
+    Tuple,
+)
 from pathlib import Path
 
 from ..client import (
@@ -198,17 +209,22 @@ class CallGraph:
         self.call_graph = call_graph.to_call_graph()
         self.entrypoints = entrypoints
 
-    def get_transitive_callees(self) -> Set[str]:
-        transitive_callees = set()
-        stack = list(self.entrypoints.entrypoints)
+    def get_transitive_callees_and_traces(self) -> Dict[str, Trace]:
+        transitive_callees = {}
+        queue: Deque[Tuple[str, Trace]] = deque(
+            [(entrypoint, [entrypoint]) for entrypoint in self.entrypoints.entrypoints]
+        )
 
-        while stack:
-            callable = stack.pop()
+        while queue:
+            callable, trace = queue.popleft()
             if callable in transitive_callees:
                 continue
-            transitive_callees.add(callable)
+            transitive_callees[callable] = trace
             if callable in self.call_graph:
-                stack += self.call_graph[callable]
+                queue += [
+                    (next_callable, trace + [next_callable])
+                    for next_callable in self.call_graph[callable]
+                ]
 
         return transitive_callees
 
@@ -250,7 +266,7 @@ class CallGraph:
         return results
 
     def find_issues(self, search_start_path: Path) -> Dict[str, List[object]]:
-        all_callables = self.get_transitive_callees()
+        all_callables = set(self.get_transitive_callees_and_traces())
         query_str = self.prepare_issues_for_query(all_callables)
 
         project_root = find_directories.find_global_and_local_root(search_start_path)

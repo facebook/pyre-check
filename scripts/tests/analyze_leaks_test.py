@@ -437,9 +437,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(input_format, entrypoints)
 
-        callees = call_graph.get_transitive_callees()
+        callees = call_graph.get_transitive_callees_and_traces()
 
-        self.assertEqual(callees, set())
+        self.assertEqual(callees, {})
 
     def test_get_transitive_callees_f1(self) -> None:
         entrypoints_list: JSON = ["f1"]
@@ -449,9 +449,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(input_format, entrypoints)
 
-        callees = call_graph.get_transitive_callees()
+        callees = call_graph.get_transitive_callees_and_traces()
 
-        self.assertEqual(callees, {"f1", "f2", "f3"})
+        self.assertEqual(
+            callees, {"f1": ["f1"], "f2": ["f1", "f2"], "f3": ["f1", "f3"]}
+        )
 
     def test_get_transitive_callees_f2(self) -> None:
         entrypoints_list: JSON = ["f2"]
@@ -461,9 +463,11 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(input_format, entrypoints)
 
-        callees = call_graph.get_transitive_callees()
+        callees = call_graph.get_transitive_callees_and_traces()
 
-        self.assertEqual(callees, {"f1", "f2", "f3"})
+        self.assertEqual(
+            callees, {"f1": ["f2", "f1"], "f2": ["f2"], "f3": ["f2", "f1", "f3"]}
+        )
 
     def test_get_transitive_callees_f3(self) -> None:
         entrypoints_list: JSON = ["f3"]
@@ -473,9 +477,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints = Entrypoints(entrypoints_list, input_format.get_keys())
         call_graph = CallGraph(input_format, entrypoints)
 
-        callees = call_graph.get_transitive_callees()
+        callees = call_graph.get_transitive_callees_and_traces()
 
-        self.assertEqual(callees, {"f3"})
+        self.assertEqual(callees, {"f3": ["f3"]})
 
     def test_get_transitive_callees_multiple(self) -> None:
         entrypoints_list: JSON = ["f1", "f4"]
@@ -495,9 +499,19 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             entrypoints,
         )
 
-        callees = call_graph.get_transitive_callees()
+        callees = call_graph.get_transitive_callees_and_traces()
 
-        self.assertEqual(callees, {"f1", "f2", "f3", "f4", "f5", "print"})
+        self.assertEqual(
+            callees,
+            {
+                "f1": ["f1"],
+                "f2": ["f1", "f2"],
+                "f3": ["f1", "f3"],
+                "f4": ["f4"],
+                "f5": ["f4", "f5"],
+                "print": ["f4", "f5", "print"],
+            },
+        )
 
     def test_prepare_issues_for_query(self) -> None:
         callees = ["f1", "f2", "f3"]
