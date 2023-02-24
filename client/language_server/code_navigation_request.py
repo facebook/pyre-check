@@ -15,7 +15,6 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-import dataclasses_json
 from marshmallow import fields
 
 from .. import dataclasses_json_extensions as json_mixins
@@ -201,13 +200,7 @@ class FileClosed:
 
 @dataclasses.dataclass(frozen=True)
 class ClassExpression(json_mixins.SnakeCaseAndExcludeJsonMixin):
-    module: Module = dataclasses.field(
-        metadata=dataclasses_json.config(
-            encoder=Module.module_to_json,
-            decoder=Module.module_from_json,
-            mm_field=fields.Field(),
-        )
-    )
+    module: str
     qualified_name: str
 
 

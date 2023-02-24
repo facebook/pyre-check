@@ -212,7 +212,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
     def test_superclasses_request_json(self) -> None:
         superclasses_request = code_navigation_request.SuperclassesRequest(
             class_=code_navigation_request.ClassExpression(
-                module=code_navigation_request.ModuleOfName("a"), qualified_name="C"
+                module="a", qualified_name="C"
             ),
         )
         self.assertEqual(
@@ -220,7 +220,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             [
                 "Superclasses",
                 {
-                    "class": {"module": ["OfName", "a"], "qualified_name": "C"},
+                    "class": {"module": "a", "qualified_name": "C"},
                 },
             ],
         )
@@ -231,11 +231,11 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 {
                     "superclasses": [
                         {
-                            "module": ["OfName", "typing"],
+                            "module": "typing",
                             "qualified_name": "Sequence",
                         },
                         {
-                            "module": ["OfName", "typing"],
+                            "module": "typing",
                             "qualified_name": "Collection",
                         },
                     ]
@@ -249,43 +249,16 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         self.assertEqual(len(superclasses), 2)
         self.assertEqual(
             superclasses[0],
-            code_navigation_request.ClassExpression(
-                code_navigation_request.ModuleOfName("typing"), "Sequence"
-            ),
-        )
-
-        # OfPath.
-        superclasses_response = (
-            code_navigation_request.SuperclassesResponse.cached_schema().load(
-                {
-                    "superclasses": [
-                        {
-                            "module": ["OfPath", "/a/b/typing.py"],
-                            "qualified_name": "Sequence",
-                        },
-                    ]
-                }
-            )
-        )
-        self.assertIsInstance(
-            superclasses_response, code_navigation_request.SuperclassesResponse
-        )
-        superclasses = superclasses_response.superclasses
-        self.assertEqual(len(superclasses), 1)
-        self.assertEqual(
-            superclasses[0],
-            code_navigation_request.ClassExpression(
-                code_navigation_request.ModuleOfPath(Path("/a/b/typing.py")), "Sequence"
-            ),
+            code_navigation_request.ClassExpression("typing", "Sequence"),
         )
 
         # Invalid module kind.
-        with self.assertRaisesRegex(AssertionError, "JSON must be a list of form"):
+        with self.assertRaises(ValidationError):
             code_navigation_request.SuperclassesResponse.cached_schema().load(
                 {
                     "superclasses": [
                         {
-                            "module": ["OfInvalid", "/a/b/typing.py"],
+                            "module": ["Invalid", "/a/b/typing.py"],
                             "qualified_name": "Sequence",
                         },
                     ]

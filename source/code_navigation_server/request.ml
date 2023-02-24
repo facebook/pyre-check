@@ -36,7 +36,7 @@ end
 
 module ClassExpression = struct
   type t = {
-    module_: Module.t; [@key "module"]
+    module_: string; [@key "module"]
     qualified_name: string;
   }
   [@@deriving sexp, compare, yojson { strict = false }]

@@ -568,18 +568,28 @@ let test_superclasses context =
             Request.(
               Query
                 (Query.Superclasses
-                   {
-                     class_ =
-                       { ClassExpression.module_ = Module.OfName "test"; qualified_name = "C" };
-                   }))
+                   { class_ = { ClassExpression.module_ = "test"; qualified_name = "C" } }))
+          ~expected:
+            Response.(
+              Superclasses
+                {
+                  superclasses =
+                    [Request.{ ClassExpression.module_ = ""; qualified_name = "object" }];
+                });
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Query
+                (Query.Superclasses
+                   { class_ = { ClassExpression.module_ = "test"; qualified_name = "D" } }))
           ~expected:
             Response.(
               Superclasses
                 {
                   superclasses =
                     [
-                      Request.
-                        { ClassExpression.module_ = Module.OfName ""; qualified_name = "object" };
+                      Request.{ ClassExpression.module_ = "test"; qualified_name = "C" };
+                      Request.{ ClassExpression.module_ = ""; qualified_name = "object" };
                     ];
                 });
         ScratchProject.ClientConnection.assert_response
@@ -587,43 +597,16 @@ let test_superclasses context =
             Request.(
               Query
                 (Query.Superclasses
-                   {
-                     class_ =
-                       { ClassExpression.module_ = Module.OfName "test"; qualified_name = "D" };
-                   }))
+                   { class_ = { ClassExpression.module_ = "test"; qualified_name = "E" } }))
           ~expected:
             Response.(
               Superclasses
                 {
                   superclasses =
                     [
-                      Request.
-                        { ClassExpression.module_ = Module.OfName "test"; qualified_name = "C" };
-                      Request.
-                        { ClassExpression.module_ = Module.OfName ""; qualified_name = "object" };
-                    ];
-                });
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Query
-                (Query.Superclasses
-                   {
-                     class_ =
-                       { ClassExpression.module_ = Module.OfName "test"; qualified_name = "E" };
-                   }))
-          ~expected:
-            Response.(
-              Superclasses
-                {
-                  superclasses =
-                    [
-                      Request.
-                        { ClassExpression.module_ = Module.OfName "test"; qualified_name = "D" };
-                      Request.
-                        { ClassExpression.module_ = Module.OfName "test"; qualified_name = "C" };
-                      Request.
-                        { ClassExpression.module_ = Module.OfName ""; qualified_name = "object" };
+                      Request.{ ClassExpression.module_ = "test"; qualified_name = "D" };
+                      Request.{ ClassExpression.module_ = "test"; qualified_name = "C" };
+                      Request.{ ClassExpression.module_ = ""; qualified_name = "object" };
                     ];
                 });
         (* Non-existent module. *)
@@ -632,17 +615,10 @@ let test_superclasses context =
             Request.(
               Query
                 (Query.Superclasses
-                   {
-                     class_ =
-                       {
-                         ClassExpression.module_ = Module.OfName "missing_module";
-                         qualified_name = "C";
-                       };
-                   }))
+                   { class_ = { ClassExpression.module_ = "missing_module"; qualified_name = "C" } }))
           ~expected:
             Response.(
-              Error
-                (ErrorKind.ModuleNotTracked { module_ = Request.Module.OfName "missing_module" }));
+              Error (ErrorKind.InvalidRequest "Cannot find module with name `missing_module`"));
         (* Non-existent class. *)
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -650,17 +626,11 @@ let test_superclasses context =
               Query
                 (Query.Superclasses
                    {
-                     class_ =
-                       {
-                         ClassExpression.module_ = Module.OfName "test";
-                         qualified_name = "CDoesNotExist";
-                       };
+                     class_ = { ClassExpression.module_ = "test"; qualified_name = "CDoesNotExist" };
                    }))
           ~expected:
             Response.(
-              Error
-                (ErrorKind.InvalidRequest
-                   "Class `test.CDoesNotExist` not found in the type environment."));
+              Error (ErrorKind.InvalidRequest "Cannot find class `CDoesNotExist` in module `test`."));
         (* Overlay. *)
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -679,17 +649,11 @@ let test_superclasses context =
               Query
                 (Query.Superclasses
                    {
-                     class_ =
-                       {
-                         ClassExpression.module_ = Module.OfName "test";
-                         qualified_name = "OnlyInOverlay";
-                       };
+                     class_ = { ClassExpression.module_ = "test"; qualified_name = "OnlyInOverlay" };
                    }))
           ~expected:
             Response.(
-              Error
-                (ErrorKind.InvalidRequest
-                   "Class `test.OnlyInOverlay` not found in the type environment."));
+              Error (ErrorKind.InvalidRequest "Cannot find class `OnlyInOverlay` in module `test`."));
       ]
 
 

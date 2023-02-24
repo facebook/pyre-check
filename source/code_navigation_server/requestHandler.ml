@@ -135,13 +135,16 @@ let handle_location_of_definition
 
 let handle_superclasses
     ~class_:{ Request.ClassExpression.module_; qualified_name }
-    { State.environment; build_system; _ }
+    { State.environment; _ }
   =
-  let open Result in
   let root_environment = OverlaidEnvironment.root environment in
   let global_resolution =
     ErrorsEnvironment.ReadOnly.type_environment root_environment
     |> TypeEnvironment.ReadOnly.global_resolution
+  in
+  let get_module_by_name ~module_tracker name =
+    let module_name = Ast.Reference.create name in
+    Option.some_if (ModuleTracker.ReadOnly.is_module_tracked module_tracker module_name) module_name
   in
   let to_class_expression superclass =
     (* TODO(T139769506): Instead of this hack where we assume `a.b.c` is a module when looking at
@@ -152,31 +155,37 @@ let handle_superclasses
     | Some module_ ->
         Some
           {
-            Request.ClassExpression.module_ = Request.Module.OfName (Ast.Reference.show module_);
+            Request.ClassExpression.module_ = Ast.Reference.show module_;
             qualified_name = Ast.Reference.last superclass_reference;
           }
     | None -> None
   in
 
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker root_environment in
-  get_modules ~module_tracker ~build_system module_
-  >>= fun modules ->
-  (* `get_modules` is guaranteed to evaluate to a non-empty module. *)
-  let module_ = List.hd_exn modules in
-  let class_name =
-    Ast.Reference.combine module_ (Ast.Reference.create qualified_name) |> Ast.Reference.show
-  in
-  if not (GlobalResolution.class_exists global_resolution class_name) then
-    Response.ErrorKind.InvalidRequest
-      (Printf.sprintf "Class `%s` not found in the type environment." class_name)
-    |> Result.fail
-  else
-    let superclasses =
-      class_name
-      |> GlobalResolution.successors ~resolution:global_resolution
-      |> List.filter_map ~f:to_class_expression
-    in
-    Response.Superclasses { superclasses } |> Result.return
+  match get_module_by_name ~module_tracker module_ with
+  | None ->
+      Response.ErrorKind.InvalidRequest (Format.sprintf "Cannot find module with name `%s`" module_)
+      |> Result.fail
+  | Some module_name ->
+      let class_name =
+        Ast.Reference.combine module_name (Ast.Reference.create qualified_name)
+        |> Ast.Reference.show
+      in
+      if not (GlobalResolution.class_exists global_resolution class_name) then
+        Response.ErrorKind.InvalidRequest
+          (Format.asprintf
+             "Cannot find class `%s` in module `%a`."
+             qualified_name
+             Ast.Reference.pp
+             module_name)
+        |> Result.fail
+      else
+        let superclasses =
+          class_name
+          |> GlobalResolution.successors ~resolution:global_resolution
+          |> List.filter_map ~f:to_class_expression
+        in
+        Response.Superclasses { superclasses } |> Result.return
 
 
 let with_broadcast ~subscriptions ~status f =
