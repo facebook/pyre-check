@@ -66,6 +66,4 @@ class PyreFlavor(enum.Enum):
         ]
 
     def server_log_subdirectory(self) -> str:
-        if self == PyreFlavor.CODE_NAVIGATION:
-            return self.value
-        return "new_server"
+        return self.value
