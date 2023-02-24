@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-from ... import backend_arguments, error, identifiers, json_rpc
+from ... import backend_arguments, background_tasks, error, identifiers, json_rpc
 
 from ...language_server import protocol as lsp
 
@@ -22,7 +22,7 @@ from ...language_server.connections import (
 from ...language_server.daemon_connection import DaemonConnectionFailure
 from ...language_server.features import LanguageServerFeatures, TypeCoverageAvailability
 
-from .. import background, start
+from .. import start
 from ..daemon_querier import AbstractDaemonQuerier
 from ..daemon_query import DaemonQueryFailure
 from ..persistent import ClientTypeErrorHandler
@@ -256,7 +256,7 @@ def create_pyre_language_server_api_and_output(
 def create_pyre_language_server_dispatcher(
     input_channel: AsyncTextReader,
     server_state: ServerState,
-    daemon_manager: background.TaskManager,
+    daemon_manager: background_tasks.TaskManager,
     querier: MockDaemonQuerier,
 ) -> Tuple[PyreLanguageServerDispatcher, MemoryBytesWriter]:
     output_writer: MemoryBytesWriter = MemoryBytesWriter()
@@ -316,11 +316,11 @@ def success_response_json(
     return json.dumps(json_rpc.SuccessResponse(id=request_id, result=result).json())
 
 
-class NoOpBackgroundTask(background.Task):
+class NoOpBackgroundTask(background_tasks.Task):
     async def run(self) -> None:
         pass
 
 
-class WaitForeverBackgroundTask(background.Task):
+class WaitForeverBackgroundTask(background_tasks.Task):
     async def run(self) -> None:
         await asyncio.Event().wait()

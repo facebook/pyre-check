@@ -7,16 +7,17 @@ import asyncio
 
 import testslide
 
-from ...tests import setup
-from .. import background
+from .. import background_tasks
+
+from ..tests import setup
 
 
-class WaitForeverTask(background.Task):
+class WaitForeverTask(background_tasks.Task):
     async def run(self) -> None:
         await asyncio.Event().wait()
 
 
-class WaitForEventTask(background.Task):
+class WaitForEventTask(background_tasks.Task):
     event: asyncio.Event
 
     def __init__(self) -> None:
@@ -31,7 +32,7 @@ class TaskTest(testslide.TestCase):
     @setup.async_test
     async def test_background_task_manager(self) -> None:
         task = WaitForEventTask()
-        manager = background.TaskManager(task)
+        manager = background_tasks.TaskManager(task)
         self.assertFalse(manager.is_task_running())
 
         await manager.ensure_task_running()
@@ -57,7 +58,7 @@ class TaskTest(testslide.TestCase):
 
     @setup.async_test
     async def test_background_task_manager_shutdown_before_start(self) -> None:
-        manager = background.TaskManager(WaitForeverTask())
+        manager = background_tasks.TaskManager(WaitForeverTask())
         self.assertFalse(manager.is_task_running())
 
         await manager.ensure_task_running()

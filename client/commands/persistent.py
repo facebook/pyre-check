@@ -36,10 +36,9 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from .. import backend_arguments, error, json_rpc, timer, version
+from .. import backend_arguments, background_tasks, error, json_rpc, timer, version
 from ..language_server import connections, features, protocol as lsp
 from . import (
-    background,
     daemon_querier,
     incremental,
     launch_and_subscribe_handler,
@@ -487,7 +486,7 @@ async def run_persistent(
         input_channel=stdin,
         output_channel=stdout,
         server_state=server_state,
-        daemon_manager=background.TaskManager(
+        daemon_manager=background_tasks.TaskManager(
             PyrePersistentDaemonLaunchAndSubscribeHandler(
                 server_options_reader=server_options_reader,
                 remote_logging=remote_logging,

@@ -19,10 +19,9 @@ import traceback
 from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 
-from .. import backend_arguments, timer
+from .. import backend_arguments, background_tasks, timer
 from ..language_server import connections, features, protocol as lsp
 from . import (
-    background,
     daemon_querier,
     log_lsp_event,
     pyre_server_options,
@@ -56,7 +55,7 @@ class PyreSubscriptionResponseParser(abc.ABC):
         pass
 
 
-class PyreDaemonLaunchAndSubscribeHandler(background.Task):
+class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
     server_options_reader: PyreServerOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
     server_state: ServerState

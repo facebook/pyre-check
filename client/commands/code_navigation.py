@@ -19,11 +19,10 @@ import traceback
 
 from typing import Optional
 
-from .. import backend_arguments, timer, version
+from .. import backend_arguments, background_tasks, timer, version
 from ..language_server import connections, features, protocol as lsp
 
 from . import (
-    background,
     daemon_querier,
     initialization,
     launch_and_subscribe_handler,
@@ -231,7 +230,7 @@ async def async_run_code_navigation_client(
         input_channel=stdin,
         output_channel=stdout,
         server_state=server_state,
-        daemon_manager=background.TaskManager(
+        daemon_manager=background_tasks.TaskManager(
             PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
                 server_options_reader=server_options_reader,
                 remote_logging=remote_logging,

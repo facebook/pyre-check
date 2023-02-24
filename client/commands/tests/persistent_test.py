@@ -13,7 +13,7 @@ from typing import Callable, List, Optional, Union
 
 import testslide
 
-from ... import backend_arguments, error, json_rpc
+from ... import backend_arguments, background_tasks, error, json_rpc
 from ...language_server import protocol as lsp
 from ...language_server.connections import (
     AsyncTextReader,
@@ -33,7 +33,7 @@ from ...language_server.features import (
 )
 from ...language_server.protocol import SymbolKind
 from ...tests import setup
-from .. import background, start, subscription
+from .. import start, subscription
 from ..initialization import (
     async_try_initialize,
     InitializationExit,
@@ -438,7 +438,9 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
             input_channel=input_channel,
             server_state=server_state,
             querier=server_setup.MockDaemonQuerier(),
-            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
+            daemon_manager=background_tasks.TaskManager(
+                server_setup.NoOpBackgroundTask()
+            ),
         )
         exit_code = await dispatcher.run()
         self.assertEqual(exit_code, 0)
@@ -457,7 +459,9 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
             input_channel=input_channel,
             server_state=server_state,
             querier=server_setup.MockDaemonQuerier(),
-            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
+            daemon_manager=background_tasks.TaskManager(
+                server_setup.NoOpBackgroundTask()
+            ),
         )
         exit_code = await dispatcher.run()
         self.assertEqual(exit_code, 0)
@@ -474,7 +478,9 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
             input_channel=input_channel,
             server_state=server_state,
             querier=server_setup.MockDaemonQuerier(),
-            daemon_manager=background.TaskManager(server_setup.NoOpBackgroundTask()),
+            daemon_manager=background_tasks.TaskManager(
+                server_setup.NoOpBackgroundTask()
+            ),
         )
         exit_code = await dispatcher.run()
         self.assertEqual(exit_code, 0)
@@ -482,7 +488,9 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
     @setup.async_test
     async def test_exit_gracefully_on_channel_closure(self) -> None:
         server_state = server_setup.mock_server_state
-        noop_task_manager = background.TaskManager(server_setup.NoOpBackgroundTask())
+        noop_task_manager = background_tasks.TaskManager(
+            server_setup.NoOpBackgroundTask()
+        )
         dispatcher, output_writer = server_setup.create_pyre_language_server_dispatcher(
             # Feed nothing to input channel
             input_channel=create_memory_text_reader(""),
@@ -526,7 +534,7 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
                 ),
             ),
         ]:
-            fake_task_manager = background.TaskManager(
+            fake_task_manager = background_tasks.TaskManager(
                 server_setup.WaitForeverBackgroundTask()
             )
             dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(
@@ -580,7 +588,7 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
                 ),
             ),
         ]:
-            fake_task_manager = background.TaskManager(
+            fake_task_manager = background_tasks.TaskManager(
                 server_setup.WaitForeverBackgroundTask()
             )
             dispatcher, _ = server_setup.create_pyre_language_server_dispatcher(

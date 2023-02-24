@@ -27,10 +27,10 @@ from typing import (
     Union,
 )
 
-from .. import json_rpc, log, timer
+from .. import background_tasks, json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
-from . import background, commands, daemon_querier, find_symbols, server_state as state
+from . import commands, daemon_querier, find_symbols, server_state as state
 
 from .daemon_query import DaemonQueryFailure
 
@@ -712,7 +712,7 @@ class PyreLanguageServerDispatcher:
     # State: used *exclusively* to track restart failures.
     server_state: state.ServerState
 
-    daemon_manager: background.TaskManager
+    daemon_manager: background_tasks.TaskManager
     api: PyreLanguageServerApi
 
     async def wait_for_exit(self) -> commands.ExitCode:
