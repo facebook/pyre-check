@@ -27,6 +27,7 @@ from typing import Iterable, List, Optional
 import click
 
 from . import (
+    backend_arguments,
     command_arguments,
     commands,
     configuration as configuration_module,
@@ -980,7 +981,7 @@ def persistent(
                 telemetry=language_server_features.TelemetryAvailability.DISABLED,
             ),
         ),
-        remote_logging=commands.backend_arguments.RemoteLogging.create(
+        remote_logging=backend_arguments.RemoteLogging.create(
             configuration.logger,
             start_command_argument.get_log_identifier(),
         ),

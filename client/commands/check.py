@@ -19,12 +19,13 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Sequence
 
 from .. import (
+    backend_arguments,
     command_arguments,
     configuration as configuration_module,
     error,
     frontend_configuration,
 )
-from . import backend_arguments, commands, incremental, start
+from . import commands, incremental, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

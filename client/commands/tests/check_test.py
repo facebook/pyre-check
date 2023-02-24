@@ -10,11 +10,15 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration, frontend_configuration
+from ... import (
+    backend_arguments,
+    command_arguments,
+    configuration,
+    frontend_configuration,
+)
 from ...configuration import search_path
 from ...error import Error
 from ...tests import setup
-from .. import backend_arguments
 from ..check import (
     Arguments,
     create_check_arguments,

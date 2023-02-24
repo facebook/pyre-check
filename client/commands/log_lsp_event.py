@@ -19,9 +19,7 @@ json messages to the editor, which is responsible for loggign them.
 import enum
 from typing import Dict, Optional
 
-from .. import remote_logger, version
-
-from . import backend_arguments
+from .. import backend_arguments, remote_logger, version
 
 
 class LSPEvent(enum.Enum):

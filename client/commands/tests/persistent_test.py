@@ -13,7 +13,7 @@ from typing import Callable, List, Optional, Union
 
 import testslide
 
-from ... import error, json_rpc
+from ... import backend_arguments, error, json_rpc
 from ...language_server import protocol as lsp
 from ...language_server.connections import (
     AsyncTextReader,
@@ -33,7 +33,7 @@ from ...language_server.features import (
 )
 from ...language_server.protocol import SymbolKind
 from ...tests import setup
-from .. import backend_arguments, background, start, subscription
+from .. import background, start, subscription
 from ..initialization import (
     async_try_initialize,
     InitializationExit,

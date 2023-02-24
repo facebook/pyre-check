@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Callable, Optional, Sequence
 
 from .. import (
+    backend_arguments,
     command_arguments,
     configuration as configuration_module,
     daemon_socket,
@@ -27,7 +28,7 @@ from .. import (
 )
 from ..language_server import features
 
-from . import backend_arguments, commands, log_lsp_event, start
+from . import commands, log_lsp_event, start
 
 PyreServerOptionsReader = Callable[[], "PyreServerOptions"]
 FrontendConfigurationReader = Callable[[], frontend_configuration.Base]

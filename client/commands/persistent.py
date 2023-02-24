@@ -36,10 +36,9 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from .. import error, json_rpc, timer, version
+from .. import backend_arguments, error, json_rpc, timer, version
 from ..language_server import connections, features, protocol as lsp
 from . import (
-    backend_arguments,
     background,
     daemon_querier,
     incremental,

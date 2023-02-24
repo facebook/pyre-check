@@ -37,6 +37,7 @@ from typing import (
 )
 
 from .. import (
+    backend_arguments,
     command_arguments,
     configuration as configuration_module,
     daemon_socket,
@@ -45,7 +46,7 @@ from .. import (
     identifiers,
     log,
 )
-from . import backend_arguments, commands, server_event, stop
+from . import commands, server_event, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

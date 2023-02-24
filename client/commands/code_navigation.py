@@ -19,11 +19,10 @@ import traceback
 
 from typing import Optional
 
-from .. import timer, version
+from .. import backend_arguments, timer, version
 from ..language_server import connections, features, protocol as lsp
 
 from . import (
-    backend_arguments,
     background,
     daemon_querier,
     initialization,

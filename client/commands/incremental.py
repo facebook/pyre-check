@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence
 
 from .. import (
+    backend_arguments,
     command_arguments,
     configuration as configuration_module,
     daemon_socket,
@@ -26,7 +27,7 @@ from .. import (
 )
 
 from ..language_server import connections
-from . import backend_arguments, commands, server_event, start
+from . import commands, server_event, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

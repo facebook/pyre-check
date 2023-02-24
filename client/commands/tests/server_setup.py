@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-from ... import error, identifiers, json_rpc
+from ... import backend_arguments, error, identifiers, json_rpc
 
 from ...language_server import protocol as lsp
 
@@ -22,7 +22,7 @@ from ...language_server.connections import (
 from ...language_server.daemon_connection import DaemonConnectionFailure
 from ...language_server.features import LanguageServerFeatures, TypeCoverageAvailability
 
-from .. import backend_arguments, background, start
+from .. import background, start
 from ..daemon_querier import AbstractDaemonQuerier
 from ..daemon_query import DaemonQueryFailure
 from ..persistent import ClientTypeErrorHandler

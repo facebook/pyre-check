@@ -19,10 +19,9 @@ import traceback
 from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 
-from .. import timer
+from .. import backend_arguments, timer
 from ..language_server import connections, features, protocol as lsp
 from . import (
-    backend_arguments,
     background,
     daemon_querier,
     log_lsp_event,

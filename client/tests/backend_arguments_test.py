@@ -9,9 +9,7 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration, frontend_configuration
-from ...configuration import search_path
-from ...tests import setup
+from .. import command_arguments, configuration, frontend_configuration
 from ..backend_arguments import (
     BaseArguments,
     BuckSourcePath,
@@ -24,6 +22,8 @@ from ..backend_arguments import (
     SimpleSourcePath,
     WithUnwatchedDependencySourcePath,
 )
+from ..configuration import search_path
+from ..tests import setup
 
 
 class ArgumentsTest(testslide.TestCase):

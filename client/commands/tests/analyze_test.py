@@ -9,10 +9,14 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration, frontend_configuration
+from ... import (
+    backend_arguments,
+    command_arguments,
+    configuration,
+    frontend_configuration,
+)
 from ...configuration import search_path
 from ...tests import setup
-from .. import backend_arguments
 from ..analyze import Arguments, create_analyze_arguments
 
 

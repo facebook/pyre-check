@@ -24,17 +24,11 @@ from typing import Callable, Optional, Union
 
 from typing_extensions import TypeAlias
 
-from .. import identifiers, json_rpc, log
+from .. import backend_arguments, identifiers, json_rpc, log
 from ..language_server import connections, protocol as lsp
 from ..language_server.protocol import InitializeParameters, InitializeResult
 
-from . import (
-    backend_arguments,
-    log_lsp_event,
-    pyre_language_server,
-    server_event,
-    start,
-)
+from . import log_lsp_event, pyre_language_server, server_event, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

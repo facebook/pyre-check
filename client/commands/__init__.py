@@ -13,7 +13,6 @@ library code used by several commands.
 
 from . import (  # noqa F401
     analyze,
-    backend_arguments,
     check,
     code_navigation,
     coverage,
