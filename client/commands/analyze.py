@@ -21,15 +21,10 @@ from .. import (
     command_arguments,
     configuration as configuration_module,
     error as error_module,
+    frontend_configuration,
     log,
 )
-from . import (
-    backend_arguments,
-    commands,
-    frontend_configuration,
-    start,
-    validate_models,
-)
+from . import backend_arguments, commands, start, validate_models
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

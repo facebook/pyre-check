@@ -14,9 +14,15 @@ import json
 import logging
 from typing import Union
 
-from .. import command_arguments, configuration as configuration_module, json_rpc, log
+from .. import (
+    command_arguments,
+    configuration as configuration_module,
+    frontend_configuration,
+    json_rpc,
+    log,
+)
 from ..language_server import connections, protocol as lsp
-from . import commands, frontend_configuration, start
+from . import commands, start
 from .initialization import (
     InitializationExit,
     InitializationFailure,

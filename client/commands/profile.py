@@ -25,8 +25,13 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from typing_extensions import Final
 
-from .. import command_arguments, configuration as configuration_module, identifiers
-from . import backend_arguments, commands, frontend_configuration
+from .. import (
+    command_arguments,
+    configuration as configuration_module,
+    frontend_configuration,
+    identifiers,
+)
+from . import backend_arguments, commands
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

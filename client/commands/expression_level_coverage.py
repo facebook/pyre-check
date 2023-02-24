@@ -23,13 +23,14 @@ import dataclasses_json
 from .. import (
     configuration as configuration_module,
     daemon_socket,
+    frontend_configuration,
     identifiers,
     log,
     remote_logger,
 )
 
 from ..language_server import connections, protocol as lsp
-from . import commands, coverage, daemon_query, frontend_configuration
+from . import commands, coverage, daemon_query
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

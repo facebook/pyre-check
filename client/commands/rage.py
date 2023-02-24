@@ -23,11 +23,12 @@ from typing import List, Optional, Sequence, TextIO, Tuple
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    frontend_configuration,
     identifiers,
     log,
     version,
 )
-from . import commands, frontend_configuration, start
+from . import commands, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

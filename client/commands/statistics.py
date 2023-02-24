@@ -26,10 +26,11 @@ import libcst as cst
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    frontend_configuration,
     libcst_collectors as collectors,
     log,
 )
-from . import commands, frontend_configuration
+from . import commands
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

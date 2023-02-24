@@ -9,10 +9,9 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration
+from ... import command_arguments, configuration, frontend_configuration
 from ...configuration import search_path
 from ...tests import setup
-from .. import frontend_configuration
 from ..backend_arguments import (
     BaseArguments,
     BuckSourcePath,

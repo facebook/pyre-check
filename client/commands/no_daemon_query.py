@@ -22,8 +22,12 @@ import dataclasses
 import subprocess
 from typing import Any, Dict, Iterator, Optional
 
-from .. import command_arguments, configuration as configuration_module
-from . import backend_arguments, frontend_configuration, query_response
+from .. import (
+    command_arguments,
+    configuration as configuration_module,
+    frontend_configuration,
+)
+from . import backend_arguments, query_response
 
 
 @dataclasses.dataclass(frozen=True)

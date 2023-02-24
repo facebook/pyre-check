@@ -41,10 +41,11 @@ from .. import (
     configuration as configuration_module,
     daemon_socket,
     find_directories,
+    frontend_configuration,
     identifiers,
     log,
 )
-from . import backend_arguments, commands, frontend_configuration, server_event, stop
+from . import backend_arguments, commands, server_event, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

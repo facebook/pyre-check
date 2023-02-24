@@ -13,9 +13,14 @@ via a socket connection.
 import logging
 from pathlib import Path
 
-from .. import configuration as configuration_module, daemon_socket, identifiers
+from .. import (
+    configuration as configuration_module,
+    daemon_socket,
+    frontend_configuration,
+    identifiers,
+)
 from ..language_server import connections
-from . import commands, frontend_configuration
+from . import commands
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

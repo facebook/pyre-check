@@ -21,10 +21,11 @@ from .. import (
     configuration as configuration_module,
     daemon_socket,
     error as error_module,
+    frontend_configuration,
     identifiers,
 )
 from ..language_server import connections
-from . import commands, daemon_query, frontend_configuration
+from . import commands, daemon_query
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

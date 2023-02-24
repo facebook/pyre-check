@@ -12,8 +12,13 @@ is a single command that effectively runs `pyre stop` followed by
 
 import logging
 
-from .. import command_arguments, configuration as configuration_module, identifiers
-from . import commands, frontend_configuration, incremental, stop
+from .. import (
+    command_arguments,
+    configuration as configuration_module,
+    frontend_configuration,
+    identifiers,
+)
+from . import commands, incremental, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

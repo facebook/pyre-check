@@ -9,11 +9,11 @@ from typing import Iterable, List
 
 import testslide
 
-from ... import command_arguments, configuration
+from ... import command_arguments, configuration, frontend_configuration
 
 from ...language_server import connections, protocol as lsp
 from ...tests import setup
-from .. import commands, daemon_query, expression_level_coverage, frontend_configuration
+from .. import commands, daemon_query, expression_level_coverage
 
 
 class ExpressionLevelTest(testslide.TestCase):

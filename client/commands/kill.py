@@ -21,9 +21,10 @@ from .. import (
     configuration as configuration_module,
     daemon_socket,
     find_directories,
+    frontend_configuration,
     identifiers,
 )
-from . import commands, frontend_configuration, stop
+from . import commands, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

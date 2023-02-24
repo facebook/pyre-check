@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from .. import configuration as configuration_module
+from . import configuration as configuration_module
 
 # TODO(T120824066): Break this class down into smaller pieces. Ideally, one
 # class per command.

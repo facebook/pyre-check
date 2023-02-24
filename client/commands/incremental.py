@@ -20,12 +20,13 @@ from .. import (
     configuration as configuration_module,
     daemon_socket,
     error,
+    frontend_configuration,
     identifiers,
     remote_logger,
 )
 
 from ..language_server import connections
-from . import backend_arguments, commands, frontend_configuration, server_event, start
+from . import backend_arguments, commands, server_event, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

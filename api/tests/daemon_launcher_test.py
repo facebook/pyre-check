@@ -9,9 +9,13 @@ from typing import Union
 
 from pyre_extensions import override
 
-from ...client import configuration as configuration_module, daemon_socket, identifiers
-
-from ...client.commands import frontend_configuration, initialization
+from ...client import (
+    configuration as configuration_module,
+    daemon_socket,
+    frontend_configuration,
+    identifiers,
+)
+from ...client.commands import initialization
 
 from ...client.tests import setup
 

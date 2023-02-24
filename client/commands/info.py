@@ -19,10 +19,11 @@ from .. import (
     command_arguments,
     configuration as configuration_module,
     daemon_socket,
+    frontend_configuration,
     identifiers,
     version,
 )
-from . import commands, frontend_configuration, start
+from . import commands, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
