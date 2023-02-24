@@ -33,7 +33,6 @@ def stop_message(flavor: identifiers.PyreFlavor) -> str:
         if flavor not in (
             identifiers.PyreFlavor.CLASSIC,
             identifiers.PyreFlavor.SHADOW,
-            identifiers.PyreFlavor.CLASSIC_NAV,
         ):
             raise AssertionError(
                 f"Attempted to stop a server for unsupported flavor {flavor}"
