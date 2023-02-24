@@ -1776,13 +1776,8 @@ arguments:
 
 argument:
   | identifier = identifier; EQUALS; value = test {
-      let location =
-        let identifier_location = fst identifier in
-        let value_location = Node.location value in
-        { identifier_location with Location.stop = value_location.stop }
-      in
-      {
-        Call.Argument.name = Some { Node.location; value = snd identifier };
+     {
+        Call.Argument.name = Some { Node.location = fst identifier; value = snd identifier };
         value;
       }
     }

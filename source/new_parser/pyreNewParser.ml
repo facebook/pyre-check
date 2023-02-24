@@ -167,7 +167,9 @@ let keyword ~location ~arg ~value = { KeywordArgument.location; name = arg; valu
 
 let convert_positional_argument value = { Ast.Expression.Call.Argument.name = None; value }
 
-let convert_keyword_argument { KeywordArgument.location; name; value } =
+let convert_keyword_argument
+    { KeywordArgument.location = { start = { line; column }; _ } as location; name; value }
+  =
   let open Ast.Expression in
   let module Node = Ast.Node in
   match name with
@@ -177,7 +179,16 @@ let convert_keyword_argument { KeywordArgument.location; name; value } =
         Call.Argument.name = None;
         value = Expression.Starred (Starred.Twice value) |> Node.create ~location;
       }
-  | Some keyword_name -> { Call.Argument.name = Some (Node.create ~location keyword_name); value }
+  | Some name ->
+      {
+        Call.Argument.name =
+          Some
+            {
+              value = name;
+              location = { location with stop = { line; column = column + String.length name } };
+            };
+        value;
+      }
 
 
 module SingleParameter = struct

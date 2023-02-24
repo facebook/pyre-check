@@ -160,8 +160,6 @@ end
 and Call : sig
   module Argument : sig
     type t = {
-      (* NOTE(grievejia): Location here refers to the location of the entire argument, not the
-         location of the argument name itself. *)
       name: Identifier.t Node.t option;
       value: Expression.t;
     }
