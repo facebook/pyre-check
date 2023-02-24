@@ -22,6 +22,11 @@ module Sink = struct
     | Return
     | LiteralStringSink of Sinks.t
     | ConditionalTestSink of Sinks.t
+    | StringFormat of {
+        callee: Target.t;
+        index: int;
+        parameter_index: int;
+      }
   [@@deriving compare, hash, sexp, show]
 
   let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
@@ -65,6 +70,14 @@ module Sink = struct
         `Assoc ["kind", `String "LiteralStringSink"; "sink", `String (Sinks.show sink)]
     | ConditionalTestSink sink ->
         `Assoc ["kind", `String "ConditionalTestSink"; "sink", `String (Sinks.show sink)]
+    | StringFormat { callee; index; parameter_index } ->
+        `Assoc
+          [
+            "kind", `String "StringFormat";
+            "callee", `String (Target.external_name callee);
+            "index", `Int index;
+            "parameter_index", `Int parameter_index;
+          ]
 end
 
 module T = struct
@@ -90,6 +103,12 @@ module T = struct
       | Return -> "Return"
       | LiteralStringSink sink -> Format.asprintf "LiteralStringSink|%a" Sinks.pp sink
       | ConditionalTestSink sink -> Format.asprintf "ConditionalTestSink|%a" Sinks.pp sink
+      | StringFormat { callee; index; parameter_index } ->
+          Format.asprintf
+            "StringFormat|%s|%d|%d"
+            (Target.external_name callee)
+            index
+            parameter_index
     in
     let full_handle =
       Format.asprintf "%s:%d:%d:%s" (Target.external_name callable) code version sink_handle

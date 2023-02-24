@@ -47,7 +47,7 @@ module CallTarget : sig
     (* The type of the receiver object at this call site, if any. *)
     receiver_type: Type.t option;
   }
-  [@@deriving eq, show]
+  [@@deriving eq, show, compare]
 
   val target : t -> Target.t
 

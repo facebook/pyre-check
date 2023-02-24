@@ -5,88 +5,6 @@
     "callable": "multiple_sources_string_operations.format_string_issue",
     "callable_line": 58,
     "code": 4324,
-    "line": 63,
-    "start": 14,
-    "end": 29,
-    "filename": "multiple_sources_string_operations.py",
-    "message": "User controlled data flows into potential SQL strings",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations.user_controlled_input"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 63, "start": 14, "end": 29 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 60,
-              "start": 22,
-              "end": 45
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "extra_traces": [
-              {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
-                "origin": { "line": 59, "start": 17, "end": 25 },
-                "leaf_kind": "StringMayBeSQL",
-                "trace_kind": "source"
-              },
-              {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
-                "origin": { "line": 63, "start": 7, "end": 12 },
-                "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
-                "trace_kind": "sink"
-              }
-            ],
-            "kinds": [
-              {
-                "multi_source_issue_handles": [
-                  "multiple_sources_string_operations.format_string_issue:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:63:7-63:12}|0:e7fc5b14ccaf54c87dc0ba05c22a66ff"
-                ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
-              }
-            ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 63,
-              "start": 14,
-              "end": 29
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{string-literal:multiple_sources_string_operations:63:14-63:29}",
-      "index": 0
-    },
-    "master_handle": "multiple_sources_string_operations.format_string_issue:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:63:14-63:29}|0:f50256fcb7d71a92fd63482fa075d643"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources_string_operations.format_string_issue",
-    "callable_line": 58,
-    "code": 4324,
     "line": 61,
     "start": 14,
     "end": 29,
@@ -108,7 +26,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 61, "start": 14, "end": 29 } ],
+            "tito_positions": [
+              { "line": 61, "start": 14, "end": 29 },
+              { "line": 63, "start": 14, "end": 29 }
+            ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 60,
@@ -134,12 +55,18 @@
                 "origin": { "line": 61, "start": 7, "end": 12 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "origin": { "line": 63, "start": 7, "end": 12 },
+                "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
               {
                 "multi_source_issue_handles": [
-                  "multiple_sources_string_operations.format_string_issue:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:61:7-61:12}|0:3444c00d0e74de686b472a543ebfb79f"
+                  "multiple_sources_string_operations.format_string_issue:4324:0:StringFormat|Obj{<format-string>}|0|1:81b34344bafce53d3abac36670672ad9"
                 ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
@@ -150,17 +77,54 @@
               "start": 14,
               "end": 29
             }
+          },
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "origin": { "line": 59, "start": 17, "end": 25 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "origin": { "line": 61, "start": 7, "end": 12 },
+                "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "trace_kind": "sink"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "origin": { "line": 63, "start": 7, "end": 12 },
+                "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "trace_kind": "sink"
+              }
+            ],
+            "kinds": [
+              {
+                "multi_source_issue_handles": [
+                  "multiple_sources_string_operations.format_string_issue:4324:0:StringFormat|Obj{<format-string>}|0|1:81b34344bafce53d3abac36670672ad9"
+                ],
+                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 63,
+              "start": 14,
+              "end": 29
+            }
           }
         ]
       }
     ],
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{string-literal:multiple_sources_string_operations:61:14-61:29}",
-      "index": 0
+      "kind": "StringFormat",
+      "callee": "Obj{<format-string>}",
+      "index": 0,
+      "parameter_index": 2
     },
-    "master_handle": "multiple_sources_string_operations.format_string_issue:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:61:14-61:29}|0:c748e0fd759d793a22b212a71b880736"
+    "master_handle": "multiple_sources_string_operations.format_string_issue:4324:0:StringFormat|Obj{<format-string>}|0|2:7683ec288f45b99f24d03a7be1d91aa5"
   }
 }
 {
@@ -221,7 +185,7 @@
             "kinds": [
               {
                 "multi_source_issue_handles": [
-                  "multiple_sources_string_operations.format_string_issue_string_literal:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:49:4-49:30}|0:46bd047867bdd20d20f46a907587ef2f"
+                  "multiple_sources_string_operations.format_string_issue_string_literal:4324:0:StringFormat|Obj{<format-string>}|0|0:b298bfee0265c3f8e7e757a6c160d615"
                 ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
@@ -238,93 +202,12 @@
     ],
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{string-literal:multiple_sources_string_operations:49:13-49:28}",
-      "index": 0
+      "kind": "StringFormat",
+      "callee": "Obj{<format-string>}",
+      "index": 0,
+      "parameter_index": 1
     },
-    "master_handle": "multiple_sources_string_operations.format_string_issue_string_literal:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:49:13-49:28}|0:58e2c7ff69142e76ba7bf33854ed11c7"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources_string_operations.format_string_multiple_issues_string_literal",
-    "callable_line": 52,
-    "code": 4324,
-    "line": 55,
-    "start": 13,
-    "end": 28,
-    "filename": "multiple_sources_string_operations.py",
-    "message": "User controlled data flows into potential SQL strings",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations.user_controlled_input"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 55, "start": 13, "end": 28 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 53,
-              "start": 22,
-              "end": 45
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "extra_traces": [
-              {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
-                "origin": { "line": 55, "start": 4, "end": 30 },
-                "leaf_kind": "StringMayBeSQL",
-                "trace_kind": "source"
-              },
-              {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
-                "origin": { "line": 55, "start": 4, "end": 30 },
-                "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
-                "trace_kind": "sink"
-              }
-            ],
-            "kinds": [
-              {
-                "multi_source_issue_handles": [
-                  "multiple_sources_string_operations.format_string_multiple_issues_string_literal:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:55:4-55:30}|0:8f0bbd0f0ce41f4adf29109d1dcedc96"
-                ],
-                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
-              }
-            ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 55,
-              "start": 13,
-              "end": 28
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{string-literal:multiple_sources_string_operations:55:13-55:28}",
-      "index": 0
-    },
-    "master_handle": "multiple_sources_string_operations.format_string_multiple_issues_string_literal:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:55:13-55:28}|0:275524a4e3c25ff6b6edcb17b397d069"
+    "master_handle": "multiple_sources_string_operations.format_string_issue_string_literal:4324:0:StringFormat|Obj{<format-string>}|0|1:c9821a2b3ce2cbabc8eb44273d5b18b9"
   }
 }
 {
@@ -354,7 +237,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 54, "start": 13, "end": 28 } ],
+            "tito_positions": [
+              { "line": 54, "start": 13, "end": 28 },
+              { "line": 55, "start": 13, "end": 28 }
+            ],
             "origin": {
               "filename": "multiple_sources_string_operations.py",
               "line": 53,
@@ -380,12 +266,24 @@
                 "origin": { "line": 54, "start": 4, "end": 30 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
+              },
+              {
+                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "origin": { "line": 55, "start": 4, "end": 30 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "origin": { "line": 55, "start": 4, "end": 30 },
+                "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "trace_kind": "sink"
               }
             ],
             "kinds": [
               {
                 "multi_source_issue_handles": [
-                  "multiple_sources_string_operations.format_string_multiple_issues_string_literal:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:54:4-54:30}|0:3a05b7f10678c337ae17f322583add57"
+                  "multiple_sources_string_operations.format_string_multiple_issues_string_literal:4324:0:StringFormat|Obj{<format-string>}|0|0:403074aaeb88d85898509900facb2b02"
                 ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
@@ -396,17 +294,60 @@
               "start": 13,
               "end": 28
             }
+          },
+          {
+            "extra_traces": [
+              {
+                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "origin": { "line": 54, "start": 4, "end": 30 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "origin": { "line": 54, "start": 4, "end": 30 },
+                "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "trace_kind": "sink"
+              },
+              {
+                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "origin": { "line": 55, "start": 4, "end": 30 },
+                "leaf_kind": "StringMayBeSQL",
+                "trace_kind": "source"
+              },
+              {
+                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "origin": { "line": 55, "start": 4, "end": 30 },
+                "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "trace_kind": "sink"
+              }
+            ],
+            "kinds": [
+              {
+                "multi_source_issue_handles": [
+                  "multiple_sources_string_operations.format_string_multiple_issues_string_literal:4324:0:StringFormat|Obj{<format-string>}|0|0:403074aaeb88d85898509900facb2b02"
+                ],
+                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
+              }
+            ],
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 55,
+              "start": 13,
+              "end": 28
+            }
           }
         ]
       }
     ],
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{string-literal:multiple_sources_string_operations:54:13-54:28}",
-      "index": 0
+      "kind": "StringFormat",
+      "callee": "Obj{<format-string>}",
+      "index": 0,
+      "parameter_index": 1
     },
-    "master_handle": "multiple_sources_string_operations.format_string_multiple_issues_string_literal:4324:0:Global|Obj{string-literal:multiple_sources_string_operations:54:13-54:28}|0:55c054cb83ac3bc856da84c48a9f9c3e"
+    "master_handle": "multiple_sources_string_operations.format_string_multiple_issues_string_literal:4324:0:StringFormat|Obj{<format-string>}|0|1:ff6b8d82e9a659216c47375695a67063"
   }
 }
 {

@@ -22,6 +22,11 @@ module Sink : sig
     | Return
     | LiteralStringSink of Sinks.t
     | ConditionalTestSink of Sinks.t
+    | StringFormat of {
+        callee: Target.t;
+        index: int;
+        parameter_index: int;
+      }
   [@@deriving compare, hash, sexp, show]
 
   val make_call : call_target:CallGraph.CallTarget.t -> root:AccessPath.Root.t -> t
