@@ -2382,7 +2382,7 @@ let run
 
     let definition = define
 
-    let debug = Statement.Define.dump define.Node.value
+    let debug = Statement.Define.dump define.value
 
     let profiler = profiler
 
