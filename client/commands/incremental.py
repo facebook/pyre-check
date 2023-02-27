@@ -4,7 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides the logic for the `pyre incremental` command,
+which is what is also run when `pyre` is invoked with no subcommand.
+
+What `pyre incremental` does is try to connect to a running daemon
+and start one if none is found, then ask for type errors and display
+them in the same format as `pyre check` would.
 """
 
 
