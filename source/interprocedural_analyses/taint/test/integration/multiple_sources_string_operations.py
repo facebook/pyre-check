@@ -70,7 +70,6 @@ def format_string_triggered_user_controlled(arg):
 
 def format_string_issue_with_triggered_user_controlled():
     user_controlled = user_controlled_input()
-    # TODO(T144475492): False negative
     format_string_triggered_user_controlled(user_controlled)
 
 
@@ -81,7 +80,6 @@ def format_string_triggered_sql(arg):
 
 def format_string_issue_with_triggered_sql():
     query: str = "SELECT"
-    # TODO(T144475492): False negative
     format_string_triggered_sql(query)
 
 
@@ -91,7 +89,5 @@ def format_string_multiple_triggered_user_controlled(arg1, arg2):
 
 def format_string_issue_with_multiple_triggered_user_controlled():
     user_controlled = user_controlled_input()
-    # TODO(T144475492): False negative
     format_string_multiple_triggered_user_controlled(user_controlled, 0)
-    # TODO(T144475492): False negative
     format_string_multiple_triggered_user_controlled(0, user_controlled)

@@ -227,30 +227,57 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~define:FunctionContext.definition
 
 
-  (* Store all triggered sinks seen in `triggered_sinks_to_propagate` to propagate
-   * them up in the backward analysis. *)
-  let store_triggered_sinks_to_propagate ~call_location ~triggered_sinks_for_call ~sink_taint =
-    if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks_for_call) then
-      let add_sink ~root sink sofar =
-        match Sinks.extract_partial_sink sink with
-        | Some sink -> (
-            match Issue.TriggeredSinkHashMap.find triggered_sinks_for_call sink with
-            | Some triggered_sink ->
-                let taint = BackwardState.Tree.create_leaf triggered_sink in
-                BackwardState.assign ~root ~path:[] taint BackwardState.bottom
-                |> BackwardState.join sofar
-            | None -> sofar)
-        | _ -> sofar
-      in
-      let add_taint (root, taint) sofar =
-        BackwardState.Tree.fold BackwardTaint.kind taint ~f:(add_sink ~root) ~init:sofar
-      in
+  let gather_triggered_sinks_to_propagate ~triggered_sinks (root, taint_tree) taint_so_far =
+    let add_sink ~root sink sofar =
+      match Sinks.extract_partial_sink sink with
+      | Some sink -> (
+          match Issue.TriggeredSinkHashMap.find triggered_sinks sink with
+          | Some triggered_sink ->
+              let taint = BackwardState.Tree.create_leaf triggered_sink in
+              BackwardState.assign ~root ~path:[] taint BackwardState.bottom
+              |> BackwardState.join sofar
+          | None -> sofar)
+      | _ -> sofar
+    in
+    BackwardState.Tree.fold BackwardTaint.kind taint_tree ~f:(add_sink ~root) ~init:taint_so_far
+
+
+  (* Store all triggered sinks seen in `triggered_sinks` to propagate them up in the backward
+     analysis. *)
+  let store_triggered_sinks_to_propagate_for_call ~location ~triggered_sinks sink_taint =
+    if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks) then
       let triggered_sinks =
-        BackwardState.fold BackwardState.KeyValue sink_taint ~init:BackwardState.bottom ~f:add_taint
+        BackwardState.fold
+          BackwardState.KeyValue
+          sink_taint
+          ~init:BackwardState.bottom
+          ~f:(gather_triggered_sinks_to_propagate ~triggered_sinks)
       in
       Issue.TriggeredSinkLocationMap.add
         FunctionContext.triggered_sinks_to_propagate
-        ~location:call_location
+        ~location
+        ~taint:triggered_sinks
+
+
+  let store_triggered_sinks_to_propagate_for_string_combine
+      ~location
+      ~triggered_sinks
+      nested_expressions
+    =
+    if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks) then
+      let accumulate so_far nested_expression =
+        match AccessPath.of_expression nested_expression with
+        | Some access_path ->
+            let root, taint_tree =
+              access_path.root, FunctionContext.string_combine_partial_sink_tree
+            in
+            gather_triggered_sinks_to_propagate ~triggered_sinks (root, taint_tree) so_far
+        | None -> (* TODO(T146550300): False negative *) so_far
+      in
+      let triggered_sinks = List.fold nested_expressions ~f:accumulate ~init:BackwardState.bottom in
+      Issue.TriggeredSinkLocationMap.add
+        FunctionContext.triggered_sinks_to_propagate
+        ~location
         ~taint:triggered_sinks
 
 
@@ -581,10 +608,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let tito_taint = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     let () =
       (* Need to be called after calling `check_triggered_flows` *)
-      store_triggered_sinks_to_propagate
-        ~call_location
-        ~triggered_sinks_for_call
-        ~sink_taint:backward.sink_taint
+      store_triggered_sinks_to_propagate_for_call
+        ~location:call_location
+        ~triggered_sinks:triggered_sinks_for_call
+        backward.sink_taint
     in
     let apply_tito_side_effects tito_effects state =
       (* We also have to consider the cases when the updated parameter has a global model, in which
@@ -2086,14 +2113,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~call_target_for_string_combine_rules
       value
     =
-    let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
+    let location_with_module =
+      Location.with_module ~module_reference:FunctionContext.qualifier location
+    in
     let value_taint =
       let literal_string_regular_expressions =
         FunctionContext.taint_configuration.implicit_sources.literal_strings
       in
       let add_matching_source_kind tree { TaintConfiguration.pattern; source_kind = kind } =
         if Re2.matches pattern value then
-          ForwardTaint.singleton (CallInfo.Origin location) kind Frame.initial
+          ForwardTaint.singleton (CallInfo.Origin location_with_module) kind Frame.initial
           |> ForwardState.Tree.create_leaf
           |> ForwardState.Tree.join tree
         else
@@ -2205,6 +2234,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardState.Tree.add_local_breadcrumbs breadcrumbs
       |>> ForwardState.Tree.join value_taint
     in
+    store_triggered_sinks_to_propagate_for_string_combine
+      ~location
+      ~triggered_sinks
+      nested_expressions;
     (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
     let literal_string_sinks =
       FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks
@@ -2214,11 +2247,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       List.iter literal_string_sinks ~f:(fun { TaintConfiguration.sink_kind; pattern } ->
           if Re2.matches pattern value then
             let sink_tree =
-              BackwardTaint.singleton (CallInfo.Origin location) sink_kind Frame.initial
+              BackwardTaint.singleton (CallInfo.Origin location_with_module) sink_kind Frame.initial
               |> BackwardState.Tree.create_leaf
             in
             check_flow
-              ~location
+              ~location:location_with_module
               ~sink_handle:(IssueHandle.Sink.LiteralStringSink sink_kind)
               ~source_tree:taint
               ~sink_tree);

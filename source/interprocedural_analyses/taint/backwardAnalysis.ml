@@ -1702,7 +1702,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~resolution
           ~taint
           ~state
-          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          ~location
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           substrings
     (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
@@ -1724,7 +1724,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~resolution
           ~taint
           ~state
-          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          ~location
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
           substrings
     | {
@@ -1748,7 +1748,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~resolution
           ~taint
           ~state
-          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          ~location
           ~breadcrumbs:
             (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
           substrings
@@ -1796,6 +1796,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_joined_string ~resolution ~taint ~state ~location ~breadcrumbs substrings =
+    let triggered_taint =
+      Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location
+    in
+    let location_with_module =
+      Location.with_module ~module_reference:FunctionContext.qualifier location
+    in
+    let state = { state with taint = BackwardState.join state.taint triggered_taint } in
     let taint =
       let literal_string_sinks =
         FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks
@@ -1813,7 +1820,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           literal_string_sinks
           ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
             if Re2.matches pattern value then
-              BackwardTaint.singleton (CallInfo.Origin location) sink_kind Frame.initial
+              BackwardTaint.singleton (CallInfo.Origin location_with_module) sink_kind Frame.initial
               |> BackwardState.Tree.create_leaf
               |> BackwardState.Tree.join taint
             else
@@ -1984,7 +1991,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~resolution
           ~taint
           ~state
-          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          ~location
           ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           substrings
     | Ternary { target; test; alternative } ->
