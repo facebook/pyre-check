@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides the logic for the `pyre init-pysa` command, which:
+- generate a pyre configuration if necessary
+- installs project dependencies if desired so that we can analyze them
+- runs pyre infer if desired which can provide extra type information
 """
 
 
