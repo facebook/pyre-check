@@ -19,14 +19,13 @@ import traceback
 
 from typing import Optional
 
-from .. import backend_arguments, background_tasks, timer, version
+from .. import backend_arguments, background_tasks, log_lsp_event, timer, version
 from ..language_server import connections, features, protocol as lsp
 
 from . import (
     daemon_querier,
     initialization,
     launch_and_subscribe_handler,
-    log_lsp_event,
     persistent,
     pyre_language_server,
     pyre_server_options,

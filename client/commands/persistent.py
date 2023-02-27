@@ -36,13 +36,20 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from .. import backend_arguments, background_tasks, error, json_rpc, timer, version
+from .. import (
+    backend_arguments,
+    background_tasks,
+    error,
+    json_rpc,
+    log_lsp_event,
+    timer,
+    version,
+)
 from ..language_server import connections, features, protocol as lsp
 from . import (
     daemon_querier,
     incremental,
     launch_and_subscribe_handler,
-    log_lsp_event,
     pyre_language_server,
     pyre_server_options,
     server_state as state,

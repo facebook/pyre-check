@@ -20,9 +20,10 @@ from .. import (
     frontend_configuration,
     json_rpc,
     log,
+    log_lsp_event,
 )
 from ..language_server import connections, protocol as lsp
-from . import commands, log_lsp_event, start
+from . import commands, start
 from .initialization import (
     InitializationExit,
     InitializationFailure,

@@ -19,15 +19,9 @@ import traceback
 from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 
-from .. import backend_arguments, background_tasks, timer
+from .. import backend_arguments, background_tasks, log_lsp_event, timer
 from ..language_server import connections, features, protocol as lsp
-from . import (
-    daemon_querier,
-    log_lsp_event,
-    pyre_server_options,
-    server_state as state,
-    subscription,
-)
+from . import daemon_querier, pyre_server_options, server_state as state, subscription
 from .initialization import (
     async_start_pyre_server,
     BuckStartFailure,

@@ -25,10 +25,11 @@ from .. import (
     daemon_socket,
     frontend_configuration,
     identifiers,
+    log_lsp_event,
 )
 from ..language_server import features
 
-from . import commands, log_lsp_event, start
+from . import commands, start
 
 PyreServerOptionsReader = Callable[[], "PyreServerOptions"]
 FrontendConfigurationReader = Callable[[], frontend_configuration.Base]
