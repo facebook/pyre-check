@@ -22,13 +22,12 @@ from .. import (
     log,
 )
 from ..language_server import connections, protocol as lsp
-from . import commands, start
+from . import commands, log_lsp_event, start
 from .initialization import (
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
 )
-from .log_lsp_event import _log_lsp_event, LSPEvent
 from .persistent import process_initialize_request
 
 from .pyre_language_server import _wait_for_exit, read_lsp_request
@@ -279,9 +278,9 @@ async def run_persistent(
         elif isinstance(initialize_result, InitializationSuccess):
             LOG.info("Initialization successful.")
             client_info = initialize_result.client_info
-            _log_lsp_event(
+            log_lsp_event.log_lsp_event(
                 remote_logging=pysa_arguments.base_arguments.remote_logging,
-                event=LSPEvent.INITIALIZED,
+                event=log_lsp_event.LSPEvent.INITIALIZED,
                 normals=(
                     {}
                     if client_info is None

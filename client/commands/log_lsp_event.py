@@ -34,7 +34,7 @@ class LSPEvent(enum.Enum):
     COVERED = "covered"
 
 
-def _log_lsp_event(
+def log_lsp_event(
     remote_logging: Optional[backend_arguments.RemoteLogging],
     event: LSPEvent,
     integers: Optional[Dict[str, int]] = None,

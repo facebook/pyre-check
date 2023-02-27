@@ -108,7 +108,7 @@ def read_server_options(
         LOG.info("Reading Pyre server configurations...")
         return server_options_reader()
     except Exception:
-        log_lsp_event._log_lsp_event(
+        log_lsp_event.log_lsp_event(
             remote_logging=remote_logging,
             event=log_lsp_event.LSPEvent.NOT_CONFIGURED,
             normals={
