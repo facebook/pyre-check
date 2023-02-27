@@ -484,3 +484,23 @@ def issue_user_declared_tito_collapse_one():
     x = {"a": {"b": _test_source()}}
     y = user_declared_tito_collapse_one(x)
     _test_sink(y["a"]["c"])
+
+
+# Test false positives with the backward analysis.
+
+
+def no_tito_init_then_overwrite(x):
+    d = {"a": x}
+    d["a"] = 0
+    return d  # Wrongly infers tito
+
+
+def no_tito_overwrite_then_init(d):
+    d["a"] = 0
+    return d["a"]  # Properly infers no tito
+
+
+def tito_with_sink(d):
+    x = d["a"]
+    _test_sink(d["a"])
+    return x
