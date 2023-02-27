@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+This module provides various helper functions that unit tests
+can use to create test fixtures - for example, making sure
+files and directories exist and controlling the working directory
+from which tests are run.
 """
 
 
