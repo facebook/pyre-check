@@ -601,7 +601,7 @@ let test_try _ =
                  [
                    {
                      Try.Handler.kind = Some !"a";
-                     name = Some "b";
+                     name = Some (+"b");
                      body = [+Statement.Expression !"b"];
                    };
                  ];
@@ -653,7 +653,7 @@ let test_try _ =
                                operator = BooleanOperator.Or;
                                right = !"b";
                              });
-                     name = Some "e";
+                     name = Some (+"e");
                      body = [+Statement.Expression !"c"];
                    };
                  ];
@@ -672,7 +672,7 @@ let test_try _ =
                  [
                    {
                      Try.Handler.kind = Some (+Expression.Tuple [!"a"; !"b"]);
-                     name = Some "c";
+                     name = Some (+"c");
                      body = [+Statement.Expression !"b"];
                    };
                  ];
@@ -691,7 +691,7 @@ let test_try _ =
                  [
                    {
                      Try.Handler.kind = Some !"a";
-                     name = Some "b";
+                     name = Some (+"b");
                      body = [+Statement.Expression !"b"];
                    };
                    {

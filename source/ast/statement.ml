@@ -1239,7 +1239,7 @@ and Try : sig
   module Handler : sig
     type t = {
       kind: Expression.t option;
-      name: Identifier.t option;
+      name: Identifier.t Node.t option;
       body: Statement.t list;
     }
     [@@deriving compare, sexp, show, hash, to_yojson]
@@ -1262,7 +1262,7 @@ end = struct
   module Handler = struct
     type t = {
       kind: Expression.t option;
-      name: Identifier.t option;
+      name: Identifier.t Node.t option;
       body: Statement.t list;
     }
     [@@deriving compare, sexp, show, hash, to_yojson]
@@ -1271,7 +1271,10 @@ end = struct
       match Option.compare Expression.location_insensitive_compare left.kind right.kind with
       | x when not (Int.equal x 0) -> x
       | _ -> (
-          match [%compare: Identifier.t option] left.name right.name with
+          let compare_handler left right =
+            [%compare: Identifier.t] (Node.value left) (Node.value right)
+          in
+          match Option.compare compare_handler left.name right.name with
           | x when not (Int.equal x 0) -> x
           | _ -> List.compare Statement.location_insensitive_compare left.body right.body)
   end
@@ -1324,7 +1327,8 @@ end = struct
       ]
     in
     match kind, name with
-    | Some ({ Node.location; value = Name _ | Tuple _; _ } as annotation), Some name ->
+    | ( Some ({ Node.location; value = Name _ | Tuple _; _ } as annotation),
+        Some { Node.value = name; _ } ) ->
         assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
     | Some ({ Node.location; _ } as expression), _ ->
         (* Insert raw `kind` so that we type check the expression. *)
@@ -1820,7 +1824,8 @@ module PrettyPrinter = struct
           Format.fprintf formatter "@[<v 2>try:@;%a@]" pp_statement_list body
         in
         let pp_except_block formatter handlers =
-          let pp_as formatter name = pp_option ~prefix:" as " formatter name pp_name in
+          let pp_name_node format { Node.value = name; _ } = Format.fprintf format "%s" name in
+          let pp_as formatter name = pp_option ~prefix:" as " formatter name pp_name_node in
           let pp_handler formatter { Try.Handler.kind; name; body } =
             Format.fprintf
               formatter

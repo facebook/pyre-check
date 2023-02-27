@@ -3045,7 +3045,7 @@ let test_try_locations _ =
                        Try.Handler.kind =
                          Some
                            (node ~start:(3, 7) ~stop:(3, 8) (Expression.Name (Name.Identifier "a")));
-                       name = Some "b";
+                       name = Some (node ~start:(3, 0) ~stop:(4, 2) "b");
                        body =
                          [
                            node

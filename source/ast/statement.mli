@@ -369,7 +369,7 @@ and Try : sig
   module Handler : sig
     type t = {
       kind: Expression.t option;
-      name: Identifier.t option;
+      name: Identifier.t Node.t option;
       body: Statement.t list;
     }
     [@@deriving compare, sexp, show, hash, to_yojson]

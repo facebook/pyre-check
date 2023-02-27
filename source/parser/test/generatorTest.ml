@@ -4957,7 +4957,11 @@ let test_try _ =
            Try.body = [+Statement.Expression !"a"];
            handlers =
              [
-               { Try.Handler.kind = Some !"a"; name = Some "b"; body = [+Statement.Expression !"b"] };
+               {
+                 Try.Handler.kind = Some !"a";
+                 name = Some (+"b");
+                 body = [+Statement.Expression !"b"];
+               };
              ];
            orelse = [];
            finally = [];
@@ -5005,7 +5009,7 @@ let test_try _ =
                            operator = BooleanOperator.Or;
                            right = !"b";
                          });
-                 name = Some "e";
+                 name = Some (+"e");
                  body = [+Statement.Expression !"c"];
                };
              ];
@@ -5021,7 +5025,11 @@ let test_try _ =
            Try.body = [+Statement.Expression !"a"];
            handlers =
              [
-               { Try.Handler.kind = Some !"a"; name = Some "b"; body = [+Statement.Expression !"b"] };
+               {
+                 Try.Handler.kind = Some !"a";
+                 name = Some (+"b");
+                 body = [+Statement.Expression !"b"];
+               };
              ];
            orelse = [];
            finally = [];
@@ -5037,7 +5045,7 @@ let test_try _ =
              [
                {
                  Try.Handler.kind = Some (+Expression.Tuple [!"a"; !"b"]);
-                 name = Some "c";
+                 name = Some (+"c");
                  body = [+Statement.Expression !"b"];
                };
              ];
@@ -5053,7 +5061,11 @@ let test_try _ =
            Try.body = [+Statement.Expression !"a"];
            handlers =
              [
-               { Try.Handler.kind = Some !"a"; name = Some "b"; body = [+Statement.Expression !"b"] };
+               {
+                 Try.Handler.kind = Some !"a";
+                 name = Some (+"b");
+                 body = [+Statement.Expression !"b"];
+               };
                { Try.Handler.kind = Some !"d"; name = None; body = [+Statement.Expression !"e"] };
              ];
            orelse = [];

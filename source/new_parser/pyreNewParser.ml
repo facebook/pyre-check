@@ -519,8 +519,13 @@ let import_alias ~location ~name ~asname =
   Node.create ~location { Statement.Import.name = Reference.create name; alias = asname }
 
 
-let exception_handler ~location:_ ~type_ ~name ~body ~context =
-  { Ast.Statement.Try.Handler.kind = type_; name; body = build_statements ~context body }
+let exception_handler ~location ~type_ ~name ~body ~context =
+  let new_name =
+    match name with
+    | Some name -> Some (Node.create ~location name)
+    | _ -> None
+  in
+  { Ast.Statement.Try.Handler.kind = type_; name = new_name; body = build_statements ~context body }
 
 
 let build_exception_handlers ~context exception_handler_builders =

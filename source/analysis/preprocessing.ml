@@ -846,9 +846,9 @@ module Qualify (Context : QualifyContext) = struct
             let qualify_handler { Try.Handler.kind; name; body } =
               let renamed_scope, name =
                 match name with
-                | Some name when not (is_qualified name) ->
+                | Some { Node.value = name; location } when not (is_qualified name) ->
                     let scope, _, renamed = prefix_identifier ~scope ~prefix:"target" name in
-                    scope, Some renamed
+                    scope, Some { Node.value = renamed; location }
                 | _ -> scope, name
               in
               let kind = kind >>| qualify_expression ~qualify_strings:DoNotQualify ~scope in
@@ -3091,7 +3091,7 @@ module AccessCollector = struct
     NameAccessSet.union collected element_accesses
 
 
-  and from_statement collected { Node.value; location = statement_location } =
+  and from_statement collected { Node.value; _ } =
     let from_optional_expression collected =
       Option.value_map ~default:collected ~f:(from_expression collected)
     in
@@ -3183,8 +3183,8 @@ module AccessCollector = struct
               let collected =
                 Option.value_map
                   name
-                  ~f:(fun name ->
-                    Set.add collected { Define.NameAccess.name; location = statement_location })
+                  ~f:(fun { Node.value = name; location } ->
+                    Set.add collected { Define.NameAccess.name; location })
                   ~default:collected
               in
               from_statements collected body)

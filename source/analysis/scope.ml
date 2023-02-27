@@ -253,8 +253,7 @@ module Binding = struct
           let sofar =
             match name with
             | None -> sofar
-            | Some name ->
-                (* TODO: Track the location of handler name. *)
+            | Some { Node.value = name; location } ->
                 { kind = Kind.ExceptTarget kind; name; location } :: sofar
           in
           of_statements sofar body
