@@ -202,7 +202,7 @@ async def async_run_code_navigation_client(
     if isinstance(initialize_result, initialization.InitializationExit):
         return 0
     client_info = initialize_result.client_info
-    log_lsp_event.log_lsp_event(
+    log_lsp_event.log(
         remote_logging=remote_logging,
         event=log_lsp_event.LSPEvent.INITIALIZED,
         normals=(
@@ -269,7 +269,7 @@ def run(
         LOG.exception("Uncaught error in code_navigation.run")
         return 1
     finally:
-        log_lsp_event.log_lsp_event(
+        log_lsp_event.log(
             remote_logging,
             log_lsp_event.LSPEvent.STOPPED,
             integers={"duration": int(command_timer.stop_in_millisecond())},

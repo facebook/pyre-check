@@ -169,7 +169,7 @@ async def async_try_initialize_loop(
                 str(exception) if exception is not None else "ignoring notification"
             )
             LOG.info(f"Initialization failed: {message}")
-            log_lsp_event.log_lsp_event(
+            log_lsp_event.log(
                 remote_logging=remote_logging,
                 event=log_lsp_event.LSPEvent.NOT_INITIALIZED,
                 normals=(

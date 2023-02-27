@@ -279,7 +279,7 @@ async def run_persistent(
         elif isinstance(initialize_result, InitializationSuccess):
             LOG.info("Initialization successful.")
             client_info = initialize_result.client_info
-            log_lsp_event.log_lsp_event(
+            log_lsp_event.log(
                 remote_logging=pysa_arguments.base_arguments.remote_logging,
                 event=log_lsp_event.LSPEvent.INITIALIZED,
                 normals=(
