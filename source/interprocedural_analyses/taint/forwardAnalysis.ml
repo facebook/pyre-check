@@ -1812,7 +1812,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                           Node.value = Constant (Constant.String { StringLiteral.value; _ });
                           location = value_location;
                         };
-                      attribute = "__mod__";
+                      attribute = "__mod__" as function_name;
                       _;
                     });
               _;
@@ -1831,7 +1831,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                           Node.value = Constant (Constant.String { StringLiteral.value; _ });
                           location = value_location;
                         };
-                      attribute = "format";
+                      attribute = "format" as function_name;
                       _;
                     });
               _;
@@ -1841,11 +1841,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let nested_expressions =
             List.map ~f:(fun call_argument -> call_argument.value) arguments
           in
+          let default_target =
+            match function_name with
+            | "__mod__" -> Interprocedural.Target.StringCombineArtificialTargets.str_mod
+            | "format" -> Interprocedural.Target.StringCombineArtificialTargets.str_format
+            | _ -> failwith "Expect either `__mod__` or `format`"
+          in
           let call_target_for_string_combine_rules =
             Some
               (create_call_target_for_string_combine
                  ~call_targets:callees.call_targets
-                 ~default_target:(Interprocedural.Target.Object "<str.format>"))
+                 ~default_target)
           in
           analyze_string_literal
             ~resolution
@@ -1876,7 +1882,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             Some
               (create_call_target_for_string_combine
                  ~call_targets:callees.call_targets
-                 ~default_target:(Interprocedural.Target.Object "<str.__add__>"))
+                 ~default_target:Interprocedural.Target.StringCombineArtificialTargets.str_add)
           in
           analyze_string_literal
             ~resolution
@@ -1911,7 +1917,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             Some
               (create_call_target_for_string_combine
                  ~call_targets:callees.call_targets
-                 ~default_target:(Interprocedural.Target.Object "<str.__add__>"))
+                 ~default_target:Interprocedural.Target.StringCombineArtificialTargets.str_add)
           in
           analyze_string_literal
             ~resolution
@@ -2206,10 +2212,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let expression_taint, state =
         match get_string_format_callees ~location:expression_location with
-        | Some { CallGraph.StringFormatCallees.stringify_targets } ->
+        | Some { CallGraph.StringFormatCallees.stringify_targets; f_string_targets } ->
+            let taint, state =
+              if List.is_empty f_string_targets then
+                ForwardState.Tree.empty, { taint = ForwardState.empty }
+              else (* If there exists an f-string target, treat as TITO. *)
+                base_taint, base_state
+            in
             List.fold
               stringify_targets
-              ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
+              ~init:(taint, state)
               ~f:(fun (taint_to_join, state_to_join) call_target ->
                 analyze_stringify_callee
                   (taint_to_join, state_to_join)
@@ -2389,6 +2401,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 | Substring.Format expression -> Some expression
                 | _ -> None)
           in
+          let call_target_for_string_combine_rules =
+            let call_targets =
+              match get_string_format_callees ~location with
+              | Some { CallGraph.StringFormatCallees.f_string_targets; _ } -> f_string_targets
+              | None -> []
+            in
+            create_call_target_for_string_combine
+              ~call_targets
+              ~default_target:Interprocedural.Target.StringCombineArtificialTargets.format_string
+          in
           analyze_string_literal
             ~resolution
             ~state
@@ -2396,8 +2418,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~nested_expressions
             ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
             ~value_location:location
-            ~call_target_for_string_combine_rules:
-              (Some (CallGraph.CallTarget.create (Interprocedural.Target.Object "<format-string>")))
+            ~call_target_for_string_combine_rules:(Some call_target_for_string_combine_rules)
             value
       | Ternary { target; test; alternative } ->
           let state = analyze_condition ~resolution test state in

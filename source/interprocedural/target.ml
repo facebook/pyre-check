@@ -289,6 +289,18 @@ let resolve_method ~resolution ~class_type ~method_name =
   | _ -> None
 
 
+module StringCombineArtificialTargets = struct
+  let format_string = Object "<format-string>"
+
+  let str_add = Object "<str.__add__>"
+
+  let str_mod = Object "<str.__mod__>"
+
+  let str_format = Object "<str.format>"
+
+  let is_artificial target = List.mem ~equal [format_string; str_add; str_mod; str_format] target
+end
+
 module SharedMemoryKey = struct
   include T
 

@@ -1876,7 +1876,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Substring.Format ({ Node.location = expression_location; _ } as expression) ->
           let new_taint, new_state =
             (match get_string_format_callees ~location:expression_location with
-            | Some { CallGraph.StringFormatCallees.stringify_targets } ->
+            | Some { CallGraph.StringFormatCallees.stringify_targets; _ } ->
                 List.fold
                   stringify_targets
                   ~init:(taint, state)

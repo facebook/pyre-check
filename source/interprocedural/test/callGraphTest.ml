@@ -1944,22 +1944,29 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "7:9-7:25",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "7:18-7:23",
           LocationCallees.Compound
             (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
-                   ExpressionCallees.from_string_formatting
-                     {
-                       StringFormatCallees.stringify_targets =
-                         [
-                           CallTarget.create
-                             ~implicit_self:true
-                             ~receiver_type:Type.string
-                             (Target.Method
-                                { class_name = "str"; method_name = "__str__"; kind = Normal });
-                         ];
-                     } );
+                   ExpressionCallees.from_string_format
+                     (StringFormatCallees.from_stringify_targets
+                        [
+                          CallTarget.create
+                            ~implicit_self:true
+                            ~receiver_type:Type.string
+                            (Target.Method
+                               { class_name = "str"; method_name = "__str__"; kind = Normal });
+                        ]) );
                  ( "m",
                    ExpressionCallees.from_call
                      (CallCallees.create
@@ -2985,58 +2992,59 @@ let test_call_graph_of_define context =
                              { class_name = "object"; method_name = "__new__"; kind = Normal });
                       ]
                     ())) );
+          ( "25:9-25:34",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_string_format
+                 (StringFormatCallees.from_f_string_targets
+                    [
+                      CallTarget.create
+                        ~return_type:None
+                        Target.StringCombineArtificialTargets.format_string;
+                    ])) );
           ( "25:12-25:13",
             LocationCallees.Singleton
-              (ExpressionCallees.from_string_formatting
-                 {
-                   StringFormatCallees.stringify_targets =
-                     [
-                       CallTarget.create
-                         ~implicit_self:true
-                         ~receiver_type:(Type.Primitive "test.A")
-                         (Target.Method
-                            { class_name = "test.A"; method_name = "__str__"; kind = Normal });
-                     ];
-                 }) );
+              (ExpressionCallees.from_string_format
+                 (StringFormatCallees.from_stringify_targets
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.Primitive "test.A")
+                        (Target.Method
+                           { class_name = "test.A"; method_name = "__str__"; kind = Normal });
+                    ])) );
           ( "25:20-25:21",
             LocationCallees.Singleton
-              (ExpressionCallees.from_string_formatting
-                 {
-                   StringFormatCallees.stringify_targets =
-                     [
-                       CallTarget.create
-                         ~implicit_self:true
-                         ~receiver_type:(Type.Primitive "test.B")
-                         (Target.Method
-                            { class_name = "test.B"; method_name = "__repr__"; kind = Normal });
-                     ];
-                 }) );
+              (ExpressionCallees.from_string_format
+                 (StringFormatCallees.from_stringify_targets
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.Primitive "test.B")
+                        (Target.Method
+                           { class_name = "test.B"; method_name = "__repr__"; kind = Normal });
+                    ])) );
           ( "25:28-25:29",
             LocationCallees.Singleton
-              (ExpressionCallees.from_string_formatting
-                 {
-                   StringFormatCallees.stringify_targets =
-                     [
-                       CallTarget.create
-                         ~implicit_self:true
-                         ~receiver_type:(Type.Primitive "test.C")
-                         (Target.Method
-                            { class_name = "test.C"; method_name = "__str__"; kind = Normal });
-                     ];
-                 }) );
+              (ExpressionCallees.from_string_format
+                 (StringFormatCallees.from_stringify_targets
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.Primitive "test.C")
+                        (Target.Method
+                           { class_name = "test.C"; method_name = "__str__"; kind = Normal });
+                    ])) );
           ( "25:31-25:32",
             LocationCallees.Singleton
-              (ExpressionCallees.from_string_formatting
-                 {
-                   StringFormatCallees.stringify_targets =
-                     [
-                       CallTarget.create
-                         ~implicit_self:true
-                         ~receiver_type:(Type.Primitive "test.D")
-                         (Target.Method
-                            { class_name = "object"; method_name = "__repr__"; kind = Normal });
-                     ];
-                 }) );
+              (ExpressionCallees.from_string_format
+                 (StringFormatCallees.from_stringify_targets
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.Primitive "test.D")
+                        (Target.Method
+                           { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                    ])) );
         ]
       ()
   in
@@ -3045,36 +3053,42 @@ let test_call_graph_of_define context =
     ~define_name:"test.bar"
     ~expected:
       [
+        ( "28:9-28:15",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "28:12-28:13",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     (* TODO(T112028293): Properly resolve `__str__` calls on union-typed
-                        variables *)
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:(Type.Primitive "test.B")
-                       (Target.Method
-                          { class_name = "object"; method_name = "__str__"; kind = Normal });
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:(Type.Primitive "test.D")
-                       (Target.Method
-                          { class_name = "object"; method_name = "__str__"; kind = Normal });
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:(Type.Primitive "test.A")
-                       (Target.Method
-                          { class_name = "test.A"; method_name = "__str__"; kind = Normal });
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:(Type.Primitive "test.C")
-                       (Target.Method
-                          { class_name = "test.C"; method_name = "__str__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    (* TODO(T112028293): Properly resolve `__str__` calls on union-typed variables *)
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:(Type.Primitive "test.B")
+                      (Target.Method
+                         { class_name = "object"; method_name = "__str__"; kind = Normal });
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:(Type.Primitive "test.D")
+                      (Target.Method
+                         { class_name = "object"; method_name = "__str__"; kind = Normal });
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:(Type.Primitive "test.A")
+                      (Target.Method
+                         { class_name = "test.A"; method_name = "__str__"; kind = Normal });
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:(Type.Primitive "test.C")
+                      (Target.Method
+                         { class_name = "test.C"; method_name = "__str__"; kind = Normal });
+                  ])) );
       ]
     ();
   assert_call_graph_of_define
@@ -3090,111 +3104,150 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "7:9-7:39",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "7:12-7:13",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:Type.integer
-                       (Target.Method { class_name = "int"; method_name = "__str__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:Type.integer
+                      (Target.Method { class_name = "int"; method_name = "__str__"; kind = Normal });
+                  ])) );
         ( "7:15-7:16",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:Type.float
-                       (Target.Method
-                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:Type.float
+                      (Target.Method
+                         { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                  ])) );
         ( "7:18-7:19",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:Type.string
-                       (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:Type.string
+                      (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
+                  ])) );
         ( "7:21-7:22",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~index:1
-                       ~receiver_type:(Type.list Type.integer)
-                       (Target.Method
-                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~index:1
+                      ~receiver_type:(Type.list Type.integer)
+                      (Target.Method
+                         { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                  ])) );
         ( "7:24-7:25",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~index:2
-                       ~receiver_type:(Type.list Type.integer)
-                       (Target.Method
-                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~index:2
+                      ~receiver_type:(Type.list Type.integer)
+                      (Target.Method
+                         { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                  ])) );
         ( "7:27-7:28",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~index:1
-                       ~receiver_type:(Type.literal_integer 1)
-                       (Target.Method { class_name = "int"; method_name = "__str__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~index:1
+                      ~receiver_type:(Type.literal_integer 1)
+                      (Target.Method { class_name = "int"; method_name = "__str__"; kind = Normal });
+                  ])) );
         ( "7:30-7:31",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~index:1
-                       ~receiver_type:(Type.literal_string "str")
-                       (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~index:1
+                      ~receiver_type:(Type.literal_string "str")
+                      (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
+                  ])) );
         ( "7:33-7:34",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~index:3
-                       ~receiver_type:Type.float
-                       (Target.Method
-                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~index:3
+                      ~receiver_type:Type.float
+                      (Target.Method
+                         { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                  ])) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def bar(x):
+        y = f"{x}" f"{x}"
+        if bar(f"{x}"):
+          return True
+        else:
+          return True
+    |}
+    ~define_name:"test.bar"
+    ~expected:
+      [
+        ( "3:6-3:19",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
+        ( "4:5-4:16",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~return_type:(Some ReturnType.none)
+                        (Target.Function { name = "test.bar"; kind = Normal });
+                    ]
+                  ())) );
+        ( "4:9-4:15",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    (* No duplicate targets, even if visiting both `if` and `if not`. *)
+                    CallTarget.create
+                      ~return_type:None
+                      ~index:1
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
       ]
     ();
   assert_call_graph_of_define
@@ -3205,20 +3258,27 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "3:9-3:15",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "3:12-3:13",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     (* TODO(T112761296): Probably wrong call resolution *)
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:Type.object_primitive
-                       (Target.Method
-                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    (* TODO(T112761296): Probably wrong call resolution *)
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:Type.object_primitive
+                      (Target.Method
+                         { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                  ])) );
       ]
     ();
   assert_call_graph_of_define
@@ -3227,7 +3287,69 @@ let test_call_graph_of_define context =
         return f"{x}"
     |}
     ~define_name:"test.foo"
-    ~expected:[] (* TODO(T112761296): Probably wrong call resolution *)
+    ~expected:
+      [
+        ( "3:9-3:15",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
+        (* TODO(T112761296): Probably wrong call resolution. Expect an additional call target. *)
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class A:
+        def __str__(self): return "stringified"
+
+      def foo():
+        a = A()
+        "hello %s" % a
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:6-6:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.meta (Type.Primitive "test.A"))
+                        (Target.Method
+                           { class_name = "object"; method_name = "__init__"; kind = Normal });
+                    ]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.meta (Type.Primitive "test.A"))
+                        (Target.Method
+                           { class_name = "object"; method_name = "__new__"; kind = Normal });
+                    ]
+                  ())) );
+        ( "7:2-7:16",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      (* TODO(T146836847): Missing the stringify callee. *)
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.literal_string "hello %s")
+                        (Target.Method
+                           { class_name = "str"; method_name = "__mod__"; kind = Normal });
+                    ]
+                  ())) );
+      ]
     ();
   assert_call_graph_of_define
     ~cmp:DefineCallGraph.equal_ignoring_types
@@ -3239,38 +3361,53 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "3:2-3:8",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "3:5-3:6",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:(Type.Primitive "Exception")
-                       (Target.Method
-                          { class_name = "BaseException"; method_name = "__str__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:(Type.Primitive "Exception")
+                      (Target.Method
+                         { class_name = "BaseException"; method_name = "__str__"; kind = Normal });
+                  ])) );
+        ( "4:2-4:14",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      ~index:1
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "4:5-4:12",
           LocationCallees.Compound
             (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
-                   ExpressionCallees.from_string_formatting
-                     {
-                       StringFormatCallees.stringify_targets =
-                         [
-                           (* TODO(T112761296): Probably wrong call resolution *)
-                           CallTarget.create
-                             (Target.Method
-                                {
-                                  class_name = "BaseException";
-                                  method_name = "__repr__";
-                                  kind = Normal;
-                                });
-                         ];
-                     } );
+                   ExpressionCallees.from_string_format
+                     (StringFormatCallees.from_stringify_targets
+                        [
+                          (* TODO(T112761296): Probably wrong call resolution *)
+                          CallTarget.create
+                            (Target.Method
+                               {
+                                 class_name = "BaseException";
+                                 method_name = "__repr__";
+                                 kind = Normal;
+                               });
+                        ]) );
                  ( "type",
                    ExpressionCallees.from_call
                      (CallCallees.create
@@ -3303,21 +3440,28 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "3:9-3:24",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "3:12-3:22",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     (* TODO(T112761296): Wrong call resolution *)
-                     CallTarget.create
-                       (Target.Function { name = "BaseException.__str__"; kind = Normal });
-                     CallTarget.create
-                       ~implicit_self:true
-                       ~receiver_type:Type.string
-                       (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    (* TODO(T112761296): Wrong call resolution *)
+                    CallTarget.create
+                      (Target.Function { name = "BaseException.__str__"; kind = Normal });
+                    CallTarget.create
+                      ~implicit_self:true
+                      ~receiver_type:Type.string
+                      (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
+                  ])) );
       ]
     ();
   assert_call_graph_of_define
@@ -3329,18 +3473,25 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "3:9-3:24",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "3:12-3:22",
           LocationCallees.Singleton
-            (ExpressionCallees.from_string_formatting
-               {
-                 StringFormatCallees.stringify_targets =
-                   [
-                     (* TODO(T112761296): Wrong call resolution *)
-                     CallTarget.create
-                       (Target.Method
-                          { class_name = "BaseException"; method_name = "__repr__"; kind = Normal });
-                   ];
-               }) );
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_stringify_targets
+                  [
+                    (* TODO(T112761296): Wrong call resolution *)
+                    CallTarget.create
+                      (Target.Method
+                         { class_name = "BaseException"; method_name = "__repr__"; kind = Normal });
+                  ])) );
       ]
     ();
   assert_call_graph_of_define
@@ -3358,22 +3509,29 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "8:2-8:18",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "8:5-8:16",
           LocationCallees.Compound
             (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
-                   ExpressionCallees.from_string_formatting
-                     {
-                       StringFormatCallees.stringify_targets =
-                         [
-                           (* TODO(T112761296): Probably wrong call resolution *)
-                           CallTarget.create
-                             (Target.Function { name = "object.__str__"; kind = Normal });
-                           CallTarget.create
-                             (Target.Function { name = "test.A.__str__"; kind = Normal });
-                         ];
-                     } );
+                   ExpressionCallees.from_string_format
+                     (StringFormatCallees.from_stringify_targets
+                        [
+                          (* TODO(T112761296): Probably wrong call resolution *)
+                          CallTarget.create
+                            (Target.Function { name = "object.__str__"; kind = Normal });
+                          CallTarget.create
+                            (Target.Function { name = "test.A.__str__"; kind = Normal });
+                        ]) );
                  ( "__class__",
                    ExpressionCallees.from_attribute_access
                      {
@@ -3403,21 +3561,28 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
+        ( "6:2-6:18",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_string_format
+               (StringFormatCallees.from_f_string_targets
+                  [
+                    CallTarget.create
+                      ~return_type:None
+                      Target.StringCombineArtificialTargets.format_string;
+                  ])) );
         ( "6:5-6:16",
           LocationCallees.Compound
             (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
-                   ExpressionCallees.from_string_formatting
-                     {
-                       StringFormatCallees.stringify_targets =
-                         [
-                           (* TODO(T112761296): Probably wrong call resolution *)
-                           CallTarget.create
-                             (Target.Method
-                                { class_name = "object"; method_name = "__repr__"; kind = Normal });
-                         ];
-                     } );
+                   ExpressionCallees.from_string_format
+                     (StringFormatCallees.from_stringify_targets
+                        [
+                          (* TODO(T112761296): Probably wrong call resolution *)
+                          CallTarget.create
+                            (Target.Method
+                               { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                        ]) );
                  ( "__class__",
                    ExpressionCallees.from_attribute_access
                      {

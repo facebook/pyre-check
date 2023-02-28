@@ -153,8 +153,14 @@ module StringFormatCallees : sig
   type t = {
     (* Implicit callees for any expression that is stringified. *)
     stringify_targets: CallTarget.t list;
+    (* Artificial callees for distinguishing f-strings within a function. *)
+    f_string_targets: CallTarget.t list;
   }
   [@@deriving eq, show]
+
+  val from_stringify_targets : CallTarget.t list -> t
+
+  val from_f_string_targets : CallTarget.t list -> t
 end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
@@ -175,7 +181,7 @@ module ExpressionCallees : sig
 
   val from_identifier : IdentifierCallees.t -> t
 
-  val from_string_formatting : StringFormatCallees.t -> t
+  val from_string_format : StringFormatCallees.t -> t
 end
 
 (** An aggregate of all possible callees for an arbitrary location.

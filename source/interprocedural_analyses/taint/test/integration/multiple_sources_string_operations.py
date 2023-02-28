@@ -91,3 +91,9 @@ def format_string_issue_with_multiple_triggered_user_controlled():
     user_controlled = user_controlled_input()
     format_string_multiple_triggered_user_controlled(user_controlled, 0)
     format_string_multiple_triggered_user_controlled(0, user_controlled)
+
+
+def nested_stradd_and_fstring():
+    x: str = user_controlled_input()
+    y = "xyz"
+    return "abc" + f"{x + y}"

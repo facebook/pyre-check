@@ -139,6 +139,18 @@ val resolve_method
   method_name:string ->
   t option
 
+module StringCombineArtificialTargets : sig
+  val format_string : t
+
+  val str_add : t
+
+  val str_mod : t
+
+  val str_format : t
+
+  val is_artificial : t -> bool
+end
+
 module SharedMemoryKey : sig
   type nonrec t = t
 

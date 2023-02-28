@@ -547,21 +547,35 @@ module StringFormatCallees = struct
   type t = {
     (* Implicit callees for any expression that is stringified. *)
     stringify_targets: CallTarget.t list;
+    (* Artificial callees for distinguishing f-strings within a function. *)
+    f_string_targets: CallTarget.t list;
   }
   [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { stringify_targets } =
-    { stringify_targets = List.dedup_and_sort ~compare:CallTarget.compare stringify_targets }
+  let deduplicate { stringify_targets; f_string_targets } =
+    {
+      stringify_targets = CallTarget.dedup_and_sort stringify_targets;
+      f_string_targets = CallTarget.dedup_and_sort f_string_targets;
+    }
 
 
   let join
-      { stringify_targets = left_stringify_targets }
-      { stringify_targets = right_stringify_targets }
+      { stringify_targets = left_stringify_targets; f_string_targets = left_f_string_targets }
+      { stringify_targets = right_stringify_targets; f_string_targets = right_f_string_targets }
     =
-    { stringify_targets = List.rev_append left_stringify_targets right_stringify_targets }
+    {
+      stringify_targets = List.rev_append left_stringify_targets right_stringify_targets;
+      f_string_targets = List.rev_append left_f_string_targets right_f_string_targets;
+    }
 
 
-  let all_targets { stringify_targets } = List.map ~f:CallTarget.target stringify_targets
+  let all_targets { stringify_targets; f_string_targets } =
+    List.rev_append stringify_targets f_string_targets |> List.map ~f:CallTarget.target
+
+
+  let from_stringify_targets stringify_targets = { stringify_targets; f_string_targets = [] }
+
+  let from_f_string_targets f_string_targets = { stringify_targets = []; f_string_targets }
 end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
@@ -595,7 +609,7 @@ module ExpressionCallees = struct
     { call = None; attribute_access = None; identifier = Some identifier; string_format = None }
 
 
-  let from_string_formatting string_format =
+  let from_string_format string_format =
     { call = None; attribute_access = None; identifier = None; string_format = Some string_format }
 
 
@@ -1892,6 +1906,24 @@ struct
                 |> register_targets ~expression_identifier:(call_identifier call)
             | _ -> ())
         | Expression.FormatString substrings ->
+            let artificial_target =
+              CallTargetIndexer.create_target
+                call_indexer
+                ~implicit_self:false
+                ~implicit_dunder_call:false
+                ~return_type:None
+                Target.StringCombineArtificialTargets.format_string
+            in
+            let callees =
+              ExpressionCallees.from_string_format
+                (StringFormatCallees.from_f_string_targets [artificial_target])
+            in
+            (* Use indexed artificial targets to distinguish format strings at different
+               locations. *)
+            register_targets
+              ~expression_identifier:DefineCallGraph.string_format_expression_identifier
+              ~location
+              callees;
             List.iter substrings ~f:(function
                 | Substring.Literal _ -> ()
                 | Substring.Format ({ Node.location = expression_location; _ } as expression) ->
@@ -1919,8 +1951,8 @@ struct
 
                     if not (List.is_empty call_targets) then
                       let callees =
-                        ExpressionCallees.from_string_formatting
-                          { StringFormatCallees.stringify_targets = call_targets }
+                        ExpressionCallees.from_string_format
+                          (StringFormatCallees.from_stringify_targets call_targets)
                       in
                       register_targets
                         ~expression_identifier:DefineCallGraph.string_format_expression_identifier
