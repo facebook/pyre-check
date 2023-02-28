@@ -7,7 +7,7 @@
     "code": 1337,
     "line": 27,
     "start": 4,
-    "end": 20,
+    "end": 10,
     "filename": "implicit_sinks.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -40,7 +40,7 @@
               "filename": "implicit_sinks.py",
               "line": 27,
               "start": 4,
-              "end": 20
+              "end": 10
             }
           }
         ]
@@ -183,7 +183,7 @@
     "callable_line": 53,
     "code": 1337,
     "line": 56,
-    "start": 14,
+    "start": 18,
     "end": 25,
     "filename": "implicit_sinks.py",
     "message": "[Test] to [Test]",
@@ -216,7 +216,7 @@
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 56,
-              "start": 14,
+              "start": 18,
               "end": 25
             }
           }
@@ -238,7 +238,7 @@
     "code": 1337,
     "line": 36,
     "start": 4,
-    "end": 17,
+    "end": 10,
     "filename": "implicit_sinks.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -274,7 +274,7 @@
               "filename": "implicit_sinks.py",
               "line": 36,
               "start": 4,
-              "end": 17
+              "end": 10
             }
           }
         ]
@@ -298,7 +298,7 @@
     "code": 1337,
     "line": 45,
     "start": 4,
-    "end": 18,
+    "end": 14,
     "filename": "implicit_sinks.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -331,7 +331,7 @@
               "filename": "implicit_sinks.py",
               "line": 45,
               "start": 4,
-              "end": 18
+              "end": 14
             }
           }
         ]

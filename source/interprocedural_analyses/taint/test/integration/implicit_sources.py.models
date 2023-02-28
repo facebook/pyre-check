@@ -13,7 +13,7 @@
               "filename": "implicit_sources.py",
               "line": 25,
               "start": 11,
-              "end": 55
+              "end": 31
             }
           }
         ]
@@ -57,7 +57,7 @@
               "filename": "implicit_sources.py",
               "line": 20,
               "start": 11,
-              "end": 52
+              "end": 31
             }
           }
         ]

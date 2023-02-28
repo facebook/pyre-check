@@ -2119,8 +2119,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~call_target_for_string_combine_rules
       value
     =
-    let location_with_module =
-      Location.with_module ~module_reference:FunctionContext.qualifier location
+    let value_location_with_module =
+      Location.with_module ~module_reference:FunctionContext.qualifier value_location
     in
     let value_taint =
       let literal_string_regular_expressions =
@@ -2128,7 +2128,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let add_matching_source_kind tree { TaintConfiguration.pattern; source_kind = kind } =
         if Re2.matches pattern value then
-          ForwardTaint.singleton (CallInfo.Origin location_with_module) kind Frame.initial
+          ForwardTaint.singleton (CallInfo.Origin value_location_with_module) kind Frame.initial
           |> ForwardState.Tree.create_leaf
           |> ForwardState.Tree.join tree
         else
@@ -2259,11 +2259,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       List.iter literal_string_sinks ~f:(fun { TaintConfiguration.sink_kind; pattern } ->
           if Re2.matches pattern value then
             let sink_tree =
-              BackwardTaint.singleton (CallInfo.Origin location_with_module) sink_kind Frame.initial
+              BackwardTaint.singleton
+                (CallInfo.Origin value_location_with_module)
+                sink_kind
+                Frame.initial
               |> BackwardState.Tree.create_leaf
             in
             check_flow
-              ~location:location_with_module
+              ~location:value_location_with_module
               ~sink_handle:(IssueHandle.Sink.LiteralStringSink sink_kind)
               ~source_tree:taint
               ~sink_tree);
