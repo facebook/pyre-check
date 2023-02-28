@@ -7,7 +7,7 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-type t = ArtifactPath of PyrePath.t [@@deriving sexp, show, compare, hash]
+type t = ArtifactPath of PyrePath.t [@@deriving sexp, compare, hash, show]
 
 let create raw = ArtifactPath raw
 
