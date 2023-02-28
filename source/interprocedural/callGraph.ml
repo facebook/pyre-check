@@ -542,19 +542,26 @@ module IdentifierCallees = struct
   let all_targets { global_targets } = List.map ~f:CallTarget.target global_targets
 end
 
-(** An aggregate of all implicit callees for any expression used in a f-string. *)
-module FormatStringCallees = struct
-  type t = { call_targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
+(** An aggregate of callees for formatting strings. *)
+module StringFormatCallees = struct
+  type t = {
+    (* Implicit callees for any expression that is stringified. *)
+    stringify_targets: CallTarget.t list;
+  }
+  [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { call_targets } =
-    { call_targets = List.dedup_and_sort ~compare:CallTarget.compare call_targets }
+  let deduplicate { stringify_targets } =
+    { stringify_targets = List.dedup_and_sort ~compare:CallTarget.compare stringify_targets }
 
 
-  let join { call_targets = left_call_targets } { call_targets = right_call_targets } =
-    { call_targets = List.rev_append left_call_targets right_call_targets }
+  let join
+      { stringify_targets = left_stringify_targets }
+      { stringify_targets = right_stringify_targets }
+    =
+    { stringify_targets = List.rev_append left_stringify_targets right_stringify_targets }
 
 
-  let all_targets { call_targets } = List.map ~f:CallTarget.target call_targets
+  let all_targets { stringify_targets } = List.map ~f:CallTarget.target stringify_targets
 end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
@@ -563,12 +570,12 @@ module ExpressionCallees = struct
     call: CallCallees.t option;
     attribute_access: AttributeAccessCallees.t option;
     identifier: IdentifierCallees.t option;
-    format_string: FormatStringCallees.t option;
+    string_format: StringFormatCallees.t option;
   }
   [@@deriving eq, show { with_path = false }]
 
   let from_call callees =
-    { call = Some callees; attribute_access = None; identifier = None; format_string = None }
+    { call = Some callees; attribute_access = None; identifier = None; string_format = None }
 
 
   let from_call_with_empty_attribute callees =
@@ -576,20 +583,20 @@ module ExpressionCallees = struct
       call = Some callees;
       attribute_access = Some AttributeAccessCallees.empty;
       identifier = None;
-      format_string = None;
+      string_format = None;
     }
 
 
   let from_attribute_access properties =
-    { call = None; attribute_access = Some properties; identifier = None; format_string = None }
+    { call = None; attribute_access = Some properties; identifier = None; string_format = None }
 
 
   let from_identifier identifier =
-    { call = None; attribute_access = None; identifier = Some identifier; format_string = None }
+    { call = None; attribute_access = None; identifier = Some identifier; string_format = None }
 
 
-  let from_format_string format_string =
-    { call = None; attribute_access = None; identifier = None; format_string = Some format_string }
+  let from_string_formatting string_format =
+    { call = None; attribute_access = None; identifier = None; string_format = Some string_format }
 
 
   let join
@@ -597,13 +604,13 @@ module ExpressionCallees = struct
         call = left_call;
         attribute_access = left_attribute_access;
         identifier = left_identifier;
-        format_string = left_format_string;
+        string_format = left_string_format;
       }
       {
         call = right_call;
         attribute_access = right_attribute_access;
         identifier = right_identifier;
-        format_string = right_format_string;
+        string_format = right_string_format;
       }
     =
     {
@@ -611,21 +618,21 @@ module ExpressionCallees = struct
       attribute_access =
         Option.merge ~f:AttributeAccessCallees.join left_attribute_access right_attribute_access;
       identifier = Option.merge ~f:IdentifierCallees.join left_identifier right_identifier;
-      format_string =
-        Option.merge ~f:FormatStringCallees.join left_format_string right_format_string;
+      string_format =
+        Option.merge ~f:StringFormatCallees.join left_string_format right_string_format;
     }
 
 
-  let deduplicate { call; attribute_access; identifier; format_string } =
+  let deduplicate { call; attribute_access; identifier; string_format } =
     {
       call = call >>| CallCallees.deduplicate;
       attribute_access = attribute_access >>| AttributeAccessCallees.deduplicate;
       identifier = identifier >>| IdentifierCallees.deduplicate;
-      format_string = format_string >>| FormatStringCallees.deduplicate;
+      string_format = string_format >>| StringFormatCallees.deduplicate;
     }
 
 
-  let all_targets { call; attribute_access; identifier; format_string } =
+  let all_targets { call; attribute_access; identifier; string_format } =
     let call_targets = call >>| CallCallees.all_targets |> Option.value ~default:[] in
     let attribute_access_targets =
       attribute_access >>| AttributeAccessCallees.all_targets |> Option.value ~default:[]
@@ -633,13 +640,13 @@ module ExpressionCallees = struct
     let identifier_targets =
       identifier >>| IdentifierCallees.all_targets |> Option.value ~default:[]
     in
-    let format_string_targets =
-      format_string >>| FormatStringCallees.all_targets |> Option.value ~default:[]
+    let string_format_targets =
+      string_format >>| StringFormatCallees.all_targets |> Option.value ~default:[]
     in
     call_targets
     |> List.rev_append attribute_access_targets
     |> List.rev_append identifier_targets
-    |> List.rev_append format_string_targets
+    |> List.rev_append string_format_targets
 
 
   let is_empty_attribute_access_callees = function
@@ -647,7 +654,7 @@ module ExpressionCallees = struct
         call = None;
         attribute_access = Some some_attribute_access;
         identifier = None;
-        format_string = None;
+        string_format = None;
       } ->
         AttributeAccessCallees.is_empty some_attribute_access
     | _ -> false
@@ -658,13 +665,13 @@ module ExpressionCallees = struct
         call = call_left;
         attribute_access = attribute_access_left;
         identifier = identifier_left;
-        format_string = format_string_left;
+        string_format = string_format_left;
       }
       {
         call = call_right;
         attribute_access = attribute_access_right;
         identifier = identifier_right;
-        format_string = format_string_right;
+        string_format = string_format_right;
       }
     =
     Option.equal CallCallees.equal_ignoring_types call_left call_right
@@ -673,7 +680,7 @@ module ExpressionCallees = struct
          attribute_access_left
          attribute_access_right
     && Option.equal IdentifierCallees.equal identifier_left identifier_right
-    && Option.equal FormatStringCallees.equal format_string_left format_string_right
+    && Option.equal StringFormatCallees.equal string_format_left string_format_right
 end
 
 (** An aggregate of all possible callees for an arbitrary location.
@@ -786,14 +793,14 @@ module DefineCallGraph = struct
     >>= fun { identifier; _ } -> identifier
 
 
-  let format_string_expression_identifier = "$__str__$"
+  let string_format_expression_identifier = "$__str__$"
 
-  let resolve_format_string call_graph ~location =
+  let resolve_string_format call_graph ~location =
     resolve_expression
       call_graph
       ~location
-      ~expression_identifier:format_string_expression_identifier
-    >>= fun { format_string; _ } -> format_string
+      ~expression_identifier:string_format_expression_identifier
+    >>= fun { string_format; _ } -> string_format
 
 
   let equal_ignoring_types call_graph_left call_graph_right =
@@ -1912,10 +1919,11 @@ struct
 
                     if not (List.is_empty call_targets) then
                       let callees =
-                        ExpressionCallees.from_format_string { FormatStringCallees.call_targets }
+                        ExpressionCallees.from_string_formatting
+                          { StringFormatCallees.stringify_targets = call_targets }
                       in
                       register_targets
-                        ~expression_identifier:DefineCallGraph.format_string_expression_identifier
+                        ~expression_identifier:DefineCallGraph.string_format_expression_identifier
                         ~location:expression_location
                         callees)
         | _ -> ()

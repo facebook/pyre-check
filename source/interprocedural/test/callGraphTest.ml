@@ -1949,9 +1949,9 @@ let test_call_graph_of_define context =
             (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
-                   ExpressionCallees.from_format_string
+                   ExpressionCallees.from_string_formatting
                      {
-                       FormatStringCallees.call_targets =
+                       StringFormatCallees.stringify_targets =
                          [
                            CallTarget.create
                              ~implicit_self:true
@@ -2987,9 +2987,9 @@ let test_call_graph_of_define context =
                     ())) );
           ( "25:12-25:13",
             LocationCallees.Singleton
-              (ExpressionCallees.from_format_string
+              (ExpressionCallees.from_string_formatting
                  {
-                   FormatStringCallees.call_targets =
+                   StringFormatCallees.stringify_targets =
                      [
                        CallTarget.create
                          ~implicit_self:true
@@ -3000,9 +3000,9 @@ let test_call_graph_of_define context =
                  }) );
           ( "25:20-25:21",
             LocationCallees.Singleton
-              (ExpressionCallees.from_format_string
+              (ExpressionCallees.from_string_formatting
                  {
-                   FormatStringCallees.call_targets =
+                   StringFormatCallees.stringify_targets =
                      [
                        CallTarget.create
                          ~implicit_self:true
@@ -3013,9 +3013,9 @@ let test_call_graph_of_define context =
                  }) );
           ( "25:28-25:29",
             LocationCallees.Singleton
-              (ExpressionCallees.from_format_string
+              (ExpressionCallees.from_string_formatting
                  {
-                   FormatStringCallees.call_targets =
+                   StringFormatCallees.stringify_targets =
                      [
                        CallTarget.create
                          ~implicit_self:true
@@ -3026,9 +3026,9 @@ let test_call_graph_of_define context =
                  }) );
           ( "25:31-25:32",
             LocationCallees.Singleton
-              (ExpressionCallees.from_format_string
+              (ExpressionCallees.from_string_formatting
                  {
-                   FormatStringCallees.call_targets =
+                   StringFormatCallees.stringify_targets =
                      [
                        CallTarget.create
                          ~implicit_self:true
@@ -3047,9 +3047,9 @@ let test_call_graph_of_define context =
       [
         ( "28:12-28:13",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      (* TODO(T112028293): Properly resolve `__str__` calls on union-typed
                         variables *)
@@ -3092,9 +3092,9 @@ let test_call_graph_of_define context =
       [
         ( "7:12-7:13",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3104,9 +3104,9 @@ let test_call_graph_of_define context =
                }) );
         ( "7:15-7:16",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3117,9 +3117,9 @@ let test_call_graph_of_define context =
                }) );
         ( "7:18-7:19",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3129,9 +3129,9 @@ let test_call_graph_of_define context =
                }) );
         ( "7:21-7:22",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3143,9 +3143,9 @@ let test_call_graph_of_define context =
                }) );
         ( "7:24-7:25",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3157,9 +3157,9 @@ let test_call_graph_of_define context =
                }) );
         ( "7:27-7:28",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3170,9 +3170,9 @@ let test_call_graph_of_define context =
                }) );
         ( "7:30-7:31",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3183,9 +3183,9 @@ let test_call_graph_of_define context =
                }) );
         ( "7:33-7:34",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3207,9 +3207,9 @@ let test_call_graph_of_define context =
       [
         ( "3:12-3:13",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      (* TODO(T112761296): Probably wrong call resolution *)
                      CallTarget.create
@@ -3241,9 +3241,9 @@ let test_call_graph_of_define context =
       [
         ( "3:5-3:6",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      CallTarget.create
                        ~implicit_self:true
@@ -3257,9 +3257,9 @@ let test_call_graph_of_define context =
             (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
-                   ExpressionCallees.from_format_string
+                   ExpressionCallees.from_string_formatting
                      {
-                       FormatStringCallees.call_targets =
+                       StringFormatCallees.stringify_targets =
                          [
                            (* TODO(T112761296): Probably wrong call resolution *)
                            CallTarget.create
@@ -3305,9 +3305,9 @@ let test_call_graph_of_define context =
       [
         ( "3:12-3:22",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      (* TODO(T112761296): Wrong call resolution *)
                      CallTarget.create
@@ -3331,9 +3331,9 @@ let test_call_graph_of_define context =
       [
         ( "3:12-3:22",
           LocationCallees.Singleton
-            (ExpressionCallees.from_format_string
+            (ExpressionCallees.from_string_formatting
                {
-                 FormatStringCallees.call_targets =
+                 StringFormatCallees.stringify_targets =
                    [
                      (* TODO(T112761296): Wrong call resolution *)
                      CallTarget.create
@@ -3363,9 +3363,9 @@ let test_call_graph_of_define context =
             (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
-                   ExpressionCallees.from_format_string
+                   ExpressionCallees.from_string_formatting
                      {
-                       FormatStringCallees.call_targets =
+                       StringFormatCallees.stringify_targets =
                          [
                            (* TODO(T112761296): Probably wrong call resolution *)
                            CallTarget.create
@@ -3408,9 +3408,9 @@ let test_call_graph_of_define context =
             (SerializableStringMap.of_alist_exn
                [
                  ( "$__str__$",
-                   ExpressionCallees.from_format_string
+                   ExpressionCallees.from_string_formatting
                      {
-                       FormatStringCallees.call_targets =
+                       StringFormatCallees.stringify_targets =
                          [
                            (* TODO(T112761296): Probably wrong call resolution *)
                            CallTarget.create

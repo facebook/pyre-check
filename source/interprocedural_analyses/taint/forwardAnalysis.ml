@@ -158,8 +158,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     callees
 
 
-  let get_format_string_callees ~location =
-    CallGraph.DefineCallGraph.resolve_format_string FunctionContext.call_graph_of_define ~location
+  let get_string_format_callees ~location =
+    CallGraph.DefineCallGraph.resolve_string_format FunctionContext.call_graph_of_define ~location
 
 
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution FunctionContext.environment
@@ -2205,10 +2205,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |>> ForwardState.Tree.add_local_breadcrumb (Features.tito ())
       in
       let expression_taint, state =
-        match get_format_string_callees ~location:expression_location with
-        | Some { CallGraph.FormatStringCallees.call_targets } ->
+        match get_string_format_callees ~location:expression_location with
+        | Some { CallGraph.StringFormatCallees.stringify_targets } ->
             List.fold
-              call_targets
+              stringify_targets
               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
               ~f:(fun (taint_to_join, state_to_join) call_target ->
                 analyze_stringify_callee
