@@ -13,8 +13,8 @@ sudo apt-get update
 
 sudo apt-get install -y \
   build-essential \
-  python3.8 \
-  python3.8-venv \
+  python3 \
+  python3-venv \
   python3-dev \
   watchman \
   git \
