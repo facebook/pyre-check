@@ -175,18 +175,27 @@ let print_errors errors =
   |> Log.print "%s"
 
 
-let run_check check_configuration =
+let run_check ~build_system check_configuration =
+  try
+    let errors =
+      compute_errors
+        ~configuration:(CheckConfiguration.analysis_configuration_of check_configuration)
+        ~build_system
+        ()
+    in
+    print_errors errors
+  with
+  | exn ->
+      Log.log_exception "Pyre check failed." exn (Worker.exception_backtrace exn);
+      raise exn
+
+
+let run_check_in_lwt check_configuration =
   let { CheckConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ }; _ } =
     check_configuration
   in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
-      let errors =
-        compute_errors
-          ~configuration:(CheckConfiguration.analysis_configuration_of check_configuration)
-          ~build_system
-          ()
-      in
-      print_errors errors;
+      run_check ~build_system check_configuration;
       Lwt.return ExitStatus.Ok)
 
 
@@ -239,7 +248,7 @@ let on_exception = function
       ExitStatus.PyreError
 
 
-let run_check configuration_file =
+let run_check_command configuration_file =
   let exit_status =
     match CommandStartup.read_and_parse_json configuration_file ~f:CheckConfiguration.of_yojson with
     | Result.Error message ->
@@ -272,7 +281,7 @@ let run_check configuration_file =
 
         Lwt_main.run
           (Lwt.catch
-             (fun () -> run_check check_configuration)
+             (fun () -> run_check_in_lwt check_configuration)
              (fun exn -> Lwt.return (on_exception exn)))
   in
   Statistics.flush ();
@@ -284,4 +293,4 @@ let command =
   let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
   Command.basic
     ~summary:"Runs a full check without a server"
-    (Command.Param.map filename_argument ~f:(fun filename () -> run_check filename))
+    (Command.Param.map filename_argument ~f:(fun filename () -> run_check_command filename))
