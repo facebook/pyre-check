@@ -492,7 +492,7 @@ def issue_user_declared_tito_collapse_one():
 def no_tito_init_then_overwrite(x):
     d = {"a": x}
     d["a"] = 0
-    return d  # Wrongly infers tito
+    return d  # TODO(T146774878): Wrongly infers tito
 
 
 def no_tito_overwrite_then_init(d):
