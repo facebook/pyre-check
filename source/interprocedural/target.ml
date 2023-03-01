@@ -297,8 +297,6 @@ module StringCombineArtificialTargets = struct
   let str_mod = Object "<str.__mod__>"
 
   let str_format = Object "<str.format>"
-
-  let is_artificial target = List.mem ~equal [format_string; str_add; str_mod; str_format] target
 end
 
 module SharedMemoryKey = struct
