@@ -70,7 +70,11 @@ let handle_query ~server ~output_channel query =
 
 
 let handle_command ~server ~output_channel command =
-  Log.info "Processing command `%a`" Sexp.pp (Request.Command.sexp_of_t command);
+  (* Certain command, like [FileOpen] or [LocalUpdate], contains a [content] field which can be
+     large. Truncate the content to avoid log spamming. *)
+  Log.info
+    "Processing command `%s`"
+    (Request.Command.sexp_of_t command |> Sexp.to_string |> Log.truncate ~size:400);
   let%lwt response = handle_command_and_stop_if_necessary ~server command in
   let raw_response = Response.to_string response in
   Log.info "Command processed. Response: `%s`" raw_response;
@@ -83,7 +87,7 @@ let handle_connection ~server _client_address (input_channel, output_channel) =
     match%lwt Lwt_io.read_line_opt input_channel with
     | None -> Lwt.return_unit
     | Some message -> (
-        Log.info "Processing message `%s`" message;
+        Log.info "Processing message `%s`" (Log.truncate message ~size:400);
         match parse_json message with
         | Result.Error message -> handle_invalid_request ~output_channel message
         | Result.Ok json -> (
