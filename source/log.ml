@@ -148,3 +148,11 @@ module Color = struct
 
   let yellow string = Format.asprintf "\027[33m%s\027[0m" string
 end
+
+let truncate ~size message =
+  let drop_size = String.length message - Int.max 0 size in
+  if drop_size <= 0 then
+    message
+  else
+    let truncated = String.drop_suffix message drop_size in
+    Format.sprintf "%s..(truncated %d bytes)" truncated drop_size

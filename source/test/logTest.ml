@@ -30,10 +30,25 @@ let test_initialize_default_on _ =
   assert_enabled `Warning
 
 
+let test_truncate context =
+  let assert_string_equals ~expected =
+    assert_equal ~ctxt:context ~printer:Fn.id ~cmp:String.equal expected
+  in
+
+  assert_string_equals (Log.truncate "abc" ~size:5) ~expected:"abc";
+  assert_string_equals (Log.truncate "abc" ~size:3) ~expected:"abc";
+  assert_string_equals (Log.truncate "abc" ~size:2) ~expected:"ab..(truncated 1 bytes)";
+  assert_string_equals (Log.truncate "abc" ~size:1) ~expected:"a..(truncated 2 bytes)";
+  assert_string_equals (Log.truncate "abc" ~size:0) ~expected:"..(truncated 3 bytes)";
+  assert_string_equals (Log.truncate "abc" ~size:(-1)) ~expected:"..(truncated 3 bytes)";
+  ()
+
+
 let () =
   "log"
   >::: [
          "initialize_default_off" >:: test_initialize_default_off;
          "initialize_default_on" >:: test_initialize_default_on;
+         "truncate" >:: test_truncate;
        ]
   |> run_test_tt_main

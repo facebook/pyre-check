@@ -68,3 +68,5 @@ module Color : sig
 
   val yellow : string -> string
 end
+
+val truncate : size:int -> string -> string
