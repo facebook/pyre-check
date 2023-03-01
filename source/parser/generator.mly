@@ -1172,7 +1172,7 @@ handler:
     kind = expression; COMMA; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = Some (snd name); body = snd handler_body }
+      { Try.Handler.kind = Some kind; name = Some ({Node.location=(fst name); value=(snd name)}); body = snd handler_body }
     }
   | start = EXCEPT;
     kind = or_test; COLON; handler_body = block {
@@ -1183,7 +1183,7 @@ handler:
     kind = or_test; AS; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = Some (snd name); body = snd handler_body }
+      { Try.Handler.kind = Some kind; name = Some ({Node.location=(fst name); value=(snd name)}); body = snd handler_body }
     }
   ;
 

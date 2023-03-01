@@ -149,7 +149,7 @@ and Try : sig
   module Handler : sig
     type t = {
       kind: Expression.t option;
-      name: Identifier.t option;
+      name: Identifier.t Node.t option;
       body: Statement.t list;
     }
   end
@@ -164,7 +164,7 @@ end = struct
   module Handler = struct
     type t = {
       kind: Expression.t option;
-      name: Identifier.t option;
+      name: Identifier.t Node.t option;
       body: Statement.t list;
     }
   end

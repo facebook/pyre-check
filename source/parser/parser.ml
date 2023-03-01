@@ -471,11 +471,7 @@ module ParserToAst = struct
           let convert_handler { ParserStatement.Try.Handler.kind; name; body } =
             {
               Ast.Statement.Try.Handler.kind = kind >>| convert_expression;
-              name =
-                Option.value_map
-                  name
-                  ~f:(fun name -> Some (Node.create ~location name))
-                  ~default:None;
+              name;
               body = List.map ~f:convert_statement body;
             }
           in
