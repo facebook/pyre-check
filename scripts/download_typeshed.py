@@ -4,7 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Script to download, trim, and patch typeshed zip files.
+
+- By "trimming" we mean removing files only needed for python2
+- By "patching" patching we mean altering the stubs. Pyre's patches are
+  stored in ./typeshed-patches. These patches are needed because:
+  - off-the-shelf typeshed sometimes doesn't play well with Pyre
+  - Pyre has some custom extensions (e.g. type arithmetic) that require
+    modifying standard library stubs.
 """
 
 
@@ -144,7 +151,6 @@ class TrimmedTypeshed:
         )
 
 
-
 @dataclasses.dataclass(frozen=True)
 class PatchedTypeshed:
     results: List[PatchResult]
@@ -180,13 +186,11 @@ class PatchedTypeshed:
 
         return PatchResult(FileEntry(entry.path, new_data), False)
 
-
     @staticmethod
     def _entry_path_to_patch_path(input: str) -> Path:
         """Removes the first component of the path, and changes the suffix to `.patch`."""
         parts = Path(input).with_suffix(".patch").parts
         return Path("/".join(parts[1:]))
-
 
     @classmethod
     def from_trimmed_typeshed(
@@ -240,10 +244,11 @@ def download_typeshed(url: str) -> io.BytesIO:
     return downloaded
 
 
-
-
-def write_output(patched_typeshed: PatchedTypeshed, output: str) -> None:
-    with zipfile.ZipFile(output, mode="w") as output_file:
+def write_output_to_zip(
+    patched_typeshed: PatchedTypeshed,
+    output_zip_path: str,
+) -> None:
+    with zipfile.ZipFile(output_zip_path, mode="w") as output_file:
         for patch_result in patched_typeshed.results:
             data = patch_result.entry.data
             if data is not None:
@@ -265,8 +270,6 @@ def _find_entry(typeshed_path: Path, entries: List[FileEntry]) -> Optional[FileE
         ):
             return entry
     return None
-
-
 
 
 def main() -> None:
@@ -307,8 +310,10 @@ def main() -> None:
     LOG.info(f"{downloaded.getbuffer().nbytes} bytes downloaded from {url}")
     trimmed_typeshed = TrimmedTypeshed.from_raw_zip(downloaded)
     trimmed_typeshed.log_statistics()
-    patched_typeshed = PatchedTypeshed.from_trimmed_typeshed(patch_directory, trimmed_typeshed)
-    write_output(patched_typeshed, arguments.output)
+    patched_typeshed = PatchedTypeshed.from_trimmed_typeshed(
+        patch_directory, trimmed_typeshed
+    )
+    write_output_to_zip(patched_typeshed, arguments.output)
     LOG.info(f"Zip file written to {arguments.output}")
 
 
