@@ -214,12 +214,12 @@ class PatchedTypeshed:
 def get_default_typeshed_url() -> str:
     commit_hash = json.loads(
         urllib.request.urlopen(
-            "https://api.github.com/repos/python/typeshed/commits/master"
+            "https://api.github.com/repos/python/typeshed/commits/main"
         )
         .read()
         .decode("utf-8")
     )["sha"]
-    LOG.info(f"Found typeshed master at commit {commit_hash}")
+    LOG.info(f"Found typeshed main at commit {commit_hash}")
     return f"https://api.github.com/repos/python/typeshed/zipball/{commit_hash}"
 
 
