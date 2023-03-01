@@ -1328,8 +1328,11 @@ end = struct
     in
     match kind, name with
     | ( Some ({ Node.location; value = Name _ | Tuple _; _ } as annotation),
-        Some { Node.value = name; _ } ) ->
-        assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
+        Some { Node.location = name_location; Node.value = name } ) ->
+        assume
+          ~location
+          ~target:{ Node.location = name_location; value = Name (Name.Identifier name) }
+          ~annotation
     | Some ({ Node.location; _ } as expression), _ ->
         (* Insert raw `kind` so that we type check the expression. *)
         [Node.create ~location (Statement.Expression expression)]

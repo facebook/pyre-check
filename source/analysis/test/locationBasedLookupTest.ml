@@ -1417,17 +1417,16 @@ let test_resolve_definition_for_symbol context =
     |}
     (* This points to builtins.pyi. *)
     (Some ":276:2-276:46");
-  (* TODO(T112570623): The target variable points to the `Exception`. This is unavoidable right now,
-     because we don't store its location in `Try.t`. *)
-  assert_resolved_definition
-    {|
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
         try:
           print("hello")
         except Exception as exception:
-             # ^        ^
           print(exception)
           #      ^- cursor
-    |};
+    |}
+    (Some "test:4:20-5:2");
   (* We create special stubs in `MissingFromStubs` for special forms like `Callable`. They end up
      making the location be `any` (with all positions as `-1`), which the IDE doesn't recognize. We
      should translate that to something sensible, so that the IDE at least goes to the relevant

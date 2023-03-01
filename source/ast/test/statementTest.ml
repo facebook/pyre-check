@@ -380,7 +380,7 @@ let test_try_block_preamble _ =
           Statement.Assign
             {
               Assign.target =
-                { Node.location = ~@"4:7-4:14"; value = Name (Name.Identifier "error") };
+                { Node.location = ~@"4:18-5:2"; value = Name (Name.Identifier "error") };
               annotation = None;
               value = Node.create ~location:~@"4:7-4:14" (Expression.Constant Constant.Ellipsis);
             };
@@ -407,7 +407,7 @@ let test_try_block_preamble _ =
                               Call.Argument.name = None;
                               value =
                                 {
-                                  Node.location = ~@"4:7-4:14";
+                                  Node.location = ~@"4:18-5:2";
                                   value = Name (Name.Identifier "error");
                                 };
                             };
