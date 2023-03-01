@@ -530,7 +530,11 @@ let test_build_system_file_open_and_update context =
             Request.(
               Command
                 (Command.FileOpened
-                   { path = PyrePath.absolute raw_source_path0; content = None; overlay_id = None }))
+                   {
+                     path = PyrePath.absolute raw_source_path0;
+                     content = None;
+                     overlay_id = Some "foo";
+                   }))
           ~expected:Response.Ok;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:0;
         assert_module_path_not_tracked raw_source_path1;
@@ -554,7 +558,11 @@ let test_build_system_file_open_and_update context =
             Request.(
               Command
                 (Command.FileOpened
-                   { path = PyrePath.absolute raw_source_path1; content = None; overlay_id = None }))
+                   {
+                     path = PyrePath.absolute raw_source_path1;
+                     content = None;
+                     overlay_id = Some "foo";
+                   }))
           ~expected:Response.Ok;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
@@ -563,7 +571,8 @@ let test_build_system_file_open_and_update context =
           ~request:
             Request.(
               Command
-                (Command.FileClosed { path = PyrePath.absolute raw_source_path0; overlay_id = None }))
+                (Command.FileClosed
+                   { path = PyrePath.absolute raw_source_path0; overlay_id = Some "foo" }))
           ~expected:Response.Ok;
         assert_module_path_not_tracked raw_source_path0;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
@@ -586,7 +595,8 @@ let test_build_system_file_open_and_update context =
           ~request:
             Request.(
               Command
-                (Command.FileClosed { path = PyrePath.absolute raw_source_path1; overlay_id = None }))
+                (Command.FileClosed
+                   { path = PyrePath.absolute raw_source_path1; overlay_id = Some "foo" }))
           ~expected:Response.Ok;
         assert_module_path_not_tracked raw_source_path0;
         assert_module_path_not_tracked raw_source_path1;
