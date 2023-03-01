@@ -306,6 +306,33 @@ class CallGraph:
             script_errors=script_errors,
         )
 
+    @staticmethod
+    def attach_trace_to_query_results(
+        pyre_results: LeakAnalysisResult, callables_and_traces: Dict[str, Trace]
+    ) -> None:
+        for issue in pyre_results.global_leaks:
+            if "define" not in issue:
+                pyre_results.script_errors.append(
+                    LeakAnalysisScriptError(
+                        error_message="Key `define` not present in global leak result, skipping trace",
+                        bad_value=issue,
+                    )
+                )
+                continue
+
+            define = issue["define"]
+            if define not in callables_and_traces:
+                pyre_results.script_errors.append(
+                    LeakAnalysisScriptError(
+                        error_message="Define not known in analyzed callables, skipping trace",
+                        bad_value=issue,
+                    )
+                )
+                continue
+
+            trace = callables_and_traces[define]
+            issue["trace"] = cast(JSON, trace)
+
     def find_issues(self, search_start_path: Path) -> LeakAnalysisResult:
         all_callables = self.get_transitive_callees_and_traces()
         query_str = self.prepare_issues_for_query(all_callables.keys())
@@ -333,7 +360,9 @@ class CallGraph:
 
         try:
             response = daemon_query.execute_query(socket_path, query_str)
-            return self.collect_pyre_query_results(response.payload)
+            collected_results = self.collect_pyre_query_results(response.payload)
+            self.attach_trace_to_query_results(collected_results, all_callables)
+            return collected_results
         except connections.ConnectionFailure as e:
             raise RuntimeError(
                 "A running Pyre server is required for queries to be responded. "

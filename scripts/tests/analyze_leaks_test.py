@@ -6,6 +6,7 @@
 
 import unittest
 
+from typing import cast, Dict, List
 from ..analyze_leaks import (
     LeakAnalysisResult,
     LeakAnalysisScriptError,
@@ -647,3 +648,80 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             CallGraph.collect_pyre_query_results(example_pyre_stdout)
+
+    def test_attach_trace_to_query_results(self) -> None:
+        pyre_results = LeakAnalysisResult(
+            global_leaks=[
+                {
+                    "error_msg": "found an error for you",
+                    "location": "your_location",
+                },
+                {
+                    "error_msg": "found an error for you2",
+                    "location": "your_location2",
+                    "define": "my_func_with_trace",
+                },
+                {
+                    "error_msg": "found an error for you3",
+                    "location": "your_location3",
+                    "define": "my_func_without_trace",
+                },
+            ],
+            query_errors=[
+                {"errors": "we failed to find your callable"},
+                {"errors": "we failed to find your callable 2"},
+            ],
+            script_errors=[],
+        )
+        expected = LeakAnalysisResult(
+            global_leaks=cast(
+                List[Dict[str, JSON]],
+                [
+                    {
+                        "error_msg": "found an error for you",
+                        "location": "your_location",
+                    },
+                    {
+                        "error_msg": "found an error for you2",
+                        "location": "your_location2",
+                        "define": "my_func_with_trace",
+                        "trace": ["func_1", "my_func_with_trace"],
+                    },
+                    {
+                        "error_msg": "found an error for you3",
+                        "location": "your_location3",
+                        "define": "my_func_without_trace",
+                    },
+                ],
+            ),
+            query_errors=[
+                {"errors": "we failed to find your callable"},
+                {"errors": "we failed to find your callable 2"},
+            ],
+            script_errors=[
+                LeakAnalysisScriptError(
+                    error_message="Key `define` not present in global leak result, skipping trace",
+                    bad_value={
+                        "error_msg": "found an error for you",
+                        "location": "your_location",
+                    },
+                ),
+                LeakAnalysisScriptError(
+                    error_message="Define not known in analyzed callables, skipping trace",
+                    bad_value={
+                        "error_msg": "found an error for you3",
+                        "location": "your_location3",
+                        "define": "my_func_without_trace",
+                    },
+                ),
+            ],
+        )
+        callables_and_traces = {
+            "my_func_with_trace": ["func_1", "my_func_with_trace"],
+        }
+
+        self.assertNotEqual(pyre_results, expected)
+        CallGraph.attach_trace_to_query_results(pyre_results, callables_and_traces)
+        print(pyre_results)
+        print(expected)
+        self.assertEqual(pyre_results, expected)
