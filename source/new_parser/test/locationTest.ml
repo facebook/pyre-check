@@ -3045,7 +3045,7 @@ let test_try_locations _ =
                        Try.Handler.kind =
                          Some
                            (node ~start:(3, 7) ~stop:(3, 8) (Expression.Name (Name.Identifier "a")));
-                       name = Some (node ~start:(3, 0) ~stop:(4, 2) "b");
+                       name = Some (node ~start:(3, 12) ~stop:(4, 1) "b");
                        body =
                          [
                            node
@@ -3073,6 +3073,47 @@ let test_try_locations _ =
                                    ~start:(6, 1)
                                    ~stop:(6, 2)
                                    (Expression.Name (Name.Identifier "e"))));
+                         ];
+                     };
+                   ];
+                 orelse = [];
+                 finally = [];
+               });
+        ];
+    assert_parsed
+      "try:\n\ta\nexcept a as b:\n\t..."
+      ~expected:
+        [
+          node
+            ~start:(1, 0)
+            ~stop:(4, 4)
+            (Statement.Try
+               {
+                 Try.body =
+                   [
+                     node
+                       ~start:(2, 1)
+                       ~stop:(2, 2)
+                       (Statement.Expression
+                          (node ~start:(2, 1) ~stop:(2, 2) (Expression.Name (Name.Identifier "a"))));
+                   ];
+                 handlers =
+                   [
+                     {
+                       Try.Handler.kind =
+                         Some
+                           (node ~start:(3, 7) ~stop:(3, 8) (Expression.Name (Name.Identifier "a")));
+                       name = Some (node ~start:(3, 12) ~stop:(4, 1) "b");
+                       body =
+                         [
+                           node
+                             ~start:(4, 1)
+                             ~stop:(4, 4)
+                             (Statement.Expression
+                                (node
+                                   ~start:(4, 1)
+                                   ~stop:(4, 4)
+                                   (Expression.Constant Constant.Ellipsis)));
                          ];
                      };
                    ];

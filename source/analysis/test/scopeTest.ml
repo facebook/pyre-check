@@ -749,7 +749,7 @@ let test_define_local_bindings _ =
                         ~location:(location (5, 9) (5, 17))
                         (Expression.Expression.Name
                            (Expression.create_name "KeyError" ~location:(location (5, 9) (5, 17)))))))
-               (location (5, 2) (6, 12))) );
+               (location (5, 21) (6, 4))) );
         ( "z",
           Some
             (ExpectBinding.create

@@ -519,10 +519,30 @@ let import_alias ~location ~name ~asname =
   Node.create ~location { Statement.Import.name = Reference.create name; alias = asname }
 
 
-let exception_handler ~location ~type_ ~name ~body ~context =
+let exception_handler ~location:Location.{ stop = handler_stop; _ } ~type_ ~name ~body ~context =
   let new_name =
-    match name with
-    | Some name -> Some (Node.create ~location name)
+    match type_, name with
+    | ( Some
+          { Node.location = { stop = { line = type_stop_line; column = type_stop_column }; _ }; _ },
+        Some name ) ->
+        (* Stop at the beginning of body or end of handler if no body *)
+        let name_stop =
+          match body with
+          | [] -> handler_stop
+          | statement :: _ -> (
+              match statement ~context with
+              | { Node.location = { start; _ }; _ } :: _ -> start
+              | [] -> handler_stop)
+        in
+        Some
+          (Node.create
+             ~location:
+               {
+                 (* Start " as " characters from end of expression type *)
+                 start = { line = type_stop_line; column = type_stop_column + 4 };
+                 stop = name_stop;
+               }
+             name)
     | _ -> None
   in
   { Ast.Statement.Try.Handler.kind = type_; name = new_name; body = build_statements ~context body }
