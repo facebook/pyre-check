@@ -7,6 +7,8 @@
 import unittest
 
 from ..analyze_leaks import (
+    LeakAnalysisResult,
+    LeakAnalysisScriptError,
     CallGraph,
     DependencyGraph,
     Entrypoints,
@@ -521,7 +523,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
 
         self.assertEqual(result_query, expected_query)
 
-    def test_analyze_pyre_query_results(self) -> None:
+    def test_collect_pyre_query_results(self) -> None:
         example_pyre_stdout = {
             "response": [
                 {"error": "we failed to find your callable"},
@@ -542,63 +544,82 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                             {
                                 "error_msg": "found an error for you2",
                                 "location": "your_location2",
+                                "define": "my_func_with_trace",
                             }
                         ]
                     }
                 },
+                ["not_expected"],
+                {"not_expected": 1},
             ]
         }
 
-        results = CallGraph.analyze_pyre_query_results(example_pyre_stdout)
-        expected_results = {
-            "global_leaks": [
-                {"error_msg": "found an error for you", "location": "your_location"},
-                {"error_msg": "found an error for you2", "location": "your_location2"},
+        results = CallGraph.collect_pyre_query_results(
+            example_pyre_stdout,
+        )
+        expected_results = LeakAnalysisResult(
+            global_leaks=[
+                {
+                    "error_msg": "found an error for you",
+                    "location": "your_location",
+                },
+                {
+                    "error_msg": "found an error for you2",
+                    "location": "your_location2",
+                    "define": "my_func_with_trace",
+                },
             ],
-            "errors": [
+            query_errors=[
                 "we failed to find your callable",
                 "we failed to find your callable 2",
             ],
-        }
-
-        print(results)
-        print(expected_results)
+            script_errors=[
+                LeakAnalysisScriptError(
+                    error_message="Expected dict for pyre response list type, got <class 'list'>",
+                    bad_value=["not_expected"],
+                ),
+                LeakAnalysisScriptError(
+                    error_message="Unexpected single query response from Pyre",
+                    bad_value={"not_expected": 1},
+                ),
+            ],
+        )
 
         self.assertEqual(results, expected_results)
 
-    def test_analyze_pyre_query_results_non_json(self) -> None:
+    def test_collect_pyre_query_results_non_json(self) -> None:
         example_pyre_stdout = """
             this is not a valid response
         """
 
         with self.assertRaises(RuntimeError):
-            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            CallGraph.collect_pyre_query_results(example_pyre_stdout)
 
-    def test_analyze_pyre_query_results_not_top_level_dict(self) -> None:
+    def test_collect_pyre_query_results_not_top_level_dict(self) -> None:
         example_pyre_stdout = """
             ["this is a list"]
         """
 
         with self.assertRaises(RuntimeError):
-            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            CallGraph.collect_pyre_query_results(example_pyre_stdout)
 
-    def test_analyze_pyre_query_results_no_response_present(self) -> None:
+    def test_collect_pyre_query_results_no_response_present(self) -> None:
         example_pyre_stdout = """
             {"not a response": 1}
         """
 
         with self.assertRaises(RuntimeError):
-            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            CallGraph.collect_pyre_query_results(example_pyre_stdout)
 
-    def test_analyze_pyre_query_results_response_not_a_list(self) -> None:
+    def test_collect_pyre_query_results_response_not_a_list(self) -> None:
         example_pyre_stdout = """
             {"response": 1}
         """
 
         with self.assertRaises(RuntimeError):
-            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            CallGraph.collect_pyre_query_results(example_pyre_stdout)
 
-    def test_analyze_pyre_query_results_response_batch_response_not_a_dict(
+    def test_collect_pyre_query_results_response_batch_response_not_a_dict(
         self,
     ) -> None:
         example_pyre_stdout = """
@@ -610,9 +631,9 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         """
 
         with self.assertRaises(RuntimeError):
-            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            CallGraph.collect_pyre_query_results(example_pyre_stdout)
 
-    def test_analyze_pyre_query_results_response_batch_response_no_nested_error_or_response(
+    def test_collect_pyre_query_results_response_batch_response_no_nested_error_or_response(
         self,
     ) -> None:
         example_pyre_stdout = """
@@ -625,4 +646,4 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         """
 
         with self.assertRaises(RuntimeError):
-            CallGraph.analyze_pyre_query_results(example_pyre_stdout)
+            CallGraph.collect_pyre_query_results(example_pyre_stdout)

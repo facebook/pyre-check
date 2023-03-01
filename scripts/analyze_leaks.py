@@ -8,6 +8,7 @@ import json
 import sys
 import os
 from collections import defaultdict, deque
+from dataclasses import dataclass
 from typing import (
     cast,
     Collection,
@@ -201,6 +202,34 @@ class DependencyGraph:
         return " -> ".join(node_path)
 
 
+@dataclass(frozen=True)
+class LeakAnalysisScriptError:
+    error_message: str
+    bad_value: JSON
+
+    def to_json(self) -> JSON:
+        return {"error_message": self.error_message, "bad_value": self.bad_value}
+
+
+@dataclass(frozen=True)
+class LeakAnalysisResult:
+    global_leaks: List[Dict[str, JSON]]
+    query_errors: List[JSON]
+    script_errors: List[LeakAnalysisScriptError]
+
+    def _script_errors_to_json(self) -> List[JSON]:
+        return [script_error.to_json() for script_error in self.script_errors]
+
+    def to_json(self) -> str:
+        return json.dumps(
+            {
+                "global_leaks": self.global_leaks,
+                "query_errors": self.query_errors,
+                "script_errors": self._script_errors_to_json(),
+            }
+        )
+
+
 class CallGraph:
     call_graph: Dict[str, Set[str]]
     entrypoints: Entrypoints
@@ -234,8 +263,10 @@ class CallGraph:
         return "batch(" + ", ".join(single_callee_query) + ")"
 
     @staticmethod
-    def analyze_pyre_query_results(pyre_results: object) -> Dict[str, List[object]]:
-        results = {"global_leaks": [], "errors": []}
+    def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
+        global_leaks: List[Dict[str, JSON]] = []
+        query_errors: List[JSON] = []
+        script_errors: List[LeakAnalysisScriptError] = []
         if not isinstance(pyre_results, dict):
             raise RuntimeError(
                 f"Expected dict for Pyre query results, got {type(pyre_results)}: {pyre_results}"
@@ -249,25 +280,35 @@ class CallGraph:
             )
         for query_response in pyre_results["response"]:
             if not isinstance(query_response, dict):
-                raise RuntimeError(
-                    f"Expected dict for pyre response list type, got {type(query_response)}: {query_response}"
+                script_errors.append(
+                    LeakAnalysisScriptError(
+                        error_message=f"Expected dict for pyre response list type, got {type(query_response)}",
+                        bad_value=query_response,
+                    )
                 )
             elif "error" in query_response:
-                results["errors"].append(query_response["error"])
+                query_errors.append(query_response["error"])
             elif (
                 "response" in query_response and "errors" in query_response["response"]
             ):
-                results["global_leaks"] += query_response["response"]["errors"]
+                global_leaks += query_response["response"]["errors"]
             else:
-                raise RuntimeError(
-                    "Unexpected response from Pyre query", query_response
+                script_errors.append(
+                    LeakAnalysisScriptError(
+                        error_message="Unexpected single query response from Pyre",
+                        bad_value=query_response,
+                    )
                 )
 
-        return results
+        return LeakAnalysisResult(
+            global_leaks=global_leaks,
+            query_errors=query_errors,
+            script_errors=script_errors,
+        )
 
-    def find_issues(self, search_start_path: Path) -> Dict[str, List[object]]:
-        all_callables = set(self.get_transitive_callees_and_traces())
-        query_str = self.prepare_issues_for_query(all_callables)
+    def find_issues(self, search_start_path: Path) -> LeakAnalysisResult:
+        all_callables = self.get_transitive_callees_and_traces()
+        query_str = self.prepare_issues_for_query(all_callables.keys())
 
         project_root = find_directories.find_global_and_local_root(search_start_path)
         if not project_root:
@@ -292,7 +333,7 @@ class CallGraph:
 
         try:
             response = daemon_query.execute_query(socket_path, query_str)
-            return self.analyze_pyre_query_results(response.payload)
+            return self.collect_pyre_query_results(response.payload)
         except connections.ConnectionFailure as e:
             raise RuntimeError(
                 "A running Pyre server is required for queries to be responded. "
@@ -382,7 +423,7 @@ def leaks(
     call_graph = CallGraph(input_format, entrypoints)
 
     issues = call_graph.find_issues(Path(project_path))
-    print(json.dumps(issues))
+    print(issues.to_json())
 
 
 @analyze.command()
