@@ -6888,9 +6888,13 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               ~resolution:global_resolution
               class_name
             >>| List.filter_map ~f:(fun attribute ->
+                    (* `accessed_through_class` is true here because it is ture in
+                       GlobalResolution.overrides. This mostly works, but we might fail to uncover
+                       some incompatible overrides that only appear in instance access.
+                       TODO(T146994981) we should check for both attribute access patterns. *)
                     let annotation =
                       GlobalResolution.instantiate_attribute
-                        ~accessed_through_class:false
+                        ~accessed_through_class:true
                         ~accessed_through_readonly:false
                         ~resolution:global_resolution
                         ?instantiated:None
