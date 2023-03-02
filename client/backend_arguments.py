@@ -308,9 +308,6 @@ def get_source_path(
             return SimpleSourcePath(elements)
 
     if targets is not None and not source_directories:
-        if len(targets) == 0:
-            LOG.warning("Pyre did not find any targets to check.")
-
         use_buck2 = configuration.uses_buck2()
         search_base = _get_global_or_local_root(configuration)
         source_root = (
