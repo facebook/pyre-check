@@ -45,3 +45,12 @@ def string_source_top_level():
 def string_source_not_top_level():
     params = {"key": "AIzaSyB2qiehH9CMRIuRVJghvnluwA1GvQ3FCe4"}
     return params
+
+
+def string_literal_arguments_source(template: str, x):
+    if 1 == 1:
+        return template.format("SELECT1", 1)
+    elif 1 == 1:
+        return template % "SELECT2"
+    else:
+        return x + "SELECT3"

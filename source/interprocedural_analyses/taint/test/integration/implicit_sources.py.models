@@ -112,6 +112,49 @@
 {
   "kind": "model",
   "data": {
+    "callable": "implicit_sources.string_literal_arguments_source",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 56, "start": 15, "end": 16 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(template)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 52, "start": 15, "end": 23 },
+              { "line": 54, "start": 15, "end": 23 }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "implicit_sources.string_source_not_top_level",
     "sources": [
       {
