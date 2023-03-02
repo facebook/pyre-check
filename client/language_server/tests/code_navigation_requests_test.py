@@ -80,7 +80,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 response_type=code_navigation_request.HoverResponse,
             ),
             code_navigation_request.ErrorResponse(
-                f"Invalid response {raw_response} to hover request."
+                f"Invalid response {raw_response} to pyre code_navigation request."
             ),
         )
 
@@ -99,7 +99,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 response_type=code_navigation_request.HoverResponse,
             ),
             code_navigation_request.ErrorResponse(
-                f"Invalid response {raw_response} to hover request."
+                f"Invalid response {raw_response} to pyre code_navigation request."
             ),
         )
 

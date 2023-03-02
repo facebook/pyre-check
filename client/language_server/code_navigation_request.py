@@ -180,7 +180,9 @@ class SuperclassesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 def invalid_response(response: str) -> ErrorResponse:
-    return ErrorResponse(message=f"Invalid response {response} to hover request.")
+    return ErrorResponse(
+        message=f"Invalid response {response} to pyre code_navigation request."
+    )
 
 
 ResponseKind = TypeVar("ResponseKind", bound=json_mixins.CamlCaseAndExcludeJsonMixin)
