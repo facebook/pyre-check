@@ -97,3 +97,8 @@ def nested_stradd_and_fstring():
     x: str = user_controlled_input()
     y = "xyz"
     return "abc" + f"{x + y}"
+
+
+def stradd_triggered_user_controlled(arg):
+    x: str = user_controlled_input()
+    x + arg.f  # The triggered sink should be on arg.f, not arg

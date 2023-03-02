@@ -182,9 +182,13 @@ module CallInfo = struct
     | Tito -> Tito
 end
 
-module TraceLength = Features.MakeScalarDomain (struct
-  let name = "trace length"
-end)
+module TraceLength = struct
+  include Features.MakeScalarDomain (struct
+    let name = "trace length"
+  end)
+
+  let increase_length n = if n < max_int then n + 1 else n
+end
 
 (* This should be associated with every call site *)
 module CallInfoIntervals = struct
@@ -1224,10 +1228,10 @@ end = struct
       match call_info with
       | CallInfo.Origin _
       | CallInfo.CallSite _ ->
-          let increase_length n = if n < max_int then n + 1 else n in
           let call_info = CallInfo.CallSite { location; callees; port; path } in
           let local_taint =
-            local_taint |> LocalTaintDomain.transform TraceLength.Self Map ~f:increase_length
+            local_taint
+            |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase_length
           in
           call_info, local_taint
       | CallInfo.Declaration { leaf_name_provided } ->

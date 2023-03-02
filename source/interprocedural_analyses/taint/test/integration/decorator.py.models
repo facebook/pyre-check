@@ -2171,7 +2171,7 @@
               {
                 "features": [
                   { "always-via": "special_sink" },
-                  { "always-via": "obscure:model" },
+                  { "via": "obscure:model" },
                   { "always-via": "tito" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -2243,7 +2243,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 95, "start": 17, "end": 18 } ],
             "call": {

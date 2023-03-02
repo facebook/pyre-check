@@ -347,6 +347,257 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "implicit_sinks.string_literal_arguments_issue",
+    "callable_line": 97,
+    "code": 1337,
+    "line": 98,
+    "start": 34,
+    "end": 48,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
+            ],
+            "origin": {
+              "filename": "implicit_sinks.py",
+              "line": 98,
+              "start": 34,
+              "end": 48
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "format-string" }, { "always-via": "tito" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "implicit_sinks.py",
+                "line": 98,
+                "start": 34,
+                "end": 48
+              },
+              "resolves_to": [
+                "implicit_sinks.string_literal_arguments_sink"
+              ],
+              "port": "formal(template)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "implicit_sinks.string_literal_arguments_sink",
+      "index": 0,
+      "parameter": "formal(template)"
+    },
+    "master_handle": "implicit_sinks.string_literal_arguments_issue:1337:0:Call|implicit_sinks.string_literal_arguments_sink|0|formal(template):3410447c57b39115321f880c963130fa"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_dot_format",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 22, "start": 18, "end": 19 } ],
+            "origin": {
+              "filename": "implicit_sinks.py",
+              "line": 22,
+              "start": 4,
+              "end": 10
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_format_string",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 12, "start": 8, "end": 9 } ],
+            "origin": {
+              "filename": "implicit_sinks.py",
+              "line": 12,
+              "start": 4,
+              "end": 12
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_lhs_add_literal",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 50, "start": 14, "end": 15 } ],
+            "origin": {
+              "filename": "implicit_sinks.py",
+              "line": 50,
+              "start": 14,
+              "end": 25
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_percent_format",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 31, "start": 13, "end": 17 } ],
+            "origin": {
+              "filename": "implicit_sinks.py",
+              "line": 31,
+              "start": 4,
+              "end": 10
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_rhs_add_literal",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 40, "start": 17, "end": 18 } ],
+            "origin": {
+              "filename": "implicit_sinks.py",
+              "line": 40,
+              "start": 4,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.string_literal_arguments_sink",
+    "sinks": [
+      {
+        "port": "formal(template)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 90, "start": 8, "end": 16 } ],
+            "origin": {
+              "filename": "implicit_sinks.py",
+              "line": 90,
+              "start": 8,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "implicit_sinks.string_literal_arguments_sink",
     "callable_line": 87,
     "code": 1337,
@@ -412,161 +663,5 @@
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle": "implicit_sinks.string_literal_arguments_sink:1337:0:LiteralStringSink|Test:e3c1e392051508a7ea531e0005723cc2"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "sinks": [
-      {
-        "port": "formal(arg)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "implicit_sinks.propagate_sink_dot_format",
-    "sinks": [
-      {
-        "port": "formal(a)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "Test" } ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 22, "start": 18, "end": 19 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 22,
-              "start": 4,
-              "end": 10
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "implicit_sinks.propagate_sink_format_string",
-    "sinks": [
-      {
-        "port": "formal(a)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "Test" } ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 12, "start": 8, "end": 9 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 12,
-              "start": 4,
-              "end": 12
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "implicit_sinks.propagate_sink_lhs_add_literal",
-    "sinks": [
-      {
-        "port": "formal(a)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "Test" } ],
-            "local_features": [
-              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 50, "start": 14, "end": 15 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 50,
-              "start": 14,
-              "end": 25
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "implicit_sinks.propagate_sink_percent_format",
-    "sinks": [
-      {
-        "port": "formal(a)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "Test" } ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 31, "start": 13, "end": 17 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 31,
-              "start": 4,
-              "end": 10
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "implicit_sinks.propagate_sink_rhs_add_literal",
-    "sinks": [
-      {
-        "port": "formal(a)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "Test" } ],
-            "local_features": [
-              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 40, "start": 17, "end": 18 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 40,
-              "start": 4,
-              "end": 18
-            }
-          }
-        ]
-      }
-    ]
   }
 }

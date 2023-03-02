@@ -1087,6 +1087,30 @@
 {
   "kind": "model",
   "data": {
+    "callable": "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations",
+    "sinks": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "multi_source_issue_handles": [
+                  "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations:4324:0:StringFormat|str.format|0|2:c106ea0d96d7c3c2f1fc49524b367174"
+                ],
+                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
     "sinks": [
       {
@@ -1288,6 +1312,30 @@
               "start": 13,
               "end": 36
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_string_operations.stradd_triggered_user_controlled",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "multi_source_issue_handles": [
+                  "multiple_sources_string_operations.stradd_triggered_user_controlled:4324:0:StringFormat|str.__add__|0|1:c4a91de91595fbdd1778f0feee3981bb"
+                ],
+                "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
+              }
+            ],
+            "declaration": null
           }
         ]
       }
