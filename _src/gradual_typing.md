@@ -66,6 +66,22 @@ As you can see in the example, `Any` can still sneak into modules that are stric
 ### Strict-By-Default
 Strict mode can also be set as the default in a [project configuration](configuration.md). To opt individual files out of strict mode, use `# pyre-unsafe` in place of `# pyre-strict`.
 
+## How to move away from `Any`
+
+### What if I want to use `Any`?
+It may be tempting to annotate a generic function parameter with `Any`. But while it is a convenient utility for quickly annotating untyped code, it has no place in a strict-mode codebase. The main problem with `Any` is that it unifies with every type - which effectively hides all potential type errors that could stem from incorrect usage of anything annotated with `Any`. It is not, therefore, a good idea to use it in generic code.
+
+### What then?
+We have two main methods for annotating generic code: `object` and `TypeVar`. As it turns out, it is not at all obvious which of them should be used where. However, the general **TL;DR** is that `object` is an opaque superclass of all types, while `TypeVar` is for preserving a type across one or more function calls.
+
+### About `object`
+The advantage of using `object` over `Any` is that while any type can be “put inside” it, it is an error to use it as any type other than `object`. This can be useful everywhere we need type erasure, like (de)serialization or generic heterogeneous containers where there is no obvious common supertype. Thanks to Python’s runtime reflection, the original type can be recovered, e.g. through `isinstance`. Note that such checks are valid only for a short time, see [here](errors.md#optional-attributes).
+
+### About `TypeVar`
+`TypeVar`s are somewhat interesting beasts, as in a vacuum, they can behave both like `Any` and like `object`. Like `object`, they accept all types, but within a single typecheck (i.e. one line/function call/operation) they remember what type they were. This makes them useful for e.g. linking the parameters and return types of a function, or class attribute types with its method signatures. There are, however, a couple of caveats. It doesn’t make sense to use a TypeVar on a function or method when it’s only used in its parameters (just use the most general known supertype instead).
+Another story is the difference between `TypeVar`s’ invariance, variance and contravariance, which is covered in [here](errors.md#covariance-and-contravariance).
+
+
 ## When Source Code is not Available
 We do not always have access to all the source code that contributes type information to our project: e.g. `builtins` is compiled native code, and other libraries may be using *Cython*. Other times, we may be working with Python code that is just too dynamic to be reasonably typed.
 
