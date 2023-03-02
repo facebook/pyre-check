@@ -530,6 +530,32 @@ let test_non_data_descriptors context =
       "Revealed type [-1]: Revealed type for `base.value` is `int`.";
       "Revealed type [-1]: Revealed type for `child.value` is `int`.";
     ];
+  assert_type_errors
+    {|
+      from typing import overload
+
+      class Descriptor:
+        @overload
+        def __get__(self, o: None, t: object = None) -> str:
+          ...
+        @overload
+        def __get__(self, o: object, t: object = None) -> int:
+          ...
+        def __get__(self, o: object, t: object = None) -> object:
+          ...
+
+      class Base:
+          normal_value: str = "base_normal_value"
+          maybe_descriptor_value: str = "base_maybe_descriptor_value"
+
+      class Child(Base):
+          normal_value: str = "child_normal_value"
+          maybe_descriptor_value: Descriptor = Descriptor()
+    |}
+    (* TODO(T146994981) this ought to produce an inconsistent override error, because accessing
+       `maybe_descriptor_value` on an *instance* of `Child` would give us an `int` which is not
+       compatible with `str`. We miss it because we only check class access. *)
+    [];
   ()
 
 
