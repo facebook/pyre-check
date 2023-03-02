@@ -497,6 +497,44 @@ let test_non_data_descriptors context =
           reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `Descriptor`."];
+  assert_type_errors
+    {|
+      from typing import overload
+
+      class Descriptor:
+        @overload
+        def __get__(self, o: None, t: object = None) -> str:
+          ...
+        @overload
+        def __get__(self, o: object, t: object = None) -> int:
+          ...
+        def __get__(self, o: object, t: object = None) -> object:
+          ...
+
+      class Base:
+          value: Descriptor = Descriptor()
+
+      class Child(Base):
+          value: Descriptor = Descriptor()
+
+      def f() -> None:
+          reveal_type(Base.value)
+          reveal_type(Child.value)
+          base, child = Base(), Child()
+          reveal_type(base.value)
+          reveal_type(child.value)
+    |}
+    [
+      (* TODO(T146933312) Pyre should not complain here - overriding with the same descriptor is
+         trivially legal. The problem is we're checking compatibliity of instance lookups on the
+         subclass versus a class lookup on the base class, but those don't have to be consistent. *)
+      "Inconsistent override [15]: `value` overrides attribute defined in `Base` inconsistently. \
+       Type `int` is not a subtype of the overridden attribute `str`.";
+      "Revealed type [-1]: Revealed type for `test.Base.value` is `Descriptor` (inferred: `str`).";
+      "Revealed type [-1]: Revealed type for `test.Child.value` is `Descriptor` (inferred: `str`).";
+      "Revealed type [-1]: Revealed type for `base.value` is `int`.";
+      "Revealed type [-1]: Revealed type for `child.value` is `int`.";
+    ];
   ()
 
 
