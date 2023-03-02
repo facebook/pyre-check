@@ -130,9 +130,9 @@ let handle_superclasses
     ErrorsEnvironment.ReadOnly.type_environment root_environment
     |> TypeEnvironment.ReadOnly.global_resolution
   in
-  let get_module_by_name ~module_tracker name =
+  let get_module_by_name name =
     let module_name = Ast.Reference.create name in
-    Option.some_if (ModuleTracker.ReadOnly.is_module_tracked module_tracker module_name) module_name
+    Option.some_if (GlobalResolution.module_exists global_resolution module_name) module_name
   in
   let to_class_expression superclass =
     (* TODO(T139769506): Instead of this hack where we assume `a.b.c` is a module when looking at
@@ -149,8 +149,7 @@ let handle_superclasses
     | None -> None
   in
 
-  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker root_environment in
-  match get_module_by_name ~module_tracker module_ with
+  match get_module_by_name module_ with
   | None ->
       Response.ErrorKind.InvalidRequest (Format.sprintf "Cannot find module with name `%s`" module_)
       |> Result.fail
