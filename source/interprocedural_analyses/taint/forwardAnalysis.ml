@@ -2034,6 +2034,112 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               location;
             }
       | {
+          callee =
+            {
+              Node.value = Name (Name.Attribute { base; attribute = "__add__" as function_name; _ });
+              _;
+            };
+          arguments;
+        }
+      | {
+          callee =
+            {
+              Node.value = Name (Name.Attribute { base; attribute = "__mod__" as function_name; _ });
+              _;
+            };
+          arguments;
+        }
+      | {
+          callee =
+            {
+              Node.value = Name (Name.Attribute { base; attribute = "format" as function_name; _ });
+              _;
+            };
+          arguments;
+        } ->
+          (* User-defined or inferred models. *)
+          let taint, state =
+            apply_callees
+              ~resolution
+              ~is_result_used
+              ~is_property:false
+              ~call_location:location
+              ~callee
+              ~arguments
+              ~state
+              callees
+          in
+          let is_string_format =
+            List.exists callees.call_targets ~f:(fun call_target ->
+                match Interprocedural.Target.class_name call_target.target with
+                | Some class_name -> String.equal "str" class_name
+                | None -> false)
+          in
+          if not is_string_format then
+            taint, state
+          else
+            (* Additional hard-coded models for analyzing implicit sinks during string formatting
+               operations. *)
+            let taint_from_string_format, state_from_string_format =
+              let breadcrumbs =
+                match function_name with
+                | "__mod__"
+                | "format" ->
+                    Features.BreadcrumbSet.singleton (Features.format_string ())
+                | _ -> Features.BreadcrumbSet.empty
+              in
+              let default_target =
+                match function_name with
+                | "__add__" -> Interprocedural.Target.StringCombineArtificialTargets.str_add
+                | "__mod__" -> Interprocedural.Target.StringCombineArtificialTargets.str_mod
+                | "format" -> Interprocedural.Target.StringCombineArtificialTargets.str_format
+                | _ -> failwith "Expect either `__add__` or `__mod__` or `format`"
+              in
+              let call_target_for_string_combine_rules =
+                Some
+                  (StringFormatCall.create_call_target_for_string_combine
+                     ~call_targets:callees.call_targets
+                     ~default_target)
+              in
+              let nested_expressions =
+                arguments
+                |> List.map ~f:(fun call_argument -> call_argument.Call.Argument.value)
+                |> List.cons base
+              in
+              let string_literals, nested_expressions =
+                List.partition_map nested_expressions ~f:(fun nested_expression ->
+                    match nested_expression with
+                    | {
+                     Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
+                     _;
+                    } ->
+                        Either.First value
+                    | _ -> Either.Second nested_expression)
+              in
+              let string_literal =
+                match string_literals with
+                | [] -> None
+                | string_literals ->
+                    Some
+                      {
+                        StringFormatCall.Argument.value = String.concat ~sep:"" string_literals;
+                        value_location = location;
+                      }
+              in
+              analyze_joined_string
+                ~resolution
+                ~state
+                ~breadcrumbs
+                {
+                  StringFormatCall.Argument.nested_expressions;
+                  string_literal;
+                  call_target_for_string_combine_rules;
+                  location;
+                }
+            in
+            ( ForwardState.Tree.join taint taint_from_string_format,
+              join state state_from_string_format )
+      | {
        callee = { Node.value = Expression.Name (Name.Identifier "reveal_taint"); _ };
        arguments = [{ Call.Argument.value = expression; _ }];
       } ->

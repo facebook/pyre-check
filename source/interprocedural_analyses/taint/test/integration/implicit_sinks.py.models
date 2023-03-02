@@ -350,9 +350,9 @@
     "callable": "implicit_sinks.string_literal_arguments_sink",
     "callable_line": 87,
     "code": 1337,
-    "line": 94,
-    "start": 12,
-    "end": 23,
+    "line": 90,
+    "start": 8,
+    "end": 39,
     "filename": "implicit_sinks.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -364,9 +364,14 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+              { "via": "format-string" },
+              { "via": "string_concat_lhs" },
+              { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 94, "start": 8, "end": 9 } ],
+            "tito_positions": [
+              { "line": 90, "start": 37, "end": 38 },
+              { "line": 94, "start": 8, "end": 9 }
+            ],
             "origin": {
               "filename": "implicit_sinks.py",
               "line": 88,
@@ -383,6 +388,15 @@
             "kinds": [ { "kind": "Test" } ],
             "origin": {
               "filename": "implicit_sinks.py",
+              "line": 90,
+              "start": 8,
+              "end": 39
+            }
+          },
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "origin": {
+              "filename": "implicit_sinks.py",
               "line": 94,
               "start": 12,
               "end": 23
@@ -392,7 +406,9 @@
       }
     ],
     "features": [
-      { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+      { "via": "format-string" },
+      { "via": "string_concat_lhs" },
+      { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle": "implicit_sinks.string_literal_arguments_sink:1337:0:LiteralStringSink|Test:e3c1e392051508a7ea531e0005723cc2"

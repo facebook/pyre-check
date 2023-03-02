@@ -87,9 +87,9 @@ def conditional_literal_sink():
 def string_literal_arguments_sink(template: str):
     x = _test_source()
     if 1 == 1:
-        template.format("https://1", x)  # Should see an issue
+        template.format("https://1", x)
     elif 1 == 1:
-        template % ("https://2", x)  # Should see an issue
+        template % ("https://2", x)  # TODO(T146946806): Should see an issue
     else:
         x + "https://3"
 
