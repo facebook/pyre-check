@@ -119,7 +119,7 @@ def process_field(input: int) -> None:
   ...
 
 def process_data(data: Data) -> None:
-  if data.field:
+  if data.field is not None:
     # ... interleaving logic
     process_field(data.field)  # Error: expected `int` but got `Optional[int]`
 ```
@@ -140,14 +140,23 @@ class Data:
 
 It is always safe to refine attributes when their types are `Final`.
 
-Alternatively, it is also safe to assign the attribute to a local variable before accessing its value.
+Alternatively, it is also safe to assign the attribute to a local variable before accessing its value:
 
 ```python
 def process_data(data: Data) -> None:
   field = data.field
-  if field:
+  if field is not None:
     # ... interleaving logic
     process_field(field)
+```
+
+or using Python 3.8's assignment expressions:
+
+```python
+def process_data(data: Data) -> None:
+    if (field := data.field) is not None:
+        # ... interleaving logic
+        process_field(field)
 ```
 
 ### Third-Party Libraries
