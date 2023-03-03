@@ -99,3 +99,9 @@ end
 val transform_tito_depth_breadcrumb : BackwardTaint.t -> int
 
 val string_combine_partial_sink_tree : TaintConfiguration.Heap.t -> BackwardState.Tree.t
+
+(* Compute the arguments at a call site that formats strings, such as `str.__add__` and
+   f-strings. *)
+val arguments_for_string_format
+  :  Expression.expression Node.t list ->
+  string * Expression.expression Node.t list

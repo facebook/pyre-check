@@ -364,3 +364,20 @@ let string_combine_partial_sink_tree { TaintConfiguration.Heap.string_combine_pa
   |> List.reduce ~f:BackwardTaint.join
   |> Option.value ~default:BackwardTaint.bottom
   |> BackwardState.Tree.create_leaf
+
+
+let arguments_for_string_format arguments =
+  let open Expression in
+  let string_literals =
+    List.map arguments ~f:(function
+        | { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ } ->
+            value
+        | _ -> "{}")
+  in
+  let non_literal_arguments =
+    List.filter arguments ~f:(function
+        | { Node.value = Expression.Constant (Constant.String _); _ } -> false
+        | _ -> true)
+  in
+  let string_literal = String.concat ~sep:"" string_literals in
+  string_literal, non_literal_arguments
