@@ -132,14 +132,14 @@ let test_file_opened_and_closed_request context =
             Request.(
               Command (Command.FileClosed { path = "/untracked/file.py"; overlay_id = Some "foo" }))
           ~expected:
-            (Response.Error (Response.ErrorKind.UntrackedFileClosed { path = "/untracked/file.py" }));
+            (Response.Error (Response.ErrorKind.FileNotOpened { path = "/untracked/file.py" }));
         assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Command
                 (Command.FileClosed { path = test_path; overlay_id = Some "untracked overlay id" }))
-          ~expected:(Response.Error (Response.ErrorKind.UntrackedFileClosed { path = test_path }));
+          ~expected:(Response.Error (Response.ErrorKind.FileNotOpened { path = test_path }));
         assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -150,7 +150,7 @@ let test_file_opened_and_closed_request context =
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileClosed { path = test_path; overlay_id = Some "foo" }))
-          ~expected:(Response.Error (Response.ErrorKind.UntrackedFileClosed { path = test_path }));
+          ~expected:(Response.Error (Response.ErrorKind.FileNotOpened { path = test_path }));
       ]
 
 

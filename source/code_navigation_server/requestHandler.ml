@@ -332,7 +332,7 @@ let handle_file_opened ~path ~content ~overlay_id ~subscriptions ({ State.open_f
 let handle_file_closed ~path ~overlay_id ~subscriptions ({ State.open_files; _ } as state) =
   let source_path = PyrePath.create_absolute path |> SourcePath.create in
   match OpenFiles.contains open_files ~source_path ~overlay_id with
-  | false -> Lwt.return (Response.Error (Response.ErrorKind.UntrackedFileClosed { path }))
+  | false -> Lwt.return (Response.Error (Response.ErrorKind.FileNotOpened { path }))
   | true -> (
       let%lwt update_response =
         match overlay_id with

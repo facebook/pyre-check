@@ -14,7 +14,7 @@ module ErrorKind = struct
     | InvalidRequest of string
     | ModuleNotTracked of { path: string }
     | OverlayNotFound of { overlay_id: string }
-    | UntrackedFileClosed of { path: string }
+    | FileNotOpened of { path: string }
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 

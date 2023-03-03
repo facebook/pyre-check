@@ -414,9 +414,9 @@ module Testing : sig
         | OverlayNotFound of { overlay_id: string }
             (** This error occurs when the client has requested info from an overlay whose id does
                 not exist within the server. *)
-        | UntrackedFileClosed of { path: string }
-            (** This error occurs when the client has send a command to close a file not tracked by
-                the server. *)
+        | FileNotOpened of { path: string }
+            (** This error occurs when the client has send a command on a file not tracked by the
+                server. *)
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 

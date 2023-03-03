@@ -50,7 +50,7 @@ let close_file open_files ~source_path ~overlay_id : (unit, Response.ErrorKind.t
           String.Table.set open_files ~key:path ~data:overlays
       in
       Result.Ok ()
-  | _ -> Result.Error (Response.ErrorKind.UntrackedFileClosed { path })
+  | _ -> Result.Error (Response.ErrorKind.FileNotOpened { path })
 
 
 let open_files open_files : SourcePath.t list =
