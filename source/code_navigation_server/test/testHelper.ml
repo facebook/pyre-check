@@ -7,11 +7,24 @@
 
 open OUnit2
 module Request = CodeNavigationServer.Testing.Request
+module Response = CodeNavigationServer.Testing.Response
 
 let position line column = { Ast.Location.line; column }
 
 let range start_line start_column stop_line stop_column =
   { Ast.Location.start = position start_line start_column; stop = position stop_line stop_column }
+
+
+let open_file ?overlay_id ?content ~path =
+  ScratchProject.ClientConnection.assert_response
+    ~request:Request.(Command (Command.FileOpened { path; content; overlay_id }))
+    ~expected:Response.Ok
+
+
+let close_file ?overlay_id ~path =
+  ScratchProject.ClientConnection.assert_response
+    ~request:Request.(Command (Command.FileClosed { path; overlay_id }))
+    ~expected:Response.Ok
 
 
 let assert_type_error_count ?overlay_id ~path ~expected client =

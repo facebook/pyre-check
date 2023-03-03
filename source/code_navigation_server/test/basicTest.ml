@@ -115,17 +115,7 @@ let test_file_opened_and_closed_request context =
     ~clients:
       [
         assert_type_error_count_for_path ~path:test_path ~expected:1;
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileOpened
-                   {
-                     path = test_path;
-                     content = Some "reveal_type(43)\nreveal_type(44)";
-                     overlay_id = Some "foo";
-                   }))
-          ~expected:Response.Ok;
+        open_file ~path:test_path ~content:"reveal_type(43)\nreveal_type(44)" ~overlay_id:"foo";
         assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -141,10 +131,7 @@ let test_file_opened_and_closed_request context =
                 (Command.FileClosed { path = test_path; overlay_id = Some "untracked overlay id" }))
           ~expected:(Response.Error (Response.ErrorKind.FileNotOpened { path = test_path }));
         assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(Command (Command.FileClosed { path = test_path; overlay_id = Some "foo" }))
-          ~expected:Response.Ok;
+        close_file ~path:test_path ~overlay_id:"foo";
         assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:1;
         (* Now that foo is no longer tracked as an open file, this should error. *)
         ScratchProject.ClientConnection.assert_response
@@ -528,17 +515,7 @@ let test_superclasses context =
             Response.(
               Error (ErrorKind.InvalidRequest "Cannot find class `CDoesNotExist` in module `test`."));
         (* Overlay. *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileOpened
-                   {
-                     path = test_path;
-                     content = Some "class OnlyInOverlay: ...";
-                     overlay_id = Some "foo";
-                   }))
-          ~expected:Response.Ok;
+        TestHelper.open_file ~path:test_path ~content:"class OnlyInOverlay: ..." ~overlay_id:"foo";
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(

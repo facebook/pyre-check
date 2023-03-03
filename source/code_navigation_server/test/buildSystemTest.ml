@@ -352,41 +352,19 @@ let test_build_system_open_close context =
         assert_module_path_not_tracked raw_source_path0;
         assert_module_path_not_tracked raw_source_path1;
         (* Open source0.py *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileOpened
-                   { path = PyrePath.absolute raw_source_path0; content = None; overlay_id = None }))
-          ~expected:Response.Ok;
+        open_file ~path:(PyrePath.absolute raw_source_path0);
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
         assert_module_path_not_tracked raw_source_path1;
         (* Open source1.py *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileOpened
-                   { path = PyrePath.absolute raw_source_path1; content = None; overlay_id = None }))
-          ~expected:Response.Ok;
+        open_file ~path:(PyrePath.absolute raw_source_path1);
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
         (* Close source0.py *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileClosed { path = PyrePath.absolute raw_source_path0; overlay_id = None }))
-          ~expected:Response.Ok;
+        close_file ~path:(PyrePath.absolute raw_source_path0);
         assert_module_path_not_tracked raw_source_path0;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
         (* Close source1.py *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileClosed { path = PyrePath.absolute raw_source_path1; overlay_id = None }))
-          ~expected:Response.Ok;
+        close_file ~path:(PyrePath.absolute raw_source_path1);
         assert_module_path_not_tracked raw_source_path0;
         assert_module_path_not_tracked raw_source_path1;
       ]
@@ -525,17 +503,7 @@ let test_build_system_file_open_and_update context =
         assert_module_path_not_tracked raw_source_path0;
         assert_module_path_not_tracked raw_source_path1;
         (* Open source0.py *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileOpened
-                   {
-                     path = PyrePath.absolute raw_source_path0;
-                     content = None;
-                     overlay_id = Some "foo";
-                   }))
-          ~expected:Response.Ok;
+        open_file ~path:(PyrePath.absolute raw_source_path0) ~overlay_id:"foo";
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:0;
         assert_module_path_not_tracked raw_source_path1;
         (* Update source0.py *)
@@ -553,27 +521,11 @@ let test_build_system_file_open_and_update context =
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
         assert_module_path_not_tracked raw_source_path1;
         (* Open source1.py *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileOpened
-                   {
-                     path = PyrePath.absolute raw_source_path1;
-                     content = None;
-                     overlay_id = Some "foo";
-                   }))
-          ~expected:Response.Ok;
+        open_file ~path:(PyrePath.absolute raw_source_path1) ~overlay_id:"foo";
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
         (* Close source0.py *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileClosed
-                   { path = PyrePath.absolute raw_source_path0; overlay_id = Some "foo" }))
-          ~expected:Response.Ok;
+        close_file ~path:(PyrePath.absolute raw_source_path0) ~overlay_id:"foo";
         assert_module_path_not_tracked raw_source_path0;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
         (* Update source0.py (should have no effect) *)
@@ -591,13 +543,7 @@ let test_build_system_file_open_and_update context =
         assert_module_path_not_tracked raw_source_path0;
         assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:1;
         (* Close source1.py *)
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.FileClosed
-                   { path = PyrePath.absolute raw_source_path1; overlay_id = Some "foo" }))
-          ~expected:Response.Ok;
+        close_file ~path:(PyrePath.absolute raw_source_path1) ~overlay_id:"foo";
         assert_module_path_not_tracked raw_source_path0;
         assert_module_path_not_tracked raw_source_path1;
       ]
