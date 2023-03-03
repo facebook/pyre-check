@@ -22,6 +22,7 @@ import dataclasses
 import io
 import json
 import logging
+import os
 import pathlib
 import shutil
 import subprocess
@@ -260,6 +261,25 @@ def write_output_to_zip(
                     LOG.warning(f"Failed to apply patch to {patch_result.entry.path}!")
 
 
+def write_output_to_directory(
+    patched_typeshed: PatchedTypeshed,
+    output_directory_path: Path,
+) -> None:
+    os.makedirs(output_directory_path, exist_ok=False)
+    for patch_result in patched_typeshed.results:
+        path = output_directory_path / Path(patch_result.entry.path)
+        data = patch_result.entry.data
+        if data is not None:
+            os.makedirs(path.parent, exist_ok=True)
+            with path.open("wb") as output_file:
+                if data is not None:
+                    output_file.write(data)
+                elif patch_result.failed:
+                    LOG.warning(f"Failed to apply patch to {patch_result.entry.path}!")
+                else:
+                    pass
+
+
 def _find_entry(typeshed_path: Path, entries: List[FileEntry]) -> Optional[FileEntry]:
     """Finds a particular entry in typeshed, given its path relative to
     `typeshed-master`, possibly while having a different suffix."""
@@ -290,7 +310,7 @@ def main() -> None:
         "--output",
         required=True,
         type=str,
-        help="Where to store the downloaded typeshed zip file.",
+        help="Where to store the downloaded typeshed (as either a directory or zip file).",
     )
     parser.add_argument(
         "-p",
@@ -299,6 +319,13 @@ def main() -> None:
         type=str,
         help="Where the .patch files for amending typeshed are located.",
     )
+    parser.add_argument(
+        "-d",
+        "--as-directory",
+        action="store_true",
+        help="Write the contents to a directory instead of a zip file.",
+    )
+    parser.set_defaults(as_directory=False)
     arguments = parser.parse_args()
     logging.basicConfig(
         format="[%(asctime)s][%(levelname)s]: %(message)s", level=logging.INFO
@@ -313,8 +340,12 @@ def main() -> None:
     patched_typeshed = PatchedTypeshed.from_trimmed_typeshed(
         patch_directory, trimmed_typeshed
     )
-    write_output_to_zip(patched_typeshed, arguments.output)
-    LOG.info(f"Zip file written to {arguments.output}")
+    if arguments.as_directory:
+        write_output_to_directory(patched_typeshed, arguments.output)
+        LOG.info(f"Patched typeshed directory written to {arguments.output}")
+    else:
+        write_output_to_zip(patched_typeshed, arguments.output)
+        LOG.info(f"Patched typeshed zip written to {arguments.output}")
 
 
 if __name__ == "__main__":
