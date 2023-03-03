@@ -12,6 +12,7 @@ from ..analyze_leaks import (
     LeakAnalysisScriptError,
     CallGraph,
     DependencyGraph,
+    DynamicCallGraphInputFormat,
     Entrypoints,
     JSON,
     PyreCallGraphInputFormat,
@@ -20,7 +21,7 @@ from ..analyze_leaks import (
 
 
 class AnalyzeIssueTraceTest(unittest.TestCase):
-    def test_load_pysa_call_graph_happy_path(self) -> None:
+    def test_load_pysa_call_graph_input_format(self) -> None:
         json_call_graph: JSON = {
             "my_module.my_function": [
                 "something_that.my_function_calls",
@@ -31,7 +32,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         }
 
         call_graph = PysaCallGraphInputFormat(json_call_graph)
-        result = call_graph.to_call_graph()
+        result = call_graph.call_graph
 
         self.assertEqual(len(result), 2)
         self.assertSetEqual(result["something_that.my_function_calls"], {"int.__str__"})
@@ -40,7 +41,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             {"something_that.my_function_calls", "builtins.print"},
         )
 
-    def test_load_pyre_call_graph_happy_path(self) -> None:
+    def test_load_pyre_call_graph_input_format(self) -> None:
         json_call_graph: JSON = {
             "my_module.my_function": [
                 {
@@ -54,7 +55,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         }
 
         call_graph = PyreCallGraphInputFormat(json_call_graph)
-        result = call_graph.to_call_graph()
+        result = call_graph.call_graph
 
         self.assertEqual(len(result), 2)
         self.assertSetEqual(result["something_that.my_function_calls"], {"int.__str__"})
@@ -63,7 +64,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             {"something_that.my_function_calls", "builtins.print"},
         )
 
-    def test_load_pyre_call_graph_happy_path_with_response(self) -> None:
+    def test_load_pyre_call_graph_input_format_with_response(self) -> None:
         json_call_graph: JSON = {
             "response": {
                 "my_module.my_function": [
@@ -79,7 +80,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         }
 
         call_graph = PyreCallGraphInputFormat(json_call_graph)
-        result = call_graph.to_call_graph()
+        result = call_graph.call_graph
 
         self.assertEqual(len(result), 2)
         self.assertSetEqual(result["something_that.my_function_calls"], {"int.__str__"})
@@ -87,6 +88,36 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             result["my_module.my_function"],
             {"something_that.my_function_calls", "builtins.print"},
         )
+
+    def test_load_dynamic_call_graph_input_format(self) -> None:
+        json_call_graph: JSON = {
+            "my_module:my_function": [
+                "something.that:my_module.my_function.calls",
+                "something_else.that:my_module.<locals>.my_function.<locals>.calls",
+            ],
+            "something.that:my_module.my_function.calls": [],
+            "something_else.that:my_module.<locals>.my_function.<locals>.calls": [
+                "another.function:with.<locals>.in_it"
+            ],
+            "incorrectly.formatted_qualifier": [
+                "incorrectly.formatted_qualifier",
+                "another.incorrectly.formatted",
+            ],
+        }
+        call_graph = DynamicCallGraphInputFormat(json_call_graph)
+        result = call_graph.call_graph
+        expected_call_graph = {
+            "my_module.my_function": {
+                "something.that.my_module.my_function.calls",
+                "something_else.that.my_module.my_function.calls",
+            },
+            "something.that.my_module.my_function.calls": set(),
+            "something_else.that.my_module.my_function.calls": {
+                "another.function.with.in_it"
+            },
+            "incorrectly.formatted_qualifier": {"another.incorrectly.formatted"},
+        }
+        self.assertEqual(result, expected_call_graph)
 
     def test_load_call_graph_bad_root(self) -> None:
         call_graph: JSON = ["1234"]
@@ -100,62 +131,47 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
     def test_load_call_graph_bad_callers(self) -> None:
         call_graph: JSON = {"caller": 1234}
 
-        pyre_call_graph = PyreCallGraphInputFormat(call_graph)
-        pysa_call_graph = PysaCallGraphInputFormat(call_graph)
+        with self.assertRaises(ValueError):
+            PyreCallGraphInputFormat(call_graph)
 
         with self.assertRaises(ValueError):
-            pyre_call_graph.to_call_graph()
-
-        with self.assertRaises(ValueError):
-            pysa_call_graph.to_call_graph()
+            PysaCallGraphInputFormat(call_graph)
 
     def test_load_call_graph_bad_callees(self) -> None:
         call_graph: JSON = {"caller": [1, 2, 3]}
 
-        pyre_call_graph = PyreCallGraphInputFormat(call_graph)
-        pysa_call_graph = PysaCallGraphInputFormat(call_graph)
+        with self.assertRaises(ValueError):
+            PyreCallGraphInputFormat(call_graph)
 
         with self.assertRaises(ValueError):
-            pyre_call_graph.to_call_graph()
-
-        with self.assertRaises(ValueError):
-            pysa_call_graph.to_call_graph()
+            PysaCallGraphInputFormat(call_graph)
 
     def test_load_call_graph_bad_callees_dict_keys(self) -> None:
         call_graph: JSON = {"caller": {"callee": 123}}
 
-        pyre_call_graph = PyreCallGraphInputFormat(call_graph)
-        pysa_call_graph = PysaCallGraphInputFormat(call_graph)
+        with self.assertRaises(ValueError):
+            PyreCallGraphInputFormat(call_graph)
 
         with self.assertRaises(ValueError):
-            pyre_call_graph.to_call_graph()
-
-        with self.assertRaises(ValueError):
-            pysa_call_graph.to_call_graph()
+            PysaCallGraphInputFormat(call_graph)
 
     def test_load_call_graph_bad_callees_dict_target(self) -> None:
         call_graph: JSON = {"caller": {"target": 123}}
 
-        pyre_call_graph = PyreCallGraphInputFormat(call_graph)
-        pysa_call_graph = PysaCallGraphInputFormat(call_graph)
+        with self.assertRaises(ValueError):
+            PyreCallGraphInputFormat(call_graph)
 
         with self.assertRaises(ValueError):
-            pyre_call_graph.to_call_graph()
-
-        with self.assertRaises(ValueError):
-            pysa_call_graph.to_call_graph()
+            PysaCallGraphInputFormat(call_graph)
 
     def test_load_call_graph_bad_callees_dict_direct_target(self) -> None:
         call_graph: JSON = {"caller": {"direct_target": 123}}
 
-        pyre_call_graph = PyreCallGraphInputFormat(call_graph)
-        pysa_call_graph = PysaCallGraphInputFormat(call_graph)
+        with self.assertRaises(ValueError):
+            PyreCallGraphInputFormat(call_graph)
 
         with self.assertRaises(ValueError):
-            pyre_call_graph.to_call_graph()
-
-        with self.assertRaises(ValueError):
-            pysa_call_graph.to_call_graph()
+            PysaCallGraphInputFormat(call_graph)
 
     def test_create_dependency_graph(self) -> None:
         call_graph_json: JSON = {
@@ -725,3 +741,69 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         print(pyre_results)
         print(expected)
         self.assertEqual(pyre_results, expected)
+
+    def assert_format_qualifier(self, input: str, expected: str) -> None:
+        self.assertEqual(DynamicCallGraphInputFormat.format_qualifier(input), expected)
+
+    def test_dynamic_call_graph_input_format_format_qualifier_1(self) -> None:
+        self.assert_format_qualifier(
+            "this_is.a_normal_qualifier",
+            "this_is.a_normal_qualifier",
+        )
+
+    def test_dynamic_call_graph_input_format_format_qualifier_2(self) -> None:
+        self.assert_format_qualifier(
+            "this.is_a.qualifier:with.an_included.path",
+            "this.is_a.qualifier.with.an_included.path",
+        )
+
+    def test_dynamic_call_graph_input_format_format_qualifier_3(self) -> None:
+        self.assert_format_qualifier(
+            "this_qualifier_is_probably_broken_but_its_ok",
+            "this_qualifier_is_probably_broken_but_its_ok",
+        )
+
+    def test_dynamic_call_graph_input_format_format_qualifier_4(self) -> None:
+        self.assert_format_qualifier(
+            "this_is.<locals>.a_normal_qualifier",
+            "this_is.a_normal_qualifier",
+        )
+
+    def test_dynamic_call_graph_input_format_format_qualifier_5(self) -> None:
+        self.assert_format_qualifier(
+            "this.is_a.qualifier:with.<locals>.an_included.path",
+            "this.is_a.qualifier.with.an_included.path",
+        )
+
+    def test_dynamic_call_graph_input_format_format_qualifier_6(self) -> None:
+        self.assert_format_qualifier(
+            "this.is:a.<locals>.qualifier.<locals>.with.<locals>.and_included.<locals>.path",
+            "this.is.a.qualifier.with.and_included.path",
+        )
+
+    def test_dynamic_call_graph_input_format_get_keys_extracts_caller(self) -> None:
+        input_format = DynamicCallGraphInputFormat(
+            {
+                "my_module:my_function": [
+                    "something.that:my_module.my_function.calls",
+                    "something_else.that:my_module.<locals>.my_function.<locals>.calls",
+                ],
+                "something.that:my_module.my_function.calls": [],
+                "something_else.that:my_module.<locals>.my_function.<locals>.calls": [
+                    "another.function:with.<locals>.in_it"
+                ],
+                "incorrectly.formatted_qualifier": [
+                    "incorrectly.formatted_qualifier",
+                    "another.incorrectly.formatted",
+                ],
+            }
+        )
+
+        expected = {
+            "my_module.my_function",
+            "something.that.my_module.my_function.calls",
+            "something_else.that.my_module.my_function.calls",
+            "incorrectly.formatted_qualifier",
+        }
+
+        self.assertEqual(input_format.get_keys(), expected)
