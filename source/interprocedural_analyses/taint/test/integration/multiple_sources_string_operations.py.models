@@ -1090,7 +1090,7 @@
     "callable": "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations",
     "sinks": [
       {
-        "port": "formal(self)",
+        "port": "formal(self)[attribute_query]",
         "taint": [
           {
             "kinds": [
@@ -1324,7 +1324,7 @@
     "callable": "multiple_sources_string_operations.stradd_triggered_user_controlled",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg)[f]",
         "taint": [
           {
             "kinds": [

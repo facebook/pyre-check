@@ -227,19 +227,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~define:FunctionContext.definition
 
 
-  let gather_triggered_sinks_to_propagate ~triggered_sinks (root, taint_tree) taint_so_far =
-    let add_sink ~root sink sofar =
+  let gather_triggered_sinks_to_propagate ~triggered_sinks ~path (root, taint_tree) taint_so_far =
+    let add_sink sink sofar =
       match Sinks.extract_partial_sink sink with
       | Some sink -> (
           match Issue.TriggeredSinkHashMap.find triggered_sinks sink with
           | Some triggered_sink ->
               let taint = BackwardState.Tree.create_leaf triggered_sink in
-              BackwardState.assign ~root ~path:[] taint BackwardState.bottom
+              BackwardState.assign ~root ~path taint BackwardState.bottom
               |> BackwardState.join sofar
           | None -> sofar)
       | _ -> sofar
     in
-    BackwardState.Tree.fold BackwardTaint.kind taint_tree ~f:(add_sink ~root) ~init:taint_so_far
+    BackwardState.Tree.fold BackwardTaint.kind taint_tree ~f:add_sink ~init:taint_so_far
 
 
   (* Store all triggered sinks seen in `triggered_sinks` to propagate them up in the backward
@@ -251,7 +251,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.KeyValue
           sink_taint
           ~init:BackwardState.bottom
-          ~f:(gather_triggered_sinks_to_propagate ~triggered_sinks)
+          ~f:(gather_triggered_sinks_to_propagate ~path:[] ~triggered_sinks)
       in
       Issue.TriggeredSinkLocationMap.add
         FunctionContext.triggered_sinks_to_propagate
@@ -271,7 +271,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let root, taint_tree =
               access_path.root, FunctionContext.string_combine_partial_sink_tree
             in
-            gather_triggered_sinks_to_propagate ~triggered_sinks (root, taint_tree) so_far
+            gather_triggered_sinks_to_propagate
+              ~path:access_path.path
+              ~triggered_sinks
+              (root, taint_tree)
+              so_far
         | None -> (* TODO(T146550300): False negative *) so_far
       in
       let triggered_sinks = List.fold nested_expressions ~f:accumulate ~init:BackwardState.bottom in
