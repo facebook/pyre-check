@@ -25,6 +25,10 @@ val update_root
   ArtifactPath.Event.t list ->
   ErrorsEnvironment.UpdateResult.t
 
+val get_or_create_overlay : t -> overlay_identifier -> ErrorsEnvironment.Overlay.t
+
+(** A convenience wrapper around {!get_or_create_overlay} followed by
+    {!ErrorsEnvironment.Overlay.update_overlaid_code}. *)
 val update_overlay_with_code
   :  t ->
   code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
