@@ -82,9 +82,16 @@ class TrimmedTypeshed:
         for info in zip_file.infolist():
             parts = pathlib.Path(info.filename).parts
 
+            # Bypass txt and toml files - these files just make our vendored directory
+            # bigger for no benefit, and some of them violate lint rules (e.g. no trailing
+            # newline).
+            if parts[-1].endswith(".txt") or parts[-1].endswith(".toml"):
+                continue
+
             if len(parts) <= 1:
                 # Entry for the top-level directory
                 result_info.append(info)
+
             elif parts[1] == "stdlib":
                 # Python standard library
                 if "@python2" in parts:
