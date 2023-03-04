@@ -285,6 +285,13 @@ def write_output_to_directory(
                     LOG.warning(f"Failed to apply patch to {patch_result.entry.path}!")
                 else:
                     pass
+    # Rename the output directory. This is a temporary fix while we migrate
+    # files that deal with the zipball to use the directory instead; once we're
+    # ready to remove the zipball we can just get rid of the TrimmedTypeshed
+    # logic that sets typeshed-master in the first place.
+    (output_directory_path / "typeshed-master").rename(
+        output_directory_path / "typeshed"
+    )
 
 
 def _find_entry(typeshed_path: Path, entries: List[FileEntry]) -> Optional[FileEntry]:
