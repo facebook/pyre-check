@@ -9,8 +9,12 @@ Run an integration test of the pyre server's incremental update logic.
 
 You can run this from the pyre-check repository root as follows:
 ```
+# First, set your PYRE_CLIENT to point to the local build of an
+# (open-source) pyre client and your PYRE_BINARY to a locally built
+# pyre binary.
+
 python3 scripts/run_server_integration_test.py \
-    --typeshed-zip-path stubs/typeshed/typeshed.zip \
+    --typeshed-path stubs/typeshed/typeshed \
     source/command/test/integration/fake_repository/
 ```
 """
@@ -31,7 +35,6 @@ from argparse import Namespace
 from contextlib import contextmanager
 from logging import Logger
 from typing import Generator, Optional, Tuple
-from zipfile import ZipFile
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -46,24 +49,6 @@ def assert_readable_directory(directory: str) -> None:
         raise Exception("{} is not a valid directory.".format(directory))
     if not os.access(directory, os.R_OK):
         raise Exception("{} is not a readable directory.".format(directory))
-
-
-def extract_typeshed(typeshed_zip_path: str, base_directory: str) -> str:
-    typeshed = os.path.join(base_directory, "typeshed-master")
-    os.mkdir(typeshed)
-    with ZipFile(typeshed_zip_path, "r") as typeshed_zip:
-        typeshed_zip.extractall(base_directory)
-    assert_readable_directory(typeshed)
-    # Prune all non-essential directories.
-    for entry in os.listdir(typeshed):
-        if entry in ["stdlib", "third_party", "stubs"]:
-            continue
-        full_path = os.path.join(typeshed, entry)
-        if os.path.isfile(full_path):
-            os.remove(full_path)
-        elif os.path.isdir(full_path):
-            shutil.rmtree(full_path)
-    return typeshed
 
 
 def poor_mans_rsync(source_directory: str, destination_directory: str) -> None:
@@ -128,7 +113,7 @@ def poor_mans_rsync(source_directory: str, destination_directory: str) -> None:
 class Repository:
     def __init__(
         self,
-        typeshed_zip_path: str,
+        typeshed_path: pathlib.Path,
         base_directory: str,
         repository_path: str,
         debug: bool,
@@ -151,11 +136,10 @@ class Repository:
         with open(
             os.path.join(self._pyre_directory, ".pyre_configuration"), "w"
         ) as configuration_file:
-            typeshed_location = extract_typeshed(typeshed_zip_path, base_directory)
             json.dump(
                 {
                     "source_directories": ["."],
-                    "typeshed": typeshed_location,
+                    "typeshed": str(typeshed_path.absolute()),
                     "search_path": ["stubs"],
                 },
                 configuration_file,
@@ -220,7 +204,7 @@ class Repository:
 
 
 def run_incremental_test(
-    typeshed_zip_path: str, repository_path: str, debug: bool
+    typeshed_path: pathlib.Path, repository_path: str, debug: bool
 ) -> int:
     if not shutil.which("watchman"):
         LOG.error("The integration test cannot work if watchman is not installed!")
@@ -228,9 +212,7 @@ def run_incremental_test(
 
     with tempfile.TemporaryDirectory() as base_directory:
         discrepancies = {}
-        repository = Repository(
-            typeshed_zip_path, base_directory, repository_path, debug
-        )
+        repository = Repository(typeshed_path, base_directory, repository_path, debug)
         with _watch_directory(repository.get_repository_directory()):
             try:
                 repository.run_pyre(
@@ -256,9 +238,18 @@ def run_incremental_test(
             print(repository.run_pyre("rage"), file=sys.stderr)
             LOG.error("Found discrepancies between incremental and complete checks!")
             for revision, (actual_error, expected_error) in discrepancies.items():
-                print("Difference found for revision: {}".format(revision), file=sys.stderr)
-                print("Actual errors (pyre incremental): {}".format(actual_error), file=sys.stderr)
-                print("Expected errors (pyre check): {}".format(expected_error), file=sys.stderr)
+                print(
+                    "Difference found for revision: {}".format(revision),
+                    file=sys.stderr,
+                )
+                print(
+                    "Actual errors (pyre incremental): {}".format(actual_error),
+                    file=sys.stderr,
+                )
+                print(
+                    "Expected errors (pyre check): {}".format(expected_error),
+                    file=sys.stderr,
+                )
             return 1
 
     return 0
@@ -267,13 +258,15 @@ def run_incremental_test(
 # In general, saved state load/saves are a distributed system problem - the file systems
 # are completely different. Make sure that Pyre doesn't rely on absolute paths when
 # loading via this test.
-def run_saved_state_test(typeshed_zip_path: str, repository_path: str, debug: bool) -> int:
+def run_saved_state_test(
+    typeshed_path: pathlib.Path, repository_path: str, debug: bool
+) -> int:
     # Copy files over to a temporary directory.
     original_directory = os.getcwd()
     saved_state_path = tempfile.NamedTemporaryFile().name
     with tempfile.TemporaryDirectory() as saved_state_create_directory:
         repository = Repository(
-            typeshed_zip_path,
+            typeshed_path,
             saved_state_create_directory,
             repository_path,
             debug,
@@ -288,7 +281,7 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str, debug: bo
     os.chdir(original_directory)
     with tempfile.TemporaryDirectory() as saved_state_load_directory:
         repository = Repository(
-            typeshed_zip_path, saved_state_load_directory, repository_path, debug=False
+            typeshed_path, saved_state_load_directory, repository_path, debug=False
         )
         repository.__next__()
 
@@ -315,8 +308,13 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str, debug: bo
 
     if actual_errors != expected_errors:
         LOG.error("Actual errors are not equal to expected errors.")
-        print("Actual errors (pyre incremental): {}".format(actual_errors), file=sys.stderr)
-        print("Expected errors (pyre check): {}".format(expected_errors), file=sys.stderr)
+        print(
+            "Actual errors (pyre incremental): {}".format(actual_errors),
+            file=sys.stderr,
+        )
+        print(
+            "Expected errors (pyre check): {}".format(expected_errors), file=sys.stderr
+        )
         return 1
     return 0
 
@@ -336,31 +334,29 @@ def _watch_directory(source_directory) -> Generator[None, None, None]:
     )
 
 
-def run(repository_location: str, typeshed_zip_path: Optional[str], debug: bool) -> int:
+def run(
+    repository_location: str, typeshed_path: Optional[pathlib.Path], debug: bool
+) -> int:
     retries = 3
-    typeshed_zip_path = typeshed_zip_path or str(
-        pathlib.Path.cwd() / "stubs/typeshed/typeshed.zip"
-    )
+    typeshed_path = typeshed_path or pathlib.Path.cwd() / "stubs/typeshed/typeshed"
     original_directory: str = os.getcwd()
     while retries > 0:
         try:
             os.chdir(original_directory)
-            exit_code = run_incremental_test(
-                typeshed_zip_path, repository_location, debug
-            )
+            exit_code = run_incremental_test(typeshed_path, repository_location, debug)
             if exit_code != 0:
                 sys.exit(exit_code)
             print("### Running Saved State Test ###", file=sys.stderr)
             os.chdir(original_directory)
-            return run_saved_state_test(typeshed_zip_path, repository_location, debug)
+            return run_saved_state_test(typeshed_path, repository_location, debug)
         except Exception as e:
             # Retry the integration test for uncaught exceptions. Caught issues will
             # result in an exit code of 1.
             retries = retries - 1
             message = (
                 "retrying..."
-                if retries > 0 else
-                "Retries exceeded, try running with the --debug flag for more information"
+                if retries > 0
+                else "Retries exceeded, try running with the --debug flag for more information"
             )
             LOG.error("Exception raised in integration test:\n %s \n%s", e, message)
     return 1
@@ -375,12 +371,18 @@ if __name__ == "__main__":
         "repository_location", help="Path to directory with fake commit list"
     )
     parser.add_argument(
-        "--typeshed-zip-path",
+        "--typeshed-path",
         help="Path to zip containing typeshed.",
         type=os.path.abspath,
     )
     parser.add_argument("--debug", action="store_true", default=False)
     arguments: Namespace = parser.parse_args()
     sys.exit(
-        run(arguments.repository_location, arguments.typeshed_zip_path, arguments.debug)
+        run(
+            arguments.repository_location,
+            None
+            if arguments.typeshed_path is None
+            else pathlib.Path(arguments.typeshed_path),
+            arguments.debug,
+        )
     )
