@@ -1,11 +1,11 @@
 {
   "source_directories": [
-    "."
+    "./fixture_source"
   ],
   "binary": ".overridden",
   "typeshed": "../typeshed",
   "search_path": [
-    ".."
+    "./fixture_stubs"
   ],
   "taint_models_path": [
     "../taint",
