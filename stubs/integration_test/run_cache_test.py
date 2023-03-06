@@ -10,7 +10,6 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -370,29 +369,19 @@ def run_tests() -> None:
     cache_path = Path(".pyre/.pysa_cache")
     LOG.info(f"Cache file path: {cache_path.resolve()}")
 
-    # Extract typeshed.
-    with tempfile.TemporaryDirectory() as directory:
-        LOG.info(f"Extracting typeshed into `{directory}`...")
-        subprocess.check_call(
-            ["unzip", "../typeshed/typeshed.zip", "-d", directory],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        typeshed_path = f"{directory}/typeshed-master"
+    typeshed_path = Path("../typeshed/typeshed").absolute().as_posix()
+    with open("result.json") as file:
+        expected = json.loads(file.read())
 
-        expected = None
-        with open("result.json") as file:
-            expected = json.loads(file.read())
+        run_test_no_cache(typeshed_path, cache_path, expected)
+        run_test_cache_first_and_second_runs(typeshed_path, cache_path, expected)
+        run_test_invalid_cache_file(typeshed_path, cache_path, expected)
+        run_test_changed_pysa_file(typeshed_path, cache_path, expected)
+        run_test_changed_taint_config_file(typeshed_path, cache_path, expected)
+        run_test_changed_models(typeshed_path, cache_path, expected)
+        run_test_changed_source_files(typeshed_path, cache_path, expected)
 
-            run_test_no_cache(typeshed_path, cache_path, expected)
-            run_test_cache_first_and_second_runs(typeshed_path, cache_path, expected)
-            run_test_invalid_cache_file(typeshed_path, cache_path, expected)
-            run_test_changed_pysa_file(typeshed_path, cache_path, expected)
-            run_test_changed_taint_config_file(typeshed_path, cache_path, expected)
-            run_test_changed_models(typeshed_path, cache_path, expected)
-            run_test_changed_source_files(typeshed_path, cache_path, expected)
-
-        LOG.info("All runs produced expected output.")
+    LOG.info("All runs produced expected output.")
 
 
 if __name__ == "__main__":
