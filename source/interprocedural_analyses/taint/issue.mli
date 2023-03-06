@@ -47,9 +47,10 @@ val to_json
 
 val to_error : taint_configuration:TaintConfiguration.Heap.t -> t -> Error.t
 
-(* A map from triggered sink kinds (which is a string) to the triggered sink taints to propagate in
-   the backward analysis. For a multi-source rule, triggered sinks do not mean we have found the
-   issue, because the other sources are still missing. *)
+(* A map from triggered sink kinds (which is a string) to the handles of the flows that are detected
+   when creating these triggered sinks. The issue handles will be propagated in the backward
+   analysis. A triggered sink here means we must find its matching source, in order to file an issue
+   for a multi-source rule. *)
 module TriggeredSinkHashMap : sig
   type t
 
@@ -59,7 +60,7 @@ module TriggeredSinkHashMap : sig
 
   val mem : t -> Sinks.partial_sink -> bool
 
-  val find : t -> Sinks.partial_sink -> BackwardTaint.t option
+  val find : t -> Sinks.partial_sink -> IssueHandleSet.t option
 end
 
 (* A map from locations to a backward taint of triggered sinks.

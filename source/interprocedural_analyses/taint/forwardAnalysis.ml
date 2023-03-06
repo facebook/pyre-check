@@ -232,9 +232,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match Sinks.extract_partial_sink sink with
       | Some sink -> (
           match Issue.TriggeredSinkHashMap.find triggered_sinks sink with
-          | Some triggered_sink ->
-              let taint = BackwardState.Tree.create_leaf triggered_sink in
-              BackwardState.assign ~root ~path taint BackwardState.bottom
+          | Some issue_handles ->
+              let triggered_sink_taint =
+                BackwardTaint.singleton
+                  CallInfo.declaration
+                  (Sinks.TriggeredPartialSink sink)
+                  (Frame.update Frame.Slots.MultiSourceIssueHandle issue_handles Frame.initial)
+              in
+              let taint_tree = BackwardState.Tree.create_leaf triggered_sink_taint in
+              BackwardState.assign ~root ~path taint_tree BackwardState.bottom
               |> BackwardState.join sofar
           | None -> sofar)
       | _ -> sofar

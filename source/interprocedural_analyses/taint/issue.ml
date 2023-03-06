@@ -365,14 +365,15 @@ let generate_issues
     |> IssueHandle.SerializableMap.data
 
 
-(* A map from triggered sink kinds (which is a string) to the triggered sink taints to propagate in
-   the backward analysis. A triggered sink here means we must find its matching source, in order to
-   file an issue for a multi-source rule. *)
+(* A map from triggered sink kinds (which is a string) to the handles of the flows that are detected
+   when creating these triggered sinks. The issue handles will be propagated in the backward
+   analysis. A triggered sink here means we must find its matching source, in order to file an issue
+   for a multi-source rule. *)
 module TriggeredSinkHashMap = struct
   module Hashable = Core.Hashable.Make (String)
   module HashMap = Hashable.Table
 
-  type t = BackwardTaint.t HashMap.t
+  type t = IssueHandleSet.t HashMap.t
 
   let create () = HashMap.create ()
 
@@ -383,33 +384,13 @@ module TriggeredSinkHashMap = struct
   let mem map partial_sink = HashMap.mem map (convert_to_key partial_sink)
 
   let get_issue_handles map partial_sink =
-    match HashMap.find map (convert_to_key partial_sink) with
-    | Some sink_taint ->
-        BackwardTaint.fold
-          IssueHandleSet.Self
-          ~f:IssueHandleSet.join
-          ~init:IssueHandleSet.bottom
-          sink_taint
-    | None -> IssueHandleSet.bottom
+    HashMap.find map (convert_to_key partial_sink) |> Option.value ~default:IssueHandleSet.bottom
 
 
   let add map ~triggered_sink ~issue_handles =
-    let add_handles triggered_sink =
-      (* Handles of the issues that are created when creating the triggered sinks *)
-      BackwardTaint.transform
-        IssueHandleSet.Self
-        Map
-        ~f:(IssueHandleSet.join issue_handles)
-        triggered_sink
-    in
     let update = function
-      | Some triggered_sink -> add_handles triggered_sink
-      | None ->
-          BackwardTaint.singleton
-            CallInfo.declaration
-            (Sinks.TriggeredPartialSink triggered_sink)
-            Frame.initial
-          |> add_handles
+      | Some existing_issue_handles -> IssueHandleSet.join existing_issue_handles issue_handles
+      | None -> issue_handles
     in
     HashMap.update map (convert_to_key triggered_sink) ~f:update
 
