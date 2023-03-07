@@ -228,24 +228,32 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let gather_triggered_sinks_to_propagate ~triggered_sinks ~path (root, taint_tree) taint_so_far =
-    let add_sink sink sofar =
-      match Sinks.extract_partial_sink sink with
+    let update_kind_frame (kind, frame) =
+      match Sinks.extract_partial_sink kind with
       | Some sink -> (
           match Issue.TriggeredSinkHashMap.find triggered_sinks sink with
           | Some issue_handles ->
-              let triggered_sink_taint =
-                BackwardTaint.singleton
-                  CallInfo.declaration
-                  (Sinks.TriggeredPartialSink sink)
-                  (Frame.update Frame.Slots.MultiSourceIssueHandle issue_handles Frame.initial)
+              let existing_issue_handles = Frame.get Frame.Slots.MultiSourceIssueHandle frame in
+              let frame =
+                Frame.update
+                  Frame.Slots.MultiSourceIssueHandle
+                  (IssueHandleSet.join existing_issue_handles issue_handles)
+                  frame
               in
-              let taint_tree = BackwardState.Tree.create_leaf triggered_sink_taint in
-              BackwardState.assign ~root ~path taint_tree BackwardState.bottom
-              |> BackwardState.join sofar
-          | None -> sofar)
-      | _ -> sofar
+              Some (Sinks.TriggeredPartialSink sink, frame)
+          | None -> None)
+      | None -> None
     in
-    BackwardState.Tree.fold BackwardTaint.kind taint_tree ~f:add_sink ~init:taint_so_far
+    let transform_partial_sink (path, leaf_taint) =
+      let leaf_taint =
+        BackwardTaint.transform BackwardTaint.kind_frame FilterMap ~f:update_kind_frame leaf_taint
+      in
+      path, leaf_taint
+    in
+    let taint_tree =
+      BackwardState.Tree.transform BackwardState.Tree.Path Map taint_tree ~f:transform_partial_sink
+    in
+    BackwardState.assign ~weak:true ~root ~path taint_tree taint_so_far
 
 
   (* Store all triggered sinks seen in `triggered_sinks` to propagate them up in the backward
@@ -268,15 +276,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let store_triggered_sinks_to_propagate_for_string_combine
       ~location
       ~triggered_sinks
+      ~sink_tree
       nested_expressions
     =
     if not (Issue.TriggeredSinkHashMap.is_empty triggered_sinks) then
       let accumulate so_far nested_expression =
         match AccessPath.of_expression nested_expression with
         | Some access_path ->
-            let root, taint_tree =
-              access_path.root, FunctionContext.string_combine_partial_sink_tree
-            in
+            let root, taint_tree = access_path.root, sink_tree in
             gather_triggered_sinks_to_propagate
               ~path:access_path.path
               ~triggered_sinks
@@ -382,6 +389,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~parameter_index
         ~call_target_for_string_combine_rules
         ~location
+        ~string_combine_partial_sink_tree
         source_tree
       =
       match call_target_for_string_combine_rules with
@@ -397,7 +405,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~sink_handle
             ~location
             ~source_tree
-            ~sink_tree:FunctionContext.string_combine_partial_sink_tree
+            ~sink_tree:string_combine_partial_sink_tree
       | None -> ()
   end
 
@@ -2327,6 +2335,29 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         location;
       }
     =
+    let callee, receiver_class_interval =
+      match call_target_for_string_combine_rules with
+      | Some call_target ->
+          let receiver_class_interval =
+            Interprocedural.ClassIntervalSetGraph.SharedMemory.of_type
+              class_interval_graph
+              call_target.receiver_type
+          in
+          Some call_target.target, receiver_class_interval
+      | None -> None, Interprocedural.ClassIntervalSet.top
+    in
+    let string_combine_partial_sink_tree =
+      BackwardState.Tree.apply_call
+        ~resolution
+        ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+        ~callee
+        ~arguments:[]
+        ~port:AccessPath.Root.LocalResult
+        ~is_self_call:false
+        ~caller_class_interval:FunctionContext.caller_class_interval
+        ~receiver_class_interval
+        FunctionContext.string_combine_partial_sink_tree
+    in
     let string_literal_taint = StringFormatCall.implicit_string_literal_sources string_literal in
     let triggered_sinks = Issue.TriggeredSinkHashMap.create () in
     StringFormatCall.check_triggered_flows
@@ -2334,6 +2365,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~parameter_index:0
       ~call_target_for_string_combine_rules
       ~location:string_literal_location
+      ~string_combine_partial_sink_tree
       string_literal_taint;
 
     let analyze_stringify_callee
@@ -2412,6 +2444,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~parameter_index:(index + 1)
         ~call_target_for_string_combine_rules
         ~location:expression_location
+        ~string_combine_partial_sink_tree
         expression_taint;
       ForwardState.Tree.join expression_taint taint, state
     in
@@ -2426,6 +2459,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     store_triggered_sinks_to_propagate_for_string_combine
       ~location
       ~triggered_sinks
+      ~sink_tree:string_combine_partial_sink_tree
       nested_expressions;
     (* Compute flows to literal string sinks if applicable. *)
     StringFormatCall.check_flow_implicit_string_literal_sinks ~string_literal taint;

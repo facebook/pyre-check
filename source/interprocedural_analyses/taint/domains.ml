@@ -482,6 +482,8 @@ module type TAINT_DOMAIN = sig
 
   val kind : kind Abstract.Domain.part
 
+  val kind_frame : (kind * Frame.t) Abstract.Domain.part
+
   val call_info : CallInfo.t Abstract.Domain.part
 
   val add_local_breadcrumb : ?add_on_tito:bool -> Features.BreadcrumbInterned.t -> t -> t
@@ -748,6 +750,8 @@ end = struct
 
 
   let kind = KindTaintDomain.Key
+
+  let kind_frame = KindTaintDomain.KeyValue
 
   let call_info = Map.Key
 

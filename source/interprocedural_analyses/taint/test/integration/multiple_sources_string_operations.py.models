@@ -306,19 +306,22 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|0:b96631c9caec05e78abe0bc41f8c6929"
                 ],
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
-                  }
-                ],
+                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 93,
-              "start": 56,
-              "end": 71
+            "call": {
+              "position": {
+                "filename": "multiple_sources_string_operations.py",
+                "line": 93,
+                "start": 56,
+                "end": 71
+              },
+              "resolves_to": [
+                "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
+              ],
+              "port": "formal(arg2)"
             }
           }
         ]
@@ -392,19 +395,22 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|0:b96631c9caec05e78abe0bc41f8c6929"
                 ],
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
-                  }
-                ],
+                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 92,
-              "start": 53,
-              "end": 68
+            "call": {
+              "position": {
+                "filename": "multiple_sources_string_operations.py",
+                "line": 92,
+                "start": 53,
+                "end": 68
+              },
+              "resolves_to": [
+                "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
+              ],
+              "port": "formal(arg1)"
             }
           }
         ]
@@ -478,19 +484,22 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|1:73a6a34a52dcde0077fbaa00dc17df2c"
                 ],
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations.format_string_triggered_user_controlled"
-                  }
-                ],
+                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 73,
-              "start": 44,
-              "end": 59
+            "call": {
+              "position": {
+                "filename": "multiple_sources_string_operations.py",
+                "line": 73,
+                "start": 44,
+                "end": 59
+              },
+              "resolves_to": [
+                "multiple_sources_string_operations.format_string_triggered_user_controlled"
+              ],
+              "port": "formal(arg)"
             }
           }
         ]
@@ -1093,15 +1102,23 @@
         "port": "formal(self)[attribute_query]",
         "taint": [
           {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations:4324:0:StringFormat|str.format|0|2:c106ea0d96d7c3c2f1fc49524b367174"
                 ],
+                "leaves": [ { "name": "str.format" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
-            "declaration": null
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 23,
+              "start": 8,
+              "end": 52
+            }
           }
         ]
       }
@@ -1122,10 +1139,16 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|0:b96631c9caec05e78abe0bc41f8c6929"
                 ],
+                "leaves": [ { "name": "Obj{<format-string>}" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "declaration": null
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 87,
+              "start": 4,
+              "end": 27
+            }
           }
         ]
       },
@@ -1138,10 +1161,16 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|0:b96631c9caec05e78abe0bc41f8c6929"
                 ],
+                "leaves": [ { "name": "Obj{<format-string>}" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "declaration": null
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 87,
+              "start": 4,
+              "end": 27
+            }
           }
         ]
       }
@@ -1162,10 +1191,16 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_triggered_sql:4324:0:StringFormat|Obj{<format-string>}|0|1:8f6cacd47cabf12bbc63da564ccba4b3"
                 ],
+                "leaves": [ { "name": "Obj{<format-string>}" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
-            "declaration": null
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 78,
+              "start": 4,
+              "end": 29
+            }
           }
         ]
       }
@@ -1222,7 +1257,13 @@
               },
               {
                 "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
-                "origin": { "line": 83, "start": 32, "end": 37 },
+                "call": {
+                  "position": { "line": 83, "start": 32, "end": 37 },
+                  "resolves_to": [
+                    "multiple_sources_string_operations.format_string_triggered_sql"
+                  ],
+                  "port": "formal(arg)"
+                },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
               }
@@ -1266,10 +1307,16 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|1:73a6a34a52dcde0077fbaa00dc17df2c"
                 ],
+                "leaves": [ { "name": "Obj{<format-string>}" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
-            "declaration": null
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 68,
+              "start": 4,
+              "end": 19
+            }
           }
         ]
       }
@@ -1332,10 +1379,16 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.stradd_triggered_user_controlled:4324:0:StringFormat|str.__add__|0|1:c4a91de91595fbdd1778f0feee3981bb"
                 ],
+                "leaves": [ { "name": "str.__add__" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
-            "declaration": null
+            "origin": {
+              "filename": "multiple_sources_string_operations.py",
+              "line": 104,
+              "start": 4,
+              "end": 13
+            }
           }
         ]
       }
