@@ -10,7 +10,7 @@ import logging
 import os
 import subprocess
 import sys
-import tempfile
+from pathlib import Path
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -58,47 +58,40 @@ if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     LOG.info("Running in `%s`", os.getcwd())
 
-    # Extract typeshed
-    with tempfile.TemporaryDirectory() as directory:
-        LOG.info(f"Extracting typeshed into `{directory}`...")
-        subprocess.check_call(
-            ["unzip", "../typeshed/typeshed.zip", "-d", directory],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+    typeshed_directory = Path("../typeshed/typeshed").absolute().as_posix()
 
-        LOG.info("Running `pyre analyze`")
-        try:
-            command = [
-                "pyre",
-                "--typeshed",
-                f"{directory}/typeshed-master",
-                "--noninteractive",
-                "analyze",
-                "--check-invariants",
-            ]
-            if arguments.save_results_to is not None:
-                command.extend(["--save-results-to", arguments.save_results_to])
-            output = subprocess.check_output(command).decode()
+    LOG.info("Running `pyre analyze`")
+    try:
+        command = [
+            "pyre",
+            "--typeshed",
+            typeshed_directory,
+            "--noninteractive",
+            "analyze",
+            "--check-invariants",
+        ]
+        if arguments.save_results_to is not None:
+            command.extend(["--save-results-to", arguments.save_results_to])
+        output = subprocess.check_output(command).decode()
 
-            if arguments.save_results_to is not None:
-                with open(f"{arguments.save_results_to}/errors.json") as file:
-                    output = file.read()
+        if arguments.save_results_to is not None:
+            with open(f"{arguments.save_results_to}/errors.json") as file:
+                output = file.read()
 
-        except subprocess.CalledProcessError as exception:
-            LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
-            sys.stdout.write(exception.output.decode())
-            sys.exit(exception.returncode)
+    except subprocess.CalledProcessError as exception:
+        LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
+        sys.stdout.write(exception.output.decode())
+        sys.exit(exception.returncode)
 
-        expected = ""
-        with open("result.json") as file:
-            expected = file.read()
+    expected = ""
+    with open("result.json") as file:
+        expected = file.read()
 
-        if normalized_json_dump(expected) != normalized_json_dump(output):
-            with open("result.actual", "w") as file:
-                file.write(normalized_json_dump(output))
-            sys.stdout.write("Output differs from expected:\n")
-            subprocess.run(["diff", "-u", "result.json", "result.actual"])
-            sys.exit(30)  # ExitCode.TEST_COMPARISON_DIFFERS
+    if normalized_json_dump(expected) != normalized_json_dump(output):
+        with open("result.actual", "w") as file:
+            file.write(normalized_json_dump(output))
+        sys.stdout.write("Output differs from expected:\n")
+        subprocess.run(["diff", "-u", "result.json", "result.actual"])
+        sys.exit(30)  # ExitCode.TEST_COMPARISON_DIFFERS
 
-        LOG.info("Run produced expected results")
+    LOG.info("Run produced expected results")
