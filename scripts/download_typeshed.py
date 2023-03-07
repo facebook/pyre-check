@@ -271,6 +271,7 @@ def write_output_to_zip(
 def write_output_to_directory(
     patched_typeshed: PatchedTypeshed,
     output_directory_path: Path,
+    url: str,
 ) -> None:
     os.makedirs(output_directory_path, exist_ok=False)
     for patch_result in patched_typeshed.results:
@@ -292,6 +293,10 @@ def write_output_to_directory(
     (output_directory_path / "typeshed-master").rename(
         output_directory_path / "typeshed"
     )
+    # record where we got the typeshed source - otherwise commit messages are the
+    # only record!
+    with (output_directory_path / "typeshed" / "source_url").open("w") as output_file:
+        output_file.write(f"{url}\n")
 
 
 def _find_entry(typeshed_path: Path, entries: List[FileEntry]) -> Optional[FileEntry]:
@@ -355,7 +360,7 @@ def main() -> None:
         patch_directory, trimmed_typeshed
     )
     if arguments.as_directory:
-        write_output_to_directory(patched_typeshed, arguments.output)
+        write_output_to_directory(patched_typeshed, Path(arguments.output), url)
         LOG.info(f"Patched typeshed directory written to {arguments.output}")
     else:
         write_output_to_zip(patched_typeshed, arguments.output)
