@@ -8,8 +8,12 @@ Run an integration test of the pyre server's unsaved changes logic.
 
 You can run this from the pyre-check repository root as follows:
 ```
+# First, set your PYRE_CLIENT to point to the local build of an
+# (open-source) pyre client and your PYRE_BINARY to a locally built
+# pyre binary.
+
 python3 scripts/run_server_unsaved_changes_test.py \
-    --typeshed-zip-path stubs/typeshed/typeshed.zip \
+    --typeshed-path stubs/typeshed/typeshed \
     source/command/test/integration/fake_repository/
 ```
 """
@@ -21,7 +25,6 @@ import json
 import logging
 import os
 import pathlib
-import shutil
 import socket
 import subprocess
 import sys
@@ -30,29 +33,12 @@ from argparse import Namespace
 from dataclasses import dataclass
 from logging import Logger
 from typing import BinaryIO, Dict, Generator, Iterable, List, TextIO, Tuple
-from zipfile import ZipFile
 
 LOG: Logger = logging.getLogger(__name__)
 
+
 class ConnectionFailure(Exception):
     pass
-
-
-def extract_typeshed(typeshed_zip_path: str, base_directory: str) -> str:
-    typeshed = os.path.join(base_directory, "typeshed-master")
-    os.mkdir(typeshed)
-    with ZipFile(typeshed_zip_path, "r") as typeshed_zip:
-        typeshed_zip.extractall(base_directory)
-    # Prune all non-essential directories.
-    for entry in os.listdir(typeshed):
-        if entry in ["stdlib", "third_party", "stubs"]:
-            continue
-        full_path = os.path.join(typeshed, entry)
-        if os.path.isfile(full_path):
-            os.remove(full_path)
-        elif os.path.isdir(full_path):
-            shutil.rmtree(full_path)
-    return typeshed
 
 
 @contextlib.contextmanager
@@ -83,8 +69,11 @@ def connect_in_text_mode(
             ),
         )
 
+
 @contextlib.contextmanager
-def connect(socket_path: pathlib.Path) -> Generator[Tuple[BinaryIO, BinaryIO], None, None]:
+def connect(
+    socket_path: pathlib.Path,
+) -> Generator[Tuple[BinaryIO, BinaryIO], None, None]:
     """
     Connect to the socket at given path. Once connected, create an input and
     an output stream from the socket. Both the input stream and the output
@@ -125,28 +114,37 @@ class Repository:
 
     def __init__(
         self,
-        typeshed_zip_path: str,
+        typeshed_path: pathlib.Path,
         base_directory: str,
         repository_path: str,
-        debug: bool
+        debug: bool,
     ) -> None:
-        self._commit_paths: Iterable[pathlib.Path] = _fetch_commit_paths(repository_path)
+        self._commit_paths: Iterable[pathlib.Path] = _fetch_commit_paths(
+            repository_path
+        )
         self._pyre_directory: pathlib.Path = pathlib.Path(base_directory) / "repository"
         self.debug: bool = debug
-        self._initialize_pyre_directory(self._pyre_directory, typeshed_zip_path, base_directory)
+        self._initialize_pyre_directory(
+            self._pyre_directory, typeshed_path, base_directory
+        )
         self.socket_path: pathlib.Path = self.start_pyre_and_return_socket_path()
         pass
 
     @staticmethod
-    def _initialize_pyre_directory(pyre_directory: pathlib.Path, typeshed_zip_path: str, base_directory: str) -> None:
+    def _initialize_pyre_directory(
+        pyre_directory: pathlib.Path, typeshed_path: pathlib.Path, base_directory: str
+    ) -> None:
         pathlib.Path(pyre_directory).mkdir()
         pyre_configuration_path = pathlib.Path(pyre_directory) / ".pyre_configuration"
-        typeshed_location = extract_typeshed(typeshed_zip_path, base_directory)
-        pyre_configuration_path.write_text(json.dumps({
+        pyre_configuration_path.write_text(
+            json.dumps(
+                {
                     "source_directories": ["."],
-                    "typeshed": typeshed_location,
+                    "typeshed": str(typeshed_path.absolute()),
                     "search_path": ["stubs"],
-                }))
+                }
+            )
+        )
 
         watchman_configuration_path = pathlib.Path(pyre_directory) / ".watchmanconfig"
         watchman_configuration_path.write_text(json.dumps({}))
@@ -166,7 +164,9 @@ class Repository:
         result = self.run_pyre("info")
         socket_path = pathlib.Path(json.loads(result)["socket_path"])
         if not socket_path.is_socket():
-            raise RuntimeError(f"Socket path: {socket_path} does not point to a socket. Path details: {socket_path.stat()}; Is the pyre server running?")
+            raise RuntimeError(
+                f"Socket path: {socket_path} does not point to a socket. Path details: {socket_path.stat()}; Is the pyre server running?"
+            )
         return socket_path
 
     def send_update_request(self, request_message: str) -> str:
@@ -179,28 +179,32 @@ class Repository:
     def overlay_update(self, file_path: pathlib.Path) -> str:
         file_contents = pathlib.Path(file_path).read_text()
         python_file_name_without_path = file_path.name
-        pyre_directory_file_path = pathlib.Path(self._pyre_directory) / python_file_name_without_path
+        pyre_directory_file_path = (
+            pathlib.Path(self._pyre_directory) / python_file_name_without_path
+        )
         message = [
             "OverlayUpdate",
-                {
-                    "overlay_id": str(pyre_directory_file_path),
-                    "source_path": str(pyre_directory_file_path),
-                    "code_update": ["NewCode", file_contents],
-                },
+            {
+                "overlay_id": str(pyre_directory_file_path),
+                "source_path": str(pyre_directory_file_path),
+                "code_update": ["NewCode", file_contents],
+            },
         ]
         return self.send_update_request(json.dumps(message))
 
     def incremental_update(self, file_path: pathlib.Path) -> str:
         python_file_name_without_path = file_path.name
-        pyre_directory_file_path = pathlib.Path(self._pyre_directory) / python_file_name_without_path
+        pyre_directory_file_path = (
+            pathlib.Path(self._pyre_directory) / python_file_name_without_path
+        )
         incremental_update_message = [
             "IncrementalUpdate",
-            [str(pyre_directory_file_path)]
+            [str(pyre_directory_file_path)],
         ]
         self.send_update_request(json.dumps(incremental_update_message))
         display_type_error_message = [
             "DisplayTypeError",
-            [str(pyre_directory_file_path)]
+            [str(pyre_directory_file_path)],
         ]
         return self.send_update_request(json.dumps(display_type_error_message))
 
@@ -212,17 +216,19 @@ class Repository:
 
     def _create_empty_file(self, file_path: pathlib.Path) -> None:
         python_file_name_without_path = file_path.name
-        (pathlib.Path(self._pyre_directory) / python_file_name_without_path).unlink(missing_ok = True)
+        (pathlib.Path(self._pyre_directory) / python_file_name_without_path).unlink(
+            missing_ok=True
+        )
         (pathlib.Path(self._pyre_directory) / python_file_name_without_path).touch()
 
     def initiate_empty_files(self, file_list: List[pathlib.Path]) -> None:
         for file_path in file_list:
             self._create_empty_file(file_path)
-            #File path must be registered by incremental request in order for overlay to work.
+            # File path must be registered by incremental request in order for overlay to work.
             self.incremental_update(file_path)
 
     def run_pyre(self, command: str, *arguments: str) -> str:
-        pyre_client = os.getenv("PYRE_CLIENT","pyre")
+        pyre_client = os.getenv("PYRE_CLIENT", "pyre")
         standard_error = None if self.debug else subprocess.DEVNULL
         try:
             output = subprocess.run(
@@ -244,21 +250,24 @@ class FileErrorsResult:
     overlay_errors: str
     incremental_errors: str
 
-def _get_file_errors_result(repository: Repository, file_path: pathlib.Path) -> FileErrorsResult:
+
+def _get_file_errors_result(
+    repository: Repository, file_path: pathlib.Path
+) -> FileErrorsResult:
     overlay_errors_response = repository.overlay_update(file_path)
     repository.modify_file(file_path)
     incremental_errors_response = repository.incremental_update(file_path)
-    commit_result = FileErrorsResult(file_path, overlay_errors_response, incremental_errors_response)
+    commit_result = FileErrorsResult(
+        file_path, overlay_errors_response, incremental_errors_response
+    )
     return commit_result
 
 
 def run_unsaved_changes_test(
-    typeshed_zip_path: str, repository_path: str, debug: bool
+    typeshed_path: pathlib.Path, repository_path: str, debug: bool
 ) -> int:
     with tempfile.TemporaryDirectory() as base_directory:
-        repository = Repository(
-            typeshed_zip_path, base_directory, repository_path, debug
-        )
+        repository = Repository(typeshed_path, base_directory, repository_path, debug)
         try:
             result = 0
             for commit in repository.get_commit_paths():
@@ -268,8 +277,15 @@ def run_unsaved_changes_test(
                 for file_path in python_file_list:
                     commit_result = _get_file_errors_result(repository, file_path)
                     if commit_result.overlay_errors != commit_result.incremental_errors:
-                        discrepancies[file_path] = (commit_result.overlay_errors, commit_result.incremental_errors)
-                        LOG.error("Found discrepancies in %s for incremental check, file: %s", commit, file_path)
+                        discrepancies[file_path] = (
+                            commit_result.overlay_errors,
+                            commit_result.incremental_errors,
+                        )
+                        LOG.error(
+                            "Found discrepancies in %s for incremental check, file: %s",
+                            commit,
+                            file_path,
+                        )
                 result = _print_discrepancies(discrepancies, commit.name)
                 if result:
                     break
@@ -280,12 +296,17 @@ def run_unsaved_changes_test(
             LOG.info("Pyre rage: %s", repository.run_pyre("rage"))
             raise uncaught_pyre_exception
 
-def _print_discrepancies(discrepancies: Dict[pathlib.Path, Tuple[str, str]], commit: str) -> int:
+
+def _print_discrepancies(
+    discrepancies: Dict[pathlib.Path, Tuple[str, str]], commit: str
+) -> int:
     if len(discrepancies) == 0:
         return 0
     for file_name, (actual_error, expected_error) in discrepancies.items():
         LOG.error(
-            "Difference found for revision: {}, file_name: {}\n".format(commit, file_name),
+            "Difference found for revision: {}, file_name: {}\n".format(
+                commit, file_name
+            ),
         )
         LOG.error(
             "Actual errors (pyre overlayUpdate): {}\n".format(actual_error),
@@ -296,10 +317,9 @@ def _print_discrepancies(discrepancies: Dict[pathlib.Path, Tuple[str, str]], com
     return 1
 
 
-def run(repository_location: str, typeshed_zip_path: str, debug: bool) -> int:
-    return run_unsaved_changes_test(
-        typeshed_zip_path, repository_location, debug
-    )
+def run(repository_location: str, typeshed_path: pathlib.Path, debug: bool) -> int:
+    return run_unsaved_changes_test(typeshed_path, repository_location, debug)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -307,11 +327,15 @@ if __name__ == "__main__":
         "repository_location", help="Path to directory with fake commit list"
     )
     parser.add_argument(
-        "--typeshed-zip-path",
-        help="Path to zip containing typeshed.",
+        "--typeshed-path",
+        help="Path to typeshed.",
     )
     parser.add_argument("--debug", action="store_true", default=False)
     arguments: Namespace = parser.parse_args()
     sys.exit(
-        run(arguments.repository_location, arguments.typeshed_zip_path, arguments.debug)
+        run(
+            arguments.repository_location,
+            pathlib.Path(arguments.typeshed_path),
+            arguments.debug,
+        )
     )
