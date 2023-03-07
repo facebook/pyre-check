@@ -428,6 +428,7 @@ let get_initial_models ~context =
       ~source_sink_filter:None
       ~callables:None
       ~stubs:(Target.HashSet.create ())
+      ~python_version:ModelParser.PythonVersion.default
       ()
   in
   assert_bool
@@ -553,6 +554,7 @@ let initialize
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~callables:(Some (Target.HashSet.of_list callables))
             ~stubs:(Target.HashSet.of_list stubs)
+            ~python_version:ModelParser.PythonVersion.default
             ()
         in
         assert_bool

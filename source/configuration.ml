@@ -233,7 +233,7 @@ module PythonVersion = struct
     minor: int;
     micro: int;
   }
-  [@@deriving sexp, compare, hash, yojson]
+  [@@deriving sexp, compare, hash, yojson, equal]
 
   let default =
     {

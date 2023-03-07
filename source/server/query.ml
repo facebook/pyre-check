@@ -1075,6 +1075,9 @@ let rec process_request ~type_environment ~build_system request =
           | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
           | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
           | Ok taint_configuration -> (
+              let python_version =
+                Taint.ModelParser.PythonVersion.from_configuration configuration
+              in
               let get_model_queries (path, source) =
                 Taint.ModelParser.parse
                   ~resolution:global_resolution
@@ -1084,6 +1087,7 @@ let rec process_request ~type_environment ~build_system request =
                   ~source_sink_filter:None
                   ~callables:None
                   ~stubs:(Interprocedural.Target.HashSet.create ())
+                  ~python_version
                   ()
                 |> fun { Taint.ModelParseResult.queries; errors; _ } ->
                 if List.is_empty errors then
@@ -1394,6 +1398,7 @@ let rec process_request ~type_environment ~build_system request =
           |> Taint.TaintConfiguration.exception_on_error
         in
         let get_model_errors_and_model_queries sources =
+          let python_version = Taint.ModelParser.PythonVersion.from_configuration configuration in
           let get_model_errors_and_model_queries (path, source) =
             Taint.ModelParser.parse
               ~resolution:global_resolution
@@ -1403,6 +1408,7 @@ let rec process_request ~type_environment ~build_system request =
               ~source_sink_filter:None
               ~callables:None
               ~stubs:(Interprocedural.Target.HashSet.create ())
+              ~python_version
               ()
             |> fun { Taint.ModelParseResult.errors; queries; _ } -> errors, queries
           in
