@@ -12,7 +12,7 @@ rm ../../.pyre_configuration
 echo '{
     "source_directories": ["."],
     "search_path": [
-        "../../stubs",
+        "../../stubs/integration_test/fixture_stubs",
         {"site-package": "flask"},
         {"site-package": "werkzeug"},
         {"site-package": "jsonpickle"}

@@ -36,14 +36,12 @@ jobs:
 
       - name: Build Pyre (and Pysa)
         run: |
-          mkdir typeshed
-          unzip -qq ./stubs/typeshed/typeshed.zip -d ./typeshed/
           ./scripts/setup.sh --local --no-tests
           make -C source
           echo "PYTHONPATH=$GITHUB_WORKSPACE/..:$PYTHONPATH" >> $GITHUB_ENV
           echo "pythonLocation=$GITHUB_WORKSPACE:$pythonLocation" >> $GITHUB_ENV
           echo "PYRE_BINARY=$GITHUB_WORKSPACE/source/_build/default/main.exe" >> $GITHUB_ENV
-          echo "PYRE_TYPESHED=$GITHUB_WORKSPACE/typeshed/typeshed-master/" >> $GITHUB_ENV
+          echo "PYRE_TYPESHED=$GITHUB_WORKSPACE/stubs/typeshed/typeshed/" >> $GITHUB_ENV
 
       - name: Run and test pysa output
         run: |
