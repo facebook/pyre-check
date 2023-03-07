@@ -287,7 +287,7 @@ def run_test_changed_models(
         "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
         "line": 20,
         "name": "Possible shell injection",
-        "path": "lru_cache_test.py",
+        "path": "fixture_source/integration_test/lru_cache_test.py",
         "stop_column": 18,
         "stop_line": 20,
     }
