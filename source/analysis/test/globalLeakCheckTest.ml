@@ -259,12 +259,26 @@ let test_list_global_leaks context =
     [];
   assert_global_leak_errors
     {|
+      def foo():
+        my_local = []
+        my_local[:] = [1,2]
+    |}
+    [];
+  assert_global_leak_errors
+    {|
       my_global: List[int] = []
       def foo():
         my_local = []
         my_local.append
     |}
     [];
+  assert_global_leak_errors
+    {|
+      my_global: List[int] = []
+      def foo():
+        my_global[:] = [1,2]
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -419,6 +433,23 @@ let test_list_global_leaks context =
 
 let test_dict_global_leaks context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
+  assert_global_leak_errors
+    {|
+      def foo():
+        my_local: Dict[str, int] = {}
+        my_loca[str(1)] = 1
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
+      def foo():
+        my_global[str(1)] = 1
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
+       int]`.";
+    ];
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -689,7 +720,25 @@ let test_object_global_leaks context =
       MyClass.x = 2
     |}
     [ (* TODO (T142189949): leaks should be detected on class attribute mutations *) ];
+  assert_global_leak_errors
+    {|
+      class MyClass:
+        x: int
+        def __init__(self, x: int) -> None:
+          object.__setattr__(self, "x", x)
 
+      myclass = MyClass(1)
+    |}
+    [];
+  assert_global_leak_errors
+    {|
+      class MyClass(dict):
+        def __init__(self, x: int) -> None:
+          super().__setitem__("x", 1)
+
+      myclass = MyClass(1)
+    |}
+    [];
   ()
 
 

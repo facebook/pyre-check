@@ -98,7 +98,7 @@ module State (Context : Context) = struct
     match value with
     (* interesting cases *)
     | Expression.Name (Name.Identifier target) ->
-        if is_mutable_expression then
+        if is_mutable_expression && not (Scope.Builtins.mem target) then
           error_on_global_target ~location target
     | Name (Name.Attribute { base; attribute; _ }) ->
         let is_mutable_expression =
@@ -170,7 +170,8 @@ module State (Context : Context) = struct
     =
     let forward_assignment_target = forward_assignment_target ~error_on_global_target ~resolution in
     match value with
-    | Expression.Name (Name.Identifier target) -> error_on_global_target ~location target
+    | Expression.Name (Name.Identifier target) ->
+        if not (Scope.Builtins.mem target) then error_on_global_target ~location target
     | Name (Name.Attribute { base; _ }) -> forward_assignment_target base
     | Call _ ->
         forward_expression
