@@ -6,10 +6,12 @@
 import abc
 import enum
 import json
-import sys
+import keyword
 import os
+import sys
 from collections import defaultdict, deque
 from dataclasses import dataclass
+from pathlib import Path
 from typing import (
     cast,
     Collection,
@@ -19,21 +21,16 @@ from typing import (
     Optional,
     Set,
     TextIO,
-    Union,
     Tuple,
+    Union,
 )
-from pathlib import Path
-
-from ..client import (
-    daemon_socket,
-    find_directories,
-    identifiers,
-)
-from ..client.commands import daemon_query
-from ..client.language_server import connections
 
 import click
 from typing_extensions import TypeAlias
+
+from ..client import daemon_socket, find_directories, identifiers
+from ..client.commands import daemon_query
+from ..client.language_server import connections
 
 
 Trace: TypeAlias = List[str]
@@ -310,8 +307,14 @@ class CallGraph:
         return transitive_callees
 
     @staticmethod
+    def is_valid_callee(callee: str) -> bool:
+        components = callee.strip().split(".")
+        is_valid_callee = all(component.isidentifier() and not keyword.iskeyword(component) for component in components)
+        return is_valid_callee
+
+    @staticmethod
     def prepare_issues_for_query(callees: Collection[str]) -> str:
-        single_callee_query = [f"global_leaks({callee})" for callee in callees]
+        single_callee_query = [f"global_leaks({callee})" for callee in callees if CallGraph.is_valid_callee(callee)]
         return "batch(" + ", ".join(single_callee_query) + ")"
 
     @staticmethod
