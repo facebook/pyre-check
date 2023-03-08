@@ -127,7 +127,14 @@ if sys.version_info >= (3, 11):
     ]
 
 ContextManager = AbstractContextManager
-AsyncContextManager = AbstractAsyncContextManager
+
+@runtime_checkable
+class AsyncContextManager(Protocol[_T_co]):
+    async def __aenter__(self) -> _T_co: ...
+    @abstractmethod
+    async def __aexit__(
+        self, __exc_type: Type[BaseException] | None, __exc_value: BaseException | None, __traceback: TracebackType | None
+    ) -> bool | None: ...
 
 # This itself is only available during type checking
 def type_check_only(func_or_cls: _F) -> _F: ...
