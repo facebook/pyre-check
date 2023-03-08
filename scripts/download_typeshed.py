@@ -252,22 +252,6 @@ def download_typeshed(url: str) -> io.BytesIO:
     return downloaded
 
 
-def write_output_to_zip(
-    patched_typeshed: PatchedTypeshed,
-    output_zip_path: str,
-) -> None:
-    with zipfile.ZipFile(output_zip_path, mode="w") as output_file:
-        for patch_result in patched_typeshed.results:
-            data = patch_result.entry.data
-            if data is not None:
-                output_file.writestr(patch_result.entry.path, data)
-            else:
-                # Zipfile uses trailing `/` to determine if the file is a directory.
-                output_file.writestr(f"{patch_result.entry.path}/", bytes())
-                if patch_result.failed:
-                    LOG.warning(f"Failed to apply patch to {patch_result.entry.path}!")
-
-
 def write_output_to_directory(
     patched_typeshed: PatchedTypeshed,
     output_directory_path: Path,
@@ -338,12 +322,6 @@ def main() -> None:
         type=str,
         help="Where the .patch files for amending typeshed are located.",
     )
-    parser.add_argument(
-        "-d",
-        "--as-directory",
-        action="store_true",
-        help="Write the contents to a directory instead of a zip file.",
-    )
     parser.set_defaults(as_directory=False)
     arguments = parser.parse_args()
     logging.basicConfig(
@@ -359,12 +337,8 @@ def main() -> None:
     patched_typeshed = PatchedTypeshed.from_trimmed_typeshed(
         patch_directory, trimmed_typeshed
     )
-    if arguments.as_directory:
-        write_output_to_directory(patched_typeshed, Path(arguments.output), url)
-        LOG.info(f"Patched typeshed directory written to {arguments.output}")
-    else:
-        write_output_to_zip(patched_typeshed, arguments.output)
-        LOG.info(f"Patched typeshed zip written to {arguments.output}")
+    write_output_to_directory(patched_typeshed, Path(arguments.output), url)
+    LOG.info(f"Patched typeshed directory written to {arguments.output}")
 
 
 if __name__ == "__main__":
