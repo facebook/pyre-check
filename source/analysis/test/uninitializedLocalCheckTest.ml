@@ -146,7 +146,6 @@ let test_simple context =
             self.a = b
     |}
     [];
-
   assert_uninitialized_errors
     {|
       class A:
@@ -154,22 +153,11 @@ let test_simple context =
           def meth(self) -> None: ...
 
       def f():
-        A(x=x)
-        x = 5
-    |}
-    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
-  (* TODO(T147373658): reads inside of attribute.base calls. Compare with the test case above *)
-  assert_uninitialized_errors
-    {|
-      class A:
-          def __init__(self, x: int) -> None: ...
-          def meth(self) -> None: ...
-
-      def f():
+        # Make sure we catch problems in chained calls
         A(x=x).meth()
         x = 5
     |}
-    [];
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
 
   (* TODO (T94201165): walrus operator same-expression false negative *)
   assert_uninitialized_errors {|

@@ -51,9 +51,13 @@ module AccessCollector = struct
     | Name (Name.Identifier identifier) ->
         (* For simple names, add them to the result *)
         Set.add collected { Define.NameAccess.name = identifier; location = expression_location }
-    | Name (Name.Attribute _) ->
-        (* For attribute access, we currently skip *)
-        collected
+    | Name (Name.Attribute { Name.Attribute.base; _ }) -> (
+        (* We want to recursively collect attribute access in base expressions of attribute lookups,
+           but we have to short-circuit identifiers because, due to qualification, we aren't able to
+           reliably distinguish attribute access on locals from globals. (see T94414920) *)
+        match base.value with
+        | Name (Name.Identifier _) -> collected
+        | _ -> from_expression collected base)
     (* The rest is boilerplates to make sure that expressions are visited recursively *)
     | Await await -> from_expression collected await
     | BooleanOperator { BooleanOperator.left; right; _ }
