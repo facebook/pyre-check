@@ -176,6 +176,20 @@ let test_simple context =
         _ = x.field
         x = Foo()
     |} [];
+  (* TODO(T94414920): binary operators desugar into method calls, which under the hood are attribute
+     reads *)
+  assert_uninitialized_errors
+    {|
+      def test_method() -> None:
+        try:
+          a = 5
+        except Exception:
+          print("Exception!")
+        finally:
+          b = a + 5
+          print(b)
+    |}
+    [];
 
   assert_uninitialized_errors
     {|
