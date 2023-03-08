@@ -1,26 +1,26 @@
---- /tmp/tmp.WybugLPWzf/typeshed-master/stdlib/unpatched-builtins.pyi	2023-02-03 08:40:49.037090640 -0800
-+++ /tmp/tmp.WybugLPWzf/typeshed-master/stdlib/builtins.pyi	2023-02-03 09:27:06.025389744 -0800
-@@ -55,6 +55,7 @@
-     overload,
+--- a/stdlib/builtins.pyi
++++ b/stdlib/builtins.pyi
+@@ -55,6 +55,7 @@ from typing import (  # noqa: Y022
+     type_check_only,
  )
- from typing_extensions import Literal, LiteralString, SupportsIndex, TypeAlias, TypeGuard, final
+ from typing_extensions import Literal, LiteralString, Self, SupportsIndex, TypeAlias, TypeGuard, final
 +from pyre_extensions import Add, Multiply, Divide, ReadOnly
- 
+
  if sys.version_info >= (3, 9):
      from types import GenericAlias
-@@ -75,6 +76,8 @@
+@@ -75,6 +76,8 @@ _SupportsNextT = TypeVar("_SupportsNextT", bound=SupportsNext[Any], covariant=Tr
  _SupportsAnextT = TypeVar("_SupportsAnextT", bound=SupportsAnext[Any], covariant=True)
  _AwaitableT = TypeVar("_AwaitableT", bound=Awaitable[Any])
  _AwaitableT_co = TypeVar("_AwaitableT_co", bound=Awaitable[Any], covariant=True)
 +N1 = TypeVar("N1", bound=int)
 +N2 = TypeVar("N2", bound=int)
- 
+
  class object:
      __doc__: str | None
-@@ -238,10 +241,10 @@
-             signed: bool = ...,
+@@ -242,10 +245,10 @@ class int:
+             signed: bool = False,
          ) -> Self: ...
- 
+
 -    def __add__(self, __x: int) -> int: ...
 -    def __sub__(self, __x: int) -> int: ...
 -    def __mul__(self, __x: int) -> int: ...
@@ -32,23 +32,23 @@
      def __truediv__(self, __x: int) -> float: ...
      def __mod__(self, __x: int) -> int: ...
      def __divmod__(self, __x: int) -> tuple[int, int]: ...
-@@ -1046,7 +1049,7 @@
-     def __getitem__(self, __k: _KT) -> _VT: ...
-     def __setitem__(self, __k: _KT, __v: _VT) -> None: ...
-     def __delitem__(self, __v: _KT) -> None: ...
+@@ -1062,7 +1065,7 @@ class dict(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
+     def __getitem__(self, __key: _KT) -> _VT: ...
+     def __setitem__(self, __key: _KT, __value: _VT) -> None: ...
+     def __delitem__(self, __key: _KT) -> None: ...
 -    def __iter__(self) -> Iterator[_KT]: ...
 +    def __iter__(self: ReadOnly[object]) -> Iterator[_KT]: ...
      if sys.version_info >= (3, 8):
          def __reversed__(self) -> Iterator[_KT]: ...
      __hash__: ClassVar[None]  # type: ignore[assignment]
-@@ -1778,6 +1781,10 @@
+@@ -1865,6 +1868,11 @@ class BaseException:
          __notes__: list[str]
          def add_note(self, __note: str) -> None: ...
- 
+
 +    # Define `__str__` and `__repr__` explicitly so pysa can mark them as sources.
 +    def __str__(self) -> str: ...  # noqa: Y029
 +    def __repr__(self) -> str: ...  # noqa: Y029
 +
++
  class GeneratorExit(BaseException): ...
  class KeyboardInterrupt(BaseException): ...
- 

@@ -1,6 +1,7 @@
-from _typeshed import Self
+from _typeshed import Incomplete
 from types import TracebackType
 from typing import Any, ClassVar, Protocol
+from typing_extensions import Self
 
 from redis.client import Redis
 
@@ -11,9 +12,9 @@ class Lock:
     LUA_EXTEND_SCRIPT: ClassVar[str]
     LUA_REACQUIRE_SCRIPT: ClassVar[str]
     LUA_RELEASE_SCRIPT: ClassVar[str]
-    lua_extend: ClassVar[Any | None]
-    lua_reacquire: ClassVar[Any | None]
-    lua_release: ClassVar[Any | None]
+    lua_extend: ClassVar[Incomplete | None]
+    lua_reacquire: ClassVar[Incomplete | None]
+    lua_release: ClassVar[Incomplete | None]
     local: _Local
     def __init__(
         self,
@@ -26,7 +27,7 @@ class Lock:
         thread_local: bool = ...,
     ) -> None: ...
     def register_scripts(self) -> None: ...
-    def __enter__(self: Self) -> Self: ...
+    def __enter__(self) -> Self: ...
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
     ) -> bool | None: ...

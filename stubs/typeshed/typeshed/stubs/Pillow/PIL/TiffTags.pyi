@@ -1,4 +1,5 @@
-from typing import Any, NamedTuple, Union
+from _typeshed import Incomplete
+from typing import Any, NamedTuple
 from typing_extensions import Literal, TypeAlias
 
 class _TagInfo(NamedTuple):
@@ -11,7 +12,7 @@ class _TagInfo(NamedTuple):
 class TagInfo(_TagInfo):
     def __new__(
         cls,
-        value: Any | None = ...,
+        value: Incomplete | None = ...,
         name: str = ...,
         type: _TagType | None = ...,
         length: int | None = ...,
@@ -36,7 +37,7 @@ DOUBLE: Literal[12]
 IFD: Literal[13]
 
 _TagType: TypeAlias = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-_TagTuple: TypeAlias = Union[tuple[str, _TagType, int], tuple[str, _TagInfo, int, dict[str, int]]]
+_TagTuple: TypeAlias = tuple[str, _TagType, int] | tuple[str, _TagInfo, int, dict[str, int]]
 
 TAGS_V2: dict[int, _TagTuple]
 TAGS_V2_GROUPS: dict[int, dict[int, _TagTuple]]

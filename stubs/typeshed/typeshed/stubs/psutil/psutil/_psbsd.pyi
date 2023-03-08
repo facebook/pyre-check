@@ -1,7 +1,8 @@
+from _typeshed import Incomplete
 from contextlib import AbstractContextManager
 from typing import Any, NamedTuple
 
-from ._common import (
+from psutil._common import (
     FREEBSD as FREEBSD,
     NETBSD as NETBSD,
     OPENBSD as OPENBSD,
@@ -26,17 +27,17 @@ HAS_PROC_NUM_FDS: Any
 kinfo_proc_map: Any
 
 class svmem(NamedTuple):
-    total: Any
-    available: Any
-    percent: Any
-    used: Any
-    free: Any
-    active: Any
-    inactive: Any
-    buffers: Any
-    cached: Any
-    shared: Any
-    wired: Any
+    total: int
+    available: int
+    percent: float
+    used: int
+    free: int
+    active: int
+    inactive: int
+    buffers: int
+    cached: int
+    shared: int
+    wired: int
 
 class scputimes(NamedTuple):
     user: Any
@@ -85,7 +86,7 @@ class sdiskio(NamedTuple):
     write_time: Any
     busy_time: Any
 
-def virtual_memory(): ...
+def virtual_memory() -> svmem: ...
 def swap_memory(): ...
 def cpu_times(): ...
 def per_cpu_times(): ...
@@ -135,7 +136,7 @@ class Process:
     def num_ctx_switches(self): ...
     def threads(self): ...
     def connections(self, kind: str = ...): ...
-    def wait(self, timeout: Any | None = ...): ...
+    def wait(self, timeout: Incomplete | None = ...): ...
     def nice_get(self): ...
     def nice_set(self, value): ...
     def status(self): ...
@@ -162,4 +163,4 @@ class Process:
     def cpu_affinity_get(self): ...
     def cpu_affinity_set(self, cpus) -> None: ...
     def memory_maps(self): ...
-    def rlimit(self, resource, limits: Any | None = ...): ...
+    def rlimit(self, resource, limits: Incomplete | None = ...): ...

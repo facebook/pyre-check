@@ -1,8 +1,11 @@
-from _typeshed import Self, SupportsRead, SupportsWrite
+from _typeshed import Incomplete, SupportsRead, SupportsWrite, Unused
 from collections.abc import Callable, Iterable, Iterator, MutableMapping, Sequence
+from enum import IntEnum
 from pathlib import Path
-from typing import Any, ClassVar, Protocol, SupportsBytes, Union
-from typing_extensions import Literal, TypeAlias
+from typing import Any, ClassVar, Protocol, SupportsBytes
+from typing_extensions import Literal, Self, TypeAlias
+
+from PIL.PyAccess import PyAccess
 
 from ._imaging import (
     DEFAULT_STRATEGY as DEFAULT_STRATEGY,
@@ -19,29 +22,40 @@ _Resample: TypeAlias = Literal[0, 1, 2, 3, 4, 5]
 _Size: TypeAlias = tuple[int, int]
 _Box: TypeAlias = tuple[int, int, int, int]
 
-_ConversionMatrix: TypeAlias = Union[
-    tuple[float, float, float, float], tuple[float, float, float, float, float, float, float, float, float, float, float, float],
-]
+_ConversionMatrix: TypeAlias = (
+    tuple[float, float, float, float] | tuple[float, float, float, float, float, float, float, float, float, float, float, float]
+)
 # `str` values are only accepted if mode="RGB" for an `Image` object
 # `float` values are only accepted for certain modes such as "F"
 # See https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.new
-_Color: TypeAlias = Union[int, tuple[int], tuple[int, int, int], tuple[int, int, int, int], str, float, tuple[float]]
+_Color: TypeAlias = int | tuple[int] | tuple[int, int, int] | tuple[int, int, int, int] | str | float | tuple[float]
 
 class _Writeable(SupportsWrite[bytes], Protocol):
     def seek(self, __offset: int) -> Any: ...
 
-# obsolete
-NORMAL: Literal[0]
-SEQUENCE: Literal[1]
-CONTAINER: Literal[2]
+NORMAL: Literal[0]  # deprecated
+SEQUENCE: Literal[1]  # deprecated
+CONTAINER: Literal[2]  # deprecated
 
 class DecompressionBombWarning(RuntimeWarning): ...
 class DecompressionBombError(Exception): ...
 
-MAX_IMAGE_PIXELS: int
+MAX_IMAGE_PIXELS: int | None
 
-NONE: Literal[0]
+LINEAR: Literal[Resampling.BILINEAR]  # deprecated
+CUBIC: Literal[Resampling.BICUBIC]  # deprecated
+ANTIALIAS: Literal[Resampling.LANCZOS]  # deprecated
 
+class Transpose(IntEnum):
+    FLIP_LEFT_RIGHT: Literal[0]
+    FLIP_TOP_BOTTOM: Literal[1]
+    ROTATE_90: Literal[2]
+    ROTATE_180: Literal[3]
+    ROTATE_270: Literal[4]
+    TRANSPOSE: Literal[5]
+    TRANSVERSE: Literal[6]
+
+# All Transpose items
 FLIP_LEFT_RIGHT: Literal[0]
 FLIP_TOP_BOTTOM: Literal[1]
 ROTATE_90: Literal[2]
@@ -50,29 +64,63 @@ ROTATE_270: Literal[4]
 TRANSPOSE: Literal[5]
 TRANSVERSE: Literal[6]
 
+class Transform(IntEnum):
+    AFFINE: Literal[0]
+    EXTENT: Literal[1]
+    PERSPECTIVE: Literal[2]
+    QUAD: Literal[3]
+    MESH: Literal[4]
+
+# All Transform items
 AFFINE: Literal[0]
 EXTENT: Literal[1]
 PERSPECTIVE: Literal[2]
 QUAD: Literal[3]
 MESH: Literal[4]
 
-NEAREST: Literal[0]
-BOX: Literal[4]
-BILINEAR: Literal[2]
-LINEAR: Literal[2]
-HAMMING: Literal[5]
-BICUBIC: Literal[3]
-CUBIC: Literal[3]
-LANCZOS: Literal[1]
-ANTIALIAS: Literal[1]
+class Resampling(IntEnum):
+    NEAREST: Literal[0]
+    LANCZOS: Literal[1]
+    BILINEAR: Literal[2]
+    BICUBIC: Literal[3]
+    BOX: Literal[4]
+    HAMMING: Literal[5]
 
+# All Resampling items
+NEAREST: Literal[0]
+LANCZOS: Literal[1]
+BILINEAR: Literal[2]
+BICUBIC: Literal[3]
+BOX: Literal[4]
+HAMMING: Literal[5]
+
+class Dither(IntEnum):
+    NONE: Literal[0]
+    ORDERED: Literal[1]
+    RASTERIZE: Literal[2]
+    FLOYDSTEINBERG: Literal[3]
+
+# All Dither items
+NONE: Literal[0]
 ORDERED: Literal[1]
 RASTERIZE: Literal[2]
 FLOYDSTEINBERG: Literal[3]
 
+class Palette(IntEnum):
+    WEB: Literal[0]
+    ADAPTIVE: Literal[1]
+
+# All Palette items
 WEB: Literal[0]
 ADAPTIVE: Literal[1]
 
+class Quantize(IntEnum):
+    MEDIANCUT: Literal[0]
+    MAXCOVERAGE: Literal[1]
+    FASTOCTREE: Literal[2]
+    LIBIMAGEQUANT: Literal[3]
+
+# All Quantize items
 MEDIANCUT: Literal[0]
 MAXCOVERAGE: Literal[1]
 FASTOCTREE: Literal[2]
@@ -112,17 +160,19 @@ class Image:
     palette: Any
     info: dict[Any, Any]
     readonly: int
-    pyaccess: Any
+    pyaccess: PyAccess | None
     is_animated: bool  # not present on all Image objects
     n_frames: int  # not present on all Image objects
+    # Only defined after a call to save().
+    encoderconfig: tuple[Incomplete, ...]
     @property
     def width(self) -> int: ...
     @property
     def height(self) -> int: ...
     @property
     def size(self) -> tuple[int, int]: ...
-    def __enter__(self: Self) -> Self: ...
-    def __exit__(self, *args: object) -> None: ...
+    def __enter__(self) -> Self: ...
+    def __exit__(self, *args: Unused) -> None: ...
     def close(self) -> None: ...
     def __eq__(self, other: object) -> bool: ...
     def __getstate__(self) -> _ImageState: ...
@@ -137,13 +187,13 @@ class Image:
         mode: _Mode | None = ...,
         matrix: _ConversionMatrix | None = ...,
         dither: int | None = ...,
-        palette: Literal[0, 1] = ...,
+        palette: Palette | Literal[0, 1] = ...,
         colors: int = ...,
     ) -> Image: ...
     def quantize(
         self,
         colors: int = ...,
-        method: Literal[0, 1, 2, 3] | None = ...,
+        method: Quantize | Literal[0, 1, 2, 3] | None = ...,
         kmeans: int = ...,
         palette: Image | None = ...,
         dither: int = ...,
@@ -159,6 +209,7 @@ class Image:
     def getdata(self, band: int | None = ...): ...
     def getextrema(self): ...
     def getexif(self) -> Exif: ...
+    def get_child_images(self) -> list[Image]: ...
     def getim(self): ...
     def getpalette(self, rawmode: str | None = ...) -> list[int] | None: ...
     def getpixel(self, xy: tuple[int, int]): ...
@@ -176,7 +227,7 @@ class Image:
     def resize(
         self,
         size: tuple[int, int],
-        resample: _Resample | None = ...,
+        resample: Resampling | _Resample | None = ...,
         box: tuple[float, float, float, float] | None = ...,
         reducing_gap: float | None = ...,
     ) -> Image: ...
@@ -184,7 +235,7 @@ class Image:
     def rotate(
         self,
         angle: float,
-        resample: _Resample = ...,
+        resample: Resampling | _Resample = ...,
         expand: bool = ...,
         center: tuple[float, float] | None = ...,
         translate: tuple[float, float] | None = ...,
@@ -197,6 +248,7 @@ class Image:
         *,
         save_all: bool = ...,
         bitmap_format: Literal["bmp", "png"] = ...,  # for ICO files
+        optimize: bool = ...,
         **params: Any,
     ) -> None: ...
     def seek(self, frame: int) -> None: ...
@@ -204,17 +256,17 @@ class Image:
     def split(self) -> tuple[Image, ...]: ...
     def getchannel(self, channel: int | str) -> Image: ...
     def tell(self) -> int: ...
-    def thumbnail(self, size: tuple[int, int], resample: _Resample = ..., reducing_gap: float = ...) -> None: ...
+    def thumbnail(self, size: tuple[int, int], resample: Resampling | _Resample = ..., reducing_gap: float = ...) -> None: ...
     def transform(
         self,
         size: _Size,
-        method: Literal[0, 1, 2, 3, 4],
+        method: Transform | Literal[0, 1, 2, 3, 4],
         data=...,
-        resample: _Resample = ...,
+        resample: Resampling | _Resample = ...,
         fill: int = ...,
         fillcolor: _Color | int | None = ...,
     ) -> Image: ...
-    def transpose(self, method: Literal[0, 1, 2, 3, 4, 5, 6]) -> Image: ...
+    def transpose(self, method: Transpose | Literal[0, 1, 2, 3, 4, 5, 6]) -> Image: ...
     def effect_spread(self, distance: int) -> Image: ...
     def toqimage(self): ...
     def toqpixmap(self): ...
@@ -254,6 +306,7 @@ class Exif(MutableMapping[int, Any]):
     def load(self, data: bytes) -> None: ...
     def tobytes(self, offset: int = ...) -> bytes: ...
     def get_ifd(self, tag: int): ...
+    def hide_offsets(self) -> None: ...
     def __len__(self) -> int: ...
     def __getitem__(self, tag: int) -> Any: ...
     def __contains__(self, tag: object) -> bool: ...

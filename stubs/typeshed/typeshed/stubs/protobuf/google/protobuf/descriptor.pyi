@@ -1,3 +1,4 @@
+from _typeshed import Incomplete
 from typing import Any
 
 from .descriptor_pb2 import (
@@ -16,7 +17,7 @@ class Error(Exception): ...
 class TypeTransformationError(Error): ...
 
 class DescriptorMetaclass(type):
-    def __instancecheck__(self, obj): ...
+    def __instancecheck__(self, obj: Any) -> bool: ...
 
 _internal_create_key: object
 
@@ -60,6 +61,27 @@ class Descriptor(_NestedDescriptorBase):
     oneofs: Any
     oneofs_by_name: Any
     syntax: Any
+    def __init__(
+        self,
+        name: str,
+        full_name: str,
+        filename: Any,
+        containing_type: Descriptor | None,
+        fields: list[FieldDescriptor],
+        nested_types: list[FieldDescriptor],
+        enum_types: list[EnumDescriptor],
+        extensions: list[FieldDescriptor],
+        options: Incomplete | None = ...,
+        serialized_options: Incomplete | None = ...,
+        is_extendable: bool | None = ...,
+        extension_ranges: Incomplete | None = ...,
+        oneofs: list[OneofDescriptor] | None = ...,
+        file: FileDescriptor | None = ...,
+        serialized_start: Incomplete | None = ...,
+        serialized_end: Incomplete | None = ...,
+        syntax: str | None = ...,
+        create_key: Incomplete | None = ...,
+    ): ...
     def EnumValueName(self, enum, value): ...
     def CopyToProto(self, proto): ...
     def GetOptions(self) -> MessageOptions: ...
@@ -227,6 +249,19 @@ class ServiceDescriptor(_NestedDescriptorBase):
     index: Any
     methods: Any
     methods_by_name: Any
+    def __init__(
+        self,
+        name: str,
+        full_name: str,
+        index: int,
+        methods: list[MethodDescriptor],
+        options: ServiceOptions | None = ...,
+        serialized_options: Incomplete | None = ...,
+        file: FileDescriptor | None = ...,
+        serialized_start: Incomplete | None = ...,
+        serialized_end: Incomplete | None = ...,
+        create_key: Incomplete | None = ...,
+    ): ...
     def FindMethodByName(self, name): ...
     def CopyToProto(self, proto): ...
     def GetOptions(self) -> ServiceOptions: ...
@@ -240,6 +275,8 @@ class MethodDescriptor(DescriptorBase):
         containing_service,
         input_type,
         output_type,
+        client_streaming=...,
+        server_streaming=...,
         options=...,
         serialized_options=...,
         create_key=...,
@@ -250,6 +287,8 @@ class MethodDescriptor(DescriptorBase):
     containing_service: Any
     input_type: Any
     output_type: Any
+    client_streaming: bool
+    server_streaming: bool
     def __init__(
         self,
         name,
@@ -258,6 +297,8 @@ class MethodDescriptor(DescriptorBase):
         containing_service,
         input_type,
         output_type,
+        client_streaming=...,
+        server_streaming=...,
         options=...,
         serialized_options=...,
         create_key=...,

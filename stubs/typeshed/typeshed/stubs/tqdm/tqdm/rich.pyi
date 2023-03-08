@@ -1,13 +1,20 @@
 from _typeshed import Incomplete, SupportsWrite
+from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping
-from typing import Any, Generic, NoReturn, TypeVar, overload
-from typing_extensions import TypeAlias
+from typing import Generic, NoReturn, TypeVar, overload
 
 from .std import tqdm as std_tqdm
 
 __all__ = ["tqdm_rich", "trrange", "tqdm", "trange"]
 
-_ProgressColumn: TypeAlias = Any  # Actually rich.progress.ProgressColumn
+# Actually rich.progress.ProgressColumn
+class _ProgressColumn(ABC):
+    max_refresh: float | None
+    def __init__(self, table_column: Incomplete | None = ...) -> None: ...
+    def get_table_column(self) -> Incomplete: ...
+    def __call__(self, task: Incomplete) -> Incomplete: ...
+    @abstractmethod
+    def render(self, task: Incomplete) -> Incomplete: ...
 
 class FractionColumn(_ProgressColumn):
     unit_scale: bool
@@ -37,14 +44,14 @@ class tqdm_rich(Generic[_T], std_tqdm[_T]):
         iterable: Iterable[_T],
         desc: str | None = ...,
         total: float | None = ...,
-        leave: bool = ...,
+        leave: bool | None = ...,
         file: SupportsWrite[str] | None = ...,
         ncols: int | None = ...,
         mininterval: float = ...,
         maxinterval: float = ...,
         miniters: float | None = ...,
         ascii: bool | str | None = ...,
-        disable: bool = ...,
+        disable: bool | None = ...,
         unit: str = ...,
         unit_scale: bool | float = ...,
         dynamic_ncols: bool = ...,
@@ -68,14 +75,14 @@ class tqdm_rich(Generic[_T], std_tqdm[_T]):
         iterable: None = ...,
         desc: str | None = ...,
         total: float | None = ...,
-        leave: bool = ...,
+        leave: bool | None = ...,
         file: SupportsWrite[str] | None = ...,
         ncols: int | None = ...,
         mininterval: float = ...,
         maxinterval: float = ...,
         miniters: float | None = ...,
         ascii: bool | str | None = ...,
-        disable: bool = ...,
+        disable: bool | None = ...,
         unit: str = ...,
         unit_scale: bool | float = ...,
         dynamic_ncols: bool = ...,

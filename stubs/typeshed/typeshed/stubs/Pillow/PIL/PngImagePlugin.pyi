@@ -1,3 +1,5 @@
+from _typeshed import Incomplete, Unused
+from enum import IntEnum
 from typing import Any, ClassVar
 from typing_extensions import Literal
 
@@ -8,11 +10,22 @@ logger: Any
 is_cid: Any
 MAX_TEXT_CHUNK: Any
 MAX_TEXT_MEMORY: Any
-APNG_DISPOSE_OP_NONE: int
-APNG_DISPOSE_OP_BACKGROUND: int
-APNG_DISPOSE_OP_PREVIOUS: int
-APNG_BLEND_OP_SOURCE: int
-APNG_BLEND_OP_OVER: int
+
+class Disposal(IntEnum):
+    OP_NONE: int
+    OP_BACKGROUND: int
+    OP_PREVIOUS: int
+
+APNG_DISPOSE_OP_NONE: Literal[Disposal.OP_NONE]
+APNG_DISPOSE_OP_BACKGROUND: Literal[Disposal.OP_BACKGROUND]
+APNG_DISPOSE_OP_PREVIOUS: Literal[Disposal.OP_PREVIOUS]
+
+class Blend(IntEnum):
+    OP_SOURCE: int
+    OP_OVER: int
+
+APNG_BLEND_OP_SOURCE: Literal[Blend.OP_SOURCE]
+APNG_BLEND_OP_OVER: Literal[Blend.OP_OVER]
 
 class ChunkStream:
     fp: Any
@@ -20,7 +33,7 @@ class ChunkStream:
     def __init__(self, fp) -> None: ...
     def read(self): ...
     def __enter__(self): ...
-    def __exit__(self, *args) -> None: ...
+    def __exit__(self, *args: Unused) -> None: ...
     def close(self) -> None: ...
     def push(self, cid, pos, length) -> None: ...
     def call(self, cid, pos, length): ...
@@ -32,7 +45,7 @@ class iTXt(str):
     lang: Any
     tkey: Any
     @staticmethod
-    def __new__(cls, text, lang: Any | None = ..., tkey: Any | None = ...): ...
+    def __new__(cls, text, lang: Incomplete | None = ..., tkey: Incomplete | None = ...): ...
 
 class PngInfo:
     chunks: Any

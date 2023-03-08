@@ -1,16 +1,17 @@
+import sys
+from _typeshed import Incomplete
 from collections.abc import Sequence
 from socket import socket
 from typing import Any
 
+from waitress import wasyncore
 from waitress.adjustments import Adjustments
 from waitress.channel import HTTPChannel
 from waitress.task import Task, ThreadedTaskDispatcher
 
-from . import wasyncore
-
 def create_server(
     application: Any,
-    map: Any | None = ...,
+    map: Incomplete | None = ...,
     _start: bool = ...,
     _sock: socket | None = ...,
     _dispatcher: ThreadedTaskDispatcher | None = ...,
@@ -25,7 +26,7 @@ class MultiSocketServer:
     task_dispatcher: ThreadedTaskDispatcher = ...
     def __init__(
         self,
-        map: Any | None = ...,
+        map: Incomplete | None = ...,
         adj: Adjustments | None = ...,
         effective_listen: Sequence[tuple[str, int]] | None = ...,
         dispatcher: ThreadedTaskDispatcher | None = ...,
@@ -51,12 +52,12 @@ class BaseWSGIServer(wasyncore.dispatcher):
     def __init__(
         self,
         application: Any,
-        map: Any | None = ...,
+        map: Incomplete | None = ...,
         _start: bool = ...,
-        _sock: Any | None = ...,
+        _sock: Incomplete | None = ...,
         dispatcher: ThreadedTaskDispatcher | None = ...,
         adj: Adjustments | None = ...,
-        sockinfo: Any | None = ...,
+        sockinfo: Incomplete | None = ...,
         bind_socket: bool = ...,
         **kw: Any,
     ) -> None: ...
@@ -84,21 +85,22 @@ class TcpWSGIServer(BaseWSGIServer):
     def getsockname(self) -> tuple[str, tuple[str, int]]: ...
     def set_socket_options(self, conn: socket) -> None: ...
 
-class UnixWSGIServer(BaseWSGIServer):
-    def __init__(
-        self,
-        application: Any,
-        map: Any | None = ...,
-        _start: bool = ...,
-        _sock: Any | None = ...,
-        dispatcher: Any | None = ...,
-        adj: Adjustments | None = ...,
-        sockinfo: Any | None = ...,
-        **kw: Any,
-    ) -> None: ...
-    def bind_server_socket(self) -> None: ...
-    def getsockname(self) -> tuple[str, tuple[str, int]]: ...
-    def fix_addr(self, addr: Any) -> tuple[str, None]: ...
-    def get_server_name(self, ip: Any) -> str: ...
+if sys.platform != "win32":
+    class UnixWSGIServer(BaseWSGIServer):
+        def __init__(
+            self,
+            application: Any,
+            map: Incomplete | None = ...,
+            _start: bool = ...,
+            _sock: Incomplete | None = ...,
+            dispatcher: Incomplete | None = ...,
+            adj: Adjustments | None = ...,
+            sockinfo: Incomplete | None = ...,
+            **kw: Any,
+        ) -> None: ...
+        def bind_server_socket(self) -> None: ...
+        def getsockname(self) -> tuple[str, tuple[str, int]]: ...
+        def fix_addr(self, addr: Any) -> tuple[str, None]: ...
+        def get_server_name(self, ip: Any) -> str: ...
 
 WSGIServer: TcpWSGIServer

@@ -1,9 +1,8 @@
+from _typeshed import Incomplete
 from html.parser import HTMLParser
 from typing import Any
 
 from bs4.builder import HTMLTreeBuilder
-
-class HTMLParseError(Exception): ...
 
 class BeautifulSoupHTMLParser(HTMLParser):
     IGNORE: str
@@ -11,7 +10,6 @@ class BeautifulSoupHTMLParser(HTMLParser):
     on_duplicate_attribute: Any
     already_closed_empty_element: Any
     def __init__(self, *args, **kwargs) -> None: ...
-    def error(self, msg: str) -> None: ...
     def handle_startendtag(self, name, attrs) -> None: ...
     def handle_starttag(self, name, attrs, handle_empty_element: bool = ...) -> None: ...
     def handle_endtag(self, name, check_already_closed: bool = ...) -> None: ...
@@ -30,12 +28,12 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
     features: Any
     TRACKS_LINE_NUMBERS: bool
     parser_args: Any
-    def __init__(self, parser_args: Any | None = ..., parser_kwargs: Any | None = ..., **kwargs) -> None: ...
+    def __init__(self, parser_args: Incomplete | None = ..., parser_kwargs: Incomplete | None = ..., **kwargs) -> None: ...
     def prepare_markup(
         self,
         markup,
-        user_specified_encoding: Any | None = ...,
-        document_declared_encoding: Any | None = ...,
-        exclude_encodings: Any | None = ...,
+        user_specified_encoding: Incomplete | None = ...,
+        document_declared_encoding: Incomplete | None = ...,
+        exclude_encodings: Incomplete | None = ...,
     ) -> None: ...
     def feed(self, markup) -> None: ...

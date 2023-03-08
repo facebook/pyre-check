@@ -1,8 +1,8 @@
 import datetime
-from _typeshed import Self
+from _typeshed import Unused
 from collections.abc import Callable, Iterable, Sequence
 from typing import Any, NoReturn
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Literal, Self, TypeAlias
 
 from google.cloud.ndb import exceptions, key as key_module, query as query_module, tasklets as tasklets_module
 
@@ -27,7 +27,7 @@ class _NotEqualMixin:
 _Direction: TypeAlias = Literal["asc", "desc"]
 
 class IndexProperty(_NotEqualMixin):
-    def __new__(cls: type[Self], name: str, direction: _Direction) -> Self: ...
+    def __new__(cls, name: str, direction: _Direction) -> Self: ...
     @property
     def name(self) -> str: ...
     @property
@@ -36,7 +36,7 @@ class IndexProperty(_NotEqualMixin):
     def __hash__(self) -> int: ...
 
 class Index(_NotEqualMixin):
-    def __new__(cls: type[Self], kind: str, properties: list[IndexProperty], ancestor: bool) -> Self: ...
+    def __new__(cls, kind: str, properties: list[IndexProperty], ancestor: bool) -> Self: ...
     @property
     def kind(self) -> str: ...
     @property
@@ -59,7 +59,7 @@ class IndexState(_NotEqualMixin):
 
 class ModelAdapter:
     # This actually returns NoReturn, but mypy can't handle that
-    def __new__(cls: type[Self], *args, **kwargs) -> Self: ...
+    def __new__(cls, *args, **kwargs) -> Self: ...
 
 def make_connection(*args, **kwargs) -> NoReturn: ...
 
@@ -78,7 +78,7 @@ class Property(ModelAttribute):
         indexed: bool | None = ...,
         repeated: bool | None = ...,
         required: bool | None = ...,
-        default: object | None = ...,
+        default: object = None,
         choices: Iterable[object] | None = ...,
         validator: Callable[[Property, Any], object] | None = ...,
         verbose_name: str | None = ...,
@@ -154,7 +154,7 @@ class JsonProperty(BlobProperty):
         indexed: bool | None = ...,
         repeated: bool | None = ...,
         required: bool | None = ...,
-        default: object | None = ...,
+        default: object = None,
         choices: Iterable[object] | None = ...,
         validator: Callable[[Property, Any], object] | None = ...,
         verbose_name: str | None = ...,
@@ -226,7 +226,7 @@ class TimeProperty(DateTimeProperty): ...
 
 class StructuredProperty(Property):
     def __init__(self, model_class: type, name: str | None = ..., **kwargs) -> None: ...
-    def __getattr__(self, attrname): ...
+    def __getattr__(self, attrname: str): ...
     def IN(self, value: Iterable[object]) -> query_module.DisjunctionNode | query_module.FalseNode: ...
 
 class LocalStructuredProperty(BlobProperty):
@@ -424,7 +424,7 @@ def get_multi_async(
     memcache_timeout: int | None = ...,
     max_memcache_items: int | None = ...,
     force_writes: bool | None = ...,
-    _options: object | None = ...,
+    _options: object = None,
 ) -> list[type[tasklets_module.Future]]: ...
 def get_multi(
     keys: Sequence[type[key_module.Key]],
@@ -442,7 +442,7 @@ def get_multi(
     memcache_timeout: int | None = ...,
     max_memcache_items: int | None = ...,
     force_writes: bool | None = ...,
-    _options: object | None = ...,
+    _options: object = None,
 ) -> list[type[Model] | None]: ...
 def put_multi_async(
     entities: list[type[Model]],
@@ -457,7 +457,7 @@ def put_multi_async(
     memcache_timeout: int | None = ...,
     max_memcache_items: int | None = ...,
     force_writes: bool | None = ...,
-    _options: object | None = ...,
+    _options: object = None,
 ) -> list[tasklets_module.Future]: ...
 def put_multi(
     entities: list[Model],
@@ -472,7 +472,7 @@ def put_multi(
     memcache_timeout: int | None = ...,
     max_memcache_items: int | None = ...,
     force_writes: bool | None = ...,
-    _options: object | None = ...,
+    _options: object = None,
 ) -> list[key_module.Key]: ...
 def delete_multi_async(
     keys: list[key_module.Key],
@@ -487,7 +487,7 @@ def delete_multi_async(
     memcache_timeout: int | None = ...,
     max_memcache_items: int | None = ...,
     force_writes: bool | None = ...,
-    _options: object | None = ...,
+    _options: object = None,
 ) -> list[tasklets_module.Future]: ...
 def delete_multi(
     keys: Sequence[key_module.Key],
@@ -502,7 +502,7 @@ def delete_multi(
     memcache_timeout: int | None = ...,
     max_memcache_items: int | None = ...,
     force_writes: bool | None = ...,
-    _options: object | None = ...,
+    _options: object = None,
 ) -> list[None]: ...
-def get_indexes_async(**options: object) -> NoReturn: ...
-def get_indexes(**options: object) -> NoReturn: ...
+def get_indexes_async(**options: Unused) -> NoReturn: ...
+def get_indexes(**options: Unused) -> NoReturn: ...

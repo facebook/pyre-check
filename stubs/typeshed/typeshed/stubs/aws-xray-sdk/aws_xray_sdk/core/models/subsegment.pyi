@@ -1,4 +1,6 @@
 import time
+from _typeshed import Incomplete
+from types import TracebackType
 from typing import Any
 
 from ...core import AWSXRayRecorder
@@ -17,10 +19,12 @@ class SubsegmentContextManager:
     subsegment_kwargs: dict[str, Any] | None
     recorder: AWSXRayRecorder
     subsegment: Subsegment
-    def __init__(self, recorder: AWSXRayRecorder, name: Any | None = ..., **subsegment_kwargs) -> None: ...
+    def __init__(self, recorder: AWSXRayRecorder, name: Incomplete | None = ..., **subsegment_kwargs) -> None: ...
     def __call__(self, wrapped, instance, args: list[Any], kwargs: dict[str, Any]): ...
     def __enter__(self) -> Subsegment: ...
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None: ...
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> None: ...
 
 class Subsegment(Entity):
     parent_segment: Segment

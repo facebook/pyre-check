@@ -1,3 +1,4 @@
+from _typeshed import Incomplete, Unused
 from collections.abc import Callable
 from typing import Any, ClassVar, TypeVar, overload
 from typing_extensions import TypeAlias
@@ -27,7 +28,7 @@ _DeclarativeBaseMeta: TypeAlias = Callable[[str, tuple[type[Any], ...], dict[str
 def has_inherited_table(cls: type[Any]) -> bool: ...
 
 class DeclarativeMeta(type):
-    def __init__(cls, classname: str, bases: tuple[type[Any], ...], dict_: dict[str, Any], **kw: object) -> None: ...
+    def __init__(cls, classname: str, bases: tuple[type[Any], ...], dict_: dict[str, Any], **kw: Unused) -> None: ...
     def __setattr__(cls, key: str, value: Any) -> None: ...
     def __delattr__(cls, key: str) -> None: ...
 
@@ -49,7 +50,7 @@ def declarative_mixin(cls: _ClsT) -> _ClsT: ...
 def declarative_base(
     bind: Connectable | None = ...,
     metadata: MetaData | None = ...,
-    mapper: Any | None = ...,
+    mapper: Incomplete | None = ...,
     cls: type[Any] | tuple[type[Any], ...] = ...,
     name: str = ...,
     constructor: Callable[..., None] = ...,
@@ -59,7 +60,7 @@ def declarative_base(
 def declarative_base(
     bind: Connectable | None = ...,
     metadata: MetaData | None = ...,
-    mapper: Any | None = ...,
+    mapper: Incomplete | None = ...,
     cls: type[Any] | tuple[type[Any], ...] = ...,
     name: str = ...,
     constructor: Callable[..., None] = ...,
@@ -71,7 +72,7 @@ def declarative_base(
 def declarative_base(
     bind: Connectable | None,
     metadata: MetaData | None,
-    mapper: Any | None,
+    mapper: Incomplete | None,
     cls: type[Any] | tuple[type[Any], ...],
     name: str,
     constructor: Callable[..., None],
@@ -95,12 +96,12 @@ class registry:
     def dispose(self, cascade: bool = ...) -> None: ...
     @overload
     def generate_base(
-        self, mapper: Any | None = ..., cls: type[Any] | tuple[type[Any], ...] = ..., name: str = ...
+        self, mapper: Incomplete | None = ..., cls: type[Any] | tuple[type[Any], ...] = ..., name: str = ...
     ) -> type[_DeclarativeBase]: ...
     @overload
     def generate_base(
         self,
-        mapper: Any | None = ...,
+        mapper: Incomplete | None = ...,
         cls: type[Any] | tuple[type[Any], ...] = ...,
         name: str = ...,
         *,
@@ -108,19 +109,23 @@ class registry:
     ) -> _DeclT: ...
     @overload
     def generate_base(
-        self, mapper: Any | None, cls: type[Any] | tuple[type[Any], ...], name: str, metaclass: _DeclarativeBaseMeta[_DeclT]
+        self,
+        mapper: Incomplete | None,
+        cls: type[Any] | tuple[type[Any], ...],
+        name: str,
+        metaclass: _DeclarativeBaseMeta[_DeclT],
     ) -> type[_DeclarativeBase]: ...
     def mapped(self, cls: _ClsT) -> _ClsT: ...
     # Return type of the callable is a _DeclarativeBase class with the passed in class as base.
     # This could be better approximated with Intersection[PassedInClass, _DeclarativeBase].
     @overload
-    def as_declarative_base(self, *, mapper: Any | None = ...) -> Callable[[_ClsT], _ClsT | DeclarativeMeta | Any]: ...
+    def as_declarative_base(self, *, mapper: Incomplete | None = ...) -> Callable[[_ClsT], _ClsT | DeclarativeMeta | Any]: ...
     @overload
     def as_declarative_base(
-        self, *, mapper: Any | None = ..., metaclass: _DeclarativeBaseMeta[_DeclT]
+        self, *, mapper: Incomplete | None = ..., metaclass: _DeclarativeBaseMeta[_DeclT]
     ) -> Callable[[_ClsT], _ClsT | _DeclT | Any]: ...
     def map_declaratively(self, cls): ...
-    def map_imperatively(self, class_, local_table: Any | None = ..., **kw): ...
+    def map_imperatively(self, class_, local_table: Incomplete | None = ..., **kw): ...
 
 @overload
 def as_declarative(
@@ -128,7 +133,7 @@ def as_declarative(
     bind: Connectable | None = ...,
     metadata: MetaData | None = ...,
     class_registry: dict[str, type[Any]] | None = ...,
-    mapper: Any | None = ...,
+    mapper: Incomplete | None = ...,
 ) -> Callable[[_ClsT], _ClsT | DeclarativeMeta | Any]: ...
 @overload
 def as_declarative(
@@ -136,6 +141,6 @@ def as_declarative(
     bind: Connectable | None = ...,
     metadata: MetaData | None = ...,
     class_registry: dict[str, type[Any]] | None = ...,
-    mapper: Any | None = ...,
+    mapper: Incomplete | None = ...,
     metaclass: _DeclarativeBaseMeta[_DeclT],
 ) -> Callable[[_ClsT], _ClsT | _DeclT | Any]: ...

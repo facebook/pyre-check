@@ -1,8 +1,9 @@
 import contextlib
 import enum
-from _typeshed import Self
+import sys
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, ClassVar
+from typing_extensions import Self
 
 from pynput._util import AbstractListener
 
@@ -15,13 +16,13 @@ class KeyCode:
     def __init__(self, vk: str | None = ..., char: str | None = ..., is_dead: bool = ..., **kwargs: str) -> None: ...
     def __eq__(self, other: object) -> bool: ...
     def __hash__(self) -> int: ...
-    def join(self: Self, key: Self) -> Self: ...
+    def join(self, key: Self) -> Self: ...
     @classmethod
-    def from_vk(cls: type[Self], vk: int, **kwargs: Any) -> Self: ...
+    def from_vk(cls, vk: int, **kwargs: Any) -> Self: ...
     @classmethod
-    def from_char(cls: type[Self], char: str, **kwargs: Any) -> Self: ...
+    def from_char(cls, char: str, **kwargs: Any) -> Self: ...
     @classmethod
-    def from_dead(cls: type[Self], char: str, **kwargs: Any) -> Self: ...
+    def from_dead(cls, char: str, **kwargs: Any) -> Self: ...
 
 class Key(enum.Enum):
     alt: int
@@ -61,6 +62,11 @@ class Key(enum.Enum):
     f18: int
     f19: int
     f20: int
+    if sys.platform == "win32":
+        f21: int
+        f22: int
+        f23: int
+        f24: int
     home: int
     left: int
     page_down: int
@@ -86,8 +92,12 @@ class Key(enum.Enum):
     scroll_lock: int
 
 class Controller:
-    _KeyCode: ClassVar[KeyCode]  # undocumented
-    _Key: ClassVar[Key]  # undocumented
+    _KeyCode: ClassVar[type[KeyCode]]  # undocumented
+    _Key: ClassVar[type[Key]]  # undocumented
+
+    if sys.platform == "linux":
+        CTRL_MASK: ClassVar[int]
+        SHIFT_MASK: ClassVar[int]
 
     class InvalidKeyException(Exception): ...
     class InvalidCharacterException(Exception): ...

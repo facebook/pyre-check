@@ -1,7 +1,9 @@
 import enum
+from _typeshed import Incomplete
+from collections.abc import Iterable
 from typing import Any, NamedTuple
 
-from ._common import (
+from psutil._common import (
     ENCODING as ENCODING,
     ENCODING_ERRS as ENCODING_ERRS,
     AccessDenied as AccessDenied,
@@ -15,7 +17,8 @@ from ._common import (
     parse_environ_block as parse_environ_block,
     usage_percent as usage_percent,
 )
-from ._psutil_windows import (
+from psutil._compat import PY3 as PY3
+from psutil._psutil_windows import (
     ABOVE_NORMAL_PRIORITY_CLASS as ABOVE_NORMAL_PRIORITY_CLASS,
     BELOW_NORMAL_PRIORITY_CLASS as BELOW_NORMAL_PRIORITY_CLASS,
     HIGH_PRIORITY_CLASS as HIGH_PRIORITY_CLASS,
@@ -24,7 +27,6 @@ from ._psutil_windows import (
     REALTIME_PRIORITY_CLASS as REALTIME_PRIORITY_CLASS,
 )
 
-msg: str
 __extra__all__: Any
 CONN_DELETE_TCB: str
 ERROR_PARTIAL_COPY: int
@@ -62,11 +64,11 @@ class scputimes(NamedTuple):
     dpc: Any
 
 class svmem(NamedTuple):
-    total: Any
-    available: Any
-    percent: Any
-    used: Any
-    free: Any
+    total: int
+    available: int
+    percent: float
+    used: int
+    free: int
 
 class pmem(NamedTuple):
     rss: Any
@@ -82,7 +84,20 @@ class pmem(NamedTuple):
     peak_pagefile: Any
     private: Any
 
-pfullmem: Any
+class pfullmem(NamedTuple):
+    rss: Incomplete
+    vms: Incomplete
+    num_page_faults: Incomplete
+    peak_wset: Incomplete
+    wset: Incomplete
+    peak_paged_pool: Incomplete
+    paged_pool: Incomplete
+    peak_nonpaged_pool: Incomplete
+    nonpaged_pool: Incomplete
+    pagefile: Incomplete
+    peak_pagefile: Incomplete
+    private: Incomplete
+    uss: Incomplete
 
 class pmmap_grouped(NamedTuple):
     path: Any
@@ -101,7 +116,7 @@ class pio(NamedTuple):
 def convert_dos_path(s): ...
 def py2_strencode(s): ...
 def getpagesize(): ...
-def virtual_memory(): ...
+def virtual_memory() -> svmem: ...
 def swap_memory(): ...
 
 disk_io_counters: Any
@@ -122,7 +137,7 @@ def net_if_addrs(): ...
 def sensors_battery(): ...
 def boot_time(): ...
 def users(): ...
-def win_service_iter() -> None: ...
+def win_service_iter() -> Iterable[WindowsService]: ...
 def win_service_get(name): ...
 
 class WindowsService:
@@ -144,7 +159,7 @@ pid_exists: Any
 ppid_map: Any
 
 def is_permission_err(exc): ...
-def convert_oserror(exc, pid: Any | None = ..., name: Any | None = ...): ...
+def convert_oserror(exc, pid: Incomplete | None = ..., name: Incomplete | None = ...): ...
 def wrap_exceptions(fun): ...
 def retry_error_partial_copy(fun): ...
 
@@ -163,7 +178,7 @@ class Process:
     def memory_maps(self) -> None: ...
     def kill(self): ...
     def send_signal(self, sig) -> None: ...
-    def wait(self, timeout: Any | None = ...): ...
+    def wait(self, timeout: Incomplete | None = ...): ...
     def username(self): ...
     def create_time(self): ...
     def num_threads(self): ...

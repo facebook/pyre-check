@@ -1,7 +1,7 @@
-from _typeshed import Self
+from _typeshed import Unused
 from logging import Logger
 from typing import Any, TypeVar, overload
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Literal, Self, TypeAlias
 
 _ClsT = TypeVar("_ClsT", bound=type)
 _EchoFlag: TypeAlias = bool | Literal["debug"] | None
@@ -33,7 +33,7 @@ def instance_logger(instance: Identified, echoflag: _EchoFlag = ...) -> None: ..
 class echo_property:
     __doc__: str
     @overload
-    def __get__(self: Self, instance: None, owner: object) -> Self: ...
+    def __get__(self, instance: None, owner: Unused) -> Self: ...
     @overload
-    def __get__(self, instance: Identified, owner: object) -> _EchoFlag: ...
+    def __get__(self, instance: Identified, owner: Unused) -> _EchoFlag: ...
     def __set__(self, instance: Identified, value: _EchoFlag) -> None: ...

@@ -1,9 +1,9 @@
 import enum
-from _typeshed import StrOrBytesPath, SupportsWrite
+from _typeshed import Incomplete, StrOrBytesPath, SupportsWrite
 from collections.abc import Callable
-from socket import AddressFamily, SocketKind
+from socket import AF_INET6 as AF_INET6, AddressFamily, SocketKind
 from typing import Any, NamedTuple, TypeVar, overload
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Literal
 
 POSIX: bool
 WINDOWS: bool
@@ -31,23 +31,6 @@ STATUS_LOCKED: Literal["locked"]
 STATUS_WAITING: Literal["waiting"]
 STATUS_SUSPENDED: Literal["suspended"]
 STATUS_PARKED: Literal["parked"]
-
-_Status: TypeAlias = Literal[
-    "running",
-    "sleeping",
-    "disk-sleep",
-    "stopped",
-    "tracing-stop",
-    "zombie",
-    "dead",
-    "wake-kill",
-    "waking",
-    "idle",
-    "locked",
-    "waiting",
-    "suspended",
-    "parked",
-]
 
 CONN_ESTABLISHED: str
 CONN_SYN_SENT: str
@@ -148,6 +131,7 @@ class snicstats(NamedTuple):
     duplex: int
     speed: int
     mtu: int
+    flags: str
 
 class scpustats(NamedTuple):
     ctx_switches: int
@@ -238,7 +222,7 @@ class NoSuchProcess(Error):
     pid: Any
     name: Any
     msg: Any
-    def __init__(self, pid, name: Any | None = ..., msg: Any | None = ...) -> None: ...
+    def __init__(self, pid, name: Incomplete | None = ..., msg: Incomplete | None = ...) -> None: ...
 
 class ZombieProcess(NoSuchProcess):
     __module__: str
@@ -246,21 +230,23 @@ class ZombieProcess(NoSuchProcess):
     ppid: Any
     name: Any
     msg: Any
-    def __init__(self, pid, name: Any | None = ..., ppid: Any | None = ..., msg: Any | None = ...) -> None: ...
+    def __init__(
+        self, pid, name: Incomplete | None = ..., ppid: Incomplete | None = ..., msg: Incomplete | None = ...
+    ) -> None: ...
 
 class AccessDenied(Error):
     __module__: str
     pid: Any
     name: Any
     msg: Any
-    def __init__(self, pid: Any | None = ..., name: Any | None = ..., msg: Any | None = ...) -> None: ...
+    def __init__(self, pid: Incomplete | None = ..., name: Incomplete | None = ..., msg: Incomplete | None = ...) -> None: ...
 
 class TimeoutExpired(Error):
     __module__: str
     seconds: Any
     pid: Any
     name: Any
-    def __init__(self, seconds, pid: Any | None = ..., name: Any | None = ...) -> None: ...
+    def __init__(self, seconds, pid: Incomplete | None = ..., name: Incomplete | None = ...) -> None: ...
 
 _Func = TypeVar("_Func", bound=Callable[..., Any])
 
@@ -286,10 +272,14 @@ class _WrapNumbers:
     reminder_keys: Any
     def __init__(self) -> None: ...
     def run(self, input_dict, name): ...
-    def cache_clear(self, name: Any | None = ...) -> None: ...
+    def cache_clear(self, name: Incomplete | None = ...) -> None: ...
     def cache_info(self): ...
 
 def wrap_numbers(input_dict, name: str): ...
+def open_binary(fname): ...
+def open_text(fname): ...
+def cat(fname, fallback=..., _open=...): ...
+def bcat(fname, fallback=...): ...
 def bytes2human(n: int, format: str = ...) -> str: ...
 def get_procfs_path() -> str: ...
 def term_supports_colors(file: SupportsWrite[str] = ...) -> bool: ...

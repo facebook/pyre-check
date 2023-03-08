@@ -1,7 +1,6 @@
 import sys
 
 if sys.platform == "win32":
-
     from . import win32
 
     class WinColor:
@@ -34,3 +33,5 @@ if sys.platform == "win32":
         def erase_screen(self, mode: int = ..., on_stderr: bool = ...) -> None: ...
         def erase_line(self, mode: int = ..., on_stderr: bool = ...) -> None: ...
         def set_title(self, title: str) -> None: ...
+
+def enable_vt_processing(fd: int) -> bool: ...

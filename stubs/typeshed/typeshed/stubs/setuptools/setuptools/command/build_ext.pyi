@@ -1,5 +1,7 @@
-from distutils.command.build_ext import build_ext as _build_ext
+from _typeshed import Incomplete
 from typing import Any
+
+from .._distutils.command.build_ext import build_ext as _build_ext
 
 have_rtld: bool
 use_stubs: bool
@@ -31,14 +33,14 @@ def link_shared_object(
     self,
     objects,
     output_libname,
-    output_dir: Any | None = ...,
-    libraries: Any | None = ...,
-    library_dirs: Any | None = ...,
-    runtime_library_dirs: Any | None = ...,
-    export_symbols: Any | None = ...,
+    output_dir: Incomplete | None = ...,
+    libraries: Incomplete | None = ...,
+    library_dirs: Incomplete | None = ...,
+    runtime_library_dirs: Incomplete | None = ...,
+    export_symbols: Incomplete | None = ...,
     debug: int = ...,
-    extra_preargs: Any | None = ...,
-    extra_postargs: Any | None = ...,
-    build_temp: Any | None = ...,
-    target_lang: Any | None = ...,
+    extra_preargs: Incomplete | None = ...,
+    extra_postargs: Incomplete | None = ...,
+    build_temp: Incomplete | None = ...,
+    target_lang: Incomplete | None = ...,
 ) -> None: ...

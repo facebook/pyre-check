@@ -7,6 +7,7 @@ from stripe.api_resources import (
     reporting as reporting,
     sigma as sigma,
     terminal as terminal,
+    test_helpers as test_helpers,
 )
 from stripe.api_resources.account import Account as Account
 from stripe.api_resources.account_link import AccountLink as AccountLink
@@ -58,6 +59,7 @@ from stripe.api_resources.recipient_transfer import RecipientTransfer as Recipie
 from stripe.api_resources.refund import Refund as Refund
 from stripe.api_resources.reversal import Reversal as Reversal
 from stripe.api_resources.review import Review as Review
+from stripe.api_resources.search_result_object import SearchResultObject as SearchResultObject
 from stripe.api_resources.setup_attempt import SetupAttempt as SetupAttempt
 from stripe.api_resources.setup_intent import SetupIntent as SetupIntent
 from stripe.api_resources.sku import SKU as SKU

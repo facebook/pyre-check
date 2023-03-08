@@ -1,6 +1,7 @@
-from _typeshed import Incomplete, Self, SupportsWrite
+from _typeshed import Incomplete, SupportsWrite
 from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Mapping
 from typing import Generic, NoReturn, TypeVar, overload
+from typing_extensions import Self
 
 from .std import tqdm as std_tqdm
 
@@ -13,7 +14,7 @@ class tqdm_asyncio(Generic[_T], std_tqdm[_T]):
     iterable_next: Callable[[], _T | Awaitable[_T]]
     iterable_iterator: Iterator[_T]
 
-    def __aiter__(self: Self) -> Self: ...
+    def __aiter__(self) -> Self: ...
     async def __anext__(self) -> Awaitable[_T]: ...
     def send(self, *args, **kwargs): ...
     @classmethod
@@ -25,14 +26,14 @@ class tqdm_asyncio(Generic[_T], std_tqdm[_T]):
         timeout: float | None = ...,
         total: int | None = ...,
         desc: str | None = ...,
-        leave: bool = ...,
+        leave: bool | None = ...,
         file: SupportsWrite[str] | None = ...,
         ncols: int | None = ...,
         mininterval: float = ...,
         maxinterval: float = ...,
         miniters: float | None = ...,
         ascii: bool | str | None = ...,
-        disable: bool = ...,
+        disable: bool | None = ...,
         unit: str = ...,
         unit_scale: bool | float = ...,
         dynamic_ncols: bool = ...,
@@ -57,14 +58,14 @@ class tqdm_asyncio(Generic[_T], std_tqdm[_T]):
         total: int | None = ...,
         iterable: Iterable[_T] = ...,
         desc: str | None = ...,
-        leave: bool = ...,
+        leave: bool | None = ...,
         file: SupportsWrite[str] | None = ...,
         ncols: int | None = ...,
         mininterval: float = ...,
         maxinterval: float = ...,
         miniters: float | None = ...,
         ascii: bool | str | None = ...,
-        disable: bool = ...,
+        disable: bool | None = ...,
         unit: str = ...,
         unit_scale: bool | float = ...,
         dynamic_ncols: bool = ...,
@@ -86,14 +87,14 @@ class tqdm_asyncio(Generic[_T], std_tqdm[_T]):
         iterable: Iterable[_T],
         desc: str | None = ...,
         total: float | None = ...,
-        leave: bool = ...,
+        leave: bool | None = ...,
         file: SupportsWrite[str] | None = ...,
         ncols: int | None = ...,
         mininterval: float = ...,
         maxinterval: float = ...,
         miniters: float | None = ...,
         ascii: bool | str | None = ...,
-        disable: bool = ...,
+        disable: bool | None = ...,
         unit: str = ...,
         unit_scale: bool | float = ...,
         dynamic_ncols: bool = ...,
@@ -117,14 +118,14 @@ class tqdm_asyncio(Generic[_T], std_tqdm[_T]):
         iterable: None = ...,
         desc: str | None = ...,
         total: float | None = ...,
-        leave: bool = ...,
+        leave: bool | None = ...,
         file: SupportsWrite[str] | None = ...,
         ncols: int | None = ...,
         mininterval: float = ...,
         maxinterval: float = ...,
         miniters: float | None = ...,
         ascii: bool | str | None = ...,
-        disable: bool = ...,
+        disable: bool | None = ...,
         unit: str = ...,
         unit_scale: bool | float = ...,
         dynamic_ncols: bool = ...,
@@ -151,14 +152,14 @@ def tarange(
     *,
     desc: str | None = ...,
     total: float | None = ...,
-    leave: bool = ...,
+    leave: bool | None = ...,
     file: SupportsWrite[str] | None = ...,
     ncols: int | None = ...,
     mininterval: float = ...,
     maxinterval: float = ...,
     miniters: float | None = ...,
     ascii: bool | str | None = ...,
-    disable: bool = ...,
+    disable: bool | None = ...,
     unit: str = ...,
     unit_scale: bool | float = ...,
     dynamic_ncols: bool = ...,
@@ -180,14 +181,14 @@ def tarange(
     *,
     desc: str | None = ...,
     total: float | None = ...,
-    leave: bool = ...,
+    leave: bool | None = ...,
     file: SupportsWrite[str] | None = ...,
     ncols: int | None = ...,
     mininterval: float = ...,
     maxinterval: float = ...,
     miniters: float | None = ...,
     ascii: bool | str | None = ...,
-    disable: bool = ...,
+    disable: bool | None = ...,
     unit: str = ...,
     unit_scale: bool | float = ...,
     dynamic_ncols: bool = ...,

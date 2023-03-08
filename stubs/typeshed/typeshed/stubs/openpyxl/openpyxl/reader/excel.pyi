@@ -1,26 +1,38 @@
-from typing import Any
+from _typeshed import Incomplete, StrPath, SupportsRead
 
-SUPPORTED_FORMATS: Any
+from openpyxl.chartsheet.chartsheet import Chartsheet
+from openpyxl.packaging.relationship import Relationship
+from openpyxl.workbook.workbook import Workbook
+
+SUPPORTED_FORMATS: Incomplete
 
 class ExcelReader:
-    archive: Any
-    valid_files: Any
-    read_only: Any
-    keep_vba: Any
-    data_only: Any
-    keep_links: Any
-    shared_strings: Any
-    def __init__(self, fn, read_only: bool = ..., keep_vba=..., data_only: bool = ..., keep_links: bool = ...) -> None: ...
-    package: Any
+    archive: Incomplete
+    valid_files: Incomplete
+    read_only: Incomplete
+    keep_vba: Incomplete
+    data_only: Incomplete
+    keep_links: Incomplete
+    shared_strings: Incomplete
+    def __init__(
+        self, fn: SupportsRead[bytes] | str, read_only: bool = ..., keep_vba=..., data_only: bool = ..., keep_links: bool = ...
+    ) -> None: ...
+    package: Incomplete
     def read_manifest(self) -> None: ...
     def read_strings(self) -> None: ...
-    parser: Any
-    wb: Any
+    parser: Incomplete
+    wb: Incomplete
     def read_workbook(self) -> None: ...
     def read_properties(self) -> None: ...
     def read_theme(self) -> None: ...
-    def read_chartsheet(self, sheet, rel) -> None: ...
+    def read_chartsheet(self, sheet: Chartsheet, rel: Relationship) -> None: ...
     def read_worksheets(self) -> None: ...
     def read(self) -> None: ...
 
-def load_workbook(filename, read_only: bool = ..., keep_vba=..., data_only: bool = ..., keep_links: bool = ...): ...
+def load_workbook(
+    filename: SupportsRead[bytes] | StrPath,
+    read_only: bool = ...,
+    keep_vba: bool = ...,
+    data_only: bool = ...,
+    keep_links: bool = ...,
+) -> Workbook: ...

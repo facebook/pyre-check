@@ -1,4 +1,4 @@
-from _typeshed import StrOrBytesPath
+from _typeshed import Incomplete, StrOrBytesPath
 from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from typing import Any
@@ -18,7 +18,7 @@ TYPE_RSA: int
 TYPE_DSA: int
 
 class _EllipticCurve:
-    def __init__(self, lib: Any | None, nid: int, name: str) -> None: ...
+    def __init__(self, lib: Incomplete | None, nid: int, name: str) -> None: ...
 
 class Error(Exception): ...
 
@@ -143,8 +143,9 @@ class X509StoreContext:
     def verify_certificate(self) -> None: ...
 
 class X509StoreContextError(Exception):
+    errors: list[Any]
     certificate: X509
-    def __init__(self, message: str | bytes, certificate: X509) -> None: ...
+    def __init__(self, message: str, errors: list[Any], certificate: X509) -> None: ...
 
 class X509StoreFlags:
     CRL_CHECK: int
@@ -158,6 +159,7 @@ class X509StoreFlags:
     NOTIFY_POLICY: int
     CHECK_SS_SIGNATURE: int
     CB_ISSUER_CHECK: int
+    PARTIAL_CHAIN: int
 
 class PKCS7:
     def get_type_name(self) -> str: ...

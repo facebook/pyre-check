@@ -1,9 +1,14 @@
-from _typeshed import StrOrBytesPath, SupportsRead
-from typing import Any, Protocol
+from _typeshed import FileDescriptorOrPath, Incomplete, SupportsRead
+from enum import IntEnum
+from typing import Protocol
 from typing_extensions import Literal
 
-LAYOUT_BASIC: Literal[0]
-LAYOUT_RAQM: Literal[1]
+class Layout(IntEnum):
+    BASIC: Literal[0]
+    RAQM: Literal[1]
+
+LAYOUT_BASIC: Literal[Layout.BASIC]
+LAYOUT_RAQM: Literal[Layout.RAQM]
 
 class _Font(Protocol):
     def getmask(self, text: str | bytes, mode: str = ..., direction=..., features=...): ...
@@ -17,14 +22,14 @@ class FreeTypeFont:
     size: int
     index: int
     encoding: str
-    layout_engine: Any
+    layout_engine: Layout
     def __init__(
         self,
         font: str | bytes | SupportsRead[bytes] | None = ...,
         size: int = ...,
         index: int = ...,
         encoding: str = ...,
-        layout_engine: int | None = ...,
+        layout_engine: Layout | None = ...,
     ) -> None: ...
     def getname(self) -> tuple[str, str]: ...
     def getmetrics(self) -> tuple[int, int]: ...
@@ -33,7 +38,7 @@ class FreeTypeFont:
         text: str | bytes,
         mode: str = ...,
         direction: Literal["ltr", "rtl", "ttb"] | None = ...,
-        features: Any | None = ...,
+        features: Incomplete | None = ...,
         language: str | None = ...,
     ) -> int: ...
     def getbbox(
@@ -50,7 +55,7 @@ class FreeTypeFont:
         self,
         text: str | bytes,
         direction: Literal["ltr", "rtl", "ttb"] | None = ...,
-        features: Any | None = ...,
+        features: Incomplete | None = ...,
         language: str | None = ...,
         stroke_width: int = ...,
     ) -> tuple[int, int]: ...
@@ -59,7 +64,7 @@ class FreeTypeFont:
         text: str | bytes,
         direction: Literal["ltr", "rtl", "ttb"] | None = ...,
         spacing: float = ...,
-        features: Any | None = ...,
+        features: Incomplete | None = ...,
         language: str | None = ...,
         stroke_width: float = ...,
     ) -> tuple[int, int]: ...
@@ -69,11 +74,12 @@ class FreeTypeFont:
         text: str | bytes,
         mode: str = ...,
         direction: Literal["ltr", "rtl", "ttb"] | None = ...,
-        features: Any | None = ...,
+        features: Incomplete | None = ...,
         language: str | None = ...,
         stroke_width: float = ...,
         anchor: str | None = ...,
         ink=...,
+        start: tuple[float, float] | None = ...,
     ): ...
     def getmask2(
         self,
@@ -81,11 +87,12 @@ class FreeTypeFont:
         mode: str = ...,
         fill=...,
         direction: Literal["ltr", "rtl", "ttb"] | None = ...,
-        features: Any | None = ...,
+        features: Incomplete | None = ...,
         language: str | None = ...,
         stroke_width: float = ...,
         anchor: str | None = ...,
         ink=...,
+        start: tuple[float, float] | None = ...,
         *args,
         **kwargs,
     ): ...
@@ -95,7 +102,7 @@ class FreeTypeFont:
         size: int | None = ...,
         index: int | None = ...,
         encoding: str | None = ...,
-        layout_engine: int | None = ...,
+        layout_engine: Layout | None = ...,
     ) -> FreeTypeFont: ...
     def get_variation_names(self): ...
     def set_variation_by_name(self, name): ...
@@ -107,13 +114,13 @@ class TransposedFont:
     def getsize(self, text: str | bytes, *args, **kwargs) -> tuple[int, int]: ...
     def getmask(self, text: str | bytes, mode: str = ..., *args, **kwargs): ...
 
-def load(filename: StrOrBytesPath | int) -> ImageFont: ...
+def load(filename: FileDescriptorOrPath) -> ImageFont: ...
 def truetype(
     font: str | bytes | SupportsRead[bytes] | None = ...,
     size: int = ...,
     index: int = ...,
     encoding: str = ...,
-    layout_engine: int | None = ...,
+    layout_engine: Layout | None = ...,
 ) -> FreeTypeFont: ...
 def load_path(filename: str | bytes) -> ImageFont: ...
 def load_default() -> ImageFont: ...

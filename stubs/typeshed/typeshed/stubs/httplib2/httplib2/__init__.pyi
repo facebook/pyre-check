@@ -1,7 +1,8 @@
 import http.client
-from _typeshed import Self
+from _typeshed import Incomplete
 from collections.abc import Generator
-from typing import Any
+from typing import Any, ClassVar
+from typing_extensions import Self
 
 from .error import *
 
@@ -30,7 +31,7 @@ class Authentication:
     def __gt__(self, auth): ...
     def __le__(self, auth): ...
     def __ge__(self, auth): ...
-    def __bool__(self): ...
+    def __bool__(self) -> bool: ...
 
 class BasicAuthentication(Authentication):
     def __init__(self, credentials, host, request_uri, headers, response, content, http) -> None: ...
@@ -40,7 +41,7 @@ class DigestAuthentication(Authentication):
     challenge: Any
     A1: Any
     def __init__(self, credentials, host, request_uri, headers, response, content, http) -> None: ...
-    def request(self, method, request_uri, headers, content, cnonce: Any | None = ...): ...
+    def request(self, method, request_uri, headers, content, cnonce: Incomplete | None = ...): ...
     def response(self, response, content): ...
 
 class HmacDigestAuthentication(Authentication):
@@ -48,6 +49,7 @@ class HmacDigestAuthentication(Authentication):
     hashmod: Any
     pwhashmod: Any
     key: Any
+    __author__: ClassVar[str]
     def __init__(self, credentials, host, request_uri, headers, response, content, http) -> None: ...
     def request(self, method, request_uri, headers, content) -> None: ...
     def response(self, response, content): ...
@@ -90,9 +92,9 @@ class ProxyInfo:
         proxy_host,
         proxy_port,
         proxy_rdns: bool = ...,
-        proxy_user: Any | None = ...,
-        proxy_pass: Any | None = ...,
-        proxy_headers: Any | None = ...,
+        proxy_user: Incomplete | None = ...,
+        proxy_pass: Incomplete | None = ...,
+        proxy_headers: Incomplete | None = ...,
     ) -> None: ...
     def astuple(self): ...
     def isgood(self): ...
@@ -101,7 +103,9 @@ class ProxyInfo:
 
 class HTTPConnectionWithTimeout(http.client.HTTPConnection):
     proxy_info: Any
-    def __init__(self, host, port: Any | None = ..., timeout: Any | None = ..., proxy_info: Any | None = ...) -> None: ...
+    def __init__(
+        self, host, port: Incomplete | None = ..., timeout: Incomplete | None = ..., proxy_info: Incomplete | None = ...
+    ) -> None: ...
     sock: Any
     def connect(self) -> None: ...
 
@@ -115,16 +119,16 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
     def __init__(
         self,
         host,
-        port: Any | None = ...,
-        key_file: Any | None = ...,
-        cert_file: Any | None = ...,
-        timeout: Any | None = ...,
-        proxy_info: Any | None = ...,
-        ca_certs: Any | None = ...,
+        port: Incomplete | None = ...,
+        key_file: Incomplete | None = ...,
+        cert_file: Incomplete | None = ...,
+        timeout: Incomplete | None = ...,
+        proxy_info: Incomplete | None = ...,
+        ca_certs: Incomplete | None = ...,
         disable_ssl_certificate_validation: bool = ...,
-        tls_maximum_version: Any | None = ...,
-        tls_minimum_version: Any | None = ...,
-        key_password: Any | None = ...,
+        tls_maximum_version: Incomplete | None = ...,
+        tls_minimum_version: Incomplete | None = ...,
+        key_password: Incomplete | None = ...,
     ) -> None: ...
     sock: Any
     def connect(self) -> None: ...
@@ -151,26 +155,26 @@ class Http:
     forward_authorization_headers: bool
     def __init__(
         self,
-        cache: Any | None = ...,
-        timeout: Any | None = ...,
+        cache: Incomplete | None = ...,
+        timeout: Incomplete | None = ...,
         proxy_info=...,
-        ca_certs: Any | None = ...,
+        ca_certs: Incomplete | None = ...,
         disable_ssl_certificate_validation: bool = ...,
-        tls_maximum_version: Any | None = ...,
-        tls_minimum_version: Any | None = ...,
+        tls_maximum_version: Incomplete | None = ...,
+        tls_minimum_version: Incomplete | None = ...,
     ) -> None: ...
     def close(self) -> None: ...
     def add_credentials(self, name, password, domain: str = ...) -> None: ...
-    def add_certificate(self, key, cert, domain, password: Any | None = ...) -> None: ...
+    def add_certificate(self, key, cert, domain, password: Incomplete | None = ...) -> None: ...
     def clear_credentials(self) -> None: ...
     def request(
         self,
         uri,
         method: str = ...,
-        body: Any | None = ...,
-        headers: Any | None = ...,
+        body: Incomplete | None = ...,
+        headers: Incomplete | None = ...,
         redirections=...,
-        connection_type: Any | None = ...,
+        connection_type: Incomplete | None = ...,
     ): ...
 
 class Response(dict[str, Any]):
@@ -181,4 +185,4 @@ class Response(dict[str, Any]):
     previous: Any
     def __init__(self, info) -> None: ...
     @property
-    def dict(self: Self) -> Self: ...
+    def dict(self) -> Self: ...

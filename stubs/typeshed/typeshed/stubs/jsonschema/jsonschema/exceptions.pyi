@@ -1,8 +1,8 @@
-from _typeshed import Self, SupportsRichComparison
+from _typeshed import Incomplete, SupportsRichComparison
 from collections import deque
 from collections.abc import Callable, Container, Iterable, Sequence
 from typing import Any
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from jsonschema import _utils, protocols
 from jsonschema._types import TypeChecker
@@ -30,7 +30,7 @@ class _Error(Exception):
         message: str,
         validator: _utils.Unset | None | protocols.Validator = ...,
         path: Sequence[str | int] = ...,
-        cause: Any | None = ...,
+        cause: Incomplete | None = ...,
         context: Sequence[ValidationError] = ...,
         validator_value=...,
         instance: Any = ...,
@@ -40,7 +40,7 @@ class _Error(Exception):
         type_checker: _utils.Unset | TypeChecker = ...,
     ) -> None: ...
     @classmethod
-    def create_from(cls: type[Self], other: _Error) -> Self: ...
+    def create_from(cls, other: _Error) -> Self: ...
     @property
     def absolute_path(self) -> Sequence[str | int]: ...
     @property
@@ -70,7 +70,7 @@ class UnknownType(Exception):
 class FormatError(Exception):
     message: Any
     cause: Any
-    def __init__(self, message, cause: Any | None = ...) -> None: ...
+    def __init__(self, message, cause: Incomplete | None = ...) -> None: ...
 
 class ErrorTree:
     errors: Any
@@ -79,7 +79,7 @@ class ErrorTree:
     def __getitem__(self, index): ...
     def __setitem__(self, index, value) -> None: ...
     def __iter__(self): ...
-    def __len__(self): ...
+    def __len__(self) -> int: ...
     @property
     def total_errors(self): ...
 
