@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module defines Pyre's check for uninitialized local variables. This check, which is
+   independent of type checking but makes use of the same control flow graph, catches situations
+   where code uses a local variable that may not have been defined yet. For example an uninitialized
+   local error can occur if a variable is bound inside an `if` statement and then used
+   unconditionally later on. *)
 
 open Core
 open Ast
