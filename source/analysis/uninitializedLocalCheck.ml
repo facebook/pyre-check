@@ -67,11 +67,12 @@ module AccessCollector = struct
     | Dictionary { Dictionary.entries; keywords } ->
         let collected = List.fold entries ~init:collected ~f:from_entry in
         List.fold keywords ~init:collected ~f:from_expression
-    | DictionaryComprehension comprehension -> from_comprehension from_entry collected comprehension
+    | DictionaryComprehension comprehension ->
+        from_comprehension ~collected from_entry comprehension
     | Generator comprehension
     | ListComprehension comprehension
     | SetComprehension comprehension ->
-        from_comprehension from_expression collected comprehension
+        from_comprehension ~collected from_expression comprehension
     | List expressions
     | Set expressions
     | Tuple expressions ->
@@ -99,12 +100,12 @@ module AccessCollector = struct
   (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
   and from_comprehension :
         'a.
+        collected:NameAccessSet.t ->
         (NameAccessSet.t -> 'a -> NameAccessSet.t) ->
-        NameAccessSet.t ->
         'a Comprehension.t ->
         NameAccessSet.t
     =
-   fun from_element collected { Comprehension.element; generators } ->
+   fun ~collected from_element { Comprehension.element; generators } ->
     let remove_bound_names ~bound_names =
       Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Identifier.Set.mem bound_names name))
     in
