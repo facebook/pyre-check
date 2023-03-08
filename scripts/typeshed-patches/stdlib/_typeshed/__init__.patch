@@ -1,0 +1,8 @@
+--- a/stdlib/_typeshed/__init__.pyi
++++ b/stdlib/_typeshed/__init__.pyi
+@@ -311,4 +311,4 @@ TraceFunction: TypeAlias = Callable[[FrameType, str, Any], TraceFunction | None]
+ #   https://github.com/python/typeshed/pull/9362
+ #   https://github.com/microsoft/pyright/issues/4339
+ class DataclassInstance(Protocol):
+-    __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
++    ...
