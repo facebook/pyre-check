@@ -3,6 +3,15 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+"""
+Run an integration test for Pysa verifying that dumping the enviornment
+to a cache and reloading produces expected results.
+
+This test has no dependencies aside from stdlib, you should be able to run
+it any environment simply by running `./run_cache_test.py` from the
+containing directory (or any parent, it is not sensitive to your current
+working directory.)
+"""
 
 import json
 import logging
