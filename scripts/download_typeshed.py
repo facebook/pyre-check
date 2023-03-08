@@ -202,6 +202,10 @@ class PatchedTypeshed:
     def from_trimmed_typeshed(
         cls, patch_directory: Path, trimmed_typeshed: TrimmedTypeshed
     ) -> PatchedTypeshed:
+        if not patch_directory.is_dir():
+            raise ValueError(
+                f"Specified patch directory {patch_directory} is not a directory"
+            )
         with tempfile.TemporaryDirectory() as temporary_root:
             temporary_root_path = Path(temporary_root)
 
