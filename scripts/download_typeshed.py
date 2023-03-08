@@ -118,10 +118,8 @@ class TrimmedTypeshed:
         return cls(
             entries=[
                 FileEntry(
-                    # Other scripts expect the toplevel directory name to be
-                    # `typeshed-master`
                     path=str(
-                        pathlib.Path("typeshed-master").joinpath(
+                        pathlib.Path("typeshed").joinpath(
                             *pathlib.Path(info.filename).parts[1:]
                         )
                     ),
@@ -270,13 +268,6 @@ def write_output_to_directory(
                     LOG.warning(f"Failed to apply patch to {patch_result.entry.path}!")
                 else:
                     pass
-    # Rename the output directory. This is a temporary fix while we migrate
-    # files that deal with the zipball to use the directory instead; once we're
-    # ready to remove the zipball we can just get rid of the TrimmedTypeshed
-    # logic that sets typeshed-master in the first place.
-    (output_directory_path / "typeshed-master").rename(
-        output_directory_path / "typeshed"
-    )
     # record where we got the typeshed source - otherwise commit messages are the
     # only record!
     with (output_directory_path / "typeshed" / "source_url").open("w") as output_file:
