@@ -86,11 +86,11 @@ def strip_custom_annotations(annotation: str) -> str:
         if (
             isinstance(parsed_annotation, ast.Expr)
             and isinstance(parsed_annotation.value, ast.Subscript)
-            and isinstance(parsed_annotation.value.slice, ast.Index)
-            and isinstance(parsed_annotation.value.slice.value, ast.Tuple)
         ):
-            return ast_to_pretty_string(parsed_annotation.value.slice.value.elts[0])
-
+            if (isinstance(parsed_annotation.value.slice, ast.Tuple)):
+                return ast_to_pretty_string(parsed_annotation.value.slice.elts[0])
+            if (isinstance(parsed_annotation.value.slice, ast.Index) and isinstance(parsed_annotation.value.slice.value, ast.Tuple)):
+                return ast_to_pretty_string(parsed_annotation.value.slice.value.elts[0])
     return annotation
 
 
