@@ -73,7 +73,9 @@ module Error = AnalysisError
    Given that there is no RuntimeWarning for classes with hand-rolled `__await__`, we can leave them
    out of our analysis. *)
 let can_lead_to_runtime_warning_if_unawaited ~global_resolution = function
-  | Type.Parametric { name = "typing.Coroutine" | "typing.Awaitable"; _ } -> true
+  | Type.Parametric { name = "typing.Coroutine" | "typing.Awaitable" | "asyncio.futures.Future"; _ }
+    ->
+      true
   | _ -> false
 
 

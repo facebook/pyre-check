@@ -59,7 +59,6 @@ let test_forward context =
         await awaited
     |}
     [];
-  (* TODO(T147519313) An unawaited Future should produce an unawaited awaitable error. *)
   assert_awaitable_errors
     {|
       from asyncio.futures import Future
@@ -69,7 +68,7 @@ let test_forward context =
       async def main() -> None:
         unawaited = future()
     |}
-    [];
+    ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
   assert_awaitable_errors
     {|
       from asyncio.futures import Future
