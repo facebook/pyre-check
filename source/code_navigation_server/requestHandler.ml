@@ -204,8 +204,8 @@ let with_broadcast ~subscriptions ~status f =
   Lwt.return result
 
 
-let with_broadcast_busy_checking ~subscriptions ~overlay_id f =
-  with_broadcast ~subscriptions ~status:(Response.Status.BusyChecking { overlay_id }) f
+let with_broadcast_busy_checking ~subscriptions ~client_id f =
+  with_broadcast ~subscriptions ~status:(Response.Status.BusyChecking { client_id }) f
 
 
 let with_broadcast_busy_building ~subscriptions f =
@@ -260,7 +260,7 @@ let handle_non_critical_file_update ~subscriptions ~environment artifact_path_ev
             OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
         |> Lwt.return
       in
-      with_broadcast_busy_checking ~subscriptions ~overlay_id:None run_file_update
+      with_broadcast_busy_checking ~subscriptions ~client_id:None run_file_update
 
 
 let handle_file_update
@@ -302,7 +302,7 @@ let handle_working_set_update ~subscriptions { State.environment; build_system; 
   handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
 
 
-let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~overlay_id overlay =
+let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~client_id overlay =
   let module_tracker =
     ErrorsEnvironment.Overlay.read_only overlay |> ErrorsEnvironment.ReadOnly.module_tracker
   in
@@ -332,7 +332,7 @@ let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~
             let%lwt _ =
               with_broadcast_busy_checking
                 ~subscriptions
-                ~overlay_id:(Some overlay_id)
+                ~client_id:(Some client_id)
                 run_local_update
             in
             Lwt.return_unit
@@ -354,9 +354,9 @@ let handle_local_update
       Lwt.return Response.(Error (ErrorKind.ClientNotRegistered { client_id }))
   | `FileNotAdded -> Lwt.return Response.(Error (ErrorKind.FileNotOpened { path }))
   | `Ok overlay_id ->
-      let overlay_id = State.Client.OverlayId.to_string overlay_id in
-      let overlay = OverlaidEnvironment.get_or_create_overlay environment overlay_id in
-      handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~overlay_id overlay
+      State.Client.OverlayId.to_string overlay_id
+      |> OverlaidEnvironment.get_or_create_overlay environment
+      |> handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~client_id
 
 
 let handle_file_opened
@@ -372,9 +372,9 @@ let handle_file_opened
       Lwt.return Response.(Error (ErrorKind.ClientNotRegistered { client_id }))
   | `Ok overlay_id ->
       let%lwt () = handle_working_set_update ~subscriptions state in
-      let overlay_id = State.Client.OverlayId.to_string overlay_id in
-      let overlay = OverlaidEnvironment.get_or_create_overlay environment overlay_id in
-      handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~overlay_id overlay
+      State.Client.OverlayId.to_string overlay_id
+      |> OverlaidEnvironment.get_or_create_overlay environment
+      |> handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~client_id
 
 
 let handle_file_closed
@@ -390,29 +390,26 @@ let handle_file_closed
   | `FileNotAdded -> Lwt.return Response.(Error (ErrorKind.FileNotOpened { path }))
   | `Ok overlay_id ->
       let overlay_id = State.Client.OverlayId.to_string overlay_id in
-      let overlay =
+      let%lwt _ =
         (* This should already be a "get" instead of "create" since the creation should already have
            happend when the file is opened. *)
         OverlaidEnvironment.get_or_create_overlay environment overlay_id
-      in
-      (* Attempt to reset the overlay state.
+        (* Attempt to reset the overlay state.
 
-         Note that [path] may get removed from the filesystem after it's opened, in which case
-         [handle_local_update_in_overlay] will return us an error. In theory, we should fix the
-         module tracker such that it won't fail the [handle_local_update_in_overlay] on removed
-         files. But that is a big TODO (T147166738) at the moment.
+           Note that [path] may get removed from the filesystem after it's opened, in which case
+           [handle_local_update_in_overlay] will return us an error. In theory, we should fix the
+           module tracker such that it won't fail the [handle_local_update_in_overlay] on removed
+           files. But that is a big TODO (T147166738) at the moment.
 
-         But either way, we should never surface the error returned from
-         [handle_local_update_in_overlay] to the client, given that all the issues are only related
-         to server internals which the client should not see. *)
-      let%lwt _ =
-        handle_local_update_in_overlay
-          ~path
-          ~content:None
-          ~subscriptions
-          ~build_system
-          ~overlay_id
-          overlay
+           But either way, we should never surface the error returned from
+           [handle_local_update_in_overlay] to the client, given that all the issues are only
+           related to server internals which the client should not see. *)
+        |> handle_local_update_in_overlay
+             ~path
+             ~content:None
+             ~subscriptions
+             ~build_system
+             ~client_id
       in
       let () = OverlaidEnvironment.remove_overlay environment overlay_id in
       let%lwt () = handle_working_set_update ~subscriptions state in

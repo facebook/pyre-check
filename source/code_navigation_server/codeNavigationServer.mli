@@ -417,9 +417,6 @@ module Testing : sig
         | ClientNotRegistered of { client_id: string }
             (** This error occurs when the client tried to request a stateful operation but the
                 corresponding state was not registered with the server. *)
-        | OverlayNotFound of { overlay_id: string }
-            (** This error occurs when the client has requested info from an overlay whose id does
-                not exist within the server. *)
         | FileNotOpened of { path: string }
             (** This error occurs when the client has send a command on a file not tracked by the
                 server. *)
@@ -462,11 +459,11 @@ module Testing : sig
         | BusyBuilding
             (** This response is sent when the code navigation server is about to start performing
                 an incremental build system update. *)
-        | BusyChecking of { overlay_id: string option }
+        | BusyChecking of { client_id: string option }
             (** This response is sent when the code navigation server is about to start performing
                 an incremental update request.
 
-                [overlay_id] will be [None] if the incremental update is on the whole project (i.e.
+                [client_id] will be [None] if the incremental update is on the whole project (i.e.
                 the server is handling a {!Testing.Request.FileUpdateEvent}), and will bet set if
                 the incremental update is on a given overlay (i.e. the server is handling a
                 {!Testing.Request.LocalUpdate}). *)

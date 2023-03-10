@@ -108,7 +108,7 @@ let test_server_subscription_busy_file_update context =
     in
     let%lwt () =
       ScratchProject.ClientConnection.assert_subscription_response
-        ~expected:Response.(ServerStatus (Status.BusyChecking { overlay_id = None }))
+        ~expected:Response.(ServerStatus (Status.BusyChecking { client_id = None }))
         connection
     in
     let%lwt () =
@@ -142,6 +142,7 @@ let test_server_subscription_busy_local_update context =
   let project = ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", ""] in
   let root = ScratchProject.source_root_of project in
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+  let client_id = "foo" in
 
   (* This is used to ensure opener always runs after client is registered. *)
   let register_mailbox = Lwt_mvar.create_empty () in
@@ -154,7 +155,7 @@ let test_server_subscription_busy_local_update context =
     let%lwt _ =
       ScratchProject.ClientConnection.send_request
         connection
-        Request.(Command (Command.RegisterClient { client_id = "foo" }))
+        Request.(Command (Command.RegisterClient { client_id }))
     in
     Lwt_mvar.put register_mailbox "registered"
   in
@@ -165,8 +166,7 @@ let test_server_subscription_busy_local_update context =
         connection
         Request.(
           Command
-            (Command.FileOpened
-               { path = PyrePath.absolute test_path; content = Some ""; client_id = "foo" }))
+            (Command.FileOpened { path = PyrePath.absolute test_path; content = Some ""; client_id }))
     in
     Lwt_mvar.put open_mailbox "opened"
   in
@@ -179,10 +179,8 @@ let test_server_subscription_busy_local_update context =
     in
     let%lwt () = Lwt_mvar.put subscribe_mailbox "subscribed" in
     let%lwt () =
-      (* TODO: Remove overlay_id from status message *)
-      let expected_id = Format.sprintf "foo:%s" (PyrePath.absolute test_path) in
       ScratchProject.ClientConnection.assert_subscription_response
-        ~expected:Response.(ServerStatus (Status.BusyChecking { overlay_id = Some expected_id }))
+        ~expected:Response.(ServerStatus (Status.BusyChecking { client_id = Some client_id }))
         connection
     in
     let%lwt () =
@@ -200,11 +198,7 @@ let test_server_subscription_busy_local_update context =
         Request.(
           Command
             (Command.LocalUpdate
-               {
-                 path = PyrePath.absolute test_path;
-                 content = Some "reveal_type(42)";
-                 client_id = "foo";
-               }))
+               { path = PyrePath.absolute test_path; content = Some "reveal_type(42)"; client_id }))
     in
     Lwt.return_unit
   in
