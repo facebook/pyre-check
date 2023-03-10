@@ -339,35 +339,35 @@ module Testing : sig
                 If the given file was not previously opened by a `{!Command.FileOpened}` command for
                 the client, the server will respond with a {!Response.ErrorKind.FileNotOpened}
                 error. If the provided module is opened but not covered by the code navigation
-                server, the server will respond with a {!Response.ErrorKind.ModuleNotTracked} error.*)
+                server, the server will respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
         | Hover of {
             path: string;
             position: Ast.Location.position;
-            overlay_id: string option;
+            client_id: string option;
           }
             (** A query that asks the server to return hover information at a given location in a
                 given module. The server will send back a {!Response.Hover} response as result. The
                 response will contain an empty list if the server do not have any hover text to show
                 at the location.
 
-                If the provided module is not covered by the code navigation server, the server will
-                respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot
-                find the overlay with the given ID, it will respond with a
-                {!Response.ErrorKind.OverlayNotFound} error. *)
+                If the given file was not previously opened by a `{!Command.FileOpened}` command for
+                the client, the server will respond with a {!Response.ErrorKind.FileNotOpened}
+                error. If the provided module is opened but not covered by the code navigation
+                server, the server will respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
         | LocationOfDefinition of {
             path: string;
             position: Ast.Location.position;
-            overlay_id: string option;
+            client_id: string option;
           }
             (** A query that asks the server to return the location of definitions for a given
                 cursor point in a given module. The server will send back a
                 {!Response.LocationOfDefinition} response as result. The response will contain an
                 empty list if a definition cannot be found.
 
-                If the provided module is not covered by the code navigation server, the server will
-                respond with a {!Response.ErrorKind.ModuleNotTracked} error. If the server cannot
-                find the overlay with the given ID, it will respond with a
-                {!Response.ErrorKind.OverlayNotFound} error. *)
+                If the given file was not previously opened by a `{!Command.FileOpened}` command for
+                the client, the server will respond with a {!Response.ErrorKind.FileNotOpened}
+                error. If the provided module is opened but not covered by the code navigation
+                server, the server will respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
         | GetInfo
             (** A query that asks for server metadata, intended to be consumed by the `pyre servers`
                 command. *)

@@ -361,20 +361,20 @@ let test_hover_request context =
           ~request:
             Request.(
               (* This location point to empty space. *)
-              Query (Query.Hover { overlay_id = None; path = test_path; position = position 1 2 }))
+              Query (Query.Hover { client_id = None; path = test_path; position = position 1 2 }))
           ~expected:
             Response.(Hover { contents = HoverContent.[{ value = None; docstring = None }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
-              Query (Query.Hover { overlay_id = None; path = test_path; position = position 1 0 }))
+              Query (Query.Hover { client_id = None; path = test_path; position = position 1 0 }))
           ~expected:
             Response.(
               Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
-              Query (Query.Hover { overlay_id = None; path = test_path; position = position 1 0 }))
+              Query (Query.Hover { client_id = None; path = test_path; position = position 1 0 }))
           ~expected:
             Response.(
               Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
@@ -383,15 +383,15 @@ let test_hover_request context =
             Request.(
               Query
                 (Query.Hover
-                   { overlay_id = None; path = "/doesnotexist.py"; position = position 1 0 }))
+                   { client_id = None; path = "/doesnotexist.py"; position = position 1 0 }))
           ~kind:"ModuleNotTracked";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.Hover
-                   { overlay_id = Some "doesnotexist"; path = test_path; position = position 1 0 }))
-          ~kind:"OverlayNotFound";
+                   { client_id = Some "doesnotexist"; path = test_path; position = position 1 0 }))
+          ~kind:"ClientNotRegistered";
       ]
 
 
@@ -417,7 +417,7 @@ let test_location_of_definition_request context =
               (* This location points to an empty space *)
               Query
                 (Query.LocationOfDefinition
-                   { overlay_id = None; path = test2_path; position = position 2 8 }))
+                   { client_id = None; path = test2_path; position = position 2 8 }))
           ~expected:Response.(LocationOfDefinition { definitions = [] });
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -425,7 +425,7 @@ let test_location_of_definition_request context =
               (* This location points to `test.x` *)
               Query
                 (Query.LocationOfDefinition
-                   { overlay_id = None; path = test2_path; position = position 2 14 }))
+                   { client_id = None; path = test2_path; position = position 2 14 }))
           ~expected:
             Response.(
               LocationOfDefinition
@@ -435,7 +435,7 @@ let test_location_of_definition_request context =
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   { overlay_id = None; path = test2_path; position = position 2 14 }))
+                   { client_id = None; path = test2_path; position = position 2 14 }))
           ~expected:
             Response.(
               LocationOfDefinition
@@ -445,15 +445,15 @@ let test_location_of_definition_request context =
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   { overlay_id = None; path = "/doesnotexist.py"; position = position 1 0 }))
+                   { client_id = None; path = "/doesnotexist.py"; position = position 1 0 }))
           ~kind:"ModuleNotTracked";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   { overlay_id = Some "doesnotexist"; path = test_path; position = position 1 0 }))
-          ~kind:"OverlayNotFound";
+                   { client_id = Some "doesnotexist"; path = test_path; position = position 1 0 }))
+          ~kind:"ClientNotRegistered";
       ]
 
 

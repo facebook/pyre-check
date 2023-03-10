@@ -21,15 +21,6 @@ module ServerInternal = struct
   }
 end
 
-let legacy_get_overlay ~environment overlay_id =
-  match overlay_id with
-  | None -> Result.Ok (OverlaidEnvironment.root environment)
-  | Some overlay_id -> (
-      match OverlaidEnvironment.overlay environment overlay_id with
-      | Some overlay -> Result.Ok overlay
-      | None -> Result.Error (Response.ErrorKind.OverlayNotFound { overlay_id }))
-
-
 let get_overlay_id ~path ~client_id client_states =
   match client_id with
   | None -> Result.Ok None
@@ -99,10 +90,11 @@ let get_hover_in_overlay ~overlay ~build_system ~position module_ =
   >>| List.map ~f:(get_hover_content_for_module ~overlay ~position)
 
 
-let handle_hover ~path ~position ~overlay_id { State.environment; build_system; _ } =
+let handle_hover ~path ~position ~client_id { State.environment; build_system; client_states; _ } =
   let open Result in
-  legacy_get_overlay ~environment overlay_id
-  >>= fun overlay ->
+  get_overlay_id ~path ~client_id client_states
+  >>= fun overlay_id ->
+  let overlay = get_overlay ~environment overlay_id in
   get_hover_in_overlay ~overlay ~build_system ~position path
   >>| fun contents ->
   Response.(
@@ -133,11 +125,16 @@ let get_location_of_definition_in_overlay ~overlay ~build_system ~position path 
   >>| List.filter_map ~f:(get_location_of_definition_for_module ~overlay ~build_system ~position)
 
 
-let handle_location_of_definition ~path ~position ~overlay_id { State.environment; build_system; _ }
+let handle_location_of_definition
+    ~path
+    ~position
+    ~client_id
+    { State.environment; build_system; client_states; _ }
   =
   let open Result in
-  legacy_get_overlay ~environment overlay_id
-  >>= fun overlay ->
+  get_overlay_id ~path ~client_id client_states
+  >>= fun overlay_id ->
+  let overlay = get_overlay ~environment overlay_id in
   get_location_of_definition_in_overlay ~overlay ~build_system ~position path
   >>| fun definitions -> Response.(LocationOfDefinition { definitions })
 
@@ -446,16 +443,16 @@ let handle_query
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.Query.Hover { path; position; overlay_id } ->
+  | Request.Query.Hover { path; position; client_id } ->
       let f state =
-        let response = handle_hover ~path ~position ~overlay_id state |> response_from_result in
+        let response = handle_hover ~path ~position ~client_id state |> response_from_result in
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.Query.LocationOfDefinition { path; position; overlay_id } ->
+  | Request.Query.LocationOfDefinition { path; position; client_id } ->
       let f state =
         let response =
-          handle_location_of_definition ~path ~position ~overlay_id state |> response_from_result
+          handle_location_of_definition ~path ~position ~client_id state |> response_from_result
         in
         Lwt.return response
       in

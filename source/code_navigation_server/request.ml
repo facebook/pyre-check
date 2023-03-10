@@ -64,12 +64,12 @@ module Query = struct
     | Hover of {
         path: string;
         position: Ast.Location.position;
-        overlay_id: string option;
+        client_id: string option;
       }
     | LocationOfDefinition of {
         path: string;
         position: Ast.Location.position;
-        overlay_id: string option;
+        client_id: string option;
       }
     | GetInfo (* Poll the server's state. *)
     | Superclasses of { class_: ClassExpression.t [@key "class"] }

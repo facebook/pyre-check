@@ -287,7 +287,7 @@ let test_build_system_path_lookup context =
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   { path = path_a; overlay_id = None; position = position 2 12 }))
+                   { path = path_a; client_id = None; position = position 2 12 }))
           ~kind:"ModuleNotTracked";
         (* Server should be aware of `b.py` on type error query *)
         ScratchProject.ClientConnection.assert_response
@@ -300,7 +300,7 @@ let test_build_system_path_lookup context =
               (* This location points to `x` in "reveal_type(x)" *)
               Query
                 (Query.LocationOfDefinition
-                   { overlay_id = None; path = path_b; position = position 2 12 }))
+                   { client_id = None; path = path_b; position = position 2 12 }))
           ~expected:
             Response.(
               LocationOfDefinition
