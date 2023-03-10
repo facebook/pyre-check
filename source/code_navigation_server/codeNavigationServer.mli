@@ -321,9 +321,9 @@ module Testing : sig
       (** A type representing queries sent from the clients to the server.
 
           The code navigation server supports a form of isolation between different clients. Many
-          kinds of requests that query server state can optionally specify a [client_id], and the
-          server will attempt to guarantee that type checking states for different [client_id]s will
-          not interfere with each other. [client_id]s are explicitly registered with the server via
+          kinds of requests that query server state must specify a [client_id], and the server will
+          attempt to guarantee that type checking states for different [client_id]s will not
+          interfere with each other. [client_id]s are explicitly registered with the server via
           {!Command.RegisterClient} command and disposed via {!Command.DisposeClient} command.
 
           The server will send back a query response and close its connection with the client once
@@ -331,7 +331,7 @@ module Testing : sig
       type t =
         | GetTypeErrors of {
             path: string;
-            client_id: string option;
+            client_id: string;
           }
             (** A query that asks the server to type check a given module. The server will send back
                 a {!Response.TypeErrors} response when the type checking completes.
@@ -343,7 +343,7 @@ module Testing : sig
         | Hover of {
             path: string;
             position: Ast.Location.position;
-            client_id: string option;
+            client_id: string;
           }
             (** A query that asks the server to return hover information at a given location in a
                 given module. The server will send back a {!Response.Hover} response as result. The
@@ -357,7 +357,7 @@ module Testing : sig
         | LocationOfDefinition of {
             path: string;
             position: Ast.Location.position;
-            client_id: string option;
+            client_id: string;
           }
             (** A query that asks the server to return the location of definitions for a given
                 cursor point in a given module. The server will send back a

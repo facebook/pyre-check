@@ -22,23 +22,18 @@ module ServerInternal = struct
 end
 
 let get_overlay_id ~path ~client_id client_states =
-  match client_id with
-  | None -> Result.Ok None
-  | Some client_id -> (
-      let source_path = PyrePath.create_absolute path |> SourcePath.create in
-      match State.Client.WorkingSet.lookup client_states ~client_id ~source_path with
-      | `ClientNotRegistered -> Result.Error (Response.ErrorKind.ClientNotRegistered { client_id })
-      | `FileNotAdded -> Result.Error (Response.ErrorKind.FileNotOpened { path })
-      | `Ok overlay_id -> Result.Ok (Some overlay_id))
+  let source_path = PyrePath.create_absolute path |> SourcePath.create in
+  match State.Client.WorkingSet.lookup client_states ~client_id ~source_path with
+  | `ClientNotRegistered -> Result.Error (Response.ErrorKind.ClientNotRegistered { client_id })
+  | `FileNotAdded -> Result.Error (Response.ErrorKind.FileNotOpened { path })
+  | `Ok overlay_id -> Result.Ok overlay_id
 
 
-let get_overlay ~environment = function
-  | None -> OverlaidEnvironment.root environment
-  | Some overlay_id ->
-      let overlay_id = State.Client.OverlayId.to_string overlay_id in
-      OverlaidEnvironment.overlay environment overlay_id
-      |> Option.value_exn
-           ~message:(Format.sprintf "Unexpected overlay lookup failure with id `%s`" overlay_id)
+let get_overlay ~environment overlay_id =
+  let overlay_id = State.Client.OverlayId.to_string overlay_id in
+  OverlaidEnvironment.overlay environment overlay_id
+  |> Option.value_exn
+       ~message:(Format.sprintf "Unexpected overlay lookup failure with id `%s`" overlay_id)
 
 
 let get_modules ~module_tracker ~build_system path =

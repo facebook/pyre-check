@@ -74,10 +74,12 @@ let test_get_type_errors_request context =
         ])
     |> Result.ok_or_failwith
   in
+  let open TestHelper in
+  let client_id = "foo" in
   let assert_type_errors ~path client =
     ScratchProject.ClientConnection.assert_response
       client
-      ~request:Request.(Query (Query.GetTypeErrors { client_id = None; path }))
+      ~request:Request.(Query (Query.GetTypeErrors { client_id; path }))
       ~expected:(Response.TypeErrors [expected_error])
   in
   ScratchProject.test_server_with
@@ -85,18 +87,21 @@ let test_get_type_errors_request context =
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
+        register_client ~client_id;
+        open_file ~client_id ~path:(PyrePath.absolute test_path);
         assert_type_errors ~path:(PyrePath.absolute test_path);
         ScratchProject.ClientConnection.assert_error_response
-          ~request:
-            Request.(Query (Query.GetTypeErrors { client_id = None; path = "/doesnotexist.py" }))
-          ~kind:"ModuleNotTracked";
+          ~request:Request.(Query (Query.GetTypeErrors { client_id; path = "/doesnotexist.py" }))
+          ~kind:"FileNotOpened";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.GetTypeErrors
-                   { client_id = Some "doesnotexist"; path = PyrePath.absolute test_path }))
+                   { client_id = "doesnotexist"; path = PyrePath.absolute test_path }))
           ~kind:"ClientNotRegistered";
+        close_file ~client_id ~path:(PyrePath.absolute test_path);
+        dispose_client ~client_id;
       ]
 
 
@@ -116,7 +121,7 @@ let test_file_opened_and_closed_request context =
     ~clients:
       [
         register_client ~client_id;
-        assert_type_error_count_for_path ~path:test_path ~expected:1;
+        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:1;
         open_file ~path:test_path ~content:"reveal_type(43)\nreveal_type(44)" ~client_id;
         assert_type_error_count_for_path ~path:test_path ~client_id ~expected:2;
         ScratchProject.ClientConnection.assert_response
@@ -242,10 +247,7 @@ let test_file_update_request context =
         register_client ~client_id;
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(
-              Query
-                (Query.GetTypeErrors
-                   { client_id = Some client_id; path = PyrePath.absolute test_path }))
+            Request.(Query (Query.GetTypeErrors { client_id; path = PyrePath.absolute test_path }))
           ~kind:"FileNotOpened";
         open_file ~client_id ~path:(PyrePath.absolute test_path);
         assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:1;
@@ -261,18 +263,12 @@ let test_file_update_request context =
           ~expected:Response.Ok;
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(
-              Query
-                (Query.GetTypeErrors
-                   { client_id = Some client_id; path = PyrePath.absolute test_path }))
+            Request.(Query (Query.GetTypeErrors { client_id; path = PyrePath.absolute test_path }))
           ~kind:"ModuleNotTracked";
         close_file ~client_id ~path:(PyrePath.absolute test_path);
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(
-              Query
-                (Query.GetTypeErrors
-                   { client_id = Some client_id; path = PyrePath.absolute test_path }))
+            Request.(Query (Query.GetTypeErrors { client_id; path = PyrePath.absolute test_path }))
           ~kind:"FileNotOpened";
         (fun _ ->
           File.create test2_path ~content:"reveal_type(43)\nreveal_type(44)" |> File.write;
@@ -313,7 +309,8 @@ let test_file_and_local_update context =
       [
         register_client ~client_id;
         open_file ~path:(PyrePath.absolute test_path) ~client_id;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~expected:2;
+        open_file ~path:(PyrePath.absolute test2_path) ~client_id;
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -341,6 +338,7 @@ let test_file_and_local_update context =
           ~expected:Response.Ok;
         assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:0;
         close_file ~path:(PyrePath.absolute test_path) ~client_id;
+        close_file ~path:(PyrePath.absolute test2_path) ~client_id;
         dispose_client ~client_id;
       ]
 
@@ -352,46 +350,47 @@ let test_hover_request context =
   let root = ScratchProject.source_root_of project in
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
   let open TestHelper in
+  let client_id = "foo" in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
+        register_client ~client_id;
+        open_file ~client_id ~path:test_path;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               (* This location point to empty space. *)
-              Query (Query.Hover { client_id = None; path = test_path; position = position 1 2 }))
+              Query (Query.Hover { client_id; path = test_path; position = position 1 2 }))
           ~expected:
             Response.(Hover { contents = HoverContent.[{ value = None; docstring = None }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
-            Request.(
-              Query (Query.Hover { client_id = None; path = test_path; position = position 1 0 }))
+            Request.(Query (Query.Hover { client_id; path = test_path; position = position 1 0 }))
           ~expected:
             Response.(
               Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
         ScratchProject.ClientConnection.assert_response
           ~request:
-            Request.(
-              Query (Query.Hover { client_id = None; path = test_path; position = position 1 0 }))
+            Request.(Query (Query.Hover { client_id; path = test_path; position = position 1 0 }))
           ~expected:
             Response.(
               Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
-              Query
-                (Query.Hover
-                   { client_id = None; path = "/doesnotexist.py"; position = position 1 0 }))
-          ~kind:"ModuleNotTracked";
+              Query (Query.Hover { client_id; path = "/doesnotexist.py"; position = position 1 0 }))
+          ~kind:"FileNotOpened";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.Hover
-                   { client_id = Some "doesnotexist"; path = test_path; position = position 1 0 }))
+                   { client_id = "doesnotexist"; path = test_path; position = position 1 0 }))
           ~kind:"ClientNotRegistered";
+        close_file ~client_id ~path:test_path;
+        dispose_client ~client_id;
       ]
 
 
@@ -406,18 +405,22 @@ let test_location_of_definition_request context =
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
   let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" |> PyrePath.absolute in
   let open TestHelper in
+  let client_id = "foo" in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
+        register_client ~client_id;
+        open_file ~client_id ~path:test_path;
+        open_file ~client_id ~path:test2_path;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               (* This location points to an empty space *)
               Query
                 (Query.LocationOfDefinition
-                   { client_id = None; path = test2_path; position = position 2 8 }))
+                   { client_id; path = test2_path; position = position 2 8 }))
           ~expected:Response.(LocationOfDefinition { definitions = [] });
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -425,7 +428,7 @@ let test_location_of_definition_request context =
               (* This location points to `test.x` *)
               Query
                 (Query.LocationOfDefinition
-                   { client_id = None; path = test2_path; position = position 2 14 }))
+                   { client_id; path = test2_path; position = position 2 14 }))
           ~expected:
             Response.(
               LocationOfDefinition
@@ -435,7 +438,7 @@ let test_location_of_definition_request context =
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   { client_id = None; path = test2_path; position = position 2 14 }))
+                   { client_id; path = test2_path; position = position 2 14 }))
           ~expected:
             Response.(
               LocationOfDefinition
@@ -445,15 +448,18 @@ let test_location_of_definition_request context =
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   { client_id = None; path = "/doesnotexist.py"; position = position 1 0 }))
-          ~kind:"ModuleNotTracked";
+                   { client_id; path = "/doesnotexist.py"; position = position 1 0 }))
+          ~kind:"FileNotOpened";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.LocationOfDefinition
-                   { client_id = Some "doesnotexist"; path = test_path; position = position 1 0 }))
+                   { client_id = "doesnotexist"; path = test_path; position = position 1 0 }))
           ~kind:"ClientNotRegistered";
+        close_file ~client_id ~path:test_path;
+        close_file ~client_id ~path:test2_path;
+        dispose_client ~client_id;
       ]
 
 
@@ -622,10 +628,11 @@ let test_watchman_integration context =
       ~context
       ~include_typeshed_stubs:false
       ~watchman:mock_watchman
-      ["test.py", ""]
+      ["test.py", "from test2 import x"; "test2.py", "x: int = 42"]
   in
   let root = ScratchProject.source_root_of project in
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
+  let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
   let watchman_update_response file_names =
     `Assoc
       [
@@ -638,24 +645,28 @@ let test_watchman_integration context =
       ]
   in
   let open TestHelper in
+  let client_id = "foo" in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~expected:0;
+        register_client ~client_id;
+        open_file ~client_id ~path:(PyrePath.absolute test_path);
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:0;
         (fun _ ->
-          File.create ~content:"reveal_type(42)" test_path |> File.write;
-          Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]));
-        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~expected:1;
+          File.create ~content:"" test2_path |> File.write;
+          Lwt_mvar.put watchman_mailbox (watchman_update_response ["test2.py"]));
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:1;
         (fun _ ->
           PyrePath.remove test_path;
           Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]));
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(
-              Query (Query.GetTypeErrors { client_id = None; path = PyrePath.absolute test_path }))
+            Request.(Query (Query.GetTypeErrors { client_id; path = PyrePath.absolute test_path }))
           ~kind:"ModuleNotTracked";
+        close_file ~client_id ~path:(PyrePath.absolute test_path);
+        dispose_client ~client_id;
       ]
 
 

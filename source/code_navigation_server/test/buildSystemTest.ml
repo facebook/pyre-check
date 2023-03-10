@@ -272,26 +272,36 @@ let test_build_system_path_lookup context =
     |> Result.ok_or_failwith
   in
   let open TestHelper in
+  let client_id = "foo" in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
+        register_client ~client_id;
         (* Server should not be aware of `a.py` on type error query *)
         ScratchProject.ClientConnection.assert_error_response
-          ~request:Request.(Query (Query.GetTypeErrors { path = path_a; client_id = None }))
-          ~kind:"ModuleNotTracked";
+          ~request:Request.(Query (Query.GetTypeErrors { path = path_a; client_id }))
+          ~kind:"FileNotOpened";
         (* Server should not be aware of `a.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
-                (Query.LocationOfDefinition
-                   { path = path_a; client_id = None; position = position 2 12 }))
+                (Query.LocationOfDefinition { path = path_a; client_id; position = position 2 12 }))
+          ~kind:"FileNotOpened";
+        (* Try open both `a.py` and `b.py` *)
+        ScratchProject.ClientConnection.assert_error_response
+          ~request:
+            Request.(Command (Command.FileOpened { path = path_a; content = None; client_id }))
           ~kind:"ModuleNotTracked";
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(Command (Command.FileOpened { path = path_b; content = None; client_id }))
+          ~expected:Response.Ok;
         (* Server should be aware of `b.py` on type error query *)
         ScratchProject.ClientConnection.assert_response
-          ~request:Request.(Query (Query.GetTypeErrors { path = path_b; client_id = None }))
+          ~request:Request.(Query (Query.GetTypeErrors { path = path_b; client_id }))
           ~expected:(Response.TypeErrors [expected_error]);
         (* Server should be aware of `b.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_response
@@ -299,8 +309,7 @@ let test_build_system_path_lookup context =
             Request.(
               (* This location points to `x` in "reveal_type(x)" *)
               Query
-                (Query.LocationOfDefinition
-                   { client_id = None; path = path_b; position = position 2 12 }))
+                (Query.LocationOfDefinition { client_id; path = path_b; position = position 2 12 }))
           ~expected:
             Response.(
               LocationOfDefinition
@@ -308,18 +317,9 @@ let test_build_system_path_lookup context =
       ]
 
 
-let assert_module_path_not_tracked path =
-  ScratchProject.ClientConnection.assert_error_response
-    ~request:
-      Request.(Query (Query.GetTypeErrors { path = PyrePath.absolute path; client_id = None }))
-    ~kind:"ModuleNotTracked"
-
-
 let assert_file_not_opened ~client_id path =
   ScratchProject.ClientConnection.assert_error_response
-    ~request:
-      Request.(
-        Query (Query.GetTypeErrors { path = PyrePath.absolute path; client_id = Some client_id }))
+    ~request:Request.(Query (Query.GetTypeErrors { path = PyrePath.absolute path; client_id }))
     ~kind:"FileNotOpened"
 
 
@@ -449,22 +449,33 @@ let test_build_system_file_update context =
       []
   in
   let open TestHelper in
+  let client_id = "foo" in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
+        register_client ~client_id;
         (* Initial request to just get the link tree populated *)
         assert_single_file_update other_path;
-        assert_module_path_not_tracked raw_source_path0;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:1;
+        assert_file_not_opened ~client_id raw_source_path1;
+        open_file ~client_id ~path:(PyrePath.absolute raw_source_path1);
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~client_id
+          ~expected:1;
+        close_file ~client_id ~path:(PyrePath.absolute raw_source_path1);
         (* Update pre-existing file in build map *)
         (fun _ ->
           File.create raw_source_path1 ~content:"reveal_type(2)\nreveal_type(3)" |> File.write;
           Lwt.return_unit);
-        assert_module_path_not_tracked raw_source_path0;
         assert_single_file_update raw_source_path1;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
+        open_file ~client_id ~path:(PyrePath.absolute raw_source_path1);
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~client_id
+          ~expected:2;
+        close_file ~client_id ~path:(PyrePath.absolute raw_source_path1);
         (* Update build map *)
         (fun _ ->
           update_flag := true;
@@ -486,8 +497,19 @@ let test_build_system_file_update context =
                      };
                    ]))
           ~expected:Response.Ok;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
+        open_file ~client_id ~path:(PyrePath.absolute raw_source_path0);
+        open_file ~client_id ~path:(PyrePath.absolute raw_source_path1);
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~client_id
+          ~expected:1;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~client_id
+          ~expected:2;
+        close_file ~client_id ~path:(PyrePath.absolute raw_source_path0);
+        close_file ~client_id ~path:(PyrePath.absolute raw_source_path1);
+        dispose_client ~client_id;
       ]
 
 
@@ -528,52 +550,68 @@ let test_build_system_file_open_and_update context =
         (* Register client *)
         register_client ~client_id;
         (* Initially nothing exists *)
-        assert_module_path_not_tracked raw_source_path0;
-        assert_module_path_not_tracked raw_source_path1;
+        assert_file_not_opened ~client_id raw_source_path0;
+        assert_file_not_opened ~client_id raw_source_path1;
         (* Open source0.py *)
         open_file ~path:(PyrePath.absolute raw_source_path0) ~client_id;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:0;
-        assert_module_path_not_tracked raw_source_path1;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~client_id
+          ~expected:0;
+        assert_file_not_opened ~client_id raw_source_path1;
+        close_file ~path:(PyrePath.absolute raw_source_path0) ~client_id;
         (* Update source0.py *)
         (fun _ ->
           File.create raw_source_path0 ~content:"reveal_type(1)" |> File.write;
           Lwt.return_unit);
         assert_single_file_update raw_source_path0;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
-        assert_module_path_not_tracked raw_source_path1;
+        open_file ~path:(PyrePath.absolute raw_source_path0) ~client_id;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~client_id
+          ~expected:1;
+        assert_file_not_opened ~client_id raw_source_path1;
         (* Update source1.py (should have no effect) *)
         (fun _ ->
           File.create raw_source_path1 ~content:"reveal_type(0)\nreveal_type(2)" |> File.write;
           Lwt.return_unit);
         assert_single_file_update raw_source_path1;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
-        assert_module_path_not_tracked raw_source_path1;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~client_id
+          ~expected:1;
+        assert_file_not_opened ~client_id raw_source_path1;
         (* Open source1.py *)
         open_file ~path:(PyrePath.absolute raw_source_path1) ~client_id;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~client_id
+          ~expected:1;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~client_id
+          ~expected:2;
         (* Close source0.py *)
         close_file ~path:(PyrePath.absolute raw_source_path0) ~client_id;
-        assert_module_path_not_tracked raw_source_path0;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
+        assert_file_not_opened ~client_id raw_source_path0;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~client_id
+          ~expected:2;
         (* Update source0.py (should have no effect) *)
         (fun _ ->
           File.create raw_source_path0 ~content:"" |> File.write;
           Lwt.return_unit);
         assert_single_file_update raw_source_path0;
-        assert_module_path_not_tracked raw_source_path0;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
-        (* Update source1.py *)
-        (fun _ ->
-          File.create raw_source_path1 ~content:"reveal_type(0)" |> File.write;
-          Lwt.return_unit);
-        assert_single_file_update raw_source_path1;
-        assert_module_path_not_tracked raw_source_path0;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:1;
+        assert_file_not_opened ~client_id raw_source_path0;
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~client_id
+          ~expected:2;
         (* Close source1.py *)
         close_file ~path:(PyrePath.absolute raw_source_path1) ~client_id;
-        assert_module_path_not_tracked raw_source_path0;
-        assert_module_path_not_tracked raw_source_path1;
+        assert_file_not_opened ~client_id raw_source_path0;
+        assert_file_not_opened ~client_id raw_source_path1;
         (* Dispose client *)
         dispose_client ~client_id;
       ]

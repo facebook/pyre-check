@@ -59,17 +59,17 @@ module Query = struct
   type t =
     | GetTypeErrors of {
         path: string;
-        client_id: string option;
+        client_id: string;
       }
     | Hover of {
         path: string;
         position: Ast.Location.position;
-        client_id: string option;
+        client_id: string;
       }
     | LocationOfDefinition of {
         path: string;
         position: Ast.Location.position;
-        client_id: string option;
+        client_id: string;
       }
     | GetInfo (* Poll the server's state. *)
     | Superclasses of { class_: ClassExpression.t [@key "class"] }

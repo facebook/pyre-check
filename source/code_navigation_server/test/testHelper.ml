@@ -39,7 +39,7 @@ let close_file ~client_id ~path =
     ~expected:Response.Ok
 
 
-let assert_type_error_count ?client_id ~path ~expected client =
+let assert_type_error_count ~client_id ~path ~expected client =
   let%lwt raw_response =
     ScratchProject.ClientConnection.send_request
       client
@@ -61,5 +61,5 @@ let assert_type_error_count ?client_id ~path ~expected client =
       assert_failure message
 
 
-let assert_type_error_count_for_path ?client_id ~path ~expected client =
-  assert_type_error_count client ?client_id ~expected ~path
+let assert_type_error_count_for_path ~client_id ~path ~expected client =
+  assert_type_error_count client ~client_id ~expected ~path
