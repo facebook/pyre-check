@@ -34,6 +34,11 @@ let get_or_create_overlay { root; overlays } identifier =
       new_overlay
 
 
+let remove_overlay { overlays; _ } identifier =
+  (* NOTE(grievejia): This is going to leak some sharedmem *)
+  String.Table.remove overlays identifier
+
+
 let controls { root; _ } = ErrorsEnvironment.read_only root |> ErrorsEnvironment.ReadOnly.controls
 
 let configuration environment = controls environment |> EnvironmentControls.configuration

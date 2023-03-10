@@ -27,6 +27,8 @@ val update_root
 
 val get_or_create_overlay : t -> overlay_identifier -> ErrorsEnvironment.Overlay.t
 
+val remove_overlay : t -> overlay_identifier -> unit
+
 (** A convenience wrapper around {!get_or_create_overlay} followed by
     {!ErrorsEnvironment.Overlay.update_overlaid_code}. *)
 val update_overlay_with_code
