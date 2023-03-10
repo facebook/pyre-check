@@ -143,18 +143,46 @@ let test_server_subscription_busy_local_update context =
   let root = ScratchProject.source_root_of project in
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
 
+  (* This is used to ensure opener always runs after client is registered. *)
+  let register_mailbox = Lwt_mvar.create_empty () in
+  (* This is used to ensure subscriber always runs after file is opened. *)
+  let open_mailbox = Lwt_mvar.create_empty () in
   (* This is used to ensure mutator always run after subscription is established *)
-  let mailbox = Lwt_mvar.create_empty () in
+  let subscribe_mailbox = Lwt_mvar.create_empty () in
+
+  let register connection =
+    let%lwt _ =
+      ScratchProject.ClientConnection.send_request
+        connection
+        Request.(Command (Command.RegisterClient { client_id = "foo" }))
+    in
+    Lwt_mvar.put register_mailbox "registered"
+  in
+  let opener connection =
+    let%lwt _ = Lwt_mvar.take register_mailbox in
+    let%lwt _ =
+      ScratchProject.ClientConnection.send_request
+        connection
+        Request.(
+          Command
+            (Command.FileOpened
+               { path = PyrePath.absolute test_path; content = Some ""; client_id = "foo" }))
+    in
+    Lwt_mvar.put open_mailbox "opened"
+  in
   let subscriber connection =
+    let%lwt _ = Lwt_mvar.take open_mailbox in
     let%lwt _ =
       ScratchProject.ClientConnection.send_request
         connection
         Request.(Subscription Subscription.Subscribe)
     in
-    let%lwt () = Lwt_mvar.put mailbox "subscribed" in
+    let%lwt () = Lwt_mvar.put subscribe_mailbox "subscribed" in
     let%lwt () =
+      (* TODO: Remove overlay_id from status message *)
+      let expected_id = Format.sprintf "foo:%s" (PyrePath.absolute test_path) in
       ScratchProject.ClientConnection.assert_subscription_response
-        ~expected:Response.(ServerStatus (Status.BusyChecking { overlay_id = Some "foo" }))
+        ~expected:Response.(ServerStatus (Status.BusyChecking { overlay_id = Some expected_id }))
         connection
     in
     let%lwt () =
@@ -165,7 +193,7 @@ let test_server_subscription_busy_local_update context =
     Lwt.return_unit
   in
   let mutator connection =
-    let%lwt _ = Lwt_mvar.take mailbox in
+    let%lwt _ = Lwt_mvar.take subscribe_mailbox in
     let%lwt _ =
       ScratchProject.ClientConnection.send_request
         connection
@@ -175,7 +203,7 @@ let test_server_subscription_busy_local_update context =
                {
                  path = PyrePath.absolute test_path;
                  content = Some "reveal_type(42)";
-                 overlay_id = "foo";
+                 client_id = "foo";
                }))
     in
     Lwt.return_unit
@@ -183,7 +211,7 @@ let test_server_subscription_busy_local_update context =
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Concurrent
-    ~clients:[subscriber; mutator]
+    ~clients:[register; opener; subscriber; mutator]
 
 
 let test_server_subscription_stop context =

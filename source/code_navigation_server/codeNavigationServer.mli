@@ -285,48 +285,50 @@ module Testing : sig
         | FileOpened of {
             path: string;
             content: string option;
-            overlay_id: string option;
+            client_id: string;
           }
-            (** A command that asks the server to create an overlay for a given module and mark a
-                file as tracked. [content] specifies the content of the source file corresponds to
+            (** A command that asks the server to add the given file [path] to the working set of
+                the given client. [content] specifies the content of the source file corresponds to
                 the module.[content] being [None] indicates that contents of the source file should
-                match what was stored on the filesystem.
+                match what was stored on the filesystem. File open is a stateful operation on the
+                server side, and it requires the client to have a prior ID registration with the
+                server.
 
-                The server will send back a {!Response.Ok} response when the update succeeds, and a
-                new overlay with that ID will be created.
-
-                If the provided module is not covered by the code navigation server, the server will
-                respond with a {!Response.ErrorKind.ModuleNotTracked} error. We don't allow
-                specifying closed opened/closed files by name. *)
+                The server will send back a {!Response.Ok} response when the update succeeds. If the
+                provided client ID is not registered previously, the server will respond with a
+                {!Response.ErrorKind.ClientNotRegistered} error. If the provided module is not
+                covered by the code navigation server, the server will respond with a
+                {!Response.ErrorKind.ModuleNotTracked} error. *)
         | FileClosed of {
             path: string;
-            overlay_id: string option;
+            client_id: string;
           }
-            (** A command that notifies the server that a previouly open file was closed. The server
-                will send back a {!Response.Ok} response when the update succeeds.
+            (** A command that asks the server to remove a given file [path] from the working set of
+                the given client. File close is a stateful operation on the server side, and it
+                requires the client to have a prior ID registration with the server.
 
-                If the provided module is not covered by the code navigation server, the server will
-                respond with a {!Response.ErrorKind.ModuleNotTracked} error.
-
-                If closing a file that was not previously opened by a `{Command.FileOpened}`
-                command, the server will respond with a {!Response.ErrorKind.UntrackedFileClosed}
-                error. *)
+                The server will send back a {!Response.Ok} response when the update succeeds. If the
+                provided client ID is not registered previously, the server will respond with a
+                {!Response.ErrorKind.ClientNotRegistered} error. If the given file was not
+                previously opened by a `{!Command.FileOpened}` command for the client, the server
+                will respond with a {!Response.ErrorKind.FileNotOpened} error. *)
         | LocalUpdate of {
             path: string;
             content: string option;
-            overlay_id: string;
+            client_id: string;
           }
-            (** A command that asks the server to update a given module locally for an overlay.
+            (** A command that asks the server to update a given module locally for a given client.
                 [content] specifies the content of the source file corresponds to the module.
                 [content] being [None] indicates that contents of the source file should match what
                 was stored on the filesystem.
 
                 The server will send back a {!Response.Ok} response when the update succeeds. If the
-                overlay with the given ID does not exist yet, a new overlay with that ID will be
-                created.
-
-                If the provided module is not covered by the code navigation server, the server will
-                respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
+                provided client ID is not registered previously, the server will respond with a
+                {!Response.ErrorKind.ClientNotRegistered} error. If the given file was not
+                previously opened by a `{!Command.FileOpened}` command for the client, the server
+                will respond with a {!Response.ErrorKind.FileNotOpened} error. If the provided
+                module is not covered by the code navigation server, the server will respond with a
+                {!Response.ErrorKind.ModuleNotTracked} error. *)
         | FileUpdate of FileUpdateEvent.t list
             (** A command that notify the server that a file has changed on disk, so the server
                 needs to incrementally adjust its internal state accordingly. Events will get

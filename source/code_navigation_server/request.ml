@@ -40,16 +40,16 @@ module Command = struct
     | FileOpened of {
         path: string;
         content: string option;
-        overlay_id: string option;
+        client_id: string;
       }
     | FileClosed of {
         path: string;
-        overlay_id: string option;
+        client_id: string;
       }
     | LocalUpdate of {
         path: string;
         content: string option;
-        overlay_id: string;
+        client_id: string;
       }
     | FileUpdate of FileUpdateEvent.t list
   [@@deriving sexp, compare, yojson { strict = false }]

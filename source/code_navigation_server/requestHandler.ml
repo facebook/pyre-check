@@ -249,7 +249,7 @@ let handle_file_update
     ~events
     ~subscriptions
     ~properties:{ Server.ServerProperties.critical_files; _ }
-    { State.environment; build_system; open_files; client_states = _ }
+    { State.environment; build_system; client_states; open_files = _ }
   =
   match Server.CriticalFile.find critical_files ~within:(List.map events ~f:get_raw_path) with
   | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)
@@ -261,7 +261,7 @@ let handle_file_update
           ~response:(lazy Response.(ServerStatus Status.BusyBuilding))
       in
       let%lwt changed_artifacts_from_rebuild =
-        let working_set = OpenFiles.open_files open_files in
+        let working_set = State.Client.WorkingSet.to_list client_states in
         BuildSystem.update_sources build_system source_path_events ~working_set
       in
       let changed_artifacts_from_source =
@@ -276,27 +276,17 @@ let handle_file_update
       Lwt.return_ok Response.Ok
 
 
-let handle_working_set_update
-    ~subscriptions
-    { State.environment; build_system; open_files; client_states = _ }
-  =
+let handle_working_set_update ~subscriptions { State.environment; build_system; client_states; _ } =
   let%lwt artifact_path_events =
     with_broadcast_busy_building ~subscriptions (fun () ->
-        OpenFiles.open_files open_files |> BuildSystem.update_working_set build_system)
+        State.Client.WorkingSet.to_list client_states |> BuildSystem.update_working_set build_system)
   in
   handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
 
 
-let handle_local_update
-    ~path
-    ~content
-    ~overlay_id
-    ~subscriptions
-    { State.environment; build_system; _ }
-    : Response.t Lwt.t
-  =
+let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~overlay_id overlay =
   let module_tracker =
-    OverlaidEnvironment.root environment |> ErrorsEnvironment.ReadOnly.module_tracker
+    ErrorsEnvironment.Overlay.read_only overlay |> ErrorsEnvironment.ReadOnly.module_tracker
   in
   match get_modules ~module_tracker ~build_system path with
   | Result.Error kind -> Lwt.return (Response.Error kind)
@@ -319,8 +309,7 @@ let handle_local_update
         | [] -> Lwt.return_unit
         | _ ->
             let run_local_update () =
-              OverlaidEnvironment.update_overlay_with_code environment ~code_updates overlay_id
-              |> Lwt.return
+              ErrorsEnvironment.Overlay.update_overlaid_code overlay ~code_updates |> Lwt.return
             in
             let%lwt _ =
               with_broadcast_busy_checking
@@ -333,33 +322,69 @@ let handle_local_update
       Lwt.return Response.Ok
 
 
-let handle_file_opened ~path ~content ~overlay_id ~subscriptions ({ State.open_files; _ } as state) =
-  let () =
-    let source_path = PyrePath.create_absolute path |> SourcePath.create in
-    OpenFiles.open_file open_files ~source_path ~overlay_id
-  in
-  let%lwt () = handle_working_set_update ~subscriptions state in
-  match overlay_id with
-  | Some overlay_id -> handle_local_update ~path ~content ~overlay_id ~subscriptions state
-  | None -> Lwt.return Response.Ok
-
-
-let handle_file_closed ~path ~overlay_id ~subscriptions ({ State.open_files; _ } as state) =
+let handle_local_update
+    ~path
+    ~content
+    ~client_id
+    ~subscriptions
+    { State.environment; build_system; client_states; _ }
+    : Response.t Lwt.t
+  =
   let source_path = PyrePath.create_absolute path |> SourcePath.create in
-  match OpenFiles.contains open_files ~source_path ~overlay_id with
-  | false -> Lwt.return (Response.Error (Response.ErrorKind.FileNotOpened { path }))
-  | true -> (
-      let%lwt update_response =
-        match overlay_id with
-        | Some overlay_id ->
-            handle_local_update ~path ~content:None ~overlay_id ~subscriptions state
-        | None -> Lwt.return Response.Ok
+  match State.Client.WorkingSet.lookup client_states ~client_id ~source_path with
+  | `ClientNotRegistered ->
+      Lwt.return Response.(Error (ErrorKind.ClientNotRegistered { client_id }))
+  | `FileNotAdded -> Lwt.return Response.(Error (ErrorKind.FileNotOpened { path }))
+  | `Ok overlay_id ->
+      let overlay_id = State.Client.OverlayId.to_string overlay_id in
+      let overlay = OverlaidEnvironment.get_or_create_overlay environment overlay_id in
+      handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~overlay_id overlay
+
+
+let handle_file_opened
+    ~path
+    ~content
+    ~client_id
+    ~subscriptions
+    ({ State.environment; client_states; build_system; _ } as state)
+  =
+  let source_path = PyrePath.create_absolute path |> SourcePath.create in
+  match State.Client.WorkingSet.add client_states ~client_id ~source_path with
+  | `ClientNotRegistered ->
+      Lwt.return Response.(Error (ErrorKind.ClientNotRegistered { client_id }))
+  | `Ok overlay_id ->
+      let%lwt () = handle_working_set_update ~subscriptions state in
+      let overlay_id = State.Client.OverlayId.to_string overlay_id in
+      let overlay = OverlaidEnvironment.get_or_create_overlay environment overlay_id in
+      handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~overlay_id overlay
+
+
+let handle_file_closed
+    ~path
+    ~client_id
+    ~subscriptions
+    ({ State.environment; client_states; build_system; _ } as state)
+  =
+  let source_path = PyrePath.create_absolute path |> SourcePath.create in
+  match State.Client.WorkingSet.remove client_states ~client_id ~source_path with
+  | `ClientNotRegistered ->
+      Lwt.return Response.(Error (ErrorKind.ClientNotRegistered { client_id }))
+  | `FileNotAdded -> Lwt.return Response.(Error (ErrorKind.FileNotOpened { path }))
+  | `Ok overlay_id ->
+      let overlay_id = State.Client.OverlayId.to_string overlay_id in
+      let overlay = OverlaidEnvironment.get_or_create_overlay environment overlay_id in
+      let%lwt response =
+        (* Reset the overlay state *)
+        handle_local_update_in_overlay
+          ~path
+          ~content:None
+          ~subscriptions
+          ~build_system
+          ~overlay_id
+          overlay
       in
-      match OpenFiles.close_file open_files ~source_path ~overlay_id with
-      | Result.Error error_kind -> Lwt.return (Response.Error error_kind)
-      | Result.Ok () ->
-          let%lwt () = handle_working_set_update ~subscriptions state in
-          Lwt.return update_response)
+      let%lwt () = handle_working_set_update ~subscriptions state in
+      Lwt.return response
 
 
 let response_from_result = function
@@ -432,21 +457,21 @@ let handle_command ~server:{ ServerInternal.state; subscriptions; properties } =
         Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.Command.FileOpened { path; content; overlay_id } ->
+  | Request.Command.FileOpened { path; content; client_id } ->
       let f state =
-        let%lwt response = handle_file_opened ~path ~content ~overlay_id ~subscriptions state in
+        let%lwt response = handle_file_opened ~path ~content ~client_id ~subscriptions state in
         Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.Command.FileClosed { path; overlay_id } ->
+  | Request.Command.FileClosed { path; client_id } ->
       let f state =
-        let%lwt response = handle_file_closed ~path ~overlay_id ~subscriptions state in
+        let%lwt response = handle_file_closed ~path ~client_id ~subscriptions state in
         Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.Command.LocalUpdate { path; content; overlay_id } ->
+  | Request.Command.LocalUpdate { path; content; client_id } ->
       let f state =
-        let%lwt response = handle_local_update ~path ~content ~overlay_id ~subscriptions state in
+        let%lwt response = handle_local_update ~path ~content ~client_id ~subscriptions state in
         Lwt.return_ok response
       in
       Server.ExclusiveLock.read state ~f

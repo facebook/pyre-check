@@ -15,15 +15,27 @@ let range start_line start_column stop_line stop_column =
   { Ast.Location.start = position start_line start_column; stop = position stop_line stop_column }
 
 
-let open_file ?overlay_id ?content ~path =
+let register_client ~client_id =
   ScratchProject.ClientConnection.assert_response
-    ~request:Request.(Command (Command.FileOpened { path; content; overlay_id }))
+    ~request:Request.(Command (Command.RegisterClient { client_id }))
     ~expected:Response.Ok
 
 
-let close_file ?overlay_id ~path =
+let dispose_client ~client_id =
   ScratchProject.ClientConnection.assert_response
-    ~request:Request.(Command (Command.FileClosed { path; overlay_id }))
+    ~request:Request.(Command (Command.DisposeClient { client_id }))
+    ~expected:Response.Ok
+
+
+let open_file ?content ~client_id ~path =
+  ScratchProject.ClientConnection.assert_response
+    ~request:Request.(Command (Command.FileOpened { path; content; client_id }))
+    ~expected:Response.Ok
+
+
+let close_file ~client_id ~path =
+  ScratchProject.ClientConnection.assert_response
+    ~request:Request.(Command (Command.FileClosed { path; client_id }))
     ~expected:Response.Ok
 
 
