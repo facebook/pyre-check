@@ -561,4 +561,82 @@ module Testing : sig
         lazily to avoid the cost of the construction when [subscriptions] is empty *)
     val broadcast : response:Response.t Lazy.t -> t -> unit Lwt.t
   end
+
+  (** Clients of the Code Navigation server can request that the server preserve some states for
+      them. Having a client state requested is a pre-requisite for many stateful operations in the
+      protocol (e.g. file open/close). *)
+  module ClientState : sig
+    (** An opaque type representing a collection of client states. *)
+    type t
+
+    (** Create an empty collection of client states. *)
+    val create : unit -> t
+
+    (** [register states client_id] informs the server to allocate new state in [states] for a
+        client whose ID is [client_id]. The ID can be arbitrarily chosen by the client, with the
+        only restriction being that it should not conflict with the IDs of other clients already
+        registered in [states].
+
+        Return [true] if the registration is successful and [false] (i.e. client id already taken)
+        otherwise. *)
+    val register : t -> string -> bool
+
+    (** [dispose states client_id] informs the server to dispose the state for client with
+        [client_id] in [states]. After the disposal, the [client_id] can be freely reused by future
+        clients connected to the server.
+
+        Return [true] if the dispoal is successful and [false] (i.e. client id does not exist)
+        otherwise. *)
+    val dispose : t -> string -> bool
+
+    (** This module exposes an abstract type used to represent overlay ID, which is the main handle
+        to interact with {!module: Analysis.OverlaidEnvironment}. It is considered an implementation
+        detail of the server and should not be exposed to the client. *)
+    module OverlayId : sig
+      (** An opaque type representing an overlay ID. *)
+      type t
+
+      (** Convert the overlay id into a string, for interaction with {!module:
+          Analysis.OverlaidEnvironment}*)
+      val to_string : t -> string
+    end
+
+    (** This module contains common client state operations related to working set maintenance.
+
+        The Code navigation server maintains a working set in the state for each client, to figure
+        out what files to (lazily) run its analysis on. Files that are neither included in the
+        working set nor served as dependency of other files in the working set will not be loaded
+        and examined. *)
+    module WorkingSet : sig
+      (** Add a file with path [source_path] to the working set of the client with [client_id] as
+          its ID. If the addition is successful, return the {!OverlayId.t} associated with the file.
+
+          Note that this API only concerns with the working set itself and does not (and is not
+          intended to) check for existence of [source_path]. Further interpretation of the paths
+          should be performed on the caller side. *)
+      val add
+        :  client_id:string ->
+        source_path:SourcePath.t ->
+        t ->
+        [> `Ok of OverlayId.t | `ClientNotRegistered ]
+
+      (** Remove a file with path [source_path] from the working set of the client with [client_id]
+          as its ID. *)
+      val remove
+        :  client_id:string ->
+        source_path:SourcePath.t ->
+        t ->
+        [> `Ok of OverlayId.t | `ClientNotRegistered | `FileNotAdded ]
+
+      (** Look up the {!OverlayId.t} for a given [source_path] and a given [client_id]. *)
+      val lookup
+        :  client_id:string ->
+        source_path:SourcePath.t ->
+        t ->
+        [> `Ok of OverlayId.t | `ClientNotRegistered | `FileNotAdded ]
+
+      (** Return a list of all source paths currently included in the given working set. *)
+      val to_list : t -> SourcePath.t list
+    end
+  end
 end

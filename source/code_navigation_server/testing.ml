@@ -12,3 +12,4 @@ module Response = Response
 module Subscription = Subscription
 module Subscriptions = Subscriptions
 module BuildSystem = BuildSystem
+module ClientState = State.Client
