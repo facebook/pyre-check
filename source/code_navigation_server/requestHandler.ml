@@ -373,8 +373,20 @@ let handle_file_closed
   | `Ok overlay_id ->
       let overlay_id = State.Client.OverlayId.to_string overlay_id in
       let overlay = OverlaidEnvironment.get_or_create_overlay environment overlay_id in
-      let%lwt response =
-        (* Reset the overlay state *)
+      (* Attempt to reset the overlay state.
+
+         Note that [path] may get removed from the filesystem after it's opened, in which case
+         [handle_local_update_in_overlay] will return us an error. In theory, we should fix the
+         module tracker such that it won't fail the [handle_local_update_in_overlay] on removed
+         files. But that is a big TODO (T147166738) at the moment.
+
+         For now, we are in the unfortunate situation where when the removal happens, there's no way
+         for us to reset the overlay for the file, and we will be leaking an overlay as a result.
+
+         But either way, we should never surface the error returned from
+         [handle_local_update_in_overlay] to the client, given that all the issues are only related
+         to server internals which the client should not see. *)
+      let%lwt _ =
         handle_local_update_in_overlay
           ~path
           ~content:None
@@ -384,7 +396,7 @@ let handle_file_closed
           overlay
       in
       let%lwt () = handle_working_set_update ~subscriptions state in
-      Lwt.return response
+      Lwt.return Response.Ok
 
 
 let response_from_result = function
