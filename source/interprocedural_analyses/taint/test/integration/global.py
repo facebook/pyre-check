@@ -58,3 +58,70 @@ obj4 = _test_source()
 def obj4_flow():
     # TODO(T145247918): False negative
     _test_sink(obj4)
+
+
+def create_global_source():
+    global z
+    z = _test_source()
+
+
+create_global_source()
+
+
+def return_global_source():
+    # TODO(T123109154): We should see a model here, because
+    # global variable z is a source
+    return z
+
+
+obj6 = object()
+
+
+def obj6_source():
+    global obj6
+    obj6 = _test_source()
+
+
+def obj6_sink():
+    _test_sink(obj6)
+
+
+def obj6_flow():
+    # TODO(T145247918): False negative
+    obj6_source()
+    obj6_sink()
+
+
+def obj7_source():
+    # This created a new variable obj7 in the global frame
+    global obj7
+    obj7 = _test_source()
+
+
+def obj7_sink():
+    _test_sink(obj7)
+
+
+def obj7_flow():
+    # TODO(T145247918): False negative
+    obj7_source()
+    obj7_sink()
+
+
+obj8 = object()
+
+
+def obj8_return():
+    return obj8
+
+
+def obj8_set(x):
+    global obj8
+    obj8 = x
+
+
+def obj8_flow():
+    # TODO(T145247918): False negative
+    obj8_set(_test_source())
+    y = obj8_return()
+    _test_sink(y)
