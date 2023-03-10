@@ -172,7 +172,7 @@ let test_local_update_request context =
           ~request:
             Request.(
               Command (Command.LocalUpdate { path = "/doesnotexist"; content = Some ""; client_id }))
-          ~kind:"ModuleNotTracked";
+          ~kind:"FileNotOpened";
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(

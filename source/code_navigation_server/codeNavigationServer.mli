@@ -169,30 +169,6 @@ end
 
 (** {1 Server State}*)
 
-(** This module contains the state tracking open files in the code navigation server. *)
-module OpenFiles : sig
-  type t
-
-  (** Mark a file as opened in the open file state. *)
-  val open_file : t -> source_path:SourcePath.t -> overlay_id:string option -> unit
-
-  (** Mark a file as closed in the open file state. *)
-  val close_file
-    :  t ->
-    source_path:SourcePath.t ->
-    overlay_id:string option ->
-    (unit, Response.ErrorKind.t) Result.t
-
-  (** Evaluates to the list of current open files. *)
-  val open_files : t -> SourcePath.t list
-
-  (** Returns true iff the open files currently tracks `overlay_id`. *)
-  val contains : t -> source_path:SourcePath.t -> overlay_id:string option -> bool
-
-  (** Creates a new open files state object with no files marked as open. *)
-  val create : unit -> t
-end
-
 (** This module contains APIs that are relevant to the internal state of the code navigation server. *)
 module State : sig
   (** A type that represent the internal state of the server. *)

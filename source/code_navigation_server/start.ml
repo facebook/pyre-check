@@ -135,9 +135,8 @@ let initialize_server_state ~build_system_initializer ~environment_controls () =
   let environment =
     Analysis.ErrorsEnvironment.create environment_controls |> Analysis.OverlaidEnvironment.create
   in
-  let open_files = OpenFiles.create () in
   let client_states = State.Client.create () in
-  { State.environment; build_system; open_files; client_states }
+  { State.environment; build_system; client_states }
 
 
 let broadcast_server_stop_and_fail ~subscriptions ~message exn =

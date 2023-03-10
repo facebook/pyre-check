@@ -249,7 +249,7 @@ let handle_file_update
     ~events
     ~subscriptions
     ~properties:{ Server.ServerProperties.critical_files; _ }
-    { State.environment; build_system; client_states; open_files = _ }
+    { State.environment; build_system; client_states }
   =
   match Server.CriticalFile.find critical_files ~within:(List.map events ~f:get_raw_path) with
   | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)

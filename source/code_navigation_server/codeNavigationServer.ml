@@ -7,7 +7,6 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-module OpenFiles = OpenFiles
 module Start = Start
 module StartOptions = StartOptions
 module BuildSystem = BuildSystem
