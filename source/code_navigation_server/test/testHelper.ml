@@ -39,11 +39,11 @@ let close_file ~client_id ~path =
     ~expected:Response.Ok
 
 
-let assert_type_error_count ?overlay_id ~path ~expected client =
+let assert_type_error_count ?client_id ~path ~expected client =
   let%lwt raw_response =
     ScratchProject.ClientConnection.send_request
       client
-      Request.(Query (Query.GetTypeErrors { path; overlay_id }))
+      Request.(Query (Query.GetTypeErrors { path; client_id }))
   in
   match Yojson.Safe.from_string raw_response with
   | `List [`String "TypeErrors"; `List errors] ->
@@ -61,5 +61,5 @@ let assert_type_error_count ?overlay_id ~path ~expected client =
       assert_failure message
 
 
-let assert_type_error_count_for_path ?overlay_id ~path ~expected client =
-  assert_type_error_count client ?overlay_id ~expected ~path
+let assert_type_error_count_for_path ?client_id ~path ~expected client =
+  assert_type_error_count client ?client_id ~expected ~path

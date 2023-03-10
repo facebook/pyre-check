@@ -77,7 +77,7 @@ let test_get_type_errors_request context =
   let assert_type_errors ~path client =
     ScratchProject.ClientConnection.assert_response
       client
-      ~request:Request.(Query (Query.GetTypeErrors { overlay_id = None; path }))
+      ~request:Request.(Query (Query.GetTypeErrors { client_id = None; path }))
       ~expected:(Response.TypeErrors [expected_error])
   in
   ScratchProject.test_server_with
@@ -88,15 +88,15 @@ let test_get_type_errors_request context =
         assert_type_errors ~path:(PyrePath.absolute test_path);
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(Query (Query.GetTypeErrors { overlay_id = None; path = "/doesnotexist.py" }))
+            Request.(Query (Query.GetTypeErrors { client_id = None; path = "/doesnotexist.py" }))
           ~kind:"ModuleNotTracked";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.GetTypeErrors
-                   { overlay_id = Some "doesnotexist"; path = PyrePath.absolute test_path }))
-          ~kind:"OverlayNotFound";
+                   { client_id = Some "doesnotexist"; path = PyrePath.absolute test_path }))
+          ~kind:"ClientNotRegistered";
       ]
 
 
@@ -118,20 +118,20 @@ let test_file_opened_and_closed_request context =
         register_client ~client_id;
         assert_type_error_count_for_path ~path:test_path ~expected:1;
         open_file ~path:test_path ~content:"reveal_type(43)\nreveal_type(44)" ~client_id;
-        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:Request.(Command (Command.FileClosed { path = "/untracked/file.py"; client_id }))
           ~expected:
             (Response.Error (Response.ErrorKind.FileNotOpened { path = "/untracked/file.py" }));
-        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:2;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Command (Command.FileClosed { path = test_path; client_id = "nonexistent_client_id" }))
           ~expected:(Response.Error (Response.ErrorKind.FileNotOpened { path = test_path }));
-        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:2;
         close_file ~path:test_path ~client_id;
-        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:1;
+        assert_type_error_count_for_path ~path:test_path ~client_id ~expected:1;
         (* Now that foo is no longer tracked as an open file, this should error. *)
         ScratchProject.ClientConnection.assert_response
           ~request:Request.(Command (Command.FileClosed { path = test_path; client_id }))
@@ -147,15 +147,17 @@ let test_local_update_request context =
   let root = ScratchProject.source_root_of project in
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
   let open TestHelper in
-  let client_id = "foo" in
+  let client_foo = "foo" in
+  let client_bar = "bar" in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        register_client ~client_id;
-        assert_type_error_count_for_path ~path:test_path ~expected:1;
-        open_file ~path:test_path ~client_id;
+        register_client ~client_id:client_foo;
+        register_client ~client_id:client_bar;
+        open_file ~path:test_path ~client_id:client_foo;
+        open_file ~path:test_path ~client_id:client_bar;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -164,14 +166,17 @@ let test_local_update_request context =
                    {
                      path = test_path;
                      content = Some "reveal_type(43)\nreveal_type(44)";
-                     client_id;
+                     client_id = client_foo;
                    }))
           ~expected:Response.Ok;
-        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~client_id:client_bar ~expected:1;
+        assert_type_error_count_for_path ~path:test_path ~client_id:client_foo ~expected:2;
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
-              Command (Command.LocalUpdate { path = "/doesnotexist"; content = Some ""; client_id }))
+              Command
+                (Command.LocalUpdate
+                   { path = "/doesnotexist"; content = Some ""; client_id = client_foo }))
           ~kind:"FileNotOpened";
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -181,19 +186,42 @@ let test_local_update_request context =
                    {
                      path = test_path;
                      content = Some "reveal_type(43)\nreveal_type(44)\nreveal_type(45)";
-                     client_id;
+                     client_id = client_foo;
                    }))
           ~expected:Response.Ok;
-        assert_type_error_count_for_path ~path:test_path ~overlay_id:"bar" ~expected:3;
-        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:2;
-        assert_type_error_count_for_path ~path:test_path ~expected:1;
+        assert_type_error_count_for_path ~path:test_path ~client_id:client_bar ~expected:1;
+        assert_type_error_count_for_path ~path:test_path ~client_id:client_foo ~expected:3;
         ScratchProject.ClientConnection.assert_response
           ~request:
-            Request.(Command (Command.LocalUpdate { path = test_path; content = None; client_id }))
+            Request.(
+              Command
+                (Command.LocalUpdate
+                   {
+                     path = test_path;
+                     content = Some "reveal_type(43)\nreveal_type(44)";
+                     client_id = client_bar;
+                   }))
           ~expected:Response.Ok;
-        assert_type_error_count_for_path ~path:test_path ~overlay_id:"foo" ~expected:1;
-        close_file ~path:test_path ~client_id;
-        dispose_client ~client_id;
+        assert_type_error_count_for_path ~path:test_path ~client_id:client_bar ~expected:2;
+        assert_type_error_count_for_path ~path:test_path ~client_id:client_foo ~expected:3;
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.LocalUpdate { path = test_path; content = None; client_id = client_foo }))
+          ~expected:Response.Ok;
+        assert_type_error_count_for_path ~path:test_path ~client_id:client_foo ~expected:1;
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.LocalUpdate { path = test_path; content = None; client_id = client_bar }))
+          ~expected:Response.Ok;
+        assert_type_error_count_for_path ~path:test_path ~client_id:client_bar ~expected:1;
+        close_file ~path:test_path ~client_id:client_foo;
+        close_file ~path:test_path ~client_id:client_bar;
+        dispose_client ~client_id:client_foo;
+        dispose_client ~client_id:client_bar;
       ]
 
 
@@ -205,12 +233,22 @@ let test_file_update_request context =
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" in
   let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" in
   let open TestHelper in
+  let client_id = "foo" in
   ScratchProject.test_server_with
     project
     ~style:ScratchProject.ClientConnection.Style.Sequential
     ~clients:
       [
-        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~expected:1;
+        register_client ~client_id;
+        ScratchProject.ClientConnection.assert_error_response
+          ~request:
+            Request.(
+              Query
+                (Query.GetTypeErrors
+                   { client_id = Some client_id; path = PyrePath.absolute test_path }))
+          ~kind:"FileNotOpened";
+        open_file ~client_id ~path:(PyrePath.absolute test_path);
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:1;
         (fun _ ->
           PyrePath.remove test_path;
           Lwt.return_unit);
@@ -224,8 +262,18 @@ let test_file_update_request context =
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
-              Query (Query.GetTypeErrors { overlay_id = None; path = PyrePath.absolute test_path }))
+              Query
+                (Query.GetTypeErrors
+                   { client_id = Some client_id; path = PyrePath.absolute test_path }))
           ~kind:"ModuleNotTracked";
+        close_file ~client_id ~path:(PyrePath.absolute test_path);
+        ScratchProject.ClientConnection.assert_error_response
+          ~request:
+            Request.(
+              Query
+                (Query.GetTypeErrors
+                   { client_id = Some client_id; path = PyrePath.absolute test_path }))
+          ~kind:"FileNotOpened";
         (fun _ ->
           File.create test2_path ~content:"reveal_type(43)\nreveal_type(44)" |> File.write;
           Lwt.return_unit);
@@ -239,7 +287,10 @@ let test_file_update_request context =
                        { kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
                    ]))
           ~expected:Response.Ok;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute test2_path) ~expected:2;
+        open_file ~client_id ~path:(PyrePath.absolute test2_path);
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test2_path) ~client_id ~expected:2;
+        close_file ~client_id ~path:(PyrePath.absolute test2_path);
+        dispose_client ~client_id;
       ]
 
 
@@ -274,10 +325,7 @@ let test_file_and_local_update context =
                      client_id;
                    }))
           ~expected:Response.Ok;
-        assert_type_error_count_for_path
-          ~path:(PyrePath.absolute test_path)
-          ~overlay_id:"foo"
-          ~expected:1;
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:1;
         (fun _ ->
           File.create test2_path ~content:"x: int = 42" |> File.write;
           Lwt.return_unit);
@@ -291,10 +339,7 @@ let test_file_and_local_update context =
                        { kind = Kind.CreatedOrChanged; path = PyrePath.absolute test2_path };
                    ]))
           ~expected:Response.Ok;
-        assert_type_error_count_for_path
-          ~path:(PyrePath.absolute test_path)
-          ~overlay_id:"foo"
-          ~expected:0;
+        assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:0;
         close_file ~path:(PyrePath.absolute test_path) ~client_id;
         dispose_client ~client_id;
       ]
@@ -609,7 +654,7 @@ let test_watchman_integration context =
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
-              Query (Query.GetTypeErrors { overlay_id = None; path = PyrePath.absolute test_path }))
+              Query (Query.GetTypeErrors { client_id = None; path = PyrePath.absolute test_path }))
           ~kind:"ModuleNotTracked";
       ]
 
@@ -645,9 +690,9 @@ let () =
          "stop_request" >:: test_stop_request;
          "get_type_errors_request" >:: test_get_type_errors_request;
          "get_info_request" >:: test_get_info_request;
-         (* "local_update_request" >:: test_local_update_request; *)
+         "local_update_request" >:: test_local_update_request;
          "file_update_request" >:: test_file_update_request;
-         (* "file_and_local_update" >:: test_file_and_local_update; *)
+         "file_and_local_update" >:: test_file_and_local_update;
          "hover_request" >:: test_hover_request;
          "location_of_definition_request" >:: test_location_of_definition_request;
          "superclasses" >:: test_superclasses;

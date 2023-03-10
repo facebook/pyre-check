@@ -21,13 +21,33 @@ module ServerInternal = struct
   }
 end
 
-let get_overlay ~environment overlay_id =
+let legacy_get_overlay ~environment overlay_id =
   match overlay_id with
   | None -> Result.Ok (OverlaidEnvironment.root environment)
   | Some overlay_id -> (
       match OverlaidEnvironment.overlay environment overlay_id with
       | Some overlay -> Result.Ok overlay
       | None -> Result.Error (Response.ErrorKind.OverlayNotFound { overlay_id }))
+
+
+let get_overlay_id ~path ~client_id client_states =
+  match client_id with
+  | None -> Result.Ok None
+  | Some client_id -> (
+      let source_path = PyrePath.create_absolute path |> SourcePath.create in
+      match State.Client.WorkingSet.lookup client_states ~client_id ~source_path with
+      | `ClientNotRegistered -> Result.Error (Response.ErrorKind.ClientNotRegistered { client_id })
+      | `FileNotAdded -> Result.Error (Response.ErrorKind.FileNotOpened { path })
+      | `Ok overlay_id -> Result.Ok (Some overlay_id))
+
+
+let get_overlay ~environment = function
+  | None -> OverlaidEnvironment.root environment
+  | Some overlay_id ->
+      let overlay_id = State.Client.OverlayId.to_string overlay_id in
+      OverlaidEnvironment.overlay environment overlay_id
+      |> Option.value_exn
+           ~message:(Format.sprintf "Unexpected overlay lookup failure with id `%s`" overlay_id)
 
 
 let get_modules ~module_tracker ~build_system path =
@@ -58,10 +78,11 @@ let get_type_errors_in_overlay ~overlay ~build_system path =
             ~module_tracker)
 
 
-let handle_get_type_errors ~path ~overlay_id { State.environment; build_system; _ } =
+let handle_get_type_errors ~path ~client_id { State.environment; build_system; client_states; _ } =
   let open Result in
-  get_overlay ~environment overlay_id
-  >>= fun overlay ->
+  get_overlay_id ~path ~client_id client_states
+  >>= fun overlay_id ->
+  let overlay = get_overlay ~environment overlay_id in
   get_type_errors_in_overlay ~overlay ~build_system path
   >>| fun type_errors -> Response.TypeErrors type_errors
 
@@ -80,7 +101,7 @@ let get_hover_in_overlay ~overlay ~build_system ~position module_ =
 
 let handle_hover ~path ~position ~overlay_id { State.environment; build_system; _ } =
   let open Result in
-  get_overlay ~environment overlay_id
+  legacy_get_overlay ~environment overlay_id
   >>= fun overlay ->
   get_hover_in_overlay ~overlay ~build_system ~position path
   >>| fun contents ->
@@ -115,7 +136,7 @@ let get_location_of_definition_in_overlay ~overlay ~build_system ~position path 
 let handle_location_of_definition ~path ~position ~overlay_id { State.environment; build_system; _ }
   =
   let open Result in
-  get_overlay ~environment overlay_id
+  legacy_get_overlay ~environment overlay_id
   >>= fun overlay ->
   get_location_of_definition_in_overlay ~overlay ~build_system ~position path
   >>| fun definitions -> Response.(LocationOfDefinition { definitions })
@@ -419,9 +440,9 @@ let handle_query
         _;
       }
   = function
-  | Request.Query.GetTypeErrors { path; overlay_id } ->
+  | Request.Query.GetTypeErrors { path; client_id } ->
       let f state =
-        let response = handle_get_type_errors ~path ~overlay_id state |> response_from_result in
+        let response = handle_get_type_errors ~path ~client_id state |> response_from_result in
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f

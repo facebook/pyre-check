@@ -279,7 +279,7 @@ let test_build_system_path_lookup context =
       [
         (* Server should not be aware of `a.py` on type error query *)
         ScratchProject.ClientConnection.assert_error_response
-          ~request:Request.(Query (Query.GetTypeErrors { path = path_a; overlay_id = None }))
+          ~request:Request.(Query (Query.GetTypeErrors { path = path_a; client_id = None }))
           ~kind:"ModuleNotTracked";
         (* Server should not be aware of `a.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_error_response
@@ -291,7 +291,7 @@ let test_build_system_path_lookup context =
           ~kind:"ModuleNotTracked";
         (* Server should be aware of `b.py` on type error query *)
         ScratchProject.ClientConnection.assert_response
-          ~request:Request.(Query (Query.GetTypeErrors { path = path_b; overlay_id = None }))
+          ~request:Request.(Query (Query.GetTypeErrors { path = path_b; client_id = None }))
           ~expected:(Response.TypeErrors [expected_error]);
         (* Server should be aware of `b.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_response
@@ -311,8 +311,16 @@ let test_build_system_path_lookup context =
 let assert_module_path_not_tracked path =
   ScratchProject.ClientConnection.assert_error_response
     ~request:
-      Request.(Query (Query.GetTypeErrors { path = PyrePath.absolute path; overlay_id = None }))
+      Request.(Query (Query.GetTypeErrors { path = PyrePath.absolute path; client_id = None }))
     ~kind:"ModuleNotTracked"
+
+
+let assert_file_not_opened ~client_id path =
+  ScratchProject.ClientConnection.assert_error_response
+    ~request:
+      Request.(
+        Query (Query.GetTypeErrors { path = PyrePath.absolute path; client_id = Some client_id }))
+    ~kind:"FileNotOpened"
 
 
 let test_build_system_open_close context =
@@ -352,24 +360,36 @@ let test_build_system_open_close context =
         (* Register client *)
         register_client ~client_id;
         (* Initially nothing exists *)
-        assert_module_path_not_tracked raw_source_path0;
-        assert_module_path_not_tracked raw_source_path1;
+        assert_file_not_opened ~client_id raw_source_path0;
+        assert_file_not_opened ~client_id raw_source_path1;
         (* Open source0.py *)
         open_file ~path:(PyrePath.absolute raw_source_path0) ~client_id;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
-        assert_module_path_not_tracked raw_source_path1;
+        assert_type_error_count_for_path
+          ~client_id
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~expected:1;
+        assert_file_not_opened ~client_id raw_source_path1;
         (* Open source1.py *)
         open_file ~path:(PyrePath.absolute raw_source_path1) ~client_id;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path0) ~expected:1;
+        assert_type_error_count_for_path
+          ~client_id
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~expected:2;
+        assert_type_error_count_for_path
+          ~client_id
+          ~path:(PyrePath.absolute raw_source_path0)
+          ~expected:1;
         (* Close source0.py *)
         close_file ~path:(PyrePath.absolute raw_source_path0) ~client_id;
-        assert_module_path_not_tracked raw_source_path0;
-        assert_type_error_count_for_path ~path:(PyrePath.absolute raw_source_path1) ~expected:2;
+        assert_file_not_opened ~client_id raw_source_path0;
+        assert_type_error_count_for_path
+          ~client_id
+          ~path:(PyrePath.absolute raw_source_path1)
+          ~expected:2;
         (* Close source1.py *)
         close_file ~path:(PyrePath.absolute raw_source_path1) ~client_id;
-        assert_module_path_not_tracked raw_source_path0;
-        assert_module_path_not_tracked raw_source_path1;
+        assert_file_not_opened ~client_id raw_source_path0;
+        assert_file_not_opened ~client_id raw_source_path1;
         (* Dispose client *)
         dispose_client ~client_id;
       ]
@@ -567,7 +587,7 @@ let () =
          "test_build_system_path_lookup" >:: OUnitLwt.lwt_wrapper test_build_system_path_lookup;
          "test_build_system_open_close" >:: OUnitLwt.lwt_wrapper test_build_system_open_close;
          "test_build_system_file_update" >:: OUnitLwt.lwt_wrapper test_build_system_file_update;
-         (* "test_build_system_file_open_and_update" *)
-         (* >:: OUnitLwt.lwt_wrapper test_build_system_file_open_and_update; *)
+         "test_build_system_file_open_and_update"
+         >:: OUnitLwt.lwt_wrapper test_build_system_file_open_and_update;
        ]
   |> Test.run

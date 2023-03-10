@@ -59,7 +59,7 @@ module Query = struct
   type t =
     | GetTypeErrors of {
         path: string;
-        overlay_id: string option;
+        client_id: string option;
       }
     | Hover of {
         path: string;
