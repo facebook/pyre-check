@@ -13,6 +13,8 @@ module ErrorKind = struct
   type t =
     | InvalidRequest of string
     | ModuleNotTracked of { path: string }
+    | ClientAlreadyRegistered of { client_id: string }
+    | ClientNotRegistered of { client_id: string }
     | OverlayNotFound of { overlay_id: string }
     | FileNotOpened of { path: string }
   [@@deriving sexp, compare, yojson { strict = false }]

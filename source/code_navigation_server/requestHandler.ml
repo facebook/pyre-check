@@ -194,6 +194,18 @@ let with_broadcast_busy_building ~subscriptions f =
   with_broadcast ~subscriptions ~status:Response.Status.BusyBuilding f
 
 
+let handle_register_client ~client_id { State.client_states; _ } =
+  match State.Client.register client_states client_id with
+  | false -> Response.(Error (ErrorKind.ClientAlreadyRegistered { client_id }))
+  | true -> Response.Ok
+
+
+let handle_dispose_client ~client_id { State.client_states; _ } =
+  match State.Client.dispose client_states client_id with
+  | false -> Response.(Error (ErrorKind.ClientNotRegistered { client_id }))
+  | true -> Response.Ok
+
+
 let get_raw_path { Request.FileUpdateEvent.path; _ } = PyrePath.create_absolute path
 
 let get_source_path_event_kind = function
@@ -237,7 +249,7 @@ let handle_file_update
     ~events
     ~subscriptions
     ~properties:{ Server.ServerProperties.critical_files; _ }
-    { State.environment; build_system; open_files }
+    { State.environment; build_system; open_files; client_states = _ }
   =
   match Server.CriticalFile.find critical_files ~within:(List.map events ~f:get_raw_path) with
   | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)
@@ -264,7 +276,10 @@ let handle_file_update
       Lwt.return_ok Response.Ok
 
 
-let handle_working_set_update ~subscriptions { State.environment; build_system; open_files } =
+let handle_working_set_update
+    ~subscriptions
+    { State.environment; build_system; open_files; client_states = _ }
+  =
   let%lwt artifact_path_events =
     with_broadcast_busy_building ~subscriptions (fun () ->
         OpenFiles.open_files open_files |> BuildSystem.update_working_set build_system)
@@ -405,6 +420,18 @@ let handle_query
 
 let handle_command ~server:{ ServerInternal.state; subscriptions; properties } = function
   | Request.Command.Stop -> Lwt.return_error Server.Stop.Reason.ExplicitRequest
+  | Request.Command.RegisterClient { client_id } ->
+      let f state =
+        let response = handle_register_client ~client_id state in
+        Lwt.return_ok response
+      in
+      Server.ExclusiveLock.read state ~f
+  | Request.Command.DisposeClient { client_id } ->
+      let f state =
+        let response = handle_dispose_client ~client_id state in
+        Lwt.return_ok response
+      in
+      Server.ExclusiveLock.read state ~f
   | Request.Command.FileOpened { path; content; overlay_id } ->
       let f state =
         let%lwt response = handle_file_opened ~path ~content ~overlay_id ~subscriptions state in

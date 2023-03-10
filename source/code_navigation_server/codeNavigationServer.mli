@@ -260,6 +260,28 @@ module Testing : sig
         | Stop
             (** A command that asks the server to stop. The server will shut itself down immediately
                 when this request gets processed. No response will be sent back to the client. *)
+        | RegisterClient of { client_id: string }
+            (** A command that register a client with the server using a given ID. The ID can be an
+                arbitrary string chosen on the client side. After client registration, the server
+                will be informed about the existence of the ID and allocate some states on its side
+                to prepare for future requests coming from the same client. Subsequent stateful
+                requests (e.g. file open/close) will only succeed if the corresponding [client_id]
+                has already been registered with the server.
+
+                The server will send back a {!Response.Ok} response when the registration succeeds,
+                and a {!Response.ErrorKind.ClientAlreadyRegistered} response when the given ID is
+                already registered.
+
+                TODO: extend this request with an expiration timer so client states can be
+                auto-recollected without any explicit disposal request. *)
+        | DisposeClient of { client_id: string }
+            (** A command that inform the server that a given client ID is no longer in use. After
+                client disposal, the server will discard the associated states with that ID so it
+                can be re-used by future clients.
+
+                The server will send back a {!Response.Ok} response when the registration succeeds,
+                and a {!Response.ErrorKind.ClientNotRegistered} response when the given ID is not
+                registered. *)
         | FileOpened of {
             path: string;
             content: string option;
@@ -411,6 +433,12 @@ module Testing : sig
         | ModuleNotTracked of { path: string }
             (** This error occurs when the client has requested info on a module which the server
                 cannot find. *)
+        | ClientAlreadyRegistered of { client_id: string }
+            (** This error occurs when mulitple registration on the same [client_id] were received
+                from the server side, without any interleaving requests to dispose the [client_id]. *)
+        | ClientNotRegistered of { client_id: string }
+            (** This error occurs when the client tried to request a stateful operation but the
+                corresponding state was not registered with the server. *)
         | OverlayNotFound of { overlay_id: string }
             (** This error occurs when the client has requested info from an overlay whose id does
                 not exist within the server. *)

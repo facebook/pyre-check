@@ -35,6 +35,8 @@ end
 module Command = struct
   type t =
     | Stop
+    | RegisterClient of { client_id: string }
+    | DisposeClient of { client_id: string }
     | FileOpened of {
         path: string;
         content: string option;

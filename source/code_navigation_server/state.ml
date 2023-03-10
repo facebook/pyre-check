@@ -108,5 +108,6 @@ end
 type t = {
   environment: Analysis.OverlaidEnvironment.t;
   build_system: BuildSystem.t;
+  client_states: Client.t;
   open_files: OpenFiles.t;
 }
