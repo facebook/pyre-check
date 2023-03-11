@@ -41,7 +41,7 @@ class DaemonStatus:
 
     def as_telemetry_dict(self) -> Dict[str, float | str]:
         return {
-            "server_state_before": self.connection_status.value,
+            "server_status_before": self.connection_status.value,
             "time_since_last_ready_ms": self.milliseconds_since_ready,
         }
 
