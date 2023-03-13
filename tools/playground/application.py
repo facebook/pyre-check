@@ -136,8 +136,14 @@ class Pyre:
                 LOG.error(f"Returning error: {stderr}")
                 result = jsonify(errors=[stderr])
             else:
-                errors = json.loads(stdout)
-                result = jsonify(data={"errors": errors, "stderr": stderr})
+                try:
+                    errors = json.loads(stdout)
+                    result = jsonify(data={"errors": errors, "stderr": stderr})
+                except BaseException:
+                    LOG.error(f"Could not parse json from stdout: {stdout!r}")
+                    result = jsonify(
+                        errors=[f"Invalid json from pyre --output=json: {stdout!r}"],
+                    )
 
             return result
 
