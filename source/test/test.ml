@@ -1841,7 +1841,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     ( "numbers.pyi",
       {|
         class Number(metaclass=ABCMeta):
-            @abstractmethod
             def __hash__(self) -> int: ...
 
         class Complex(Number):

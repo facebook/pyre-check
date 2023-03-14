@@ -7,7 +7,6 @@ from typing import Any, SupportsFloat, overload
 __all__ = ["Number", "Complex", "Real", "Rational", "Integral"]
 
 class Number(metaclass=ABCMeta):
-    @abstractmethod
     def __hash__(self) -> int: ...
 
 class Complex(Number):
