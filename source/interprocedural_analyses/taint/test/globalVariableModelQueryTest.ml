@@ -54,6 +54,7 @@ let test_find_globals context =
         !&"__debug__";
         !&"abc.";
         !&"typing.";
+        !&"typing_extensions.";
         !&"unittest.";
       ]
     in

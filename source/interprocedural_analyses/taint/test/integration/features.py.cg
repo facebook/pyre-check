@@ -16,7 +16,7 @@ features.no_always_when_calling_setitem (fun) -> [_test_source (fun) features.Se
 features.optional_scalar (fun) -> []
 features.return_tuple_of_bools (fun) -> [_test_source (fun)]
 features.returns_tainted_object (fun) -> [_test_source (fun)]
-features.tito_via_constructor (fun) -> [int::__init__ (method) object::__new__ (method)]
+features.tito_via_constructor (fun) -> [int::__new__ (method) object::__init__ (method)]
 features.tito_via_len (fun) -> [features.len (fun)]
 features.tito_via_min_left (fun) -> [features.min (fun)]
 features.tito_via_min_or_not (fun) -> [features.min (fun)]

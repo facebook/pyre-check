@@ -513,7 +513,7 @@ let test_call_graph_of_define context =
                         ~return_type:(Some ReturnType.integer)
                         ~receiver_type:(Type.meta (Type.Primitive "int"))
                         (Target.Method
-                           { class_name = "int"; method_name = "__init__"; kind = Normal });
+                           { class_name = "object"; method_name = "__init__"; kind = Normal });
                     ]
                   ~new_targets:
                     [
@@ -522,7 +522,7 @@ let test_call_graph_of_define context =
                         ~return_type:(Some ReturnType.integer)
                         ~receiver_type:(Type.meta (Type.Primitive "int"))
                         (Target.Method
-                           { class_name = "object"; method_name = "__new__"; kind = Normal });
+                           { class_name = "int"; method_name = "__new__"; kind = Normal });
                     ]
                   ())) );
       ]
@@ -3121,7 +3121,8 @@ let test_call_graph_of_define context =
                     CallTarget.create
                       ~implicit_self:true
                       ~receiver_type:Type.integer
-                      (Target.Method { class_name = "int"; method_name = "__str__"; kind = Normal });
+                      (Target.Method
+                         { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
         ( "7:15-7:16",
           LocationCallees.Singleton
@@ -3131,6 +3132,7 @@ let test_call_graph_of_define context =
                     CallTarget.create
                       ~implicit_self:true
                       ~receiver_type:Type.float
+                      ~index:1
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
@@ -3151,7 +3153,7 @@ let test_call_graph_of_define context =
                   [
                     CallTarget.create
                       ~implicit_self:true
-                      ~index:1
+                      ~index:2
                       ~receiver_type:(Type.list Type.integer)
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
@@ -3163,7 +3165,7 @@ let test_call_graph_of_define context =
                   [
                     CallTarget.create
                       ~implicit_self:true
-                      ~index:2
+                      ~index:3
                       ~receiver_type:(Type.list Type.integer)
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
@@ -3175,9 +3177,10 @@ let test_call_graph_of_define context =
                   [
                     CallTarget.create
                       ~implicit_self:true
-                      ~index:1
+                      ~index:4
                       ~receiver_type:(Type.literal_integer 1)
-                      (Target.Method { class_name = "int"; method_name = "__str__"; kind = Normal });
+                      (Target.Method
+                         { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
         ( "7:30-7:31",
           LocationCallees.Singleton
@@ -3197,7 +3200,7 @@ let test_call_graph_of_define context =
                   [
                     CallTarget.create
                       ~implicit_self:true
-                      ~index:3
+                      ~index:5
                       ~receiver_type:Type.float
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
