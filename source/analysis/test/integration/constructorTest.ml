@@ -785,6 +785,33 @@ let test_check_constructors context =
     |}
     [];
 
+  (* Check that subclasses of numeric types are instantiatable *)
+  (* TODO: Fix these abstract class instantiation errors *)
+  assert_type_errors
+    {|
+      class CustomInt(int):
+        def __init__(self, val: int) -> None: ...
+
+      class CustomFloat(float):
+        def __init__(self, val: float) -> None: ...
+
+      class CustomComplex(float):
+        def __init__(self, real: float, imaginary: float) -> None: ...
+
+      def foo() -> None:
+        custom_int = CustomInt(42)
+        custom_float = CustomFloat(42.0)
+        custom_complex = CustomComplex(42.0, 42.0)
+    |}
+    [
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `CustomInt` with \
+       abstract method `__hash__`.";
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `CustomFloat` with \
+       abstract method `__hash__`.";
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `CustomComplex` with \
+       abstract method `__hash__`.";
+    ];
+
   (* The MRO of inheriting both a class and its direct parent will result in super() evaluating to
      the subclass, regardless of order. *)
   assert_type_errors
