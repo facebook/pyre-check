@@ -2076,7 +2076,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           arguments;
         } ->
           (* User-defined or inferred models. *)
-          let taint, state =
+          let taint_from_model, state_from_model =
             apply_callees
               ~resolution
               ~is_result_used
@@ -2094,7 +2094,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 | _ -> false)
           in
           if not is_string_format then
-            taint, state
+            taint_from_model, state_from_model
           else
             (* Additional hard-coded models for analyzing implicit sinks during string formatting
                operations. *)
@@ -2138,8 +2138,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   location;
                 }
             in
-            ( ForwardState.Tree.join taint taint_from_string_format,
-              join state state_from_string_format )
+            ( ForwardState.Tree.join taint_from_model taint_from_string_format,
+              join state_from_model state_from_string_format )
       | {
        callee = { Node.value = Expression.Name (Name.Identifier "reveal_taint"); _ };
        arguments = [{ Call.Argument.value = expression; _ }];
