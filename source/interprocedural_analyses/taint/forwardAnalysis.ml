@@ -2090,8 +2090,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let is_string_format =
             List.exists callees.call_targets ~f:(fun call_target ->
                 match Interprocedural.Target.class_name call_target.target with
-                | Some class_name -> String.equal "str" class_name
-                | None -> false)
+                | Some "str" -> true
+                | _ -> false)
           in
           if not is_string_format then
             taint, state
