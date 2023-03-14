@@ -244,14 +244,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           | None -> None)
       | None -> None
     in
-    let transform_partial_sink (path, leaf_taint) =
-      let leaf_taint =
-        BackwardTaint.transform BackwardTaint.kind_frame FilterMap ~f:update_kind_frame leaf_taint
-      in
-      path, leaf_taint
-    in
     let taint_tree =
-      BackwardState.Tree.transform BackwardState.Tree.Path Map taint_tree ~f:transform_partial_sink
+      BackwardState.Tree.transform
+        BackwardTaint.kind_frame
+        FilterMap
+        taint_tree
+        ~f:update_kind_frame
     in
     BackwardState.assign ~weak:true ~root ~path taint_tree taint_so_far
 
@@ -283,11 +281,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let accumulate so_far nested_expression =
         match AccessPath.of_expression nested_expression with
         | Some access_path ->
-            let root, taint_tree = access_path.root, sink_tree in
             gather_triggered_sinks_to_propagate
               ~path:access_path.path
               ~triggered_sinks
-              (root, taint_tree)
+              (access_path.root, sink_tree)
               so_far
         | None -> (* TODO(T146550300): False negative *) so_far
       in
@@ -2331,16 +2328,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         location;
       }
     =
-    let callee, receiver_class_interval =
+    let callee =
       match call_target_for_string_combine_rules with
-      | Some call_target ->
-          let receiver_class_interval =
-            Interprocedural.ClassIntervalSetGraph.SharedMemory.of_type
-              class_interval_graph
-              call_target.receiver_type
-          in
-          Some call_target.target, receiver_class_interval
-      | None -> None, Interprocedural.ClassIntervalSet.top
+      | Some call_target -> Some call_target.target
+      | None -> None
     in
     let string_combine_partial_sink_tree =
       BackwardState.Tree.apply_call
@@ -2350,8 +2341,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~arguments:[]
         ~port:AccessPath.Root.LocalResult
         ~is_self_call:false
-        ~caller_class_interval:FunctionContext.caller_class_interval
-        ~receiver_class_interval
+        ~caller_class_interval:Interprocedural.ClassIntervalSet.top
+        ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
         FunctionContext.string_combine_partial_sink_tree
     in
     let string_literal_taint = StringFormatCall.implicit_string_literal_sources string_literal in
