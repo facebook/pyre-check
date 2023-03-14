@@ -187,7 +187,7 @@ module TraceLength = struct
     let name = "trace length"
   end)
 
-  let increase_length n = if n < max_int then n + 1 else n
+  let increase n = if n < max_int then n + 1 else n
 end
 
 (* This should be associated with every call site *)
@@ -1234,8 +1234,7 @@ end = struct
       | CallInfo.CallSite _ ->
           let call_info = CallInfo.CallSite { location; callees; port; path } in
           let local_taint =
-            local_taint
-            |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase_length
+            local_taint |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase
           in
           call_info, local_taint
       | CallInfo.Declaration { leaf_name_provided } ->

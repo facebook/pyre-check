@@ -1972,7 +1972,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.Tree.transform
             Domains.TraceLength.Self
             Map
-            ~f:TraceLength.increase_length
+            ~f:TraceLength.increase
             new_taint
         else
           new_taint
