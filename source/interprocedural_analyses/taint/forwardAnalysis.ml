@@ -304,7 +304,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     module Argument = struct
       type string_literal = {
         value: string;
-        value_location: Location.t;
+        location: Location.t;
       }
 
       type t = {
@@ -326,12 +326,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> Option.value ~default:(CallGraph.CallTarget.create default_target)
 
 
-    let implicit_string_literal_sources { Argument.value; value_location } =
+    let implicit_string_literal_sources { Argument.value; location } =
       if String.equal "" value then
         ForwardState.Tree.empty
       else
         let value_location =
-          Location.with_module ~module_reference:FunctionContext.qualifier value_location
+          Location.with_module ~module_reference:FunctionContext.qualifier location
         in
         let literal_string_regular_expressions =
           FunctionContext.taint_configuration.implicit_sources.literal_strings
@@ -350,10 +350,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~f:add_matching_source_kind
 
 
-    let check_flow_implicit_string_literal_sinks
-        ~string_literal:{ Argument.value; value_location }
-        taint
-      =
+    let check_flow_implicit_string_literal_sinks ~string_literal:{ Argument.value; location } taint =
       (* We try to be a bit clever about bailing out early and not computing the matches. *)
       let literal_string_sinks =
         FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks
@@ -364,7 +361,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         && not (ForwardState.Tree.is_bottom taint)
       then
         let value_location_with_module =
-          Location.with_module ~module_reference:FunctionContext.qualifier value_location
+          Location.with_module ~module_reference:FunctionContext.qualifier location
         in
         List.iter literal_string_sinks ~f:(fun { TaintConfiguration.sink_kind; pattern } ->
             if Re2.matches pattern value then
@@ -1981,7 +1978,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
             {
               StringFormatCall.Argument.nested_expressions;
-              string_literal = { value; value_location };
+              string_literal = { value; location = value_location };
               call_target_for_string_combine_rules;
               location;
             }
@@ -2014,7 +2011,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               (Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
             {
               StringFormatCall.Argument.nested_expressions = [expression];
-              string_literal = { value; value_location };
+              string_literal = { value; location = value_location };
               call_target_for_string_combine_rules;
               location;
             }
@@ -2050,7 +2047,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
             {
               StringFormatCall.Argument.nested_expressions = [expression];
-              string_literal = { value; value_location };
+              string_literal = { value; location = value_location };
               call_target_for_string_combine_rules;
               location;
             }
@@ -2136,8 +2133,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~breadcrumbs
                 {
                   StringFormatCall.Argument.nested_expressions;
-                  string_literal =
-                    { StringFormatCall.Argument.value = string_literal; value_location = location };
+                  string_literal = { StringFormatCall.Argument.value = string_literal; location };
                   call_target_for_string_combine_rules;
                   location;
                 }
@@ -2330,7 +2326,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~breadcrumbs
       {
         StringFormatCall.Argument.nested_expressions;
-        string_literal = { value_location = string_literal_location; _ } as string_literal;
+        string_literal = { location = string_literal_location; _ } as string_literal;
         call_target_for_string_combine_rules;
         location;
       }
@@ -2508,7 +2504,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~breadcrumbs:Features.BreadcrumbSet.empty
             {
               StringFormatCall.Argument.nested_expressions = [];
-              string_literal = { value; value_location = location };
+              string_literal = { value; location };
               call_target_for_string_combine_rules = None;
               location;
             }
@@ -2613,7 +2609,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
             {
               StringFormatCall.Argument.nested_expressions;
-              string_literal = { value = string_literal; value_location = location };
+              string_literal = { value = string_literal; location };
               call_target_for_string_combine_rules = Some call_target_for_string_combine_rules;
               location;
             }
