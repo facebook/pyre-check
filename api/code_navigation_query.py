@@ -56,6 +56,8 @@ class CodeNavConnection:
         self, path: Path
     ) -> Optional[daemon_connection.DaemonConnectionFailure]:
         path = path.resolve()
+        if path in self.open_files:
+            return None
         self.open_files.add(path)
         request = code_navigation_request.FileOpened(
             path=path, content=None, client_id=self.server_info.client_id
