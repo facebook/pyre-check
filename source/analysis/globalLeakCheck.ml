@@ -52,33 +52,42 @@ module State (Context : Context) = struct
   let errors () = Context.error_map |> LocalErrorMap.all_errors
 
   let known_mutation_methods =
+    [
+      "list", "append";
+      "list", "insert";
+      "list", "extend";
+      "dict", "setdefault";
+      "dict", "update";
+      "set", "add";
+      "set", "update";
+      "set", "intersection_update";
+      "set", "difference_update";
+      "set", "symmetric_difference_update";
+    ]
+
+
+  let mutation_types_and_methods =
     String.Set.of_list
-      [
-        "list.append";
-        "list.insert";
-        "list.extend";
-        "dict.setdefault";
-        "dict.update";
-        "set.add";
-        "set.update";
-        "set.intersection_update";
-        "set.difference_update";
-        "set.symmetric_difference_update";
-      ]
+      (List.map ~f:(fun (type_, method_) -> type_ ^ "." ^ method_) known_mutation_methods)
+
+
+  let mutation_methods =
+    String.Set.of_list (List.map ~f:(fun (_, method_) -> method_) known_mutation_methods)
 
 
   let is_known_mutation_method ~resolution expression identifier =
     let is_blocklisted_method () =
-      let expression_type =
-        Resolution.resolve_expression_to_type resolution expression
-        |> Type.class_name
-        |> Reference.show
-      in
-      String.Set.mem known_mutation_methods (expression_type ^ "." ^ identifier)
+      let expression_type = Resolution.resolve_expression_to_type resolution expression in
+      if Type.equal expression_type Type.Top || Type.equal expression_type Type.Any then
+        String.Set.mem mutation_methods identifier
+      else (* TODO (T142189949): don't perform string comparison when determining method class *)
+        String.Set.mem
+          mutation_types_and_methods
+          ((Type.class_name expression_type |> Reference.show) ^ "." ^ identifier)
     in
     String.equal identifier "__setitem__"
-    or String.equal identifier "__setattr__"
-    or is_blocklisted_method ()
+    || String.equal identifier "__setattr__"
+    || is_blocklisted_method ()
 
 
   let rec forward_expression
@@ -97,14 +106,16 @@ module State (Context : Context) = struct
     in
     match value with
     (* interesting cases *)
-    | Expression.Name (Name.Identifier target) ->
+    | Expression.Name (Name.Identifier target as name) ->
         if is_mutable_expression && not (Scope.Builtins.mem target) then
-          error_on_global_target ~location target
-    | Name (Name.Attribute { base; attribute; _ }) ->
-        let is_mutable_expression =
-          is_mutable_expression or is_known_mutation_method ~resolution base attribute
-        in
-        forward_expression ~is_mutable_expression base
+          ignore (error_on_global_target ~location name)
+    | Name (Name.Attribute { base; attribute; _ } as name) ->
+        let error_emitted = is_mutable_expression && error_on_global_target ~location name in
+        if not error_emitted then
+          let is_mutable_expression =
+            is_mutable_expression || is_known_mutation_method ~resolution base attribute
+          in
+          forward_expression ~is_mutable_expression base
     | Call { callee; arguments } ->
         forward_expression callee;
         List.iter ~f:(fun { value; _ } -> forward_expression value) arguments
@@ -127,7 +138,7 @@ module State (Context : Context) = struct
         forward_expression left;
         forward_expression right
     | WalrusOperator { target; value } ->
-        forward_assignment_target ~error_on_global_target ~resolution target;
+        ignore (forward_assignment_target ~error_on_global_target ~resolution target);
         forward_expression value
     | Dictionary { entries; keywords } ->
         let forward_entries { Dictionary.Entry.key; value } =
@@ -170,8 +181,9 @@ module State (Context : Context) = struct
     =
     let forward_assignment_target = forward_assignment_target ~error_on_global_target ~resolution in
     match value with
-    | Expression.Name (Name.Identifier target) ->
-        if not (Scope.Builtins.mem target) then error_on_global_target ~location target
+    | Expression.Name (Name.Identifier target as name) ->
+        if not (Scope.Builtins.mem target) then
+          ignore (error_on_global_target ~location name)
     | Name (Name.Attribute { base; _ }) -> forward_assignment_target base
     | Call _ ->
         forward_expression
@@ -231,36 +243,40 @@ module State (Context : Context) = struct
         (module TypeCheck.DummyContext)
     in
     let error_on_global_target ~location target =
-      let reference = Reference.create target |> Reference.delocalize in
-      let rec get_module_qualifier qualifier =
-        let module_tracker = GlobalResolution.module_tracker Context.global_resolution in
-        let qualifier_prefix = Reference.prefix qualifier in
-        match
-          ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier, qualifier_prefix
-        with
-        (* we couldn't find a module from the given qualifier *)
-        | _, None -> Reference.empty
-        (* we found the module *)
-        | true, _ -> qualifier
-        (* we haven't found a module yet *)
-        | _, Some prefix -> get_module_qualifier prefix
-      in
-      let is_global = Context.is_global ~resolution (Reference.create target) in
-      if is_global then
-        let target_type = Resolution.resolve_reference resolution (Reference.create target) in
-        let error =
-          Error.create
-            ~location:
-              (Location.with_module
-                 ~module_reference:
-                   (get_module_qualifier (Context.qualifier |> Reference.delocalize))
-                 location)
-            ~kind:(Error.GlobalLeak { global_name = reference; global_type = target_type })
-            ~define:Context.define
-        in
-        LocalErrorMap.append Context.error_map ~statement_key ~error
-      else
-        ()
+      match Ast.Expression.name_to_reference target with
+      | None -> false
+      | Some reference ->
+          let rec get_module_qualifier qualifier =
+            let module_tracker = GlobalResolution.module_tracker Context.global_resolution in
+            let qualifier_prefix = Reference.prefix qualifier in
+            match
+              ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier, qualifier_prefix
+            with
+            (* we couldn't find a module from the given qualifier *)
+            | _, None -> Reference.empty
+            (* we found the module *)
+            | true, _ -> qualifier
+            (* we haven't found a module yet *)
+            | _, Some prefix -> get_module_qualifier prefix
+          in
+          let is_global = Context.is_global ~resolution reference in
+          (if is_global then
+             let target_type = Resolution.resolve_reference resolution reference in
+             let delocalized_reference = Reference.delocalize reference in
+             let error =
+               Error.create
+                 ~location:
+                   (Location.with_module
+                      ~module_reference:
+                        (get_module_qualifier (Context.qualifier |> Reference.delocalize))
+                      location)
+                 ~kind:
+                   (Error.GlobalLeak
+                      { global_name = delocalized_reference; global_type = target_type })
+                 ~define:Context.define
+             in
+             LocalErrorMap.append Context.error_map ~statement_key ~error);
+          is_global
     in
     let forward_expression = forward_expression ~resolution ~error_on_global_target in
     match value with

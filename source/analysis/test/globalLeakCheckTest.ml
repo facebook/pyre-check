@@ -27,6 +27,7 @@ let run_check_module ~type_environment source =
 
 
 let assert_global_leak_errors ~context source expected =
+  (* TODO (T142189949): fail when file cannot be parsed correctly instead of silently failing *)
   let source_with_imports = "      from typing import *" ^ source in
   let check ~environment ~source =
     run_check_module ~type_environment:(TypeEnvironment.read_only environment) source
@@ -711,13 +712,64 @@ let test_object_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `test.MyClass2`."];
   assert_global_leak_errors
     {|
-    class MyClass:
-      x: int
-      def __init__(self, x: int) -> None:
-        self.x = x
+      import collections
+      class MyClass:
+        my_list: List[int]
+        def __init__(self, x: int) -> None:
+          self.my_list = [x]
 
-    def foo():
-      MyClass.x = 2
+      def foo():
+        MyClass().my_list.append(1)
+    |}
+    [
+      (* TODO (T142189949): we should not be detecting leaks on instantiating a class *)
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
+    ];
+  assert_global_leak_errors
+    {|
+      import collections
+      class MyClass:
+        my_list: List[int] = []
+
+      def foo():
+        MyClass.my_list.append(1)
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
+    ];
+  assert_global_leak_errors
+    {|
+      import collections
+      class MyClass:
+        my_list: List[int]
+        def __init__(self, x: int) -> None:
+          self.my_list = [x]
+
+      def foo():
+        collections.my_list.append(1)
+    |}
+    [ (* TODO (T142189949): this functionality works correctly, but tests need to be updated to
+         recognize external imports *) ];
+  assert_global_leak_errors
+    {|
+      import collections
+
+      def foo():
+        collections.append(1)
+    |}
+    [ (* TODO (T142189949): this functionality works correctly, but tests need to be updated to
+         recognize external imports *) ];
+  assert_global_leak_errors
+    {|
+      class MyClass:
+        x: int
+        def __init__(self, x: int) -> None:
+          self.x = x
+
+      def foo():
+        MyClass.x = 2
     |}
     [ (* TODO (T142189949): leaks should be detected on class attribute mutations *) ];
   assert_global_leak_errors
@@ -729,7 +781,7 @@ let test_object_global_leaks context =
 
       myclass = MyClass(1)
     |}
-    [];
+    [ (* TODO (T142189949): leaks should be detected on class attribute mutations *) ];
   assert_global_leak_errors
     {|
       class MyClass(dict):
@@ -825,7 +877,12 @@ let test_global_statements context =
       def foo():
         MyClass().x = my_global
     |}
-    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
+    [
+      (* TODO (T142189949): leaks should be detected for writing a global into a local *)
+      (* TODO (T142189949): we should not be detecting leaks on instantiating a class *)
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
+    ];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1205,6 +1262,22 @@ let test_global_statements context =
     |}
     (* TODO (T142189949): should pyre figure out the right type here? *)
     ["Global leak [3100]: Data is leaked to global `my_global` of type `unknown`."];
+  assert_global_leak_errors
+    {|
+      from x import my_global
+      def foo() -> None:
+        global my_global
+        my_global.append(1)
+    |}
+    ["Global leak [3100]: Data is leaked to global `x.my_global` of type `unknown`."];
+  assert_global_leak_errors
+    {|
+      from collections import my_global
+      def foo() -> None:
+        my_global.append(1)
+    |}
+    [ (* TODO (T142189949): this functionality works correctly, but tests need to be updated to
+         recognize external imports *) ];
   ()
 
 
