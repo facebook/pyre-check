@@ -2404,16 +2404,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let expression_taint, state =
         match get_string_format_callees ~location:expression_location with
-        | Some { CallGraph.StringFormatCallees.stringify_targets; f_string_targets } ->
-            let taint, state =
-              if List.is_empty f_string_targets then
-                ForwardState.Tree.empty, { taint = ForwardState.empty }
-              else (* If there exists an f-string target, treat as TITO. *)
-                base_taint, base_state
-            in
+        | Some { CallGraph.StringFormatCallees.stringify_targets = _ :: _ as stringify_targets; _ }
+          ->
             List.fold
               stringify_targets
-              ~init:(taint, state)
+              ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
               ~f:(fun (taint_to_join, state_to_join) call_target ->
                 analyze_stringify_callee
                   (taint_to_join, state_to_join)
@@ -2422,7 +2417,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~base:expression
                   ~base_taint
                   ~base_state)
-        | None -> base_taint, base_state
+        | _ ->
+            (* When there is no stringify target, treat as TITO. Meanwhile, we do not analyze
+               f_string_targets because they are artificial targets that are introduced only for
+               distinguishing f-strings at different locations from the same function. Such targets
+               are only used in the issue sink handles, to distinguish the locations of the
+               issues. *)
+            base_taint, base_state
       in
       StringFormatCall.check_triggered_flows
         ~triggered_sinks

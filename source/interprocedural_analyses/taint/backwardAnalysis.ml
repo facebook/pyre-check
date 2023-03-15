@@ -1948,7 +1948,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let analyze_nested_expression state ({ Node.location = expression_location; _ } as expression) =
       let new_taint, new_state =
         match get_string_format_callees ~location:expression_location with
-        | Some { CallGraph.StringFormatCallees.stringify_targets; _ } ->
+        | Some { CallGraph.StringFormatCallees.stringify_targets = _ :: _ as stringify_targets; _ }
+          ->
             List.fold
               stringify_targets
               ~init:(taint, state)
