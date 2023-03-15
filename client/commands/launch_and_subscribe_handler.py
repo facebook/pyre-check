@@ -101,7 +101,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         pass
 
     @abc.abstractmethod
-    async def send_open_state(self) -> None:
+    async def client_setup(self) -> None:
         pass
 
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
@@ -221,14 +221,11 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
                     fallback_to_notification=True,
                 )
             else:
-                asyncio.gather(
-                    self.send_open_state(),
-                    self.client_status_message_handler.log_and_show_status_message_to_client(
-                        f"Pyre server at `{project_identifier}` has been initialized.",
-                        short_message="Pyre Ready",
-                        level=lsp.MessageType.INFO,
-                        fallback_to_notification=True,
-                    ),
+                await self.client_status_message_handler.log_and_show_status_message_to_client(
+                    f"Pyre server at `{project_identifier}` has been initialized.",
+                    short_message="Pyre Ready",
+                    level=lsp.MessageType.INFO,
+                    fallback_to_notification=True,
                 )
             self.server_state.consecutive_start_failure = 0
             self.server_state.is_user_notified_on_buck_failure = False
@@ -259,6 +256,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
 
         connection_timer = timer.Timer()
         try:
+            await self.client_setup()
             await self.connect_and_subscribe(
                 server_options,
                 socket_path,
@@ -282,6 +280,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
             flavor,
         )
         if isinstance(start_status, StartSuccess):
+            await self.client_setup()
             await self.connect_and_subscribe(
                 server_options,
                 socket_path,

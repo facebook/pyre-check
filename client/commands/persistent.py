@@ -435,8 +435,8 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
                 server_output_channel,
             )
 
-    async def send_open_state(self) -> None:
-        """Unnecessary to send open state on server instantiation for persistent server."""
+    async def client_setup(self) -> None:
+        """Persistent server does not require any client-side setup"""
         pass
 
 
