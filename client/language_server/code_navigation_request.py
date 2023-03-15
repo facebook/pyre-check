@@ -24,7 +24,7 @@ from .protocol import PyreHoverResponse
 @dataclasses.dataclass(frozen=True)
 class HoverRequest:
     path: str
-    overlay_id: Optional[str]
+    client_id: str
     position: lsp.PyrePosition
 
     def to_json(self) -> List[object]:
@@ -32,7 +32,7 @@ class HoverRequest:
             "Hover",
             {
                 "path": self.path,
-                "overlay_id": self.overlay_id,
+                "client_id": self.client_id,
                 "position": {
                     "line": self.position.line,
                     "column": self.position.character,
@@ -44,7 +44,7 @@ class HoverRequest:
 @dataclasses.dataclass(frozen=True)
 class LocationOfDefinitionRequest:
     path: str
-    overlay_id: Optional[str]
+    client_id: str
     position: lsp.PyrePosition
 
     def to_json(self) -> List[object]:
@@ -52,7 +52,7 @@ class LocationOfDefinitionRequest:
             "LocationOfDefinition",
             {
                 "path": self.path,
-                "overlay_id": self.overlay_id,
+                "client_id": self.client_id,
                 "position": {
                     "line": self.position.line,
                     "column": self.position.character,

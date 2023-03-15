@@ -239,12 +239,6 @@ class AbstractDaemonQuerier(abc.ABC):
     def get_language_server_features(self) -> features.LanguageServerFeatures:
         return self.server_state.server_options.language_server_features
 
-    def _get_overlay_id(self, path: Path) -> Optional[str]:
-        unsaved_changes_enabled = (
-            self.get_language_server_features().unsaved_changes.is_enabled()
-        )
-        return f"{path}, pid_{os.getpid()}" if unsaved_changes_enabled else None
-
 
 class PersistentDaemonQuerier(AbstractDaemonQuerier):
     async def _query_modules_of_path(
@@ -433,6 +427,12 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         return "Ok"
 
+    def _get_overlay_id(self, path: Path) -> Optional[str]:
+        unsaved_changes_enabled = (
+            self.get_language_server_features().unsaved_changes.is_enabled()
+        )
+        return f"{path}, pid_{os.getpid()}" if unsaved_changes_enabled else None
+
 
 class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
@@ -454,7 +454,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
         hover_request = code_navigation_request.HoverRequest(
             path=str(path),
-            overlay_id=self._get_overlay_id(path),
+            client_id=self._get_client_id(),
             position=position,
         )
         response = await code_navigation_request.async_handle_hover_request(
@@ -479,7 +479,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
             path=str(path),
-            overlay_id=self._get_overlay_id(path),
+            client_id=self._get_client_id(),
             position=position,
         )
         response = await code_navigation_request.async_handle_definition_request(

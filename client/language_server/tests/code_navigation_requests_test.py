@@ -18,7 +18,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
     def test_serialize_request(self) -> None:
         hover_request = code_navigation_request.HoverRequest(
             path="/a/b.py",
-            overlay_id=None,
+            client_id="foo",
             position=lsp.PyrePosition(line=1, character=2),
         )
         self.assertEqual(
@@ -27,7 +27,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 "Hover",
                 {
                     "path": "/a/b.py",
-                    "overlay_id": None,
+                    "client_id": "foo",
                     "position": {"line": 1, "column": 2},
                 },
             ],
@@ -35,7 +35,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
 
         hover_request = code_navigation_request.HoverRequest(
             path="/a/b.py",
-            overlay_id="overlay_key",
+            client_id="foo",
             position=lsp.PyrePosition(line=1, character=2),
         )
         self.assertEqual(
@@ -44,14 +44,14 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 "Hover",
                 {
                     "path": "/a/b.py",
-                    "overlay_id": "overlay_key",
+                    "client_id": "foo",
                     "position": {"line": 1, "column": 2},
                 },
             ],
         )
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
             path="/a/b.py",
-            overlay_id="overlay_key",
+            client_id="foo",
             position=lsp.PyrePosition(line=1, character=2),
         )
         self.assertEqual(
@@ -60,7 +60,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 "LocationOfDefinition",
                 {
                     "path": "/a/b.py",
-                    "overlay_id": "overlay_key",
+                    "client_id": "foo",
                     "position": {"line": 1, "column": 2},
                 },
             ],
