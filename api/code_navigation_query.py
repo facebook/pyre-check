@@ -58,7 +58,7 @@ class CodeNavConnection:
         path = path.resolve()
         self.open_files.add(path)
         request = code_navigation_request.FileOpened(
-            path=path, content=None, overlay_id=None
+            path=path, content=None, client_id=self.server_info.client_id
         )
         response = await code_navigation_request.async_handle_file_opened(
             self.server_info.socket_path, request
@@ -72,7 +72,9 @@ class CodeNavConnection:
     ) -> Optional[daemon_connection.DaemonConnectionFailure]:
         path = path.resolve()
         self.open_files.remove(path)
-        request = code_navigation_request.FileClosed(path=path, overlay_id=None)
+        request = code_navigation_request.FileClosed(
+            path=path, client_id=self.server_info.client_id
+        )
         response = await code_navigation_request.async_handle_file_closed(
             self.server_info.socket_path, request
         )

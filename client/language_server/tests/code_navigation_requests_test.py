@@ -185,7 +185,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         local_update = code_navigation_request.LocalUpdate(
             path="/a/b.py",
             content="def foo() -> int: pass\n",
-            overlay_id="/a/b.py 1234",
+            client_id="/a/b.py 1234",
         )
         self.assertEqual(
             local_update.to_json(),
@@ -194,7 +194,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 {
                     "path": "/a/b.py",
                     "content": "def foo() -> int: pass\n",
-                    "overlay_id": "/a/b.py 1234",
+                    "client_id": "/a/b.py 1234",
                 },
             ],
         )
@@ -203,7 +203,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         local_update = code_navigation_request.FileOpened(
             path=Path("/a/b.py"),
             content="def foo() -> int: pass\n",
-            overlay_id="/a/b.py 1234",
+            client_id="/a/b.py 1234",
         )
         self.assertEqual(
             local_update.to_json(),
@@ -212,7 +212,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 {
                     "path": "/a/b.py",
                     "content": "def foo() -> int: pass\n",
-                    "overlay_id": "/a/b.py 1234",
+                    "client_id": "/a/b.py 1234",
                 },
             ],
         )
@@ -220,7 +220,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
     def test_file_closed_json(self) -> None:
         local_update = code_navigation_request.FileClosed(
             path=Path("/a/b.py"),
-            overlay_id="/a/b.py 1234",
+            client_id="/a/b.py 1234",
         )
         self.assertEqual(
             local_update.to_json(),
@@ -228,7 +228,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 "FileClosed",
                 {
                     "path": "/a/b.py",
-                    "overlay_id": "/a/b.py 1234",
+                    "client_id": "/a/b.py 1234",
                 },
             ],
         )

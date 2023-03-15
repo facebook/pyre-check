@@ -505,13 +505,9 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
-        overlay_id = self._get_overlay_id(path)
-        if overlay_id is None:
-            raise AssertionError(
-                "Unsaved changes should always be enabled when updating overlays."
-            )
+        client_id = self._get_client_id()
         local_update = code_navigation_request.LocalUpdate(
-            overlay_id=overlay_id,
+            client_id=client_id,
             path=str(path),
             content=code,
         )
@@ -524,10 +520,10 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
-        overlay_id = self._get_overlay_id(path)
+        client_id = self._get_client_id()
         file_opened = code_navigation_request.FileOpened(
             path=path,
-            overlay_id=overlay_id,
+            client_id=client_id,
             content=code,
         )
         return await code_navigation_request.async_handle_file_opened(
@@ -538,10 +534,8 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
-        overlay_id = self._get_overlay_id(path)
-        file_closed = code_navigation_request.FileClosed(
-            overlay_id=overlay_id, path=path
-        )
+        client_id = self._get_client_id()
+        file_closed = code_navigation_request.FileClosed(client_id=client_id, path=path)
         return await code_navigation_request.async_handle_file_closed(
             self.socket_path, file_closed
         )

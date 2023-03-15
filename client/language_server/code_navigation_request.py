@@ -138,7 +138,7 @@ class DisposeClient:
 class LocalUpdate:
     path: str
     content: str
-    overlay_id: str
+    client_id: str
 
     def to_json(self) -> List[object]:
         return [
@@ -146,7 +146,7 @@ class LocalUpdate:
             {
                 "path": self.path,
                 "content": self.content,
-                "overlay_id": self.overlay_id,
+                "client_id": self.client_id,
             },
         ]
 
@@ -155,7 +155,7 @@ class LocalUpdate:
 class FileOpened:
     path: Path
     content: Optional[str]
-    overlay_id: Optional[str]
+    client_id: str
 
     def to_json(self) -> List[object]:
         return [
@@ -163,7 +163,7 @@ class FileOpened:
             {
                 "path": f"{self.path}",
                 "content": self.content,
-                "overlay_id": self.overlay_id,
+                "client_id": self.client_id,
             },
         ]
 
@@ -171,14 +171,14 @@ class FileOpened:
 @dataclasses.dataclass(frozen=True)
 class FileClosed:
     path: Path
-    overlay_id: Optional[str]
+    client_id: str
 
     def to_json(self) -> List[object]:
         return [
             "FileClosed",
             {
                 "path": f"{self.path}",
-                "overlay_id": self.overlay_id,
+                "client_id": self.client_id,
             },
         ]
 
