@@ -10,6 +10,7 @@ This module provides a Python API for starting and stopping Pyre daemons
 
 import abc
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
@@ -23,7 +24,11 @@ from ..client import (
     identifiers,
 )
 from ..client.commands import initialization, start, stop
-from ..client.language_server import connections
+from ..client.language_server import (
+    code_navigation_request,
+    connections,
+    daemon_connection,
+)
 
 FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CODE_NAVIGATION
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -32,10 +37,21 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @dataclass
 class StartedServerInfo:
     socket_path: Path
+    client_id: str
 
 
 @dataclass
 class StartFailure:
+    message: str
+
+
+@dataclass(frozen=True)
+class RegitrationSuccess:
+    client_id: str
+
+
+@dataclass(frozen=True)
+class RegistrationFailure:
     message: str
 
 
@@ -54,10 +70,10 @@ class PyreServerStarterBase(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def server_already_exists(
+    async def register_client(
         self,
         socket_path: Path,
-    ) -> bool:
+    ) -> Union[RegitrationSuccess, RegistrationFailure]:
         raise NotImplementedError()
 
 
@@ -93,15 +109,22 @@ class PyreServerStarter(PyreServerStarterBase):
         )
 
     @override
-    async def server_already_exists(
+    async def register_client(
         self,
         socket_path: Path,
-    ) -> bool:
-        try:
-            async with connections.connect_async(socket_path) as _:
-                return True
-        except connections.ConnectionFailure:
-            return False
+    ) -> Union[RegitrationSuccess, RegistrationFailure]:
+        client_id = _get_client_id()
+        request = code_navigation_request.RegisterClient(client_id)
+        response = await code_navigation_request.async_handle_register_client(
+            socket_path, request
+        )
+        if isinstance(response, daemon_connection.DaemonConnectionFailure):
+            return RegistrationFailure(response.error_message)
+        return RegitrationSuccess(client_id)
+
+
+def _get_client_id() -> str:
+    return f"pyre_api_{os.getpid()}"
 
 
 async def _start_server(
@@ -112,11 +135,12 @@ async def _start_server(
         configuration.get_project_identifier(),
         flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
     )
-    if await server_starter.server_already_exists(
+    registration = await server_starter.register_client(
         socket_path,
-    ):
+    )
+    if isinstance(registration, RegitrationSuccess):
         LOG.info("Pyre server already exists.")
-        return StartedServerInfo(socket_path)
+        return StartedServerInfo(socket_path, registration.client_id)
 
     LOG.info("Starting new Pyre server.")
     server_start_status = await server_starter.run(
@@ -127,7 +151,11 @@ async def _start_server(
     if not isinstance(server_start_status, initialization.StartSuccess):
         return StartFailure(server_start_status.message)
     else:
-        return StartedServerInfo(socket_path)
+        registration = await server_starter.register_client(socket_path)
+        if isinstance(registration, RegitrationSuccess):
+            return StartedServerInfo(socket_path, registration.client_id)
+        else:
+            return StartFailure(registration.message)
 
 
 async def start_server(
