@@ -224,6 +224,18 @@ class AbstractDaemonQuerier(abc.ABC):
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    async def handle_register_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def handle_dispose_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
     def get_language_server_features(self) -> features.LanguageServerFeatures:
         return self.server_state.server_options.language_server_features
 
@@ -411,6 +423,16 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         )
         return daemon_response
 
+    async def handle_register_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return "Ok"
+
+    async def handle_dispose_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return "Ok"
+
 
 class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
@@ -522,4 +544,25 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         )
         return await code_navigation_request.async_handle_file_closed(
             self.socket_path, file_closed
+        )
+
+    def _get_client_id(self) -> str:
+        return f"codenav_pid_{os.getpid()}"
+
+    async def handle_register_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        client_id = self._get_client_id()
+        register_client = code_navigation_request.RegisterClient(client_id=client_id)
+        return await code_navigation_request.async_handle_register_client(
+            self.socket_path, register_client
+        )
+
+    async def handle_dispose_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        client_id = self._get_client_id()
+        dispose_client = code_navigation_request.DisposeClient(client_id=client_id)
+        return await code_navigation_request.async_handle_dispose_client(
+            self.socket_path, dispose_client
         )

@@ -151,6 +151,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         )
 
     async def client_setup(self) -> None:
+        await self.querier.handle_register_client()
         results = await asyncio.gather(
             *[
                 self.querier.handle_file_opened(path, document.code)

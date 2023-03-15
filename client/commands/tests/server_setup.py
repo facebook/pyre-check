@@ -212,6 +212,16 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[DaemonConnectionFailure, str]:
         return "Ok"
 
+    async def handle_register_client(
+        self,
+    ) -> Union[DaemonConnectionFailure, str]:
+        return "Ok"
+
+    async def handle_dispose_client(
+        self,
+    ) -> Union[DaemonConnectionFailure, str]:
+        return "Ok"
+
 
 mock_server_options_reader: PyreServerOptionsReader = create_server_options
 mock_initial_server_options: PyreServerOptions = mock_server_options_reader()
