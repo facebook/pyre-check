@@ -104,6 +104,10 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
     async def client_setup(self) -> None:
         pass
 
+    @abc.abstractmethod
+    async def client_teardown(self) -> None:
+        pass
+
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
         return self.server_state.server_options.language_server_features.type_errors
 
@@ -391,6 +395,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
             self.server_state.status_tracker.set_status(
                 state.ConnectionStatus.DISCONNECTED
             )
+            await self.client_teardown()
             raise
         finally:
             if error_message is not None:

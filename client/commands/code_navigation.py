@@ -161,6 +161,9 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         if len(results) > 0:
             LOG.info(f"Sent {len(results)} open messages to daemon for existing state.")
 
+    async def client_teardown(self) -> None:
+        await self.querier.handle_dispose_client()
+
 
 def process_initialize_request(
     parameters: lsp.InitializeParameters,

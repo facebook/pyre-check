@@ -439,6 +439,10 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         """Persistent server does not require any client-side setup"""
         pass
 
+    async def client_teardown(self) -> None:
+        """Persistent server does not require any client-side teardown"""
+        pass
+
 
 async def run_persistent(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
