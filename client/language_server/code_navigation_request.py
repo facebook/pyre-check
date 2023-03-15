@@ -109,6 +109,32 @@ class LocationOfDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class RegisterClient:
+    client_id: str
+
+    def to_json(self) -> List[object]:
+        return [
+            "RegisterClient",
+            {
+                "client_id": self.client_id,
+            },
+        ]
+
+
+@dataclasses.dataclass(frozen=True)
+class DisposeClient:
+    client_id: str
+
+    def to_json(self) -> List[object]:
+        return [
+            "DisposeClient",
+            {
+                "client_id": self.client_id,
+            },
+        ]
+
+
+@dataclasses.dataclass(frozen=True)
 class LocalUpdate:
     path: str
     content: str
@@ -248,6 +274,26 @@ async def async_handle_definition_request(
         expected_response_kind="LocationOfDefinition",
         response_type=LocationOfDefinitionResponse,
     )
+
+
+async def async_handle_register_client(
+    socket_path: Path, register_client: RegisterClient
+) -> Union[str, daemon_connection.DaemonConnectionFailure]:
+    raw_command = json.dumps(["Command", register_client.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_command
+    )
+    return response
+
+
+async def async_handle_dispose_client(
+    socket_path: Path, dispose_client: DisposeClient
+) -> Union[str, daemon_connection.DaemonConnectionFailure]:
+    raw_command = json.dumps(["Command", dispose_client.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_command
+    )
+    return response
 
 
 async def async_handle_local_update(

@@ -157,6 +157,30 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             ),
         )
 
+    def test_register_client_json(self) -> None:
+        register_client = code_navigation_request.RegisterClient(client_id="foo")
+        self.assertEqual(
+            register_client.to_json(),
+            [
+                "RegisterClient",
+                {
+                    "client_id": "foo",
+                },
+            ],
+        )
+
+    def test_dispose_client_json(self) -> None:
+        dispose_client = code_navigation_request.DisposeClient(client_id="foo")
+        self.assertEqual(
+            dispose_client.to_json(),
+            [
+                "DisposeClient",
+                {
+                    "client_id": "foo",
+                },
+            ],
+        )
+
     def test_local_update_json(self) -> None:
         local_update = code_navigation_request.LocalUpdate(
             path="/a/b.py",
