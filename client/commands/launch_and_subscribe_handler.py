@@ -21,7 +21,7 @@ from typing import Dict, Optional, TYPE_CHECKING
 
 from .. import backend_arguments, background_tasks, log_lsp_event, timer
 from ..language_server import connections, features, protocol as lsp
-from . import daemon_querier, pyre_server_options, server_state as state, subscription
+from . import pyre_server_options, server_state as state, subscription
 from .initialization import (
     async_start_pyre_server,
     BuckStartFailure,
@@ -55,7 +55,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
     server_state: ServerState
     client_status_message_handler: ClientStatusMessageHandler
     client_type_error_handler: ClientTypeErrorHandler
-    querier: daemon_querier.AbstractDaemonQuerier
     subscription_response_parser: PyreSubscriptionResponseParser
 
     def __init__(
@@ -65,7 +64,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         client_status_message_handler: ClientStatusMessageHandler,
         client_type_error_handler: ClientTypeErrorHandler,
         subscription_response_parser: PyreSubscriptionResponseParser,
-        querier: daemon_querier.AbstractDaemonQuerier,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         self.server_options_reader = server_options_reader
@@ -73,7 +71,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         self.server_state = server_state
         self.client_status_message_handler = client_status_message_handler
         self.client_type_error_handler = client_type_error_handler
-        self.querier = querier
         self.subscription_response_parser = subscription_response_parser
 
     @abc.abstractmethod

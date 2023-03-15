@@ -55,6 +55,8 @@ class PyreCodeNavigationSubscriptionResponseParser(
 class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler
 ):
+    querier: daemon_querier.AbstractDaemonQuerier
+
     def __init__(
         self,
         server_options_reader: pyre_server_options.PyreServerOptionsReader,
@@ -70,9 +72,9 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             client_status_message_handler,
             client_type_error_handler,
             PyreCodeNavigationSubscriptionResponseParser(),
-            querier,
             remote_logging,
         )
+        self.querier = querier
 
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
         return self.server_state.server_options.language_server_features.type_errors

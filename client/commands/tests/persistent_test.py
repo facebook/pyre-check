@@ -796,7 +796,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -863,7 +862,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -908,7 +906,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_setup.mock_server_state
             ),
-            querier=server_setup.MockDaemonQuerier(),
         )
         with self.assertRaises(PyreDaemonShutdown):
             await server_handler.handle_error_event(
@@ -938,7 +935,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -980,7 +976,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="Rebuilding")
@@ -1022,7 +1017,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            querier=server_setup.MockDaemonQuerier(),
         )
 
         with self.assertRaises(asyncio.IncompleteReadError):
@@ -1085,7 +1079,6 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            querier=server_setup.MockDaemonQuerier(),
         )
         await server_handler.client_status_message_handler.show_status_message_to_client(
             message="derp", level=lsp.MessageType.WARNING
