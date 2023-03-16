@@ -83,22 +83,27 @@ let parse_and_save_decorators_to_skip
     ~inline_decorators
     { Configuration.Analysis.taint_model_paths; _ }
   =
-  Analysis.InlineDecorator.set_should_inline_decorators inline_decorators;
-  if inline_decorators then (
-    let timer = Timer.start () in
-    Log.info "Getting decorators to skip when inlining...";
-    let model_sources = ModelParser.get_model_sources ~paths:taint_model_paths in
-    let decorators_to_skip =
-      List.concat_map model_sources ~f:(fun (path, source) ->
-          ModelParser.parse_decorators_to_skip_when_inlining ~path ~source)
-    in
-    List.iter decorators_to_skip ~f:(fun decorator ->
-        Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
-    Statistics.performance
-      ~name:"Getting decorators to skip when inlining"
-      ~phase_name:"Getting decorators to skip when inlining"
-      ~timer
-      ())
+  let decorators_to_skip =
+    if inline_decorators then
+      let timer = Timer.start () in
+      let () = Log.info "Getting decorators to skip when inlining..." in
+      let model_sources = ModelParser.get_model_sources ~paths:taint_model_paths in
+      let decorators_to_skip =
+        List.concat_map model_sources ~f:(fun (path, source) ->
+            ModelParser.parse_decorators_to_skip_when_inlining ~path ~source)
+      in
+      let () =
+        Statistics.performance
+          ~name:"Getting decorators to skip when inlining"
+          ~phase_name:"Getting decorators to skip when inlining"
+          ~timer
+          ()
+      in
+      decorators_to_skip
+    else
+      []
+  in
+  Analysis.InlineDecorator.setup_decorator_inlining ~decorators_to_skip ~enable:inline_decorators
 
 
 (** Perform a full type check and build a type environment. *)

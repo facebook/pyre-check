@@ -118,7 +118,7 @@ let test_decorator_body context =
 
 let get_expected_actual_sources ~context ~additional_sources ~handle source expected =
   Memory.reset_shared_memory ();
-  InlineDecorator.set_should_inline_decorators true;
+  InlineDecorator.setup_decorator_inlining ~decorators_to_skip:[] ~enable:true;
   let ast_environment =
     ScratchProject.setup ~context ~external_sources:additional_sources [handle, source]
     |> ScratchProject.build_ast_environment
@@ -1642,7 +1642,7 @@ let test_decorator_location context =
               ([%show: Reference.t option] outer_decorator_reference))
           ~cmp:[%equal: Reference.t option]
           expected
-          (InlineDecorator.InlinedNameToOriginalName.get inlined_function_reference))
+          (InlineDecorator.original_name_from_inlined_name inlined_function_reference))
   in
   let additional_sources =
     [

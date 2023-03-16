@@ -462,9 +462,7 @@ let set_up_decorator_inlining ~handle models =
             ~source:models)
     |> Option.value ~default:[]
   in
-  List.iter decorators_to_skip ~f:(fun decorator ->
-      Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
-  Analysis.InlineDecorator.set_should_inline_decorators true
+  Analysis.InlineDecorator.setup_decorator_inlining ~decorators_to_skip ~enable:true
 
 
 let initialize
