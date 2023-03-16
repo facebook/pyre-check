@@ -962,7 +962,8 @@ let test_captured_variable_for_specially_decorated_functions context =
     [
       "Revealed type [-1]: Revealed type for `parameter` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
-       since it is readonly";
+       since it is readonly\n\
+       Note that this is a zone entrypoint and any captured variables are treated as readonly";
       "Revealed type [-1]: Revealed type for `not_captured` is `Foo`.";
     ];
   (* Outer local variable should be marked as readonly within the entrypoint. *)
@@ -985,7 +986,8 @@ let test_captured_variable_for_specially_decorated_functions context =
     [
       "Revealed type [-1]: Revealed type for `local_variable` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
-       since it is readonly";
+       since it is readonly\n\
+       Note that this is a zone entrypoint and any captured variables are treated as readonly";
     ];
   assert_type_errors
     {|
@@ -1028,7 +1030,8 @@ let test_captured_variable_for_specially_decorated_functions context =
     [
       "Revealed type [-1]: Revealed type for `self` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
-       since it is readonly";
+       since it is readonly\n\
+       Note that this is a zone entrypoint and any captured variables are treated as readonly";
     ];
   (* `cls` captured in a nested entrypoint should be marked as readonly. *)
   assert_type_errors

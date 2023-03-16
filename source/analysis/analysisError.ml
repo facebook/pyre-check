@@ -325,9 +325,16 @@ module ReadOnly = struct
   let error_messages
       ~location:{ Location.WithPath.stop = { Location.line = stop_line; _ }; _ }
       ~concise
+      ~is_readonly_entrypoint
       kind
     =
     let pp_reference = pp_reference ~concise in
+    let readonly_entrypoint_message =
+      if is_readonly_entrypoint then
+        "\nNote that this is a zone entrypoint and any captured variables are treated as readonly"
+      else
+        ""
+    in
     match kind with
     | IncompatibleVariableType
         { incompatible_type = { name; mismatch = { actual; expected; _ }; _ }; _ } ->
@@ -335,22 +342,24 @@ module ReadOnly = struct
           let pp_type = pp_type ~concise in
           if concise then
             Format.asprintf
-              "%a has type `%a`; used as `%a`."
+              "%a has type `%a`; used as `%a`.%s"
               pp_reference
               name
               pp_type
               expected
               pp_type
               actual
+              readonly_entrypoint_message
           else
             Format.asprintf
-              "%a is declared to have type `%a` but is used as type `%a`."
+              "%a is declared to have type `%a` but is used as type `%a`.%s"
               pp_reference
               name
               pp_type
               expected
               pp_type
               actual
+              readonly_entrypoint_message
         in
         [message]
     | IncompatibleParameterType
@@ -372,9 +381,23 @@ module ReadOnly = struct
             Format.asprintf "In %s, for %s," callee parameter
         in
         let pp_type = pp_type ~concise in
-        [Format.asprintf "%s expected `%a` but got `%a`." target pp_type expected pp_type actual]
+        [
+          Format.asprintf
+            "%s expected `%a` but got `%a`.%s"
+            target
+            pp_type
+            expected
+            pp_type
+            actual
+            readonly_entrypoint_message;
+        ]
     | AssigningToReadOnlyAttribute { attribute_name } ->
-        [Format.asprintf "Cannot assign to attribute `%s` since it is readonly" attribute_name]
+        [
+          Format.asprintf
+            "Cannot assign to attribute `%s` since it is readonly%s"
+            attribute_name
+            readonly_entrypoint_message;
+        ]
     | IncompatibleReturnType
         {
           mismatch = { actual; expected; _ };
@@ -390,7 +413,13 @@ module ReadOnly = struct
             return_line
         in
         let message =
-          Format.asprintf "Expected `%a` but got `%a`." pp_type expected pp_type actual
+          Format.asprintf
+            "Expected `%a` but got `%a`.%s"
+            pp_type
+            expected
+            pp_type
+            actual
+            readonly_entrypoint_message
         in
         [message; trace]
     | CallingMutatingMethodOnReadOnly { self_argument; self_argument_type; method_name } ->
@@ -400,21 +429,23 @@ module ReadOnly = struct
         if concise then
           [
             Format.asprintf
-              "Method `%a` may modify `%s`."
+              "Method `%a` may modify `%s`.%s"
               pp_reference
               method_name
-              self_argument_string;
+              self_argument_string
+              readonly_entrypoint_message;
           ]
         else
           [
             Format.asprintf
               "Method `%a` may modify its object. Cannot call it on readonly expression `%s` of \
-               type `%a`."
+               type `%a`.%s"
               pp_reference
               method_name
               self_argument_string
               (pp_type ~concise)
-              self_argument_type;
+              self_argument_type
+              readonly_entrypoint_message;
           ]
 
 
@@ -1130,6 +1161,16 @@ let rec messages ~concise ~signature location kind =
               expected_length
               actual_length )
     | _ -> expected_message, actual_message, ""
+  in
+  let is_readonly_entrypoint =
+    signature
+    |> fun { Node.value = { Define.Signature.decorators; _ }; _ } ->
+    decorators
+    |> List.map ~f:Expression.show
+    |> String.Set.of_list
+    |> Set.inter Recognized.readonly_entrypoint_decorators
+    |> Set.is_empty
+    |> not
   in
   let kind = weaken_literals kind in
   let kind = simplify_kind kind in
@@ -1935,11 +1976,20 @@ let rec messages ~concise ~signature location kind =
               class_variable;
           ]
       | ReadOnly name ->
+          let readonly_entrypoint_message =
+            if is_readonly_entrypoint then
+              "\n\
+               Note that this is a zone entrypoint and any captured variables are treated as \
+               readonly"
+            else
+              ""
+          in
           [
             Format.asprintf
               "`%a` cannot be reassigned. It is a read-only property."
               pp_reference
-              name;
+              name
+            ^ readonly_entrypoint_message;
           ])
   | InvalidClassInstantiation kind -> (
       match kind with
@@ -2374,7 +2424,8 @@ let rec messages ~concise ~signature location kind =
           [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
       | TypeAlias, _ ->
           [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name])
-  | ReadOnlynessMismatch kind -> ReadOnly.error_messages ~location ~concise kind
+  | ReadOnlynessMismatch kind ->
+      ReadOnly.error_messages ~location ~concise ~is_readonly_entrypoint kind
   | RedefinedClass { shadowed_class; _ } when concise ->
       [Format.asprintf "Class `%a` redefined" pp_reference shadowed_class]
   | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported } ->
