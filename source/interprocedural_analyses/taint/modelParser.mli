@@ -26,6 +26,11 @@ val parse_access_path
   Ast.Expression.t ->
   (Abstract.TreeDomain.Label.path, ModelVerificationError.t) result
 
+val parse_decorators_to_skip_when_inlining
+  :  path:PyrePath.t ->
+  source:string ->
+  Ast.Reference.t list
+
 (* Exposed for model queries. *)
 val create_callable_model_from_annotations
   :  resolution:Analysis.GlobalResolution.t ->

@@ -12,42 +12,6 @@ open Analysis
 open Ast
 open Test
 
-let test_decorators_to_skip _ =
-  let assert_decorators_to_skip source expected =
-    assert_equal
-      ~cmp:[%equal: Reference.t list]
-      ~printer:[%show: Reference.t list]
-      expected
-      (trim_extra_indentation source
-      |> InlineDecorator.decorators_to_skip ~path:(PyrePath.create_absolute "/root/test.py")
-      |> List.sort ~compare:[%compare: Reference.t])
-  in
-  assert_decorators_to_skip
-    {|
-    @SkipDecoratorWhenInlining
-    def foo.skip_this_decorator(f): ...
-
-    @SkipObscure
-    @SkipDecoratorWhenInlining
-    @SkipOverrides
-    def bar.skip_this_decorator2(f): ...
-
-    @SkipObscure
-    @SkipOverrides
-    def bar.dont_skip(self: TaintInTaintOut[LocalReturn]): ...
-
-    @Sanitize
-    def bar.dont_skip2(self: TaintInTaintOut[LocalReturn]): ...
-
-    def baz.dont_skip3(): ...
-  |}
-    [!&"bar.skip_this_decorator2"; !&"foo.skip_this_decorator"];
-  assert_decorators_to_skip {|
-    @CouldNotParse
-  |} [];
-  ()
-
-
 let test_decorator_body context =
   Memory.reset_shared_memory ();
   let assert_decorator_body
@@ -2173,7 +2137,6 @@ let test_uniquify_names _ =
 let () =
   "inline"
   >::: [
-         "decorators_to_skip" >:: test_decorators_to_skip;
          "decorator_body" >:: test_decorator_body;
          "inline_decorators" >:: test_inline_decorators;
          "decorator_location" >:: test_decorator_location;

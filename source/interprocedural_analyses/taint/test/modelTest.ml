@@ -6938,6 +6938,47 @@ let test_access_path _ =
   ()
 
 
+let test_decorators_to_skip_when_inlining _ =
+  let assert_decorators_to_skip source expected =
+    let source = trim_extra_indentation source in
+    let actual =
+      ModelParser.parse_decorators_to_skip_when_inlining
+        ~path:(PyrePath.create_absolute "/root/test.py")
+        ~source
+      |> List.sort ~compare:[%compare: Ast.Reference.t]
+    in
+    assert_equal
+      ~cmp:[%equal: Ast.Reference.t list]
+      ~printer:[%show: Ast.Reference.t list]
+      expected
+      actual
+  in
+  assert_decorators_to_skip
+    {|
+    @SkipDecoratorWhenInlining
+    def foo.skip_this_decorator(f): ...
+
+    @SkipObscure
+    @SkipDecoratorWhenInlining
+    @SkipOverrides
+    def bar.skip_this_decorator2(f): ...
+
+    @SkipObscure
+    @SkipOverrides
+    def bar.dont_skip(self: TaintInTaintOut[LocalReturn]): ...
+
+    @Sanitize
+    def bar.dont_skip2(self: TaintInTaintOut[LocalReturn]): ...
+
+    def baz.dont_skip3(): ...
+  |}
+    [!&"bar.skip_this_decorator2"; !&"foo.skip_this_decorator"];
+  assert_decorators_to_skip {|
+    @CouldNotParse
+  |} [];
+  ()
+
+
 let () =
   "taint_model"
   >::: [
@@ -6970,5 +7011,6 @@ let () =
          "taint_union_models" >:: test_union_models;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
          "access_path" >:: test_access_path;
+         "decorators_to_skip_when_inlining" >:: test_decorators_to_skip_when_inlining;
        ]
   |> Test.run

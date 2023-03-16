@@ -90,7 +90,7 @@ let parse_and_save_decorators_to_skip
     let model_sources = ModelParser.get_model_sources ~paths:taint_model_paths in
     let decorators_to_skip =
       List.concat_map model_sources ~f:(fun (path, source) ->
-          Analysis.InlineDecorator.decorators_to_skip ~path source)
+          ModelParser.parse_decorators_to_skip_when_inlining ~path ~source)
     in
     List.iter decorators_to_skip ~f:(fun decorator ->
         Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);

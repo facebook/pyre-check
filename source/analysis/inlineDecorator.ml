@@ -10,7 +10,6 @@
 open Ast
 open Core
 open Pyre
-open PyreParser
 open Statement
 open Expression
 
@@ -35,8 +34,6 @@ let should_inline_decorators () =
 
 let inlined_original_function_name = "_original_function"
 
-let skip_inlining_decorator_name = "SkipDecoratorWhenInlining"
-
 let make_wrapper_function_name decorator_reference =
   Reference.delocalize decorator_reference
   |> Reference.last
@@ -47,29 +44,6 @@ let make_wrapper_function_name decorator_reference =
 let args_local_variable_name = "_args"
 
 let kwargs_local_variable_name = "_kwargs"
-
-let decorators_to_skip ~path source =
-  let open Result in
-  let from_statement = function
-    | { Node.value = Statement.Define { signature = { name; decorators; _ }; _ }; _ }
-      when List.exists decorators ~f:(name_is ~name:skip_inlining_decorator_name) ->
-        Some name
-    | _ -> None
-  in
-  try
-    String.split ~on:'\n' source
-    |> Parser.parse
-    >>| List.filter_map ~f:from_statement
-    |> Result.ok
-    |> Option.value ~default:[]
-  with
-  | exn ->
-      Log.dump
-        "Ignoring `%s` when trying to get decorators to skip because of exception: %s"
-        (PyrePath.show path)
-        (Exn.to_string exn);
-      []
-
 
 module DecoratorModuleValue = struct
   type t = Ast.Reference.t

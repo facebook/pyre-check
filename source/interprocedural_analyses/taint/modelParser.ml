@@ -3334,6 +3334,29 @@ let create ~resolution ~path ~taint_configuration ~source_sink_filter ~callables
          | Error error -> Error [error]))
 
 
+let parse_decorators_to_skip_when_inlining ~path ~source =
+  let open Result in
+  let from_statement = function
+    | { Node.value = Statement.Define { signature = { name; decorators; _ }; _ }; _ }
+      when List.exists decorators ~f:(name_is ~name:"SkipDecoratorWhenInlining") ->
+        Some name
+    | _ -> None
+  in
+  try
+    String.split ~on:'\n' source
+    |> Parser.parse
+    >>| List.filter_map ~f:from_statement
+    |> Result.ok
+    |> Option.value ~default:[]
+  with
+  | exn ->
+      Log.warning
+        "Ignoring `%s` when trying to get decorators to skip because of exception: %s"
+        (PyrePath.show path)
+        (Exn.to_string exn);
+      []
+
+
 let get_model_sources ~paths =
   let path_and_content file =
     match File.content file with
