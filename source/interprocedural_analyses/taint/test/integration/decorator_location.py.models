@@ -451,6 +451,64 @@
               "start": 19,
               "end": 20
             }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": {
+                "filename": "decorator_location.py",
+                "line": 29,
+                "start": 10,
+                "end": 11
+              },
+              "resolves_to": [ "decorator_location.baz._original_function" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator_location.baz._original_function",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": {
+              "filename": "decorator_location.py",
+              "line": 56,
+              "start": 15,
+              "end": 16
+            }
           }
         ]
       }

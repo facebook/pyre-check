@@ -47,13 +47,13 @@ def foo(x: int) -> None:
 
 @skip_this_decorator
 def bar(x: int) -> None:
-    print(x)
+    _test_sink(x)
 
 
 @with_logging2
 @skip_this_decorator
 def baz(x: int) -> None:
-    print(x)
+    _test_sink(x)
 
 
 def pass_local_variable_to_x(f: Callable) -> Callable:

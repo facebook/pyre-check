@@ -2,7 +2,7 @@
 Call dependencies
 $local_decorator_location?handle_request$_inlined_pass_local_variable_to_x (fun) -> [$local_decorator_location?handle_request$_original_function (fun) _test_sink (fun)]
 $local_decorator_location?baz$_inlined_with_logging2 (fun) -> [$local_decorator_location?baz$_original_function (fun) _test_sink (fun)]
-$local_decorator_location?baz$_original_function (fun) -> [print (fun)]
+$local_decorator_location?baz$_original_function (fun) -> [_test_sink (fun)]
 $local_decorator_location?foo$_inlined_with_logging (fun) -> [$local_decorator_location?foo$_inlined_with_logging2 (fun) $local_decorator_location?foo?_inlined_with_logging$some_helper (fun) _test_sink (fun)]
 $local_decorator_location?foo$_inlined_with_logging2 (fun) -> [$local_decorator_location?foo$_original_function (fun) _test_sink (fun)]
 $local_decorator_location?foo$_original_function (fun) -> [_test_sink (fun)]
@@ -18,7 +18,7 @@ $local_decorator_location?with_logging$some_helper (fun) -> [_test_sink (fun) pr
 $local_decorator_location?with_logging2$inner (fun) -> [_test_sink (fun)]
 decorator_location.pass_local_variable_to_x (fun) -> []
 decorator_location.$toplevel (fun) -> []
-decorator_location.bar (fun) -> [print (fun)]
+decorator_location.bar (fun) -> [_test_sink (fun)]
 decorator_location.baz (fun) -> [$local_decorator_location?baz$_inlined_with_logging2 (fun)]
 decorator_location.call_return_foo (fun) -> [_test_sink (fun) decorator_location.Foo::return_source (method) decorator_location.return_foo (fun)]
 decorator_location.foo (fun) -> [$local_decorator_location?foo$_inlined_with_logging (fun)]
