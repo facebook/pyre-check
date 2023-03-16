@@ -7,4 +7,3 @@ pyre-extensions>=0.0.29
 tabulate
 testslide>=2.7.0
 typing_extensions
-typeguard<3.0
