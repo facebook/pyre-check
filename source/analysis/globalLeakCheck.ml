@@ -51,39 +51,37 @@ module State (Context : Context) = struct
 
   let errors () = Context.error_map |> LocalErrorMap.all_errors
 
-  let known_mutation_methods =
-    [
-      "list", "append";
-      "list", "insert";
-      "list", "extend";
-      "dict", "setdefault";
-      "dict", "update";
-      "set", "add";
-      "set", "update";
-      "set", "intersection_update";
-      "set", "difference_update";
-      "set", "symmetric_difference_update";
-    ]
+  let mutation_methods_and_types =
+    String.Map.of_alist_exn
+      [
+        "list", String.Set.of_list ["append"; "insert"; "extend"];
+        "dict", String.Set.of_list ["setdefault"; "update"];
+        ( "set",
+          String.Set.of_list
+            [
+              "add";
+              "update";
+              "intersection_update";
+              "difference_update";
+              "symmetric_difference_update";
+            ] );
+      ]
 
 
-  let mutation_types_and_methods =
-    String.Set.of_list
-      (List.map ~f:(fun (type_, method_) -> type_ ^ "." ^ method_) known_mutation_methods)
-
-
-  let mutation_methods =
-    String.Set.of_list (List.map ~f:(fun (_, method_) -> method_) known_mutation_methods)
-
+  let mutation_methods = String.Map.data mutation_methods_and_types |> String.Set.union_list
 
   let is_known_mutation_method ~resolution expression identifier =
     let is_blocklisted_method () =
       let expression_type = Resolution.resolve_expression_to_type resolution expression in
-      if Type.equal expression_type Type.Top || Type.equal expression_type Type.Any then
-        String.Set.mem mutation_methods identifier
-      else (* TODO (T142189949): don't perform string comparison when determining method class *)
-        String.Set.mem
-          mutation_types_and_methods
-          ((Type.class_name expression_type |> Reference.show) ^ "." ^ identifier)
+      match expression_type with
+      | Type.Parametric { name; _ } ->
+          String.Map.find mutation_methods_and_types name
+          >>| (fun methods -> String.Set.mem methods identifier)
+          |> Option.value ~default:false
+      | Type.Top
+      | Type.Any ->
+          String.Set.mem mutation_methods identifier
+      | _ -> false
     in
     String.equal identifier "__setitem__"
     || String.equal identifier "__setattr__"
