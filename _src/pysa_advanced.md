@@ -502,7 +502,7 @@ def foo(z: str) -> None:
 foo(loggable_string)
 ```
 
-However, Pysa has the ability to inline decorators within functions before analyzing them so that it can catch such flows. This is currently an experimental feature hidden behind the `--inline-decorators` flag.
+However, Pysa has the ability to inline decorators within functions before analyzing them so that it can catch such flows. This can be enabled with the `--inline-decorators` flag.
 
 ## Prevent Inlining Decorators with `SkipDecoratorWhenInlining`
 
@@ -522,6 +522,17 @@ def bar(x: int) -> None:
 ```
 
 This will prevent the decorator from being inlined when analyzing `bar`. Note that we use `@SkipDecoratorWhenInlining` on the decorator that is to be skipped, not the function on which the decorator is applied.
+
+Unfortunately, this can often lead to false negatives because Pysa won't be able to resolve calls to the decoratored function. In that case, the call will be treated as obscure.
+
+For instance:
+```python
+@decorator_to_be_skipped
+def bar(x: int) -> None:
+  sink(x)
+
+bar(source()) # Issue won't be found here (false negative).
+```
 
 ## Single trace sanitizers with `@SanitizeSingleTrace`
 
