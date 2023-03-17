@@ -111,6 +111,13 @@ let incompatible_annotation_with_attribute_error ~define ~explicit ~original_ann
   | _ -> None
 
 
+let is_readonlyness_mismatch ~global_resolution ~actual ~expected =
+  GlobalResolution.less_or_equal
+    global_resolution
+    ~left:(Type.ReadOnly.strip_readonly actual)
+    ~right:(Type.ReadOnly.strip_readonly expected)
+
+
 let errors_from_not_found
     ?(callee_base_expression = None)
     ~callable
@@ -217,9 +224,7 @@ let errors_from_not_found
               | _ ->
                   if Type.is_primitive_string actual && Type.is_literal_string expected then
                     location, Error.NonLiteralString { name; position; callee }
-                  else if
-                    Type.ReadOnly.is_readonly actual && not (Type.ReadOnly.is_readonly expected)
-                  then
+                  else if is_readonlyness_mismatch ~global_resolution ~actual ~expected then
                     ( location,
                       Error.ReadOnlynessMismatch
                         (IncompatibleParameterType

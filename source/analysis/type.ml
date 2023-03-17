@@ -3707,6 +3707,8 @@ module ReadOnly = struct
 
 
   let is_readonly type_ = unpack_readonly type_ |> Option.is_some
+
+  let strip_readonly type_ = instantiate type_ ~constraints:unpack_readonly
 end
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =

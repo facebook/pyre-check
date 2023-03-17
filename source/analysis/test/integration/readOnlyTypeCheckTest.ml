@@ -612,10 +612,40 @@ let test_function_call context =
         expect_list_mutable(xs)
     |}
     [
-      (* TODO(T130377746): We should emit a readonly violation error here instead of the regular
-         incompatible parameter type error. *)
-      "Incompatible parameter type [6]: In call `expect_list_mutable`, for 1st positional \
-       argument, expected `List[pyre_extensions.ReadOnly[int]]` but got `List[int]`.";
+      "ReadOnly violation - Incompatible parameter type [3002]: In call \
+       `test.expect_list_mutable`, for 1st positional argument, expected \
+       `typing.List[pyre_extensions.ReadOnly[int]]` but got `typing.List[int]`.";
+    ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import List
+
+      def expect_list_list_mutable(xs: List[List[ReadOnly[int]]]) -> None: ...
+
+      def main(xs: List[List[int]]) -> None:
+        expect_list_list_mutable(xs)
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call \
+       `test.expect_list_list_mutable`, for 1st positional argument, expected \
+       `typing.List[typing.List[pyre_extensions.ReadOnly[int]]]` but got \
+       `typing.List[typing.List[int]]`.";
+    ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Union
+
+      def expect_union(xs: Union[int, str]) -> None: ...
+
+      def main(readonly_int: ReadOnly[int] | ReadOnly[str]) -> None:
+        expect_union(readonly_int)
+    |}
+    [
+      "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_union`, for \
+       1st positional argument, expected `typing.Union[int, str]` but got \
+       `typing.Union[pyre_extensions.ReadOnly[int], pyre_extensions.ReadOnly[str]]`.";
     ];
   assert_type_errors_including_readonly
     {|

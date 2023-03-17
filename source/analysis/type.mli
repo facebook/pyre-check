@@ -1117,6 +1117,8 @@ module ReadOnly : sig
   val unpack_readonly : t -> t option
 
   val is_readonly : t -> bool
+
+  val strip_readonly : t -> t
 end
 
 val infer_transform : t -> t
