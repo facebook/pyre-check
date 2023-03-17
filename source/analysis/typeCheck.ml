@@ -950,8 +950,7 @@ module State (Context : Context) = struct
               ~expected:return_annotation
               ~covariant:true
           in
-          if Type.ReadOnly.is_readonly actual && not (Type.ReadOnly.is_readonly return_annotation)
-          then
+          if is_readonlyness_mismatch ~global_resolution ~actual ~expected:return_annotation then
             Error.ReadOnlynessMismatch (IncompatibleReturnType { mismatch; define_location })
           else
             Error.IncompatibleReturnType

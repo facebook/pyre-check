@@ -1132,10 +1132,8 @@ let test_return_type context =
         return x
     |}
     [
-      (* TODO(T130377746): We should emit a readonly violation error here instead of the regular
-         incompatible return type error. *)
-      "Incompatible return type [7]: Expected `List[int]` but got \
-       `List[pyre_extensions.ReadOnly[int]]`.";
+      "ReadOnly violation - Incompatible return type [3004]: Expected `typing.List[int]` but got \
+       `typing.List[pyre_extensions.ReadOnly[int]]`.";
     ];
   ()
 
