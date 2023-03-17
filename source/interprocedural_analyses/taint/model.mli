@@ -43,6 +43,7 @@ module Mode : sig
     | SkipDecoratorWhenInlining
     | SkipOverrides
     | Entrypoint
+    | IgnoreDecorator
   [@@deriving show, compare, equal]
 
   val from_string : string -> t option

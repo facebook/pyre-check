@@ -1846,7 +1846,8 @@ let parse_model_clause
           match mode with
           | { Node.value = Expression.Name (Name.Identifier mode_name); location } -> (
               match Model.Mode.from_string mode_name with
-              | Some Model.Mode.SkipDecoratorWhenInlining ->
+              | Some Model.Mode.SkipDecoratorWhenInlining
+              | Some Model.Mode.IgnoreDecorator ->
                   Error
                     (model_verification_error
                        ~path
@@ -2431,6 +2432,7 @@ let adjust_sanitize_and_modes_and_skipped_override
     | "SkipOverrides" -> Ok (sanitizers, Model.ModeSet.add SkipOverrides modes)
     | "SkipObscure" -> Ok (sanitizers, Model.ModeSet.remove Obscure modes)
     | "Entrypoint" -> Ok (sanitizers, Model.ModeSet.add Entrypoint modes)
+    | "IgnoreDecorator" -> Ok (sanitizers, Model.ModeSet.add IgnoreDecorator modes)
     | _ -> Ok (sanitizers, modes)
   in
   List.fold_result
@@ -2470,7 +2472,8 @@ let create_model_from_signature
           | ["SkipDecoratorWhenInlining"]
           | ["SkipOverrides"]
           | ["Entrypoint"]
-          | ["SkipObscure"] ->
+          | ["SkipObscure"]
+          | ["IgnoreDecorator"] ->
               Either.first decorator
           | _ -> Either.Second decorator_expression)
     in

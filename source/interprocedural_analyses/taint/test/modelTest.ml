@@ -535,7 +535,21 @@ let test_global_sanitize context =
           ~analysis_modes:(Model.ModeSet.singleton SkipDecoratorWhenInlining)
           "test.taint";
       ]
-    ()
+    ();
+  assert_model
+    ~model_source:{|
+      @IgnoreDecorator
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.singleton IgnoreDecorator)
+          "test.taint";
+      ]
+    ();
+  ()
 
 
 let test_sanitize_single_trace context =
