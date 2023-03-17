@@ -111,6 +111,9 @@ let incompatible_annotation_with_attribute_error ~define ~explicit ~original_ann
   | _ -> None
 
 
+(* Return true if the mismatch between `actual` and `expected` is due to readonlyness.
+
+   We check this by stripping any `ReadOnly` types in both and checking if they are compatible. *)
 let is_readonlyness_mismatch ~global_resolution ~actual ~expected =
   GlobalResolution.less_or_equal
     global_resolution
@@ -285,10 +288,11 @@ let errors_from_not_found
 
 
 let incompatible_variable_type_error_kind
+    ~global_resolution
     ~declare_location
     ({ Error.mismatch = { expected; actual; _ }; _ } as incompatible_type)
   =
-  if Type.ReadOnly.is_readonly actual && not (Type.ReadOnly.is_readonly expected) then
+  if is_readonlyness_mismatch ~global_resolution ~actual ~expected then
     Error.ReadOnlynessMismatch (IncompatibleVariableType { incompatible_type; declare_location })
   else
     Error.IncompatibleVariableType { incompatible_type; declare_location }
@@ -4274,6 +4278,7 @@ module State (Context : Context) = struct
                             |> fun kind -> emit_error ~errors ~location ~kind
                         | None when is_incompatible ->
                             incompatible_variable_type_error_kind
+                              ~global_resolution
                               ~declare_location:(instantiate_path ~global_resolution location)
                               {
                                 Error.name = reference;
@@ -5600,6 +5605,7 @@ module State (Context : Context) = struct
             errors
           else
             incompatible_variable_type_error_kind
+              ~global_resolution
               ~declare_location:(instantiate_path ~global_resolution location)
               {
                 Error.name = Reference.create name;

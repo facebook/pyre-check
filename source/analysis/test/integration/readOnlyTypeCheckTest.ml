@@ -32,8 +32,8 @@ let test_ignore_readonly context =
         y: str = x
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `str` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "Incompatible variable type [9]: y is declared to have type `str` but is used as type \
+       `pyre_extensions.ReadOnly[int]`.";
     ];
   assert_type_errors
     {|
@@ -337,10 +337,8 @@ let test_assignment context =
         y: List[int] = xs
     |}
     [
-      (* TODO(T130377746): We should emit a readonly violation error here instead of the regular
-         incompatible variable type error. *)
-      "Incompatible variable type [9]: y is declared to have type `List[int]` but is used as type \
-       `List[pyre_extensions.ReadOnly[int]]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `typing.List[int]` but is used as type `typing.List[pyre_extensions.ReadOnly[int]]`.";
     ];
   (* We cannot assign to any attribute of a readonly object. *)
   assert_type_errors_including_readonly
