@@ -108,6 +108,7 @@ let test_constant _ =
 
     assert_parsed "1" ~expected:(+Expression.Constant (Constant.Integer 1));
     assert_parsed "-1" ~expected:(+Expression.Constant (Constant.Integer (-1)));
+    assert_parsed "+1" ~expected:(+Expression.Constant (Constant.Integer 1));
     assert_parsed "0" ~expected:(+Expression.Constant (Constant.Integer 0));
     assert_parsed "00" ~expected:(+Expression.Constant (Constant.Integer 0));
     assert_parsed "00_0" ~expected:(+Expression.Constant (Constant.Integer 0));
@@ -284,6 +285,7 @@ let test_await_yield _ =
     assert_parsed "(yield from x)" ~expected:(+Expression.YieldFrom !"x");
     assert_parsed "(yield (await x))" ~expected:(+Expression.Yield (Some (+Expression.Await !"x")));
     assert_parsed "await (yield from x)" ~expected:(+Expression.Await (+Expression.YieldFrom !"x"));
+    assert_parsed "await (yield x)" ~expected:(+Expression.Await (+Expression.Yield (Some !"x")));
 
     assert_not_parsed "await";
     (* Standalone yield/yield from expressions are required to be protected with parenthesis. *)
