@@ -446,7 +446,7 @@ module Make (Analysis : ANALYSIS) = struct
       |> List.map ~f:(fun at_type -> Target.create_derived_override callable ~at_type)
     in
     let new_model =
-      let lookup_and_join accumulator override =
+      let lookup override =
         match State.get_model override with
         | None ->
             Format.asprintf
@@ -454,14 +454,16 @@ module Make (Analysis : ANALYSIS) = struct
               Target.pp_pretty
               override
             |> failwith
-        | Some model -> model |> Model.strip_for_callsite |> Model.join ~iteration accumulator
+        | Some model -> model |> Model.strip_for_callsite
       in
       let direct_model =
         State.get_model (Target.get_corresponding_method callable)
         |> Option.value ~default:Analysis.empty_model
         |> Model.strip_for_callsite
       in
-      List.fold overrides ~f:lookup_and_join ~init:direct_model
+      overrides
+      |> List.map ~f:lookup
+      |> Algorithms.fold_balanced ~f:(Model.join ~iteration) ~init:direct_model
     in
     let previous_model =
       match State.get_old_model callable with
