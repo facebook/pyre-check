@@ -64,6 +64,7 @@ class GrapheneModelsGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
         return resolver_models + mutator_models
 
     def _models_for_subclass_methods_matching_pattern(
+        # pyre-fixme[24]: Generic type `re.Pattern` expects 1 type parameter.
         self, pattern: re.Pattern, base_classes: List[str]
     ) -> List[PyreFunctionDefinitionModel]:
         def matches_pattern(method: PyreFunctionDefinitionModel) -> bool:

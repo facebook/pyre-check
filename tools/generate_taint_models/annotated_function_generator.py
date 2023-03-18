@@ -42,9 +42,11 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
         root: str,
         annotation_specifications: List[DecoratorAnnotationSpecification],
         paths: Optional[List[str]] = None,
+        # pyre-fixme[24]: Generic type `re.Pattern` expects 1 type parameter.
         exclude_paths: Optional[List[re.Pattern]] = None,
     ) -> None:
         self._paths: Optional[List[str]] = paths
+        # pyre-fixme[24]: Generic type `re.Pattern` expects 1 type parameter.
         self.exclude_paths: List[re.Pattern] = exclude_paths or []
         self.root = root
         self.annotation_specifications: List[

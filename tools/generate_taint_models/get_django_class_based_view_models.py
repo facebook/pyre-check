@@ -49,6 +49,7 @@ class DjangoClassBasedViewModels(ModelGenerator[PyreFunctionDefinitionModel]):
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> List[PyreFunctionDefinitionModel]:
+        # pyre-fixme[24]: Generic type `re.Pattern` expects 1 type parameter.
         pattern: re.Pattern = re.compile(
             "(get|post|put|patch|delete|head|options|trace)"
         )
