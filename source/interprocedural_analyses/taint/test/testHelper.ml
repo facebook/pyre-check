@@ -453,16 +453,17 @@ type test_environment = {
   class_interval_graph: ClassIntervalSetGraph.SharedMemory.t;
 }
 
-let set_up_decorator_inlining ~handle models =
-  let decorators_to_skip =
+let set_up_decorator_preprocessing ~handle models =
+  let decorator_actions =
     models
     >>| (fun models ->
-          ModelParser.parse_decorators_to_skip_when_inlining
-            ~path:(PyrePath.create_absolute handle)
-            ~source:models)
-    |> Option.value ~default:[]
+          ModelParser.parse_decorator_modes ~path:(PyrePath.create_absolute handle) ~source:models)
+    |> Option.value ~default:Reference.Map.empty
   in
-  Analysis.InlineDecorator.setup_decorator_inlining ~decorators_to_skip ~enable:true
+  Analysis.InlineDecorator.setup_preprocessing
+    ~decorator_actions
+    ~enable_inlining:true
+    ~enable_discarding:true
 
 
 let initialize
@@ -482,7 +483,7 @@ let initialize
   in
   let configuration, type_environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    set_up_decorator_inlining ~handle models_source;
+    set_up_decorator_preprocessing ~handle models_source;
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
       Test.ScratchProject.build_type_environment_and_postprocess project
     in

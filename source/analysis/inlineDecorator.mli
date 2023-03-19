@@ -8,16 +8,32 @@
 open Ast
 open Statement
 
-val setup_decorator_inlining : decorators_to_skip:Ast.Reference.t list -> enable:bool -> unit
+module Action : sig
+  type t =
+    (* Do not try to inline that decorator, keep it as-is. *)
+    | DoNotInline
+    (* Remove that decorator from decorated function, assuming it is a no-op. *)
+    | Discard
+  [@@deriving eq, show]
+
+  val to_mode : t -> string
+end
+
+val setup_preprocessing
+  :  decorator_actions:Action.t Reference.Map.t ->
+  enable_inlining:bool ->
+  enable_discarding:bool ->
+  unit
 
 val original_name_from_inlined_name : Ast.Reference.t -> Ast.Reference.t option
 
 (* This is called automatically by the AST environment during preprocessing. *)
-val inline_decorators : get_source:(Reference.t -> Source.t option) -> Source.t -> Source.t
+val preprocess_source : get_source:(Reference.t -> Source.t option) -> Source.t -> Source.t
 
 (* This is called by `pyre query` for debugging and testing purposes. *)
 val inline_decorators_for_define
-  :  get_decorator_body:(Reference.t -> Define.t option) ->
+  :  get_source:(Reference.t -> Source.t option) ->
+  get_decorator_action:(Reference.t -> Action.t option) ->
   location:Location.t ->
   Define.t ->
   Define.t
@@ -30,9 +46,8 @@ val uniquify_names
   'a list
 
 (* exposed for testing purposes only. *)
-val decorator_body
-  :  should_skip_decorator:(Reference.t -> bool) ->
-  get_source:(Reference.t -> Source.t option) ->
+val find_decorator_body
+  :  get_source:(Reference.t -> Source.t option) ->
   Reference.t ->
   Define.t option
 

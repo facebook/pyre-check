@@ -6952,22 +6952,21 @@ let test_access_path _ =
   ()
 
 
-let test_decorators_to_skip_when_inlining _ =
-  let assert_decorators_to_skip source expected =
+let test_parse_decorator_modes _ =
+  let open Analysis in
+  let assert_decorator_modes source expected =
     let source = trim_extra_indentation source in
     let actual =
-      ModelParser.parse_decorators_to_skip_when_inlining
-        ~path:(PyrePath.create_absolute "/root/test.py")
-        ~source
-      |> List.sort ~compare:[%compare: Ast.Reference.t]
+      ModelParser.parse_decorator_modes ~path:(PyrePath.create_absolute "/root/test.py") ~source
+      |> Ast.Reference.Map.to_alist ~key_order:`Increasing
     in
     assert_equal
-      ~cmp:[%equal: Ast.Reference.t list]
-      ~printer:[%show: Ast.Reference.t list]
+      ~cmp:[%equal: (Ast.Reference.t * InlineDecorator.Action.t) list]
+      ~printer:[%show: (Ast.Reference.t * InlineDecorator.Action.t) list]
       expected
       actual
   in
-  assert_decorators_to_skip
+  assert_decorator_modes
     {|
     @SkipDecoratorWhenInlining
     def foo.skip_this_decorator(f): ...
@@ -6985,9 +6984,16 @@ let test_decorators_to_skip_when_inlining _ =
     def bar.dont_skip2(self: TaintInTaintOut[LocalReturn]): ...
 
     def baz.dont_skip3(): ...
+
+    @IgnoreDecorator
+    def foo.ignore_this_decorator(): ...
   |}
-    [!&"bar.skip_this_decorator2"; !&"foo.skip_this_decorator"];
-  assert_decorators_to_skip {|
+    [
+      !&"bar.skip_this_decorator2", InlineDecorator.Action.DoNotInline;
+      !&"foo.ignore_this_decorator", InlineDecorator.Action.Discard;
+      !&"foo.skip_this_decorator", InlineDecorator.Action.DoNotInline;
+    ];
+  assert_decorator_modes {|
     @CouldNotParse
   |} [];
   ()
@@ -7025,6 +7031,6 @@ let () =
          "taint_union_models" >:: test_union_models;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
          "access_path" >:: test_access_path;
-         "decorators_to_skip_when_inlining" >:: test_decorators_to_skip_when_inlining;
+         "parse_decorator_modes" >:: test_parse_decorator_modes;
        ]
   |> Test.run

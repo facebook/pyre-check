@@ -39,20 +39,41 @@ def skip_this_decorator(f: Callable[[int], None]) -> Callable[[int], None]:
     return inner
 
 
+def ignore_this_decorator(f: Callable[[int], None]) -> Callable[[int], None]:
+    return f
+
+
 @with_logging
 @with_logging2
-def foo(x: int) -> None:
+def decorated_logging_logging2(x: int) -> None:
     _test_sink(x)
 
 
 @skip_this_decorator
-def bar(x: int) -> None:
+def decorated_skip_this_decorator(x: int) -> None:
     _test_sink(x)
 
 
 @with_logging2
 @skip_this_decorator
-def baz(x: int) -> None:
+def decorated_logging2_skip_this_decorator(x: int) -> None:
+    _test_sink(x)
+
+
+@ignore_this_decorator
+def decorated_ignore_this_decorator(x: int) -> None:
+    _test_sink(x)
+
+
+@ignore_this_decorator
+@skip_this_decorator
+def decorated_ignore_then_skip_decorator(x: int) -> None:
+    _test_sink(x)
+
+
+@with_logging
+@ignore_this_decorator
+def decorated_logging_ignore_this_decorator(x: int) -> None:
     _test_sink(x)
 
 
@@ -96,9 +117,18 @@ def call_return_foo() -> None:
 
 
 def main() -> None:
-    foo(_test_source())
-    bar(_test_source())
-    baz(_test_source())
+    # Properly finds all issues.
+    decorated_logging_logging2(_test_source())
+    # Does NOT find the issue (false negative).
+    decorated_skip_this_decorator(_test_source())
+    # Finds the issue to the decorator but not the inner function.
+    decorated_logging2_skip_this_decorator(_test_source())
+    # Properly finds the issue.
+    decorated_ignore_this_decorator(_test_source())
+    # does NOT find the issue (false negative).
+    decorated_ignore_then_skip_decorator(_test_source())
+    # Properly finds all issues.
+    decorated_logging_ignore_this_decorator(_test_source())
 
     # No issue because this `x` is not passed to `handle_request`.
     handle_request("hello", _test_source(), 42)

@@ -12,14 +12,9 @@ open Analysis
 open Ast
 open Test
 
-let test_decorator_body context =
+let test_find_decorator_body context =
   Memory.reset_shared_memory ();
-  let assert_decorator_body
-      ?(should_skip_decorator = fun _ -> false)
-      ~expected_handle
-      decorator_reference
-      expected
-    =
+  let assert_decorator_body ~expected_handle decorator_reference expected =
     let additional_sources =
       [
         ( "file1.py",
@@ -76,7 +71,7 @@ let test_decorator_body context =
       ~cmp:(Option.equal (fun left right -> Define.location_insensitive_compare left right = 0))
       ~printer:[%show: Define.t option]
       (expected >>| get_expected_define)
-      (InlineDecorator.decorator_body ~should_skip_decorator ~get_source decorator_reference)
+      (InlineDecorator.find_decorator_body ~get_source decorator_reference)
   in
   assert_decorator_body
     ~expected_handle:"file1.py"
@@ -92,11 +87,6 @@ let test_decorator_body context =
 
         return inner
   |});
-  assert_decorator_body
-    ~expected_handle:"file1.py"
-    ~should_skip_decorator:(Reference.equal !&"file1.decorator1")
-    !&"file1.decorator1"
-    None;
   assert_decorator_body
     ~expected_handle:"some_module/file2.py"
     !&"some_module.file2.decorator2"
@@ -118,7 +108,10 @@ let test_decorator_body context =
 
 let get_expected_actual_sources ~context ~additional_sources ~handle source expected =
   Memory.reset_shared_memory ();
-  InlineDecorator.setup_decorator_inlining ~decorators_to_skip:[] ~enable:true;
+  InlineDecorator.setup_preprocessing
+    ~decorator_actions:Reference.Map.empty
+    ~enable_inlining:true
+    ~enable_discarding:true;
   let ast_environment =
     ScratchProject.setup ~context ~external_sources:additional_sources [handle, source]
     |> ScratchProject.build_ast_environment
@@ -126,7 +119,7 @@ let get_expected_actual_sources ~context ~additional_sources ~handle source expe
   let get_source = AstEnvironment.ReadOnly.get_processed_source ast_environment in
   let actual =
     get_source !&"test"
-    >>| (fun source -> InlineDecorator.inline_decorators ~get_source source)
+    >>| (fun source -> InlineDecorator.preprocess_source ~get_source source)
     >>| InlineDecorator.sanitize_defines ~strip_decorators:false
     |> fun optional -> Option.value_exn optional
   in
@@ -2137,7 +2130,7 @@ let test_uniquify_names _ =
 let () =
   "inline"
   >::: [
-         "decorator_body" >:: test_decorator_body;
+         "find_decorator_body" >:: test_find_decorator_body;
          "inline_decorators" >:: test_inline_decorators;
          "decorator_location" >:: test_decorator_location;
          "requalify_name" >:: test_requalify_name;

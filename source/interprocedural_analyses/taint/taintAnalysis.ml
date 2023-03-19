@@ -79,31 +79,37 @@ let initialize_configuration
   taint_configuration, taint_configuration_shared_memory
 
 
-let parse_and_save_decorators_to_skip
-    ~inline_decorators
-    { Configuration.Analysis.taint_model_paths; _ }
+let setup_decorator_preprocessing ~inline_decorators { Configuration.Analysis.taint_model_paths; _ }
   =
-  let decorators_to_skip =
-    if inline_decorators then
-      let timer = Timer.start () in
-      let () = Log.info "Getting decorators to skip when inlining..." in
-      let model_sources = ModelParser.get_model_sources ~paths:taint_model_paths in
-      let decorators_to_skip =
-        List.concat_map model_sources ~f:(fun (path, source) ->
-            ModelParser.parse_decorators_to_skip_when_inlining ~path ~source)
-      in
+  let timer = Timer.start () in
+  let () = Log.info "Parsing taint models for decorator modes..." in
+  let decorator_actions =
+    let combine_decorator_modes ~key:decorator left right =
       let () =
-        Statistics.performance
-          ~name:"Getting decorators to skip when inlining"
-          ~phase_name:"Getting decorators to skip when inlining"
-          ~timer
-          ()
+        Log.warning
+          "Found multiple modes for decorator `%a`: was @%s, it is now @%s"
+          Ast.Reference.pp
+          decorator
+          (Analysis.InlineDecorator.Action.to_mode left)
+          (Analysis.InlineDecorator.Action.to_mode right)
       in
-      decorators_to_skip
-    else
-      []
+      right
+    in
+    ModelParser.get_model_sources ~paths:taint_model_paths
+    |> List.map ~f:(fun (path, source) -> ModelParser.parse_decorator_modes ~path ~source)
+    |> List.fold
+         ~init:Ast.Reference.Map.empty
+         ~f:(Ast.Reference.Map.merge_skewed ~combine:combine_decorator_modes)
   in
-  Analysis.InlineDecorator.setup_decorator_inlining ~decorators_to_skip ~enable:inline_decorators
+  Analysis.InlineDecorator.setup_preprocessing
+    ~decorator_actions
+    ~enable_inlining:inline_decorators
+    ~enable_discarding:true;
+  Statistics.performance
+    ~name:"Parsed taint models for decorator modes"
+    ~phase_name:"Parsed taint models for decorator modes"
+    ~timer
+    ()
 
 
 (** Perform a full type check and build a type environment. *)
@@ -313,9 +319,9 @@ let run_taint_analysis
       initialize_configuration ~static_analysis_configuration
     in
 
-    (* Collect decorators to skip before type-checking because decorator inlining happens in an
-       early phase of type-checking and needs to know which decorators to skip. *)
-    let () = parse_and_save_decorators_to_skip ~inline_decorators configuration in
+    (* Parse taint models to find decorators to inline or discard. This must be done early because
+       inlining is a preprocessing phase of type-checking. *)
+    let () = setup_decorator_preprocessing ~inline_decorators configuration in
 
     let cache = Cache.load ~scheduler ~configuration ~taint_configuration ~enabled:use_cache in
 
