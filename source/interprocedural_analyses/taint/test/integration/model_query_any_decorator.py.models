@@ -2,6 +2,47 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query_any_decorator.decorator_ignored",
+    "tito": [
+      {
+        "port": "formal(f)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "IgnoreDecorator" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.source_on_decorator_ignored",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query_any_decorator.test1_alarm1",
     "sources": [
       {

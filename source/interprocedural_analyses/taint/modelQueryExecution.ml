@@ -647,8 +647,9 @@ module Modelable = struct
 
   let decorators = function
     | Callable { signature; _ } ->
-        let { Statement.Define.Signature.decorators; _ } = Lazy.force signature in
-        decorators
+        signature
+        |> Lazy.force
+        |> Analysis.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
     | Attribute _
     | Global _ ->
         failwith "unexpected use of Decorator on an attribute or global"

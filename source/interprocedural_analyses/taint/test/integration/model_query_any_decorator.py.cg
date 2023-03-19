@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+model_query_any_decorator.decorator_ignored (fun) -> []
+model_query_any_decorator.source_on_decorator_ignored (fun) -> []
 model_query_any_decorator.test1_noalarm1 (fun) -> []
 model_query_any_decorator.test2_noalarm1 (fun) -> []
 model_query_any_decorator.test3_noalarm1 (fun) -> []

@@ -131,3 +131,14 @@ app = Application()
 @app.decorator
 def test_local_variable_method_decorator():
     return None
+
+
+# Test that we can still match on ignored decorators (`@IgnoreDecorator`) with DSL queries.
+
+def decorator_ignored(f):
+    return f
+
+
+@decorator_ignored
+def source_on_decorator_ignored(x):
+    return x

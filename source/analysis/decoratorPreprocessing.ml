@@ -83,6 +83,45 @@ end
 module InlinedNameToOriginalName =
   Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DecoratorModuleValue)
 
+let add_function_decorator_module_mapping
+    ~qualifier
+    ~outer_decorator_reference
+    { Define.signature = { name; _ }; _ }
+  =
+  let qualified_inlined_name = Reference.combine qualifier name in
+  InlinedNameToOriginalName.add qualified_inlined_name outer_decorator_reference
+
+
+let original_name_from_inlined_name = InlinedNameToOriginalName.get
+
+module DecoratorListValue = struct
+  type t = Ast.Expression.t list
+
+  let prefix = Prefix.make ()
+
+  let description = "Original decorators for a decorated function that has been preprocessed."
+end
+
+(** Mapping from a decorated function to its original decorator list. *)
+module DecoratedCallableToOriginalDecorators =
+  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DecoratorListValue)
+
+let get_define_decorators { Define.signature = { decorators; _ }; _ } = decorators
+
+let add_original_decorators_mapping ~original_define ~new_define =
+  if
+    List.length (get_define_decorators original_define)
+    != List.length (get_define_decorators new_define)
+  then
+    DecoratedCallableToOriginalDecorators.add
+      (Define.name new_define)
+      (get_define_decorators original_define)
+
+
+let original_decorators_from_preprocessed_signature { Define.Signature.name; decorators; _ } =
+  DecoratedCallableToOriginalDecorators.get name |> Option.value ~default:decorators
+
+
 (* Pysa doesn't care about metadata like `unbound_names`. So, strip them. *)
 let sanitize_define
     ?(strip_decorators = true)
@@ -560,17 +599,6 @@ let replace_signature_if_always_passing_on_arguments
   | _ -> None
 
 
-let add_function_decorator_module_mapping
-    ~qualifier
-    ~outer_decorator_reference
-    { Define.signature = { name; _ }; _ }
-  =
-  let qualified_inlined_name = Reference.combine qualifier name in
-  InlinedNameToOriginalName.add qualified_inlined_name outer_decorator_reference
-
-
-let original_name_from_inlined_name = InlinedNameToOriginalName.get
-
 let make_wrapper_define
     ~location
     ~qualifier
@@ -812,26 +840,18 @@ let has_decorator_action ~get_decorator_action decorator_name action =
   Option.equal Action.equal (get_decorator_action decorator_name) (Some action)
 
 
-let discard_decorators_for_define
-    ~get_decorator_action
-    ({ Define.signature = { decorators = original_decorators; _ }; _ } as define)
-  =
+let discard_decorators_for_define ~get_decorator_action define =
   let should_keep_decorator decorator =
     match Decorator.from_expression decorator with
     | None -> true
     | Some { Decorator.name = { Node.value = decorator_name; _ }; _ } ->
         not (has_decorator_action ~get_decorator_action decorator_name Action.Discard)
   in
-  let decorators = List.filter ~f:should_keep_decorator original_decorators in
+  let decorators = define |> get_define_decorators |> List.filter ~f:should_keep_decorator in
   { define with Define.signature = { define.signature with decorators } }
 
 
-let inline_decorators_for_define
-    ~get_source
-    ~get_decorator_action
-    ~location
-    ({ Define.signature = { decorators = original_decorators; _ }; _ } as define)
-  =
+let inline_decorators_for_define ~get_source ~get_decorator_action ~location define =
   let uniquify_decorator_data_list =
     uniquify_names
       ~get_reference:(fun { outer_decorator_reference; _ } -> outer_decorator_reference)
@@ -855,7 +875,10 @@ let inline_decorators_for_define
               ~is_decorator_factory:(Option.is_some arguments)
   in
   let inlinable_decorators =
-    List.filter_map original_decorators ~f:find_decorator_data |> uniquify_decorator_data_list
+    define
+    |> get_define_decorators
+    |> List.filter_map ~f:find_decorator_data
+    |> uniquify_decorator_data_list
   in
   match inlinable_decorators with
   | [] -> define
@@ -880,14 +903,14 @@ let preprocess_source ~get_source source =
     let statement _ statement =
       let statement =
         match statement with
-        | { Node.value = Statement.Define define; location } ->
+        | { Node.value = Statement.Define original_define; location } ->
             let define =
               if should_discard then
                 discard_decorators_for_define
                   ~get_decorator_action:DecoratorActionsSharedMemory.get
-                  define
+                  original_define
               else
-                define
+                original_define
             in
             let define =
               if should_inline then
@@ -899,6 +922,7 @@ let preprocess_source ~get_source source =
               else
                 define
             in
+            let () = add_original_decorators_mapping ~original_define ~new_define:define in
             { statement with value = Statement.Define define }
         | _ -> statement
       in

@@ -73,3 +73,19 @@ ModelQuery(
     Returns(TaintSource[Test])
   ]
 )
+
+@IgnoreDecorator
+def model_query_any_decorator.decorator_ignored(): ...
+
+ModelQuery(
+  name = "get_model_query_any_decorator_ignored_decorator",
+  find = "functions",
+  where = [
+    Decorator(
+      name.equals("decorator_ignored"),
+    )
+  ],
+  model = [
+    Returns(TaintSource[Test])
+  ]
+)
