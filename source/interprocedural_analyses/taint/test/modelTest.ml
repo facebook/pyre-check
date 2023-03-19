@@ -6961,8 +6961,8 @@ let test_parse_decorator_modes _ =
       |> Ast.Reference.Map.to_alist ~key_order:`Increasing
     in
     assert_equal
-      ~cmp:[%equal: (Ast.Reference.t * InlineDecorator.Action.t) list]
-      ~printer:[%show: (Ast.Reference.t * InlineDecorator.Action.t) list]
+      ~cmp:[%equal: (Ast.Reference.t * DecoratorPreprocessing.Action.t) list]
+      ~printer:[%show: (Ast.Reference.t * DecoratorPreprocessing.Action.t) list]
       expected
       actual
   in
@@ -6992,10 +6992,10 @@ let test_parse_decorator_modes _ =
     def foo.ignore_decorator_class.__call__(): ...
   |}
     [
-      !&"bar.skip_this_decorator2", InlineDecorator.Action.DoNotInline;
-      !&"foo.ignore_decorator_class", InlineDecorator.Action.Discard;
-      !&"foo.ignore_this_decorator", InlineDecorator.Action.Discard;
-      !&"foo.skip_this_decorator", InlineDecorator.Action.DoNotInline;
+      !&"bar.skip_this_decorator2", DecoratorPreprocessing.Action.DoNotInline;
+      !&"foo.ignore_decorator_class", DecoratorPreprocessing.Action.Discard;
+      !&"foo.ignore_this_decorator", DecoratorPreprocessing.Action.Discard;
+      !&"foo.skip_this_decorator", DecoratorPreprocessing.Action.DoNotInline;
     ];
   assert_decorator_modes {|
     @CouldNotParse

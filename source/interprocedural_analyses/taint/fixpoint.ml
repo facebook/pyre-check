@@ -200,7 +200,7 @@ module Analysis = struct
          point to the lines in the module where the decorator was defined, not the module where it
          was inlined. So, look up the originating module, if any, and use that as the module
          qualifier. *)
-      InlineDecorator.original_name_from_inlined_name define_qualifier
+      DecoratorPreprocessing.original_name_from_inlined_name define_qualifier
       >>= AnnotatedGlobalEnvironment.ReadOnly.get_global_location annotated_global_environment
       >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in

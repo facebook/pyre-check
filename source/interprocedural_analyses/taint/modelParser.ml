@@ -3350,8 +3350,8 @@ let parse_decorator_modes ~path ~source =
                 path
                 Reference.pp
                 decorator
-                (InlineDecorator.Action.to_mode existing_action)
-                (InlineDecorator.Action.to_mode action)
+                (DecoratorPreprocessing.Action.to_mode existing_action)
+                (DecoratorPreprocessing.Action.to_mode action)
             in
             action)
   in
@@ -3366,9 +3366,9 @@ let parse_decorator_modes ~path ~source =
           | _ -> name
         in
         if List.exists decorators ~f:(name_is ~name:"IgnoreDecorator") then
-          update_actions actions name InlineDecorator.Action.Discard
+          update_actions actions name DecoratorPreprocessing.Action.Discard
         else if List.exists decorators ~f:(name_is ~name:"SkipDecoratorWhenInlining") then
-          update_actions actions name InlineDecorator.Action.DoNotInline
+          update_actions actions name DecoratorPreprocessing.Action.DoNotInline
         else
           actions
     | _ -> actions

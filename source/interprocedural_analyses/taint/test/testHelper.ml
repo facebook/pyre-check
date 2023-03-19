@@ -460,7 +460,7 @@ let set_up_decorator_preprocessing ~handle models =
           ModelParser.parse_decorator_modes ~path:(PyrePath.create_absolute handle) ~source:models)
     |> Option.value ~default:Reference.Map.empty
   in
-  Analysis.InlineDecorator.setup_preprocessing
+  Analysis.DecoratorPreprocessing.setup_preprocessing
     ~decorator_actions
     ~enable_inlining:true
     ~enable_discarding:true

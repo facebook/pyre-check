@@ -29,7 +29,7 @@ val parse_access_path
 val parse_decorator_modes
   :  path:PyrePath.t ->
   source:string ->
-  Analysis.InlineDecorator.Action.t Ast.Reference.Map.t
+  Analysis.DecoratorPreprocessing.Action.t Ast.Reference.Map.t
 
 (* Exposed for model queries. *)
 val create_callable_model_from_annotations

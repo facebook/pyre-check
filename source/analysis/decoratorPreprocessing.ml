@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module defines an AST preprocessing step that can be used to inline
+ * or remove python decorators from decorated functions. This is generally
+ * unsound, but is used in the taint analysis (Pysa) to improve the precision
+ * of the analysis. *)
 
 open Ast
 open Core

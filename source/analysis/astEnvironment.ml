@@ -190,7 +190,7 @@ module ReadOnly = struct
     | Result.Ok source ->
         expand_wildcard_imports ?dependency environment source
         |> preprocessing
-        |> InlineDecorator.preprocess_source ~get_source:(fun qualifier ->
+        |> DecoratorPreprocessing.preprocess_source ~get_source:(fun qualifier ->
                get_raw_source ?dependency environment qualifier >>= Result.ok)
     | Result.Error
         {

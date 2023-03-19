@@ -90,8 +90,8 @@ let setup_decorator_preprocessing ~inline_decorators { Configuration.Analysis.ta
           "Found multiple modes for decorator `%a`: was @%s, it is now @%s"
           Ast.Reference.pp
           decorator
-          (Analysis.InlineDecorator.Action.to_mode left)
-          (Analysis.InlineDecorator.Action.to_mode right)
+          (Analysis.DecoratorPreprocessing.Action.to_mode left)
+          (Analysis.DecoratorPreprocessing.Action.to_mode right)
       in
       right
     in
@@ -101,7 +101,7 @@ let setup_decorator_preprocessing ~inline_decorators { Configuration.Analysis.ta
          ~init:Ast.Reference.Map.empty
          ~f:(Ast.Reference.Map.merge_skewed ~combine:combine_decorator_modes)
   in
-  Analysis.InlineDecorator.setup_preprocessing
+  Analysis.DecoratorPreprocessing.setup_preprocessing
     ~decorator_actions
     ~enable_inlining:inline_decorators
     ~enable_discarding:true;
