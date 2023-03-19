@@ -6987,9 +6987,13 @@ let test_parse_decorator_modes _ =
 
     @IgnoreDecorator
     def foo.ignore_this_decorator(): ...
+
+    @IgnoreDecorator
+    def foo.ignore_decorator_class.__call__(): ...
   |}
     [
       !&"bar.skip_this_decorator2", InlineDecorator.Action.DoNotInline;
+      !&"foo.ignore_decorator_class", InlineDecorator.Action.Discard;
       !&"foo.ignore_this_decorator", InlineDecorator.Action.Discard;
       !&"foo.skip_this_decorator", InlineDecorator.Action.DoNotInline;
     ];

@@ -3357,6 +3357,14 @@ let parse_decorator_modes ~path ~source =
   in
   let parse_statement actions = function
     | { Node.value = Statement.Define { signature = { name; decorators; _ }; _ }; _ } ->
+        let name =
+          (* To properly work on a decorator factory implemented with a class, the user needs to
+             model `Class.__call__` (since modeling a class directly is generally not allowed). We
+             need to discard the `__call__` afterward to properly match the decorator. *)
+          match Reference.last name with
+          | "__call__" -> Reference.prefix name |> Option.value ~default:Reference.empty
+          | _ -> name
+        in
         if List.exists decorators ~f:(name_is ~name:"IgnoreDecorator") then
           update_actions actions name InlineDecorator.Action.Discard
         else if List.exists decorators ~f:(name_is ~name:"SkipDecoratorWhenInlining") then

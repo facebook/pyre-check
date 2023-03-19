@@ -43,6 +43,21 @@ def ignore_this_decorator(f: Callable[[int], None]) -> Callable[[int], None]:
     return f
 
 
+def ignore_this_decorator_factory(add: int):
+    def decorator(f: Callable[[int], None]) -> Callable[[int], None]:
+        def inner(x: int) -> None:
+            f(x + add)
+
+        return inner
+
+    return decorator
+
+
+class ignore_this_decorator_class:
+    def __call__(self, f: Callable[[int], None]) -> Callable[[int], None]:
+        return f
+
+
 @with_logging
 @with_logging2
 def decorated_logging_logging2(x: int) -> None:
@@ -62,6 +77,16 @@ def decorated_logging2_skip_this_decorator(x: int) -> None:
 
 @ignore_this_decorator
 def decorated_ignore_this_decorator(x: int) -> None:
+    _test_sink(x)
+
+
+@ignore_this_decorator_factory(1)
+def decorated_ignore_this_decorator_factory(x: int) -> None:
+    _test_sink(x)
+
+
+@ignore_this_decorator_class()
+def decorated_ignore_this_decorator_class(x: int) -> None:
     _test_sink(x)
 
 
@@ -125,6 +150,10 @@ def main() -> None:
     decorated_logging2_skip_this_decorator(_test_source())
     # Properly finds the issue.
     decorated_ignore_this_decorator(_test_source())
+    # Properly finds the issue.
+    decorated_ignore_this_decorator_factory(_test_source())
+    # Properly finds the issue.
+    decorated_ignore_this_decorator_class(_test_source())
     # does NOT find the issue (false negative).
     decorated_ignore_then_skip_decorator(_test_source())
     # Properly finds all issues.

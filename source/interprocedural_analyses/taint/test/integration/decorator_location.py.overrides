@@ -1,2 +1,4 @@
 @generated
 Overrides
+decorator_location.ignore_this_decorator_class::__call__ (override) -> [decorator_location.ignore_this_decorator_class::__call__ (method)]
+type::__call__ (override) -> [decorator_location.ignore_this_decorator_class::__call__ (override) type::__call__ (method)]
