@@ -168,20 +168,17 @@ def collect_statistics(
 ) -> Dict[str, StatisticsData]:
     data: Dict[str, StatisticsData] = {}
     for path in sources:
-        module = parse_path_to_module(path)
-        if module is None:
+        raw_module = parse_path_to_module(path)
+        if raw_module is None:
             continue
         try:
-            module_with_position_metadata = cst.MetadataWrapper(module)
-            annotation_statistics = _collect_annotation_statistics(
-                module_with_position_metadata
-            )
-            fixme_statistics = _collect_fixme_statistics(module_with_position_metadata)
-            ignore_statistics = _collect_ignore_statistics(
-                module_with_position_metadata
-            )
+            module = cst.MetadataWrapper(raw_module)
+            annotation_statistics = _collect_annotation_statistics(module)
+            fixme_statistics = _collect_fixme_statistics(module)
+            ignore_statistics = _collect_ignore_statistics(module)
             strict_file_statistics = _collect_strict_file_statistics(
-                module_with_position_metadata, strict_default
+                module,
+                strict_default,
             )
             statistics_data = StatisticsData(
                 annotation_statistics,
