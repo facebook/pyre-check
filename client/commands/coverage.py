@@ -50,7 +50,7 @@ def find_root_path(local_root: Optional[Path], working_directory: Path) -> Path:
 def collect_coverage_for_path(
     path: Path, working_directory: str, strict_default: bool
 ) -> Optional[collectors.FileCoverage]:
-    module = statistics.parse_path_to_module(path)
+    module = statistics.module_from_path(path)
     relative_path = os.path.relpath(str(path), working_directory)
     return (
         collectors.collect_coverage_for_module(relative_path, module, strict_default)

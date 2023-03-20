@@ -119,7 +119,7 @@ def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
 def path_to_coverage_response(
     path: Path, strict_default: bool
 ) -> Optional[lsp.TypeCoverageResponse]:
-    module = statistics.parse_path_to_module(path)
+    module = statistics.module_from_path(path)
     if module is None:
         return None
 

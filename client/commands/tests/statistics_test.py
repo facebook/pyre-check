@@ -16,8 +16,8 @@ from ..statistics import (
     collect_statistics,
     find_paths_to_parse,
     find_roots,
-    parse_path_to_module,
-    parse_text_to_module,
+    module_from_code,
+    module_from_path,
 )
 
 
@@ -179,9 +179,9 @@ class StatisticsTest(testslide.TestCase):
                 ],
             )
 
-    def test_parse_text_to_module(self) -> None:
+    def test_module_from_code(self) -> None:
         self.assertIsNotNone(
-            parse_text_to_module(
+            module_from_code(
                 textwrap.dedent(
                     """
                     def foo() -> int:
@@ -191,7 +191,7 @@ class StatisticsTest(testslide.TestCase):
             )
         )
         self.assertIsNone(
-            parse_text_to_module(
+            module_from_code(
                 textwrap.dedent(
                     """
                     def foo() ->
@@ -200,14 +200,14 @@ class StatisticsTest(testslide.TestCase):
             )
         )
 
-    def test_parse_path_to_module(self) -> None:
+    def test_module_from_path(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             source_path = root_path / "source.py"
             source_path.write_text("reveal_type(42)")
 
-            self.assertIsNotNone(parse_path_to_module(source_path))
-            self.assertIsNone(parse_path_to_module(root_path / "nonexistent.py"))
+            self.assertIsNotNone(module_from_path(source_path))
+            self.assertIsNone(module_from_path(root_path / "nonexistent.py"))
 
     def test_collect_statistics(self) -> None:
         with tempfile.TemporaryDirectory() as root:

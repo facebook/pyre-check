@@ -814,7 +814,9 @@ class CoverageTest(unittest.TestCase):
         expected_covered: List[int],
         expected_uncovered: List[int],
     ) -> None:
-        module = cst.parse_module(textwrap.dedent(file_content).strip())
+        module = cst.MetadataWrapper(
+            cst.parse_module(textwrap.dedent(file_content).strip())
+        )
         actual_coverage = collect_coverage_for_module(
             "test.py", module, strict_default=False
         )
@@ -891,7 +893,9 @@ class CoverageTest(unittest.TestCase):
         )
 
     def contains_uncovered_lines(self, file_content: str, strict_default: bool) -> bool:
-        module = cst.parse_module(textwrap.dedent(file_content).strip())
+        module = cst.MetadataWrapper(
+            cst.parse_module(textwrap.dedent(file_content).strip())
+        )
         actual_coverage = collect_coverage_for_module("test.py", module, strict_default)
         return len(actual_coverage.uncovered_lines) > 0
 

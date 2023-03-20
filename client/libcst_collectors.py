@@ -519,24 +519,23 @@ class CoverageCollector(AnnotationCollector):
 
 
 def coverage_collector_for_module(
-    relative_path: str, module: cst.Module, strict_default: bool
+    relative_path: str, module: cst.MetadataWrapper, strict_default: bool
 ) -> CoverageCollector:
-    module_with_metadata = cst.MetadataWrapper(module)
     strict_count_collector = StrictCountCollector(strict_default)
     try:
-        module_with_metadata.visit(strict_count_collector)
+        module.visit(strict_count_collector)
     except RecursionError:
         LOG.warning(f"LibCST encountered recursion error in `{relative_path}`")
     coverage_collector = CoverageCollector(strict_count_collector.is_strict_module())
     try:
-        module_with_metadata.visit(coverage_collector)
+        module.visit(coverage_collector)
     except RecursionError:
         LOG.warning(f"LibCST encountered recursion error in `{relative_path}`")
     return coverage_collector
 
 
 def collect_coverage_for_module(
-    relative_path: str, module: cst.Module, strict_default: bool
+    relative_path: str, module: cst.MetadataWrapper, strict_default: bool
 ) -> FileCoverage:
     coverage_collector = coverage_collector_for_module(
         relative_path, module, strict_default
