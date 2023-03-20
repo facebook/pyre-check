@@ -71,9 +71,9 @@
     "stop_line": 45,
     "stop_column": 34,
     "path": "app.py",
-    "code": 5008,
+    "code": 5046,
     "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
     "define": "app.definite_xss"
   },
   {
@@ -93,9 +93,9 @@
     "stop_line": 81,
     "stop_column": 20,
     "path": "app.py",
-    "code": 5018,
-    "name": "Open redirect",
-    "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
+    "code": 5046,
+    "name": "XSS",
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
     "define": "app.open_redirect_tp"
   },
   {
@@ -104,9 +104,9 @@
     "stop_line": 81,
     "stop_column": 20,
     "path": "app.py",
-    "code": 5008,
-    "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
+    "code": 5018,
+    "name": "Open redirect",
+    "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
     "define": "app.open_redirect_tp"
   },
   {
@@ -133,13 +133,13 @@
   },
   {
     "line": 100,
-    "column": 10,
+    "column": 28,
     "stop_line": 100,
-    "stop_column": 25,
+    "stop_column": 35,
     "path": "app.py",
     "code": 6462,
     "name": "User-controlled data flows into URL-like string (potential SSRF)",
-    "description": "User-controlled data flows into URL-like string (potential SSRF) [6462]: Data from [UserControlled] source(s) may reach [StringMayBeURL] sink(s)",
+    "description": "User-controlled data flows into URL-like string (potential SSRF) [6462]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeURL[main]]] sink(s)",
     "define": "app.user_controlled_data_flows_into_url_like_string_tp"
   },
   {
@@ -203,9 +203,9 @@
     "stop_line": 708,
     "stop_column": 39,
     "path": "*",
-    "code": 5018,
-    "name": "Open redirect",
-    "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
+    "code": 5046,
+    "name": "XSS",
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
     "define": "flask.app.Flask.__init__"
   },
   {
@@ -214,9 +214,9 @@
     "stop_line": 708,
     "stop_column": 39,
     "path": "*",
-    "code": 5008,
-    "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
+    "code": 5018,
+    "name": "Open redirect",
+    "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
     "define": "flask.app.Flask.__init__"
   },
   {
@@ -225,6 +225,28 @@
     "stop_line": 1826,
     "stop_column": 39,
     "path": "*",
+    "code": 5046,
+    "name": "XSS",
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
+    "define": "flask.app.Flask.full_dispatch_request"
+  },
+  {
+    "line": 1826,
+    "column": 37,
+    "stop_line": 1826,
+    "stop_column": 39,
+    "path": "*",
+    "code": 5046,
+    "name": "XSS",
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
+    "define": "flask.app.Flask.full_dispatch_request"
+  },
+  {
+    "line": 1826,
+    "column": 37,
+    "stop_line": 1826,
+    "stop_column": 39,
+    "path": "*",
     "code": 5018,
     "name": "Open redirect",
     "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
@@ -242,26 +264,15 @@
     "define": "flask.app.Flask.full_dispatch_request"
   },
   {
-    "line": 1826,
-    "column": 37,
-    "stop_line": 1826,
-    "stop_column": 39,
+    "line": 2343,
+    "column": 48,
+    "stop_line": 2343,
+    "stop_column": 52,
     "path": "*",
-    "code": 5008,
+    "code": 5046,
     "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
-    "define": "flask.app.Flask.full_dispatch_request"
-  },
-  {
-    "line": 1826,
-    "column": 37,
-    "stop_line": 1826,
-    "stop_column": 39,
-    "path": "*",
-    "code": 5008,
-    "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
-    "define": "flask.app.Flask.full_dispatch_request"
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
+    "define": "flask.app.Flask.process_response"
   },
   {
     "line": 2343,
@@ -275,15 +286,26 @@
     "define": "flask.app.Flask.process_response"
   },
   {
-    "line": 2343,
-    "column": 48,
-    "stop_line": 2343,
-    "stop_column": 52,
+    "line": 2527,
+    "column": 16,
+    "stop_line": 2527,
+    "stop_column": 19,
     "path": "*",
-    "code": 5008,
+    "code": 5046,
     "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
-    "define": "flask.app.Flask.process_response"
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
+    "define": "flask.app.Flask.wsgi_app"
+  },
+  {
+    "line": 2544,
+    "column": 12,
+    "stop_line": 2544,
+    "stop_column": 15,
+    "path": "*",
+    "code": 5046,
+    "name": "XSS",
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
+    "define": "flask.app.Flask.wsgi_app"
   },
   {
     "line": 2527,
@@ -305,28 +327,6 @@
     "code": 5018,
     "name": "Open redirect",
     "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
-    "define": "flask.app.Flask.wsgi_app"
-  },
-  {
-    "line": 2527,
-    "column": 16,
-    "stop_line": 2527,
-    "stop_column": 19,
-    "path": "*",
-    "code": 5008,
-    "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
-    "define": "flask.app.Flask.wsgi_app"
-  },
-  {
-    "line": 2544,
-    "column": 12,
-    "stop_line": 2544,
-    "stop_column": 15,
-    "path": "*",
-    "code": 5008,
-    "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
     "define": "flask.app.Flask.wsgi_app"
   },
   {
@@ -335,9 +335,9 @@
     "stop_line": 380,
     "stop_column": 43,
     "path": "*",
-    "code": 5018,
-    "name": "Open redirect",
-    "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
+    "code": 5046,
+    "name": "XSS",
+    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
     "define": "flask.sessions.SecureCookieSessionInterface.save_session"
   },
   {
@@ -346,9 +346,9 @@
     "stop_line": 380,
     "stop_column": 43,
     "path": "*",
-    "code": 5008,
-    "name": "XSS",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [StringMayBeHTML] sink(s)",
+    "code": 5018,
+    "name": "Open redirect",
+    "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
     "define": "flask.sessions.SecureCookieSessionInterface.save_session"
   }
 ]
