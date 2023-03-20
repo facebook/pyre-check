@@ -3,8 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import tempfile
 import textwrap
 import unittest
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import libcst as cst
@@ -17,18 +19,55 @@ from ..libcst_collectors import (
     FixmeCountCollector,
     FunctionAnnotationKind,
     IgnoreCountCollector,
+    module_from_code,
+    module_from_path,
     ModuleMode,
     StrictCountCollector,
 )
 
 
-def parse_source(source: str) -> cst.Module:
-    return cst.parse_module(textwrap.dedent(source.rstrip()))
+def parse_code(code: str) -> MetadataWrapper:
+    module = module_from_code(textwrap.dedent(code.rstrip()))
+    if module is None:
+        raise RuntimeError(f"Failed to parse code {code}")
+    return module
+
+
+class ParsingHelpersTest(unittest.TestCase):
+    def test_module_from_path(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            source_path = root_path / "source.py"
+            source_path.write_text("reveal_type(42)")
+
+            self.assertIsNotNone(module_from_path(source_path))
+            self.assertIsNone(module_from_path(root_path / "nonexistent.py"))
+
+    def test_module_from_code(self) -> None:
+        self.assertIsNotNone(
+            module_from_code(
+                textwrap.dedent(
+                    """
+                    def foo() -> int:
+                        pass
+                    """
+                )
+            )
+        )
+        self.assertIsNone(
+            module_from_code(
+                textwrap.dedent(
+                    """
+                    def foo() ->
+                    """
+                )
+            )
+        )
 
 
 class AnnotationCollectorTest(unittest.TestCase):
     def _build_and_visit_annotation_collector(self, source: str) -> AnnotationCollector:
-        source_module = MetadataWrapper(parse_source(source))
+        source_module = parse_code(source)
         collector = AnnotationCollector()
         source_module.visit(collector)
         return collector
@@ -61,7 +100,7 @@ class AnnotationCollectorTest(unittest.TestCase):
 class AnnotationCountCollectorTest(unittest.TestCase):
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
         collector = AnnotationCountCollector()
-        source_module = MetadataWrapper(parse_source(source))
+        source_module = parse_code(source)
         source_module.visit(collector)
         result = collector.build_result()
         self.assertDictEqual(
@@ -582,9 +621,7 @@ class FixmeCountCollectorTest(unittest.TestCase):
         expected_codes: Dict[int, List[int]],
         expected_no_codes: List[int],
     ) -> None:
-        source_module = MetadataWrapper(
-            parse_source(source.replace("FIXME", "pyre-fixme"))
-        )
+        source_module = parse_code(source.replace("FIXME", "pyre-fixme"))
         collector = FixmeCountCollector()
         source_module.visit(collector)
         result = collector.build_result()
@@ -688,9 +725,7 @@ class IgnoreCountCollectorTest(unittest.TestCase):
         expected_codes: Dict[int, List[int]],
         expected_no_codes: List[int],
     ) -> None:
-        source_module = MetadataWrapper(
-            parse_source(source.replace("IGNORE", "pyre-ignore"))
-        )
+        source_module = parse_code(source.replace("IGNORE", "pyre-ignore"))
         collector = IgnoreCountCollector()
         source_module.visit(collector)
         result = collector.build_result()
@@ -719,7 +754,7 @@ class StrictCountCollectorTest(unittest.TestCase):
         mode: ModuleMode,
         explicit_comment_line: Optional[int],
     ) -> None:
-        source_module = MetadataWrapper(parse_source(source))
+        source_module = parse_code(source)
         collector = StrictCountCollector(default_strict)
         source_module.visit(collector)
         result = collector.build_result()

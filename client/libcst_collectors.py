@@ -14,6 +14,7 @@ etc).
 import dataclasses
 import logging
 from enum import Enum
+from pathlib import Path
 from re import compile
 from typing import Dict, Iterable, List, Optional, Pattern, Sequence, Set, Tuple
 
@@ -550,3 +551,19 @@ def collect_coverage_for_module(
 
 def _code_range_to_lines(code_range: CodeRange) -> Set[int]:
     return set(range(code_range.start.line - 1, code_range.end.line))
+
+
+def module_from_code(code: str) -> Optional[cst.MetadataWrapper]:
+    try:
+        raw_module = cst.parse_module(code)
+        return cst.MetadataWrapper(raw_module)
+    except cst.ParserSyntaxError:
+        LOG.exception("Parsing failure")
+        return None
+
+
+def module_from_path(path: Path) -> Optional[cst.MetadataWrapper]:
+    try:
+        return module_from_code(path.read_text())
+    except FileNotFoundError:
+        return None

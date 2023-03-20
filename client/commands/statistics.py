@@ -108,21 +108,6 @@ def find_paths_to_parse(
     )
 
 
-def module_from_code(code: str) -> Optional[cst.MetadataWrapper]:
-    try:
-        raw_module = cst.parse_module(code)
-        return cst.MetadataWrapper(raw_module)
-    except cst.ParserSyntaxError:
-        return None
-
-
-def module_from_path(path: Path) -> Optional[cst.MetadataWrapper]:
-    try:
-        return module_from_code(path.read_text())
-    except FileNotFoundError:
-        return None
-
-
 def _collect_annotation_statistics(
     module: cst.MetadataWrapper,
 ) -> collectors.ModuleAnnotationData:
@@ -169,7 +154,7 @@ def collect_statistics(
 ) -> Dict[str, StatisticsData]:
     data: Dict[str, StatisticsData] = {}
     for path in sources:
-        module = module_from_path(path)
+        module = collectors.module_from_path(path)
         if module is None:
             continue
         try:

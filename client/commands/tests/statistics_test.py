@@ -16,8 +16,6 @@ from ..statistics import (
     collect_statistics,
     find_paths_to_parse,
     find_roots,
-    module_from_code,
-    module_from_path,
 )
 
 
@@ -178,36 +176,6 @@ class StatisticsTest(testslide.TestCase):
                     root_path / "b/c/s3.py",
                 ],
             )
-
-    def test_module_from_code(self) -> None:
-        self.assertIsNotNone(
-            module_from_code(
-                textwrap.dedent(
-                    """
-                    def foo() -> int:
-                        pass
-                    """
-                )
-            )
-        )
-        self.assertIsNone(
-            module_from_code(
-                textwrap.dedent(
-                    """
-                    def foo() ->
-                    """
-                )
-            )
-        )
-
-    def test_module_from_path(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
-            source_path = root_path / "source.py"
-            source_path.write_text("reveal_type(42)")
-
-            self.assertIsNotNone(module_from_path(source_path))
-            self.assertIsNone(module_from_path(root_path / "nonexistent.py"))
 
     def test_collect_statistics(self) -> None:
         with tempfile.TemporaryDirectory() as root:
