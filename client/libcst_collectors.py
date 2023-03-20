@@ -10,7 +10,6 @@ various code statistics (counts of annotations, annotated functions, fixmes,
 etc).
 """
 
-
 import dataclasses
 import logging
 from enum import Enum
@@ -299,7 +298,11 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
     def annotated_attributes(self) -> List[AnnotationInfo]:
         return [a for a in self.attributes if a.is_annotated]
 
-    def build_result(self) -> ModuleAnnotationData:
+    def collect(
+        self,
+        module: cst.MetadataWrapper,
+    ) -> ModuleAnnotationData:
+        module.visit(self)
         return ModuleAnnotationData(
             line_count=self.line_count,
             total_functions=[function.code_range for function in self.functions],
@@ -380,7 +383,11 @@ class SuppressionCountCollector(StatisticsCollector):
             else:
                 self.codes[code] = [suppression_line]
 
-    def build_result(self) -> ModuleSuppressionData:
+    def collect(
+        self,
+        module: cst.MetadataWrapper,
+    ) -> ModuleSuppressionData:
+        module.visit(self)
         return ModuleSuppressionData(code=self.codes, no_code=self.no_code)
 
 
@@ -449,7 +456,11 @@ class StrictCountCollector(StatisticsCollector):
         else:
             self.strict_count += 1
 
-    def build_result(self) -> ModuleStrictData:
+    def collect(
+        self,
+        module: cst.MetadataWrapper,
+    ) -> ModuleStrictData:
+        module.visit(self)
         return ModuleStrictData(
             mode=ModuleMode.UNSAFE if self.is_unsafe_module() else ModuleMode.STRICT,
             explicit_comment_line=self.explicit_unsafe_comment_line

@@ -21,8 +21,6 @@ import re
 from pathlib import Path
 from typing import Dict, Iterable, Mapping, Optional, Sequence
 
-import libcst as cst
-
 from .. import (
     command_arguments,
     configuration as configuration_module,
@@ -108,39 +106,6 @@ def find_paths_to_parse(
     )
 
 
-def _collect_annotation_statistics(
-    module: cst.MetadataWrapper,
-) -> collectors.ModuleAnnotationData:
-    collector = collectors.AnnotationCountCollector()
-    module.visit(collector)
-    return collector.build_result()
-
-
-def _collect_fixme_statistics(
-    module: cst.MetadataWrapper,
-) -> collectors.ModuleSuppressionData:
-    collector = collectors.FixmeCountCollector()
-    module.visit(collector)
-    return collector.build_result()
-
-
-def _collect_ignore_statistics(
-    module: cst.MetadataWrapper,
-) -> collectors.ModuleSuppressionData:
-    collector = collectors.IgnoreCountCollector()
-    module.visit(collector)
-    return collector.build_result()
-
-
-def _collect_strict_file_statistics(
-    module: cst.MetadataWrapper,
-    strict_default: bool,
-) -> collectors.ModuleStrictData:
-    collector = collectors.StrictCountCollector(strict_default)
-    module.visit(collector)
-    return collector.build_result()
-
-
 @dataclasses.dataclass(frozen=True)
 class StatisticsData:
     annotations: collectors.ModuleAnnotationData
@@ -158,18 +123,15 @@ def collect_statistics(
         if module is None:
             continue
         try:
-            annotation_statistics = _collect_annotation_statistics(module)
-            fixme_statistics = _collect_fixme_statistics(module)
-            ignore_statistics = _collect_ignore_statistics(module)
-            strict_file_statistics = _collect_strict_file_statistics(
-                module,
-                strict_default,
-            )
+            annotations = collectors.AnnotationCountCollector().collect(module)
+            fixmes = collectors.FixmeCountCollector().collect(module)
+            ignores = collectors.IgnoreCountCollector().collect(module)
+            modes = collectors.StrictCountCollector(strict_default).collect(module)
             statistics_data = StatisticsData(
-                annotation_statistics,
-                fixme_statistics,
-                ignore_statistics,
-                strict_file_statistics,
+                annotations,
+                fixmes,
+                ignores,
+                modes,
             )
             data[str(path)] = statistics_data
         except RecursionError:

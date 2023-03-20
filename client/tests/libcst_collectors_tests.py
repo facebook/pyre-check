@@ -99,10 +99,8 @@ class AnnotationCollectorTest(unittest.TestCase):
 
 class AnnotationCountCollectorTest(unittest.TestCase):
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
-        collector = AnnotationCountCollector()
         source_module = parse_code(source)
-        source_module.visit(collector)
-        result = collector.build_result()
+        result = AnnotationCountCollector().collect(source_module)
         self.assertDictEqual(
             expected, AnnotationCountCollector.get_result_counts(result)
         )
@@ -622,9 +620,7 @@ class FixmeCountCollectorTest(unittest.TestCase):
         expected_no_codes: List[int],
     ) -> None:
         source_module = parse_code(source.replace("FIXME", "pyre-fixme"))
-        collector = FixmeCountCollector()
-        source_module.visit(collector)
-        result = collector.build_result()
+        result = FixmeCountCollector().collect(source_module)
         self.assertEqual(expected_codes, result.code)
         self.assertEqual(expected_no_codes, result.no_code)
 
@@ -726,9 +722,7 @@ class IgnoreCountCollectorTest(unittest.TestCase):
         expected_no_codes: List[int],
     ) -> None:
         source_module = parse_code(source.replace("IGNORE", "pyre-ignore"))
-        collector = IgnoreCountCollector()
-        source_module.visit(collector)
-        result = collector.build_result()
+        result = IgnoreCountCollector().collect(source_module)
         self.assertEqual(expected_codes, result.code)
         self.assertEqual(expected_no_codes, result.no_code)
 
@@ -755,9 +749,7 @@ class StrictCountCollectorTest(unittest.TestCase):
         explicit_comment_line: Optional[int],
     ) -> None:
         source_module = parse_code(source)
-        collector = StrictCountCollector(default_strict)
-        source_module.visit(collector)
-        result = collector.build_result()
+        result = StrictCountCollector(default_strict).collect(source_module)
         self.assertEqual(mode, result.mode)
         self.assertEqual(explicit_comment_line, result.explicit_comment_line)
 
