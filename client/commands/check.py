@@ -32,6 +32,18 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
+class CheckResult:
+    """
+    Data structure for storing the result of the check command. We have this so we can call
+    check from other scripts and retrieve the raw error objects, rather than having to dump them
+    to stdout only to read them back in.
+    """
+
+    exit_code: commands.ExitCode
+    errors: List[error.Error]
+
+
+@dataclasses.dataclass(frozen=True)
 class Arguments:
     """
     Data structure for configuration options the backend check command can recognize.
@@ -170,7 +182,7 @@ def parse_type_error_response(response: str) -> List[error.Error]:
         raise InvalidCheckResponse(message) from decode_error
 
 
-def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode:
+def _run_check_command(command: Sequence[str], output: str) -> CheckResult:
     with backend_arguments.backend_log_file(prefix="pyre_check") as log_file:
         with start.background_logging(Path(log_file.name)):
             # lint-ignore: NoUnsafeExecRule
@@ -187,29 +199,31 @@ def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode
             # `source/command/checkCommand.ml`.
             if return_code == 0:
                 type_errors = parse_type_error_response(result.stdout)
-                incremental.display_type_errors(type_errors, output=output)
-                return (
+
+                exit_code = (
                     commands.ExitCode.SUCCESS
                     if len(type_errors) == 0
                     else commands.ExitCode.FOUND_ERRORS
                 )
+                return CheckResult(exit_code, type_errors)
             elif return_code == 2:
                 LOG.error("Pyre encountered a failure within buck.")
-                return commands.ExitCode.BUCK_INTERNAL_ERROR
+                return CheckResult(commands.ExitCode.BUCK_INTERNAL_ERROR, [])
             elif return_code == 3:
                 LOG.error("Pyre encountered an error when building the buck targets.")
-                return commands.ExitCode.BUCK_USER_ERROR
+                return CheckResult(commands.ExitCode.BUCK_USER_ERROR, [])
+
             else:
                 LOG.error(
                     f"Check command exited with non-zero return code: {return_code}."
                 )
-                return commands.ExitCode.FAILURE
+                return CheckResult(commands.ExitCode.FAILURE, [])
 
 
 def run_check(
     configuration: frontend_configuration.Base,
     check_arguments: command_arguments.CheckArguments,
-) -> commands.ExitCode:
+) -> CheckResult:
     binary_location = configuration.get_binary_location(download_if_needed=True)
     if binary_location is None:
         raise configuration_module.InvalidConfiguration(
@@ -230,4 +244,8 @@ def run(
     configuration: configuration_module.Configuration,
     check_arguments: command_arguments.CheckArguments,
 ) -> commands.ExitCode:
-    return run_check(frontend_configuration.OpenSource(configuration), check_arguments)
+    check_result = run_check(
+        frontend_configuration.OpenSource(configuration), check_arguments
+    )
+    incremental.display_type_errors(check_result.errors, output=check_arguments.output)
+    return check_result.exit_code
