@@ -19,14 +19,14 @@ class InitTest(unittest.TestCase):
     def test_report_results(self, mock_stdout: StringIO) -> None:
 
         models = {
-            "generator_one": {
+            "generator_one": [
                 ClassModel("Class1", "Annotation1"),
                 ClassModel("Class2", "Annotation1"),
-            },
-            "generator_two": {
+            ],
+            "generator_two": [
                 ClassModel("Class2", "Annotation2"),
                 ClassModel("Class3", "Annotation2"),
-            },
+            ],
         }
 
         _report_results(models, None)

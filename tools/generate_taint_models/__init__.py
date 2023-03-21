@@ -15,7 +15,7 @@ import time
 import traceback
 from dataclasses import dataclass
 from itertools import chain
-from typing import AbstractSet, Dict, List, Mapping, Optional, Set
+from typing import Dict, List, Mapping, Optional, Sequence
 
 from typing_extensions import Final
 
@@ -127,7 +127,7 @@ def _parse_arguments(
 
 
 def _report_results(
-    models: Mapping[str, AbstractSet[Model]], output_directory: Optional[str]
+    models: Mapping[str, Sequence[Model]], output_directory: Optional[str]
 ) -> None:
     if output_directory is not None:
         for name in models:
@@ -176,14 +176,14 @@ def run_from_parsed_arguments(
         if pyre_connection is not None and isolation_prefix is not None:
             pyre_connection.add_arguments("--isolation-prefix", isolation_prefix)
 
-        generated_models: Dict[str, Set[Model]] = {}
+        generated_models: Dict[str, Sequence[Model]] = {}
         for mode in modes:
             LOG.info("Computing models for `%s`", mode)
             if mode not in generator_options.keys():
                 LOG.warning(f"Unknown mode `{mode}`, skipping.")
                 continue
             start = time.time()
-            generated_models[mode] = set(generator_options[mode].generate_models())
+            generated_models[mode] = list(generator_options[mode].generate_models())
             elapsed_time_seconds = time.time() - start
             LOG.info(
                 f"Computed {len(generated_models[mode])} models for `{mode}` in {elapsed_time_seconds:.3f} seconds."
