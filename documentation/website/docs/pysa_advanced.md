@@ -237,7 +237,7 @@ def test() -> None:
 The converse of supporting literal strings as sinks is also supported, for data flowing into a tainted string. The
 syntax allows you to model data being used to format strings, like f-strings, manual string formatting, the string `format()` method, and printf-style string formatting with `%`.
 
-Template strings and and manual string formatting with more than two subexpressions are not yet supported.
+Template strings and manual string formatting with more than two subexpressions are not yet supported.
 
 To add a literal sink, first add the literal_sink to your configuration
 
@@ -281,6 +281,7 @@ def build_sql_query(columns: str) -> None:
     result = "SELECT " + columns + " FROM users;"
 ```
 
+Note that string literal sinks have some limitations. For instance, they cannot catch issues if the string literal is stored in a temporary variable (e.g., `x = "SELECT {}"; x.format(input)`). We recommend using string combine rules instead (see below).
 
 ## Combined Source Rules
 
@@ -341,6 +342,56 @@ The SAPP UI only shows a single flow at a time. However, an issue for a combined
 For combined source issues, Pysa will always show the main flow, and provide the secondary flow as a subtrace that can be expanded in the UI.
 
 When attribute `main_trace_source` is missing, Pysa treat the sources under the first tag as the main sources.
+
+## String Combine Rules
+
+It is sometimes useful to detect data tainted with a source (e.g., `UserControlled` data) that is incorporated into a suspicious looking string (e.g., a string that looks like a SQL query). Detecting such a pattern is useful, because it allows Pysa to detect dynamic creation of SQL queries which could lead to SQL injection, even if the code under analysis is using a SQL framework that Pysa does not have models for.
+
+To detect such flows, one can specify a variant of [combined source rules](#combined-source-rules), called string combine rules, to detect when the suspicious string (identified via regex match) and the other configured source both flow into string formatting call sites (such as calling `str.__add__`, `str.__mod__`, `str.format` or constructing f-strings).
+
+For example, to detect flows from source `UserControlled` to sink `StringMayBeSQL`, one should specify the following contents in the taint configuration file, where `UserControlled` is declared as a main source and `StringMayBeSQL` is declared as a secondary source:
+```python
+{
+  "sources": [
+    { "name": "UserControlled" },
+    { "name": "StringMayBeSQL" }
+  ],
+  "implicit_sources": {
+    "literal_strings": [
+      {
+        "regexp": "SELECT.*",
+        "kind": "StringMayBeSQL",
+        "comment": "matches a SQL statement"
+      }
+    ]
+  },
+  "string_combine_rules": [
+    {
+       "name": "User controlled data flows into potential SQL strings",
+       "main_sources": "UserControlled",
+       "secondary_sources": "StringMayBeSQL",
+       "partial_sink": "UserControlledDataAndStringMayBeSQL",
+       "code": 4324,
+       "message_format": "User controlled data flows into potential SQL strings"
+    }
+  ]
+}
+```
+As shown above, one needs to additionally specify a (unique) partial sink kind (such as `UserControlledDataAndStringMayBeSQL`), which will be automatically introduced onto the actual arguments at string formatting call sites.
+
+The above rule enables catching the following flows:
+```python
+def issue():
+  uc = user_controlled()
+  f"SELECT {uc} FROM async_query"
+  "SELECT " + uc + " FROM async_query"
+  "SELECT %s FROM async_query" % uc
+  "SELECT {} FROM async_query".format(uc)
+```
+
+Note that the string combine rules are strictly more powerful than the feature of implicit literal string sinks.
+That is, any flow that can be detected via implicit literal string sinks can also be detected via string combine rules, but not vice versa.
+Hence, we recommend using the string combine rules.
 
 ## Prevent Inferring Models with `SkipAnalysis`
 
