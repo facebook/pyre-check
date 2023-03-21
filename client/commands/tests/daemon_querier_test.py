@@ -4,16 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import tempfile
-import textwrap
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 from unittest.mock import CallableMixin, patch
 
 import testslide
-from libcst.metadata import CodePosition, CodeRange
-
-from ...coverage_data import CoveredAndUncoveredLines
 
 from ...language_server import connections, protocol as lsp
 from ...language_server.connections import (
