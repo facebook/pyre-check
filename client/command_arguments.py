@@ -238,7 +238,7 @@ class RageArguments:
 
 @dataclass(frozen=True)
 class StatisticsArguments:
-    directories: List[str] = field(default_factory=list)
+    paths: Optional[List[Path]] = None
     log_identifier: Optional[str] = None
     log_results: bool = False
     aggregate: bool = False

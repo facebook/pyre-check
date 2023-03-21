@@ -34,22 +34,28 @@ from . import commands
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def find_roots(
-    explicitly_specified_directories: Sequence[str],
+def get_paths_to_collect(
+    paths: Optional[Sequence[Path]],
     local_root: Optional[Path],
     global_root: Path,
 ) -> Iterable[Path]:
+    """
+    If `paths` is None, return the project root in a singleton list.
+
+    Otherwise, verify that every path in `paths` is a valid subpath
+    of the project, and return a deduplicated list of these paths (which
+    can be either directory or file paths).
+    """
     root = local_root or global_root
-    if len(explicitly_specified_directories) == 0:
+    if paths is None:
         return [root]
     else:
         absolute_paths = set()
-        for directory in explicitly_specified_directories:
-            path = Path(directory)
+        for path in paths:
             absolute_path = path if path.is_absolute() else Path.cwd() / path
             if root not in absolute_path.parents:
                 raise ValueError(
-                    f"`{directory}` is not a subdirectory of the project at `{root}`",
+                    f"`{path}` is not nested under the project at `{root}`",
                 )
             absolute_paths.add(absolute_path)
         return absolute_paths
@@ -77,9 +83,14 @@ def has_py_extension_and_not_ignored(path: Path, excludes: Sequence[str]) -> boo
     return path.suffix == ".py" and not _should_ignore(path, excludes)
 
 
-def find_paths_to_parse(
-    paths: Iterable[Path], excludes: Sequence[str]
-) -> Iterable[Path]:
+def find_module_paths(paths: Iterable[Path], excludes: Sequence[str]) -> Iterable[Path]:
+    """
+    Given a set of paths (which can be file paths or directory paths)
+    where we want to collect data, return an iterable of all the module
+    paths after recursively expanding directories, and ignoring directory
+    exclusions specified in `excludes`.
+    """
+
     def _get_paths_for_file(target_file: Path) -> Iterable[Path]:
         return (
             [target_file]
@@ -141,9 +152,9 @@ def collect_all_statistics(
 ) -> Dict[str, StatisticsData]:
     local_root = configuration.get_local_root()
     return collect_statistics(
-        find_paths_to_parse(
-            find_roots(
-                statistics_arguments.directories,
+        find_module_paths(
+            get_paths_to_collect(
+                statistics_arguments.paths,
                 local_root=Path(local_root) if local_root is not None else None,
                 global_root=Path(configuration.get_global_root()),
             ),

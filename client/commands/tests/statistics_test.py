@@ -14,16 +14,16 @@ from ..statistics import (
     aggregate_statistics,
     AggregatedStatisticsData,
     collect_statistics,
-    find_paths_to_parse,
-    find_roots,
+    find_module_paths,
+    get_paths_to_collect,
 )
 
 
 class StatisticsTest(testslide.TestCase):
-    def test_find_roots__duplicate_directories(self) -> None:
+    def test_get_paths_to_collect__duplicate_directories(self) -> None:
         self.assertCountEqual(
-            find_roots(
-                ["/root/foo.py", "/root/bar.py", "/root/foo.py"],
+            get_paths_to_collect(
+                [Path("/root/foo.py"), Path("/root/bar.py"), Path("/root/foo.py")],
                 local_root=None,
                 global_root=Path("/root"),
             ),
@@ -31,35 +31,35 @@ class StatisticsTest(testslide.TestCase):
         )
 
         self.assertCountEqual(
-            find_roots(
-                ["/root/foo", "/root/bar", "/root/foo"],
+            get_paths_to_collect(
+                [Path("/root/foo"), Path("/root/bar"), Path("/root/foo")],
                 local_root=None,
                 global_root=Path("/root"),
             ),
             [Path("/root/foo"), Path("/root/bar")],
         )
 
-    def test_find_roots__expand_directories(self) -> None:
+    def test_get_paths_to_collect__expand_directories(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
             with setup.switch_working_directory(root_path):
                 self.assertCountEqual(
-                    find_roots(
-                        ["foo.py", "bar.py"],
+                    get_paths_to_collect(
+                        [Path("foo.py"), Path("bar.py")],
                         local_root=None,
                         global_root=root_path,
                     ),
                     [root_path / "foo.py", root_path / "bar.py"],
                 )
 
-    def test_find_roots__invalid_given_subdirectory(self) -> None:
+    def test_get_paths_to_collect__invalid_given_subdirectory(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
             with setup.switch_working_directory(root_path):
                 # this is how a valid call behaves: subdirectory lives under project_root
                 self.assertCountEqual(
-                    find_roots(
-                        ["project_root/subdirectory"],
+                    get_paths_to_collect(
+                        [Path("project_root/subdirectory")],
                         local_root=None,
                         global_root=root_path / "project_root",
                     ),
@@ -68,46 +68,46 @@ class StatisticsTest(testslide.TestCase):
                 # ./subdirectory isn't part of ./project_root
                 self.assertRaisesRegex(
                     ValueError,
-                    ".* is not a subdirectory of the project .*",
-                    find_roots,
-                    ["subdirectory"],
+                    ".* is not nested under the project .*",
+                    get_paths_to_collect,
+                    [Path("subdirectory")],
                     local_root=None,
                     global_root=root_path / "project_root",
                 )
                 # ./subdirectory isn't part of ./local_root
                 self.assertRaisesRegex(
                     ValueError,
-                    ".* is not a subdirectory of the project .*",
-                    find_roots,
-                    ["subdirectory"],
+                    ".* is not nested under the project .*",
+                    get_paths_to_collect,
+                    [Path("subdirectory")],
                     local_root=root_path / "local_root",
                     global_root=root_path,
                 )
 
-    def test_find_roots__local_root(self) -> None:
+    def test_get_paths_to_collect__local_root(self) -> None:
         self.assertCountEqual(
-            find_roots(
-                [],
+            get_paths_to_collect(
+                None,
                 local_root=Path("/root/local"),
                 global_root=Path("/root"),
             ),
             [Path("/root/local")],
         )
 
-    def test_find_roots__global_root(self) -> None:
+    def test_get_paths_to_collect__global_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
             with setup.switch_working_directory(root_path):
                 self.assertCountEqual(
-                    find_roots(
-                        [],
+                    get_paths_to_collect(
+                        None,
                         local_root=None,
                         global_root=Path("/root"),
                     ),
                     [Path("/root")],
                 )
 
-    def test_find_paths_to_parse(self) -> None:
+    def test_find_module_paths__basic(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             setup.ensure_files_exist(
@@ -116,7 +116,7 @@ class StatisticsTest(testslide.TestCase):
             )
             setup.ensure_directories_exists(root_path, ["b/d"])
             self.assertCountEqual(
-                find_paths_to_parse(
+                find_module_paths(
                     [
                         root_path / "a/s1.py",
                         root_path / "b/s2.py",
@@ -130,7 +130,7 @@ class StatisticsTest(testslide.TestCase):
                 ],
             )
             self.assertCountEqual(
-                find_paths_to_parse([root_path], excludes=[]),
+                find_module_paths([root_path], excludes=[]),
                 [
                     root_path / "s0.py",
                     root_path / "a/s1.py",
@@ -139,7 +139,7 @@ class StatisticsTest(testslide.TestCase):
                 ],
             )
 
-    def test_find_paths_to_parse_with_exclude(self) -> None:
+    def test_find_module_paths__with_exclude(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             setup.ensure_files_exist(
@@ -148,7 +148,7 @@ class StatisticsTest(testslide.TestCase):
             )
             setup.ensure_directories_exists(root_path, ["b/d"])
             self.assertCountEqual(
-                find_paths_to_parse(
+                find_module_paths(
                     [
                         root_path / "a/s1.py",
                         root_path / "b/s2.py",
@@ -161,7 +161,7 @@ class StatisticsTest(testslide.TestCase):
                 ],
             )
             self.assertCountEqual(
-                find_paths_to_parse(
+                find_module_paths(
                     [root_path],
                     excludes=[r".*2\.py"],
                 ),

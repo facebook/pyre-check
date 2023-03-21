@@ -99,7 +99,7 @@ def get_module_paths(
         absolute_paths = [
             find_root_path(configuration.get_local_root(), working_directory_path)
         ]
-    return statistics.find_paths_to_parse(
+    return statistics.find_module_paths(
         absolute_paths, excludes=configuration.get_excludes()
     )
 
