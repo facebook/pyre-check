@@ -75,7 +75,7 @@ class HasClassmethods:
         return ""
 
 
-def test():
+def test_classmethod():
     HasClassmethods._async_results_for_non_empty_query_from_db(_test_source())
 
 

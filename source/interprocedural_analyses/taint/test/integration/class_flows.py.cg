@@ -9,7 +9,7 @@ class_flows.tainted_attribute_through_inheritance_issue (fun) -> [_test_source (
 class_flows.tainted_class_attribute_through_class_issue (fun) -> [_test_source (fun) class_flows.C.__class__.tainted_class_attribute (object)]
 class_flows.tainted_class_attribute_through_instance_not_issue (fun) -> [_test_source (fun)]
 class_flows.$toplevel (fun) -> []
-class_flows.test (fun) -> [_test_source (fun) class_flows.HasClassmethods::_async_results_for_non_empty_query_from_db (method)]
+class_flows.test_classmethod (fun) -> [_test_source (fun) class_flows.HasClassmethods::_async_results_for_non_empty_query_from_db (method)]
 class_flows.test_decorated_classmethod (fun) -> [_test_source (fun) class_flows.HasDecoratedClassmethod::to_sink (method)]
 class_flows.untainted_flow_not_issue (fun) -> [_test_source (fun)]
 class_flows.C::$class_toplevel (method) -> [class_flows.C.__class__.tainted_class_attribute (object)]

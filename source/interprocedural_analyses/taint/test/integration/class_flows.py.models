@@ -388,7 +388,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "class_flows.test",
+    "callable": "class_flows.test_classmethod",
     "callable_line": 78,
     "code": 5002,
     "line": 79,
@@ -454,7 +454,7 @@
       "index": 0,
       "parameter": "formal(locale)"
     },
-    "master_handle": "class_flows.test:5002:0:Call|class_flows.HasClassmethods._async_results_for_non_empty_query_from_db|0|formal(locale):a529aa7033e6a0d9c907672d49c19426"
+    "master_handle": "class_flows.test_classmethod:5002:0:Call|class_flows.HasClassmethods._async_results_for_non_empty_query_from_db|0|formal(locale):cbecf01336661e7694457345f5964c33"
   }
 }
 {
