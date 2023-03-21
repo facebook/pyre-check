@@ -9,7 +9,7 @@ from typing import List
 
 import testslide
 
-from ...libcst_collectors import FileCoverage
+from ...coverage_data import FileCoverage
 from ...tests import setup
 from ..coverage import collect_coverage_for_paths, find_root_path
 

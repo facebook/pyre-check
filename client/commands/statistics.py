@@ -23,8 +23,8 @@ from typing import Dict, Iterable, Mapping
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    coverage_data,
     frontend_configuration,
-    libcst_collectors as collectors,
     log,
 )
 from . import commands
@@ -35,10 +35,10 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass(frozen=True)
 class StatisticsData:
-    annotations: collectors.ModuleAnnotationData
-    fixmes: collectors.ModuleSuppressionData
-    ignores: collectors.ModuleSuppressionData
-    strict: collectors.ModuleStrictData
+    annotations: coverage_data.ModuleAnnotationData
+    fixmes: coverage_data.ModuleSuppressionData
+    ignores: coverage_data.ModuleSuppressionData
+    strict: coverage_data.ModuleStrictData
 
 
 def collect_statistics(
@@ -46,14 +46,14 @@ def collect_statistics(
 ) -> Dict[str, StatisticsData]:
     data: Dict[str, StatisticsData] = {}
     for path in sources:
-        module = collectors.module_from_path(path)
+        module = coverage_data.module_from_path(path)
         if module is None:
             continue
         try:
-            annotations = collectors.AnnotationCountCollector().collect(module)
-            fixmes = collectors.FixmeCountCollector().collect(module)
-            ignores = collectors.IgnoreCountCollector().collect(module)
-            modes = collectors.StrictCountCollector(strict_default).collect(module)
+            annotations = coverage_data.AnnotationCountCollector().collect(module)
+            fixmes = coverage_data.FixmeCountCollector().collect(module)
+            ignores = coverage_data.IgnoreCountCollector().collect(module)
+            modes = coverage_data.StrictCountCollector(strict_default).collect(module)
             statistics_data = StatisticsData(
                 annotations,
                 fixmes,
@@ -72,8 +72,8 @@ def collect_all_statistics(
 ) -> Dict[str, StatisticsData]:
     local_root = configuration.get_local_root()
     return collect_statistics(
-        collectors.find_module_paths(
-            collectors.get_paths_to_collect(
+        coverage_data.find_module_paths(
+            coverage_data.get_paths_to_collect(
                 statistics_arguments.paths,
                 local_root=Path(local_root) if local_root is not None else None,
                 global_root=Path(configuration.get_global_root()),
@@ -112,7 +112,7 @@ def aggregate_statistics(
     }
 
     for statistics_data in data.values():
-        annotation_counts = collectors.AnnotationCountCollector.get_result_counts(
+        annotation_counts = coverage_data.AnnotationCountCollector.get_result_counts(
             statistics_data.annotations
         )
         for key in aggregate_annotations.keys():
@@ -131,13 +131,13 @@ def aggregate_statistics(
             ]
         ),
         strict=sum(
-            1 if strictness.mode == collectors.ModuleMode.STRICT else 0
+            1 if strictness.mode == coverage_data.ModuleMode.STRICT else 0
             for strictness in [
                 statistics_data.strict for statistics_data in data.values()
             ]
         ),
         unsafe=sum(
-            1 if strictness.mode == collectors.ModuleMode.UNSAFE else 0
+            1 if strictness.mode == coverage_data.ModuleMode.UNSAFE else 0
             for strictness in [
                 statistics_data.strict for statistics_data in data.values()
             ]

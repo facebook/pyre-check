@@ -12,7 +12,7 @@ from typing import Dict, List, Optional
 import libcst as cst
 from libcst.metadata import CodePosition, CodeRange, MetadataWrapper
 
-from ..libcst_collectors import (
+from ..coverage_data import (
     AnnotationCollector,
     AnnotationCountCollector,
     collect_coverage_for_module,

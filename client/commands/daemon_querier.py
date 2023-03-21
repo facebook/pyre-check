@@ -22,11 +22,9 @@ from typing import List, Optional, Union
 
 from libcst.metadata import CodeRange
 
-from .. import (
-    dataclasses_json_extensions as json_mixins,
-    error,
-    libcst_collectors as collectors,
-)
+from .. import coverage_data, dataclasses_json_extensions as json_mixins, error
+
+from ..coverage_data import coverage_collector_for_module, CoveredAndUncoveredLines
 
 from ..language_server import (
     code_navigation_request,
@@ -34,8 +32,6 @@ from ..language_server import (
     features,
     protocol as lsp,
 )
-
-from ..libcst_collectors import coverage_collector_for_module, CoveredAndUncoveredLines
 from . import daemon_query, expression_level_coverage, server_state as state
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -123,7 +119,7 @@ def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
 def path_to_coverage_response(
     path: Path, strict_default: bool
 ) -> Optional[lsp.TypeCoverageResponse]:
-    module = collectors.module_from_path(path)
+    module = coverage_data.module_from_path(path)
     if module is None:
         return None
 

@@ -13,6 +13,8 @@ from unittest.mock import CallableMixin, patch
 import testslide
 from libcst.metadata import CodePosition, CodeRange
 
+from ...coverage_data import CoveredAndUncoveredLines
+
 from ...language_server import connections, protocol as lsp
 from ...language_server.connections import (
     AsyncTextReader,
@@ -26,7 +28,6 @@ from ...language_server.features import (
     ReferencesAvailability,
     TypeCoverageAvailability,
 )
-from ...libcst_collectors import CoveredAndUncoveredLines
 from ...tests import setup
 from ..daemon_querier import (
     path_to_coverage_response,

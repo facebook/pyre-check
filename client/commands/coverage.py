@@ -29,8 +29,8 @@ from typing import Iterable, List, Optional
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    coverage_data,
     frontend_configuration,
-    libcst_collectors as collectors,
     log,
 )
 from . import commands
@@ -49,11 +49,11 @@ def find_root_path(local_root: Optional[Path], working_directory: Path) -> Path:
 
 def collect_coverage_for_path(
     path: Path, working_directory: str, strict_default: bool
-) -> Optional[collectors.FileCoverage]:
-    module = collectors.module_from_path(path)
+) -> Optional[coverage_data.FileCoverage]:
+    module = coverage_data.module_from_path(path)
     relative_path = os.path.relpath(str(path), working_directory)
     return (
-        collectors.collect_coverage_for_module(relative_path, module, strict_default)
+        coverage_data.collect_coverage_for_module(relative_path, module, strict_default)
         if module is not None
         else None
     )
@@ -61,8 +61,8 @@ def collect_coverage_for_path(
 
 def collect_coverage_for_paths(
     paths: Iterable[Path], working_directory: str, strict_default: bool
-) -> List[collectors.FileCoverage]:
-    result: List[collectors.FileCoverage] = []
+) -> List[coverage_data.FileCoverage]:
+    result: List[coverage_data.FileCoverage] = []
     for path in paths:
         coverage = collect_coverage_for_path(path, working_directory, strict_default)
         if coverage is not None:
@@ -70,7 +70,7 @@ def collect_coverage_for_paths(
     return result
 
 
-def _print_summary(data: List[collectors.FileCoverage]) -> None:
+def _print_summary(data: List[coverage_data.FileCoverage]) -> None:
     for file_data in data:
         path = file_data.filepath
         covered_lines = len(file_data.covered_lines)
@@ -99,7 +99,7 @@ def get_module_paths(
         absolute_paths = [
             find_root_path(configuration.get_local_root(), working_directory_path)
         ]
-    return collectors.find_module_paths(
+    return coverage_data.find_module_paths(
         absolute_paths, excludes=configuration.get_excludes()
     )
 
