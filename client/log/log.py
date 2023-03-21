@@ -22,7 +22,7 @@ import threading
 import time
 from pathlib import Path
 from types import TracebackType
-from typing import Generator, Iterable, Optional, Pattern, Sequence
+from typing import Dict, Generator, Iterable, Optional, Pattern, Sequence
 
 import click
 
@@ -33,6 +33,13 @@ SUCCESS: int = 60
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+LOG_LEVELS: Dict[str, int] = {
+    "CRITICAL": logging.CRITICAL,
+    "ERROR": logging.ERROR,
+    "WARNING": logging.WARNING,
+    "INFO": logging.INFO,
+    "DEBUG": logging.DEBUG,
+}
 
 
 stdout: io.StringIO = io.StringIO(newline="")

@@ -209,6 +209,14 @@ def _check_open_source_version(
     is_flag=True,
     help="Enable verbose non-interactive logging.",
 )
+@click.option(
+    "--log-level",
+    type=click.Choice(
+        ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"], case_sensitive=True
+    ),
+    default="DEBUG",
+    help="The granularity of the messages the Pyre client will log. Default is 'DEBUG'.",
+)
 @click.option("--logging-sections", type=str, hidden=True)
 @click.option("--dot-pyre-directory", type=str, hidden=True)
 @click.option(
@@ -292,6 +300,7 @@ def pyre(
     enable_profiling: bool,
     enable_memory_profiling: bool,
     noninteractive: bool,
+    log_level: str,
     logging_sections: Optional[str],
     dot_pyre_directory: Optional[str],
     source_directory: Iterable[str],
@@ -1486,7 +1495,15 @@ def run_default_command(
 # Need the default argument here since this is our entry point in setup.py
 def main(argv: List[str] = sys.argv[1:]) -> int:
     noninteractive = ("-n" in argv) or ("--noninteractive" in argv)
-    with log.configured_logger(noninteractive):
+    logging_level = logging.DEBUG
+    if "--log-level" in argv:
+        log_level_descriptor_index = argv.index("--log-level") + 1
+        if (
+            log_level_descriptor_index < len(argv)
+            and argv[log_level_descriptor_index] in log.LOG_LEVELS
+        ):
+            logging_level = log.LOG_LEVELS[argv[log_level_descriptor_index]]
+    with log.configured_logger(noninteractive, logging_level=logging_level):
         try:
             return_code = pyre(argv, auto_envvar_prefix="PYRE", standalone_mode=False)
         except configuration_module.InvalidConfiguration as error:

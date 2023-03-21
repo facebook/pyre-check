@@ -15,6 +15,7 @@ from .log import (  # noqa: F401
     get_optional_input,
     get_yes_no_input,
     initialize,
+    LOG_LEVELS,
     PERFORMANCE,
     PROMPT,
     stdout,
