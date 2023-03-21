@@ -534,7 +534,7 @@ class CoverageCollector(AnnotationCollector):
         return CoveredAndUncoveredLines(covered_lines, uncovered_lines)
 
 
-def coverage_collector_for_module(
+def _coverage_collector_for_module(
     relative_path: str, module: cst.MetadataWrapper, strict_default: bool
 ) -> CoverageCollector:
     strict_count_collector = StrictCountCollector(strict_default)
@@ -553,7 +553,7 @@ def coverage_collector_for_module(
 def collect_coverage_for_module(
     relative_path: str, module: cst.MetadataWrapper, strict_default: bool
 ) -> FileCoverage:
-    coverage_collector = coverage_collector_for_module(
+    coverage_collector = _coverage_collector_for_module(
         relative_path, module, strict_default
     )
     covered_and_uncovered_lines = coverage_collector.covered_and_uncovered_lines()

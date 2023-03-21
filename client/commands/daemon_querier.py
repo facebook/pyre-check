@@ -22,9 +22,7 @@ from typing import List, Optional, Union
 
 from libcst.metadata import CodeRange
 
-from .. import coverage_data, dataclasses_json_extensions as json_mixins, error
-
-from ..coverage_data import coverage_collector_for_module, CoveredAndUncoveredLines
+from .. import dataclasses_json_extensions as json_mixins, error
 
 from ..language_server import (
     code_navigation_request,
@@ -57,46 +55,6 @@ class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[str]
 
 
-def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
-    return lsp.Diagnostic(
-        range=lsp.LspRange(
-            start=lsp.LspPosition(
-                line=uncovered_range.start.line - 1,
-                character=uncovered_range.start.column,
-            ),
-            end=lsp.LspPosition(
-                line=uncovered_range.end.line - 1, character=uncovered_range.end.column
-            ),
-        ),
-        message=(
-            "This function is not type checked. "
-            "Consider adding parameter or return type annotations."
-        ),
-    )
-
-
-def to_coverage_result(
-    covered_and_uncovered_lines: CoveredAndUncoveredLines,
-    uncovered_ranges: List[CodeRange],
-) -> lsp.TypeCoverageResponse:
-    num_covered = len(covered_and_uncovered_lines.covered_lines)
-    num_uncovered = len(covered_and_uncovered_lines.uncovered_lines)
-    num_total = num_covered + num_uncovered
-    if num_total == 0:
-        return lsp.TypeCoverageResponse(
-            covered_percent=100.0, uncovered_ranges=[], default_message=""
-        )
-    else:
-        return lsp.TypeCoverageResponse(
-            covered_percent=100.0 * num_covered / num_total,
-            uncovered_ranges=[
-                uncovered_range_to_diagnostic(uncovered_range)
-                for uncovered_range in uncovered_ranges
-            ],
-            default_message="Consider adding type annotations.",
-        )
-
-
 def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
     return lsp.TypeCoverageResponse(
         covered_percent=0.0,
@@ -114,21 +72,6 @@ def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
         ],
         default_message="",
     )
-
-
-def path_to_coverage_response(
-    path: Path, strict_default: bool
-) -> Optional[lsp.TypeCoverageResponse]:
-    module = coverage_data.module_from_path(path)
-    if module is None:
-        return None
-
-    coverage_collector = coverage_collector_for_module(
-        str(path), module, strict_default
-    )
-    covered_and_uncovered_lines = coverage_collector.covered_and_uncovered_lines()
-    uncovered_ranges = [f.code_range for f in coverage_collector.uncovered_functions()]
-    return to_coverage_result(covered_and_uncovered_lines, uncovered_ranges)
 
 
 def path_to_expression_coverage_response(
@@ -294,24 +237,20 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             return None
         elif not is_typechecked:
             return file_not_typechecked_coverage_result()
-        type_coverage = self.get_language_server_features().type_coverage
         strict_by_default = self.server_state.server_options.strict_default
-        if type_coverage == features.TypeCoverageAvailability.EXPRESSION_LEVEL:
-            response = await daemon_query.attempt_async_query(
-                socket_path=self.socket_path,
-                query_text=f"expression_level_coverage('{path}')",
-            )
-            if isinstance(response, daemon_query.DaemonQueryFailure):
-                return response
-            else:
-                return path_to_expression_coverage_response(
-                    strict_by_default,
-                    expression_level_coverage._make_expression_level_coverage_response(
-                        response.payload
-                    ),
-                )
+        response = await daemon_query.attempt_async_query(
+            socket_path=self.socket_path,
+            query_text=f"expression_level_coverage('{path}')",
+        )
+        if isinstance(response, daemon_query.DaemonQueryFailure):
+            return response
         else:
-            return path_to_coverage_response(path, strict_by_default)
+            return path_to_expression_coverage_response(
+                strict_by_default,
+                expression_level_coverage._make_expression_level_coverage_response(
+                    response.payload
+                ),
+            )
 
     async def get_hover(
         self,

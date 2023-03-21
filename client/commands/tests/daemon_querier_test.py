@@ -29,87 +29,10 @@ from ...language_server.features import (
     TypeCoverageAvailability,
 )
 from ...tests import setup
-from ..daemon_querier import (
-    path_to_coverage_response,
-    PersistentDaemonQuerier,
-    to_coverage_result,
-    uncovered_range_to_diagnostic,
-)
+from ..daemon_querier import PersistentDaemonQuerier
 from ..daemon_query import DaemonQueryFailure
 
 from ..tests import server_setup
-
-
-class CoverageHelperFunctionsTest(testslide.TestCase):
-    def test_coverage_diagnostics(self) -> None:
-        self.assertEqual(
-            uncovered_range_to_diagnostic(
-                CodeRange(
-                    CodePosition(line=1, column=1), CodePosition(line=2, column=2)
-                )
-            ),
-            lsp.Diagnostic(
-                range=lsp.LspRange(
-                    start=lsp.LspPosition(line=0, character=1),
-                    end=lsp.LspPosition(line=1, character=2),
-                ),
-                message=(
-                    "This function is not type checked. "
-                    "Consider adding parameter or return type annotations."
-                ),
-            ),
-        )
-
-    def test_path_to_coverage_response(self) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
-            path = Path(temporary_file.name)
-            source = """
-            def uncovered(x):
-                print(x)
-            """
-            path.write_text(textwrap.dedent(source))
-            self.assertEqual(
-                lsp.TypeCoverageResponse(
-                    covered_percent=50.0,
-                    uncovered_ranges=[
-                        lsp.Diagnostic(
-                            range=lsp.LspRange(
-                                start=lsp.LspPosition(line=1, character=0),
-                                end=lsp.LspPosition(line=2, character=12),
-                            ),
-                            message="This function is not type checked. Consider adding parameter or return type annotations.",
-                            severity=None,
-                            code=None,
-                            source=None,
-                        )
-                    ],
-                    default_message="Consider adding type annotations.",
-                ),
-                path_to_coverage_response(path, strict_default=False),
-            )
-
-    def test_path_to_coverage_response__invalid_syntax(self) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
-            path = Path(temporary_file.name)
-            source = """
-            def invalid_syntax
-            """
-            path.write_text(textwrap.dedent(source))
-            self.assertIsNone(
-                path_to_coverage_response(path, strict_default=False),
-            )
-
-    def test_coverage_percentage(self) -> None:
-        coverage_result = to_coverage_result(
-            CoveredAndUncoveredLines({1, 2}, {3, 4}),
-            uncovered_ranges=[
-                CodeRange(
-                    CodePosition(line=3, column=3), CodePosition(line=4, column=4)
-                )
-            ],
-        )
-        self.assertEqual(coverage_result.covered_percent, 50.0)
-        self.assertEqual(len(coverage_result.uncovered_ranges), 1)
 
 
 @contextmanager
@@ -134,92 +57,7 @@ def patch_connect_async(
 
 class DaemonQuerierTest(testslide.TestCase):
     @setup.async_test
-    async def test_get_type_coverage__basic(self) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
-            tmpfile.write(b"def foo(x):\n  pass\n")
-            tmpfile.flush()
-            test_path = Path(tmpfile.name)
-            querier = PersistentDaemonQuerier(
-                server_state=server_setup.create_server_state_with_options(
-                    strict_default=False
-                ),
-            )
-            input_channel = create_memory_text_reader(
-                '["Query", {"response": ["test"]}]\n'
-            )
-            memory_bytes_writer = MemoryBytesWriter()
-            output_channel = AsyncTextWriter(memory_bytes_writer)
-            with patch_connect_async(input_channel, output_channel):
-                result = await querier.get_type_coverage(path=test_path)
-            self.assertEqual(len(memory_bytes_writer.items()), 1)
-            self.assertTrue(
-                memory_bytes_writer.items()[0].startswith(
-                    b'["QueryWithOverlay", {"query_text": "modules_of_path('
-                )
-            )
-            self.assertTrue(result is not None)
-            self.assertTrue(not isinstance(result, DaemonQueryFailure))
-            self.assertEqual(len(result.uncovered_ranges), 1)
-            self.assertTrue(result.covered_percent < 100.0)
-
-    @setup.async_test
-    async def test_get_type_coverage__bad_json(self) -> None:
-        querier = PersistentDaemonQuerier(
-            server_state=server_setup.create_server_state_with_options(
-                strict_default=False
-            ),
-        )
-        input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
-        output_channel = AsyncTextWriter(MemoryBytesWriter())
-        with patch_connect_async(input_channel, output_channel):
-            result = await querier.get_type_coverage(
-                path=Path("test.py"),
-            )
-            self.assertTrue(result is None)
-
-    @setup.async_test
-    async def test_get_type_coverage__strict(self) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
-            tmpfile.write(b"def foo(x):\n  pass\n")
-            tmpfile.flush()
-            test_path = Path(tmpfile.name)
-            querier = PersistentDaemonQuerier(
-                server_state=server_setup.create_server_state_with_options(
-                    strict_default=True
-                ),
-            )
-            input_channel = create_memory_text_reader(
-                '["Query", {"response": ["test"]}]\n'
-            )
-            output_channel = AsyncTextWriter(MemoryBytesWriter())
-            with patch_connect_async(input_channel, output_channel):
-                result = await querier.get_type_coverage(path=test_path)
-            self.assertTrue(result is not None)
-            self.assertTrue(not isinstance(result, DaemonQueryFailure))
-            self.assertEqual(len(result.uncovered_ranges), 0)
-            self.assertEqual(result.covered_percent, 100.0)
-
-    @setup.async_test
-    async def test_get_type_coverage__not_typechecked(self) -> None:
-        querier = PersistentDaemonQuerier(
-            server_state=server_setup.create_server_state_with_options(
-                strict_default=False
-            ),
-        )
-        input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
-        output_channel = AsyncTextWriter(MemoryBytesWriter())
-        with patch_connect_async(input_channel, output_channel):
-            result = await querier.get_type_coverage(path=Path("test.py"))
-        self.assertTrue(result is not None)
-        self.assertTrue(not isinstance(result, DaemonQueryFailure))
-        self.assertEqual(result.covered_percent, 0.0)
-        self.assertEqual(len(result.uncovered_ranges), 1)
-        self.assertEqual(
-            result.uncovered_ranges[0].message, "This file is not type checked by Pyre."
-        )
-
-    @setup.async_test
-    async def test_get_type_coverage__expression_level(self) -> None:
+    async def test_get_type_coverage__happy_path(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
@@ -249,6 +87,40 @@ class DaemonQuerierTest(testslide.TestCase):
             self.assertTrue(not isinstance(result, DaemonQueryFailure))
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertTrue(result.covered_percent == 100.0)
+
+    @setup.async_test
+    async def test_get_type_coverage__bad_json(self) -> None:
+        querier = PersistentDaemonQuerier(
+            server_state=server_setup.create_server_state_with_options(
+                strict_default=False
+            ),
+        )
+        input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
+        output_channel = AsyncTextWriter(MemoryBytesWriter())
+        with patch_connect_async(input_channel, output_channel):
+            result = await querier.get_type_coverage(
+                path=Path("test.py"),
+            )
+            self.assertTrue(result is None)
+
+    @setup.async_test
+    async def test_get_type_coverage__not_typechecked(self) -> None:
+        querier = PersistentDaemonQuerier(
+            server_state=server_setup.create_server_state_with_options(
+                strict_default=False
+            ),
+        )
+        input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
+        output_channel = AsyncTextWriter(MemoryBytesWriter())
+        with patch_connect_async(input_channel, output_channel):
+            result = await querier.get_type_coverage(path=Path("test.py"))
+        self.assertTrue(result is not None)
+        self.assertTrue(not isinstance(result, DaemonQueryFailure))
+        self.assertEqual(result.covered_percent, 0.0)
+        self.assertEqual(len(result.uncovered_ranges), 1)
+        self.assertEqual(
+            result.uncovered_ranges[0].message, "This file is not type checked by Pyre."
+        )
 
     @setup.async_test
     async def test_get_type_coverage__expression_level__gaps(self) -> None:
