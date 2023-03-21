@@ -56,30 +56,7 @@ class StatisticsTest(testslide.TestCase):
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
             with setup.switch_working_directory(root_path):
-                self.assertCountEqual(
-                    find_roots(
-                        ["subdirectory"],
-                        local_root=None,
-                        global_root=root_path / "project_root",
-                    ),
-                    [root_path / "project_root"],
-                )
-
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
-            with setup.switch_working_directory(root_path):
-                self.assertCountEqual(
-                    find_roots(
-                        ["subdirectory"],
-                        local_root=root_path / "local_root",
-                        global_root=root_path,
-                    ),
-                    [root_path / "local_root"],
-                )
-
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
-            with setup.switch_working_directory(root_path):
+                # this is how a valid call behaves: subdirectory lives under project_root
                 self.assertCountEqual(
                     find_roots(
                         ["project_root/subdirectory"],
@@ -87,6 +64,24 @@ class StatisticsTest(testslide.TestCase):
                         global_root=root_path / "project_root",
                     ),
                     [root_path / "project_root/subdirectory"],
+                )
+                # ./subdirectory isn't part of ./project_root
+                self.assertRaisesRegex(
+                    ValueError,
+                    ".* is not a subdirectory of the project .*",
+                    find_roots,
+                    ["subdirectory"],
+                    local_root=None,
+                    global_root=root_path / "project_root",
+                )
+                # ./subdirectory isn't part of ./local_root
+                self.assertRaisesRegex(
+                    ValueError,
+                    ".* is not a subdirectory of the project .*",
+                    find_roots,
+                    ["subdirectory"],
+                    local_root=root_path / "local_root",
+                    global_root=root_path,
                 )
 
     def test_find_roots__local_root(self) -> None:

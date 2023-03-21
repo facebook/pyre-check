@@ -49,11 +49,9 @@ def find_roots(
             if absolute_root in absolute_path.parents:
                 absolute_paths.add(absolute_path)
             else:
-                LOG.warning(
-                    "`%s` is not a subdirectory of the project at `%s`", directory, root
+                raise ValueError(
+                    f"`{directory}` is not a subdirectory of the project at `{root}`",
                 )
-                LOG.warning("Gathering statistics in `%s`", root)
-                return [root]
         return absolute_paths
 
     return [root]
