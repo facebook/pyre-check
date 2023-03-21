@@ -4,10 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-This module defines a suite of libcst visitors that discover annotation
-information and typing-related comments in code, and can thereby produce
-various code statistics (counts of annotations, annotated functions, fixmes,
-etc).
+This module defines shared logic used by Pyre coverage tooling, including
+- LibCST visitors to collect coverage information, and dataclasses
+  representing the resulting data.
+- Helpers for determining which files correspond to modules where Pyre
+  should collect coverage information.
+- Helpers for parsing code into LibCST modules with position metadata
 """
 
 import dataclasses
