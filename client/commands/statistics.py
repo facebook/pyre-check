@@ -14,12 +14,11 @@ and pyre-fixme and pyre-ignore directives.
 
 
 import dataclasses
-import itertools
 import json
 import logging
 import re
 from pathlib import Path
-from typing import Dict, Iterable, Mapping, Optional, Sequence
+from typing import Dict, Iterable, Mapping
 
 from .. import (
     command_arguments,
@@ -32,78 +31,6 @@ from . import commands
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-def get_paths_to_collect(
-    paths: Optional[Sequence[Path]],
-    local_root: Optional[Path],
-    global_root: Path,
-) -> Iterable[Path]:
-    """
-    If `paths` is None, return the project root in a singleton list.
-
-    Otherwise, verify that every path in `paths` is a valid subpath
-    of the project, and return a deduplicated list of these paths (which
-    can be either directory or file paths).
-    """
-    root = local_root or global_root
-    if paths is None:
-        return [root]
-    else:
-        absolute_paths = set()
-        for path in paths:
-            absolute_path = path if path.is_absolute() else Path.cwd() / path
-            if root not in absolute_path.parents:
-                raise ValueError(
-                    f"`{path}` is not nested under the project at `{root}`",
-                )
-            absolute_paths.add(absolute_path)
-        return absolute_paths
-
-
-def _is_excluded(path: Path, excludes: Sequence[str]) -> bool:
-    try:
-        return any(
-            [re.match(exclude_pattern, str(path)) for exclude_pattern in excludes]
-        )
-    except re.error:
-        LOG.warning("Could not parse `excludes`: %s", excludes)
-        return False
-
-
-def _should_ignore(path: Path, excludes: Sequence[str]) -> bool:
-    return (
-        path.suffix != ".py"
-        or path.name.startswith("__")
-        or path.name.startswith(".")
-        or _is_excluded(path, excludes)
-    )
-
-
-def find_module_paths(paths: Iterable[Path], excludes: Sequence[str]) -> Iterable[Path]:
-    """
-    Given a set of paths (which can be file paths or directory paths)
-    where we want to collect data, return an iterable of all the module
-    paths after recursively expanding directories, and ignoring directory
-    exclusions specified in `excludes`.
-    """
-
-    def _get_paths_for_file(target_file: Path) -> Iterable[Path]:
-        return [target_file] if not _should_ignore(target_file, excludes) else []
-
-    def _get_paths_in_directory(target_directory: Path) -> Iterable[Path]:
-        return (
-            path
-            for path in target_directory.glob("**/*.py")
-            if not _should_ignore(path, excludes)
-        )
-
-    return itertools.chain.from_iterable(
-        _get_paths_for_file(path)
-        if not path.is_dir()
-        else _get_paths_in_directory(path)
-        for path in paths
-    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -145,8 +72,8 @@ def collect_all_statistics(
 ) -> Dict[str, StatisticsData]:
     local_root = configuration.get_local_root()
     return collect_statistics(
-        find_module_paths(
-            get_paths_to_collect(
+        collectors.find_module_paths(
+            collectors.get_paths_to_collect(
                 statistics_arguments.paths,
                 local_root=Path(local_root) if local_root is not None else None,
                 global_root=Path(configuration.get_global_root()),

@@ -33,7 +33,7 @@ from .. import (
     libcst_collectors as collectors,
     log,
 )
-from . import commands, statistics
+from . import commands
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ def get_module_paths(
         absolute_paths = [
             find_root_path(configuration.get_local_root(), working_directory_path)
         ]
-    return statistics.find_module_paths(
+    return collectors.find_module_paths(
         absolute_paths, excludes=configuration.get_excludes()
     )
 

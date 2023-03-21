@@ -16,14 +16,17 @@ from ..libcst_collectors import (
     AnnotationCollector,
     AnnotationCountCollector,
     collect_coverage_for_module,
+    find_module_paths,
     FixmeCountCollector,
     FunctionAnnotationKind,
+    get_paths_to_collect,
     IgnoreCountCollector,
     module_from_code,
     module_from_path,
     ModuleMode,
     StrictCountCollector,
 )
+from ..tests import setup
 
 
 def parse_code(code: str) -> MetadataWrapper:
@@ -963,3 +966,157 @@ class CoverageTest(unittest.TestCase):
                 strict_default=True,
             )
         )
+
+
+class ModuleFindingHelpersTest(unittest.TestCase):
+    def test_get_paths_to_collect__duplicate_directories(self) -> None:
+        self.assertCountEqual(
+            get_paths_to_collect(
+                [Path("/root/foo.py"), Path("/root/bar.py"), Path("/root/foo.py")],
+                local_root=None,
+                global_root=Path("/root"),
+            ),
+            [Path("/root/foo.py"), Path("/root/bar.py")],
+        )
+
+        self.assertCountEqual(
+            get_paths_to_collect(
+                [Path("/root/foo"), Path("/root/bar"), Path("/root/foo")],
+                local_root=None,
+                global_root=Path("/root"),
+            ),
+            [Path("/root/foo"), Path("/root/bar")],
+        )
+
+    def test_get_paths_to_collect__expand_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
+            with setup.switch_working_directory(root_path):
+                self.assertCountEqual(
+                    get_paths_to_collect(
+                        [Path("foo.py"), Path("bar.py")],
+                        local_root=None,
+                        global_root=root_path,
+                    ),
+                    [root_path / "foo.py", root_path / "bar.py"],
+                )
+
+    def test_get_paths_to_collect__invalid_given_subdirectory(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
+            with setup.switch_working_directory(root_path):
+                # this is how a valid call behaves: subdirectory lives under project_root
+                self.assertCountEqual(
+                    get_paths_to_collect(
+                        [Path("project_root/subdirectory")],
+                        local_root=None,
+                        global_root=root_path / "project_root",
+                    ),
+                    [root_path / "project_root/subdirectory"],
+                )
+                # ./subdirectory isn't part of ./project_root
+                self.assertRaisesRegex(
+                    ValueError,
+                    ".* is not nested under the project .*",
+                    get_paths_to_collect,
+                    [Path("subdirectory")],
+                    local_root=None,
+                    global_root=root_path / "project_root",
+                )
+                # ./subdirectory isn't part of ./local_root
+                self.assertRaisesRegex(
+                    ValueError,
+                    ".* is not nested under the project .*",
+                    get_paths_to_collect,
+                    [Path("subdirectory")],
+                    local_root=root_path / "local_root",
+                    global_root=root_path,
+                )
+
+    def test_get_paths_to_collect__local_root(self) -> None:
+        self.assertCountEqual(
+            get_paths_to_collect(
+                None,
+                local_root=Path("/root/local"),
+                global_root=Path("/root"),
+            ),
+            [Path("/root/local")],
+        )
+
+    def test_get_paths_to_collect__global_root(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
+            with setup.switch_working_directory(root_path):
+                self.assertCountEqual(
+                    get_paths_to_collect(
+                        None,
+                        local_root=None,
+                        global_root=Path("/root"),
+                    ),
+                    [Path("/root")],
+                )
+
+    def test_find_module_paths__basic(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(
+                root_path,
+                ["s0.py", "a/s1.py", "b/s2.py", "b/c/s3.py", "b/s4.txt", "b/__s5.py"],
+            )
+            setup.ensure_directories_exists(root_path, ["b/d"])
+            self.assertCountEqual(
+                find_module_paths(
+                    [
+                        root_path / "a/s1.py",
+                        root_path / "b/s2.py",
+                        root_path / "b/s4.txt",
+                    ],
+                    excludes=[],
+                ),
+                [
+                    root_path / "a/s1.py",
+                    root_path / "b/s2.py",
+                ],
+            )
+            self.assertCountEqual(
+                find_module_paths([root_path], excludes=[]),
+                [
+                    root_path / "s0.py",
+                    root_path / "a/s1.py",
+                    root_path / "b/s2.py",
+                    root_path / "b/c/s3.py",
+                ],
+            )
+
+    def test_find_module_paths__with_exclude(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(
+                root_path,
+                ["s0.py", "a/s1.py", "b/s2.py", "b/c/s3.py", "b/s4.txt", "b/__s5.py"],
+            )
+            setup.ensure_directories_exists(root_path, ["b/d"])
+            self.assertCountEqual(
+                find_module_paths(
+                    [
+                        root_path / "a/s1.py",
+                        root_path / "b/s2.py",
+                        root_path / "b/s4.txt",
+                    ],
+                    excludes=[r".*2\.py"],
+                ),
+                [
+                    root_path / "a/s1.py",
+                ],
+            )
+            self.assertCountEqual(
+                find_module_paths(
+                    [root_path],
+                    excludes=[r".*2\.py"],
+                ),
+                [
+                    root_path / "s0.py",
+                    root_path / "a/s1.py",
+                    root_path / "b/c/s3.py",
+                ],
+            )
