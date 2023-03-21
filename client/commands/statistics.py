@@ -73,14 +73,11 @@ def _is_excluded(path: Path, excludes: Sequence[str]) -> bool:
 
 def _should_ignore(path: Path, excludes: Sequence[str]) -> bool:
     return (
-        path.name.startswith("__")
+        path.suffix != ".py"
+        or path.name.startswith("__")
         or path.name.startswith(".")
         or _is_excluded(path, excludes)
     )
-
-
-def has_py_extension_and_not_ignored(path: Path, excludes: Sequence[str]) -> bool:
-    return path.suffix == ".py" and not _should_ignore(path, excludes)
 
 
 def find_module_paths(paths: Iterable[Path], excludes: Sequence[str]) -> Iterable[Path]:
@@ -92,11 +89,7 @@ def find_module_paths(paths: Iterable[Path], excludes: Sequence[str]) -> Iterabl
     """
 
     def _get_paths_for_file(target_file: Path) -> Iterable[Path]:
-        return (
-            [target_file]
-            if has_py_extension_and_not_ignored(target_file, excludes)
-            else []
-        )
+        return [target_file] if not _should_ignore(target_file, excludes) else []
 
     def _get_paths_in_directory(target_directory: Path) -> Iterable[Path]:
         return (
