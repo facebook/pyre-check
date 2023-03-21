@@ -80,7 +80,7 @@ def path_to_expression_coverage_response(
 ) -> lsp.TypeCoverageResponse:
     path_coverage = expression_coverage.response[0]
     if isinstance(path_coverage, expression_level_coverage.ErrorAtPathResponse):
-        uncovered_expressions_diagnostics = []
+        uncovered_expressions_diagnostics: List[lsp.Diagnostic] = []
         covered_percent = 0
     else:
         uncovered_expressions_diagnostics = (
