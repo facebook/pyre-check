@@ -16,7 +16,6 @@ and pyre-fixme and pyre-ignore directives.
 import dataclasses
 import json
 import logging
-import re
 from pathlib import Path
 from typing import Dict, Iterable, Mapping
 
