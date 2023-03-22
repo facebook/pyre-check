@@ -20,8 +20,6 @@ import os
 from pathlib import Path
 from typing import List, Optional, Union
 
-from libcst.metadata import CodeRange
-
 from .. import dataclasses_json_extensions as json_mixins, error
 
 from ..language_server import (
