@@ -923,6 +923,447 @@ let test_generated_annotations context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  (* Return annotation extends. *)
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        pass
+
+      class B(A):
+        pass
+
+      class C(B):
+        pass
+
+      class Test:
+        def test1() -> A: ...
+        def test2() -> B: ...
+        def test3() -> C: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.Test"; method_name = "test1"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        pass
+
+      class B(A):
+        pass
+
+      class C(B):
+        pass
+
+      class Test:
+        def test1() -> A: ...
+        def test2() -> B: ...
+        def test3() -> C: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.Test"; method_name = "test2"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        pass
+
+      class B(A):
+        pass
+
+      class C(B):
+        pass
+
+      class Test:
+        def test1() -> A: ...
+        def test2() -> B: ...
+        def test3() -> C: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = true; includes_self = false });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Method { class_name = "test.Test"; method_name = "test3"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        pass
+
+      class B(A):
+        pass
+
+      class C(B):
+        pass
+
+      def test1() -> typing.Optional[A]: ...
+      def test2() -> B: ...
+      def test3() -> typing.Optional[C]: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = true; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        pass
+
+      class B(A):
+        pass
+
+      class C(B):
+        pass
+
+      def test1() -> typing.Optional[A]: ...
+      def test2() -> B: ...
+      def test3() -> typing.Optional[C]: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = true; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test2"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        pass
+
+      class B(A):
+        pass
+
+      class C(B):
+        pass
+
+      def test1() -> typing.Optional[A]: ...
+      def test2() -> B: ...
+      def test3() -> typing.Optional[C]: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = true; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test3"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      from typing import Union
+
+      class A:
+        pass
+
+      class B:
+        pass
+
+      def test1() -> Union[A, B]: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = false; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:{|
+      from typing import List
+
+      def test1() -> List[int]: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "list"; is_transitive = false; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:{|
+      from typing import List
+
+      def test1() -> List: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "list"; is_transitive = false; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      from typing import List
+
+      class MyList(List):
+        pass
+
+      def test1() -> MyList: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "list"; is_transitive = false; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:{|
+      from typing import Tuple
+
+      def test1() -> Tuple[int, str]: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "tuple"; is_transitive = false; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      from typing import Tuple
+
+      class MyTuple(Tuple):
+        pass
+
+      def test1() -> MyTuple: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "tuple"; is_transitive = false; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      from pyre_extensions import ReadOnly
+      from typing import Optional
+
+      class A:
+        pass
+
+      class B(A):
+        pass
+
+      class C(B):
+        pass
+
+      def test1() -> ReadOnly[Optional[ReadOnly[C]]]: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = true; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+  assert_generated_annotations
+    ~source:{|
+      class A:
+        pass
+
+      def test1(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "test";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            ReturnConstraint
+              (AnnotationClassExtends
+                 { class_name = "test.A"; is_transitive = true; includes_self = true });
+          ];
+        models = [Return [TaintAnnotation (sink "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.test1"; kind = Normal })
+    ~expected:[];
   (* Any of. *)
   assert_generated_annotations
     ~source:{|

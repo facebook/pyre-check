@@ -140,6 +140,11 @@ module ModelQuery : sig
     type t =
       | IsAnnotatedTypeConstraint
       | NameConstraint of NameConstraint.t
+      | AnnotationClassExtends of {
+          class_name: string;
+          is_transitive: bool;
+          includes_self: bool;
+        }
     [@@deriving equal, show]
   end
 

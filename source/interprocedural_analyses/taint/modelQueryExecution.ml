@@ -428,7 +428,7 @@ let rec matches_decorator_constraint ~name_captures ~decorator = function
                (SanitizedCallArgumentSet.of_list decorator_keyword_arguments))
 
 
-let matches_annotation_constraint ~name_captures ~annotation_constraint annotation =
+let matches_annotation_constraint ~resolution ~name_captures ~annotation_constraint annotation =
   let open Expression in
   match annotation_constraint, annotation with
   | ( ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint,
@@ -458,10 +458,41 @@ let matches_annotation_constraint ~name_captures ~annotation_constraint annotati
         ~name_captures
         ~name_constraint
         (Expression.show annotation_expression)
+  | ( ModelQuery.AnnotationConstraint.AnnotationClassExtends
+        { class_name; is_transitive; includes_self },
+      annotation_expression ) -> (
+      let extract_readonly t =
+        match t with
+        | Type.ReadOnly t -> t
+        | t -> t
+      in
+      let extract_optional t =
+        match Type.optional_value t with
+        | Some t -> t
+        | _ -> t
+      in
+      let rec extract_class_name t =
+        match Reference.show (Type.class_name t) with
+        | "typing.Any"
+        | "typing.Union"
+        | "typing.Callable"
+        | "$bottom"
+        | "$unknown" ->
+            None
+        | "typing.Optional" -> extract_class_name (extract_optional t)
+        | "pyre_extensions.ReadOnly" -> extract_class_name (extract_readonly t)
+        | extracted_class_name -> Some extracted_class_name
+      in
+      let parsed_type = GlobalResolution.parse_annotation resolution annotation_expression in
+      match extract_class_name parsed_type with
+      | Some extracted_class_name ->
+          is_ancestor ~resolution ~is_transitive ~includes_self class_name extracted_class_name
+      | None -> false)
   | _ -> false
 
 
 let rec normalized_parameter_matches_constraint
+    ~resolution
     ~name_captures
     ~parameter:
       ((root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
@@ -469,7 +500,7 @@ let rec normalized_parameter_matches_constraint
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
-      >>| matches_annotation_constraint ~name_captures ~annotation_constraint
+      >>| matches_annotation_constraint ~resolution ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_captures ~name_constraint (Identifier.sanitized parameter_name)
@@ -478,13 +509,20 @@ let rec normalized_parameter_matches_constraint
       | AccessPath.Root.PositionalParameter { position; _ } when position = index -> true
       | _ -> false)
   | ModelQuery.ParameterConstraint.AnyOf constraints ->
-      List.exists constraints ~f:(normalized_parameter_matches_constraint ~name_captures ~parameter)
+      List.exists
+        constraints
+        ~f:(normalized_parameter_matches_constraint ~resolution ~name_captures ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
-      not (normalized_parameter_matches_constraint ~name_captures ~parameter query_constraint)
+      not
+        (normalized_parameter_matches_constraint
+           ~resolution
+           ~name_captures
+           ~parameter
+           query_constraint)
   | ModelQuery.ParameterConstraint.AllOf constraints ->
       List.for_all
         constraints
-        ~f:(normalized_parameter_matches_constraint ~name_captures ~parameter)
+        ~f:(normalized_parameter_matches_constraint ~resolution ~name_captures ~parameter)
 
 
 let class_matches_decorator_constraint ~name_captures ~resolution ~decorator_constraint class_name =
@@ -721,17 +759,21 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures val
         (value |> Modelable.name |> Reference.show)
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
-      >>| matches_annotation_constraint ~name_captures ~annotation_constraint
+      >>| matches_annotation_constraint ~resolution ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.ReturnConstraint annotation_constraint ->
       Modelable.return_annotation value
-      >>| matches_annotation_constraint ~name_captures ~annotation_constraint
+      >>| matches_annotation_constraint ~resolution ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint ->
       Modelable.parameters value
       |> AccessPath.Root.normalize_parameters
       |> List.exists ~f:(fun parameter ->
-             normalized_parameter_matches_constraint ~name_captures ~parameter parameter_constraint)
+             normalized_parameter_matches_constraint
+               ~resolution
+               ~name_captures
+               ~parameter
+               parameter_constraint)
   | ModelQuery.Constraint.ReadFromCache _ ->
       (* This is handled before matching constraints. *)
       true
@@ -939,7 +981,8 @@ module type QUERY_KIND = sig
 
   (* Generate taint annotations from the `models` part of a given model query. *)
   val generate_annotations_from_query_models
-    :  modelable:Modelable.t ->
+    :  resolution:GlobalResolution.t ->
+    modelable:Modelable.t ->
     ModelQuery.Model.t list ->
     annotation list
 
@@ -998,7 +1041,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         ~modelable
         query
     then
-      QueryKind.generate_annotations_from_query_models ~modelable models
+      QueryKind.generate_annotations_from_query_models ~resolution ~modelable models
     else
       []
 
@@ -1370,7 +1413,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
     Modelable.Callable { target = callable; signature }
 
 
-  let generate_annotations_from_query_models ~modelable models =
+  let generate_annotations_from_query_models ~resolution ~modelable models =
     let production_to_taint ?(parameter = None) ~production annotation =
       let open Expression in
       let get_subkind_from_annotation ~pattern annotation =
@@ -1554,7 +1597,11 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
             if
               List.for_all
                 where
-                ~f:(normalized_parameter_matches_constraint ~name_captures:None ~parameter)
+                ~f:
+                  (normalized_parameter_matches_constraint
+                     ~resolution
+                     ~name_captures:None
+                     ~parameter)
             then
               let parameter, _, _ = parameter in
               production_to_taint annotation ~production ~parameter:(Some parameter)
@@ -1666,7 +1713,7 @@ module AttributeQueryExecutor = struct
       Modelable.Attribute { name; type_annotation }
 
 
-    let generate_annotations_from_query_models ~modelable:_ models =
+    let generate_annotations_from_query_models ~resolution:_ ~modelable:_ models =
       let production_to_taint = function
         | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
         | _ -> None
@@ -1734,7 +1781,7 @@ module GlobalVariableQueryExecutor = struct
 
 
     (* Generate taint annotations from the `models` part of a given model query. *)
-    let generate_annotations_from_query_models ~modelable:_ models =
+    let generate_annotations_from_query_models ~resolution:_ ~modelable:_ models =
       let production_to_taint = function
         | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
         | _ -> None
