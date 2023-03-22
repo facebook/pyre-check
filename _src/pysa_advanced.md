@@ -533,29 +533,93 @@ This option can also be added in the `taint.config` as follows:
 }
 ```
 
-## Inlining Decorators during Analysis
+## Decorators
 
-By default, Pysa ignores issues that arise in the bodies of decorators. For example, it misses issues like decorators logging data. In the code below, Pysa will not catch the flow from `loggable_string` to the sink within the decorator `with_logging`:
+By default, Pysa does not generally understand decorators, and will treat a call to a decorated function as an obscure call.
 
+This will usually lead to false negatives if the decorated functions has sources or sinks. For instance:
 ```python
-def with_logging(f: Callable[[str], None]) -> Callable[[str], None]:
+def identity(f: Callable[[str], None]) -> Callable[[str], None]:
+  return f
 
-  def inner(y: str) -> None:
-    log_to_my_sink(y)
-    f(y)
+@identity
+def decorated_sink(x: str) -> None:
+  sink(x)
+
+decorated_sink(source()) # False negative, issue will NOT be found!
+```
+
+This also leads to false negatives if the decorator adds a flow to a sink. For instance:
+```python
+def with_sink(f: Callable[[str], None]) -> Callable[[str], None]:
+  def inner(x: str) -> None:
+    sink(x)
+    f(x)
 
   return inner
 
-@with_logging
-def foo(z: str) -> None:
-  print(z)
+@with_sink
+def foo(x: str) -> None:
+  print(x)
 
-foo(loggable_string)
+foo(source()) # False negative, issue will NOT be found!
 ```
 
-However, Pysa has the ability to inline decorators within functions before analyzing them so that it can catch such flows. This can be enabled with the `--inline-decorators` flag.
+Since the call to a decorated function is treated as an obscure call, it will conservatively propagate taint through decorated function:
+```python
+def identity(f: Callable[[str], str]) -> Callable[[str], str]:
+  return f
 
-## Prevent Inlining Decorators with `SkipDecoratorWhenInlining`
+@identity
+def decorated(x: str) -> str:
+  # Whatever happens here will not be considered at the call site.
+  return 'hello %s' % x
+
+sink(decorated(source())) # Issue is properly found.
+```
+
+Pysa provides a few ways to deal with these limitations.
+
+## Ignoring decorators
+
+Pysa can entirely ignore a decorator, as if it was not present in the source code. This can be done safely when the decorator does not change the signature of the decorated function (i.e, it does not add or remove parameters).
+
+To ignore a decorator, use the `@IgnoreDecorator` annotation in a `.pysa` file:
+```python
+@IgnoreDecorator
+def module.decorator(): ...
+```
+
+## Inlining decorators
+
+Pysa can try to inline decorators into decorated functions before analyzing them. This can be enabled with the `--inline-decorators` flag.
+
+Inlining will take the code of the decorator and copy it within the decorated function. For instance:
+```python
+def my_decorator(f: Callable[[int], int]) -> Callable[[int], int]:
+  def inner(x: int) -> int:
+    before(x)
+    result = f(x)
+    after(x)
+    return result
+
+  return inner
+
+@my_decorator
+def decorated(x: int) -> int:
+  return x + 1
+```
+
+Will be inlined as:
+```
+def decorated(x: int) -> int:
+  before(x)
+  result = x + 1
+  after(x)
+  return result
+```
+
+### Prevent Inlining Decorators with `SkipDecoratorWhenInlining`
 
 Decorator inlining comes at the cost of increasing the analysis time and also increasing the lengths of traces. If you would like to prevent certain decorators from being inlined, you can mark them in your `.pysa` file using `@SkipDecoratorWhenInlining`:
 
@@ -574,7 +638,7 @@ def bar(x: int) -> None:
 
 This will prevent the decorator from being inlined when analyzing `bar`. Note that we use `@SkipDecoratorWhenInlining` on the decorator that is to be skipped, not the function on which the decorator is applied.
 
-Unfortunately, this can often lead to false negatives because Pysa won't be able to resolve calls to the decoratored function. In that case, the call will be treated as obscure.
+Unfortunately, this will lead back to false negatives as described earlier.
 
 For instance:
 ```python
@@ -582,7 +646,7 @@ For instance:
 def bar(x: int) -> None:
   sink(x)
 
-bar(source()) # Issue won't be found here (false negative).
+bar(source()) # False negative, issue will NOT be found!
 ```
 
 ## Single trace sanitizers with `@SanitizeSingleTrace`
