@@ -153,6 +153,10 @@ class Base(abc.ABC):
     def get_enable_unawaited_awaitable_analysis(self) -> Optional[bool]:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def get_saved_state_project(self) -> Optional[str]:
+        raise NotImplementedError()
+
     def get_local_root(self) -> Optional[Path]:
         relative_local_root = self.get_relative_local_root()
         if relative_local_root is None:
@@ -273,3 +277,6 @@ class OpenSource(Base):
 
     def get_project_identifier(self) -> str:
         return self.configuration.project_identifier
+
+    def get_saved_state_project(self) -> Optional[str]:
+        return None
