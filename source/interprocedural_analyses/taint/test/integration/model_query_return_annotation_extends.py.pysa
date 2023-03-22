@@ -1,0 +1,55 @@
+ModelQuery(
+  name="test1",
+  find = "functions",
+  where = [
+    name.matches("test1"),
+    return_annotation.extends(
+        "model_query_return_annotation_extends.Test1_C1",
+        is_transitive=True,
+        includes_self=True
+    ),
+  ],
+  model = [
+    Returns(TaintSink[Test])
+  ]
+)
+
+
+ModelQuery(
+  name="test2",
+  find = "methods",
+  where = [
+    cls.fully_qualified_name.equals("model_query_return_annotation_extends.Test2"),
+    return_annotation.extends(
+        "model_query_return_annotation_extends.Test2_C1",
+        is_transitive=True,
+        includes_self=False
+    ),
+    Not(
+        return_annotation.extends(
+            "model_query_return_annotation_extends.Test2_C2",
+            is_transitive=True,
+            includes_self=False
+        )
+    )
+  ],
+  model = [
+    Returns(TaintSink[Test])
+  ]
+)
+
+ModelQuery(
+  name="test3",
+  find = "functions",
+  where = [
+    name.matches("test3"),
+    return_annotation.extends(
+        "model_query_return_annotation_extends.Test3_C1",
+        is_transitive=True,
+        includes_self=True
+    ),
+  ],
+  model = [
+    Returns(TaintSink[Test])
+  ]
+)

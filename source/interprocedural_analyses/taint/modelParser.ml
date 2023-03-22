@@ -1187,6 +1187,56 @@ let parse_name_constraint ~path ~location ~constraint_expression ~attribute ~arg
   | _ -> Error (model_verification_error ~path ~location (InvalidNameClause constraint_expression))
 
 
+let parse_bool expression =
+  match Node.value expression with
+  | Expression.Constant Constant.True -> Some true
+  | Expression.Constant Constant.False -> Some false
+  | _ -> None
+
+
+let parse_is_transitive ~path ~location is_transitive_expression =
+  match parse_bool is_transitive_expression with
+  | Some value -> Ok value
+  | None ->
+      Error
+        (model_verification_error ~path ~location (InvalidIsTransitive is_transitive_expression))
+
+
+let parse_includes_self ~path ~location includes_self_expression =
+  match parse_bool includes_self_expression with
+  | Some value -> Ok value
+  | None ->
+      Error
+        (model_verification_error ~path ~location (InvalidIncludesSelf includes_self_expression))
+
+
+let parse_class_hierarchy_options ~path ~location ~callee ~arguments =
+  let open Core.Result in
+  match arguments with
+  | { Call.Argument.value = first_parameter; _ } :: remaining_arguments ->
+      let parse_optional_arguments (is_transitive, includes_self) argument =
+        match argument with
+        | { Call.Argument.name = Some { Node.value = "is_transitive"; _ }; value } ->
+            parse_is_transitive ~path ~location value >>| fun value -> value, includes_self
+        | { Call.Argument.name = Some { Node.value = "includes_self"; _ }; value } ->
+            parse_includes_self ~path ~location value >>| fun value -> is_transitive, value
+        | _ ->
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (InvalidModelQueryClauseArguments { callee; arguments }))
+      in
+      List.fold_result ~f:parse_optional_arguments remaining_arguments ~init:(false, true)
+      >>| fun (is_transitive, includes_self) -> first_parameter, is_transitive, includes_self
+  | _ ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (InvalidModelQueryClauseArguments { callee; arguments }))
+
+
 let parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments =
   match attribute, arguments with
   | ( "equals",
@@ -1219,6 +1269,21 @@ let parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments =
         (ModelQuery.AnnotationConstraint.NameConstraint
            (ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern)))
   | "is_annotated_type", [] -> Ok ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint
+  | "extends", _ -> (
+      let open Core.Result in
+      parse_class_hierarchy_options ~path ~location ~callee ~arguments
+      >>= fun (first_parameter, is_transitive, includes_self) ->
+      match Node.value first_parameter with
+      | Expression.Constant (Constant.String { StringLiteral.value = class_name; _ }) ->
+          Ok
+            (ModelQuery.AnnotationConstraint.AnnotationClassExtends
+               { class_name; is_transitive; includes_self })
+      | _ ->
+          Error
+            (model_verification_error
+               ~path
+               ~location
+               (InvalidModelQueryClauseArguments { callee; arguments })))
   | _ ->
       Error
         (model_verification_error
@@ -1320,56 +1385,6 @@ let parse_write_to_cache_model ~path ~location ~find_clause ~model_expression ~a
   | _ ->
       Error
         (model_verification_error ~path ~location (InvalidWriteToCacheArguments model_expression))
-
-
-let parse_bool expression =
-  match Node.value expression with
-  | Expression.Constant Constant.True -> Some true
-  | Expression.Constant Constant.False -> Some false
-  | _ -> None
-
-
-let parse_is_transitive ~path ~location is_transitive_expression =
-  match parse_bool is_transitive_expression with
-  | Some value -> Ok value
-  | None ->
-      Error
-        (model_verification_error ~path ~location (InvalidIsTransitive is_transitive_expression))
-
-
-let parse_includes_self ~path ~location includes_self_expression =
-  match parse_bool includes_self_expression with
-  | Some value -> Ok value
-  | None ->
-      Error
-        (model_verification_error ~path ~location (InvalidIncludesSelf includes_self_expression))
-
-
-let parse_class_hierarchy_options ~path ~location ~callee ~arguments =
-  let open Core.Result in
-  match arguments with
-  | { Call.Argument.value = first_parameter; _ } :: remaining_arguments ->
-      let parse_optional_arguments (is_transitive, includes_self) argument =
-        match argument with
-        | { Call.Argument.name = Some { Node.value = "is_transitive"; _ }; value } ->
-            parse_is_transitive ~path ~location value >>| fun value -> value, includes_self
-        | { Call.Argument.name = Some { Node.value = "includes_self"; _ }; value } ->
-            parse_includes_self ~path ~location value >>| fun value -> is_transitive, value
-        | _ ->
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (InvalidModelQueryClauseArguments { callee; arguments }))
-      in
-      List.fold_result ~f:parse_optional_arguments remaining_arguments ~init:(false, true)
-      >>| fun (is_transitive, includes_self) -> first_parameter, is_transitive, includes_self
-  | _ ->
-      Error
-        (model_verification_error
-           ~path
-           ~location
-           (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
 let parse_class_extends_clause ~path ~location ~callee ~arguments =
