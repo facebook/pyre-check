@@ -6,14 +6,14 @@
 import datetime
 import tempfile
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import testslide
 
 from ... import (
     backend_arguments,
     command_arguments,
-    configuration,
+    configuration as configuration_module,
     daemon_socket,
     frontend_configuration,
 )
@@ -35,6 +35,114 @@ from ..start import (
     MatchPolicy,
     StoreSavedStateToFile,
 )
+
+
+class TestFrontendConfiguration(frontend_configuration.Base):
+    def __init__(self) -> None:
+        pass
+
+    def get_dot_pyre_directory(self) -> Path:
+        raise NotImplementedError()
+
+    def get_log_directory(self) -> Path:
+        raise NotImplementedError()
+
+    def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
+        raise NotImplementedError()
+
+    def get_binary_version(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    def get_content_for_display(self) -> str:
+        raise NotImplementedError()
+
+    def get_global_root(self) -> Path:
+        raise NotImplementedError()
+
+    def get_relative_local_root(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    def get_excludes(self) -> List[str]:
+        raise NotImplementedError()
+
+    def is_strict(self) -> bool:
+        raise NotImplementedError()
+
+    def get_remote_logger(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    def get_number_of_workers(self) -> int:
+        raise NotImplementedError()
+
+    def get_python_version(self) -> configuration_module.PythonVersion:
+        raise NotImplementedError()
+
+    def get_shared_memory(self) -> configuration_module.SharedMemory:
+        raise NotImplementedError()
+
+    def get_valid_extension_suffixes(self) -> List[str]:
+        raise NotImplementedError()
+
+    def get_ignore_all_errors(self) -> List[str]:
+        raise NotImplementedError()
+
+    def get_only_check_paths(self) -> List[str]:
+        raise NotImplementedError()
+
+    def get_existent_search_paths(
+        self,
+    ) -> List[configuration_module.search_path.Element]:
+        raise NotImplementedError()
+
+    def get_existent_source_directories(
+        self,
+    ) -> List[configuration_module.search_path.Element]:
+        raise NotImplementedError()
+
+    def get_existent_unwatched_dependency(
+        self,
+    ) -> Optional[configuration_module.unwatched.UnwatchedDependency]:
+        raise NotImplementedError()
+
+    def is_source_directories_defined(
+        self,
+    ) -> bool:
+        raise NotImplementedError()
+
+    def get_buck_targets(
+        self,
+    ) -> Optional[List[str]]:
+        raise NotImplementedError()
+
+    def uses_buck2(self) -> bool:
+        raise NotImplementedError()
+
+    def get_buck_mode(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    def get_buck_isolation_prefix(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    def get_buck_bxl_builder(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    def get_other_critical_files(self) -> List[str]:
+        raise NotImplementedError()
+
+    def get_taint_models_path(self) -> List[str]:
+        raise NotImplementedError()
+
+    def get_project_identifier(self) -> str:
+        raise NotImplementedError()
+
+    def get_enable_readonly_analysis(self) -> Optional[bool]:
+        raise NotImplementedError()
+
+    def get_enable_unawaited_awaitable_analysis(self) -> Optional[bool]:
+        raise NotImplementedError()
+
+    def get_saved_state_project(self) -> Optional[str]:
+        raise NotImplementedError()
 
 
 class ArgumentTest(testslide.TestCase):
@@ -191,7 +299,7 @@ class StartTest(testslide.TestCase):
             self.assertCountEqual(
                 get_critical_files(
                     frontend_configuration.OpenSource(
-                        configuration.create_configuration(
+                        configuration_module.create_configuration(
                             command_arguments.CommandArguments(
                                 local_configuration="local"
                             ),
@@ -227,7 +335,7 @@ class StartTest(testslide.TestCase):
             self.assertCountEqual(
                 get_critical_files(
                     frontend_configuration.OpenSource(
-                        configuration.create_overridden_configuration(
+                        configuration_module.create_overridden_configuration(
                             command_arguments.CommandArguments(
                                 strict=True,  # override configuration file
                                 source_directories=["."],
@@ -258,7 +366,7 @@ class StartTest(testslide.TestCase):
             self.assertCountEqual(
                 get_critical_files(
                     frontend_configuration.OpenSource(
-                        configuration.create_configuration(
+                        configuration_module.create_configuration(
                             command_arguments.CommandArguments(),
                             root_path,
                         )
@@ -276,30 +384,61 @@ class StartTest(testslide.TestCase):
             )
 
     def test_get_saved_state_action(self) -> None:
-        self.assertIsNone(get_saved_state_action(command_arguments.StartArguments()))
+        class EmptySavedState(TestFrontendConfiguration):
+            def get_saved_state_project(self) -> Optional[str]:
+                return None
+
+        self.assertIsNone(
+            get_saved_state_action(
+                command_arguments.StartArguments(),
+                EmptySavedState(),
+            )
+        )
+
+        class OverriddenSavedState(TestFrontendConfiguration):
+            def get_saved_state_project(self) -> Optional[str]:
+                return "test_saved_state"
+
+        saved_state_configuration = OverriddenSavedState()
+
         self.assertEqual(
             get_saved_state_action(
-                command_arguments.StartArguments(load_initial_state_from="foo")
+                command_arguments.StartArguments(),
+                saved_state_configuration,
+            ),
+            LoadSavedStateFromProject(project_name="test_saved_state"),
+        )
+
+        self.assertEqual(
+            get_saved_state_action(
+                command_arguments.StartArguments(load_initial_state_from="foo"),
+                saved_state_configuration,
             ),
             LoadSavedStateFromFile(shared_memory_path="foo"),
         )
         self.assertEqual(
             get_saved_state_action(
                 command_arguments.StartArguments(
-                    load_initial_state_from="foo", changed_files_path="bar"
-                )
+                    load_initial_state_from="foo",
+                    changed_files_path="bar",
+                ),
+                saved_state_configuration,
             ),
             LoadSavedStateFromFile(shared_memory_path="foo", changed_files_path="bar"),
         )
+
+        # Ensure command_arguments override internal_configuration
         self.assertEqual(
             get_saved_state_action(
-                command_arguments.StartArguments(saved_state_project="my_project")
+                command_arguments.StartArguments(saved_state_project="my_project"),
+                saved_state_configuration,
             ),
             LoadSavedStateFromProject(project_name="my_project"),
         )
         self.assertEqual(
             get_saved_state_action(
                 command_arguments.StartArguments(saved_state_project="my_project"),
+                saved_state_configuration,
                 relative_local_root="local/root",
             ),
             LoadSavedStateFromProject(
@@ -311,13 +450,15 @@ class StartTest(testslide.TestCase):
                 command_arguments.StartArguments(
                     load_initial_state_from="foo", changed_files_path="bar"
                 ),
+                saved_state_configuration,
                 relative_local_root="local/root",
             ),
             LoadSavedStateFromFile(shared_memory_path="foo", changed_files_path="bar"),
         )
         self.assertEqual(
             get_saved_state_action(
-                command_arguments.StartArguments(save_initial_state_to="/foo")
+                command_arguments.StartArguments(save_initial_state_to="/foo"),
+                saved_state_configuration,
             ),
             StoreSavedStateToFile(shared_memory_path="/foo"),
         )
@@ -348,7 +489,7 @@ class StartTest(testslide.TestCase):
             )
 
             server_configuration = frontend_configuration.OpenSource(
-                configuration.create_configuration(
+                configuration_module.create_configuration(
                     command_arguments.CommandArguments(
                         local_configuration="local",
                         dot_pyre_directory=root_path / ".pyre",
@@ -433,7 +574,7 @@ class StartTest(testslide.TestCase):
             )
             arguments = create_server_arguments(
                 frontend_configuration.OpenSource(
-                    configuration.create_configuration(
+                    configuration_module.create_configuration(
                         command_arguments.CommandArguments(
                             dot_pyre_directory=root_path / ".pyre",
                         ),
@@ -456,7 +597,7 @@ class StartTest(testslide.TestCase):
             )
             arguments = create_server_arguments(
                 frontend_configuration.OpenSource(
-                    configuration.create_configuration(
+                    configuration_module.create_configuration(
                         command_arguments.CommandArguments(
                             dot_pyre_directory=root_path / ".pyre",
                         ),
@@ -479,7 +620,7 @@ class StartTest(testslide.TestCase):
             )
             arguments = create_server_arguments(
                 frontend_configuration.OpenSource(
-                    configuration.create_configuration(
+                    configuration_module.create_configuration(
                         command_arguments.CommandArguments(
                             dot_pyre_directory=root_path / ".pyre",
                         ),
@@ -507,7 +648,7 @@ class StartTest(testslide.TestCase):
 
             arguments = create_server_arguments(
                 frontend_configuration.OpenSource(
-                    configuration.create_configuration(
+                    configuration_module.create_configuration(
                         command_arguments.CommandArguments(dot_pyre_directory=log_path),
                         root_path,
                     )

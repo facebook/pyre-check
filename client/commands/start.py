@@ -265,6 +265,7 @@ def get_critical_files(
 
 def get_saved_state_action(
     start_arguments: command_arguments.StartArguments,
+    configuration: frontend_configuration.Base,
     relative_local_root: Optional[str] = None,
 ) -> Optional[SavedStateAction]:
     saved_state_output_path = start_arguments.save_initial_state_to
@@ -278,7 +279,11 @@ def get_saved_state_action(
             changed_files_path=start_arguments.changed_files_path,
         )
 
-    saved_state_project = start_arguments.saved_state_project
+    saved_state_project = (
+        start_arguments.saved_state_project
+        if start_arguments.saved_state_project is not None
+        else configuration.get_saved_state_project()
+    )
     if saved_state_project is not None:
         return LoadSavedStateFromProject(
             project_name=saved_state_project,
@@ -368,7 +373,7 @@ def create_server_arguments(
         saved_state_action=None
         if start_arguments.no_saved_state
         else get_saved_state_action(
-            start_arguments, relative_local_root=relative_local_root
+            start_arguments, configuration, relative_local_root=relative_local_root
         ),
         skip_initial_type_check=start_arguments.skip_initial_type_check,
         use_lazy_module_tracking=start_arguments.use_lazy_module_tracking,
