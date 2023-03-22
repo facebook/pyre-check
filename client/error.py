@@ -88,6 +88,20 @@ class Error:
             concise_description=self.concise_description,
         )
 
+    def with_path(self, path: Path) -> "Error":
+        return Error(
+            line=self.line,
+            column=self.column,
+            stop_line=self.stop_line,
+            stop_column=self.stop_column,
+            path=path,
+            code=self.code,
+            name=self.name,
+            description=self.description,
+            long_description=self.long_description,
+            concise_description=self.concise_description,
+        )
+
     def to_json(self) -> Dict[str, Any]:
         return {
             "line": self.line,
