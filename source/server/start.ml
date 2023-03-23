@@ -280,7 +280,7 @@ let initialize_server_state
             in
             Watchman.Raw.with_connection raw ~f:(fun watchman_connection ->
                 let target =
-                  PyrePath.create_relative ~root:log_directory ~relative:"new_server/server.state"
+                  PyrePath.create_relative ~root:log_directory ~relative:"classic/server.state"
                 in
                 SavedState.query_and_fetch_exn
                   {
