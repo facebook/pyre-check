@@ -226,6 +226,54 @@ ModelQuery(
 
 This query would match on functions like the one shown above.
 
+#### `return_annotation.extends`
+
+This will match when a callable's return type is a class that is a subclass of the provided class names. Note that this will **only work on class names**. More complex types like `Union`, `Callable` are not supported. The `extends` clause also takes boolean parameters `is_transitive`, which when set to true means it will match when the class is a transitive subclass, otherwise it will only match when it is a direct subclass, and `includes_self`, which determines whether `extends(T)` should include `T` itself.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_return_annotation_extends",
+  find = functions,
+  where = [
+    return_annotation.extends("test.A", is_transitive=True, includes_self=True),
+  ],
+  model = Returns(TaintSource[Test])
+)
+```
+
+Given the following Python code in module `test`:
+```python
+class A:
+  pass
+
+class B(A):
+  pass
+
+class C:
+  pass
+
+def foo() -> A: ...
+def bar() -> B: ...
+def baz() -> C: ...
+```
+
+The above query would match `bar` and `baz` which are transitive subclasses of `A`, but not `foo`, since `includes_self` was `False`.
+
+If the return type is `Optional[T]`, or `ReadOnly[T]`, they will be effectively treated as if they were type `T`
+for the purpose of matching.
+```python
+from typing import Optional
+from pyre_extensions import ReadOnly
+
+# These should all also match
+def bar_optional() -> Optional[B]: ...
+def bar_readonly() -> ReadOnly[B]: ...
+def baz2() -> Optional[ReadOnly[Optional[C]]]: ...
+```
+
+
 ### `type_annotation` clauses
 
 Model queries allow for querying based on the type annotation of a `global`. Note that this is similar to the [`return_annotation`](#return_annotation-clauses) clauses shown previously. See also: `Parameters` model [`type_annotation`](#type_annotation-clause) clauses.
@@ -292,6 +340,10 @@ ModelQuery(
 ```
 
 This query would match on functions like the one shown above.
+
+#### `type_annotation.extends`
+
+This behaves the same way as the `return_annotation.extends()` clause. Please refer to [the section above](#return_annotationextends).
 
 ### `any_parameter` clauses
 
