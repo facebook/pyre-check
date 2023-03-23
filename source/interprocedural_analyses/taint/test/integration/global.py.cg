@@ -21,3 +21,4 @@ global.obj8_flow (fun) -> [_test_sink (fun) _test_source (fun) global.obj8_retur
 global.obj8_return (fun) -> []
 global.obj8_set (fun) -> []
 global.return_global_source (fun) -> []
+global.Object::$class_toplevel (method) -> []

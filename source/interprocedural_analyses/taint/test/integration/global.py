@@ -5,7 +5,12 @@
 
 from builtins import _test_sink, _test_source
 
-obj1 = object()
+
+class Object:
+    pass
+
+
+obj1 = Object()
 
 
 def obj1_source():
@@ -27,14 +32,14 @@ def obj1_no_flow():
     obj1_source()
 
 
-obj2 = object()
+obj2 = Object()
 
 
 def obj2_sink():
     _test_sink(obj2)
 
 
-obj3 = object()
+obj3 = Object()
 
 
 def obj3_return():
@@ -74,7 +79,7 @@ def return_global_source():
     return z
 
 
-obj6 = object()
+obj6 = Object()
 
 
 def obj6_source():
@@ -108,7 +113,7 @@ def obj7_flow():
     obj7_sink()
 
 
-obj8 = object()
+obj8 = Object()
 
 
 def obj8_return():
