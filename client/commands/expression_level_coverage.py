@@ -326,9 +326,16 @@ def run_query(
 
 def run(
     configuration: configuration_module.Configuration,
-    query_text: str,
+    paths: Iterable[str],
     print_summary: bool = False,
 ) -> commands.ExitCode:
+    path_list = get_path_list(
+        frontend_configuration.OpenSource(configuration),
+        str(Path.cwd()),
+        paths,
+    )
+    paths_string = ",".join([f"'{path}'" for path in path_list])
+    query_text = f"expression_level_coverage({paths_string})"
     return run_query(
         frontend_configuration.OpenSource(configuration),
         query_text,

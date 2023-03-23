@@ -424,9 +424,9 @@ class ExpressionLevelTest(testslide.TestCase):
             )
             self.assertEqual(
                 expression_level_coverage.run(
-                    check_configuration,
-                    "expression_level_coverage()",
-                    False,
+                    configuration=check_configuration,
+                    paths=[],
+                    print_summary=False,
                 ),
                 commands.ExitCode.SERVER_NOT_FOUND,
             )
