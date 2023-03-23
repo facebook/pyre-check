@@ -1,0 +1,4 @@
+@generated
+Overrides
+class_attribute.A::__init__ (override) -> [class_attribute.A::__init__ (method)]
+object::__init__ (override) -> [class_attribute.A::__init__ (override) object::__init__ (method)]
