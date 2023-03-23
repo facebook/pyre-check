@@ -1,0 +1,14 @@
+@generated
+Call dependencies
+$local_closure?closure$sink (fun) -> [_test_sink (fun)]
+$local_closure?closure$source (fun) -> [_test_source (fun)]
+$local_closure?nonlocal_closure$sink (fun) -> [_test_sink (fun)]
+$local_closure?nonlocal_closure$source (fun) -> [_test_source (fun)]
+closure.$toplevel (fun) -> []
+closure.closure (fun) -> [object::__init__ (method) object::__new__ (method)]
+closure.closure_flow (fun) -> [closure.closure (fun)]
+closure.closure_no_flow (fun) -> [closure.closure (fun)]
+closure.nonlocal_closure (fun) -> []
+closure.nonlocal_flow (fun) -> [closure.nonlocal_closure (fun)]
+closure.nonlocal_no_flow (fun) -> [closure.nonlocal_closure (fun)]
+closure.Object::$class_toplevel (method) -> []
