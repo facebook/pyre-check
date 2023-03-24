@@ -144,6 +144,9 @@ class TestFrontendConfiguration(frontend_configuration.Base):
     def get_saved_state_project(self) -> Optional[str]:
         raise NotImplementedError()
 
+    def get_include_suppressed_errors(self) -> Optional[bool]:
+        raise NotImplementedError()
+
 
 class ArgumentTest(testslide.TestCase):
     def test_serialize_critical_file(self) -> None:

@@ -94,6 +94,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.use_buck2, True)
         self.assertEqual(configuration.enable_readonly_analysis, None)
         self.assertEqual(configuration.enable_unawaited_awaitable_analysis, True)
+        self.assertEqual(configuration.include_suppressed_errors, None)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
@@ -439,6 +440,16 @@ class PartialConfigurationTest(unittest.TestCase):
             ).enable_unawaited_awaitable_analysis,
             None,
         )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"include_suppressed_errors": True})
+            ).include_suppressed_errors,
+            True,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(json.dumps({})).include_suppressed_errors,
+            None,
+        )
 
     def test_create_from_string_failure(self) -> None:
         def assert_raises(content: str) -> None:
@@ -468,6 +479,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"exclude": 42}))
         assert_raises(json.dumps({"extensions": 42}))
         assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
+        assert_raises(json.dumps({"include_suppressed_errors": 42}))
         assert_raises(json.dumps({"logger": []}))
         assert_raises(json.dumps({"oncall": []}))
         assert_raises(json.dumps({"workers": "abc"}))
@@ -612,6 +624,7 @@ class ConfigurationTest(testslide.TestCase):
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
                 ignore_all_errors=["bar"],
+                include_suppressed_errors=True,
                 logger="logger",
                 number_of_workers=3,
                 oncall="oncall",
@@ -644,6 +657,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
+        self.assertEqual(configuration.include_suppressed_errors, True)
         self.assertEqual(configuration.logger, "logger")
         self.assertEqual(configuration.number_of_workers, 3)
         self.assertEqual(configuration.oncall, "oncall")

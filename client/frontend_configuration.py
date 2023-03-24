@@ -157,6 +157,10 @@ class Base(abc.ABC):
     def get_saved_state_project(self) -> Optional[str]:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def get_include_suppressed_errors(self) -> Optional[bool]:
+        raise NotImplementedError()
+
     def get_local_root(self) -> Optional[Path]:
         relative_local_root = self.get_relative_local_root()
         if relative_local_root is None:
@@ -280,3 +284,6 @@ class OpenSource(Base):
 
     def get_saved_state_project(self) -> Optional[str]:
         return None
+
+    def get_include_suppressed_errors(self) -> Optional[bool]:
+        return self.configuration.include_suppressed_errors

@@ -130,6 +130,7 @@ class PartialConfiguration:
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
     )
+    include_suppressed_errors: Optional[bool] = None
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
@@ -427,6 +428,9 @@ class PartialConfiguration:
                 ignore_all_errors=ensure_string_list(
                     configuration_json, "ignore_all_errors"
                 ),
+                include_suppressed_errors=ensure_option_type(
+                    configuration_json, "include_suppressed_errors", bool
+                ),
                 isolation_prefix=ensure_option_type(
                     configuration_json, "isolation_prefix", str
                 ),
@@ -549,6 +553,7 @@ class Configuration:
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[extension.Element] = field(default_factory=list)
     ignore_all_errors: Sequence[str] = field(default_factory=list)
+    include_suppressed_errors: Optional[bool] = None
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
@@ -606,6 +611,7 @@ class Configuration:
                 expand_global_root(path, global_root=str(project_root))
                 for path in ignore_all_errors
             ),
+            include_suppressed_errors=partial_configuration.include_suppressed_errors,
             isolation_prefix=partial_configuration.isolation_prefix,
             logger=partial_configuration.logger,
             number_of_workers=partial_configuration.number_of_workers,
@@ -703,6 +709,11 @@ class Configuration:
             "excludes": list(self.excludes),
             "extensions": [extension.to_json() for extension in self.extensions],
             "ignore_all_errors": list(self.ignore_all_errors),
+            **(
+                {"include_suppressed_errors": self.include_suppressed_errors}
+                if self.include_suppressed_errors is not None
+                else {}
+            ),
             **(
                 {"isolation_prefix": isolation_prefix}
                 if isolation_prefix is not None
