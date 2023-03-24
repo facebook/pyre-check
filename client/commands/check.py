@@ -121,6 +121,7 @@ def create_check_arguments(
             ),
             excludes=configuration.get_excludes(),
             extensions=configuration.get_valid_extension_suffixes(),
+            include_suppressed_errors=configuration.get_include_suppressed_errors(),
             relative_local_root=configuration.get_relative_local_root(),
             memory_profiling_output=memory_profiling_output,
             number_of_workers=configuration.get_number_of_workers(),
