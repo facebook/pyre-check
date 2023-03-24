@@ -20,6 +20,7 @@ import subprocess
 import sys
 from enum import Enum
 from pathlib import Path
+from subprocess import CalledProcessError
 from tempfile import mkdtemp
 from typing import Dict, List, Mapping, NamedTuple, Optional, Type
 
@@ -202,8 +203,16 @@ class Setup(NamedTuple):
         )
         opam_environment_variables = self.opam_environment_variables()
 
+        opam_install_command = ["opam", "install", "--yes"]
+
+        if sys.platform == "linux":
+            # setting `--assume-depexts` means that opam will not require a "system"
+            # installed version of Rust (e.g. via `dnf`` or `yum`) but will instead
+            # accept a version referenced on the system `$PATH`
+            opam_install_command.append("--assume-depexts")
+
         self.run(
-            ["opam", "install", "--yes"] + DEPENDENCIES,
+            opam_install_command + DEPENDENCIES,
             add_environment_variables=opam_environment_variables,
         )
 
@@ -276,12 +285,19 @@ class Setup(NamedTuple):
         else:
             environment_variables = self.environment_variables
         LOG.info(command)
-        output = subprocess.check_output(
-            command,
-            universal_newlines=True,
-            cwd=current_working_directory,
-            env=environment_variables,
-        )
+        try:
+            output = subprocess.check_output(
+                command,
+                universal_newlines=True,
+                cwd=current_working_directory,
+                env=environment_variables,
+            )
+        except CalledProcessError as called_process_error:
+            LOG.info(f'Command: {command} returned non zero exit code.\n\
+            stdout: {called_process_error.stdout}\n\
+            stderr: {called_process_error.stderr}')
+            raise called_process_error
+
         if output.endswith("\n"):
             return output[:-1]
         else:
