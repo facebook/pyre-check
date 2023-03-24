@@ -481,7 +481,7 @@ let test_function_call context =
     |}
     [
       "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
-       `Foo.expect_mutable_self` may modify its object. Cannot call it on readonly expression \
+       `test.Foo.expect_mutable_self` may modify its object. Cannot call it on readonly expression \
        `readonly_foo` of type `pyre_extensions.ReadOnly[Foo]`.";
     ];
   (* A method with readonly `self` can be called on either mutable or readonly objects. However, the
@@ -507,7 +507,7 @@ let test_function_call context =
     |}
     [
       "8: ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
-       `Foo.expect_mutable_self` may modify its object. Cannot call it on readonly expression \
+       `test.Foo.expect_mutable_self` may modify its object. Cannot call it on readonly expression \
        `self` of type `pyre_extensions.ReadOnly[Foo]`.";
     ];
   assert_type_errors_including_readonly
@@ -659,8 +659,8 @@ let test_function_call context =
       |}
     [
       "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
-       `Foo.mutable_method` may modify its object. Cannot call it on readonly expression `self` of \
-       type `pyre_extensions.ReadOnly[Variable[_Self_test_Foo__ (bound to Foo)]]`.";
+       `test.Foo.mutable_method` may modify its object. Cannot call it on readonly expression \
+       `self` of type `pyre_extensions.ReadOnly[Variable[_Self_test_Foo__ (bound to Foo)]]`.";
     ];
   ()
 
