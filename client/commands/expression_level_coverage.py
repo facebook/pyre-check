@@ -22,6 +22,7 @@ import dataclasses_json
 
 from .. import (
     configuration as configuration_module,
+    coverage_data,
     daemon_socket,
     frontend_configuration,
     identifiers,
@@ -30,7 +31,7 @@ from .. import (
 )
 
 from ..language_server import connections, protocol as lsp
-from . import commands, coverage, daemon_query
+from . import commands, daemon_query
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -114,32 +115,48 @@ def _make_expression_level_coverage_response(
         raise ErrorParsingFailure(f"Error: {error}") from error
 
 
-def get_path_list(
-    configuration: frontend_configuration.Base,
-    working_directory: str,
-    paths: Iterable[str],
-) -> List[str]:
-    working_directory_path = Path(working_directory)
-    path_files = [file for file in paths if file[0] != "@"]
-    absolute_path_files_string = []
-    if not paths or path_files:
-        absolute_path_files = coverage.get_module_paths(
-            configuration,
-            working_directory,
-            path_files,
+@dataclass(frozen=True)
+class CoveragePaths:
+    module_paths: Iterable[Path]
+    argument_paths: Iterable[Path]
+
+    @staticmethod
+    def from_raw_path_arguments(
+        raw_paths: Iterable[str],
+        configuration: frontend_configuration.Base,
+    ) -> "CoveragePaths":
+        working_directory = Path.cwd()
+        explicit_paths: List[Path] = []
+        argument_paths: List[Path] = []
+        for raw_path in raw_paths:
+            if raw_path[0] == "@":
+                argument_paths.append(working_directory / Path(raw_path[1:]))
+            else:
+                explicit_paths.append(working_directory / Path(raw_path))
+        if len(explicit_paths) == 0 and len(argument_paths) > 0:
+            # Do not typecheck everything in the project if the user passed
+            # at least one argument file.
+            module_paths: List[Path] = []
+        else:
+            unexpanded_module_paths = coverage_data.get_paths_to_collect(
+                paths=None if len(explicit_paths) == 0 else explicit_paths,
+                local_root=configuration.get_local_root(),
+                global_root=configuration.get_global_root(),
+            )
+            module_paths = coverage_data.find_module_paths(
+                paths=unexpanded_module_paths,
+                excludes=configuration.get_excludes(),
+            )
+        return CoveragePaths(
+            module_paths=module_paths,
+            argument_paths=argument_paths,
         )
-        absolute_path_files_string = [
-            str(file.resolve()) for file in absolute_path_files
+
+    def get_paths_for_backend(self) -> List[str]:
+        return [
+            *(str(path) for path in self.module_paths),
+            *("@" + str(path) for path in self.argument_paths),
         ]
-    text_files = [file[1:] for file in paths if file[0] == "@"]
-    absolute_text_files_string = []
-    if text_files:
-        absolute_text_files = [
-            coverage.to_absolute_path(path, working_directory_path)
-            for path in text_files
-        ]
-        absolute_text_files_string = ["@" + str(file) for file in absolute_text_files]
-    return absolute_path_files_string + absolute_text_files_string
 
 
 def _calculate_percent_covered(
@@ -329,11 +346,10 @@ def run(
     paths: Iterable[str],
     print_summary: bool = False,
 ) -> commands.ExitCode:
-    path_list = get_path_list(
-        frontend_configuration.OpenSource(configuration),
-        str(Path.cwd()),
-        paths,
-    )
+    path_list = CoveragePaths.from_raw_path_arguments(
+        raw_paths=paths,
+        configuration=frontend_configuration.OpenSource(configuration),
+    ).get_paths_for_backend()
     paths_string = ",".join([f"'{path}'" for path in path_list])
     query_text = f"expression_level_coverage({paths_string})"
     return run_query(

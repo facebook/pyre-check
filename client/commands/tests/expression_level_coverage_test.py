@@ -329,65 +329,77 @@ class ExpressionLevelTest(testslide.TestCase):
             "test.py: 71.43% expressions are covered\nOverall: 71.43% expressions are covered",
         )
 
-    def test_get_path_list(self) -> None:
-        def assert_get_path_list(response: Iterable[str], expected: List[str]) -> None:
-            with tempfile.TemporaryDirectory() as root:
-                root_path = Path(root).resolve()
-                setup.ensure_directories_exists(
-                    root_path, [".pyre", "allows", "blocks", "search", "local/src"]
-                )
-                setup.write_configuration_file(
-                    root_path,
-                    {
-                        "only_check_paths": ["allows", "nonexistent"],
-                        "ignore_all_errors": ["blocks", "nonexistent"],
-                        "exclude": ["exclude"],
-                        "extensions": [".ext", "invalid_extension"],
-                        "workers": 42,
-                        "search_path": ["search", "nonexistent"],
-                        "strict": True,
-                    },
-                )
-                setup.write_configuration_file(
-                    root_path, {"source_directories": ["src"]}, relative="local"
-                )
+    def test_CoveragePaths(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            global_root = Path(root).resolve()
+            setup.ensure_directories_exists(
+                global_root, [".pyre", "allows", "blocks", "search", "local/src"]
+            )
+            setup.write_configuration_file(
+                global_root,
+                {
+                    "only_check_paths": ["allows", "nonexistent"],
+                    "ignore_all_errors": ["blocks", "nonexistent"],
+                    "exclude": ["exclude"],
+                    "extensions": [".ext", "invalid_extension"],
+                    "workers": 42,
+                    "search_path": ["search", "nonexistent"],
+                    "strict": True,
+                },
+            )
+            setup.write_configuration_file(
+                global_root, {"source_directories": ["src"]}, relative="local"
+            )
 
-                temp_configuration = configuration.create_configuration(
+            temp_configuration: configuration.Configuration = (
+                configuration.create_configuration(
                     command_arguments.CommandArguments(
                         local_configuration="local",
-                        dot_pyre_directory=root_path / ".pyre",
+                        dot_pyre_directory=global_root / ".pyre",
                     ),
-                    root_path,
+                    global_root,
                 )
+            )
+            local_root = global_root / "local"
+            with setup.switch_working_directory(local_root):
 
-                self.assertEqual(
-                    expression_level_coverage.get_path_list(
-                        frontend_configuration.OpenSource(temp_configuration),
-                        "/fake/path",
-                        response,
-                    ),
-                    expected,
+                def assert_backend_paths(
+                    raw_paths: Iterable[str],
+                    expected: List[str],
+                ) -> None:
+                    self.assertEqual(
+                        sorted(
+                            expression_level_coverage.CoveragePaths.from_raw_path_arguments(
+                                raw_paths=raw_paths,
+                                configuration=frontend_configuration.OpenSource(
+                                    temp_configuration
+                                ),
+                            ).get_paths_for_backend()
+                        ),
+                        sorted(expected),
+                    )
+
+                assert_backend_paths(
+                    raw_paths=[],
+                    expected=[],
                 )
-
-        assert_get_path_list([], [])
-        assert_get_path_list(["test.py"], ["/fake/path/test.py"])
-        assert_get_path_list(["@arguments.txt"], ["@/fake/path/arguments.txt"])
-        assert_get_path_list(
-            ["test.py", "@arguments.txt"],
-            ["/fake/path/test.py", "@/fake/path/arguments.txt"],
-        )
-        assert_get_path_list(["../other_path/test.py"], ["/fake/other_path/test.py"])
-        assert_get_path_list(
-            ["@../other_path/arguments.txt"],
-            ["@/fake/path/../other_path/arguments.txt"],
-        )
-        assert_get_path_list(
-            ["../other_path/test.py", "@../other_path/arguments.txt"],
-            [
-                "/fake/other_path/test.py",
-                "@/fake/path/../other_path/arguments.txt",
-            ],
-        )
+                assert_backend_paths(
+                    raw_paths=["@arguments.txt", "@/absolute/arguments.txt"],
+                    expected=[
+                        "@" + str(local_root / "arguments.txt"),
+                        "@/absolute/arguments.txt",
+                    ],
+                )
+                assert_backend_paths(
+                    raw_paths=[
+                        str(local_root / "absolute/filepath.py"),
+                        "relative_filepath.py",
+                    ],
+                    expected=[
+                        str(local_root / "absolute/filepath.py"),
+                        str(local_root / "relative_filepath.py"),
+                    ],
+                )
 
     def test_backend_exception(self) -> None:
         with tempfile.TemporaryDirectory() as root:
