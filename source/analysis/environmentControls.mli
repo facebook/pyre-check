@@ -53,6 +53,7 @@ module TypeCheckControls : sig
     include_readonly_errors: bool;
     include_unawaited_awaitable_errors: bool;
     debug: bool;
+    include_suppressed_errors: bool;
   }
 end
 

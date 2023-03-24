@@ -148,6 +148,7 @@ module Analysis : sig
     constraint_solving_style: constraint_solving_style;
     enable_readonly_analysis: bool;
     enable_unawaited_awaitable_analysis: bool;
+    include_suppressed_errors: bool;
   }
   [@@deriving show]
 
@@ -180,6 +181,7 @@ module Analysis : sig
     ?constraint_solving_style:constraint_solving_style ->
     ?enable_readonly_analysis:bool ->
     ?enable_unawaited_awaitable_analysis:bool ->
+    ?include_suppressed_errors:bool ->
     source_paths:SearchPath.t list ->
     unit ->
     t

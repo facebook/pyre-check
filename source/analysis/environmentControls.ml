@@ -92,6 +92,7 @@ module TypeCheckControls = struct
     include_readonly_errors: bool;
     include_unawaited_awaitable_errors: bool;
     debug: bool;
+    include_suppressed_errors: bool;
   }
 end
 
@@ -105,6 +106,7 @@ let type_check_controls
           constraint_solving_style;
           enable_readonly_analysis;
           enable_unawaited_awaitable_analysis;
+          include_suppressed_errors;
           _;
         };
       _;
@@ -118,4 +120,5 @@ let type_check_controls
       include_local_annotations = store_type_check_resolution;
       include_readonly_errors = enable_readonly_analysis;
       include_unawaited_awaitable_errors = enable_unawaited_awaitable_analysis;
+      include_suppressed_errors;
     }
