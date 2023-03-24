@@ -166,6 +166,7 @@ class BaseArguments:
     enable_unawaited_awaitable_analysis: Optional[bool] = None
     excludes: Sequence[str] = dataclasses.field(default_factory=list)
     extensions: Sequence[str] = dataclasses.field(default_factory=list)
+    include_suppressed_errors: Optional[bool] = None
     relative_local_root: Optional[str] = None
     memory_profiling_output: Optional[Path] = None
     number_of_workers: int = 1
@@ -212,6 +213,11 @@ class BaseArguments:
                 else {}
             ),
             "extensions": self.extensions,
+            **(
+                {"include_suppressed_errors": (self.include_suppressed_errors)}
+                if self.include_suppressed_errors is not None
+                else {}
+            ),
             "log_path": self.log_path,
             "global_root": self.global_root,
             **({} if local_root is None else {"local_root": local_root}),
