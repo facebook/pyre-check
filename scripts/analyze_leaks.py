@@ -160,6 +160,28 @@ class DynamicCallGraphInputFormat(InputFormat):
         return mapped_qualifier
 
 
+class UnionCallGraphFormat(InputFormat):
+    def __init__(self) -> None:
+        self.call_graph: Dict[str, Set[str]] = defaultdict(set)
+
+    def extract_callee(self, callee: JSON) -> str:
+        if not isinstance(callee, str):
+            raise ValueError(
+                f"Expected value for individual callee to be a string, got {type(callee)}: {callee}"
+            )
+        return callee
+
+    def extract_caller(self, qualifier: str) -> str:
+        return qualifier
+
+    def union_call_graph(self, call_graph: Dict[str, Set[str]]) -> None:
+        if self.call_graph:
+            for k, v in call_graph.items():
+                self.call_graph[k] |= v
+        else:
+            self.call_graph = defaultdict(set, call_graph)
+
+
 class InputType(enum.Enum):
     PYSA = PysaCallGraphInputFormat
     PYRE = PyreCallGraphInputFormat
@@ -455,14 +477,8 @@ def analyze() -> None:
 
 
 @analyze.command()
-@click.argument("call_graph_file", type=click.File("r"))
+@click.option("--call-graph-kind-and-path", type=(click.Choice(InputType.members(), case_sensitive=False), click.File("r")), multiple=True, required=True)
 @click.argument("entrypoints_file", type=click.File("r"))
-@click.option(
-    "--call-graph-kind",
-    type=click.Choice(InputType.members(), case_sensitive=False),
-    default="PYRE",
-    help="The format of the call_graph_file, see CALL_GRAPH_FILE for more info.",
-)
 @click.option(
     "--project-path",
     type=str,
@@ -472,32 +488,37 @@ def analyze() -> None:
     Default: current directory.",
 )
 def leaks(
-    call_graph_file: TextIO,
+    call_graph_kind_and_path: Tuple[Tuple[str, TextIO], ...],
     entrypoints_file: TextIO,
-    call_graph_kind: str,
     project_path: str,
 ) -> None:
     """
     Find global leaks for the given entrypoints and their transitive callees.
 
-    The output of this script will be a JSON object containing two keys:
+    The output of this script will be a JSON object containing three keys:
     - `global_leaks`: any global leaks that are returned from `pyre query "global_leaks(...)"` for
         callables checked.
-    - `errors`: any errors that occurred during the analysis, for example, a definition not
+    - `query_errors`: any errors that occurred during pyre's analysis, for example, no qualifier found
+    - `script_errors`: any errors that occurred during the analysis, for example, a definition not
         found for a callable
 
-    CALL_GRAPH_FILE: a file containing either:
-      - a JSON dict mapping caller qualified paths to a list of callee qualified paths (can be
-        return from `pyre analyze --dump-call-graph ...`)
-      - a JSON dict mapping caller qualified paths to a list of callee
-        objects returned from `pyre query "dump_call_graph()"`
+    CALL_GRAPH_KIND_AND_PATH: a tuple of the following form (KIND, PATH) where
+      - KIND is a string specifying the format type of the call graph e.g. pyre/pysa/dynanmic
+      - PATH points to a JSON file which is a dict mapping caller qualified paths to a list of callee qualified paths (e.g. can be
+        return from `pyre analyze --dump-call-graph ...` or `pyre query "dump_call_graph()"`)
     ENTRYPOINTS_FILE: a file containing a JSON list of qualified paths for entrypoints
-    """
-    call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
-    entrypoints_json = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
 
-    input_format_type = InputType[call_graph_kind.upper()].value
-    input_format = input_format_type(call_graph_data)
+    Example usage: ./analyze_leaks.py -- leaks <ENTRYPOINTS_FILE> --call-graph-kind-and-path <KIND1> <CALL_GRAPH_1> --call-graph-kind-and-path <KIND2> <CALL_GRAPH2>
+    """
+    entrypoints_json = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
+    input_format = UnionCallGraphFormat()
+    for call_graph_kind, call_graph_file in call_graph_kind_and_path:
+        call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
+
+        current_input_format_type = InputType[call_graph_kind.upper()].value
+        current_input_format = current_input_format_type(call_graph_data)
+        input_format.union_call_graph(current_input_format.call_graph)
+
 
     entrypoints = Entrypoints(entrypoints_json, input_format.get_keys())
 

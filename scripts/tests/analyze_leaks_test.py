@@ -6,15 +6,18 @@
 
 import unittest
 
-from typing import cast, Dict, List
+from typing import cast, Dict, List, Set
+
+from tools.pyre.scripts.analyze_leaks import UnionCallGraphFormat
+
 from ..analyze_leaks import (
-    LeakAnalysisResult,
-    LeakAnalysisScriptError,
     CallGraph,
     DependencyGraph,
     DynamicCallGraphInputFormat,
     Entrypoints,
     JSON,
+    LeakAnalysisResult,
+    LeakAnalysisScriptError,
     PyreCallGraphInputFormat,
     PysaCallGraphInputFormat,
 )
@@ -116,6 +119,39 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "another.function.with.in_it"
             },
             "incorrectly.formatted_qualifier": {"another.incorrectly.formatted"},
+        }
+        self.assertEqual(result, expected_call_graph)
+
+    def test_union_call_graph(self) -> None:
+        call_graph_from_source_a: Dict[str, Set[str]] = {
+            "parent.function.one": {
+                "child_function.one",
+                "child_function.two",
+            },
+            "child_function.one": {"child_function.two"},
+        }
+        union_call_graph = UnionCallGraphFormat()
+        union_call_graph.union_call_graph(call_graph_from_source_a)
+        result = union_call_graph.call_graph
+        expected_call_graph: Dict[str, Set[str]] = call_graph_from_source_a
+        self.assertEqual(result, expected_call_graph)
+
+        call_graph_from_source_b: Dict[str, Set[str]] = {
+            "parent.function.one": {"child_function.four"},
+            "child_function.two": {"child_function.three"},
+            "child_function.invalidformat-": {"child_function.four"},
+        }
+        union_call_graph.union_call_graph(call_graph_from_source_b)
+        result = union_call_graph.call_graph
+        expected_call_graph = {
+            "parent.function.one": {
+                "child_function.one",
+                "child_function.two",
+                "child_function.four",
+            },
+            "child_function.one": {"child_function.two"},
+            "child_function.two": {"child_function.three"},
+            "child_function.invalidformat-": {"child_function.four"},
         }
         self.assertEqual(result, expected_call_graph)
 
