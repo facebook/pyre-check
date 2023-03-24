@@ -465,11 +465,46 @@ let test_reveal_type context =
     ]
 
 
+let test_include_suppressed_errors context =
+  let assert_type_errors = assert_type_errors ~context ~handle:"test.py" in
+  assert_type_errors
+    {|
+      def expect_int(x: int) -> None: ...
+
+      def main() -> None:
+        # pyre-fixme[9]
+        x: str = 1
+
+        # pyre-fixme[6]
+        expect_int("hello")
+    |}
+    [];
+  assert_type_errors
+    ~include_suppressed_errors:true
+    {|
+      def expect_int(x: int) -> None: ...
+
+      def main() -> None:
+        # pyre-fixme[9]
+        x: str = 1
+
+        # pyre-fixme[6]
+        expect_int("hello")
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`.";
+      "Incompatible parameter type [6]: In call `expect_int`, for 1st positional argument, \
+       expected `int` but got `str`.";
+    ];
+  ()
+
+
 let () =
   "errorMessage"
   >::: [
          "check_show_error_traces" >:: test_show_error_traces;
          "check_concise" >:: test_concise;
          "reveal_types" >:: test_reveal_type;
+         "include_suppressed_errors" >:: test_include_suppressed_errors;
        ]
   |> Test.run

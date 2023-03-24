@@ -143,13 +143,24 @@ let run_on_source
     ~source:({ Source.typecheck_flags; module_path = { ModulePath.qualifier; _ }; _ } as source)
     errors_by_define
   =
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let configuration =
-    TypeEnvironment.ReadOnly.controls environment |> EnvironmentControls.configuration
+  let suppress_errors_based_on_comments
+      ~controls:{ EnvironmentControls.TypeCheckControls.include_suppressed_errors; _ }
+      errors
+    =
+    if include_suppressed_errors then
+      errors
+    else
+      handle_ignores_and_fixmes ~qualifier source errors
   in
-  filter_errors ~configuration ~global_resolution ~typecheck_flags errors_by_define
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let controls = TypeEnvironment.ReadOnly.controls environment in
+  filter_errors
+    ~configuration:(EnvironmentControls.configuration controls)
+    ~global_resolution
+    ~typecheck_flags
+    errors_by_define
   |> add_local_mode_errors ~define:(Source.top_level_define_node source) source
-  |> handle_ignores_and_fixmes ~qualifier source
+  |> suppress_errors_based_on_comments ~controls:(EnvironmentControls.type_check_controls controls)
   |> List.map
        ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution:global_resolution)
   |> List.sort ~compare:Error.compare
