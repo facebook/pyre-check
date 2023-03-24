@@ -120,6 +120,8 @@ module Analysis : sig
 
   val default_enable_unawaited_awaitable_analysis : bool
 
+  val default_include_suppressed_errors : bool
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;

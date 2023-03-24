@@ -39,6 +39,7 @@ module BaseConfiguration = struct
     memory_profiling_output: string option;
     enable_readonly_analysis: bool;
     enable_unawaited_awaitable_analysis: bool;
+    include_suppressed_errors: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -115,6 +116,12 @@ module BaseConfiguration = struct
              "enable_unawaited_awaitable_analysis"
              ~default:Configuration.Analysis.default_enable_unawaited_awaitable_analysis
       in
+      let include_suppressed_errors =
+        json
+        |> bool_member
+             "include_suppressed_errors"
+             ~default:Configuration.Analysis.default_include_suppressed_errors
+      in
       Result.Ok
         {
           source_paths;
@@ -137,6 +144,7 @@ module BaseConfiguration = struct
           memory_profiling_output;
           enable_readonly_analysis;
           enable_unawaited_awaitable_analysis;
+          include_suppressed_errors;
         }
     with
     | Type_error (message, _)

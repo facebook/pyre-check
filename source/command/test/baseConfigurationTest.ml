@@ -40,6 +40,7 @@ let dummy_base_configuration =
     remote_logging = None;
     profiling_output = None;
     memory_profiling_output = None;
+    include_suppressed_errors = false;
   }
 
 
