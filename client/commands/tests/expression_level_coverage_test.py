@@ -333,7 +333,8 @@ class ExpressionLevelTest(testslide.TestCase):
         with tempfile.TemporaryDirectory() as root:
             global_root = Path(root).resolve()
             setup.ensure_directories_exists(
-                global_root, [".pyre", "allows", "blocks", "search", "local/src"]
+                global_root,
+                [".pyre", "allows", "blocks", "search", "local/src/subpackage"],
             )
             setup.write_configuration_file(
                 global_root,
@@ -350,7 +351,10 @@ class ExpressionLevelTest(testslide.TestCase):
             setup.write_configuration_file(
                 global_root, {"source_directories": ["src"]}, relative="local"
             )
-
+            local_root = global_root / "local"
+            Path(local_root / "src/a.py").touch()
+            Path(local_root / "src/b.py").touch()
+            Path(local_root / "src/subpackage/c.py").touch()
             temp_configuration: configuration.Configuration = (
                 configuration.create_configuration(
                     command_arguments.CommandArguments(
@@ -360,7 +364,7 @@ class ExpressionLevelTest(testslide.TestCase):
                     global_root,
                 )
             )
-            local_root = global_root / "local"
+
             with setup.switch_working_directory(local_root):
 
                 def assert_backend_paths(
@@ -381,7 +385,11 @@ class ExpressionLevelTest(testslide.TestCase):
 
                 assert_backend_paths(
                     raw_paths=[],
-                    expected=[],
+                    expected=[
+                        str(local_root / "src/a.py"),
+                        str(local_root / "src/b.py"),
+                        str(local_root / "src/subpackage/c.py"),
+                    ],
                 )
                 assert_backend_paths(
                     raw_paths=["@arguments.txt", "@/absolute/arguments.txt"],
@@ -392,12 +400,20 @@ class ExpressionLevelTest(testslide.TestCase):
                 )
                 assert_backend_paths(
                     raw_paths=[
-                        str(local_root / "absolute/filepath.py"),
-                        "relative_filepath.py",
+                        str(local_root / "src/a.py"),  # absolute path
+                        "src/b.py",  # relative path
                     ],
                     expected=[
-                        str(local_root / "absolute/filepath.py"),
-                        str(local_root / "relative_filepath.py"),
+                        str(local_root / "src/a.py"),
+                        str(local_root / "src/b.py"),
+                    ],
+                )
+                assert_backend_paths(
+                    raw_paths=[
+                        "src/subpackage",  # directory as a path
+                    ],
+                    expected=[
+                        str(local_root / "src/subpackage/c.py"),
                     ],
                 )
 
