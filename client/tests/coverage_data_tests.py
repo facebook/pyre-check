@@ -841,8 +841,7 @@ class ModuleFindingHelpersTest(unittest.TestCase):
         self.assertCountEqual(
             get_paths_to_collect(
                 [Path("/root/foo.py"), Path("/root/bar.py"), Path("/root/foo.py")],
-                local_root=None,
-                global_root=Path("/root"),
+                root=Path("/root"),
             ),
             [Path("/root/foo.py"), Path("/root/bar.py")],
         )
@@ -850,8 +849,7 @@ class ModuleFindingHelpersTest(unittest.TestCase):
         self.assertCountEqual(
             get_paths_to_collect(
                 [Path("/root/foo"), Path("/root/bar"), Path("/root/foo")],
-                local_root=None,
-                global_root=Path("/root"),
+                root=Path("/root"),
             ),
             [Path("/root/foo"), Path("/root/bar")],
         )
@@ -863,8 +861,7 @@ class ModuleFindingHelpersTest(unittest.TestCase):
                 self.assertCountEqual(
                     get_paths_to_collect(
                         [Path("foo.py"), Path("bar.py")],
-                        local_root=None,
-                        global_root=root_path,
+                        root=root_path,
                     ),
                     [root_path / "foo.py", root_path / "bar.py"],
                 )
@@ -877,8 +874,7 @@ class ModuleFindingHelpersTest(unittest.TestCase):
                 self.assertCountEqual(
                     get_paths_to_collect(
                         [Path("project_root/subdirectory")],
-                        local_root=None,
-                        global_root=root_path / "project_root",
+                        root=root_path / "project_root",
                     ),
                     [root_path / "project_root/subdirectory"],
                 )
@@ -888,8 +884,7 @@ class ModuleFindingHelpersTest(unittest.TestCase):
                     ".* is not nested under the project .*",
                     get_paths_to_collect,
                     [Path("subdirectory")],
-                    local_root=None,
-                    global_root=root_path / "project_root",
+                    root=root_path / "project_root",
                 )
                 # ./subdirectory isn't part of ./local_root
                 self.assertRaisesRegex(
@@ -897,32 +892,17 @@ class ModuleFindingHelpersTest(unittest.TestCase):
                     ".* is not nested under the project .*",
                     get_paths_to_collect,
                     [Path("subdirectory")],
-                    local_root=root_path / "local_root",
-                    global_root=root_path,
+                    root=root_path / "local_root",
                 )
 
-    def test_get_paths_to_collect__local_root(self) -> None:
+    def test_get_paths_to_collect__no_explicit_paths(self) -> None:
         self.assertCountEqual(
             get_paths_to_collect(
                 None,
-                local_root=Path("/root/local"),
-                global_root=Path("/root"),
+                root=Path("/root/local"),
             ),
             [Path("/root/local")],
         )
-
-    def test_get_paths_to_collect__global_root(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
-            with setup.switch_working_directory(root_path):
-                self.assertCountEqual(
-                    get_paths_to_collect(
-                        None,
-                        local_root=None,
-                        global_root=Path("/root"),
-                    ),
-                    [Path("/root")],
-                )
 
     def test_find_module_paths__basic(self) -> None:
         with tempfile.TemporaryDirectory() as root:

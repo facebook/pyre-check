@@ -69,13 +69,13 @@ def collect_all_statistics(
     configuration: frontend_configuration.Base,
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> Dict[str, StatisticsData]:
-    local_root = configuration.get_local_root()
     return collect_statistics(
         coverage_data.find_module_paths(
             coverage_data.get_paths_to_collect(
                 statistics_arguments.paths,
-                local_root=Path(local_root) if local_root is not None else None,
-                global_root=Path(configuration.get_global_root()),
+                root=(
+                    configuration.get_local_root() or configuration.get_global_root()
+                ),
             ),
             excludes=configuration.get_excludes(),
         ),

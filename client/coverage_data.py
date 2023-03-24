@@ -491,8 +491,7 @@ def module_from_path(path: Path) -> Optional[cst.MetadataWrapper]:
 
 def get_paths_to_collect(
     paths: Optional[Sequence[Path]],
-    local_root: Optional[Path],
-    global_root: Path,
+    root: Path,
 ) -> Iterable[Path]:
     """
     If `paths` is None, return the project root in a singleton list.
@@ -501,7 +500,6 @@ def get_paths_to_collect(
     of the project, and return a deduplicated list of these paths (which
     can be either directory or file paths).
     """
-    root = local_root or global_root
     if paths is None:
         return [root]
     else:

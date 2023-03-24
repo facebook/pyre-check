@@ -140,8 +140,9 @@ class CoveragePaths:
         else:
             unexpanded_module_paths = coverage_data.get_paths_to_collect(
                 paths=None if len(explicit_paths) == 0 else explicit_paths,
-                local_root=configuration.get_local_root(),
-                global_root=configuration.get_global_root(),
+                root=(
+                    configuration.get_local_root() or configuration.get_global_root()
+                ),
             )
             module_paths = coverage_data.find_module_paths(
                 paths=unexpanded_module_paths,
