@@ -115,10 +115,11 @@ let incompatible_annotation_with_attribute_error ~define ~explicit ~original_ann
 
    We check this by stripping any `ReadOnly` types in both and checking if they are compatible. *)
 let is_readonlyness_mismatch ~global_resolution ~actual ~expected =
-  GlobalResolution.less_or_equal
-    global_resolution
-    ~left:(Type.ReadOnly.strip_readonly actual)
-    ~right:(Type.ReadOnly.strip_readonly expected)
+  (Type.ReadOnly.contains_readonly actual || Type.ReadOnly.contains_readonly expected)
+  && GlobalResolution.less_or_equal
+       global_resolution
+       ~left:(Type.ReadOnly.strip_readonly actual)
+       ~right:(Type.ReadOnly.strip_readonly expected)
 
 
 let errors_from_not_found

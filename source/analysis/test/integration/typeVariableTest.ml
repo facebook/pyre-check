@@ -431,6 +431,22 @@ let test_check_unbounded_variables context =
         x: ContextVar[Optional[int]] = ContextVar[Optional[int]]("var1", default=None)
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import Sequence, Callable, TypeVar
+
+      T = TypeVar("T")
+
+      def expect_two_generic_parameters(f: Callable[[T], bool], array: Sequence[T]) -> None: ...
+
+      def main(f: Callable[[T], bool]) -> None:
+        expect_two_generic_parameters(f, [1, 2])
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_two_generic_parameters`, for 1st \
+       positional argument, expected `typing.Callable[[Variable[T]], bool]` but got \
+       `typing.Callable[[Variable[T]], bool]`.";
+    ];
   ()
 
 
