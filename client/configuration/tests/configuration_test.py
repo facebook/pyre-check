@@ -65,6 +65,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 number_of_workers=43,
                 use_buck2=True,
                 enable_unawaited_awaitable_analysis=True,
+                include_suppressed_errors=True,
             )
         )
         self.assertEqual(configuration.binary, "binary")
@@ -94,7 +95,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.use_buck2, True)
         self.assertEqual(configuration.enable_readonly_analysis, None)
         self.assertEqual(configuration.enable_unawaited_awaitable_analysis, True)
-        self.assertEqual(configuration.include_suppressed_errors, None)
+        self.assertEqual(configuration.include_suppressed_errors, True)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(

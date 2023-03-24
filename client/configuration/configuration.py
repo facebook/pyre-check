@@ -206,6 +206,7 @@ class PartialConfiguration:
             excludes=arguments.exclude,
             extensions=[],
             ignore_all_errors=[],
+            include_suppressed_errors=arguments.include_suppressed_errors,
             isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
             number_of_workers=arguments.number_of_workers,

@@ -99,6 +99,7 @@ class CommandArguments:
     use_buck2: Optional[bool] = None
     configuration_path: Optional[str] = None
     enable_unawaited_awaitable_analysis: Optional[bool] = None
+    include_suppressed_errors: Optional[bool] = None
 
 
 @dataclass(frozen=True)
