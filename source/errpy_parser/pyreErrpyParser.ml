@@ -48,6 +48,13 @@ let _translate_binary_operator = function
   | Errpyast.FloorDiv -> "floordiv"
 
 
+let translate_unary_operator = function
+  | Errpyast.Invert -> UnaryOperator.Invert
+  | Errpyast.Not -> UnaryOperator.Not
+  | Errpyast.UAdd -> UnaryOperator.Positive
+  | Errpyast.USub -> UnaryOperator.Negative
+
+
 let _translate_boolop = function
   | Errpyast.And -> BooleanOperator.And
   | Errpyast.Or -> BooleanOperator.Or
@@ -78,9 +85,42 @@ let rec translate_expression (expression : Errpyast.expr) =
         match expression_desc with
         | Errpyast.BinOp _binop -> failwith "not implemented yet"
         | Errpyast.Name name -> Expression.Name (Name.Identifier name.id)
-        | Errpyast.UnaryOp _unaryop -> failwith "not implemented yet"
-        | Errpyast.Attribute _attribute -> failwith "not implemented yet"
-        | Errpyast.Constant _constant -> failwith "not implemented yet"
+        | Errpyast.UnaryOp unaryop -> (
+            let operand = translate_expression unaryop.operand in
+            let operator = translate_unary_operator unaryop.op in
+            match operator, operand with
+            | ( UnaryOperator.Positive,
+                { Node.value = Expression.Constant (Constant.Integer literal); _ } ) ->
+                Expression.Constant (Constant.Integer literal)
+            | ( UnaryOperator.Negative,
+                { Node.value = Expression.Constant (Constant.Integer literal); _ } ) ->
+                Expression.Constant (Constant.Integer (-literal))
+            | _ -> Expression.UnaryOperator { UnaryOperator.operator; operand })
+        | Errpyast.Attribute attribute ->
+            let base = translate_expression attribute.value in
+            Expression.Name (Name.Attribute { base; attribute = attribute.attr; special = false })
+        | Errpyast.Constant constant ->
+            let const =
+              match constant.value with
+              | None -> Constant.NoneLiteral
+              | Some constant_desc -> (
+                  match constant_desc with
+                  | Errpyast.Ellipsis -> Constant.Ellipsis
+                  | Errpyast.Bool bool -> if bool then Constant.True else Constant.False
+                  | Errpyast.Str value ->
+                      let open List in
+                      let split_value = String.split ~on:'\'' value in
+                      let just_string = nth_exn split_value (length split_value - 2) in
+                      let is_bytes = String.contains (nth_exn split_value 0) 'b' in
+                      Constant.String (StringLiteral.create ~bytes:is_bytes just_string)
+                  | Errpyast.Num num -> (
+                      match num with
+                      | Int int -> Constant.Integer int
+                      | Float float -> Constant.Float float
+                      | Complex complex -> Constant.Complex complex
+                      | Big_int bitint -> Constant.BigInteger bitint))
+            in
+            Expression.Constant const
         | Errpyast.Await _expr -> failwith "not implemented yet"
         | Errpyast.YieldFrom _expr -> failwith "not implemented yet"
         | Errpyast.Yield _maybe_expr -> failwith "not implemented yet"
