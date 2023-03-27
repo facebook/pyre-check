@@ -378,7 +378,7 @@ and convert_keyword_argument (kw_argument : Errpyast.keyword) =
 
 and translate_statements
     (statements : Errpyast.stmt list)
-    ~context:({ StatementContext.parent = _parent; _ } as _context)
+    ~context:({ StatementContext.parent = _parent; _ } as context)
   =
   let translate_statement (statement : Errpyast.stmt) =
     let statement_desc = statement.desc in
@@ -437,10 +437,46 @@ and translate_statements
                 from = Some (Node.create ~location:new_location from);
               };
           ]
-      | Errpyast.For _for_statement -> failwith "not implemented yet"
-      | Errpyast.AsyncFor _for_statement -> failwith "not implemented yet"
-      | Errpyast.While _while_statement -> failwith "not implemented yet"
-      | Errpyast.If _if_statement -> failwith "not implemented yet"
+      | Errpyast.For for_statement ->
+          [
+            Statement.For
+              {
+                For.target = translate_expression for_statement.target;
+                iterator = translate_expression for_statement.iter;
+                body = translate_statements for_statement.body ~context;
+                orelse = translate_statements for_statement.orelse ~context;
+                async = false;
+              };
+          ]
+      | Errpyast.AsyncFor for_statement ->
+          [
+            Statement.For
+              {
+                For.target = translate_expression for_statement.target;
+                iterator = translate_expression for_statement.iter;
+                body = translate_statements for_statement.body ~context;
+                orelse = translate_statements for_statement.orelse ~context;
+                async = true;
+              };
+          ]
+      | Errpyast.While while_statement ->
+          [
+            Statement.While
+              {
+                While.test = translate_expression while_statement.test;
+                body = translate_statements while_statement.body ~context;
+                orelse = translate_statements while_statement.orelse ~context;
+              };
+          ]
+      | Errpyast.If if_statement ->
+          [
+            Statement.If
+              {
+                If.test = translate_expression if_statement.test;
+                body = translate_statements if_statement.body ~context;
+                orelse = translate_statements if_statement.orelse ~context;
+              };
+          ]
       | Errpyast.Try _try_statement -> failwith "not implemented yet"
       | Errpyast.With _with_statement -> failwith "not implemented yet"
       | Errpyast.AsyncWith _with_statement -> failwith "not implemented yet"
