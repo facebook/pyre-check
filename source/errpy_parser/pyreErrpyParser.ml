@@ -841,17 +841,46 @@ let translate_module errpy_module =
   | _ -> []
 
 
+module SyntaxError = struct
+  type t = {
+    line: int;
+    column: int;
+    end_line: int;
+    end_column: int;
+    message: string;
+  }
+end
+
+module ParserError = struct
+  type t =
+    | Recoverable of {
+        recovered_ast: Ast.Statement.t list;
+        errors: SyntaxError.t list;
+      }
+    | Unrecoverable of string
+end
+
 let parse_module text =
   let open Result in
-  let format_recoverable_errors recoverable_errors =
-    recoverable_errors
-    |> List.map ~f:Errpyast.show_recoverableerrorwithlocation
-    |> String.concat ~sep:", "
-    |> Format.asprintf "[%s]"
+  let make_syntax_error (recoverable_error : Errpyast.recoverableerrorwithlocation) =
+    {
+      SyntaxError.message = recoverable_error.error;
+      line = recoverable_error.lineno;
+      column = recoverable_error.col_offset;
+      end_line = recoverable_error.end_lineno;
+      end_column = recoverable_error.end_col_offset;
+    }
   in
   match Errpyparser.parse_module text with
   | Ok (module_, recoverable_errors) -> (
+      let (transformed_ast : Ast.Statement.t list) = translate_module module_ in
       match recoverable_errors with
-      | [] -> Ok (translate_module module_)
-      | _syntax_errors -> Result.Error (format_recoverable_errors recoverable_errors))
-  | Error error -> Result.Error error
+      | [] -> Ok transformed_ast
+      | recoverable_errors ->
+          Result.Error
+            (ParserError.Recoverable
+               {
+                 recovered_ast = transformed_ast;
+                 errors = List.map ~f:make_syntax_error recoverable_errors;
+               }))
+  | Error error_string -> Result.Error (ParserError.Unrecoverable error_string)

@@ -21,16 +21,21 @@ let statements_print_to_sexp statements =
 
 
 let assert_parsed ~expected text =
+  let check_ast (actual_ast : Ast.Statement.t list) =
+    assert_equal
+      ~cmp:statements_location_insensitive_equal
+      ~printer:statements_print_to_sexp
+      expected
+      actual_ast
+  in
   match PyreErrpyParser.parse_module text with
-  | Result.Error message ->
-      let message = Format.sprintf "Unexpected parsing failure: %s" message in
-      assert_failure message
-  | Result.Ok actual ->
-      assert_equal
-        ~cmp:statements_location_insensitive_equal
-        ~printer:statements_print_to_sexp
-        expected
-        actual
+  | Result.Error error -> (
+      match error with
+      | Recoverable recoverable -> check_ast recoverable.recovered_ast
+      | Unrecoverable message ->
+          let message = Format.sprintf "Unexpected parsing failure: %s" message in
+          assert_failure message)
+  | Result.Ok actual_ast -> check_ast actual_ast
 
 
 let assert_not_parsed text =
@@ -38,7 +43,12 @@ let assert_not_parsed text =
   | Result.Ok _ ->
       let message = Format.asprintf "Unexpected parsing success of input: %s" text in
       assert_failure message
-  | Result.Error _ -> ()
+  | Result.Error error -> (
+      match error with
+      | Recoverable _ -> ()
+      | Unrecoverable message ->
+          let message = Format.sprintf "Unexpected errpy stacktrace thrown: %s" message in
+          assert_failure message)
 
 
 let test_pass_break_continue _ =

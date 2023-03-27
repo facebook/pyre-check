@@ -18,29 +18,34 @@ let expression_print_to_sexp expression = Sexp.to_string_hum (Expression.sexp_of
 
 let assert_parsed ~expected text =
   let open Ast.Statement in
+  let check_ast (actual_ast : Ast.Statement.t list) =
+    match List.hd actual_ast with
+    | Some first_statement -> (
+        match first_statement.value with
+        | Statement.Expression as_first_expression ->
+            assert_equal
+              ~cmp:expression_location_insensitive_equal
+              ~printer:expression_print_to_sexp
+              expected
+              as_first_expression
+        | _ ->
+            let message =
+              Format.asprintf
+                "expected expression to be parsed but got: %a"
+                Sexp.pp_hum
+                (Statement.sexp_of_t first_statement)
+            in
+            assert_failure message)
+    | None -> assert_failure "expected parse result"
+  in
   match PyreErrpyParser.parse_module text with
-  | Result.Error message ->
-      let message = Format.sprintf "Unexpected parsing failure: %s" message in
-      assert_failure message
-  | Result.Ok actual -> (
-      match List.hd actual with
-      | Some first_statement -> (
-          match first_statement.value with
-          | Statement.Expression as_first_expression ->
-              assert_equal
-                ~cmp:expression_location_insensitive_equal
-                ~printer:expression_print_to_sexp
-                expected
-                as_first_expression
-          | _ ->
-              let message =
-                Format.asprintf
-                  "expected expression to be parsed but got: %a"
-                  Sexp.pp_hum
-                  (Statement.sexp_of_t first_statement)
-              in
-              assert_failure message)
-      | None -> assert_failure "expected parse result")
+  | Result.Error error -> (
+      match error with
+      | Recoverable recoverable -> check_ast recoverable.recovered_ast
+      | Unrecoverable message ->
+          let message = Format.sprintf "Unexpected parsing failure: %s" message in
+          assert_failure message)
+  | Result.Ok actual_ast -> check_ast actual_ast
 
 
 let assert_not_parsed text =
@@ -48,7 +53,12 @@ let assert_not_parsed text =
   | Result.Ok _ ->
       let message = Format.asprintf "Unexpected parsing success of input: %s" text in
       assert_failure message
-  | Result.Error _ -> ()
+  | Result.Error error -> (
+      match error with
+      | Recoverable _ -> ()
+      | Unrecoverable message ->
+          let message = Format.sprintf "Unexpected errpy stacktrace thrown: %s" message in
+          assert_failure message)
 
 
 let test_name _ =
