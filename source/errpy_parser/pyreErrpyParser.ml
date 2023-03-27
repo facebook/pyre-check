@@ -377,8 +377,13 @@ and translate_statements
     in
     let as_ast_statement =
       match statement_desc with
-      | Errpyast.Return _expression -> failwith "not implemented yet"
-      | Errpyast.Raise _raise -> failwith "not implemented yet"
+      | Errpyast.Return expression ->
+          let value = Option.map expression ~f:translate_expression in
+          [Statement.Return { Return.expression = value; is_implicit = false }]
+      | Errpyast.Raise raise ->
+          let exc = Option.map raise.exc ~f:translate_expression in
+          let cause = Option.map raise.cause ~f:translate_expression in
+          [Statement.Raise { Raise.expression = exc; from = cause }]
       | Errpyast.Assert _assert_statement -> failwith "not implemented yet"
       | Errpyast.Import _aliases -> failwith "not implemented yet"
       | Errpyast.ImportFrom _import_from -> failwith "not implemented yet"
