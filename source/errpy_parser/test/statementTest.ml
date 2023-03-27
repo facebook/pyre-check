@@ -8,6 +8,7 @@
 open Base
 open OUnit2
 open Test
+open Ast
 open Ast.Expression
 open Ast.Statement
 
@@ -153,6 +154,174 @@ let test_assert_delete _ =
   ()
 
 
+let test_import _ =
+  let assert_parsed = assert_parsed in
+  let assert_not_parsed = assert_not_parsed in
+  assert_parsed
+    "import a"
+    ~expected:
+      [+Statement.Import { Import.from = None; imports = [+{ Import.name = !&"a"; alias = None }] }];
+  assert_parsed
+    "import a.b"
+    ~expected:
+      [
+        +Statement.Import
+           { Import.from = None; imports = [+{ Import.name = !&"a.b"; alias = None }] };
+      ];
+  assert_parsed
+    "import a as b"
+    ~expected:
+      [
+        +Statement.Import
+           { Import.from = None; imports = [+{ Import.name = !&"a"; alias = Some "b" }] };
+      ];
+  assert_parsed
+    "import a as b, c, d as e"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = None;
+             imports =
+               [
+                 +{ Import.name = !&"a"; alias = Some "b" };
+                 +{ Import.name = !&"c"; alias = None };
+                 +{ Import.name = !&"d"; alias = Some "e" };
+               ];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from a import b"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&"a");
+             imports = [+{ Import.name = !&"b"; alias = None }];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from a import *"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&"a");
+             imports = [+{ Import.name = !&"*"; alias = None }];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from . import b"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&".");
+             imports = [+{ Import.name = !&"b"; alias = None }];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from ...foo import b"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&"...foo");
+             imports = [+{ Import.name = !&"b"; alias = None }];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from .....foo import b"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&".....foo");
+             imports = [+{ Import.name = !&"b"; alias = None }];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from .a import b"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&".a");
+             imports = [+{ Import.name = !&"b"; alias = None }];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from ..a import b"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&"..a");
+             imports = [+{ Import.name = !&"b"; alias = None }];
+           };
+      ];
+  assert_parsed
+    "from a import (b, c)"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&"a");
+             imports =
+               [+{ Import.name = !&"b"; alias = None }; +{ Import.name = !&"c"; alias = None }];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from a.b import c"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&"a.b");
+             imports = [+{ Import.name = !&"c"; alias = None }];
+           };
+      ];
+  (*FIXME (T148694587): For tests of the form: `from ... import ...` test for actual locations,
+    don't just use create_with_default_location *)
+  assert_parsed
+    "from f import a as b, c, d as e"
+    ~expected:
+      [
+        +Statement.Import
+           {
+             Import.from = Some (Node.create_with_default_location !&"f");
+             imports =
+               [
+                 +{ Import.name = !&"a"; alias = Some "b" };
+                 +{ Import.name = !&"c"; alias = None };
+                 +{ Import.name = !&"d"; alias = Some "e" };
+               ];
+           };
+      ];
+
+  assert_not_parsed "import";
+  assert_not_parsed "import .";
+  assert_not_parsed "import a.async";
+  assert_not_parsed "from import foo";
+  ()
+
+
 let () =
   "parse_statements"
   >::: [
@@ -160,7 +329,7 @@ let () =
          "global_nonlocal" >:: test_global_nonlocal;
          "expression_return_raise" >:: test_expression_return_raise;
          "assert_delete" >:: test_assert_delete;
-         (*"import" >:: test_import;*)
+         "import" >:: test_import;
          (*"for_while_if" >:: test_for_while_if;*)
          (*"try" >:: test_try;*)
          (*"with" >:: test_with;*)

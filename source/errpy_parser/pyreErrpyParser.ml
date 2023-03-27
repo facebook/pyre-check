@@ -67,6 +67,21 @@ module StatementContext = struct
   }
 end
 
+let translate_alias (alias : Errpyast.alias) =
+  let open Ast in
+  let location =
+    let end_lineno = Option.value alias.end_lineno ~default:alias.lineno in
+    let end_col_offset = Option.value alias.end_col_offset ~default:alias.col_offset in
+    {
+      start = { line = alias.lineno; column = alias.col_offset };
+      stop = { line = end_lineno; column = end_col_offset };
+    }
+  in
+  Node.create
+    ~location
+    { Statement.Import.name = Reference.create alias.name; alias = alias.asname }
+
+
 let rec translate_expression (expression : Errpyast.expr) =
   let translate_comprehension (comprehension : Errpyast.comprehension) =
     {
@@ -394,8 +409,34 @@ and translate_statements
                 origin = Assert.Origin.Assertion;
               };
           ]
-      | Errpyast.Import _aliases -> failwith "not implemented yet"
-      | Errpyast.ImportFrom _import_from -> failwith "not implemented yet"
+      | Errpyast.Import aliases ->
+          [Statement.Import { Import.imports = List.map aliases ~f:translate_alias; from = None }]
+      | Errpyast.ImportFrom import_from ->
+          let dots =
+            List.init (Option.value import_from.level ~default:0) ~f:(fun _ -> ".")
+            |> String.concat ~sep:""
+          in
+          let from_module_name = Option.value import_from.module_ ~default:"" in
+          let from_text = Caml.Format.sprintf "%s%s" dots from_module_name in
+          let from = from_text |> Ast.Reference.create in
+          let new_location =
+            (* Add 5 characters for 'from ' *)
+            {
+              start = { line = location.start.line; column = location.start.column + 5 };
+              stop =
+                {
+                  line = location.stop.line;
+                  column = location.stop.column + 5 + String.length from_text;
+                };
+            }
+          in
+          [
+            Statement.Import
+              {
+                Import.imports = List.map import_from.names ~f:translate_alias;
+                from = Some (Node.create ~location:new_location from);
+              };
+          ]
       | Errpyast.For _for_statement -> failwith "not implemented yet"
       | Errpyast.AsyncFor _for_statement -> failwith "not implemented yet"
       | Errpyast.While _while_statement -> failwith "not implemented yet"
