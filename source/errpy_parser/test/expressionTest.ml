@@ -756,6 +756,62 @@ let test_comprehensions _ =
   ()
 
 
+let test_starred _ =
+  let assert_parsed = assert_parsed in
+  let assert_not_parsed = assert_not_parsed in
+
+  assert_parsed "( *a, )" ~expected:(+Expression.Tuple [+Expression.Starred (Starred.Once !"a")]);
+  assert_parsed
+    "(a, *b)"
+    ~expected:(+Expression.Tuple [!"a"; +Expression.Starred (Starred.Once !"b")]);
+  assert_parsed
+    "( *a, b )"
+    ~expected:(+Expression.Tuple [+Expression.Starred (Starred.Once !"a"); !"b"]);
+  assert_parsed
+    "( *a, *b )"
+    ~expected:
+      (+Expression.Tuple
+          [+Expression.Starred (Starred.Once !"a"); +Expression.Starred (Starred.Once !"b")]);
+
+  assert_parsed "[*a]" ~expected:(+Expression.List [+Expression.Starred (Starred.Once !"a")]);
+  assert_parsed "[*a,]" ~expected:(+Expression.List [+Expression.Starred (Starred.Once !"a")]);
+  assert_parsed
+    "[*a, b]"
+    ~expected:(+Expression.List [+Expression.Starred (Starred.Once !"a"); !"b"]);
+  assert_parsed
+    "[a, *b]"
+    ~expected:(+Expression.List [!"a"; +Expression.Starred (Starred.Once !"b")]);
+  assert_parsed
+    "[*a, *b]"
+    ~expected:
+      (+Expression.List
+          [+Expression.Starred (Starred.Once !"a"); +Expression.Starred (Starred.Once !"b")]);
+
+  assert_parsed "{*a}" ~expected:(+Expression.Set [+Expression.Starred (Starred.Once !"a")]);
+  assert_parsed "{*a,}" ~expected:(+Expression.Set [+Expression.Starred (Starred.Once !"a")]);
+  assert_parsed
+    "{*a, b}"
+    ~expected:(+Expression.Set [+Expression.Starred (Starred.Once !"a"); !"b"]);
+  assert_parsed
+    "{a, *b}"
+    ~expected:(+Expression.Set [!"a"; +Expression.Starred (Starred.Once !"b")]);
+  assert_parsed
+    "{*a, *b}"
+    ~expected:
+      (+Expression.Set
+          [+Expression.Starred (Starred.Once !"a"); +Expression.Starred (Starred.Once !"b")]);
+
+  (* Star expressions cannot appear out-of-context. *)
+  assert_not_parsed "*x";
+  assert_not_parsed "**x";
+  assert_not_parsed "*(x)";
+  assert_not_parsed "*[x]";
+  (*TODO: FIX In ERRPY: assert_not_parsed "( *x )";*)
+  assert_not_parsed "( **x )";
+  assert_not_parsed "[**x]";
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -767,9 +823,9 @@ let () =
          "await_yield" >:: test_await_yield;
          "container_literals" >:: test_container_literals;
          "comprehensions" >:: test_comprehensions;
+         "starred" >:: test_starred;
          (*"fstring" >:: test_fstring;*)
          (*"ternary_walrus" >:: test_ternary_walrus;*)
-         (*"starred" >:: test_starred;*)
          (*"comparison_operators" >:: test_comparison_operators;*)
          (*"binary_operators" >:: test_binary_operators;*)
          (*"test_call" >:: test_call;*)

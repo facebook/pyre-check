@@ -178,7 +178,8 @@ let rec translate_expression (expression : Errpyast.expr) =
             Expression.Dictionary { Dictionary.entries; keywords }
         | Errpyast.IfExp _ifexp -> failwith "not implemented yet"
         | Errpyast.NamedExpr _walrus -> failwith "not implemented yet"
-        | Errpyast.Starred _starred -> failwith "not implemented yet"
+        | Errpyast.Starred starred ->
+            Expression.Starred (Starred.Once (translate_expression starred.value))
         | Errpyast.Call _call -> failwith "not implemented yet"
         | Errpyast.Subscript _subscript -> failwith "not implemented yet"
         | Errpyast.Slice _slice -> failwith "not implemented yet"
