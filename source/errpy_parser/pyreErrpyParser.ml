@@ -82,6 +82,45 @@ let translate_alias (alias : Errpyast.alias) =
     { Statement.Import.name = Reference.create alias.name; alias = alias.asname }
 
 
+let create_assign ~location ~target ~annotation ~value () =
+  let value =
+    (* TODO(T101298692): Make `value` optional in assign statement and stop auto-filling `...` *)
+    let location =
+      let open Ast.Location in
+      { location with start = location.stop }
+    in
+    Option.value value ~default:(Expression.Constant Constant.Ellipsis |> Node.create ~location)
+  in
+  match Node.value target with
+  | Expression.Call
+      {
+        callee =
+          {
+            Node.value =
+              Expression.Name
+                (Name.Attribute { Name.Attribute.base; attribute = "__getitem__"; special = true });
+            location = callee_location;
+          };
+        arguments;
+      } ->
+      let setitem =
+        Expression.Call
+          {
+            callee =
+              Expression.Name
+                (Name.Attribute { Name.Attribute.base; attribute = "__setitem__"; special = true })
+              |> Node.create ~location:callee_location;
+            arguments = List.append arguments [{ Call.Argument.name = None; value }];
+          }
+        |> Node.create ~location
+      in
+      Statement.Expression setitem
+  | _ ->
+      (* TODO(T101303314): This does not take into account things like `a[0], b = ...`, where we'll
+         need to turn `a[0]` into `__setitem__` call. *)
+      Statement.Assign { target; annotation; value }
+
+
 let rec translate_expression (expression : Errpyast.expr) =
   let translate_comprehension (comprehension : Errpyast.comprehension) =
     {
@@ -545,9 +584,70 @@ and translate_statements
                 async = true;
               };
           ]
-      | Errpyast.AnnAssign _ann_assign -> failwith "not implemented yet"
-      | Errpyast.AugAssign _aug_assign -> failwith "not implemented yet"
-      | Errpyast.Assign _assign -> failwith "not implemented yet"
+      | Errpyast.AnnAssign ann_assign ->
+          [
+            create_assign
+              ~location
+              ~target:(translate_expression ann_assign.target)
+              ~annotation:(Some (translate_expression ann_assign.annotation))
+              ~value:(Option.map ann_assign.value ~f:translate_expression)
+              ();
+          ]
+      | Errpyast.AugAssign aug_assign ->
+          let target = translate_expression aug_assign.target in
+          let callee =
+            let dunder_name =
+              Caml.Format.sprintf "__i%s__" (translate_binary_operator aug_assign.op)
+            in
+            Expression.Name
+              (Name.Attribute { base = target; attribute = dunder_name; special = true })
+            |> Node.create ~location:(Node.location target)
+          in
+          let value =
+            Expression.Call
+              {
+                callee;
+                arguments =
+                  [{ Call.Argument.name = None; value = translate_expression aug_assign.value }];
+              }
+            |> Node.create ~location
+          in
+          [create_assign ~location ~target ~annotation:None ~value:(Some value) ()]
+      | Errpyast.Assign assign ->
+          let value = translate_expression assign.value in
+
+          (* Eagerly turn chained assignments `a = b = c` into `a = c; b = c`. *)
+          let create_assign_for_target (target : Errpyast.expr) =
+            let target = translate_expression target in
+            let location =
+              let { start; _ } = Node.location target in
+              { location with start }
+            in
+            let annotation =
+              match assign.type_comment, target with
+              | Some comment, { Node.value = Expression.Name _; _ } ->
+                  let annotation =
+                    Expression.Constant (Constant.String (StringLiteral.create comment))
+                  in
+                  let location =
+                    (* Type comments do not have locations attached in CPython. This is just a rough
+                       guess.*)
+                    let open Ast.Location in
+                    let { stop = { line = start_line; column = start_column }; _ } =
+                      Node.location value
+                    in
+                    let { stop; _ } = location in
+                    { start = { line = start_line; column = start_column + 1 }; stop }
+                  in
+                  Some (Node.create ~location annotation)
+              | _ ->
+                  (* TODO (T104971233): Support type comments when the LHS of assign is a
+                     list/tuple. *)
+                  None
+            in
+            create_assign ~location ~target ~annotation ~value:(Some value) ()
+          in
+          List.map assign.targets ~f:create_assign_for_target
       | Errpyast.FunctionDef _function_def -> failwith "not implemented yet"
       | Errpyast.AsyncFunctionDef _async_function_def -> failwith "not implemented yet"
       | Errpyast.Delete targets -> [Statement.Delete (List.map targets ~f:translate_expression)]
