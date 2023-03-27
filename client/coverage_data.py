@@ -21,7 +21,7 @@ from pathlib import Path
 from re import compile
 from typing import Dict, Iterable, List, Optional, Pattern, Sequence
 
-import libcst as cst
+import libcst
 from libcst.metadata import CodeRange, PositionProvider
 from typing_extensions import TypeAlias
 
@@ -33,7 +33,7 @@ LineNumber: TypeAlias = int
 
 @dataclasses.dataclass(frozen=True)
 class AnnotationInfo:
-    node: cst.CSTNode
+    node: libcst.CSTNode
     is_annotated: bool
     code_range: CodeRange
 
@@ -82,7 +82,7 @@ class FunctionAnnotationKind(Enum):
         is_return_annotated: bool,
         annotated_parameter_count: int,
         is_method_or_classmethod: bool,
-        parameters: Sequence[cst.Param],
+        parameters: Sequence[libcst.Param],
     ) -> "FunctionAnnotationKind":
         if is_return_annotated and annotated_parameter_count == len(parameters):
             return FunctionAnnotationKind.FULLY_ANNOTATED
@@ -109,7 +109,7 @@ class FunctionAnnotationKind(Enum):
 
 @dataclasses.dataclass(frozen=True)
 class FunctionAnnotationInfo:
-    node: cst.CSTNode
+    node: libcst.CSTNode
     annotation_kind: FunctionAnnotationKind
     code_range: CodeRange
 
@@ -136,7 +136,7 @@ class FunctionAnnotationInfo:
         return self.annotation_kind == FunctionAnnotationKind.FULLY_ANNOTATED
 
 
-class AnnotationCollector(cst.CSTVisitor):
+class AnnotationCollector(libcst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
     path: str = ""
 
@@ -172,11 +172,11 @@ class AnnotationCollector(cst.CSTVisitor):
     def _is_self_or_cls(self, index: int) -> bool:
         return index == 0 and self._is_method_or_classmethod()
 
-    def _code_range(self, node: cst.CSTNode) -> CodeRange:
+    def _code_range(self, node: libcst.CSTNode) -> CodeRange:
         return self.get_metadata(PositionProvider, node)
 
     def _parameter_annotations(
-        self, parameters: Sequence[cst.Param]
+        self, parameters: Sequence[libcst.Param]
     ) -> Iterable[AnnotationInfo]:
         for index, parameter in enumerate(parameters):
             is_annotated = parameter.annotation is not None or self._is_self_or_cls(
@@ -184,10 +184,10 @@ class AnnotationCollector(cst.CSTVisitor):
             )
             yield AnnotationInfo(parameter, is_annotated, self._code_range(parameter))
 
-    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+    def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
         for decorator in node.decorators:
             decorator_node = decorator.decorator
-            if isinstance(decorator_node, cst.Name):
+            if isinstance(decorator_node, libcst.Name):
                 if decorator_node.value == "staticmethod":
                     self.static_function_definition_depth += 1
                     break
@@ -223,25 +223,25 @@ class AnnotationCollector(cst.CSTVisitor):
             )
         )
 
-    def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
+    def leave_FunctionDef(self, original_node: libcst.FunctionDef) -> None:
         self.function_definition_depth -= 1
         for decorator in original_node.decorators:
             decorator_node = decorator.decorator
-            if isinstance(decorator_node, cst.Name):
+            if isinstance(decorator_node, libcst.Name):
                 if decorator_node.value == "staticmethod":
                     self.static_function_definition_depth -= 1
                     break
 
-    def visit_Assign(self, node: cst.Assign) -> None:
+    def visit_Assign(self, node: libcst.Assign) -> None:
         if self.in_function_definition():
             return
         implicitly_annotated_literal = False
-        if isinstance(node.value, cst.BaseNumber) or isinstance(
-            node.value, cst.BaseString
+        if isinstance(node.value, libcst.BaseNumber) or isinstance(
+            node.value, libcst.BaseString
         ):
             implicitly_annotated_literal = True
         implicitly_annotated_value = False
-        if isinstance(node.value, cst.Name) or isinstance(node.value, cst.Call):
+        if isinstance(node.value, libcst.Name) or isinstance(node.value, libcst.Call):
             # An over-approximation of global values that do not need an explicit
             # annotation. Erring on the side of reporting these as annotated to
             # avoid showing false positives to users.
@@ -254,7 +254,7 @@ class AnnotationCollector(cst.CSTVisitor):
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
             self.globals.append(AnnotationInfo(node, is_annotated, code_range))
 
-    def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
+    def visit_AnnAssign(self, node: libcst.AnnAssign) -> None:
         if self.in_function_definition():
             return
         code_range = self._code_range(node)
@@ -263,13 +263,13 @@ class AnnotationCollector(cst.CSTVisitor):
         else:
             self.globals.append(AnnotationInfo(node, True, code_range))
 
-    def visit_ClassDef(self, node: cst.ClassDef) -> None:
+    def visit_ClassDef(self, node: libcst.ClassDef) -> None:
         self.class_definition_depth += 1
 
-    def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
+    def leave_ClassDef(self, original_node: libcst.ClassDef) -> None:
         self.class_definition_depth -= 1
 
-    def leave_Module(self, original_node: cst.Module) -> None:
+    def leave_Module(self, original_node: libcst.Module) -> None:
         file_range = self.get_metadata(PositionProvider, original_node)
         if original_node.has_trailing_newline:
             self.line_count = file_range.end.line
@@ -279,7 +279,7 @@ class AnnotationCollector(cst.CSTVisitor):
             self.line_count = file_range.end.line - 1
 
 
-class StatisticsCollector(cst.CSTVisitor):
+class StatisticsCollector(libcst.CSTVisitor):
     pass
 
 
@@ -304,7 +304,7 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
 
     def collect(
         self,
-        module: cst.MetadataWrapper,
+        module: libcst.MetadataWrapper,
     ) -> ModuleAnnotationData:
         module.visit(self)
         return ModuleAnnotationData(
@@ -373,7 +373,7 @@ class SuppressionCountCollector(StatisticsCollector):
             LOG.warning("Invalid error suppression code: %s", line)
             return []
 
-    def visit_Comment(self, node: cst.Comment) -> None:
+    def visit_Comment(self, node: libcst.Comment) -> None:
         error_codes = self.error_codes(node.value)
         if error_codes is None:
             return
@@ -389,7 +389,7 @@ class SuppressionCountCollector(StatisticsCollector):
 
     def collect(
         self,
-        module: cst.MetadataWrapper,
+        module: libcst.MetadataWrapper,
     ) -> ModuleSuppressionData:
         module.visit(self)
         return ModuleSuppressionData(code=self.codes, no_code=self.no_code)
@@ -436,7 +436,7 @@ class StrictCountCollector(StatisticsCollector):
     def is_strict_module(self) -> bool:
         return not self.is_unsafe_module()
 
-    def visit_Comment(self, node: cst.Comment) -> None:
+    def visit_Comment(self, node: libcst.Comment) -> None:
         if self.strict_regex.match(node.value):
             self.explicit_strict_comment_line = self.get_metadata(
                 PositionProvider, node
@@ -454,7 +454,7 @@ class StrictCountCollector(StatisticsCollector):
                 PositionProvider, node
             ).start.line
 
-    def leave_Module(self, original_node: cst.Module) -> None:
+    def leave_Module(self, original_node: libcst.Module) -> None:
         if self.is_unsafe_module():
             self.unsafe_count += 1
         else:
@@ -462,7 +462,7 @@ class StrictCountCollector(StatisticsCollector):
 
     def collect(
         self,
-        module: cst.MetadataWrapper,
+        module: libcst.MetadataWrapper,
     ) -> ModuleStrictData:
         module.visit(self)
         return ModuleStrictData(
@@ -473,16 +473,16 @@ class StrictCountCollector(StatisticsCollector):
         )
 
 
-def module_from_code(code: str) -> Optional[cst.MetadataWrapper]:
+def module_from_code(code: str) -> Optional[libcst.MetadataWrapper]:
     try:
-        raw_module = cst.parse_module(code)
-        return cst.MetadataWrapper(raw_module)
-    except cst.ParserSyntaxError:
+        raw_module = libcst.parse_module(code)
+        return libcst.MetadataWrapper(raw_module)
+    except libcst.ParserSyntaxError:
         LOG.exception("Parsing failure")
         return None
 
 
-def module_from_path(path: Path) -> Optional[cst.MetadataWrapper]:
+def module_from_path(path: Path) -> Optional[libcst.MetadataWrapper]:
     try:
         return module_from_code(path.read_text())
     except FileNotFoundError:
