@@ -16,6 +16,7 @@ module Errpyast = Errpy.Ast
 module Errpyparser = Errpy.Parser
 open Ast.Expression
 open Ast.Location
+open Ast.Statement
 module Node = Ast.Node
 
 let _translate_comparison_operator = function
@@ -59,7 +60,7 @@ module StatementContext = struct
   }
 end
 
-let _translate_expression (expression : Errpyast.expr) =
+let rec translate_expression (expression : Errpyast.expr) =
   let expression_desc = expression.desc in
   let location =
     let end_lineno = Option.value expression.end_lineno ~default:expression.lineno in
@@ -76,7 +77,7 @@ let _translate_expression (expression : Errpyast.expr) =
       let as_ast_expression =
         match expression_desc with
         | Errpyast.BinOp _binop -> failwith "not implemented yet"
-        | Errpyast.Name _name -> failwith "not implemented yet"
+        | Errpyast.Name name -> Expression.Name (Name.Identifier name.id)
         | Errpyast.UnaryOp _unaryop -> failwith "not implemented yet"
         | Errpyast.Attribute _attribute -> failwith "not implemented yet"
         | Errpyast.Constant _constant -> failwith "not implemented yet"
@@ -144,7 +145,7 @@ and translate_statements
       | Errpyast.Pass -> failwith "not implemented yet"
       | Errpyast.Break -> failwith "not implemented yet"
       | Errpyast.Continue -> failwith "not implemented yet"
-      | Errpyast.Expr _expression -> failwith "not implemented yet"
+      | Errpyast.Expr expression -> [Statement.Expression (translate_expression expression)]
       | Errpyast.ClassDef _class_def -> failwith "not implemented yet"
       | Errpyast.Match _match -> failwith "not implemented yet"
     in
