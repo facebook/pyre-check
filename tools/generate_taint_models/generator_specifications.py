@@ -7,6 +7,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict, NamedTuple, Optional, Set
+import re
 
 from .parameter import Parameter
 
@@ -46,6 +47,20 @@ class AllParametersAnnotation(ParameterAnnotation):
             return self.vararg
         else:  # KWARG
             return self.kwarg
+
+
+class AllParametersAnnotationWithParameterNameAsSubKind(ParameterAnnotation):
+    def __init__(
+        self,
+        parameter_taint: str,
+        parameter_kind: str,
+    ) -> None:
+        self.parameter_taint = parameter_taint
+        self.parameter_kind = parameter_kind
+
+    def get(self, parameter: "Parameter") -> Optional[str]:
+        sanitized_parameter_name = re.compile('[^a-zA-Z_0-9]').sub("",parameter.name)
+        return f"{self.parameter_kind}[{self.parameter_taint}[{sanitized_parameter_name}]]"
 
 
 class AnnotationSpecification(NamedTuple):
