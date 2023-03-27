@@ -150,10 +150,24 @@ let rec translate_expression (expression : Errpyast.expr) =
         | Errpyast.YieldFrom expr -> Expression.YieldFrom (translate_expression expr)
         | Errpyast.Yield maybe_expr ->
             Expression.Yield (Option.map maybe_expr ~f:translate_expression)
-        | Errpyast.Tuple _tuple -> failwith "not implemented yet"
-        | Errpyast.List _list -> failwith "not implemented yet"
-        | Errpyast.Set _set_items -> failwith "not implemented yet"
-        | Errpyast.Dict _ -> failwith "not implemented yet"
+        | Errpyast.Tuple tuple -> Expression.Tuple (List.map ~f:translate_expression tuple.elts)
+        | Errpyast.List list -> Expression.List (List.map ~f:translate_expression list.elts)
+        | Errpyast.Set set_items -> Expression.Set (List.map ~f:translate_expression set_items)
+        | Errpyast.Dict { keys; values } ->
+            let entries, keywords =
+              (* `keys` and `values` are guaranteed by ERRPY parser to be of the same length. *)
+              List.zip_exn keys values
+              |> List.partition_map ~f:(fun (key, value) ->
+                     match key with
+                     | None -> Either.Second (translate_expression value)
+                     | Some key ->
+                         Either.First
+                           {
+                             Dictionary.Entry.key = translate_expression key;
+                             value = translate_expression value;
+                           })
+            in
+            Expression.Dictionary { Dictionary.entries; keywords }
         | Errpyast.IfExp _ifexp -> failwith "not implemented yet"
         | Errpyast.NamedExpr _walrus -> failwith "not implemented yet"
         | Errpyast.Starred _starred -> failwith "not implemented yet"
