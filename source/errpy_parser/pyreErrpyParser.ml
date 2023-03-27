@@ -55,7 +55,7 @@ let translate_unary_operator = function
   | Errpyast.USub -> UnaryOperator.Negative
 
 
-let _translate_boolop = function
+let translate_boolop = function
   | Errpyast.And -> BooleanOperator.And
   | Errpyast.Or -> BooleanOperator.Or
 
@@ -79,7 +79,32 @@ let rec translate_expression (expression : Errpyast.expr) =
   in
   match expression_desc with
   | Errpyast.Compare _compare -> failwith "not implemented yet"
-  | Errpyast.BoolOp _boolop -> failwith "not implemented yet"
+  | Errpyast.BoolOp boolop -> (
+      let values = List.map ~f:translate_expression boolop.values in
+      let op = translate_boolop boolop.op in
+      match values with
+      | [] ->
+          (* ERRPY won't will give us empty boolean operands. Doing this just to be safe. *)
+          let default_value =
+            match op with
+            | BooleanOperator.And -> Constant.True
+            | BooleanOperator.Or -> Constant.False
+          in
+          Expression.Constant default_value |> Node.create ~location
+      | [value] -> value
+      | first :: second :: rest ->
+          (* Boolean operators are left-associative *)
+          let init =
+            Expression.BooleanOperator
+              { BooleanOperator.left = first; operator = op; right = second }
+            |> Node.create ~location:{ location with stop = second.location.stop }
+          in
+          let f sofar next =
+            let { Node.location = { Ast.Location.stop = next_stop; _ }; _ } = next in
+            Expression.BooleanOperator { BooleanOperator.left = sofar; operator = op; right = next }
+            |> Node.create ~location:{ location with stop = next_stop }
+          in
+          List.fold rest ~init ~f)
   | _ ->
       let as_ast_expression =
         match expression_desc with

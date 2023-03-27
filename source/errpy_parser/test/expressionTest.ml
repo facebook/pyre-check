@@ -237,18 +237,127 @@ let test_unary_operators _ =
           });
 
   (* `not` has higher precedence than `and`/`or` *)
-  (*assert_parsed "not x and y" ~expected: (+Expression.BooleanOperator { BooleanOperator.left =
-    +Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
-    operator = BooleanOperator.And; right = !"y"; });*)
-  (*assert_parsed "not x or y" ~expected: (+Expression.BooleanOperator { BooleanOperator.left =
-    +Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
-    operator = BooleanOperator.Or; right = !"y"; });*)
+  assert_parsed
+    "not x and y"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left =
+              +Expression.UnaryOperator
+                 { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
+            operator = BooleanOperator.And;
+            right = !"y";
+          });
+  assert_parsed
+    "not x or y"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left =
+              +Expression.UnaryOperator
+                 { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
+            operator = BooleanOperator.Or;
+            right = !"y";
+          });
   assert_not_parsed "not";
   assert_not_parsed "x not";
   assert_not_parsed "x~";
   assert_not_parsed "x+";
   assert_not_parsed "x-";
   assert_not_parsed "+ not x";
+  ()
+
+
+let test_boolean_operators _ =
+  let assert_parsed = assert_parsed in
+  let assert_not_parsed = assert_not_parsed in
+  assert_parsed
+    "True and False"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left = +Expression.Constant Constant.True;
+            operator = BooleanOperator.And;
+            right = +Expression.Constant Constant.False;
+          });
+  assert_parsed
+    "True or False"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left = +Expression.Constant Constant.True;
+            operator = BooleanOperator.Or;
+            right = +Expression.Constant Constant.False;
+          });
+  assert_parsed
+    "1 and 2 and 3"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left =
+              +Expression.BooleanOperator
+                 {
+                   BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
+                   operator = BooleanOperator.And;
+                   right = +Expression.Constant (Constant.Integer 2);
+                 };
+            operator = BooleanOperator.And;
+            right = +Expression.Constant (Constant.Integer 3);
+          });
+  assert_parsed
+    "1 or 2 or 3"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left =
+              +Expression.BooleanOperator
+                 {
+                   BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
+                   operator = BooleanOperator.Or;
+                   right = +Expression.Constant (Constant.Integer 2);
+                 };
+            operator = BooleanOperator.Or;
+            right = +Expression.Constant (Constant.Integer 3);
+          });
+  assert_parsed
+    "1 and 2 or 3"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left =
+              +Expression.BooleanOperator
+                 {
+                   BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
+                   operator = BooleanOperator.And;
+                   right = +Expression.Constant (Constant.Integer 2);
+                 };
+            operator = BooleanOperator.Or;
+            right = +Expression.Constant (Constant.Integer 3);
+          });
+  (* `and` has higher precedence than `or` *)
+  assert_parsed
+    "1 or 2 and 3"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
+            operator = BooleanOperator.Or;
+            right =
+              +Expression.BooleanOperator
+                 {
+                   BooleanOperator.left = +Expression.Constant (Constant.Integer 2);
+                   operator = BooleanOperator.And;
+                   right = +Expression.Constant (Constant.Integer 3);
+                 };
+          });
+
+  assert_not_parsed "and";
+  assert_not_parsed "or";
+  assert_not_parsed "and or";
+  assert_not_parsed "True and";
+  assert_not_parsed "and True";
+  assert_not_parsed "True or";
+  assert_not_parsed "or True";
   ()
 
 
@@ -259,13 +368,13 @@ let () =
          "attribute" >:: test_attribute;
          "constant" >:: test_constant;
          "unary_operators" >:: test_unary_operators;
+         "boolean_operators" >:: test_boolean_operators;
          (*"fstring" >:: test_fstring;*)
          (*"await_yield" >:: test_await_yield;*)
          (*"ternary_walrus" >:: test_ternary_walrus;*)
          (*"container_literals" >:: test_container_literals;*)
          (*"comprehensions" >:: test_comprehensions;*)
          (*"starred" >:: test_starred;*)
-         (*"boolean_operators" >:: test_boolean_operators;*)
          (*"comparison_operators" >:: test_comparison_operators;*)
          (*"binary_operators" >:: test_binary_operators;*)
          (*"test_call" >:: test_call;*)
