@@ -380,7 +380,13 @@ let rec translate_expression (expression : Errpyast.expr) =
                 Lambda.parameters = translate_arguments lambda.args;
                 body = translate_expression lambda.body;
               }
-        | _ -> failwith "not implemented yet"
+        | _ ->
+            let fail_message =
+              Format.asprintf
+                "not yet implemented expression: %s"
+                (Errpyast.show_expr_desc expression_desc)
+            in
+            failwith fail_message
       in
       as_ast_expression |> Node.create ~location
 
@@ -814,7 +820,13 @@ and translate_statements
                 top_level_unbound_names = [];
               };
           ]
-      | Errpyast.Match _match -> failwith "not implemented yet"
+      | Errpyast.Match _match ->
+          let fail_message =
+            Format.asprintf
+              "not yet implemented statement: %s"
+              (Errpyast.show_stmt_desc statement_desc)
+          in
+          failwith fail_message
     in
     let make_node statement = statement |> Node.create ~location in
     List.map ~f:make_node as_ast_statement
