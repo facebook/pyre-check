@@ -19,7 +19,7 @@ open Ast.Location
 open Ast.Statement
 module Node = Ast.Node
 
-let _translate_comparison_operator = function
+let translate_comparison_operator = function
   | Errpyast.Eq -> ComparisonOperator.Equals
   | Errpyast.NotEq -> ComparisonOperator.NotEquals
   | Errpyast.Lt -> ComparisonOperator.LessThan
@@ -32,7 +32,7 @@ let _translate_comparison_operator = function
   | Errpyast.NotIn -> ComparisonOperator.NotIn
 
 
-let _translate_binary_operator = function
+let translate_binary_operator = function
   | Errpyast.Add -> "add"
   | Errpyast.Sub -> "sub"
   | Errpyast.Mult -> "mul"
@@ -86,7 +86,38 @@ let rec translate_expression (expression : Errpyast.expr) =
     }
   in
   match expression_desc with
-  | Errpyast.Compare _compare -> failwith "not implemented yet"
+  | Errpyast.Compare compare -> (
+      let left = translate_expression compare.left in
+      let ops = List.map ~f:translate_comparison_operator compare.ops in
+      let comparators = List.map ~f:translate_expression compare.comparators in
+      let f (sofar, last) (operator, next) =
+        (* NOTE(jat): This is not 100% accurate since `last` is never evaluated more than once at
+           runtime. But it's a fairly close approximation. *)
+        let right =
+          let { Node.location = { Ast.Location.start = last_start; _ }; _ } = last in
+          let { Node.location = { Ast.Location.stop = next_stop; _ }; _ } = next in
+          Expression.ComparisonOperator { ComparisonOperator.left = last; operator; right = next }
+          |> Node.create ~location:{ Ast.Location.start = last_start; stop = next_stop }
+        in
+        let sofar =
+          Expression.BooleanOperator
+            { BooleanOperator.left = sofar; operator = BooleanOperator.And; right }
+          |> Node.create ~location:{ location with stop = right.location.stop }
+        in
+        sofar, next
+      in
+      (* `ops` and `comparators` are guaranteed by Errpy parser to be of the same length. *)
+      List.zip_exn ops comparators
+      |> function
+      | [] -> left
+      | (operator, right) :: rest ->
+          let { Node.location = { Ast.Location.stop = right_stop; _ }; _ } = right in
+          let first_operand =
+            Expression.ComparisonOperator { ComparisonOperator.left; operator; right }
+            |> Node.create ~location:{ location with stop = right_stop }
+          in
+          let result, _ = List.fold ~init:(first_operand, right) ~f rest in
+          result)
   | Errpyast.BoolOp boolop -> (
       let values = List.map ~f:translate_expression boolop.values in
       let op = translate_boolop boolop.op in
@@ -116,7 +147,19 @@ let rec translate_expression (expression : Errpyast.expr) =
   | _ ->
       let as_ast_expression =
         match expression_desc with
-        | Errpyast.BinOp _binop -> failwith "not implemented yet"
+        | Errpyast.BinOp binop ->
+            let operator = Caml.Format.sprintf "__%s__" (translate_binary_operator binop.op) in
+            let base = translate_expression binop.left in
+            let callee =
+              Expression.Name (Name.Attribute { base; attribute = operator; special = true })
+              |> Node.create ~location:(Node.location base)
+            in
+            Expression.Call
+              {
+                callee;
+                arguments =
+                  [{ Call.Argument.name = None; value = translate_expression binop.right }];
+              }
         | Errpyast.Name name -> Expression.Name (Name.Identifier name.id)
         | Errpyast.UnaryOp unaryop -> (
             let operand = translate_expression unaryop.operand in

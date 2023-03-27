@@ -812,6 +812,418 @@ let test_starred _ =
   ()
 
 
+let test_binary_operators _ =
+  let assert_parsed = assert_parsed in
+  assert_parsed
+    "x + y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__add__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x - y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__sub__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x * y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__mul__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x @ y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__matmul__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x / y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__truediv__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x % y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__mod__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x ** y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__pow__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x >> y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__rshift__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x << y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__lshift__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x | y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__or__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x ^ y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__xor__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x & y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__and__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x // y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__floordiv__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "x + y + z"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute
+                    {
+                      base =
+                        +Expression.Call
+                           {
+                             callee =
+                               +Expression.Name
+                                  (Name.Attribute
+                                     { base = !"x"; attribute = "__add__"; special = true });
+                             arguments = [{ Call.Argument.name = None; value = !"y" }];
+                           };
+                      attribute = "__add__";
+                      special = true;
+                    });
+            arguments = [{ Call.Argument.name = None; value = !"z" }];
+          });
+  assert_parsed
+    "x + (y + z)"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__add__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee =
+                           +Expression.Name
+                              (Name.Attribute { base = !"y"; attribute = "__add__"; special = true });
+                         arguments = [{ Call.Argument.name = None; value = !"z" }];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "x + y * z"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__add__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee =
+                           +Expression.Name
+                              (Name.Attribute { base = !"y"; attribute = "__mul__"; special = true });
+                         arguments = [{ Call.Argument.name = None; value = !"z" }];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "x * -y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__mul__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.UnaryOperator
+                       { UnaryOperator.operator = UnaryOperator.Negative; operand = !"y" };
+                };
+              ];
+          });
+  assert_parsed
+    "x + y.z"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"x"; attribute = "__add__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Name
+                       (Name.Attribute { base = !"y"; attribute = "z"; special = false });
+                };
+              ];
+          });
+  assert_parsed
+    "x < y + z"
+    ~expected:
+      (+Expression.ComparisonOperator
+          {
+            ComparisonOperator.left = !"x";
+            operator = ComparisonOperator.LessThan;
+            right =
+              +Expression.Call
+                 {
+                   callee =
+                     +Expression.Name
+                        (Name.Attribute { base = !"y"; attribute = "__add__"; special = true });
+                   arguments = [{ Call.Argument.name = None; value = !"z" }];
+                 };
+          });
+  ()
+
+
+let test_comparison_operators _ =
+  let assert_parsed = assert_parsed in
+  assert_parsed
+    "a == b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          { ComparisonOperator.left = !"a"; operator = ComparisonOperator.Equals; right = !"b" });
+  assert_parsed
+    "a != b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          { ComparisonOperator.left = !"a"; operator = ComparisonOperator.NotEquals; right = !"b" });
+  assert_parsed
+    "a < b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          { ComparisonOperator.left = !"a"; operator = ComparisonOperator.LessThan; right = !"b" });
+  assert_parsed
+    "a <= b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          {
+            ComparisonOperator.left = !"a";
+            operator = ComparisonOperator.LessThanOrEquals;
+            right = !"b";
+          });
+  assert_parsed
+    "a > b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          {
+            ComparisonOperator.left = !"a";
+            operator = ComparisonOperator.GreaterThan;
+            right = !"b";
+          });
+  assert_parsed
+    "a >= b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          {
+            ComparisonOperator.left = !"a";
+            operator = ComparisonOperator.GreaterThanOrEquals;
+            right = !"b";
+          });
+  assert_parsed
+    "a is b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          { ComparisonOperator.left = !"a"; operator = ComparisonOperator.Is; right = !"b" });
+  assert_parsed
+    "a is not b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          { ComparisonOperator.left = !"a"; operator = ComparisonOperator.IsNot; right = !"b" });
+  assert_parsed
+    "a in b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          { ComparisonOperator.left = !"a"; operator = ComparisonOperator.In; right = !"b" });
+  assert_parsed
+    "a not in b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          { ComparisonOperator.left = !"a"; operator = ComparisonOperator.NotIn; right = !"b" });
+  assert_parsed
+    "a < b < c"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left =
+              +Expression.ComparisonOperator
+                 {
+                   ComparisonOperator.left = !"a";
+                   operator = ComparisonOperator.LessThan;
+                   right = !"b";
+                 };
+            operator = BooleanOperator.And;
+            right =
+              +Expression.ComparisonOperator
+                 {
+                   ComparisonOperator.left = !"b";
+                   operator = ComparisonOperator.LessThan;
+                   right = !"c";
+                 };
+          });
+  (* Comparisions bind tighter than `not` *)
+  assert_parsed
+    "not a in b"
+    ~expected:
+      (+Expression.UnaryOperator
+          {
+            UnaryOperator.operator = UnaryOperator.Not;
+            operand =
+              +Expression.ComparisonOperator
+                 { ComparisonOperator.left = !"a"; operator = ComparisonOperator.In; right = !"b" };
+          });
+  (* Comparisions bind tighter than `and`/`or` *)
+  assert_parsed
+    "a < b and b < c"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left =
+              +Expression.ComparisonOperator
+                 {
+                   ComparisonOperator.left = !"a";
+                   operator = ComparisonOperator.LessThan;
+                   right = !"b";
+                 };
+            operator = BooleanOperator.And;
+            right =
+              +Expression.ComparisonOperator
+                 {
+                   ComparisonOperator.left = !"b";
+                   operator = ComparisonOperator.LessThan;
+                   right = !"c";
+                 };
+          });
+  assert_parsed
+    "a < b or b < c"
+    ~expected:
+      (+Expression.BooleanOperator
+          {
+            BooleanOperator.left =
+              +Expression.ComparisonOperator
+                 {
+                   ComparisonOperator.left = !"a";
+                   operator = ComparisonOperator.LessThan;
+                   right = !"b";
+                 };
+            operator = BooleanOperator.Or;
+            right =
+              +Expression.ComparisonOperator
+                 {
+                   ComparisonOperator.left = !"b";
+                   operator = ComparisonOperator.LessThan;
+                   right = !"c";
+                 };
+          });
+  (* Comparisions bind looser than `+`/`-` *)
+  assert_parsed
+    "+a >= -b"
+    ~expected:
+      (+Expression.ComparisonOperator
+          {
+            ComparisonOperator.left =
+              +Expression.UnaryOperator
+                 { UnaryOperator.operator = UnaryOperator.Positive; operand = !"a" };
+            operator = ComparisonOperator.GreaterThanOrEquals;
+            right =
+              +Expression.UnaryOperator
+                 { UnaryOperator.operator = UnaryOperator.Negative; operand = !"b" };
+          });
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -824,10 +1236,10 @@ let () =
          "container_literals" >:: test_container_literals;
          "comprehensions" >:: test_comprehensions;
          "starred" >:: test_starred;
+         "binary_operators" >:: test_binary_operators;
+         "comparison_operators" >:: test_comparison_operators;
          (*"fstring" >:: test_fstring;*)
          (*"ternary_walrus" >:: test_ternary_walrus;*)
-         (*"comparison_operators" >:: test_comparison_operators;*)
-         (*"binary_operators" >:: test_binary_operators;*)
          (*"test_call" >:: test_call;*)
          (*"test_subscript" >:: test_subscript;*)
          (*"test_lambda" >:: test_lambda;*)
