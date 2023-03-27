@@ -397,9 +397,9 @@ and translate_statements
       | Errpyast.Delete _targets -> failwith "not implemented yet"
       | Errpyast.Global _names -> failwith "not implemented yet"
       | Errpyast.Nonlocal _names -> failwith "not implemented yet"
-      | Errpyast.Pass -> failwith "not implemented yet"
-      | Errpyast.Break -> failwith "not implemented yet"
-      | Errpyast.Continue -> failwith "not implemented yet"
+      | Errpyast.Pass -> [Statement.Pass]
+      | Errpyast.Break -> [Statement.Break]
+      | Errpyast.Continue -> [Statement.Continue]
       | Errpyast.Expr expression -> [Statement.Expression (translate_expression expression)]
       | Errpyast.ClassDef _class_def -> failwith "not implemented yet"
       | Errpyast.Match _match -> failwith "not implemented yet"
