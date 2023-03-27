@@ -241,8 +241,35 @@ let rec translate_expression (expression : Errpyast.expr) =
                 (List.map call.keywords ~f:convert_keyword_argument)
             in
             Expression.Call { callee = translate_expression call.func; arguments }
-        | Errpyast.Subscript _subscript -> failwith "not implemented yet"
-        | Errpyast.Slice _slice -> failwith "not implemented yet"
+        | Errpyast.Subscript subscript ->
+            let value = translate_expression subscript.value in
+            let slice = translate_expression subscript.slice in
+            let callee =
+              let { Node.location = value_location; _ } = value in
+              Expression.Name
+                (Name.Attribute
+                   { Name.Attribute.base = value; attribute = "__getitem__"; special = true })
+              |> Node.create ~location:value_location
+            in
+            let arguments = [{ Call.Argument.name = None; value = slice }] in
+            Expression.Call { callee; arguments }
+        | Errpyast.Slice slice ->
+            (* TODO(T101302994): We should avoid lowering slice expressions at parser phase. *)
+            let callee = Expression.Name (Name.Identifier "slice") |> Node.create ~location in
+            let arguments =
+              let to_argument = function
+                | None ->
+                    Expression.Constant Constant.NoneLiteral
+                    |> Node.create ~location:Ast.Location.any
+                | Some expression -> translate_expression expression
+              in
+              [
+                { Call.Argument.name = None; value = to_argument slice.lower };
+                { Call.Argument.name = None; value = to_argument slice.upper };
+                { Call.Argument.name = None; value = to_argument slice.step };
+              ]
+            in
+            Expression.Call { callee; arguments }
         | Errpyast.GeneratorExp gennerator_expression ->
             Expression.Generator
               {

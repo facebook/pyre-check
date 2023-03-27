@@ -1462,6 +1462,449 @@ let test_call _ =
   ()
 
 
+let test_subscript _ =
+  let assert_parsed = assert_parsed in
+  let assert_not_parsed = assert_not_parsed in
+  assert_parsed
+    "a[b]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"b" }];
+          });
+  assert_parsed
+    "a.__getitem__(b)"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = false });
+            arguments = [{ Call.Argument.name = None; value = !"b" }];
+          });
+  assert_parsed
+    "a[(b)]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = !"b" }];
+          });
+  assert_parsed
+    "a[1 < 2]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.ComparisonOperator
+                       {
+                         ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
+                         operator = ComparisonOperator.LessThan;
+                         right = +Expression.Constant (Constant.Integer 2);
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[b,c]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments = [{ Call.Argument.name = None; value = +Expression.Tuple [!"b"; !"c"] }];
+          });
+  assert_parsed
+    "a[b].c"
+    ~expected:
+      (+Expression.Name
+          (Name.Attribute
+             {
+               base =
+                 +Expression.Call
+                    {
+                      callee =
+                        +Expression.Name
+                           (Name.Attribute
+                              { base = !"a"; attribute = "__getitem__"; special = true });
+                      arguments = [{ Call.Argument.name = None; value = !"b" }];
+                    };
+               attribute = "c";
+               special = false;
+             }));
+  assert_parsed
+    "a[:]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[::]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[1:]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[:1]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[::1]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[1:1]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[1::1]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[:1:1]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant Constant.NoneLiteral;
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[1:1:1]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Call
+                       {
+                         callee = !"slice";
+                         arguments =
+                           [
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                             {
+                               Call.Argument.name = None;
+                               value = +Expression.Constant (Constant.Integer 1);
+                             };
+                           ];
+                       };
+                };
+              ];
+          });
+  assert_parsed
+    "a[:1,2]"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+            arguments =
+              [
+                {
+                  Call.Argument.name = None;
+                  value =
+                    +Expression.Tuple
+                       [
+                         +Expression.Call
+                            {
+                              callee = !"slice";
+                              arguments =
+                                [
+                                  {
+                                    Call.Argument.name = None;
+                                    value = +Expression.Constant Constant.NoneLiteral;
+                                  };
+                                  {
+                                    Call.Argument.name = None;
+                                    value = +Expression.Constant (Constant.Integer 1);
+                                  };
+                                  {
+                                    Call.Argument.name = None;
+                                    value = +Expression.Constant Constant.NoneLiteral;
+                                  };
+                                ];
+                            };
+                         +Expression.Constant (Constant.Integer 2);
+                       ];
+                };
+              ];
+          });
+
+  assert_not_parsed "a[]";
+  assert_not_parsed "a[:::]";
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -1479,7 +1922,7 @@ let () =
          "fstring" >:: test_fstring;
          "ternary_walrus" >:: test_ternary_walrus;
          "call" >:: test_call;
-         (*"subscript" >:: test_subscript;*)
+         "subscript" >:: test_subscript;
          (*"lambda" >:: test_lambda;*)
        ]
   |> Test.run
