@@ -254,8 +254,20 @@ let rec translate_expression (expression : Errpyast.expr) =
                   };
                 generators = List.map ~f:translate_comprehension dict_comprehension.generators;
               }
-        | Errpyast.FormattedValue _formatted_value -> failwith "not implemented yet"
-        | Errpyast.JoinedStr _joined_string -> failwith "not implemented yet"
+        | Errpyast.FormattedValue formatted_value ->
+            Expression.FormatString [Substring.Format (translate_expression formatted_value.value)]
+        | Errpyast.JoinedStr joined_string ->
+            let values = List.map ~f:translate_expression joined_string in
+            let collapse_formatted_value ({ Node.value; location } as expression) =
+              match value with
+              | Expression.Constant (Constant.String { StringLiteral.kind = String; value }) ->
+                  Substring.Literal (Node.create ~location value)
+              | Expression.FormatString [substring] -> substring
+              | _ ->
+                  (* NOTE: May be impossible for ERRPY to reach this branch *)
+                  Substring.Format expression
+            in
+            Expression.FormatString (List.map values ~f:collapse_formatted_value)
         | Errpyast.Lambda _lambda -> failwith "not implemented yet"
         | _ -> failwith "not implemented yet"
       in

@@ -1224,6 +1224,66 @@ let test_comparison_operators _ =
   ()
 
 
+let test_fstring _ =
+  let assert_parsed ~expected text =
+    assert_parsed ~expected:(+Expression.FormatString expected) text
+  in
+  let literal value = Substring.Literal (+value) in
+  let format value = Substring.Format (+value) in
+  assert_parsed "f'foo'" ~expected:[literal "foo"];
+  (*TODO: FIX In ERRPY: assert_parsed "F'foo'" ~expected:[literal "foo"];*)
+  assert_parsed "f'foo' f'bar'" ~expected:[literal "foobar"];
+  assert_parsed "f'foo' 'bar'" ~expected:[literal "foobar"];
+  assert_parsed "f'{  3.14  }'" ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+  assert_parsed "f'{3.14:10.10}'" ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+  assert_parsed "f'{3.14:.10f}'" ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+  assert_parsed "f'{3.14!s:10.10}'" ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+  assert_parsed "f'{3.14!r:10.10}'" ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+  assert_parsed "f'{3.14!a:10.10}'" ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+  assert_parsed "f'a{{'" ~expected:[literal "a{"];
+  assert_parsed "f'a{{b}}c'" ~expected:[literal "a{b}c"];
+  assert_parsed
+    "f'{\"{{}}\"}'"
+    ~expected:[format (Expression.Constant (Constant.String (StringLiteral.create "{{}}")))];
+  assert_parsed
+    "f\"{'''x'''}\""
+    ~expected:[format (Expression.Constant (Constant.String (StringLiteral.create "x")))];
+  (* The `=` syntax was added in Python 3.8. *)
+  assert_parsed "f'{x=}'" ~expected:[literal "x="; format (Expression.Name (Name.Identifier "x"))];
+  assert_parsed
+    "f'{x=!r:^20}'"
+    ~expected:[literal "x="; format (Expression.Name (Name.Identifier "x"))];
+  assert_parsed "f'{3.14!a:{w}.{p}}'" ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+  assert_parsed
+    "f'a{b}c'"
+    ~expected:[literal "a"; format (Expression.Name (Name.Identifier "b")); literal "c"];
+  assert_parsed
+    "f'a{\"b\"}c'"
+    ~expected:
+      [
+        literal "a";
+        format (Expression.Constant (Constant.String (StringLiteral.create "b")));
+        literal "c";
+      ];
+  assert_parsed
+    "f'{f\"a{b}c\"}'"
+    ~expected:
+      [
+        format
+          (Expression.FormatString
+             [literal "a"; format (Expression.Name (Name.Identifier "b")); literal "c"]);
+      ];
+
+  (*TODO: FIX In ERRPY: assert_parsed "f'''\n{b}\nc'''" ~expected:[literal "\n"; format
+    (Expression.Name (Name.Identifier "b")); literal "\nc"]; assert_not_parsed "f'' b''";
+    assert_not_parsed "f'{\"x'"; assert_not_parsed "f'{\"x}'"; assert_not_parsed "f'{(\"x'";
+    assert_not_parsed "f'{(\"x)'"; assert_not_parsed "f'{((}'"; assert_not_parsed "f'{a[4)}'";
+    assert_not_parsed "f'{a(4]}'"; assert_not_parsed "f'{a[4}'"; assert_not_parsed "f'{a(4}'";
+    assert_not_parsed "f'{1#}'"; assert_not_parsed "f'{#}'"; assert_not_parsed "f'{}'";
+    assert_not_parsed "f'{,}'"; assert_not_parsed "f'{\n}'"; assert_not_parsed "f'{\\'a\\'}'";*)
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -1238,7 +1298,7 @@ let () =
          "starred" >:: test_starred;
          "binary_operators" >:: test_binary_operators;
          "comparison_operators" >:: test_comparison_operators;
-         (*"fstring" >:: test_fstring;*)
+         "fstring" >:: test_fstring;
          (*"ternary_walrus" >:: test_ternary_walrus;*)
          (*"test_call" >:: test_call;*)
          (*"test_subscript" >:: test_subscript;*)
