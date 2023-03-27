@@ -1905,6 +1905,163 @@ let test_subscript _ =
   ()
 
 
+let test_lambda _ =
+  let assert_parsed = assert_parsed in
+  assert_parsed
+    "lambda: 1"
+    ~expected:
+      (+Expression.Lambda
+          { Lambda.parameters = []; body = +Expression.Constant (Constant.Integer 1) });
+  assert_parsed
+    "lambda x: x"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+            body = !"x";
+          });
+  assert_parsed
+    "lambda x,: x"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+            body = !"x";
+          });
+  assert_parsed
+    "lambda x: x is y"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters = [+{ Parameter.name = "x"; value = None; annotation = None }];
+            body =
+              +Expression.ComparisonOperator
+                 { ComparisonOperator.left = !"x"; operator = ComparisonOperator.Is; right = !"y" };
+          });
+
+  assert_parsed
+    "lambda x,y=1: x"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters =
+              [
+                +{ Parameter.name = "x"; value = None; annotation = None };
+                +{
+                   Parameter.name = "y";
+                   value = Some (+Expression.Constant (Constant.Integer 1));
+                   annotation = None;
+                 };
+              ];
+            body = !"x";
+          });
+  assert_parsed
+    "lambda *args, **kwargs: args"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters =
+              [
+                +{ Parameter.name = "*args"; value = None; annotation = None };
+                +{ Parameter.name = "**kwargs"; value = None; annotation = None };
+              ];
+            body = !"args";
+          });
+  assert_parsed
+    "lambda x, /: x"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters =
+              [
+                +{ Parameter.name = "x"; value = None; annotation = None };
+                +{ Parameter.name = "/"; value = None; annotation = None };
+              ];
+            body = !"x";
+          });
+  assert_parsed
+    "lambda *, x: x"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters =
+              [
+                +{ Parameter.name = "*"; value = None; annotation = None };
+                +{ Parameter.name = "x"; value = None; annotation = None };
+              ];
+            body = !"x";
+          });
+  assert_parsed
+    "lambda *args, x: x"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters =
+              [
+                +{ Parameter.name = "*args"; value = None; annotation = None };
+                +{ Parameter.name = "x"; value = None; annotation = None };
+              ];
+            body = !"x";
+          });
+  assert_parsed
+    "lambda x, /, y, z=1, *, w=2: x"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters =
+              [
+                +{ Parameter.name = "x"; value = None; annotation = None };
+                +{ Parameter.name = "/"; value = None; annotation = None };
+                +{ Parameter.name = "y"; value = None; annotation = None };
+                +{
+                   Parameter.name = "z";
+                   value = Some (+Expression.Constant (Constant.Integer 1));
+                   annotation = None;
+                 };
+                +{ Parameter.name = "*"; value = None; annotation = None };
+                +{
+                   Parameter.name = "w";
+                   value = Some (+Expression.Constant (Constant.Integer 2));
+                   annotation = None;
+                 };
+              ];
+            body = !"x";
+          });
+  assert_parsed
+    "lambda x, y=1, /, z=2, *, u, v=3, **w: x"
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters =
+              [
+                +{ Parameter.name = "x"; value = None; annotation = None };
+                +{
+                   Parameter.name = "y";
+                   value = Some (+Expression.Constant (Constant.Integer 1));
+                   annotation = None;
+                 };
+                +{ Parameter.name = "/"; value = None; annotation = None };
+                +{
+                   Parameter.name = "z";
+                   value = Some (+Expression.Constant (Constant.Integer 2));
+                   annotation = None;
+                 };
+                +{ Parameter.name = "*"; value = None; annotation = None };
+                +{ Parameter.name = "u"; value = None; annotation = None };
+                +{
+                   Parameter.name = "v";
+                   value = Some (+Expression.Constant (Constant.Integer 3));
+                   annotation = None;
+                 };
+                +{ Parameter.name = "**w"; value = None; annotation = None };
+              ];
+            body = !"x";
+          });
+  (*TODO: FIX In ERRPY: assert_not_parsed "lambda x=1, y: x"; assert_not_parsed "lambda *x, *, y:
+    x";*)
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -1923,6 +2080,6 @@ let () =
          "ternary_walrus" >:: test_ternary_walrus;
          "call" >:: test_call;
          "subscript" >:: test_subscript;
-         (*"lambda" >:: test_lambda;*)
+         "lambda" >:: test_lambda;
        ]
   |> Test.run

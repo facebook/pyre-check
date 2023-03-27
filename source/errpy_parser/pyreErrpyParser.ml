@@ -374,7 +374,12 @@ let rec translate_expression (expression : Errpyast.expr) =
                   Substring.Format expression
             in
             Expression.FormatString (List.map values ~f:collapse_formatted_value)
-        | Errpyast.Lambda _lambda -> failwith "not implemented yet"
+        | Errpyast.Lambda lambda ->
+            Expression.Lambda
+              {
+                Lambda.parameters = translate_arguments lambda.args;
+                body = translate_expression lambda.body;
+              }
         | _ -> failwith "not implemented yet"
       in
       as_ast_expression |> Node.create ~location
