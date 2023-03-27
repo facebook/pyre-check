@@ -381,6 +381,10 @@ and translate_statements
     ~context:({ StatementContext.parent = _parent; _ } as context)
   =
   let translate_statement (statement : Errpyast.stmt) =
+    let translate_withitem (with_item : Errpyast.withitem) =
+      ( translate_expression with_item.context_expr,
+        Option.map with_item.optional_vars ~f:translate_expression )
+    in
     let statement_desc = statement.desc in
     let location =
       let end_lineno = Option.value statement.end_lineno ~default:statement.lineno in
@@ -523,8 +527,24 @@ and translate_statements
                 handlers = List.map ~f:translate_excepthandler try_statement.handlers;
               };
           ]
-      | Errpyast.With _with_statement -> failwith "not implemented yet"
-      | Errpyast.AsyncWith _with_statement -> failwith "not implemented yet"
+      | Errpyast.With with_statement ->
+          [
+            Statement.With
+              {
+                With.items = List.map ~f:translate_withitem with_statement.items;
+                body = translate_statements with_statement.body ~context;
+                async = false;
+              };
+          ]
+      | Errpyast.AsyncWith with_statement ->
+          [
+            Statement.With
+              {
+                With.items = List.map ~f:translate_withitem with_statement.items;
+                body = translate_statements with_statement.body ~context;
+                async = true;
+              };
+          ]
       | Errpyast.AnnAssign _ann_assign -> failwith "not implemented yet"
       | Errpyast.AugAssign _aug_assign -> failwith "not implemented yet"
       | Errpyast.Assign _assign -> failwith "not implemented yet"

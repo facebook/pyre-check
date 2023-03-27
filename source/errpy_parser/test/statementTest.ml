@@ -734,6 +734,98 @@ let test_try _ =
   ()
 
 
+let test_with _ =
+  let assert_parsed = assert_parsed in
+  assert_parsed
+    "with a: b\n"
+    ~expected:
+      [
+        +Statement.With
+           { With.items = [!"a", None]; body = [+Statement.Expression !"b"]; async = false };
+      ];
+  assert_parsed
+    "with a:\n  b\n  c"
+    ~expected:
+      [
+        +Statement.With
+           {
+             With.items = [!"a", None];
+             body = [+Statement.Expression !"b"; +Statement.Expression !"c"];
+             async = false;
+           };
+      ];
+  assert_parsed
+    "with (yield from a): b\n"
+    ~expected:
+      [
+        +Statement.With
+           {
+             With.items = [+Expression.YieldFrom !"a", None];
+             body = [+Statement.Expression !"b"];
+             async = false;
+           };
+      ];
+  assert_parsed
+    "async with a: b\n"
+    ~expected:
+      [
+        +Statement.With
+           { With.items = [!"a", None]; body = [+Statement.Expression !"b"]; async = true };
+      ];
+  assert_parsed
+    "with a as b: b\n"
+    ~expected:
+      [
+        +Statement.With
+           { With.items = [!"a", Some !"b"]; body = [+Statement.Expression !"b"]; async = false };
+      ];
+  assert_parsed
+    "with a as b, c as d: b\n"
+    ~expected:
+      [
+        +Statement.With
+           {
+             With.items = [!"a", Some !"b"; !"c", Some !"d"];
+             body = [+Statement.Expression !"b"];
+             async = false;
+           };
+      ];
+  assert_parsed
+    "with a, c as d: b\n"
+    ~expected:
+      [
+        +Statement.With
+           {
+             With.items = [!"a", None; !"c", Some !"d"];
+             body = [+Statement.Expression !"b"];
+             async = false;
+           };
+      ];
+  assert_parsed
+    "with (a as b, c as d,): b\n"
+    ~expected:
+      [
+        +Statement.With
+           {
+             With.items = [!"a", Some !"b"; !"c", Some !"d"];
+             body = [+Statement.Expression !"b"];
+             async = false;
+           };
+      ];
+  assert_parsed
+    "with (\n  a as b,\n  c as d\n):\n  b\n"
+    ~expected:
+      [
+        +Statement.With
+           {
+             With.items = [!"a", Some !"b"; !"c", Some !"d"];
+             body = [+Statement.Expression !"b"];
+             async = false;
+           };
+      ];
+  ()
+
+
 let () =
   "parse_statements"
   >::: [
@@ -744,7 +836,7 @@ let () =
          "import" >:: test_import;
          "for_while_if" >:: test_for_while_if;
          "try" >:: test_try;
-         (*"with" >:: test_with;*)
+         "with" >:: test_with;
          (*"assign" >:: test_assign;*)
          (*"define" >:: test_define;*)
          (*"class" >:: test_class;*)
