@@ -831,9 +831,9 @@ let test_assign _ =
   assert_parsed
     "a = b"
     ~expected:[+Statement.Assign { Assign.target = !"a"; annotation = None; value = !"b" }];
-  (*TODO: FIX In ERRPY: Missing type comment functionality: assert_parsed "a = b # type: int"
-    ~expected: [ +Statement.Assign { Assign.target = !"a"; annotation = Some (+Expression.Constant
-    (Constant.String (StringLiteral.create "int"))); value = !"b"; }; ];*)
+  (*TODO (T148669698): assert_parsed "a = b # type: int" ~expected: [ +Statement.Assign {
+    Assign.target = !"a"; annotation = Some (+Expression.Constant (Constant.String
+    (StringLiteral.create "int"))); value = !"b"; }; ];*)
   assert_parsed
     "a = b or c"
     ~expected:
@@ -893,10 +893,10 @@ let test_assign _ =
              value = +Expression.Constant (Constant.Integer 1);
            };
       ];
-  (*TODO: FIX In ERRPY: Missing type comment functionality: assert_parsed "a.b = 1 # type: int"
-    ~expected: [ +Statement.Assign { Assign.target = +Expression.Name (Name.Attribute { base = !"a";
-    attribute = "b"; special = false }); annotation = Some (+Expression.Constant (Constant.String
-    (StringLiteral.create "int"))); value = +Expression.Constant (Constant.Integer 1); }; ];*)
+  (*TODO (T148669698): assert_parsed "a.b = 1 # type: int" ~expected: [ +Statement.Assign {
+    Assign.target = +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false
+    }); annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
+    value = +Expression.Constant (Constant.Integer 1); }; ];*)
   assert_parsed
     "a, b = 1"
     ~expected:
@@ -1044,11 +1044,10 @@ let test_assign _ =
                    ];
                });
       ];
-  (*TODO: FIX In ERRPY: Missing type comment functionality: assert_parsed "i[j] = 3 # type: int"
-    ~expected: [ +Statement.Expression (+Expression.Call { callee = +Expression.Name (Name.Attribute
-    { base = !"i"; attribute = "__setitem__"; special = true }); arguments = [ { Call.Argument.name
-    = None; value = !"j" }; { Call.Argument.name = None; value = +Expression.Constant
-    (Constant.Integer 3); }; ]; }); ];*)
+  (*TODO (T148669698): assert_parsed "i[j] = 3 # type: int" ~expected: [ +Statement.Expression
+    (+Expression.Call { callee = +Expression.Name (Name.Attribute { base = !"i"; attribute =
+    "__setitem__"; special = true }); arguments = [ { Call.Argument.name = None; value = !"j" }; {
+    Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 3); }; ]; }); ];*)
   assert_parsed
     "i[j] += 3"
     ~expected:
@@ -1247,6 +1246,738 @@ let test_assign _ =
   ()
 
 
+let test_define _ =
+  let assert_parsed = assert_parsed in
+  (*let assert_not_parsed = assert_not_parsed in*)
+  assert_parsed
+    "def foo(a):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(*, a):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters =
+                   [
+                     +{ Parameter.name = "*"; value = None; annotation = None };
+                     +{ Parameter.name = "a"; value = None; annotation = None };
+                   ];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(a, /, b):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters =
+                   [
+                     +{ Parameter.name = "a"; value = None; annotation = None };
+                     +{ Parameter.name = "/"; value = None; annotation = None };
+                     +{ Parameter.name = "b"; value = None; annotation = None };
+                   ];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(**a):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [+{ Parameter.name = "**a"; value = None; annotation = None }];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(a, b,) -> c:\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters =
+                   [
+                     +{ Parameter.name = "a"; value = None; annotation = None };
+                     +{ Parameter.name = "b"; value = None; annotation = None };
+                   ];
+                 decorators = [];
+                 return_annotation = Some !"c";
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "async def foo():\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [];
+                 decorators = [];
+                 return_annotation = None;
+                 async = true;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "async def foo():\n  ..."
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [];
+                 decorators = [];
+                 return_annotation = None;
+                 async = true;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
+           };
+      ];
+  assert_parsed
+    "@foo\nasync def foo():\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [];
+                 decorators = [!"foo"];
+                 return_annotation = None;
+                 async = true;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "@decorator\ndef foo(a):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                 decorators = [!"decorator"];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "@decorator(a=b, c=d)\ndef foo(a):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                 decorators =
+                   [
+                     +Expression.Call
+                        {
+                          Call.callee = !"decorator";
+                          arguments =
+                            [
+                              { Call.Argument.name = Some ~+"a"; value = !"b" };
+                              { Call.Argument.name = Some ~+"c"; value = !"d" };
+                            ];
+                        };
+                   ];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "@foo\n\n@bar\ndef foo(a):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                 decorators = [!"foo"; !"bar"];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "@x[0].y\ndef foo(a):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                 decorators =
+                   [
+                     +Expression.Name
+                        (Name.Attribute
+                           {
+                             Name.Attribute.base =
+                               +Expression.Call
+                                  {
+                                    Call.callee =
+                                      +Expression.Name
+                                         (Name.Attribute
+                                            {
+                                              Name.Attribute.base = !"x";
+                                              attribute = "__getitem__";
+                                              special = true;
+                                            });
+                                    arguments =
+                                      [
+                                        {
+                                          Call.Argument.name = None;
+                                          value = +Expression.Constant (Constant.Integer 0);
+                                        };
+                                      ];
+                                  };
+                             attribute = "y";
+                             special = false;
+                           });
+                   ];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "@(x<y)\ndef foo(a):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+                 decorators =
+                   [
+                     +Expression.ComparisonOperator
+                        {
+                          ComparisonOperator.left = !"x";
+                          operator = ComparisonOperator.LessThan;
+                          right = !"y";
+                        };
+                   ];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(a, b):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 Define.Signature.name = !&"foo";
+                 parameters =
+                   [
+                     +{ Parameter.name = "a"; value = None; annotation = None };
+                     +{ Parameter.name = "b"; value = None; annotation = None };
+                   ];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(a, b = 1):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters =
+                   [
+                     +{ Parameter.name = "a"; value = None; annotation = None };
+                     +{
+                        Parameter.name = "b";
+                        value = Some (+Expression.Constant (Constant.Integer 1));
+                        annotation = None;
+                      };
+                   ];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(a=()):\n  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters =
+                   [
+                     +{
+                        Parameter.name = "a";
+                        value = Some (+Expression.Tuple []);
+                        annotation = None;
+                      };
+                   ];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(): 1; 2"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body =
+               [
+                 +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                 +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+               ];
+           };
+      ];
+  assert_parsed
+    "def foo():\n  1\n  2\n3"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body =
+               [
+                 +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                 +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+               ];
+           };
+        +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+      ];
+  assert_parsed
+    "def foo():\n  def bar():\n    1\n    2\n3"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body =
+               [
+                 +Statement.Define
+                    {
+                      signature =
+                        {
+                          name = !&"bar";
+                          parameters = [];
+                          decorators = [];
+                          return_annotation = None;
+                          async = false;
+                          generator = false;
+                          parent = None;
+                          nesting_define = None;
+                        };
+                      captures = [];
+                      unbound_names = [];
+                      body =
+                        [
+                          +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                          +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+                        ];
+                    };
+               ];
+           };
+        +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+      ];
+  assert_parsed
+    "def foo(a: int):  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"int" }];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(a: int = 1):  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters =
+                   [
+                     +{
+                        Parameter.name = "a";
+                        value = Some (+Expression.Constant (Constant.Integer 1));
+                        annotation = Some !"int";
+                      };
+                   ];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+  assert_parsed
+    "def foo(a: int, b: str):  1"
+    ~expected:
+      [
+        +Statement.Define
+           {
+             signature =
+               {
+                 name = !&"foo";
+                 parameters =
+                   [
+                     +{ Parameter.name = "a"; value = None; annotation = Some !"int" };
+                     +{ Parameter.name = "b"; value = None; annotation = Some !"str" };
+                   ];
+                 decorators = [];
+                 return_annotation = None;
+                 async = false;
+                 generator = false;
+                 parent = None;
+                 nesting_define = None;
+               };
+             captures = [];
+             unbound_names = [];
+             body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+           };
+      ];
+
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str return
+    4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = []; decorators
+    = []; return_annotation = Some !"str"; async = false; generator = false; parent = None;
+    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
+    }; ]; *)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str return
+    4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = []; decorators
+    = []; return_annotation = Some !"str"; async = false; generator = false; parent = None;
+    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
+    }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(a): # type: (str) -> str
+    return 4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = [+{
+    Parameter.name = "a"; value = None; annotation = Some !"str" }]; decorators = [];
+    return_annotation = Some !"str"; async = false; generator = false; parent = None; nesting_define
+    = None; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
+    Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
+    (str) -> str return 4 |}) ~expected: [ +Statement.Class { name = !&"A"; base_arguments = [];
+    decorators = []; top_level_unbound_names = []; body = [ +Statement.Define { signature = { name =
+    !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None; annotation = None }; +{
+    Parameter.name = "a"; value = None; annotation = Some !"str" }; ]; decorators = [];
+    return_annotation = Some !"str"; async = false; generator = false; parent = Some !&"A";
+    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
+    }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
+    (A, str) -> str return 4 |}) ~expected: [ +Statement.Class { name = !&"A"; base_arguments = [];
+    decorators = []; top_level_unbound_names = []; body = [ +Statement.Define { signature = { name =
+    !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None; annotation = Some !"A" }; +{
+    Parameter.name = "a"; value = None; annotation = Some !"str" }; ]; decorators = [];
+    return_annotation = Some !"str"; async = false; generator = false; parent = Some !&"A";
+    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
+    }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( a, # type: bool b # type:
+    bool ): pass |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = [
+    +{ Parameter.name = "a"; value = None; annotation = Some (+Expression.Constant (Constant.String
+    (StringLiteral.create "bool"))); }; +{ Parameter.name = "b"; value = None; annotation = Some
+    (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; ]; decorators = [];
+    return_annotation = None; async = false; generator = false; parent = None; nesting_define =
+    None; }; captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| async def foo( a, # type: bool b #
+    type: bool ): # type: (...) -> int pass |}) ~expected: [ +Statement.Define { signature = { name
+    = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None; annotation = Some
+    (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; +{ Parameter.name =
+    "b"; value = None; annotation = Some (+Expression.Constant (Constant.String
+    (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation = Some !"int"; async =
+    true; generator = false; parent = None; nesting_define = None; }; captures = []; unbound_names =
+    []; body = [+Statement.Pass]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( *args, **kwargs): # type: (
+    *str, **str) -> str return 4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo";
+    parameters = [ +{ Parameter.name = "*args"; value = None; annotation = Some !"str" }; +{
+    Parameter.name = "**kwargs"; value = None; annotation = Some !"str" }; ]; decorators = [];
+    return_annotation = Some !"str"; async = false; generator = false; parent = None; nesting_define
+    = None; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
+    Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str return
+    4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = []; decorators
+    = []; return_annotation = Some !"str"; async = false; generator = false; parent = None;
+    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
+    }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str return
+    4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = []; decorators
+    = []; return_annotation = Some !"str"; async = false; generator = false; parent = None;
+    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
+    }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(a): # type: (str) -> str
+    return 4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = [+{
+    Parameter.name = "a"; value = None; annotation = Some !"str" }]; decorators = [];
+    return_annotation = Some !"str"; async = false; generator = false; parent = None; nesting_define
+    = None; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
+    Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
+    (str) -> str return 4 |}) ~expected: [ +Statement.Class { name = !&"A"; base_arguments = [];
+    decorators = []; top_level_unbound_names = []; body = [ +Statement.Define { signature = { name =
+    !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None; annotation = None }; +{
+    Parameter.name = "a"; value = None; annotation = Some !"str" }; ]; decorators = [];
+    return_annotation = Some !"str"; async = false; generator = false; parent = Some !&"A";
+    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
+    }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
+    (A, str) -> str return 4 |}) ~expected: [ +Statement.Class { name = !&"A"; base_arguments = [];
+    decorators = []; top_level_unbound_names = []; body = [ +Statement.Define { signature = { name =
+    !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None; annotation = Some !"A" }; +{
+    Parameter.name = "a"; value = None; annotation = Some !"str" }; ]; decorators = [];
+    return_annotation = Some !"str"; async = false; generator = false; parent = Some !&"A";
+    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
+    }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( a, # type: bool b # type:
+    bool ): pass |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = [
+    +{ Parameter.name = "a"; value = None; annotation = Some (+Expression.Constant (Constant.String
+    (StringLiteral.create "bool"))); }; +{ Parameter.name = "b"; value = None; annotation = Some
+    (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; ]; decorators = [];
+    return_annotation = None; async = false; generator = false; parent = None; nesting_define =
+    None; }; captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| async def foo( a, # type: bool b #
+    type: bool ): # type: (...) -> int pass |}) ~expected: [ +Statement.Define { signature = { name
+    = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None; annotation = Some
+    (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; +{ Parameter.name =
+    "b"; value = None; annotation = Some (+Expression.Constant (Constant.String
+    (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation = Some !"int"; async =
+    true; generator = false; parent = None; nesting_define = None; }; captures = []; unbound_names =
+    []; body = [+Statement.Pass]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( *args, **kwargs): # type: (
+    *str, **str) -> str return 4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo";
+    parameters = [ +{ Parameter.name = "*args"; value = None; annotation = Some !"str" }; +{
+    Parameter.name = "**kwargs"; value = None; annotation = Some !"str" }; ]; decorators = [];
+    return_annotation = Some !"str"; async = false; generator = false; parent = None; nesting_define
+    = None; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
+    Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+
+  (*TODO (T148669698): assert_not_parsed (trim_extra_indentation {| def foo(x): # type: (str, str)
+    -> str return 4 |});*)
+  ()
+
+
 let () =
   "parse_statements"
   >::: [
@@ -1259,7 +1990,7 @@ let () =
          "try" >:: test_try;
          "with" >:: test_with;
          "assign" >:: test_assign;
-         (*"define" >:: test_define;*)
+         "define" >:: test_define;
          (*"class" >:: test_class;*)
          (*TODO: FIX In ERRPY: "match" >:: test_match;*)
        ]

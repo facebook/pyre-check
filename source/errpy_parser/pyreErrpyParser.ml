@@ -67,6 +67,14 @@ module StatementContext = struct
   }
 end
 
+module SingleParameter = struct
+  type t = {
+    location: Ast.Location.t;
+    identifier: Ast.Identifier.t;
+    annotation: Ast.Expression.t option;
+  }
+end
+
 let translate_alias (alias : Errpyast.alias) =
   let open Ast in
   let location =
@@ -415,9 +423,103 @@ and convert_keyword_argument (kw_argument : Errpyast.keyword) =
       }
 
 
+and translate_argument (argument : Errpyast.arg) =
+  let location =
+    let end_lineno = Option.value argument.end_lineno ~default:argument.lineno in
+    let end_col_offset = Option.value argument.end_col_offset ~default:argument.col_offset in
+    {
+      start = { line = argument.lineno; column = argument.col_offset };
+      stop = { line = end_lineno; column = end_col_offset };
+    }
+  in
+  let annotation = Option.map ~f:translate_expression argument.annotation in
+  let annotation =
+    match annotation with
+    | Some _ -> annotation
+    | None -> (
+        match argument.type_comment with
+        | None -> None
+        | Some comment ->
+            let comment_annotation =
+              Ast.Expression.(
+                Expression.Constant
+                  (Constant.String { StringLiteral.kind = String; value = comment }))
+            in
+            Some (Ast.Node.create ~location comment_annotation))
+  in
+  { SingleParameter.location; identifier = argument.arg; annotation }
+
+
+and translate_arguments (arguments : Errpyast.arguments) =
+  let posonlyargs = List.map ~f:translate_argument arguments.posonlyargs in
+  let args = List.map ~f:translate_argument arguments.args in
+  let vararg = Option.map ~f:translate_argument arguments.vararg in
+  let kwonlyargs = List.map ~f:translate_argument arguments.kwonlyargs in
+  let kw_defaults =
+    List.map ~f:(fun default -> Option.map ~f:translate_expression default) arguments.kw_defaults
+  in
+  let kwarg = Option.map ~f:translate_argument arguments.kwarg in
+  let defaults = List.map ~f:translate_expression arguments.defaults in
+
+  let to_parameter ({ SingleParameter.location; identifier; annotation }, default_value) =
+    { Parameter.name = identifier; value = default_value; annotation } |> Node.create ~location
+  in
+  let to_parameters parameter_list default_list =
+    List.zip_exn parameter_list default_list |> List.map ~f:to_parameter
+  in
+  let positional_only_defaults, regular_defaults =
+    let positional_only_count = List.length posonlyargs in
+    let regular_count = List.length args in
+    let expanded_defaults =
+      let total_counts = positional_only_count + regular_count in
+      let fill_counts = total_counts - List.length defaults in
+      List.map defaults ~f:Option.some |> List.append (List.init fill_counts ~f:(fun _ -> None))
+    in
+    List.split_n expanded_defaults positional_only_count
+  in
+  let positional_only_parameters = to_parameters posonlyargs positional_only_defaults in
+  let regular_parameters = to_parameters args regular_defaults in
+  let keyword_only_parameters = to_parameters kwonlyargs kw_defaults in
+  let vararg_parameter =
+    let handle_vararg { SingleParameter.location; identifier; annotation } =
+      let name = Caml.Format.sprintf "*%s" identifier in
+      { Parameter.name; value = None; annotation } |> Node.create ~location
+    in
+    Option.map vararg ~f:handle_vararg
+  in
+  let kwarg_parameter =
+    let handle_kwarg { SingleParameter.location; identifier; annotation } =
+      let name = Caml.Format.sprintf "**%s" identifier in
+      { Parameter.name; value = None; annotation } |> Node.create ~location
+    in
+    Option.map kwarg ~f:handle_kwarg
+  in
+  let delimiter_parameter ~should_insert name =
+    (* TODO(T101307161): This is just an ugly temporary hack that helps preserve backward
+       compatibility. *)
+    if should_insert then
+      [Node.create_with_default_location { Parameter.name; value = None; annotation = None }]
+    else
+      []
+  in
+  List.concat
+    [
+      positional_only_parameters;
+      delimiter_parameter ~should_insert:(not (List.is_empty positional_only_parameters)) "/";
+      regular_parameters;
+      Option.to_list vararg_parameter;
+      delimiter_parameter
+        ~should_insert:
+          ((not (List.is_empty keyword_only_parameters)) && Option.is_none vararg_parameter)
+        "*";
+      keyword_only_parameters;
+      Option.to_list kwarg_parameter;
+    ]
+
+
 and translate_statements
     (statements : Errpyast.stmt list)
-    ~context:({ StatementContext.parent = _parent; _ } as context)
+    ~context:({ StatementContext.parent; _ } as context)
   =
   let translate_statement (statement : Errpyast.stmt) =
     let translate_withitem (with_item : Errpyast.withitem) =
@@ -468,6 +570,21 @@ and translate_statements
             | _ -> None
           in
           { Ast.Statement.Try.Handler.kind = type_; name = new_name; body }
+    in
+    let create_function_definition ~async ~name ~args ~body ~decorator_list ~returns ~_type_comment =
+      let signature =
+        {
+          Define.Signature.name = Ast.Reference.create name;
+          parameters = args;
+          decorators = decorator_list;
+          return_annotation = returns;
+          async;
+          generator = is_generator body;
+          parent = Option.map parent ~f:Ast.Reference.create;
+          nesting_define = None;
+        }
+      in
+      [Statement.Define { Define.signature; captures = []; unbound_names = []; body }]
     in
     let as_ast_statement =
       match statement_desc with
@@ -648,8 +765,25 @@ and translate_statements
             create_assign ~location ~target ~annotation ~value:(Some value) ()
           in
           List.map assign.targets ~f:create_assign_for_target
-      | Errpyast.FunctionDef _function_def -> failwith "not implemented yet"
-      | Errpyast.AsyncFunctionDef _async_function_def -> failwith "not implemented yet"
+      | Errpyast.FunctionDef function_def ->
+          create_function_definition
+            ~async:false
+            ~name:function_def.name
+            ~args:(translate_arguments function_def.args)
+            ~body:(translate_statements function_def.body ~context:{ context with parent = None })
+            ~decorator_list:(List.map ~f:translate_expression function_def.decorator_list)
+            ~returns:(Option.map ~f:translate_expression function_def.returns)
+            ~_type_comment:function_def.type_comment
+      | Errpyast.AsyncFunctionDef async_function_def ->
+          create_function_definition
+            ~async:true
+            ~name:async_function_def.name
+            ~args:(translate_arguments async_function_def.args)
+            ~body:
+              (translate_statements async_function_def.body ~context:{ context with parent = None })
+            ~decorator_list:(List.map ~f:translate_expression async_function_def.decorator_list)
+            ~returns:(Option.map ~f:translate_expression async_function_def.returns)
+            ~_type_comment:async_function_def.type_comment
       | Errpyast.Delete targets -> [Statement.Delete (List.map targets ~f:translate_expression)]
       | Errpyast.Global names -> [Statement.Global names]
       | Errpyast.Nonlocal names -> [Statement.Nonlocal names]
