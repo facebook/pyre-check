@@ -53,11 +53,24 @@ let test_pass_break_continue _ =
   ()
 
 
+let test_global_nonlocal _ =
+  let assert_parsed = assert_parsed in
+  let assert_not_parsed = assert_not_parsed in
+  assert_parsed "global a" ~expected:[+Statement.Global ["a"]];
+  assert_parsed "global a, b" ~expected:[+Statement.Global ["a"; "b"]];
+  assert_parsed "nonlocal a" ~expected:[+Statement.Nonlocal ["a"]];
+  assert_parsed "nonlocal a, b" ~expected:[+Statement.Nonlocal ["a"; "b"]];
+
+  assert_not_parsed "global";
+  assert_not_parsed "nonlocal";
+  ()
+
+
 let () =
   "parse_statements"
   >::: [
          "pass_break_continue" >:: test_pass_break_continue;
-         (*"global_nonlocal" >:: test_global_nonlocal;*)
+         "global_nonlocal" >:: test_global_nonlocal;
          (*"expression_return_raise" >:: test_expression_return_raise;*)
          (*"assert_delete" >:: test_assert_delete;*)
          (*"import" >:: test_import;*)

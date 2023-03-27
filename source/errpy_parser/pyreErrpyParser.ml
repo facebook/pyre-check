@@ -395,8 +395,8 @@ and translate_statements
       | Errpyast.FunctionDef _function_def -> failwith "not implemented yet"
       | Errpyast.AsyncFunctionDef _async_function_def -> failwith "not implemented yet"
       | Errpyast.Delete _targets -> failwith "not implemented yet"
-      | Errpyast.Global _names -> failwith "not implemented yet"
-      | Errpyast.Nonlocal _names -> failwith "not implemented yet"
+      | Errpyast.Global names -> [Statement.Global names]
+      | Errpyast.Nonlocal names -> [Statement.Nonlocal names]
       | Errpyast.Pass -> [Statement.Pass]
       | Errpyast.Break -> [Statement.Break]
       | Errpyast.Continue -> [Statement.Continue]
