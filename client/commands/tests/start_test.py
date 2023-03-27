@@ -6,7 +6,7 @@
 import datetime
 import tempfile
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, Optional, Tuple
 
 import testslide
 
@@ -37,112 +37,19 @@ from ..start import (
 )
 
 
-class TestFrontendConfiguration(frontend_configuration.Base):
-    def __init__(self) -> None:
-        pass
+class TestSavedStateConfiguration(frontend_configuration.OpenSource):
+    saved_state_project: Optional[str]
 
-    def get_dot_pyre_directory(self) -> Path:
-        raise NotImplementedError()
-
-    def get_log_directory(self) -> Path:
-        raise NotImplementedError()
-
-    def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
-        raise NotImplementedError()
-
-    def get_binary_version(self) -> Optional[str]:
-        raise NotImplementedError()
-
-    def get_content_for_display(self) -> str:
-        raise NotImplementedError()
-
-    def get_global_root(self) -> Path:
-        raise NotImplementedError()
-
-    def get_relative_local_root(self) -> Optional[str]:
-        raise NotImplementedError()
-
-    def get_excludes(self) -> List[str]:
-        raise NotImplementedError()
-
-    def is_strict(self) -> bool:
-        raise NotImplementedError()
-
-    def get_remote_logger(self) -> Optional[str]:
-        raise NotImplementedError()
-
-    def get_number_of_workers(self) -> int:
-        raise NotImplementedError()
-
-    def get_python_version(self) -> configuration_module.PythonVersion:
-        raise NotImplementedError()
-
-    def get_shared_memory(self) -> configuration_module.SharedMemory:
-        raise NotImplementedError()
-
-    def get_valid_extension_suffixes(self) -> List[str]:
-        raise NotImplementedError()
-
-    def get_ignore_all_errors(self) -> List[str]:
-        raise NotImplementedError()
-
-    def get_only_check_paths(self) -> List[str]:
-        raise NotImplementedError()
-
-    def get_existent_search_paths(
+    def __init__(
         self,
-    ) -> List[configuration_module.search_path.Element]:
-        raise NotImplementedError()
-
-    def get_existent_source_directories(
-        self,
-    ) -> List[configuration_module.search_path.Element]:
-        raise NotImplementedError()
-
-    def get_existent_unwatched_dependency(
-        self,
-    ) -> Optional[configuration_module.unwatched.UnwatchedDependency]:
-        raise NotImplementedError()
-
-    def is_source_directories_defined(
-        self,
-    ) -> bool:
-        raise NotImplementedError()
-
-    def get_buck_targets(
-        self,
-    ) -> Optional[List[str]]:
-        raise NotImplementedError()
-
-    def uses_buck2(self) -> bool:
-        raise NotImplementedError()
-
-    def get_buck_mode(self) -> Optional[str]:
-        raise NotImplementedError()
-
-    def get_buck_isolation_prefix(self) -> Optional[str]:
-        raise NotImplementedError()
-
-    def get_buck_bxl_builder(self) -> Optional[str]:
-        raise NotImplementedError()
-
-    def get_other_critical_files(self) -> List[str]:
-        raise NotImplementedError()
-
-    def get_taint_models_path(self) -> List[str]:
-        raise NotImplementedError()
-
-    def get_project_identifier(self) -> str:
-        raise NotImplementedError()
-
-    def get_enable_readonly_analysis(self) -> Optional[bool]:
-        raise NotImplementedError()
-
-    def get_enable_unawaited_awaitable_analysis(self) -> Optional[bool]:
-        raise NotImplementedError()
+        configuration: configuration_module.Configuration,
+        saved_state_project: Optional[str] = None,
+    ) -> None:
+        super().__init__(configuration)
+        self.saved_state_project = saved_state_project
 
     def get_saved_state_project(self) -> Optional[str]:
-        raise NotImplementedError()
+        return self.saved_state_project
 
     def get_include_suppressed_errors(self) -> Optional[bool]:
         raise NotImplementedError()
@@ -387,23 +294,19 @@ class StartTest(testslide.TestCase):
             )
 
     def test_get_saved_state_action(self) -> None:
-        class EmptySavedState(TestFrontendConfiguration):
-            def get_saved_state_project(self) -> Optional[str]:
-                return None
-
+        empty_configuration = configuration_module.Configuration(
+            project_root="irrelevant", dot_pyre_directory=Path("irrelevant")
+        )
         self.assertIsNone(
             get_saved_state_action(
                 command_arguments.StartArguments(),
-                EmptySavedState(),
+                TestSavedStateConfiguration(empty_configuration),
             )
         )
 
-        class OverriddenSavedState(TestFrontendConfiguration):
-            def get_saved_state_project(self) -> Optional[str]:
-                return "test_saved_state"
-
-        saved_state_configuration = OverriddenSavedState()
-
+        saved_state_configuration = TestSavedStateConfiguration(
+            empty_configuration, saved_state_project="test_saved_state"
+        )
         self.assertEqual(
             get_saved_state_action(
                 command_arguments.StartArguments(),
