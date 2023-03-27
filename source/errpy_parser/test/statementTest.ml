@@ -2240,6 +2240,47 @@ let test_class _ =
   ()
 
 
+let test_match _ =
+  (*TODO (T148669698):let assert_case_parsed case_source ~expected_pattern ~expected_guard =
+    assert_parsed ("match x:\n " ^ case_source ^ ":\n pass") ~expected: [ +Statement.Match {
+    Match.subject = !"x"; cases = [ { Match.Case.pattern = expected_pattern; guard = expected_guard;
+    body = [+Statement.Pass]; }; ]; }; ] in *)
+  (*TODO (T148669698):assert_case_parsed "case 1" ~expected_pattern:(+Match.Pattern.MatchValue
+    (+Expression.Constant (Constant.Integer 1))) ~expected_guard:None;*)
+  (*TODO (T148669698):assert_case_parsed "case 2 as y" ~expected_pattern: (+Match.Pattern.MatchAs {
+    pattern = Some (+Match.Pattern.MatchValue (+Expression.Constant (Constant.Integer 2))); name =
+    "y"; }) ~expected_guard:None;*)
+  (*TODO (T148669698):assert_case_parsed "case 3 | 4" ~expected_pattern: (+Match.Pattern.MatchOr [
+    +Match.Pattern.MatchValue (+Expression.Constant (Constant.Integer 3)); +Match.Pattern.MatchValue
+    (+Expression.Constant (Constant.Integer 4)); ]) ~expected_guard:None;*)
+  (*TODO (T148669698):assert_case_parsed "case None"
+    ~expected_pattern:(+Match.Pattern.MatchSingleton Constant.NoneLiteral) ~expected_guard:None;*)
+  (*TODO (T148669698):assert_case_parsed "case [y, z, *rest]" ~expected_pattern:
+    (+Match.Pattern.MatchSequence [ +Match.Pattern.MatchAs { pattern = None; name = "y" };
+    +Match.Pattern.MatchAs { pattern = None; name = "z" }; +Match.Pattern.MatchStar (Some "rest");
+    ]) ~expected_guard:None;*)
+  (*TODO (T148669698):assert_case_parsed "case Foo(5, y=6)" ~expected_pattern:
+    (+Match.Pattern.MatchClass { class_name = +Name.Identifier "Foo"; patterns =
+    [+Match.Pattern.MatchValue (+Expression.Constant (Constant.Integer 5))]; keyword_attributes =
+    ["y"]; keyword_patterns = [+Match.Pattern.MatchValue (+Expression.Constant (Constant.Integer
+    6))]; }) ~expected_guard:None;*)
+  (*TODO (T148669698):assert_case_parsed "case {7: y, 8: z, **rest}" ~expected_pattern:
+    (+Match.Pattern.MatchMapping { keys = [+Expression.Constant (Constant.Integer 7);
+    +Expression.Constant (Constant.Integer 8)]; patterns = [ +Match.Pattern.MatchAs { pattern =
+    None; name = "y" }; +Match.Pattern.MatchAs { pattern = None; name = "z" }; ]; rest = Some
+    "rest"; }) ~expected_guard:None;*)
+  (*TODO (T148669698):assert_case_parsed "case _ if True"
+    ~expected_pattern:(+Match.Pattern.MatchWildcard) ~expected_guard:(Some (+Expression.Constant
+    Constant.True));*)
+  (*TODO (T148669698):assert_not_parsed "match x:\n case 1 as _:\n pass";*)
+  (*TODO (T148669698):assert_not_parsed "match x:\n\n  case y | z:\n pass";*)
+  (*TODO (T148669698):assert_not_parsed "match x:\n case (1 as y) | (2 as z):\n pass";*)
+  (*TODO (T148669698):assert_not_parsed "match x:\n case [1, *_, 5, *_, 10]:\n pass";*)
+  (*TODO (T148669698):assert_not_parsed "match x:\n case\n  x:\n pass\n case x:\n pass";*)
+  (*TODO (T148669698):assert_not_parsed "match x:\n case _:\n pass\n case 42:\n pass";*)
+  ()
+
+
 let () =
   "parse_statements"
   >::: [
@@ -2254,6 +2295,6 @@ let () =
          "assign" >:: test_assign;
          "define" >:: test_define;
          "class" >:: test_class;
-         (*TODO: FIX In ERRPY: "match" >:: test_match;*)
+         "match" >:: test_match;
        ]
   |> Test.run
