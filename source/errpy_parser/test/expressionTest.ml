@@ -1284,6 +1284,59 @@ let test_fstring _ =
   ()
 
 
+let test_ternary_walrus _ =
+  let assert_parsed = assert_parsed in
+  let assert_not_parsed = assert_not_parsed in
+  assert_parsed
+    "1 if 2 else 3"
+    ~expected:
+      (+Expression.Ternary
+          {
+            Ternary.target = +Expression.Constant (Constant.Integer 1);
+            test = +Expression.Constant (Constant.Integer 2);
+            alternative = +Expression.Constant (Constant.Integer 3);
+          });
+  assert_parsed
+    "1 if 2 else 3 if 4 else 5"
+    ~expected:
+      (+Expression.Ternary
+          {
+            Ternary.target = +Expression.Constant (Constant.Integer 1);
+            test = +Expression.Constant (Constant.Integer 2);
+            alternative =
+              +Expression.Ternary
+                 {
+                   Ternary.target = +Expression.Constant (Constant.Integer 3);
+                   test = +Expression.Constant (Constant.Integer 4);
+                   alternative = +Expression.Constant (Constant.Integer 5);
+                 };
+          });
+  assert_parsed
+    "(a := 1)"
+    ~expected:
+      (+Expression.WalrusOperator
+          { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
+  assert_parsed
+    "(a := (b := 1))"
+    ~expected:
+      (+Expression.WalrusOperator
+          {
+            target = !"a";
+            value =
+              +Expression.WalrusOperator
+                 { target = !"b"; value = +Expression.Constant (Constant.Integer 1) };
+          });
+
+  (* Standalone assignment expressions are required to be protected with parenthesis. *)
+  (*TODO: FIX In ERRPY: assert_not_parsed "a := 1";*)
+  (*TODO: FIX In ERRPY: assert_not_parsed "(a := 1) := 2"; *)
+  assert_not_parsed "(a.b := 1)";
+  assert_not_parsed "(a[b] := 1)";
+  assert_not_parsed "((a, b) := 1)";
+  assert_not_parsed "([a, b] := 1)";
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -1299,7 +1352,7 @@ let () =
          "binary_operators" >:: test_binary_operators;
          "comparison_operators" >:: test_comparison_operators;
          "fstring" >:: test_fstring;
-         (*"ternary_walrus" >:: test_ternary_walrus;*)
+         "ternary_walrus" >:: test_ternary_walrus;
          (*"test_call" >:: test_call;*)
          (*"test_subscript" >:: test_subscript;*)
          (*"test_lambda" >:: test_lambda;*)

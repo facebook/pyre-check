@@ -219,8 +219,19 @@ let rec translate_expression (expression : Errpyast.expr) =
                            })
             in
             Expression.Dictionary { Dictionary.entries; keywords }
-        | Errpyast.IfExp _ifexp -> failwith "not implemented yet"
-        | Errpyast.NamedExpr _walrus -> failwith "not implemented yet"
+        | Errpyast.IfExp ifexp ->
+            Expression.Ternary
+              {
+                Ternary.target = translate_expression ifexp.body;
+                test = translate_expression ifexp.test;
+                alternative = translate_expression ifexp.orelse;
+              }
+        | Errpyast.NamedExpr walrus ->
+            Expression.WalrusOperator
+              {
+                target = translate_expression walrus.target;
+                value = translate_expression walrus.value;
+              }
         | Errpyast.Starred starred ->
             Expression.Starred (Starred.Once (translate_expression starred.value))
         | Errpyast.Call _call -> failwith "not implemented yet"
