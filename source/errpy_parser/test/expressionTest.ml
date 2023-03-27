@@ -374,10 +374,10 @@ let test_await_yield _ =
   assert_parsed "await (yield from x)" ~expected:(+Expression.Await (+Expression.YieldFrom !"x"));
   assert_parsed "await (yield x)" ~expected:(+Expression.Await (+Expression.Yield (Some !"x")));
 
-  (*TODO: FIX In ERRPY: assert_not_parsed "await"; *)
+  (*TODO (T148669698): assert_not_parsed "await"; *)
   (* Standalone yield/yield from expressions are required to be protected with parenthesis. *)
-  (*TODO: FIX In ERRPY: assert_not_parsed "yield"; *)
-  (*TODO: FIX In ERRPY: assert_not_parsed "yield from"; *)
+  (*TODO (T148669698): assert_not_parsed "yield"; *)
+  (*TODO (T148669698): assert_not_parsed "yield from"; *)
   ()
 
 
@@ -749,10 +749,10 @@ let test_comprehensions _ =
   assert_not_parsed "[*a for a in b]";
   assert_not_parsed "{*a for a in b}";
   assert_not_parsed "{**a for a in b}";
-  (*TODO: FIX In ERRPY: assert_not_parsed "[i+1 for i in (j := stuff)]";*)
-  (*TODO: FIX In ERRPY: assert_not_parsed "[i+1 for i in range(2) for j in (k := stuff)]";*)
-  (*TODO: FIX In ERRPY: assert_not_parsed "[i+1 for i in [j for j in (k := stuff)]]";*)
-  (*TODO: FIX In ERRPY: assert_not_parsed "[i+1 for i in (lambda: (j := stuff))()]";*)
+  (*TODO (T148669698): assert_not_parsed "[i+1 for i in (j := stuff)]";*)
+  (*TODO (T148669698): assert_not_parsed "[i+1 for i in range(2) for j in (k := stuff)]";*)
+  (*TODO (T148669698): assert_not_parsed "[i+1 for i in [j for j in (k := stuff)]]";*)
+  (*TODO (T148669698): assert_not_parsed "[i+1 for i in (lambda: (j := stuff))()]";*)
   ()
 
 
@@ -806,7 +806,7 @@ let test_starred _ =
   assert_not_parsed "**x";
   assert_not_parsed "*(x)";
   assert_not_parsed "*[x]";
-  (*TODO: FIX In ERRPY: assert_not_parsed "( *x )";*)
+  (*TODO (T148669698): assert_not_parsed "( *x )";*)
   assert_not_parsed "( **x )";
   assert_not_parsed "[**x]";
   ()
@@ -1231,7 +1231,7 @@ let test_fstring _ =
   let literal value = Substring.Literal (+value) in
   let format value = Substring.Format (+value) in
   assert_parsed "f'foo'" ~expected:[literal "foo"];
-  (*TODO: FIX In ERRPY: assert_parsed "F'foo'" ~expected:[literal "foo"];*)
+  (*TODO (T148669698): assert_parsed "F'foo'" ~expected:[literal "foo"];*)
   assert_parsed "f'foo' f'bar'" ~expected:[literal "foobar"];
   assert_parsed "f'foo' 'bar'" ~expected:[literal "foobar"];
   assert_parsed "f'{  3.14  }'" ~expected:[format (Expression.Constant (Constant.Float 3.14))];
@@ -1274,13 +1274,24 @@ let test_fstring _ =
              [literal "a"; format (Expression.Name (Name.Identifier "b")); literal "c"]);
       ];
 
-  (*TODO: FIX In ERRPY: assert_parsed "f'''\n{b}\nc'''" ~expected:[literal "\n"; format
-    (Expression.Name (Name.Identifier "b")); literal "\nc"]; assert_not_parsed "f'' b''";
-    assert_not_parsed "f'{\"x'"; assert_not_parsed "f'{\"x}'"; assert_not_parsed "f'{(\"x'";
-    assert_not_parsed "f'{(\"x)'"; assert_not_parsed "f'{((}'"; assert_not_parsed "f'{a[4)}'";
-    assert_not_parsed "f'{a(4]}'"; assert_not_parsed "f'{a[4}'"; assert_not_parsed "f'{a(4}'";
-    assert_not_parsed "f'{1#}'"; assert_not_parsed "f'{#}'"; assert_not_parsed "f'{}'";
-    assert_not_parsed "f'{,}'"; assert_not_parsed "f'{\n}'"; assert_not_parsed "f'{\\'a\\'}'";*)
+  (*TODO (T148669698):assert_parsed "f'''\n{b}\nc'''" ~expected:[literal "\n"; format
+    (Expression.Name (Name.Identifier "b")); literal "\nc"];*)
+  (*TODO (T148669698):assert_not_parsed "f'' b''";*)
+  (*TODO (T148669698):assert_not_parsed "f'{\"x'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{\"x}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{(\"x'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{(\"x)'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{((}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{a[4)}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{a(4]}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{a[4}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{a(4}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{1#}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{#}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{,}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{\n}'";*)
+  (*TODO (T148669698):assert_not_parsed "f'{\\'a\\'}'";*)
   ()
 
 
@@ -1328,8 +1339,8 @@ let test_ternary_walrus _ =
           });
 
   (* Standalone assignment expressions are required to be protected with parenthesis. *)
-  (*TODO: FIX In ERRPY: assert_not_parsed "a := 1";*)
-  (*TODO: FIX In ERRPY: assert_not_parsed "(a := 1) := 2"; *)
+  (*TODO (T148669698): assert_not_parsed "a := 1";*)
+  (*TODO (T148669698): assert_not_parsed "(a := 1) := 2"; *)
   assert_not_parsed "(a.b := 1)";
   assert_not_parsed "(a[b] := 1)";
   assert_not_parsed "((a, b) := 1)";
@@ -2057,7 +2068,7 @@ let test_lambda _ =
               ];
             body = !"x";
           });
-  (*TODO: FIX In ERRPY: assert_not_parsed "lambda x=1, y: x"; assert_not_parsed "lambda *x, *, y:
+  (*TODO (T148669698): assert_not_parsed "lambda x=1, y: x"; assert_not_parsed "lambda *x, *, y:
     x";*)
   ()
 

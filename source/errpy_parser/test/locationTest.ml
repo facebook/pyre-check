@@ -158,7 +158,7 @@ let test_assign_locations _ =
                value = node ~start:(1, 9) ~stop:(1, 10) (Expression.Constant (Constant.Integer 1));
              });
       ];
-  (*TODO: FIX In ERRPY: assert_parsed "a = 1 # type: int" ~expected: [ node ~start:(1, 0) ~stop:(1,
+  (*TODO (T148669698): assert_parsed "a = 1 # type: int" ~expected: [ node ~start:(1, 0) ~stop:(1,
     18) (Statement.Assign { Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name
     (Name.Identifier "a")); annotation = Some (node ~start:(1, 6) ~stop:(1, 18) (Expression.Constant
     (Constant.String (StringLiteral.create "int")))); value = node ~start:(1, 4) ~stop:(1, 5)
@@ -2684,15 +2684,16 @@ let test_string_locations _ =
       ]
 
 
-(*TODO: FIX In ERRPY: assert_parsed "'''multiline\nliteral'''\n" ~expected: [ node ~start:(1, 0)
+(*TODO (T148669698):assert_parsed "'''multiline\nliteral'''\n" ~expected: [ node ~start:(1, 0)
   ~stop:(2, 10) (Statement.Expression (node ~start:(1, 0) ~stop:(2, 10) (Expression.Constant
-  (Constant.String (StringLiteral.create "multiline\nliteral"))))); ]; assert_parsed
-  "\"\"\"multiline\nliteral\"\"\"\n" ~expected: [ node ~start:(1, 0) ~stop:(2, 10)
-  (Statement.Expression (node ~start:(1, 0) ~stop:(2, 10) (Expression.Constant (Constant.String
-  (StringLiteral.create "multiline\nliteral"))))); ]; assert_parsed "'''\nAAA\nBBB\n'''\npass"
-  ~expected: [ node ~start:(1, 0) ~stop:(4, 3) (Statement.Expression (node ~start:(1, 0) ~stop:(4,
-  3) (Expression.Constant (Constant.String (StringLiteral.create "\nAAA\nBBB\n"))))); node
-  ~start:(5, 0) ~stop:(5, 4) Statement.Pass; ]*)
+  (Constant.String (StringLiteral.create "multiline\nliteral"))))); ];*)
+(*TODO (T148669698):assert_parsed "\"\"\"multiline\nliteral\"\"\"\n" ~expected: [ node ~start:(1, 0)
+  ~stop:(2, 10) (Statement.Expression (node ~start:(1, 0) ~stop:(2, 10) (Expression.Constant
+  (Constant.String (StringLiteral.create "multiline\nliteral"))))); ];*)
+(*TODO (T148669698):assert_parsed "'''\nAAA\nBBB\n'''\npass" ~expected: [ node ~start:(1, 0)
+  ~stop:(4, 3) (Statement.Expression (node ~start:(1, 0) ~stop:(4, 3) (Expression.Constant
+  (Constant.String (StringLiteral.create "\nAAA\nBBB\n"))))); node ~start:(5, 0) ~stop:(5, 4)
+  Statement.Pass; ]*)
 
 let test_stub_locations _ =
   let assert_parsed = assert_parsed in
@@ -2711,7 +2712,7 @@ let test_stub_locations _ =
                value = node ~start:(1, 4) ~stop:(1, 7) (Expression.Constant Constant.Ellipsis);
              });
       ];
-  (*TODO: FIX In ERRPY: assert_parsed "def foo(a): ... # type: ignore" ~expected: [ node ~start:(1,
+  (*TODO (T148669698): assert_parsed "def foo(a): ... # type: ignore" ~expected: [ node ~start:(1,
     0) ~stop:(1, 15) (Statement.Define { signature = { name = !&"foo"; parameters = [ node
     ~start:(1, 8) ~stop:(1, 9) { Parameter.name = "a"; value = None; annotation = None }; ];
     decorators = []; return_annotation = None; async = false; generator = false; parent = None;
@@ -3261,31 +3262,36 @@ let test_yield_locations _ =
       ]
 
 
-(*TODO: FIX In ERRPY: let test_type_comments _ = let assert_parsed = assert_parsed in assert_parsed
-  "def foo(x):\n # type: (int) -> None\n pass" ~expected: [ node ~start:(1, 0) ~stop:(3, 6)
-  (Statement.Define { signature = { name = !&"foo"; parameters = [ node ~start:(1, 8) ~stop:(1, 9) {
-  Parameter.name = "x"; value = None; annotation = Some (node ~start:(1, 0) ~stop:(3, 2)
-  (Expression.Name (Name.Identifier "int"))); }; ]; decorators = []; return_annotation = Some (node
-  ~start:(1, 0) ~stop:(3, 2) (Expression.Constant Constant.NoneLiteral)); async = false; generator =
-  false; parent = None; nesting_define = None; }; captures = []; unbound_names = []; body = [node
-  ~start:(3, 2) ~stop:(3, 6) Statement.Pass]; }); ]; assert_parsed "async def foo(x):\n # type:
-  (int) -> None\n pass" ~expected: [ node ~start:(1, 0) ~stop:(3, 6) (Statement.Define { signature =
-  { name = !&"foo"; parameters = [ node ~start:(1, 14) ~stop:(1, 15) { Parameter.name = "x"; value =
-  None; annotation = Some (node ~start:(1, 0) ~stop:(3, 2) (Expression.Name (Name.Identifier
-  "int"))); }; ]; decorators = []; return_annotation = Some (node ~start:(1, 0) ~stop:(3, 2)
-  (Expression.Constant Constant.NoneLiteral)); async = true; generator = false; parent = None;
-  nesting_define = None; }; captures = []; unbound_names = []; body = [node ~start:(3, 2) ~stop:(3,
-  6) Statement.Pass]; }); ]; assert_parsed "def foo(x): # type: (int) -> List[derp]\n pass"
-  ~expected: [ node ~start:(1, 0) ~stop:(2, 6) (Statement.Define { signature = { name = !&"foo";
-  parameters = [ node ~start:(1, 8) ~stop:(1, 9) { Parameter.name = "x"; value = None; annotation =
-  Some (node ~start:(1, 0) ~stop:(2, 2) (Expression.Name (Name.Identifier "int"))); }; ]; decorators
-  = []; return_annotation = Some (node ~start:(1, 0) ~stop:(2, 2) (Expression.Call { callee = node
-  ~start:(1, 0) ~stop:(2, 2) (Expression.Name (Name.Attribute { base = node ~start:(1, 0) ~stop:(2,
-  2) (Expression.Name (Name.Identifier "List")); attribute = "__getitem__"; special = true; }));
-  arguments = [ { Call.Argument.name = None; value = node ~start:(1, 0) ~stop:(2, 2)
-  (Expression.Name (Name.Identifier "derp")); }; ]; })); async = false; generator = false; parent =
-  None; nesting_define = None; }; captures = []; unbound_names = []; body = [node ~start:(2, 2)
-  ~stop:(2, 6) Statement.Pass]; }); ]; () *)
+let test_type_comments _ =
+  (*TODO (T148669698):assert_parsed "def foo(x):\n # type: (int) -> None\n pass" ~expected: [ node
+    ~start:(1, 0) ~stop:(3, 6) (Statement.Define { signature = { name = !&"foo"; parameters = [ node
+    ~start:(1, 8) ~stop:(1, 9) { Parameter.name = "x"; value = None; annotation = Some (node
+    ~start:(1, 0) ~stop:(3, 2) (Expression.Name (Name.Identifier "int"))); }; ]; decorators = [];
+    return_annotation = Some (node ~start:(1, 0) ~stop:(3, 2) (Expression.Constant
+    Constant.NoneLiteral)); async = false; generator = false; parent = None; nesting_define = None;
+    }; captures = []; unbound_names = []; body = [node ~start:(3, 2) ~stop:(3, 6) Statement.Pass];
+    }); ];*)
+  (*TODO (T148669698):assert_parsed "async def foo(x):\n # type:\n (int) -> None\n pass" ~expected:
+    [ node ~start:(1, 0) ~stop:(3, 6) (Statement.Define { signature = { name = !&"foo"; parameters =
+    [ node ~start:(1, 14) ~stop:(1, 15) { Parameter.name = "x"; value = None; annotation = Some
+    (node ~start:(1, 0) ~stop:(3, 2) (Expression.Name (Name.Identifier "int"))); }; ]; decorators =
+    []; return_annotation = Some (node ~start:(1, 0) ~stop:(3, 2) (Expression.Constant
+    Constant.NoneLiteral)); async = true; generator = false; parent = None; nesting_define = None;
+    }; captures = []; unbound_names = []; body = [node ~start:(3, 2) ~stop:(3, 6) Statement.Pass];
+    }); ];*)
+  (*TODO (T148669698):assert_parsed "def foo(x): # type: (int) -> List[derp]\n pass" ~expected: [
+    node ~start:(1, 0) ~stop:(2, 6) (Statement.Define { signature = { name = !&"foo"; parameters = [
+    node ~start:(1, 8) ~stop:(1, 9) { Parameter.name = "x"; value = None; annotation = Some (node
+    ~start:(1, 0) ~stop:(2, 2) (Expression.Name (Name.Identifier "int"))); }; ]; decorators = [];
+    return_annotation = Some (node ~start:(1, 0) ~stop:(2, 2) (Expression.Call { callee = node
+    ~start:(1, 0) ~stop:(2, 2) (Expression.Name (Name.Attribute { base = node ~start:(1, 0)
+    ~stop:(2, 2) (Expression.Name (Name.Identifier "List")); attribute = "__getitem__"; special =
+    true; })); arguments = [ { Call.Argument.name = None; value = node ~start:(1, 0) ~stop:(2, 2)
+    (Expression.Name (Name.Identifier "derp")); }; ]; })); async = false; generator = false; parent
+    = None; nesting_define = None; }; captures = []; unbound_names = []; body = [node ~start:(2, 2)
+    ~stop:(2, 6) Statement.Pass]; }); ];*)
+  ()
+
 
 let () =
   "parsed_locations"
@@ -3321,6 +3327,6 @@ let () =
          "with_locations" >:: test_with_locations;
          "walrus_locations" >:: test_walrus_locations;
          "yield_locations" >:: test_yield_locations;
-         (*TODO: FIX In ERRPY: "type_comments" >:: test_type_comments;*)
+         (*TODO (T148669698): "type_comments" >:: test_type_comments;*)
        ]
   |> Test.run

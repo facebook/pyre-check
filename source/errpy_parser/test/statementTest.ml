@@ -43,12 +43,12 @@ let assert_not_parsed text =
 
 let test_pass_break_continue _ =
   let assert_parsed = assert_parsed in
-  (*TODO: FIX In ERRPY: let assert_not_parsed = assert_not_parsed in*)
+  (*TODO (T148669698): let assert_not_parsed = assert_not_parsed in*)
   assert_parsed "pass" ~expected:[+Statement.Pass];
   assert_parsed "break" ~expected:[+Statement.Break];
   assert_parsed "continue" ~expected:[+Statement.Continue];
   assert_parsed "pass\npass" ~expected:[+Statement.Pass; +Statement.Pass];
-  (*TODO: FIX In ERRPY: assert_not_parsed "pass\n pass";*)
+  (*TODO (T148669698): assert_not_parsed "pass\n pass";*)
   assert_parsed
     "break\ncontinue\npass\n"
     ~expected:[+Statement.Break; +Statement.Continue; +Statement.Pass];
@@ -538,9 +538,9 @@ let test_for_while_if _ =
   assert_not_parsed "for";
   assert_not_parsed "for a in b";
   assert_not_parsed "while a";
-  (*TODO: FIX In ERRPY: assert_not_parsed "while a:";*)
+  (*TODO (T148669698): assert_not_parsed "while a:";*)
   assert_not_parsed "if a";
-  (*TODO: FIX In ERRPY: assert_not_parsed "if a:";*)
+  (*TODO (T148669698): assert_not_parsed "if a:";*)
   ()
 
 
@@ -730,7 +730,7 @@ let test_try _ =
 
   assert_not_parsed "try: a";
   assert_not_parsed "try:\n\ta\nelse:\n\tb";
-  (*TODO: FIX In ERRPY: assert_not_parsed "try:\n\ta\nexcept a, b:\n\tb";*)
+  (*TODO (T148669698): assert_not_parsed "try:\n\ta\nexcept a, b:\n\tb";*)
   ()
 
 
