@@ -576,6 +576,186 @@ let test_container_literals _ =
   ()
 
 
+let test_comprehensions _ =
+  let assert_parsed = assert_parsed in
+  let assert_not_parsed = assert_not_parsed in
+  assert_parsed
+    "(a for a in b)"
+    ~expected:
+      (+Expression.Generator
+          {
+            Comprehension.element = !"a";
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator = !"b";
+                  conditions = [];
+                  async = false;
+                };
+              ];
+          });
+  assert_parsed
+    "(a for a in (b for b in c))"
+    ~expected:
+      (+Expression.Generator
+          {
+            Comprehension.element = !"a";
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator =
+                    +Expression.Generator
+                       {
+                         Comprehension.element = !"b";
+                         generators =
+                           [
+                             {
+                               Comprehension.Generator.target = !"b";
+                               iterator = !"c";
+                               conditions = [];
+                               async = false;
+                             };
+                           ];
+                       };
+                  conditions = [];
+                  async = false;
+                };
+              ];
+          });
+  assert_parsed
+    "(c for a in b for c in a)"
+    ~expected:
+      (+Expression.Generator
+          {
+            Comprehension.element = !"c";
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator = !"b";
+                  conditions = [];
+                  async = false;
+                };
+                {
+                  Comprehension.Generator.target = !"c";
+                  iterator = !"a";
+                  conditions = [];
+                  async = false;
+                };
+              ];
+          });
+  assert_parsed
+    "(a for a in b if True)"
+    ~expected:
+      (+Expression.Generator
+          {
+            Comprehension.element = !"a";
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator = !"b";
+                  conditions = [+Expression.Constant Constant.True];
+                  async = false;
+                };
+              ];
+          });
+  assert_parsed
+    "(a for a in b if True if False)"
+    ~expected:
+      (+Expression.Generator
+          {
+            Comprehension.element = !"a";
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator = !"b";
+                  conditions =
+                    [+Expression.Constant Constant.True; +Expression.Constant Constant.False];
+                  async = false;
+                };
+              ];
+          });
+  assert_parsed
+    "(a async for a in b)"
+    ~expected:
+      (+Expression.Generator
+          {
+            Comprehension.element = !"a";
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator = !"b";
+                  conditions = [];
+                  async = true;
+                };
+              ];
+          });
+  assert_parsed
+    "[a for a in b]"
+    ~expected:
+      (+Expression.ListComprehension
+          {
+            Comprehension.element = !"a";
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator = !"b";
+                  conditions = [];
+                  async = false;
+                };
+              ];
+          });
+  assert_parsed
+    "{a for a in b}"
+    ~expected:
+      (+Expression.SetComprehension
+          {
+            Comprehension.element = !"a";
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator = !"b";
+                  conditions = [];
+                  async = false;
+                };
+              ];
+          });
+  assert_parsed
+    "{a:0 for a in b}"
+    ~expected:
+      (+Expression.DictionaryComprehension
+          {
+            Comprehension.element =
+              { Dictionary.Entry.key = !"a"; value = +Expression.Constant (Constant.Integer 0) };
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = !"a";
+                  iterator = !"b";
+                  conditions = [];
+                  async = false;
+                };
+              ];
+          });
+
+  assert_not_parsed "(*a for a in b)";
+  assert_not_parsed "[*a for a in b]";
+  assert_not_parsed "{*a for a in b}";
+  assert_not_parsed "{**a for a in b}";
+  (*TODO: FIX In ERRPY: assert_not_parsed "[i+1 for i in (j := stuff)]";*)
+  (*TODO: FIX In ERRPY: assert_not_parsed "[i+1 for i in range(2) for j in (k := stuff)]";*)
+  (*TODO: FIX In ERRPY: assert_not_parsed "[i+1 for i in [j for j in (k := stuff)]]";*)
+  (*TODO: FIX In ERRPY: assert_not_parsed "[i+1 for i in (lambda: (j := stuff))()]";*)
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -586,9 +766,9 @@ let () =
          "boolean_operators" >:: test_boolean_operators;
          "await_yield" >:: test_await_yield;
          "container_literals" >:: test_container_literals;
+         "comprehensions" >:: test_comprehensions;
          (*"fstring" >:: test_fstring;*)
          (*"ternary_walrus" >:: test_ternary_walrus;*)
-         (*"comprehensions" >:: test_comprehensions;*)
          (*"starred" >:: test_starred;*)
          (*"comparison_operators" >:: test_comparison_operators;*)
          (*"binary_operators" >:: test_binary_operators;*)

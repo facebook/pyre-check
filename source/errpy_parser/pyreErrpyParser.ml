@@ -68,6 +68,14 @@ module StatementContext = struct
 end
 
 let rec translate_expression (expression : Errpyast.expr) =
+  let translate_comprehension (comprehension : Errpyast.comprehension) =
+    {
+      Comprehension.Generator.target = translate_expression comprehension.target;
+      iterator = translate_expression comprehension.iter;
+      conditions = List.map ~f:translate_expression comprehension.ifs;
+      async = comprehension.is_async;
+    }
+  in
   let expression_desc = expression.desc in
   let location =
     let end_lineno = Option.value expression.end_lineno ~default:expression.lineno in
@@ -174,10 +182,34 @@ let rec translate_expression (expression : Errpyast.expr) =
         | Errpyast.Call _call -> failwith "not implemented yet"
         | Errpyast.Subscript _subscript -> failwith "not implemented yet"
         | Errpyast.Slice _slice -> failwith "not implemented yet"
-        | Errpyast.GeneratorExp _gennerator_expression -> failwith "not implemented yet"
-        | Errpyast.ListComp _list_comprehension -> failwith "not implemented yet"
-        | Errpyast.SetComp _set_comprehension -> failwith "not implemented yet"
-        | Errpyast.DictComp _dict_comprehension -> failwith "not implemented yet"
+        | Errpyast.GeneratorExp gennerator_expression ->
+            Expression.Generator
+              {
+                Comprehension.element = translate_expression gennerator_expression.elt;
+                generators = List.map ~f:translate_comprehension gennerator_expression.generators;
+              }
+        | Errpyast.ListComp list_comprehension ->
+            Expression.ListComprehension
+              {
+                Comprehension.element = translate_expression list_comprehension.elt;
+                generators = List.map ~f:translate_comprehension list_comprehension.generators;
+              }
+        | Errpyast.SetComp set_comprehension ->
+            Expression.SetComprehension
+              {
+                Comprehension.element = translate_expression set_comprehension.elt;
+                generators = List.map ~f:translate_comprehension set_comprehension.generators;
+              }
+        | Errpyast.DictComp dict_comprehension ->
+            Expression.DictionaryComprehension
+              {
+                Comprehension.element =
+                  {
+                    Dictionary.Entry.key = translate_expression dict_comprehension.key;
+                    value = translate_expression dict_comprehension.value;
+                  };
+                generators = List.map ~f:translate_comprehension dict_comprehension.generators;
+              }
         | Errpyast.FormattedValue _formatted_value -> failwith "not implemented yet"
         | Errpyast.JoinedStr _joined_string -> failwith "not implemented yet"
         | Errpyast.Lambda _lambda -> failwith "not implemented yet"
