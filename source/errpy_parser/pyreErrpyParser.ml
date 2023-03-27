@@ -384,7 +384,16 @@ and translate_statements
           let exc = Option.map raise.exc ~f:translate_expression in
           let cause = Option.map raise.cause ~f:translate_expression in
           [Statement.Raise { Raise.expression = exc; from = cause }]
-      | Errpyast.Assert _assert_statement -> failwith "not implemented yet"
+      | Errpyast.Assert assert_statement ->
+          let message = Option.map assert_statement.msg ~f:translate_expression in
+          [
+            Statement.Assert
+              {
+                Assert.test = translate_expression assert_statement.test;
+                message;
+                origin = Assert.Origin.Assertion;
+              };
+          ]
       | Errpyast.Import _aliases -> failwith "not implemented yet"
       | Errpyast.ImportFrom _import_from -> failwith "not implemented yet"
       | Errpyast.For _for_statement -> failwith "not implemented yet"
@@ -399,7 +408,7 @@ and translate_statements
       | Errpyast.Assign _assign -> failwith "not implemented yet"
       | Errpyast.FunctionDef _function_def -> failwith "not implemented yet"
       | Errpyast.AsyncFunctionDef _async_function_def -> failwith "not implemented yet"
-      | Errpyast.Delete _targets -> failwith "not implemented yet"
+      | Errpyast.Delete targets -> [Statement.Delete (List.map targets ~f:translate_expression)]
       | Errpyast.Global names -> [Statement.Global names]
       | Errpyast.Nonlocal names -> [Statement.Nonlocal names]
       | Errpyast.Pass -> [Statement.Pass]
