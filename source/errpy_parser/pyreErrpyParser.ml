@@ -796,7 +796,24 @@ and translate_statements
       | Errpyast.Break -> [Statement.Break]
       | Errpyast.Continue -> [Statement.Continue]
       | Errpyast.Expr expression -> [Statement.Expression (translate_expression expression)]
-      | Errpyast.ClassDef _class_def -> failwith "not implemented yet"
+      | Errpyast.ClassDef class_def ->
+          let base_arguments =
+            List.append
+              (List.map class_def.bases ~f:convert_positional_argument)
+              (List.map class_def.keywords ~f:convert_keyword_argument)
+          in
+          let name = class_def.name in
+          [
+            Statement.Class
+              {
+                Class.name = Ast.Reference.create name;
+                base_arguments;
+                body =
+                  translate_statements class_def.body ~context:{ context with parent = Some name };
+                decorators = List.map ~f:translate_expression class_def.decorator_list;
+                top_level_unbound_names = [];
+              };
+          ]
       | Errpyast.Match _match -> failwith "not implemented yet"
     in
     let make_node statement = statement |> Node.create ~location in
