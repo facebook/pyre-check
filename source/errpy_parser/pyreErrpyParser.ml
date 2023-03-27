@@ -390,6 +390,42 @@ and translate_statements
         stop = { line = end_lineno; column = end_col_offset };
       }
     in
+    let translate_excepthandler (excepthandler : Errpyast.excepthandler) =
+      let excepthandler_desc = excepthandler.desc in
+      match excepthandler_desc with
+      | Errpyast.ExceptHandler handler ->
+          let body = translate_statements handler.body ~context in
+          let name = handler.name in
+          let type_ = Option.map handler.type_ ~f:translate_expression in
+          let handler_stop = location.stop in
+          let new_name =
+            match type_, name with
+            | ( Some
+                  {
+                    Node.location =
+                      { stop = { line = type_stop_line; column = type_stop_column }; _ };
+                    _;
+                  },
+                Some name ) ->
+                (* Stop at the beginning of body or end of handler if no body *)
+                let name_stop =
+                  match body with
+                  | [] -> handler_stop
+                  | statement :: _ -> (Node.location statement).start
+                in
+                Some
+                  (Node.create
+                     ~location:
+                       {
+                         (* Start " as " characters from end of expression type *)
+                         start = { line = type_stop_line; column = type_stop_column + 4 };
+                         stop = name_stop;
+                       }
+                     name)
+            | _ -> None
+          in
+          { Ast.Statement.Try.Handler.kind = type_; name = new_name; body }
+    in
     let as_ast_statement =
       match statement_desc with
       | Errpyast.Return expression ->
@@ -477,7 +513,16 @@ and translate_statements
                 orelse = translate_statements if_statement.orelse ~context;
               };
           ]
-      | Errpyast.Try _try_statement -> failwith "not implemented yet"
+      | Errpyast.Try try_statement ->
+          [
+            Statement.Try
+              {
+                Try.body = translate_statements try_statement.body ~context;
+                orelse = translate_statements try_statement.orelse ~context;
+                finally = translate_statements try_statement.finalbody ~context;
+                handlers = List.map ~f:translate_excepthandler try_statement.handlers;
+              };
+          ]
       | Errpyast.With _with_statement -> failwith "not implemented yet"
       | Errpyast.AsyncWith _with_statement -> failwith "not implemented yet"
       | Errpyast.AnnAssign _ann_assign -> failwith "not implemented yet"
