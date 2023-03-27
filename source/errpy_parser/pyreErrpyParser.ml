@@ -234,7 +234,13 @@ let rec translate_expression (expression : Errpyast.expr) =
               }
         | Errpyast.Starred starred ->
             Expression.Starred (Starred.Once (translate_expression starred.value))
-        | Errpyast.Call _call -> failwith "not implemented yet"
+        | Errpyast.Call call ->
+            let arguments =
+              List.append
+                (List.map call.args ~f:convert_positional_argument)
+                (List.map call.keywords ~f:convert_keyword_argument)
+            in
+            Expression.Call { callee = translate_expression call.func; arguments }
         | Errpyast.Subscript _subscript -> failwith "not implemented yet"
         | Errpyast.Slice _slice -> failwith "not implemented yet"
         | Errpyast.GeneratorExp gennerator_expression ->
@@ -283,6 +289,49 @@ let rec translate_expression (expression : Errpyast.expr) =
         | _ -> failwith "not implemented yet"
       in
       as_ast_expression |> Node.create ~location
+
+
+and convert_positional_argument value =
+  { Ast.Expression.Call.Argument.name = None; value = translate_expression value }
+
+
+and convert_keyword_argument (kw_argument : Errpyast.keyword) =
+  let name = kw_argument.arg in
+  let value = kw_argument.value in
+  let value = translate_expression value in
+  let location =
+    let end_lineno = Option.value kw_argument.end_lineno ~default:kw_argument.lineno in
+    let end_col_offset = Option.value kw_argument.end_col_offset ~default:kw_argument.col_offset in
+    {
+      start = { line = kw_argument.lineno; column = kw_argument.col_offset };
+      stop = { line = end_lineno; column = end_col_offset };
+    }
+  in
+  match name with
+  | None ->
+      (* CPython AST (and ERRPY) quirk: **arg is represented as keyword arg without a name. *)
+      {
+        Call.Argument.name = None;
+        value = Expression.Starred (Starred.Twice value) |> Node.create ~location;
+      }
+  | Some name ->
+      {
+        Call.Argument.name =
+          Some
+            {
+              value = name;
+              location =
+                {
+                  location with
+                  stop =
+                    {
+                      line = location.start.line;
+                      column = location.start.column + String.length name;
+                    };
+                };
+            };
+        value;
+      }
 
 
 and translate_statements

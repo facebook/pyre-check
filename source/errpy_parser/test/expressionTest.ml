@@ -1337,6 +1337,131 @@ let test_ternary_walrus _ =
   ()
 
 
+let test_call _ =
+  let assert_parsed = assert_parsed in
+  assert_parsed "foo()" ~expected:(+Expression.Call { callee = !"foo"; arguments = [] });
+  assert_parsed
+    "foo(x)"
+    ~expected:
+      (+Expression.Call
+          { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
+  assert_parsed
+    "foo(x,)"
+    ~expected:
+      (+Expression.Call
+          { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
+  assert_parsed
+    "foo(x=y)"
+    ~expected:
+      (+Expression.Call
+          { callee = !"foo"; arguments = [{ Call.Argument.name = Some (+"x"); value = !"y" }] });
+  assert_parsed
+    "foo(x=y,)"
+    ~expected:
+      (+Expression.Call
+          { callee = !"foo"; arguments = [{ Call.Argument.name = Some (+"x"); value = !"y" }] });
+  assert_parsed
+    "foo(x, y)"
+    ~expected:
+      (+Expression.Call
+          {
+            callee = !"foo";
+            arguments =
+              [
+                { Call.Argument.name = None; value = !"x" };
+                { Call.Argument.name = None; value = !"y" };
+              ];
+          });
+  assert_parsed
+    "foo((x, y))"
+    ~expected:
+      (+Expression.Call
+          {
+            callee = !"foo";
+            arguments = [{ Call.Argument.name = None; value = +Expression.Tuple [!"x"; !"y"] }];
+          });
+  assert_parsed
+    "foo(x,y=z)"
+    ~expected:
+      (+Expression.Call
+          {
+            callee = !"foo";
+            arguments =
+              [
+                { Call.Argument.name = None; value = !"x" };
+                { Call.Argument.name = Some (+"y"); value = !"z" };
+              ];
+          });
+  assert_parsed
+    "a.foo(x)"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name (Name.Attribute { base = !"a"; attribute = "foo"; special = false });
+            arguments = [{ Call.Argument.name = None; value = !"x" }];
+          });
+  assert_parsed
+    "foo(1, a = 2, *args, **kwargs)"
+    ~expected:
+      (+Expression.Call
+          {
+            callee = !"foo";
+            arguments =
+              [
+                { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
+                { Call.Argument.name = None; value = +Expression.Starred (Starred.Once !"args") };
+                {
+                  Call.Argument.name = Some (+"a");
+                  value = +Expression.Constant (Constant.Integer 2);
+                };
+                { Call.Argument.name = None; value = +Expression.Starred (Starred.Twice !"kwargs") };
+              ];
+          });
+  assert_parsed
+    "foo(x) + y"
+    ~expected:
+      (+Expression.Call
+          {
+            callee =
+              +Expression.Name
+                 (Name.Attribute
+                    {
+                      base =
+                        +Expression.Call
+                           {
+                             callee = !"foo";
+                             arguments = [{ Call.Argument.name = None; value = !"x" }];
+                           };
+                      attribute = "__add__";
+                      special = true;
+                    });
+            arguments = [{ Call.Argument.name = None; value = !"y" }];
+          });
+  assert_parsed
+    "foo(x) > y"
+    ~expected:
+      (+Expression.ComparisonOperator
+          {
+            ComparisonOperator.left =
+              +Expression.Call
+                 { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] };
+            operator = ComparisonOperator.GreaterThan;
+            right = !"y";
+          });
+  assert_parsed
+    "not foo(x)"
+    ~expected:
+      (+Expression.UnaryOperator
+          {
+            UnaryOperator.operator = UnaryOperator.Not;
+            UnaryOperator.operand =
+              +Expression.Call
+                 { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] };
+          });
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -1353,8 +1478,8 @@ let () =
          "comparison_operators" >:: test_comparison_operators;
          "fstring" >:: test_fstring;
          "ternary_walrus" >:: test_ternary_walrus;
-         (*"test_call" >:: test_call;*)
-         (*"test_subscript" >:: test_subscript;*)
-         (*"test_lambda" >:: test_lambda;*)
+         "call" >:: test_call;
+         (*"subscript" >:: test_subscript;*)
+         (*"lambda" >:: test_lambda;*)
        ]
   |> Test.run
