@@ -361,6 +361,26 @@ let test_boolean_operators _ =
   ()
 
 
+let test_await_yield _ =
+  let assert_parsed = assert_parsed in
+  (*let assert_not_parsed = assert_not_parsed in*)
+  assert_parsed "await x" ~expected:(+Expression.Await !"x");
+  assert_parsed "(yield)" ~expected:(+Expression.Yield None);
+  assert_parsed
+    "(yield 1)"
+    ~expected:(+Expression.Yield (Some (+Expression.Constant (Constant.Integer 1))));
+  assert_parsed "(yield from x)" ~expected:(+Expression.YieldFrom !"x");
+  assert_parsed "(yield (await x))" ~expected:(+Expression.Yield (Some (+Expression.Await !"x")));
+  assert_parsed "await (yield from x)" ~expected:(+Expression.Await (+Expression.YieldFrom !"x"));
+  assert_parsed "await (yield x)" ~expected:(+Expression.Await (+Expression.Yield (Some !"x")));
+
+  (*TODO: FIX In ERRPY: assert_not_parsed "await"; *)
+  (* Standalone yield/yield from expressions are required to be protected with parenthesis. *)
+  (*TODO: FIX In ERRPY: assert_not_parsed "yield"; *)
+  (*TODO: FIX In ERRPY: assert_not_parsed "yield from"; *)
+  ()
+
+
 let () =
   "parse_expression"
   >::: [
@@ -369,8 +389,8 @@ let () =
          "constant" >:: test_constant;
          "unary_operators" >:: test_unary_operators;
          "boolean_operators" >:: test_boolean_operators;
+         "await_yield" >:: test_await_yield;
          (*"fstring" >:: test_fstring;*)
-         (*"await_yield" >:: test_await_yield;*)
          (*"ternary_walrus" >:: test_ternary_walrus;*)
          (*"container_literals" >:: test_container_literals;*)
          (*"comprehensions" >:: test_comprehensions;*)

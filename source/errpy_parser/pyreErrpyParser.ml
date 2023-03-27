@@ -146,9 +146,10 @@ let rec translate_expression (expression : Errpyast.expr) =
                       | Big_int bitint -> Constant.BigInteger bitint))
             in
             Expression.Constant const
-        | Errpyast.Await _expr -> failwith "not implemented yet"
-        | Errpyast.YieldFrom _expr -> failwith "not implemented yet"
-        | Errpyast.Yield _maybe_expr -> failwith "not implemented yet"
+        | Errpyast.Await expr -> Expression.Await (translate_expression expr)
+        | Errpyast.YieldFrom expr -> Expression.YieldFrom (translate_expression expr)
+        | Errpyast.Yield maybe_expr ->
+            Expression.Yield (Option.map maybe_expr ~f:translate_expression)
         | Errpyast.Tuple _tuple -> failwith "not implemented yet"
         | Errpyast.List _list -> failwith "not implemented yet"
         | Errpyast.Set _set_items -> failwith "not implemented yet"
