@@ -133,17 +133,68 @@ class FunctionAnnotationInfo:
         return self.annotation_kind == FunctionAnnotationKind.FULLY_ANNOTATED
 
 
+class AnnotationContext:
+    class_definition_depth: int
+    define_depth: int
+    static_define_depth: int
+
+    def __init__(self) -> None:
+        self.class_definition_depth = 0
+        self.define_depth = 0
+        self.static_define_depth = 0
+
+    # Mutators to maintain context
+
+    @staticmethod
+    def _define_includes_staticmethod(define: libcst.FunctionDef) -> bool:
+        for decorator in define.decorators:
+            decorator_node = decorator.decorator
+            if isinstance(decorator_node, libcst.Name):
+                if decorator_node.value == "staticmethod":
+                    return True
+        return False
+
+    def update_for_enter_define(self, define: libcst.FunctionDef) -> None:
+        self.define_depth += 1
+        if self._define_includes_staticmethod(define):
+            self.static_define_depth += 1
+
+    def update_for_exit_define(self, define: libcst.FunctionDef) -> None:
+        self.define_depth -= 1
+        if self._define_includes_staticmethod(define):
+            self.static_define_depth -= 1
+
+    def update_for_enter_class(self) -> None:
+        self.class_definition_depth += 1
+
+    def update_for_exit_class(self) -> None:
+        self.class_definition_depth -= 1
+
+    # Queries of the context
+
+    def assignments_are_function_local(self) -> bool:
+        return self.define_depth > 0
+
+    def assignments_are_class_level(self) -> bool:
+        return self.class_definition_depth > 0
+
+    def is_non_static_method(self) -> bool:
+        """
+        Is a parameter implicitly typed? This happens in non-static methods for
+        the initial parameter (conventionally `self` or `cls`).
+        """
+        return self.class_definition_depth > 0 and not self.static_define_depth > 0
+
+
 class AnnotationCollector(libcst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
     path: str = ""
 
     def __init__(self) -> None:
+        self.context: AnnotationContext = AnnotationContext()
         self.globals: List[AnnotationInfo] = []
         self.attributes: List[AnnotationInfo] = []
         self.functions: List[FunctionAnnotationInfo] = []
-        self.class_definition_depth = 0
-        self.function_definition_depth = 0
-        self.static_function_definition_depth = 0
         self.line_count = 0
 
     def returns(self) -> Iterable[AnnotationInfo]:
@@ -153,21 +204,6 @@ class AnnotationCollector(libcst.CSTVisitor):
     def parameters(self) -> Iterable[AnnotationInfo]:
         for function in self.functions:
             yield from function.non_self_cls_parameters()
-
-    def in_class_definition(self) -> bool:
-        return self.class_definition_depth > 0
-
-    def in_function_definition(self) -> bool:
-        return self.function_definition_depth > 0
-
-    def in_static_function_definition(self) -> bool:
-        return self.static_function_definition_depth > 0
-
-    def _is_method_or_classmethod(self) -> bool:
-        return self.in_class_definition() and not self.in_static_function_definition()
-
-    def _is_self_or_cls(self, index: int) -> bool:
-        return index == 0 and self._is_method_or_classmethod()
 
     def _code_range(self, node: libcst.CSTNode) -> CodeRange:
         return self.get_metadata(PositionProvider, node)
@@ -184,14 +220,14 @@ class AnnotationCollector(libcst.CSTVisitor):
             for parameter in parameters
         ]
 
+    def visit_ClassDef(self, node: libcst.ClassDef) -> None:
+        self.context.update_for_enter_class()
+
+    def leave_ClassDef(self, original_node: libcst.ClassDef) -> None:
+        self.context.update_for_exit_class()
+
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
-        for decorator in node.decorators:
-            decorator_node = decorator.decorator
-            if isinstance(decorator_node, libcst.Name):
-                if decorator_node.value == "staticmethod":
-                    self.static_function_definition_depth += 1
-                    break
-        self.function_definition_depth += 1
+        self.context.update_for_enter_define(node)
 
         returns = AnnotationInfo(
             node,
@@ -202,7 +238,7 @@ class AnnotationCollector(libcst.CSTVisitor):
         parameters = self._parameter_annotations(node.params.params)
 
         annotation_kind = FunctionAnnotationKind.from_function_data(
-            is_non_static_method=self._is_method_or_classmethod(),
+            is_non_static_method=self.context.is_non_static_method(),
             is_return_annotated=returns.is_annotated,
             parameters=node.params.params,
         )
@@ -213,21 +249,15 @@ class AnnotationCollector(libcst.CSTVisitor):
                 annotation_kind,
                 returns,
                 parameters,
-                self._is_method_or_classmethod(),
+                self.context.is_non_static_method(),
             )
         )
 
     def leave_FunctionDef(self, original_node: libcst.FunctionDef) -> None:
-        self.function_definition_depth -= 1
-        for decorator in original_node.decorators:
-            decorator_node = decorator.decorator
-            if isinstance(decorator_node, libcst.Name):
-                if decorator_node.value == "staticmethod":
-                    self.static_function_definition_depth -= 1
-                    break
+        self.context.update_for_exit_define(original_node)
 
     def visit_Assign(self, node: libcst.Assign) -> None:
-        if self.in_function_definition():
+        if self.context.assignments_are_function_local():
             return
         implicitly_annotated_literal = False
         if isinstance(node.value, libcst.BaseNumber) or isinstance(
@@ -241,7 +271,7 @@ class AnnotationCollector(libcst.CSTVisitor):
             # avoid showing false positives to users.
             implicitly_annotated_value = True
         code_range = self._code_range(node)
-        if self.in_class_definition():
+        if self.context.assignments_are_class_level():
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
             self.attributes.append(AnnotationInfo(node, is_annotated, code_range))
         else:
@@ -249,19 +279,14 @@ class AnnotationCollector(libcst.CSTVisitor):
             self.globals.append(AnnotationInfo(node, is_annotated, code_range))
 
     def visit_AnnAssign(self, node: libcst.AnnAssign) -> None:
-        if self.in_function_definition():
+        node.annotation
+        if self.context.assignments_are_function_local():
             return
         code_range = self._code_range(node)
-        if self.in_class_definition():
+        if self.context.assignments_are_class_level():
             self.attributes.append(AnnotationInfo(node, True, code_range))
         else:
             self.globals.append(AnnotationInfo(node, True, code_range))
-
-    def visit_ClassDef(self, node: libcst.ClassDef) -> None:
-        self.class_definition_depth += 1
-
-    def leave_ClassDef(self, original_node: libcst.ClassDef) -> None:
-        self.class_definition_depth -= 1
 
     def leave_Module(self, original_node: libcst.Module) -> None:
         file_range = self.get_metadata(PositionProvider, original_node)
