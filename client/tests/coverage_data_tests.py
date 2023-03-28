@@ -17,11 +17,9 @@ from ..coverage_data import (
     AnnotationCollector,
     AnnotationCountCollector,
     find_module_paths,
-    FixmeCountCollector,
     FunctionAnnotationInfo,
     FunctionAnnotationKind,
     get_paths_to_collect,
-    IgnoreCountCollector,
     module_from_code,
     module_from_path,
     ModuleMode,
@@ -1130,133 +1128,6 @@ class SuppressionCollectorTest(testslide.TestCase):
                     error_codes=None,
                 ),
             ],
-        )
-
-
-class FixmeCountCollectorTest(testslide.TestCase):
-    def assert_counts(
-        self,
-        source: str,
-        expected_codes: Dict[int, List[int]],
-        expected_no_codes: List[int],
-    ) -> None:
-        source_module = parse_code(source.replace("FIXME", "pyre-fixme"))
-        result = FixmeCountCollector().collect(source_module)
-        self.assertEqual(expected_codes, result.code)
-        self.assertEqual(expected_no_codes, result.no_code)
-
-    def test_count_fixmes(self) -> None:
-        # no error codes (none in first example, unparseable in second)
-        self.assert_counts(
-            """
-            # FIXME
-            # FIXME[8,]
-            """,
-            {},
-            [2, 3],
-        )
-        self.assert_counts(
-            """
-            # FIXME[3]: Example Error Message
-            # FIXME[3, 4]: Another Message
-
-            # FIXME[34]: Example
-            """,
-            {3: [2, 3], 4: [3], 34: [5]},
-            [],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                return x  # FIXME[7]
-            """,
-            {7: [3]},
-            [],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                # FIXME[7]: comments
-                return x
-            """,
-            {7: [3]},
-            [],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                return x  # FIXME
-            """,
-            {},
-            [3],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                return x  # FIXME: comments
-            """,
-            {},
-            [3],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                return x # unrelated # FIXME[7]
-            """,
-            {7: [3]},
-            [],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                return x # unrelated   #  FIXME[7] comments
-            """,
-            {7: [3]},
-            [],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                return x # FIXME[7, 8]
-            """,
-            {7: [3], 8: [3]},
-            [],
-        )
-
-
-class IgnoreCountCollectorTest(testslide.TestCase):
-    maxDiff = 2000
-
-    def assert_counts(
-        self,
-        source: str,
-        expected_codes: Dict[int, List[int]],
-        expected_no_codes: List[int],
-    ) -> None:
-        source_module = parse_code(source.replace("IGNORE", "pyre-ignore"))
-        result = IgnoreCountCollector().collect(source_module)
-        self.assertEqual(expected_codes, result.code)
-        self.assertEqual(expected_no_codes, result.no_code)
-
-    def test_count_ignores(self) -> None:
-        self.assert_counts("# IGNORE[2]: Example Error Message", {2: [1]}, [])
-        self.assert_counts(
-            """
-            # IGNORE[3]: Example Error Message
-
-            # IGNORE[34]: Example
-            """,
-            {3: [2], 34: [4]},
-            [],
-        )
-        self.assert_counts(
-            """
-            # IGNORE[2]: Example Error Message
-
-            # IGNORE[2]: message
-            """,
-            {2: [2, 4]},
-            [],
         )
 
 

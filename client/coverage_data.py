@@ -89,12 +89,6 @@ class ModuleAnnotationData:
         }
 
 
-@dataclasses.dataclass(frozen=True)
-class ModuleSuppressionData:
-    code: Dict[ErrorCode, List[LineNumber]]
-    no_code: List[LineNumber]
-
-
 class ModuleMode(str, Enum):
     UNSAFE = "UNSAFE"
     STRICT = "STRICT"
@@ -448,66 +442,6 @@ class SuppressionCollector(VisitorWithPositionData):
     ) -> Sequence[TypeErrorSuppression]:
         module.visit(self)
         return self.suppressions
-
-
-class SuppressionCountCollector(VisitorWithPositionData):
-    def __init__(self, regex: str) -> None:
-        self.no_code: List[int] = []
-        self.codes: Dict[int, List[int]] = {}
-        self.regex: Pattern[str] = compile(regex)
-
-    def error_codes(self, line: str) -> Optional[List[ErrorCode]]:
-        match = self.regex.match(line)
-        if match is None:
-            # No suppression on line
-            return None
-        code_group = match.group(1)
-        if code_group is None:
-            # Code-less error suppression
-            return []
-        code_strings = code_group.strip("[] ").split(",")
-        try:
-            codes = [int(code) for code in code_strings]
-            return codes
-        except ValueError:
-            LOG.warning("Invalid error suppression code: %s", line)
-            return []
-
-    def visit_Comment(self, node: libcst.Comment) -> None:
-        error_codes = self.error_codes(node.value)
-        if error_codes is None:
-            return
-        suppression_line = self.code_range(node).start.line
-        if len(error_codes) == 0:
-            self.no_code.append(suppression_line)
-            return
-        for code in error_codes:
-            if code in self.codes:
-                self.codes[code].append(suppression_line)
-            else:
-                self.codes[code] = [suppression_line]
-
-    def collect(
-        self,
-        module: libcst.MetadataWrapper,
-    ) -> ModuleSuppressionData:
-        module.visit(self)
-        return ModuleSuppressionData(code=self.codes, no_code=self.no_code)
-
-
-class FixmeCountCollector(SuppressionCountCollector):
-    def __init__(self) -> None:
-        super().__init__(r".*# *pyre-fixme(\[(\d* *,? *)*\])?")
-
-
-class IgnoreCountCollector(SuppressionCountCollector):
-    def __init__(self) -> None:
-        super().__init__(r".*# *pyre-ignore(\[(\d* *,? *)*\])?")
-
-
-class TypeIgnoreCountCollector(SuppressionCountCollector):
-    def __init__(self) -> None:
-        super().__init__(r".*# *type: ignore")
 
 
 class StrictCountCollector(libcst.CSTVisitor):
