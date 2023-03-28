@@ -331,24 +331,6 @@ class AnnotationCollector(VisitorWithPositionData):
 
 
 class AnnotationCountCollector(AnnotationCollector):
-    def partially_annotated_functions(self) -> List[FunctionAnnotationInfo]:
-        return [f for f in self.functions if f.is_partially_annotated]
-
-    def fully_annotated_functions(self) -> List[FunctionAnnotationInfo]:
-        return [f for f in self.functions if f.is_fully_annotated]
-
-    def annotated_parameters(self) -> List[ParameterAnnotationInfo]:
-        return [p for p in self.parameters() if p.is_annotated]
-
-    def annotated_returns(self) -> List[ReturnAnnotationInfo]:
-        return [r for r in self.returns() if r.is_annotated]
-
-    def annotated_globals(self) -> List[AnnotationInfo]:
-        return [g for g in self.globals if g.is_annotated]
-
-    def annotated_attributes(self) -> List[AnnotationInfo]:
-        return [a for a in self.attributes if a.is_annotated]
-
     def collect(
         self,
         module: libcst.MetadataWrapper,
@@ -358,21 +340,23 @@ class AnnotationCountCollector(AnnotationCollector):
             line_count=self.line_count,
             total_functions=[function.code_range for function in self.functions],
             partially_annotated_functions=[
-                function.code_range for function in self.partially_annotated_functions()
+                f.code_range for f in self.functions if f.is_partially_annotated
             ],
             fully_annotated_functions=[
-                function.code_range for function in self.fully_annotated_functions()
+                f.code_range for f in self.functions if f.is_fully_annotated
             ],
             total_parameters=[p.code_range for p in list(self.parameters())],
             annotated_parameters=[
                 p.code_range for p in self.parameters() if p.is_annotated
             ],
-            total_returns=[r.code_range for r in list(self.returns())],
-            annotated_returns=[r.code_range for r in self.annotated_returns()],
+            total_returns=[r.code_range for r in self.returns()],
+            annotated_returns=[r.code_range for r in self.returns() if r.is_annotated],
             total_globals=[g.code_range for g in self.globals],
-            annotated_globals=[g.code_range for g in self.annotated_globals()],
+            annotated_globals=[g.code_range for g in self.globals if g.is_annotated],
             total_attributes=[a.code_range for a in self.attributes],
-            annotated_attributes=[a.code_range for a in self.annotated_attributes()],
+            annotated_attributes=[
+                a.code_range for a in self.attributes if a.is_annotated
+            ],
         )
 
     @staticmethod
