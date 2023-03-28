@@ -2777,6 +2777,23 @@ let test_replace_version_specific_code _ =
     {|
       a = 1
     |};
+  (* TODO(T148972568) Support version ranges *)
+  assert_preprocessed
+    ~major_version:3
+    ~minor_version:8
+    ~micro_version:6
+    {|
+      if sys.version_info > (3, 8) and sys.version_info < (3, 12):
+        a = 5
+      else:
+        b = 6
+    |}
+    {|
+      if sys.version_info > (3, 8) and sys.version_info < (3, 12):
+        a = 5
+      else:
+        b = 6
+    |};
   ()
 
 
