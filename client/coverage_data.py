@@ -55,40 +55,6 @@ class ReturnAnnotationInfo:
     code_range: CodeRange
 
 
-@dataclasses.dataclass(frozen=True)
-class ModuleAnnotationData:
-    line_count: int
-    total_functions: List[CodeRange]
-    partially_annotated_functions: List[CodeRange]
-    fully_annotated_functions: List[CodeRange]
-    total_parameters: List[CodeRange]
-    annotated_parameters: List[CodeRange]
-    total_returns: List[CodeRange]
-    annotated_returns: List[CodeRange]
-    total_globals: List[CodeRange]
-    annotated_globals: List[CodeRange]
-    total_attributes: List[CodeRange]
-    annotated_attributes: List[CodeRange]
-
-    def to_count_dict(self) -> Dict[str, int]:
-        return {
-            "return_count": len(self.total_returns),
-            "annotated_return_count": len(self.annotated_returns),
-            "globals_count": len(self.total_globals),
-            "annotated_globals_count": len(self.annotated_globals),
-            "parameter_count": len(self.total_parameters),
-            "annotated_parameter_count": len(self.annotated_parameters),
-            "attribute_count": len(self.total_attributes),
-            "annotated_attribute_count": len(self.annotated_attributes),
-            "function_count": len(self.total_functions),
-            "partially_annotated_function_count": len(
-                self.partially_annotated_functions
-            ),
-            "fully_annotated_function_count": len(self.fully_annotated_functions),
-            "line_count": self.line_count,
-        }
-
-
 class ModuleMode(str, Enum):
     UNSAFE = "UNSAFE"
     STRICT = "STRICT"
@@ -340,36 +306,6 @@ class AnnotationCollector(VisitorWithPositionData):
             # Seems to be a quirk in LibCST, the module CodeRange still goes 1 over
             # even when there is no trailing new line in the file.
             self.line_count = file_range.end.line - 1
-
-
-class AnnotationCountCollector(AnnotationCollector):
-    def collect(
-        self,
-        module: libcst.MetadataWrapper,
-    ) -> ModuleAnnotationData:
-        module.visit(self)
-        return ModuleAnnotationData(
-            line_count=self.line_count,
-            total_functions=[function.code_range for function in self.functions],
-            partially_annotated_functions=[
-                f.code_range for f in self.functions if f.is_partially_annotated
-            ],
-            fully_annotated_functions=[
-                f.code_range for f in self.functions if f.is_fully_annotated
-            ],
-            total_parameters=[p.code_range for p in list(self.parameters())],
-            annotated_parameters=[
-                p.code_range for p in self.parameters() if p.is_annotated
-            ],
-            total_returns=[r.code_range for r in self.returns()],
-            annotated_returns=[r.code_range for r in self.returns() if r.is_annotated],
-            total_globals=[g.code_range for g in self.globals],
-            annotated_globals=[g.code_range for g in self.globals if g.is_annotated],
-            total_attributes=[a.code_range for a in self.attributes],
-            annotated_attributes=[
-                a.code_range for a in self.attributes if a.is_annotated
-            ],
-        )
 
 
 class SuppressionKind(Enum):
