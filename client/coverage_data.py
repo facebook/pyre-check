@@ -380,8 +380,7 @@ class SuppressionCollector(VisitorWithPositionData):
         return self.suppressions
 
 
-class StrictCountCollector(libcst.CSTVisitor):
-    METADATA_DEPENDENCIES = (PositionProvider,)
+class StrictCountCollector(VisitorWithPositionData):
     unsafe_regex: Pattern[str] = compile(r" ?#+ *pyre-unsafe")
     strict_regex: Pattern[str] = compile(r" ?#+ *pyre-strict")
     ignore_all_regex: Pattern[str] = compile(r" ?#+ *pyre-ignore-all-errors")
@@ -408,21 +407,13 @@ class StrictCountCollector(libcst.CSTVisitor):
 
     def visit_Comment(self, node: libcst.Comment) -> None:
         if self.strict_regex.match(node.value):
-            self.explicit_strict_comment_line = self.get_metadata(
-                PositionProvider, node
-            ).start.line
-            return
-        if self.unsafe_regex.match(node.value):
-            self.explicit_unsafe_comment_line = self.get_metadata(
-                PositionProvider, node
-            ).start.line
-            return
-        if self.ignore_all_regex.match(
+            self.explicit_strict_comment_line = self.code_range(node).start.line
+        elif self.unsafe_regex.match(node.value):
+            self.explicit_unsafe_comment_line = self.code_range(node).start.line
+        elif self.ignore_all_regex.match(
             node.value
         ) and not self.ignore_all_by_code_regex.match(node.value):
-            self.explicit_unsafe_comment_line = self.get_metadata(
-                PositionProvider, node
-            ).start.line
+            self.explicit_unsafe_comment_line = self.code_range(node).start.line
 
     def leave_Module(self, original_node: libcst.Module) -> None:
         if self.is_unsafe_module():
