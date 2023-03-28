@@ -330,11 +330,7 @@ class AnnotationCollector(VisitorWithPositionData):
             self.line_count = file_range.end.line - 1
 
 
-class StatisticsCollector(libcst.CSTVisitor):
-    pass
-
-
-class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
+class AnnotationCountCollector(AnnotationCollector):
     def partially_annotated_functions(self) -> List[FunctionAnnotationInfo]:
         return [f for f in self.functions if f.is_partially_annotated]
 
@@ -399,7 +395,7 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
         }
 
 
-class SuppressionCountCollector(StatisticsCollector):
+class SuppressionCountCollector(libcst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
 
     def __init__(self, regex: str) -> None:
@@ -461,7 +457,7 @@ class TypeIgnoreCountCollector(SuppressionCountCollector):
         super().__init__(r".*# *type: ignore")
 
 
-class StrictCountCollector(StatisticsCollector):
+class StrictCountCollector(libcst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
     unsafe_regex: Pattern[str] = compile(r" ?#+ *pyre-unsafe")
     strict_regex: Pattern[str] = compile(r" ?#+ *pyre-strict")
