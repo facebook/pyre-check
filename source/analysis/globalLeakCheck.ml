@@ -37,11 +37,36 @@ module type Context = sig
 
   val error_map : LocalErrorMap.t
 
-  val is_global : resolution:Resolution.t -> Reference.t -> bool
+  val get_non_builtin_global_reference
+    :  resolution:Resolution.t ->
+    Ast.Expression.Name.t ->
+    Reference.t option
 end
 
 module State (Context : Context) = struct
   type t = unit [@@deriving show]
+
+  type leaked_global = {
+    reference: Reference.t;
+    location: Location.t;
+  }
+
+  type result = {
+    (* represents the list of globals from the current expression and sub-expression that will be
+       mutated if a wrapping statement or expression is a known mutation (i.e. the globals that will
+       be mutated if the wrapping expression is a known mutable method or wrapping statement is an
+       assignment) *)
+    reachable_globals: Reference.t list;
+    (* represents the list of reachable globals and their locations that have been confirmed to
+       result in a mutation *)
+    errors: leaked_global list;
+  }
+
+  let append_errors_for_globals ~location globals errors =
+    List.map ~f:(fun global -> { reference = global; location }) globals @ errors
+
+
+  let empty_result = { reachable_globals = []; errors = [] }
 
   let less_or_equal ~left:_ ~right:_ = true
 
@@ -88,38 +113,53 @@ module State (Context : Context) = struct
     || is_blocklisted_method ()
 
 
-  let rec forward_expression
-      ~error_on_global_target
-      ~resolution
-      ?(is_mutable_expression = false)
-      { Node.value; location }
-    =
-    let forward_expression ?(is_mutable_expression = is_mutable_expression) =
-      forward_expression ~error_on_global_target ~is_mutable_expression ~resolution
-    in
+  let rec forward_expression ~resolution { Node.value; location } =
+    let forward_expression = forward_expression ~resolution in
     let forward_generator { Comprehension.Generator.target; iterator; conditions; _ } =
-      forward_expression target;
-      forward_expression iterator;
-      List.iter ~f:forward_expression conditions
+      let { errors = target_errors; _ } = forward_expression target in
+      let { errors = iterator_errors; _ } = forward_expression iterator in
+      let condition_errors =
+        List.concat_map
+          ~f:(fun expression ->
+            let { errors; _ } = forward_expression expression in
+            errors)
+          conditions
+      in
+      target_errors @ iterator_errors @ condition_errors
     in
+    let append_errors_for_globals = append_errors_for_globals ~location in
     match value with
     (* interesting cases *)
-    | Expression.Name (Name.Identifier target as name) ->
-        if is_mutable_expression && not (Scope.Builtins.mem target) then
-          ignore (error_on_global_target ~location name)
+    | Expression.Name (Name.Identifier _ as name) ->
+        Context.get_non_builtin_global_reference ~resolution name
+        >>| (fun reference -> { reachable_globals = [reference]; errors = [] })
+        |> Option.value ~default:empty_result
     | Name (Name.Attribute { base; attribute; _ } as name) ->
-        let error_emitted = is_mutable_expression && error_on_global_target ~location name in
-        if not error_emitted then
-          let is_mutable_expression =
-            is_mutable_expression || is_known_mutation_method ~resolution base attribute
-          in
-          forward_expression ~is_mutable_expression base
+        let ({ reachable_globals; errors } as sub_expression_result) = forward_expression base in
+        let reachable_globals =
+          Context.get_non_builtin_global_reference ~resolution name
+          >>| (fun reference -> reference :: reachable_globals)
+          |> Option.value ~default:reachable_globals
+        in
+        if is_known_mutation_method ~resolution base attribute then
+          { reachable_globals = []; errors = append_errors_for_globals reachable_globals errors }
+        else
+          { sub_expression_result with reachable_globals }
     | Call { callee; arguments } ->
-        forward_expression callee;
-        List.iter ~f:(fun { value; _ } -> forward_expression value) arguments
+        List.fold
+          ~init:(forward_expression callee)
+          ~f:(fun { errors; reachable_globals } { value; _ } ->
+            let { errors = argument_errors; reachable_globals = argument_globals } =
+              forward_expression value
+            in
+            {
+              errors = argument_errors @ errors;
+              reachable_globals = argument_globals @ reachable_globals;
+            })
+          arguments
     | Expression.Constant _
     | Yield None ->
-        ()
+        empty_result
     | Await expression
     | Yield (Some expression)
     | YieldFrom expression
@@ -130,65 +170,93 @@ module State (Context : Context) = struct
     | List expressions
     | Set expressions
     | Tuple expressions ->
-        List.iter ~f:forward_expression expressions
+        let errors =
+          List.concat_map
+            ~f:(fun expression ->
+              let { errors; _ } = forward_expression expression in
+              errors)
+            expressions
+        in
+        { empty_result with errors }
     | BooleanOperator { left; right; _ }
     | ComparisonOperator { left; right; _ } ->
-        forward_expression left;
-        forward_expression right
+        let { errors = left_errors; _ } = forward_expression left in
+        let { errors = right_errors; _ } = forward_expression right in
+        { empty_result with errors = left_errors @ right_errors }
     | WalrusOperator { target; value } ->
-        ignore (forward_assignment_target ~error_on_global_target ~resolution target);
-        forward_expression value
+        let { reachable_globals; errors } = forward_assignment_target ~resolution target in
+        let { errors = value_errors; _ } = forward_expression value in
+        {
+          empty_result with
+          errors = append_errors_for_globals reachable_globals (value_errors @ errors);
+        }
     | Dictionary { entries; keywords } ->
         let forward_entries { Dictionary.Entry.key; value } =
-          forward_expression key;
-          forward_expression value
+          let { errors = key_errors; _ } = forward_expression key in
+          let { errors = value_errors; _ } = forward_expression value in
+          key_errors @ value_errors
         in
-        List.iter ~f:forward_entries entries;
-        List.iter ~f:forward_expression keywords
+        let entry_errors = List.concat_map ~f:forward_entries entries in
+        let keyword_errors =
+          List.concat_map
+            ~f:(fun expression ->
+              let { errors; _ } = forward_expression expression in
+              errors)
+            keywords
+        in
+        { empty_result with errors = entry_errors @ keyword_errors }
     | DictionaryComprehension { element = { key; value }; generators } ->
-        forward_expression key;
-        forward_expression value;
-        List.iter ~f:forward_generator generators
+        let { errors = key_errors; _ } = forward_expression key in
+        let { errors = value_errors; _ } = forward_expression value in
+        let generator_errors = List.concat_map ~f:forward_generator generators in
+        { empty_result with errors = key_errors @ value_errors @ generator_errors }
     | Generator { element; generators }
     | ListComprehension { element; generators }
     | SetComprehension { element; generators } ->
-        forward_expression element;
-        List.iter ~f:forward_generator generators
+        let { errors = element_errors; _ } = forward_expression element in
+        let generator_errors = List.concat_map ~f:forward_generator generators in
+        { empty_result with errors = element_errors @ generator_errors }
     | FormatString substrings ->
         let forward_format_string = function
-          | Substring.Format expression -> forward_expression expression
-          | _ -> ()
+          | Substring.Format expression ->
+              let { errors; _ } = forward_expression expression in
+              errors
+          | _ -> []
         in
-        List.iter ~f:forward_format_string substrings
+        let errors = List.concat_map ~f:forward_format_string substrings in
+        { empty_result with errors }
     | Lambda { parameters; body } ->
         let forward_parameters { Node.value = { Parameter.value; _ }; _ } =
-          Option.iter ~f:forward_expression value
+          value
+          >>| (fun expression -> forward_expression expression |> fun { errors; _ } -> errors)
+          |> Option.value ~default:[]
         in
-        List.iter ~f:forward_parameters parameters;
-        forward_expression body
+        let parameter_errors = List.concat_map ~f:forward_parameters parameters in
+        let { errors = body_errors; _ } = forward_expression body in
+        { empty_result with errors = body_errors @ parameter_errors }
     | Ternary { target; test; alternative } ->
-        forward_expression test;
-        forward_expression target;
-        forward_expression alternative
+        let { errors = test_errors; _ } = forward_expression test in
+        let { reachable_globals = target_globals; errors = target_errors } =
+          forward_expression target
+        in
+        let { reachable_globals = alternative_globals; errors = alternative_errors } =
+          forward_expression alternative
+        in
+        {
+          reachable_globals = target_globals @ alternative_globals;
+          errors = test_errors @ target_errors @ alternative_errors;
+        }
 
 
-  and forward_assignment_target
-      ~error_on_global_target
-      ~resolution
-      ({ Node.value; location } as expression)
-    =
-    let forward_assignment_target = forward_assignment_target ~error_on_global_target ~resolution in
+  and forward_assignment_target ~resolution ({ Node.value; _ } as expression) =
+    let forward_assignment_target = forward_assignment_target ~resolution in
     match value with
-    | Expression.Name (Name.Identifier target as name) ->
-        if not (Scope.Builtins.mem target) then
-          ignore (error_on_global_target ~location name)
+    | Expression.Name (Name.Identifier _ as name) ->
+        Context.get_non_builtin_global_reference ~resolution name
+        >>| (fun reference -> { reachable_globals = [reference]; errors = [] })
+        |> Option.value ~default:empty_result
     | Name (Name.Attribute { base; _ }) -> forward_assignment_target base
-    | Call _ ->
-        forward_expression
-          ~resolution
-          ~error_on_global_target
-          ~is_mutable_expression:true
-          expression
+    | Call _ -> forward_expression ~resolution expression
     | Constant _
     | UnaryOperator _
     | Await _
@@ -203,31 +271,38 @@ module State (Context : Context) = struct
     | SetComprehension _
     | FormatString _
     | Lambda _
+    | BooleanOperator _
+    | ComparisonOperator _
     | Ternary _
     | WalrusOperator _ ->
-        ()
+        empty_result
     | Starred (Once expression) -> forward_assignment_target expression
     | List expressions
     | Tuple expressions ->
-        List.iter ~f:forward_assignment_target expressions
-    | BooleanOperator { left; right; _ }
-    | ComparisonOperator { left; right; _ } ->
-        forward_assignment_target left;
-        forward_assignment_target right
+        let fold_sub_expression_targets { reachable_globals; errors } expression =
+          let { reachable_globals = expression_globals; errors = expression_errors } =
+            forward_assignment_target expression
+          in
+          {
+            reachable_globals = reachable_globals @ expression_globals;
+            errors = expression_errors @ errors;
+          }
+        in
+        List.fold ~init:empty_result ~f:fold_sub_expression_targets expressions
 
 
-  and forward_assert ~resolution ~error_on_global_target ?(origin = Assert.Origin.Assertion) test =
+  and forward_assert ~resolution ?(origin = Assert.Origin.Assertion) test =
     (* Ignore global errors from the [assert (not foo)] in the else-branch because it's the same
        [foo] as in the true-branch. We can either ignore it here or de-duplicate it in the error
        map. We ignore it here instead. *)
     match origin with
     | Assert.Origin.If { true_branch = false; _ }
     | Assert.Origin.While { true_branch = false; _ } ->
-        ()
-    | _ -> forward_expression ~resolution ~error_on_global_target test
+        empty_result
+    | _ -> forward_expression ~resolution test
 
 
-  let forward ~statement_key state ~statement:{ Node.value; _ } =
+  let forward ~statement_key _ ~statement:{ Node.value; location } =
     let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
       Context.define
     in
@@ -240,74 +315,81 @@ module State (Context : Context) = struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)
     in
-    let error_on_global_target ~location target =
-      match Ast.Expression.name_to_reference target with
-      | None -> false
-      | Some reference ->
-          let rec get_module_qualifier qualifier =
-            let module_tracker = GlobalResolution.module_tracker Context.global_resolution in
-            let qualifier_prefix = Reference.prefix qualifier in
-            match
-              ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier, qualifier_prefix
-            with
-            (* we couldn't find a module from the given qualifier *)
-            | _, None -> Reference.empty
-            (* we found the module *)
-            | true, _ -> qualifier
-            (* we haven't found a module yet *)
-            | _, Some prefix -> get_module_qualifier prefix
-          in
-          let is_global = Context.is_global ~resolution reference in
-          (if is_global then
-             let target_type = Resolution.resolve_reference resolution reference in
-             let delocalized_reference = Reference.delocalize reference in
-             let error =
-               Error.create
-                 ~location:
-                   (Location.with_module
-                      ~module_reference:
-                        (get_module_qualifier (Context.qualifier |> Reference.delocalize))
-                      location)
-                 ~kind:
-                   (Error.GlobalLeak
-                      { global_name = delocalized_reference; global_type = target_type })
-                 ~define:Context.define
-             in
-             LocalErrorMap.append Context.error_map ~statement_key ~error);
-          is_global
+    let prepare_globals_for_errors = append_errors_for_globals ~location in
+    let module_reference =
+      let rec get_module_qualifier qualifier =
+        let module_tracker = GlobalResolution.module_tracker Context.global_resolution in
+        let qualifier_prefix = Reference.prefix qualifier in
+        match
+          ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier, qualifier_prefix
+        with
+        (* we couldn't find a module from the given qualifier *)
+        | _, None -> Reference.empty
+        (* we found the module *)
+        | true, _ -> qualifier
+        (* we haven't found a module yet *)
+        | _, Some prefix -> get_module_qualifier prefix
+      in
+      get_module_qualifier (Context.qualifier |> Reference.delocalize)
     in
-    let forward_expression = forward_expression ~resolution ~error_on_global_target in
-    match value with
-    | Statement.Assert { test; origin; _ } ->
-        forward_assert ~resolution ~error_on_global_target ~origin test
-    | Assign { target; value; _ } ->
-        forward_assignment_target ~resolution ~error_on_global_target target;
-        forward_expression value
-    | Expression expression -> forward_expression expression
-    | Raise { expression; from } ->
-        Option.iter ~f:forward_expression expression;
-        Option.iter ~f:forward_expression from
-    | Return { expression = Some expression; _ } -> forward_expression expression
-    | Delete _ -> ()
-    | Return _ -> ()
-    (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
-    | If _
-    | Class _
-    | Define _
-    | For _
-    | Match _
-    | While _
-    | With _
-    | Try _ ->
-        state
-    (* Trivial cases. *)
-    | Break
-    | Continue
-    | Global _
-    | Import _
-    | Nonlocal _
-    | Pass ->
-        state
+    let emit_error_for_global { reference; location } =
+      let target_type = Resolution.resolve_reference resolution reference in
+      let delocalized_reference = Reference.delocalize reference in
+      let error =
+        Error.create
+          ~location:(Location.with_module ~module_reference location)
+          ~kind:
+            (Error.GlobalLeak { global_name = delocalized_reference; global_type = target_type })
+          ~define:Context.define
+      in
+      LocalErrorMap.append Context.error_map ~statement_key ~error
+    in
+    let resulting_errors =
+      match value with
+      | Statement.Assert { test; origin; _ } ->
+          let { errors; _ } = forward_assert ~resolution ~origin test in
+          errors
+      | Assign { target; value; _ } ->
+          let { reachable_globals; errors } = forward_assignment_target ~resolution target in
+          let { errors = value_errors; _ } = forward_expression ~resolution value in
+          prepare_globals_for_errors reachable_globals (value_errors @ errors)
+      | Expression expression ->
+          let { errors; _ } = forward_expression ~resolution expression in
+          errors
+      | Raise { expression; from } ->
+          let get_errors expression =
+            expression
+            >>| (fun expression ->
+                  forward_expression ~resolution expression |> fun { errors; _ } -> errors)
+            |> Option.value ~default:[]
+          in
+          get_errors expression @ get_errors from
+      | Return { expression = Some expression; _ } ->
+          let { errors; _ } = forward_expression ~resolution expression in
+          errors
+      | Delete _
+      | Return _ ->
+          []
+      (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
+      | If _
+      | Class _
+      | Define _
+      | For _
+      | Match _
+      | While _
+      | With _
+      | Try _ ->
+          []
+      (* Trivial cases. *)
+      | Break
+      | Continue
+      | Global _
+      | Import _
+      | Nonlocal _
+      | Pass ->
+          []
+    in
+    List.iter ~f:emit_error_for_global resulting_errors
 
 
   let backward ~statement_key:_ _ ~statement:_ = ()
@@ -349,7 +431,20 @@ let global_leak_errors ~type_environment ~qualifier define =
          `global` keyword isn't used within the callable. `Scope.globals` is used here as a backup,
          for the case where the global keyword is used but `Resolution.is_global` fails to determine
          if the reference is a global. *)
-      Resolution.is_global resolution ~reference || is_global_in_scope ()
+      if Resolution.is_global resolution ~reference || is_global_in_scope () then
+        Some reference
+      else
+        None
+
+
+    let get_non_builtin_global_reference ~resolution name =
+      match name with
+      | Name.Identifier target
+      | Name.Attribute { attribute = target; _ } ->
+          if Scope.Builtins.mem target then
+            None
+          else
+            Ast.Expression.name_to_reference name >>| is_global ~resolution |> Option.join
   end
   in
   let module State = State (Context) in
