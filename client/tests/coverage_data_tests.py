@@ -6,7 +6,7 @@
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Optional, Sequence
 
 import libcst as cst
 
@@ -22,9 +22,9 @@ from ..coverage_data import (
     module_from_code,
     module_from_path,
     ModuleMode,
+    ModuleModeCollector,
     ParameterAnnotationInfo,
     ReturnAnnotationInfo,
-    StrictCountCollector,
     SuppressionCollector,
     SuppressionKind,
     TypeErrorSuppression,
@@ -703,7 +703,7 @@ class SuppressionCollectorTest(testslide.TestCase):
         )
 
 
-class StrictCountCollectorTest(testslide.TestCase):
+class ModuleModecollectorTest(testslide.TestCase):
     def assert_counts(
         self,
         source: str,
@@ -712,7 +712,7 @@ class StrictCountCollectorTest(testslide.TestCase):
         explicit_comment_line: Optional[int],
     ) -> None:
         source_module = parse_code(source)
-        result = StrictCountCollector(default_strict).collect(source_module)
+        result = ModuleModeCollector(default_strict).collect(source_module)
         self.assertEqual(mode, result.mode)
         self.assertEqual(explicit_comment_line, result.explicit_comment_line)
 

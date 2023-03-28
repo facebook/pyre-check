@@ -105,7 +105,7 @@ class CoverageCollector(coverage_data.AnnotationCollector):
 def _coverage_collector_for_module(
     relative_path: str, module: cst.MetadataWrapper, strict_default: bool
 ) -> CoverageCollector:
-    strict_count_collector = coverage_data.StrictCountCollector(strict_default)
+    strict_count_collector = coverage_data.ModuleModeCollector(strict_default)
     try:
         module.visit(strict_count_collector)
     except RecursionError:

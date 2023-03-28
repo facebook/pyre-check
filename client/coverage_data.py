@@ -62,7 +62,7 @@ class ModuleMode(str, Enum):
 
 
 @dataclasses.dataclass(frozen=True)
-class ModuleStrictData:
+class ModuleModeInfo:
     mode: ModuleMode
     explicit_comment_line: Optional[LineNumber]
 
@@ -380,7 +380,7 @@ class SuppressionCollector(VisitorWithPositionData):
         return self.suppressions
 
 
-class StrictCountCollector(VisitorWithPositionData):
+class ModuleModeCollector(VisitorWithPositionData):
     unsafe_regex: Pattern[str] = compile(r" ?#+ *pyre-unsafe")
     strict_regex: Pattern[str] = compile(r" ?#+ *pyre-strict")
     ignore_all_regex: Pattern[str] = compile(r" ?#+ *pyre-ignore-all-errors")
@@ -417,9 +417,9 @@ class StrictCountCollector(VisitorWithPositionData):
     def collect(
         self,
         module: libcst.MetadataWrapper,
-    ) -> ModuleStrictData:
+    ) -> ModuleModeInfo:
         module.visit(self)
-        return ModuleStrictData(
+        return ModuleModeInfo(
             mode=self.mode,
             explicit_comment_line=self.explicit_comment_line,
         )

@@ -171,7 +171,7 @@ class StatisticsData:
     annotations: ModuleAnnotationData
     fixmes: ModuleSuppressionData
     ignores: ModuleSuppressionData
-    strict: coverage_data.ModuleStrictData
+    strict: coverage_data.ModuleModeInfo
 
 
 def collect_statistics(
@@ -186,7 +186,7 @@ def collect_statistics(
             annotations = AnnotationCountCollector().collect(module)
             fixmes = FixmeCountCollector().collect(module)
             ignores = IgnoreCountCollector().collect(module)
-            modes = coverage_data.StrictCountCollector(strict_default).collect(module)
+            modes = coverage_data.ModuleModeCollector(strict_default).collect(module)
             statistics_data = StatisticsData(
                 annotations,
                 fixmes,
