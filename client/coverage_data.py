@@ -216,7 +216,7 @@ class AnnotationCollector(VisitorWithPositionData):
         self,
         function_name: str,
         params: Sequence[libcst.Param],
-    ) -> Sequence[ParameterAnnotationInfo]:
+    ) -> List[ParameterAnnotationInfo]:
         return [
             ParameterAnnotationInfo(
                 function_name=function_name,
