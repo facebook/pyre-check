@@ -763,7 +763,7 @@ class StrictCountCollectorTest(testslide.TestCase):
                 return 1
             """,
             default_strict=True,
-            mode=ModuleMode.UNSAFE,
+            mode=ModuleMode.IGNORE_ALL,
             explicit_comment_line=2,
         )
         self.assert_counts(

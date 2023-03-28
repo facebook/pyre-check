@@ -390,36 +390,29 @@ class StrictCountCollector(VisitorWithPositionData):
 
     def __init__(self, strict_by_default: bool) -> None:
         self.strict_by_default: bool = strict_by_default
-        self.explicit_strict_comment_line: Optional[int] = None
-        self.explicit_unsafe_comment_line: Optional[int] = None
-        self.strict_count: int = 0
-        self.unsafe_count: int = 0
-
-    def is_unsafe_module(self) -> bool:
-        if self.explicit_unsafe_comment_line is not None:
-            return True
-        elif self.explicit_strict_comment_line is not None or self.strict_by_default:
-            return False
-        return True
+        # Note: the last comment will win here if there are multiple. This doesn't
+        # matter for practical purposes because multiple modes produce a type error,
+        # so it should be very rare to see them.
+        self.mode: ModuleMode = (
+            ModuleMode.STRICT if strict_by_default else ModuleMode.UNSAFE
+        )
+        self.explicit_comment_line: Optional[int] = None
 
     def is_strict_module(self) -> bool:
-        return not self.is_unsafe_module()
+        return self.mode == ModuleMode.STRICT
 
     def visit_Comment(self, node: libcst.Comment) -> None:
         if self.strict_regex.match(node.value):
-            self.explicit_strict_comment_line = self.code_range(node).start.line
+            self.mode = ModuleMode.STRICT
+            self.explicit_comment_line = self.code_range(node).start.line
         elif self.unsafe_regex.match(node.value):
-            self.explicit_unsafe_comment_line = self.code_range(node).start.line
+            self.mode = ModuleMode.UNSAFE
+            self.explicit_comment_line = self.code_range(node).start.line
         elif self.ignore_all_regex.match(
             node.value
         ) and not self.ignore_all_by_code_regex.match(node.value):
-            self.explicit_unsafe_comment_line = self.code_range(node).start.line
-
-    def leave_Module(self, original_node: libcst.Module) -> None:
-        if self.is_unsafe_module():
-            self.unsafe_count += 1
-        else:
-            self.strict_count += 1
+            self.mode = ModuleMode.IGNORE_ALL
+            self.explicit_comment_line = self.code_range(node).start.line
 
     def collect(
         self,
@@ -427,10 +420,8 @@ class StrictCountCollector(VisitorWithPositionData):
     ) -> ModuleStrictData:
         module.visit(self)
         return ModuleStrictData(
-            mode=ModuleMode.UNSAFE if self.is_unsafe_module() else ModuleMode.STRICT,
-            explicit_comment_line=self.explicit_unsafe_comment_line
-            if self.is_unsafe_module()
-            else self.explicit_strict_comment_line,
+            mode=self.mode,
+            explicit_comment_line=self.explicit_comment_line,
         )
 
 
