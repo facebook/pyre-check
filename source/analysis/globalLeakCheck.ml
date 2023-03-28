@@ -148,14 +148,9 @@ module State (Context : Context) = struct
     | Call { callee; arguments } ->
         List.fold
           ~init:(forward_expression callee)
-          ~f:(fun { errors; reachable_globals } { value; _ } ->
-            let { errors = argument_errors; reachable_globals = argument_globals } =
-              forward_expression value
-            in
-            {
-              errors = argument_errors @ errors;
-              reachable_globals = argument_globals @ reachable_globals;
-            })
+          ~f:(fun ({ errors; _ } as result) { value; _ } ->
+            let { errors = argument_errors; _ } = forward_expression value in
+            { result with errors = argument_errors @ errors })
           arguments
     | Expression.Constant _
     | Yield None ->

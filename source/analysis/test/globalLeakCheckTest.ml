@@ -428,7 +428,29 @@ let test_list_global_leaks context =
       "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
        int]`.";
     ];
+  assert_global_leak_errors
+    {|
+      my_global: Dict[str, int] = {}
 
+      def foo() -> None:
+        my_list: List[List[int]] = [[1], [], [2, 3]]
+
+        my_list[my_global.setdefault("A", 1)].append(4)
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
+       int]`.";
+    ];
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+
+      def foo() -> None:
+        my_list: List[List[int]] = [[1], [], [2, 3]]
+
+        my_list[my_global].append(4)
+    |}
+    [];
   ()
 
 
