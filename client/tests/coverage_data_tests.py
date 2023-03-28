@@ -28,7 +28,11 @@ from ..coverage_data import (
     ParameterAnnotationInfo,
     ReturnAnnotationInfo,
     StrictCountCollector,
+    SuppressionCollector,
+    SuppressionKind,
+    TypeErrorSuppression,
 )
+
 from ..tests import setup
 
 
@@ -889,6 +893,243 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                 ],
             ),
             FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+
+
+class SuppressionCollectorTest(testslide.TestCase):
+    maxDiff = 2000
+
+    def _assert_suppressions(
+        self, source: str, expected: Sequence[TypeErrorSuppression]
+    ) -> None:
+        source_module = parse_code(
+            source.replace("PYRE_FIXME", "pyre-fixme")
+            .replace("PYRE_IGNORE", "pyre-ignore")
+            .replace("TYPE_IGNORE", "type: ignore")
+        )
+        actual = SuppressionCollector().collect(source_module)
+        self.assertEqual(actual, expected)
+
+    def test_find_fixmes__simple(self) -> None:
+        self._assert_suppressions(
+            """
+            # PYRE_FIXME
+            # PYRE_FIXME with message
+            # PYRE_FIXME[1]
+            # PYRE_FIXME[10, 11] with message
+            # PYRE_FIXME[10,]  (trailing comma is illegal, codes are ignored)
+            """,
+            [
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_FIXME,
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=0),
+                        end=CodePosition(line=2, column=12),
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_FIXME,
+                    code_range=CodeRange(
+                        start=CodePosition(line=3, column=0),
+                        end=CodePosition(line=3, column=25),
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_FIXME,
+                    code_range=CodeRange(
+                        start=CodePosition(line=4, column=0),
+                        end=CodePosition(line=4, column=15),
+                    ),
+                    error_codes=[1],
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_FIXME,
+                    code_range=CodeRange(
+                        start=CodePosition(line=5, column=0),
+                        end=CodePosition(line=5, column=33),
+                    ),
+                    error_codes=[10, 11],
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_FIXME,
+                    code_range=CodeRange(
+                        start=CodePosition(line=6, column=0),
+                        end=CodePosition(line=6, column=65),
+                    ),
+                    error_codes=[],
+                ),
+            ],
+        )
+
+    def test_find_ignores__simple(self) -> None:
+        self._assert_suppressions(
+            """
+            # PYRE_IGNORE
+            # PYRE_IGNORE with message
+            # PYRE_IGNORE[1]
+            # PYRE_IGNORE[10, 11]
+            # PYRE_IGNORE[10, 11] with message
+            # PYRE_IGNORE[10,]  (trailing comma is illegal, codes are ignored)
+            """,
+            [
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=0),
+                        end=CodePosition(line=2, column=13),
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=3, column=0),
+                        end=CodePosition(line=3, column=26),
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=4, column=0),
+                        end=CodePosition(line=4, column=16),
+                    ),
+                    error_codes=[1],
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=5, column=0),
+                        end=CodePosition(line=5, column=21),
+                    ),
+                    error_codes=[10, 11],
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=6, column=0),
+                        end=CodePosition(line=6, column=34),
+                    ),
+                    error_codes=[10, 11],
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=7, column=0),
+                        end=CodePosition(line=7, column=66),
+                    ),
+                    error_codes=[],
+                ),
+            ],
+        )
+
+    def test_find_type_ignores(self) -> None:
+        self._assert_suppressions(
+            """
+            # TYPE_IGNORE
+            # TYPE_IGNORE[1]  (codes won't be parsed)
+            """,
+            [
+                TypeErrorSuppression(
+                    kind=SuppressionKind.TYPE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=0),
+                        end=CodePosition(line=2, column=14),
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.TYPE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=3, column=0),
+                        end=CodePosition(line=3, column=42),
+                    ),
+                    error_codes=None,
+                ),
+            ],
+        )
+
+    def test_find_suppressions__trailing_comments(self) -> None:
+        self._assert_suppressions(
+            """
+            a: int = 42.0 # PYRE_FIXME
+            b: int = 42.0 # leading comment # PYRE_FIXME[3, 4]
+            c: int = 42.0 # leading comment # PYRE_IGNORE[5]
+            f: int = 42.0 # leading comment # TYPE_IGNORE
+            """,
+            [
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_FIXME,
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=14),
+                        end=CodePosition(line=2, column=26),
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_FIXME,
+                    code_range=CodeRange(
+                        start=CodePosition(line=3, column=14),
+                        end=CodePosition(line=3, column=50),
+                    ),
+                    error_codes=[3, 4],
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=4, column=14),
+                        end=CodePosition(line=4, column=48),
+                    ),
+                    error_codes=[5],
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.TYPE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=5, column=14),
+                        end=CodePosition(line=5, column=46),
+                    ),
+                    error_codes=None,
+                ),
+            ],
+        )
+
+    def test_find_suppressions__multiline_string(self) -> None:
+        self._assert_suppressions(
+            """
+            '''
+            # PYRE_IGNORE
+            '''
+            """,
+            [],
+        )
+
+    def test_find_suppressions__nested_suppressions(self) -> None:
+        # If there are multiple suppressions, we count all of them. This is unlikely
+        # to arise in practice but needs to have well-defined behavior.
+        self._assert_suppressions(
+            """
+            # # PYRE_IGNORE # TYPE_IGNORE
+            """,
+            [
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYRE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=0),
+                        end=CodePosition(line=2, column=30),
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.TYPE_IGNORE,
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=0),
+                        end=CodePosition(line=2, column=30),
+                    ),
+                    error_codes=None,
+                ),
+            ],
         )
 
 

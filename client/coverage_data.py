@@ -12,6 +12,8 @@ This module defines shared logic used by Pyre coverage tooling, including
 - Helpers for parsing code into LibCST modules with position metadata
 """
 
+from __future__ import annotations
+
 import dataclasses
 import itertools
 import logging
@@ -374,6 +376,78 @@ class AnnotationCountCollector(AnnotationCollector):
                 a.code_range for a in self.attributes if a.is_annotated
             ],
         )
+
+
+class SuppressionKind(Enum):
+    PYRE_FIXME = "PYRE_FIXME"
+    PYRE_IGNORE = "PYRE_IGNORE"
+    TYPE_IGNORE = "TYPE_IGNORE"
+
+
+@dataclasses.dataclass(frozen=True)
+class TypeErrorSuppression:
+    kind: SuppressionKind
+    code_range: CodeRange
+    error_codes: Optional[Sequence[ErrorCode]]
+
+
+class SuppressionCollector(VisitorWithPositionData):
+
+    suppression_regexes: Dict[SuppressionKind, str] = {
+        SuppressionKind.PYRE_FIXME: r".*# *pyre-fixme(\[(\d* *,? *)*\])?",
+        SuppressionKind.PYRE_IGNORE: r".*# *pyre-ignore(\[(\d* *,? *)*\])?",
+        SuppressionKind.TYPE_IGNORE: r".*# *type: ignore",
+    }
+
+    def __init__(self) -> None:
+        self.suppressions: List[TypeErrorSuppression] = []
+
+    @staticmethod
+    def _error_codes_from_re_group(
+        match: re.Match[str],
+        line: int,
+    ) -> Optional[List[int]]:
+        if len(match.groups()) < 1:
+            code_group = None
+        else:
+            code_group = match.group(1)
+        if code_group is None:
+            return None
+        code_strings = code_group.strip("[] ").split(",")
+        try:
+            codes = [int(code) for code in code_strings]
+            return codes
+        except ValueError:
+            LOG.warning("Invalid error suppression code: %s", line)
+            return []
+
+    def suppression_from_comment(
+        self,
+        node: libcst.Comment,
+    ) -> Iterable[TypeErrorSuppression]:
+        code_range = self.code_range(node)
+        for suppression_kind, regex in self.suppression_regexes.items():
+            match = re.match(regex, node.value)
+            if match is not None:
+                yield TypeErrorSuppression(
+                    kind=suppression_kind,
+                    code_range=code_range,
+                    error_codes=self._error_codes_from_re_group(
+                        match=match,
+                        line=code_range.start.line,
+                    ),
+                )
+
+    def visit_Comment(self, node: libcst.Comment) -> None:
+        for suppression in self.suppression_from_comment(node):
+            self.suppressions.append(suppression)
+
+    def collect(
+        self,
+        module: libcst.MetadataWrapper,
+    ) -> Sequence[TypeErrorSuppression]:
+        module.visit(self)
+        return self.suppressions
 
 
 class SuppressionCountCollector(VisitorWithPositionData):
