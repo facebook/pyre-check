@@ -79,42 +79,39 @@ class FunctionAnnotationKind(Enum):
 
     @staticmethod
     def from_function_data(
+        is_non_static_method: bool,
         is_return_annotated: bool,
-        annotated_parameter_count: int,
-        is_method_or_classmethod: bool,
         parameters: Sequence[libcst.Param],
     ) -> "FunctionAnnotationKind":
-        if is_return_annotated and annotated_parameter_count == len(parameters):
-            return FunctionAnnotationKind.FULLY_ANNOTATED
-
         if is_return_annotated:
-            return FunctionAnnotationKind.PARTIALLY_ANNOTATED
-
-        has_untyped_self_parameter = is_method_or_classmethod and (
-            len(parameters) > 0 and parameters[0].annotation is None
-        )
-
-        # Note: Untyped self parameters don't count towards making the function
-        # partially-annotated. This is because, if there is no return type, we
-        # will skip typechecking that function. So, even though `self` is
-        # considered an implicitly-annotated parameter, we expect at least one
-        # explicitly-annotated parameter for the function to be typechecked.
-        threshold_for_partial_annotation = 1 if has_untyped_self_parameter else 0
-
-        if annotated_parameter_count > threshold_for_partial_annotation:
-            return FunctionAnnotationKind.PARTIALLY_ANNOTATED
-
-        return FunctionAnnotationKind.NOT_ANNOTATED
+            parameters_requiring_annotation = (
+                parameters[1:] if is_non_static_method else parameters
+            )
+            all_parameters_annotated = all(
+                parameter.annotation is not None
+                for parameter in parameters_requiring_annotation
+            )
+            if all_parameters_annotated:
+                return FunctionAnnotationKind.FULLY_ANNOTATED
+            else:
+                return FunctionAnnotationKind.PARTIALLY_ANNOTATED
+        else:
+            any_parameter_annotated = any(
+                parameter.annotation is not None for parameter in parameters
+            )
+            if any_parameter_annotated:
+                return FunctionAnnotationKind.PARTIALLY_ANNOTATED
+            else:
+                return FunctionAnnotationKind.NOT_ANNOTATED
 
 
 @dataclasses.dataclass(frozen=True)
 class FunctionAnnotationInfo:
     node: libcst.CSTNode
-    annotation_kind: FunctionAnnotationKind
     code_range: CodeRange
-
+    annotation_kind: FunctionAnnotationKind
     returns: AnnotationInfo
-    parameters: List[AnnotationInfo]
+    parameters: Sequence[AnnotationInfo]
     is_method_or_classmethod: bool
 
     def non_self_cls_parameters(self) -> Iterable[AnnotationInfo]:
@@ -177,12 +174,15 @@ class AnnotationCollector(libcst.CSTVisitor):
 
     def _parameter_annotations(
         self, parameters: Sequence[libcst.Param]
-    ) -> Iterable[AnnotationInfo]:
-        for index, parameter in enumerate(parameters):
-            is_annotated = parameter.annotation is not None or self._is_self_or_cls(
-                index
+    ) -> Sequence[AnnotationInfo]:
+        return [
+            AnnotationInfo(
+                parameter,
+                parameter.annotation is not None,
+                self._code_range(parameter),
             )
-            yield AnnotationInfo(parameter, is_annotated, self._code_range(parameter))
+            for parameter in parameters
+        ]
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
         for decorator in node.decorators:
@@ -199,24 +199,18 @@ class AnnotationCollector(libcst.CSTVisitor):
             code_range=self._code_range(node.name),
         )
 
-        parameters = []
-        annotated_parameter_count = 0
-        for parameter_info in self._parameter_annotations(node.params.params):
-            if parameter_info.is_annotated:
-                annotated_parameter_count += 1
-            parameters.append(parameter_info)
+        parameters = self._parameter_annotations(node.params.params)
 
         annotation_kind = FunctionAnnotationKind.from_function_data(
-            returns.is_annotated,
-            annotated_parameter_count,
-            self._is_method_or_classmethod(),
+            is_non_static_method=self._is_method_or_classmethod(),
+            is_return_annotated=returns.is_annotated,
             parameters=node.params.params,
         )
         self.functions.append(
             FunctionAnnotationInfo(
                 node,
-                annotation_kind,
                 self._code_range(node),
+                annotation_kind,
                 returns,
                 parameters,
                 self._is_method_or_classmethod(),

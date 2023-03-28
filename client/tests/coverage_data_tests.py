@@ -540,8 +540,7 @@ class FunctionAnnotationKindTest(testslide.TestCase):
         self.assertEqual(
             FunctionAnnotationKind.from_function_data(
                 is_return_annotated=True,
-                annotated_parameter_count=3,
-                is_method_or_classmethod=False,
+                is_non_static_method=False,
                 parameters=[
                     self._parameter("x0", annotated=True),
                     self._parameter("x1", annotated=True),
@@ -553,8 +552,7 @@ class FunctionAnnotationKindTest(testslide.TestCase):
         self.assertEqual(
             FunctionAnnotationKind.from_function_data(
                 is_return_annotated=True,
-                annotated_parameter_count=0,
-                is_method_or_classmethod=False,
+                is_non_static_method=False,
                 parameters=[
                     self._parameter("x0", annotated=False),
                     self._parameter("x1", annotated=False),
@@ -566,8 +564,7 @@ class FunctionAnnotationKindTest(testslide.TestCase):
         self.assertEqual(
             FunctionAnnotationKind.from_function_data(
                 is_return_annotated=False,
-                annotated_parameter_count=0,
-                is_method_or_classmethod=False,
+                is_non_static_method=False,
                 parameters=[
                     self._parameter("x0", annotated=False),
                     self._parameter("x1", annotated=False),
@@ -579,8 +576,7 @@ class FunctionAnnotationKindTest(testslide.TestCase):
         self.assertEqual(
             FunctionAnnotationKind.from_function_data(
                 is_return_annotated=False,
-                annotated_parameter_count=1,
-                is_method_or_classmethod=False,
+                is_non_static_method=False,
                 parameters=[
                     self._parameter("x0", annotated=True),
                     self._parameter("x1", annotated=False),
@@ -589,74 +585,53 @@ class FunctionAnnotationKindTest(testslide.TestCase):
             ),
             FunctionAnnotationKind.PARTIALLY_ANNOTATED,
         )
-        # An untyped `self` parameter of a method does not count for partial
-        # annotation. As per PEP 484, we need an explicitly annotated parameter.
+        # An untyped `self` parameter of a method is not required, but it also
+        # does not count for partial annotation. As per PEP 484, we need an
+        # explicitly annotated parameter or return before we'll typecheck a method.
+        #
+        # Check several edge cases related to this.
         self.assertEqual(
             FunctionAnnotationKind.from_function_data(
-                is_return_annotated=False,
-                annotated_parameter_count=1,
-                is_method_or_classmethod=True,
+                is_return_annotated=True,
+                is_non_static_method=True,
                 parameters=[
                     self._parameter("self", annotated=False),
                     self._parameter("x1", annotated=False),
                 ],
             ),
-            FunctionAnnotationKind.NOT_ANNOTATED,
-        )
-        self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
-                is_return_annotated=False,
-                annotated_parameter_count=2,
-                is_method_or_classmethod=True,
-                parameters=[
-                    self._parameter("self", annotated=True),
-                    self._parameter("x1", annotated=True),
-                ],
-            ),
             FunctionAnnotationKind.PARTIALLY_ANNOTATED,
         )
-        # An annotated `self` suffices to make Pyre typecheck the method.
-        self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
-                is_return_annotated=False,
-                annotated_parameter_count=1,
-                is_method_or_classmethod=True,
-                parameters=[
-                    cst.Param(
-                        name=cst.Name("self"),
-                        annotation=cst.Annotation(cst.Name("Foo")),
-                    )
-                ],
-            ),
-            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
-        )
-        # If self is annotated but not another parameter, the function is not fully annotated
         self.assertEqual(
             FunctionAnnotationKind.from_function_data(
                 is_return_annotated=True,
-                annotated_parameter_count=1,
-                is_method_or_classmethod=True,
+                is_non_static_method=True,
                 parameters=[
-                    cst.Param(
-                        name=cst.Name("self"),
-                        annotation=cst.Annotation(cst.Name("Foo")),
-                    ),
-                    cst.Param(
-                        name=cst.Name("x"),
-                        annotation=None,
-                    ),
+                    self._parameter("self", annotated=True),
+                    self._parameter("x1", annotated=False),
                 ],
             ),
             FunctionAnnotationKind.PARTIALLY_ANNOTATED,
         )
         self.assertEqual(
             FunctionAnnotationKind.from_function_data(
-                is_return_annotated=False,
-                annotated_parameter_count=0,
-                is_method_or_classmethod=True,
-                parameters=[],
+                is_return_annotated=True,
+                is_non_static_method=True,
+                parameters=[
+                    self._parameter("self", annotated=False),
+                ],
             ),
-            FunctionAnnotationKind.NOT_ANNOTATED,
+            FunctionAnnotationKind.FULLY_ANNOTATED,
+        )
+        # An explicitly annotated `self` suffices to make Pyre typecheck the method.
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                is_non_static_method=True,
+                parameters=[
+                    self._parameter("self", annotated=True),
+                ],
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
         )
 
 
