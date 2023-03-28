@@ -133,6 +133,17 @@ class FunctionAnnotationInfo:
         return self.annotation_kind == FunctionAnnotationKind.FULLY_ANNOTATED
 
 
+class VisitorWithPositionData(libcst.CSTVisitor):
+    """
+    Mixin to use for libcst visitors that need position data.
+    """
+
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
+    def code_range(self, node: libcst.CSTNode) -> CodeRange:
+        return self.get_metadata(PositionProvider, node)
+
+
 class AnnotationContext:
     class_definition_depth: int
     define_depth: int
@@ -186,8 +197,7 @@ class AnnotationContext:
         return self.class_definition_depth > 0 and not self.static_define_depth > 0
 
 
-class AnnotationCollector(libcst.CSTVisitor):
-    METADATA_DEPENDENCIES = (PositionProvider,)
+class AnnotationCollector(VisitorWithPositionData):
     path: str = ""
 
     def __init__(self) -> None:
@@ -205,9 +215,6 @@ class AnnotationCollector(libcst.CSTVisitor):
         for function in self.functions:
             yield from function.non_self_cls_parameters()
 
-    def _code_range(self, node: libcst.CSTNode) -> CodeRange:
-        return self.get_metadata(PositionProvider, node)
-
     def _parameter_annotations(
         self, parameters: Sequence[libcst.Param]
     ) -> Sequence[AnnotationInfo]:
@@ -215,7 +222,7 @@ class AnnotationCollector(libcst.CSTVisitor):
             AnnotationInfo(
                 parameter,
                 parameter.annotation is not None,
-                self._code_range(parameter),
+                self.code_range(parameter),
             )
             for parameter in parameters
         ]
@@ -232,7 +239,7 @@ class AnnotationCollector(libcst.CSTVisitor):
         returns = AnnotationInfo(
             node,
             is_annotated=node.returns is not None,
-            code_range=self._code_range(node.name),
+            code_range=self.code_range(node.name),
         )
 
         parameters = self._parameter_annotations(node.params.params)
@@ -245,7 +252,7 @@ class AnnotationCollector(libcst.CSTVisitor):
         self.functions.append(
             FunctionAnnotationInfo(
                 node,
-                self._code_range(node),
+                self.code_range(node),
                 annotation_kind,
                 returns,
                 parameters,
@@ -270,7 +277,7 @@ class AnnotationCollector(libcst.CSTVisitor):
             # annotation. Erring on the side of reporting these as annotated to
             # avoid showing false positives to users.
             implicitly_annotated_value = True
-        code_range = self._code_range(node)
+        code_range = self.code_range(node)
         if self.context.assignments_are_class_level():
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
             self.attributes.append(AnnotationInfo(node, is_annotated, code_range))
@@ -282,7 +289,7 @@ class AnnotationCollector(libcst.CSTVisitor):
         node.annotation
         if self.context.assignments_are_function_local():
             return
-        code_range = self._code_range(node)
+        code_range = self.code_range(node)
         if self.context.assignments_are_class_level():
             self.attributes.append(AnnotationInfo(node, True, code_range))
         else:
