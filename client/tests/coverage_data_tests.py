@@ -105,7 +105,8 @@ class AnnotationCountCollectorTest(testslide.TestCase):
         source_module = parse_code(source)
         result = AnnotationCountCollector().collect(source_module)
         self.assertDictEqual(
-            expected, AnnotationCountCollector.get_result_counts(result)
+            expected,
+            result.to_count_dict(),
         )
 
     def test_count_annotations(self) -> None:

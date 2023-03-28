@@ -111,9 +111,7 @@ def aggregate_statistics(
     }
 
     for statistics_data in data.values():
-        annotation_counts = coverage_data.AnnotationCountCollector.get_result_counts(
-            statistics_data.annotations
-        )
+        annotation_counts = statistics_data.annotations.to_count_dict()
         for key in aggregate_annotations.keys():
             aggregate_annotations[key] += annotation_counts[key]
 

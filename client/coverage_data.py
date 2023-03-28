@@ -68,6 +68,24 @@ class ModuleAnnotationData:
     total_attributes: List[CodeRange]
     annotated_attributes: List[CodeRange]
 
+    def to_count_dict(self) -> Dict[str, int]:
+        return {
+            "return_count": len(self.total_returns),
+            "annotated_return_count": len(self.annotated_returns),
+            "globals_count": len(self.total_globals),
+            "annotated_globals_count": len(self.annotated_globals),
+            "parameter_count": len(self.total_parameters),
+            "annotated_parameter_count": len(self.annotated_parameters),
+            "attribute_count": len(self.total_attributes),
+            "annotated_attribute_count": len(self.annotated_attributes),
+            "function_count": len(self.total_functions),
+            "partially_annotated_function_count": len(
+                self.partially_annotated_functions
+            ),
+            "fully_annotated_function_count": len(self.fully_annotated_functions),
+            "line_count": self.line_count,
+        }
+
 
 @dataclasses.dataclass(frozen=True)
 class ModuleSuppressionData:
@@ -358,25 +376,6 @@ class AnnotationCountCollector(AnnotationCollector):
                 a.code_range for a in self.attributes if a.is_annotated
             ],
         )
-
-    @staticmethod
-    def get_result_counts(result: ModuleAnnotationData) -> Dict[str, int]:
-        return {
-            "return_count": len(result.total_returns),
-            "annotated_return_count": len(result.annotated_returns),
-            "globals_count": len(result.total_globals),
-            "annotated_globals_count": len(result.annotated_globals),
-            "parameter_count": len(result.total_parameters),
-            "annotated_parameter_count": len(result.annotated_parameters),
-            "attribute_count": len(result.total_attributes),
-            "annotated_attribute_count": len(result.annotated_attributes),
-            "function_count": len(result.total_functions),
-            "partially_annotated_function_count": len(
-                result.partially_annotated_functions
-            ),
-            "fully_annotated_function_count": len(result.fully_annotated_functions),
-            "line_count": result.line_count,
-        }
 
 
 class SuppressionCountCollector(libcst.CSTVisitor):
