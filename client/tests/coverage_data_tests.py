@@ -527,18 +527,26 @@ class AnnotationCountCollectorTest(testslide.TestCase):
 
 
 class FunctionAnnotationKindTest(testslide.TestCase):
+
+    ANNOTATION = cst.Annotation(cst.Name("Foo"))
+
+    def _parameter(self, name: str, annotated: bool) -> cst.Param:
+        return cst.Param(
+            name=cst.Name(name),
+            annotation=self.ANNOTATION if annotated else None,
+        )
+
     def test_from_function_data(self) -> None:
-        three_parameters = [
-            cst.Param(name=cst.Name("x1"), annotation=None),
-            cst.Param(name=cst.Name("x2"), annotation=None),
-            cst.Param(name=cst.Name("x3"), annotation=None),
-        ]
         self.assertEqual(
             FunctionAnnotationKind.from_function_data(
                 is_return_annotated=True,
                 annotated_parameter_count=3,
                 is_method_or_classmethod=False,
-                parameters=three_parameters,
+                parameters=[
+                    self._parameter("x0", annotated=True),
+                    self._parameter("x1", annotated=True),
+                    self._parameter("x2", annotated=True),
+                ],
             ),
             FunctionAnnotationKind.FULLY_ANNOTATED,
         )
@@ -547,7 +555,11 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                 is_return_annotated=True,
                 annotated_parameter_count=0,
                 is_method_or_classmethod=False,
-                parameters=three_parameters,
+                parameters=[
+                    self._parameter("x0", annotated=False),
+                    self._parameter("x1", annotated=False),
+                    self._parameter("x2", annotated=False),
+                ],
             ),
             FunctionAnnotationKind.PARTIALLY_ANNOTATED,
         )
@@ -556,7 +568,11 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                 is_return_annotated=False,
                 annotated_parameter_count=0,
                 is_method_or_classmethod=False,
-                parameters=three_parameters,
+                parameters=[
+                    self._parameter("x0", annotated=False),
+                    self._parameter("x1", annotated=False),
+                    self._parameter("x2", annotated=False),
+                ],
             ),
             FunctionAnnotationKind.NOT_ANNOTATED,
         )
@@ -565,7 +581,11 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                 is_return_annotated=False,
                 annotated_parameter_count=1,
                 is_method_or_classmethod=False,
-                parameters=three_parameters,
+                parameters=[
+                    self._parameter("x0", annotated=True),
+                    self._parameter("x1", annotated=False),
+                    self._parameter("x2", annotated=False),
+                ],
             ),
             FunctionAnnotationKind.PARTIALLY_ANNOTATED,
         )
@@ -576,7 +596,10 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                 is_return_annotated=False,
                 annotated_parameter_count=1,
                 is_method_or_classmethod=True,
-                parameters=three_parameters,
+                parameters=[
+                    self._parameter("self", annotated=False),
+                    self._parameter("x1", annotated=False),
+                ],
             ),
             FunctionAnnotationKind.NOT_ANNOTATED,
         )
@@ -585,7 +608,10 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                 is_return_annotated=False,
                 annotated_parameter_count=2,
                 is_method_or_classmethod=True,
-                parameters=three_parameters,
+                parameters=[
+                    self._parameter("self", annotated=True),
+                    self._parameter("x1", annotated=True),
+                ],
             ),
             FunctionAnnotationKind.PARTIALLY_ANNOTATED,
         )
@@ -600,6 +626,25 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                         name=cst.Name("self"),
                         annotation=cst.Annotation(cst.Name("Foo")),
                     )
+                ],
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        # If self is annotated but not another parameter, the function is not fully annotated
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=True,
+                annotated_parameter_count=1,
+                is_method_or_classmethod=True,
+                parameters=[
+                    cst.Param(
+                        name=cst.Name("self"),
+                        annotation=cst.Annotation(cst.Name("Foo")),
+                    ),
+                    cst.Param(
+                        name=cst.Name("x"),
+                        annotation=None,
+                    ),
                 ],
             ),
             FunctionAnnotationKind.PARTIALLY_ANNOTATED,
