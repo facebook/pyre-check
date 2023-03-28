@@ -39,6 +39,21 @@ class AnnotationInfo:
 
 
 @dataclasses.dataclass(frozen=True)
+class ParameterAnnotationInfo:
+    function_name: str
+    name: str
+    is_annotated: bool
+    code_range: CodeRange
+
+
+@dataclasses.dataclass(frozen=True)
+class ReturnAnnotationInfo:
+    function_name: str
+    is_annotated: bool
+    code_range: CodeRange
+
+
+@dataclasses.dataclass(frozen=True)
 class ModuleAnnotationData:
     line_count: int
     total_functions: List[CodeRange]
@@ -110,11 +125,11 @@ class FunctionAnnotationInfo:
     node: libcst.CSTNode
     code_range: CodeRange
     annotation_kind: FunctionAnnotationKind
-    returns: AnnotationInfo
-    parameters: Sequence[AnnotationInfo]
+    returns: ReturnAnnotationInfo
+    parameters: Sequence[ParameterAnnotationInfo]
     is_method_or_classmethod: bool
 
-    def non_self_cls_parameters(self) -> Iterable[AnnotationInfo]:
+    def non_self_cls_parameters(self) -> Iterable[ParameterAnnotationInfo]:
         if self.is_method_or_classmethod:
             yield from self.parameters[1:]
         else:
@@ -183,6 +198,9 @@ class AnnotationContext:
 
     # Queries of the context
 
+    def name_of(self, node: libcst.FunctionDef) -> str:
+        return ".".join((*self.class_name_stack, node.name.value))
+
     def assignments_are_function_local(self) -> bool:
         return self.define_depth > 0
 
@@ -207,24 +225,27 @@ class AnnotationCollector(VisitorWithPositionData):
         self.functions: List[FunctionAnnotationInfo] = []
         self.line_count = 0
 
-    def returns(self) -> Iterable[AnnotationInfo]:
+    def returns(self) -> Iterable[ReturnAnnotationInfo]:
         for function in self.functions:
             yield function.returns
 
-    def parameters(self) -> Iterable[AnnotationInfo]:
+    def parameters(self) -> Iterable[ParameterAnnotationInfo]:
         for function in self.functions:
             yield from function.non_self_cls_parameters()
 
-    def _parameter_annotations(
-        self, parameters: Sequence[libcst.Param]
-    ) -> Sequence[AnnotationInfo]:
+    def get_parameter_annotation_info(
+        self,
+        function_name: str,
+        params: Sequence[libcst.Param],
+    ) -> Sequence[ParameterAnnotationInfo]:
         return [
-            AnnotationInfo(
-                parameter,
-                parameter.annotation is not None,
-                self.code_range(parameter),
+            ParameterAnnotationInfo(
+                function_name=function_name,
+                name=node.name.value,
+                is_annotated=node.annotation is not None,
+                code_range=self.code_range(node),
             )
-            for parameter in parameters
+            for node in params
         ]
 
     def visit_ClassDef(self, node: libcst.ClassDef) -> None:
@@ -234,15 +255,19 @@ class AnnotationCollector(VisitorWithPositionData):
         self.context.update_for_exit_class()
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
+        function_name = self.context.name_of(node)
         self.context.update_for_enter_define(node)
 
-        returns = AnnotationInfo(
-            node,
+        returns = ReturnAnnotationInfo(
+            function_name=function_name,
             is_annotated=node.returns is not None,
             code_range=self.code_range(node.name),
         )
 
-        parameters = self._parameter_annotations(node.params.params)
+        parameters = self.get_parameter_annotation_info(
+            function_name=function_name,
+            params=node.params.params,
+        )
 
         annotation_kind = FunctionAnnotationKind.from_function_data(
             is_non_static_method=self.context.is_non_static_method(),
@@ -316,10 +341,10 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
     def fully_annotated_functions(self) -> List[FunctionAnnotationInfo]:
         return [f for f in self.functions if f.is_fully_annotated]
 
-    def annotated_parameters(self) -> List[AnnotationInfo]:
+    def annotated_parameters(self) -> List[ParameterAnnotationInfo]:
         return [p for p in self.parameters() if p.is_annotated]
 
-    def annotated_returns(self) -> List[AnnotationInfo]:
+    def annotated_returns(self) -> List[ReturnAnnotationInfo]:
         return [r for r in self.returns() if r.is_annotated]
 
     def annotated_globals(self) -> List[AnnotationInfo]:
