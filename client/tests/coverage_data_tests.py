@@ -6,7 +6,7 @@
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 import libcst as cst
 
@@ -18,12 +18,15 @@ from ..coverage_data import (
     AnnotationCountCollector,
     find_module_paths,
     FixmeCountCollector,
+    FunctionAnnotationInfo,
     FunctionAnnotationKind,
     get_paths_to_collect,
     IgnoreCountCollector,
     module_from_code,
     module_from_path,
     ModuleMode,
+    ParameterAnnotationInfo,
+    ReturnAnnotationInfo,
     StrictCountCollector,
 )
 from ..tests import setup
@@ -69,6 +72,8 @@ class ParsingHelpersTest(testslide.TestCase):
 
 
 class AnnotationCollectorTest(testslide.TestCase):
+    maxDiff = 2000
+
     def _build_and_visit_annotation_collector(self, source: str) -> AnnotationCollector:
         source_module = parse_code(source)
         collector = AnnotationCollector()
@@ -98,6 +103,257 @@ class AnnotationCollectorTest(testslide.TestCase):
         collector = AnnotationCollector()
         source_module.visit(collector)
         self.assertEqual(collector.line_count, 2)
+
+    def _assert_function_annotations(
+        self,
+        code: str,
+        expected: Sequence[FunctionAnnotationInfo],
+    ) -> None:
+        module = parse_code(code)
+        collector = AnnotationCollector()
+        module.visit(collector)
+        actual = collector.functions
+        self.assertEqual(
+            actual,
+            expected,
+        )
+
+    def test_function_annotations__standalone_no_annotations(self) -> None:
+        self._assert_function_annotations(
+            """
+            def f(x):
+                pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=0),
+                        end=CodePosition(line=3, column=8),
+                    ),
+                    annotation_kind=FunctionAnnotationKind.NOT_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        function_name="f",
+                        is_annotated=False,
+                        code_range=CodeRange(
+                            start=CodePosition(line=2, column=4),
+                            end=CodePosition(line=2, column=5),
+                        ),
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            function_name="f",
+                            name="x",
+                            is_annotated=False,
+                            code_range=CodeRange(
+                                start=CodePosition(line=2, column=6),
+                                end=CodePosition(line=2, column=7),
+                            ),
+                        )
+                    ],
+                    is_method_or_classmethod=False,
+                )
+            ],
+        )
+
+    def test_function_annotations__standalone_partially_annotated(self) -> None:
+        self._assert_function_annotations(
+            """
+            def f(x) -> None:
+                pass
+
+            def g(x: int):
+                pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=0),
+                        end=CodePosition(line=3, column=8),
+                    ),
+                    annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        function_name="f",
+                        is_annotated=True,
+                        code_range=CodeRange(
+                            start=CodePosition(line=2, column=4),
+                            end=CodePosition(line=2, column=5),
+                        ),
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            function_name="f",
+                            name="x",
+                            is_annotated=False,
+                            code_range=CodeRange(
+                                start=CodePosition(line=2, column=6),
+                                end=CodePosition(line=2, column=7),
+                            ),
+                        )
+                    ],
+                    is_method_or_classmethod=False,
+                ),
+                FunctionAnnotationInfo(
+                    code_range=CodeRange(
+                        start=CodePosition(line=5, column=0),
+                        end=CodePosition(line=6, column=8),
+                    ),
+                    annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        function_name="g",
+                        is_annotated=False,
+                        code_range=CodeRange(
+                            start=CodePosition(line=5, column=4),
+                            end=CodePosition(line=5, column=5),
+                        ),
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            function_name="g",
+                            name="x",
+                            is_annotated=True,
+                            code_range=CodeRange(
+                                start=CodePosition(line=5, column=6),
+                                end=CodePosition(line=5, column=7),
+                            ),
+                        )
+                    ],
+                    is_method_or_classmethod=False,
+                ),
+            ],
+        )
+
+    def test_function_annotations__standalone_fully_annotated(self) -> None:
+        self._assert_function_annotations(
+            """
+            def f(x: int) -> None:
+                pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    code_range=CodeRange(
+                        start=CodePosition(line=2, column=0),
+                        end=CodePosition(line=3, column=8),
+                    ),
+                    annotation_kind=FunctionAnnotationKind.FULLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        function_name="f",
+                        is_annotated=True,
+                        code_range=CodeRange(
+                            start=CodePosition(line=2, column=4),
+                            end=CodePosition(line=2, column=5),
+                        ),
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            function_name="f",
+                            name="x",
+                            is_annotated=True,
+                            code_range=CodeRange(
+                                start=CodePosition(line=2, column=6),
+                                end=CodePosition(line=2, column=7),
+                            ),
+                        )
+                    ],
+                    is_method_or_classmethod=False,
+                )
+            ],
+        )
+
+    def test_function_annotations__annotated_method(self) -> None:
+        self._assert_function_annotations(
+            """
+            class A:
+                def f(self, x: int) -> None:
+                    pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    code_range=CodeRange(
+                        start=CodePosition(line=3, column=4),
+                        end=CodePosition(line=4, column=12),
+                    ),
+                    annotation_kind=FunctionAnnotationKind.FULLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        function_name="A.f",
+                        is_annotated=True,
+                        code_range=CodeRange(
+                            start=CodePosition(line=3, column=8),
+                            end=CodePosition(line=3, column=9),
+                        ),
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            function_name="A.f",
+                            name="self",
+                            is_annotated=False,
+                            code_range=CodeRange(
+                                start=CodePosition(line=3, column=10),
+                                end=CodePosition(line=3, column=14),
+                            ),
+                        ),
+                        ParameterAnnotationInfo(
+                            function_name="A.f",
+                            name="x",
+                            is_annotated=True,
+                            code_range=CodeRange(
+                                start=CodePosition(line=3, column=16),
+                                end=CodePosition(line=3, column=17),
+                            ),
+                        ),
+                    ],
+                    is_method_or_classmethod=True,
+                )
+            ],
+        )
+
+    def test_function_annotations__partially_annotated_static_method(self) -> None:
+        self._assert_function_annotations(
+            """
+            class A:
+
+                @staticmethod
+                def f(self, x: int) -> None:
+                    pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    code_range=CodeRange(
+                        start=CodePosition(line=5, column=4),
+                        end=CodePosition(line=6, column=12),
+                    ),
+                    annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        function_name="A.f",
+                        is_annotated=True,
+                        code_range=CodeRange(
+                            start=CodePosition(line=5, column=8),
+                            end=CodePosition(line=5, column=9),
+                        ),
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            function_name="A.f",
+                            name="self",
+                            is_annotated=False,
+                            code_range=CodeRange(
+                                start=CodePosition(line=5, column=10),
+                                end=CodePosition(line=5, column=14),
+                            ),
+                        ),
+                        ParameterAnnotationInfo(
+                            function_name="A.f",
+                            name="x",
+                            is_annotated=True,
+                            code_range=CodeRange(
+                                start=CodePosition(line=5, column=16),
+                                end=CodePosition(line=5, column=17),
+                            ),
+                        ),
+                    ],
+                    is_method_or_classmethod=False,
+                )
+            ],
+        )
 
 
 class AnnotationCountCollectorTest(testslide.TestCase):
