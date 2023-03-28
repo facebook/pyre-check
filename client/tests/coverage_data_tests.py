@@ -905,23 +905,23 @@ class FixmeCountCollectorTest(testslide.TestCase):
         self.assertEqual(expected_no_codes, result.no_code)
 
     def test_count_fixmes(self) -> None:
-        self.assert_counts("# FIXME[2]: Example Error Message", {2: [1]}, [])
+        # no error codes (none in first example, unparseable in second)
         self.assert_counts(
             """
-            # FIXME[3]: Example Error Message
-
-            # FIXME[34]: Example
+            # FIXME
+            # FIXME[8,]
             """,
-            {3: [2], 34: [4]},
-            [],
+            {},
+            [2, 3],
         )
         self.assert_counts(
             """
-            # FIXME[2]: Example Error Message
+            # FIXME[3]: Example Error Message
+            # FIXME[3, 4]: Another Message
 
-            # FIXME[2]: message
+            # FIXME[34]: Example
             """,
-            {2: [2, 4]},
+            {3: [2, 3], 4: [3], 34: [5]},
             [],
         )
         self.assert_counts(
@@ -937,22 +937,6 @@ class FixmeCountCollectorTest(testslide.TestCase):
             def foo(x: str) -> int:
                 # FIXME[7]: comments
                 return x
-            """,
-            {7: [3]},
-            [],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                return x # unrelated # FIXME[7]
-            """,
-            {7: [3]},
-            [],
-        )
-        self.assert_counts(
-            """
-            def foo(x: str) -> int:
-                return x # unrelated   #  FIXME[7] comments
             """,
             {7: [3]},
             [],
@@ -976,29 +960,26 @@ class FixmeCountCollectorTest(testslide.TestCase):
         self.assert_counts(
             """
             def foo(x: str) -> int:
+                return x # unrelated # FIXME[7]
+            """,
+            {7: [3]},
+            [],
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x # unrelated   #  FIXME[7] comments
+            """,
+            {7: [3]},
+            [],
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
                 return x # FIXME[7, 8]
             """,
             {7: [3], 8: [3]},
             [],
-        )
-        self.assert_counts(
-            """
-            # FIXME[8]
-            def foo(x: str) -> int:
-                return x # FIXME[7, 8]
-            """,
-            {7: [4], 8: [2, 4]},
-            [],
-        )
-        # Invalid suppression
-        self.assert_counts(
-            """
-            # FIXME[8,]
-            def foo(x: str) -> int:
-                return x
-            """,
-            {},
-            [2],
         )
 
 
