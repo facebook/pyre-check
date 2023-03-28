@@ -140,7 +140,6 @@ class FunctionAnnotationKind(Enum):
 
 @dataclasses.dataclass(frozen=True)
 class FunctionAnnotationInfo:
-    node: libcst.CSTNode
     code_range: CodeRange
     annotation_kind: FunctionAnnotationKind
     returns: ReturnAnnotationInfo
@@ -294,7 +293,6 @@ class AnnotationCollector(VisitorWithPositionData):
         )
         self.functions.append(
             FunctionAnnotationInfo(
-                node,
                 self.code_range(node),
                 annotation_kind,
                 returns,
