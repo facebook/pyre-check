@@ -376,9 +376,7 @@ class AnnotationCountCollector(AnnotationCollector):
         )
 
 
-class SuppressionCountCollector(libcst.CSTVisitor):
-    METADATA_DEPENDENCIES = (PositionProvider,)
-
+class SuppressionCountCollector(VisitorWithPositionData):
     def __init__(self, regex: str) -> None:
         self.no_code: List[int] = []
         self.codes: Dict[int, List[int]] = {}
@@ -405,7 +403,7 @@ class SuppressionCountCollector(libcst.CSTVisitor):
         error_codes = self.error_codes(node.value)
         if error_codes is None:
             return
-        suppression_line = self.get_metadata(PositionProvider, node).start.line
+        suppression_line = self.code_range(node).start.line
         if len(error_codes) == 0:
             self.no_code.append(suppression_line)
             return
