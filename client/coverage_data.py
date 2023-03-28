@@ -145,12 +145,12 @@ class VisitorWithPositionData(libcst.CSTVisitor):
 
 
 class AnnotationContext:
-    class_definition_depth: int
+    class_name_stack: List[str]
     define_depth: int
     static_define_depth: int
 
     def __init__(self) -> None:
-        self.class_definition_depth = 0
+        self.class_name_stack = []
         self.define_depth = 0
         self.static_define_depth = 0
 
@@ -175,11 +175,11 @@ class AnnotationContext:
         if self._define_includes_staticmethod(define):
             self.static_define_depth -= 1
 
-    def update_for_enter_class(self) -> None:
-        self.class_definition_depth += 1
+    def update_for_enter_class(self, classdef: libcst.ClassDef) -> None:
+        self.class_name_stack.append(classdef.name.value)
 
     def update_for_exit_class(self) -> None:
-        self.class_definition_depth -= 1
+        self.class_name_stack.pop()
 
     # Queries of the context
 
@@ -187,14 +187,14 @@ class AnnotationContext:
         return self.define_depth > 0
 
     def assignments_are_class_level(self) -> bool:
-        return self.class_definition_depth > 0
+        return len(self.class_name_stack) > 0
 
     def is_non_static_method(self) -> bool:
         """
         Is a parameter implicitly typed? This happens in non-static methods for
         the initial parameter (conventionally `self` or `cls`).
         """
-        return self.class_definition_depth > 0 and not self.static_define_depth > 0
+        return len(self.class_name_stack) > 0 and not self.static_define_depth > 0
 
 
 class AnnotationCollector(VisitorWithPositionData):
@@ -228,7 +228,7 @@ class AnnotationCollector(VisitorWithPositionData):
         ]
 
     def visit_ClassDef(self, node: libcst.ClassDef) -> None:
-        self.context.update_for_enter_class()
+        self.context.update_for_enter_class(node)
 
     def leave_ClassDef(self, original_node: libcst.ClassDef) -> None:
         self.context.update_for_exit_class()
