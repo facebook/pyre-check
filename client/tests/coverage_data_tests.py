@@ -907,13 +907,21 @@ class FixmeCountCollectorTest(testslide.TestCase):
     def test_count_fixmes(self) -> None:
         self.assert_counts("# FIXME[2]: Example Error Message", {2: [1]}, [])
         self.assert_counts(
-            "# FIXME[3]: Example Error Message \n\n\n # FIXME[34]: Example",
-            {3: [1], 34: [4]},
+            """
+            # FIXME[3]: Example Error Message
+
+            # FIXME[34]: Example
+            """,
+            {3: [2], 34: [4]},
             [],
         )
         self.assert_counts(
-            "# FIXME[2]: Example Error Message\n\n\n# FIXME[2]: message",
-            {2: [1, 4]},
+            """
+            # FIXME[2]: Example Error Message
+
+            # FIXME[2]: message
+            """,
+            {2: [2, 4]},
             [],
         )
         self.assert_counts(
@@ -1011,13 +1019,21 @@ class IgnoreCountCollectorTest(testslide.TestCase):
     def test_count_ignores(self) -> None:
         self.assert_counts("# IGNORE[2]: Example Error Message", {2: [1]}, [])
         self.assert_counts(
-            "# IGNORE[3]: Example Error Message \n\n\n # pyre-ignore[34]: Example",
-            {3: [1], 34: [4]},
+            """
+            # IGNORE[3]: Example Error Message
+
+            # IGNORE[34]: Example
+            """,
+            {3: [2], 34: [4]},
             [],
         )
         self.assert_counts(
-            "# IGNORE[2]: Example Error Message\n\n\n# pyre-ignore[2]: message",
-            {2: [1, 4]},
+            """
+            # IGNORE[2]: Example Error Message
+
+            # IGNORE[2]: message
+            """,
+            {2: [2, 4]},
             [],
         )
 
