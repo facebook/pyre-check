@@ -734,7 +734,6 @@ let test_object_global_leaks context =
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `test.MyClass2`."];
   assert_global_leak_errors
     {|
-      import collections
       class MyClass:
         my_list: List[int]
         def __init__(self, x: int) -> None:
@@ -744,7 +743,7 @@ let test_object_global_leaks context =
         MyClass().my_list.append(1)
     |}
     [
-      (* TODO (T142189949): we should not be detecting leaks on instantiating a class *)
+      (* TODO (T142189949): leaks should not be detected for instantiating a class *)
       "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
        `typing.Type[test.MyClass]`.";
     ];
@@ -793,7 +792,16 @@ let test_object_global_leaks context =
       def foo():
         MyClass.x = 2
     |}
-    [ (* TODO (T142189949): leaks should be detected on class attribute mutations *) ];
+    [ (* TODO (T142189949): writes to class attributes should be detected *) ];
+  assert_global_leak_errors
+    {|
+      class MyClass:
+        x = 5
+
+      def foo():
+        MyClass.x = 2
+    |}
+    [ (* TODO (T142189949): writes to class attributes should be detected *) ];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -813,6 +821,141 @@ let test_object_global_leaks context =
       myclass = MyClass(1)
     |}
     [];
+  assert_global_leak_errors
+    (* tests that global leaks are found in calls to constructors *)
+    {|
+      my_global: Dict[str, int] = {}
+
+      class A:
+        x: Dict[str, int]
+        def __init__(self, x: Dict[str, int]) -> None:
+          self.x = x
+
+      def foo() -> A:
+        return A(my_global.setdefault("a", 1))
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
+       int]`.";
+    ];
+  assert_global_leak_errors
+    (* tests that aliasing a class will still properly interact with global leaks *)
+    {|
+      class A:
+        x: int = 5
+
+      B = A
+      C = A
+
+      def foo():
+        B().x = 6
+        C.x = 6
+    |}
+    [
+      (* TODO (T142189949): errors should not be found for instantiated local writes *)
+      "Global leak [3100]: Data is leaked to global `test.B` of type `typing.Type[test.A]`.";
+      "Global leak [3100]: Data is leaked to global `test.C` of type `typing.Type[test.A]`.";
+    ];
+  assert_global_leak_errors
+    (* tests that returning a class from a function will still find a global leak *)
+    {|
+      class MyClass:
+        x: List[int] = []
+
+      def get_class() -> Type[MyClass]:
+        return MyClass
+
+      def foo() -> None:
+        get_class().x.append(5)
+    |}
+    [
+      (* TODO (T142189949): add more user-friendly error message for classes returned from
+         callables *)
+      "Global leak [3100]: Data is leaked to global `test.get_class` of type \
+       `typing.Callable(test.get_class)[[], typing.Type[test.MyClass]]`.";
+    ];
+  assert_global_leak_errors
+    (* tests that returning a class and instantiating it doesn't find a global leak *)
+    {|
+      class MyClass:
+        x: List[int] = []
+
+      def get_class() -> Type[MyClass]:
+        return MyClass
+
+      def foo() -> None:
+        get_class()().x.append(5)
+    |}
+    [
+      (* TODO (T142189949): errors should not be found for instantiated local writes *)
+      "Global leak [3100]: Data is leaked to global `test.get_class` of type \
+       `typing.Callable(test.get_class)[[], typing.Type[test.MyClass]]`.";
+    ];
+  assert_global_leak_errors
+    (* tests that a mutation on something returned from a class does not result in an error *)
+    {|
+      class MyClass:
+        current: Optional[MyClass] = None
+        x: List[int]
+
+        def __init__(self) -> None:
+          self.x = []
+
+        @classmethod
+        def get_current(cls) -> MyClass:
+          if not cls.current:
+            cls.current = MyClass()
+          return cls.current
+
+      def foo() -> None:
+        MyClass.get_current().x.append(2)
+    |}
+    [
+      (* TODO (T142189949): errors should not be found for instantiated local writes *)
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
+    ];
+  assert_global_leak_errors
+    (* tests getting a class and instantiating it from a function finds a leak with assignment *)
+    {|
+      class MyClass:
+        x: int = 1
+
+      def get_class() -> Type[MyClass]:
+        return MyClass
+
+      def foo() -> None:
+        get_class()().x = 5
+    |}
+    [
+      (* TODO (T142189949): errors should not be found for instantiated local writes *)
+      "Global leak [3100]: Data is leaked to global `test.get_class` of type \
+       `typing.Callable(test.get_class)[[], typing.Type[test.MyClass]]`.";
+    ];
+  assert_global_leak_errors
+    (* tests that a mutation on something returned from a class does not result in an error *)
+    {|
+      class MyClass:
+        current: Optional[MyClass] = None
+        x: int
+
+        def __init__(self) -> None:
+          self.x = 1
+	
+        @classmethod
+        def get_current(cls) -> MyClass:
+          if not cls.current:
+            cls.current = MyClass()
+          return cls.current
+
+      def foo() -> None:
+        MyClass.get_current().x = 2
+    |}
+    [
+      (* TODO (T142189949): errors should not be found for instantiated local writes *)
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
+    ];
   ()
 
 
@@ -901,7 +1044,7 @@ let test_global_statements context =
     |}
     [
       (* TODO (T142189949): leaks should be detected for writing a global into a local *)
-      (* TODO (T142189949): we should not be detecting leaks on instantiating a class *)
+      (* TODO (T142189949): leaks should not be detected for instantiating a class *)
       "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
        `typing.Type[test.MyClass]`.";
     ];
@@ -1333,15 +1476,16 @@ let test_recursive_coverage context =
     ];
   assert_global_leak_errors
     {|
-      my_global: List[List[int]] = [[]]
+      class MyClass:
+        def get(x: int) -> List[int]:
+          return [x] *= x
+
+      my_global: MyClass = MyClass()
       def foo():
         global my_global
         my_global.get(0)[1] = 5
     |}
-    [
-      "Global leak [3100]: Data is leaked to global `test.my_global` of type \
-       `typing.List[typing.List[int]]`.";
-    ];
+    [];
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
