@@ -5,6 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module PythonVersion : sig
+  include module type of Configuration.PythonVersion
+
+  val parse_from_tuple : Ast.Expression.Expression.t list -> (t, string) result
+
+  val from_configuration : Configuration.Analysis.t -> t
+
+  val compare_with
+    :  t ->
+    Ast.Expression.ComparisonOperator.operator ->
+    t ->
+    (bool, Ast.Expression.ComparisonOperator.operator) result
+end
+
 val get_model_sources : paths:PyrePath.t list -> (PyrePath.t * string) list
 
 val parse
@@ -15,6 +29,7 @@ val parse
   source_sink_filter:SourceSinkFilter.t option ->
   callables:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->
+  python_version:PythonVersion.t ->
   unit ->
   ModelParseResult.t
 

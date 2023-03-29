@@ -23,6 +23,54 @@ open Statement
 open Domains
 open ModelParseResult
 
+module PythonVersion = struct
+  (* Not putting the functions there to prevent circular dependency errors *)
+  include Configuration.PythonVersion
+
+  let parse_from_tuple tuple =
+    let parse_element = function
+      | Some { Node.value = Ast.Expression.Expression.Constant const; _ } -> (
+          match const with
+          | Integer integer -> Some (Ok integer)
+          | _ -> Some (Error "Only integer values are allowed inside the version tuple."))
+      | Some _ -> Some (Error "The value in the version tuple must be an integer constant.")
+      | None -> None
+    in
+    let open Core.Result in
+    (* we need at least a single value to emulate python tuple comparison *)
+    Option.value ~default:(Error "The tuple must not be empty") (parse_element (List.nth tuple 0))
+    >>= fun major ->
+    Option.value ~default:(Ok 0) (parse_element (List.nth tuple 1))
+    >>= fun minor ->
+    Option.value ~default:(Ok 0) (parse_element (List.nth tuple 2))
+    >>| fun micro -> { major; minor; micro }
+
+
+  let from_configuration
+      {
+        Configuration.Analysis.python_major_version = major;
+        python_minor_version = minor;
+        python_micro_version = micro;
+        _;
+      }
+    =
+    { major; minor; micro }
+
+
+  let compare_with left operator right =
+    match operator with
+    | ComparisonOperator.Equals -> Ok (equal left right)
+    | NotEquals -> Ok (not (equal left right))
+    | GreaterThan -> Ok (compare left right > 0)
+    | GreaterThanOrEquals -> Ok (compare left right >= 0)
+    | LessThan -> Ok (compare left right < 0)
+    | LessThanOrEquals -> Ok (compare left right <= 0)
+    | In -> Error ComparisonOperator.In
+    | NotIn -> Error ComparisonOperator.NotIn
+    | Is -> Error ComparisonOperator.Is
+    | IsNot -> Error ComparisonOperator.IsNot
+end
+
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 
 (* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
@@ -2850,6 +2898,7 @@ let rec parse_statement
     ~source_sink_filter
     ~callables
     ~stubs
+    ~python_version
     statement
   =
   let open Core.Result in
@@ -2879,9 +2928,12 @@ let rec parse_statement
         | Some _ -> Target.create_method name
         | None -> Target.create_function name
       in
-      Ok [ParsedSignature { signature; location; call_target }]
+      [Ok (ParsedSignature { signature; location; call_target })]
   | { Node.value = Statement.Define { signature = { name; _ }; _ }; location } ->
-      Error [model_verification_error ~path ~location (DefineBodyNotEllipsis (Reference.show name))]
+      [
+        Error
+          (model_verification_error ~path ~location (DefineBodyNotEllipsis (Reference.show name)));
+      ]
   | {
    Node.value =
      Class
@@ -3014,11 +3066,13 @@ let rec parse_statement
 
                List.concat_map body ~f:signature)
         |> Option.value ~default:[]
-        |> return
+        |> List.map ~f:return
       else
-        Ok []
+        []
   | { Node.value = Class { Class.name; _ }; location } ->
-      Error [model_verification_error ~path ~location (ClassBodyNotEllipsis (Reference.show name))]
+      [
+        Error (model_verification_error ~path ~location (ClassBodyNotEllipsis (Reference.show name)));
+      ]
   | {
    Node.value =
      Assign
@@ -3026,20 +3080,20 @@ let rec parse_statement
    location;
   } ->
       if not (is_simple_name name) then
-        Error [model_verification_error ~path ~location (InvalidIdentifier target)]
+        [Error (model_verification_error ~path ~location (InvalidIdentifier target))]
       else if Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintInTaintOut["
       then
-        Error
-          [
-            model_verification_error
-              ~path
-              ~location
-              (InvalidTaintAnnotation
-                 {
-                   taint_annotation = annotation;
-                   reason = "TaintInTaintOut sanitizers cannot be modelled on attributes";
-                 });
-          ]
+        [
+          Error
+            (model_verification_error
+               ~path
+               ~location
+               (InvalidTaintAnnotation
+                  {
+                    taint_annotation = annotation;
+                    reason = "TaintInTaintOut sanitizers cannot be modelled on attributes";
+                  }));
+        ]
       else if
         Expression.show annotation |> String.equal "Sanitize"
         || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSource"
@@ -3057,72 +3111,75 @@ let rec parse_statement
             arguments;
           }
         in
-        Ok
-          [
-            ParsedAttribute
-              {
-                name;
-                source_annotation = None;
-                sink_annotation = None;
-                decorators = [decorator];
-                location;
-                call_target = Target.create_object name;
-              };
-          ]
+        [
+          Ok
+            (ParsedAttribute
+               {
+                 name;
+                 source_annotation = None;
+                 sink_annotation = None;
+                 decorators = [decorator];
+                 location;
+                 call_target = Target.create_object name;
+               });
+        ]
       else if Expression.show annotation |> String.is_substring ~substring:"TaintSource[" then
         let name = name_to_reference_exn name in
-        Ok
-          [
-            ParsedAttribute
-              {
-                name;
-                source_annotation = Some annotation;
-                sink_annotation = None;
-                decorators = [];
-                location;
-                call_target = Target.create_object name;
-              };
-          ]
+        [
+          Ok
+            (ParsedAttribute
+               {
+                 name;
+                 source_annotation = Some annotation;
+                 sink_annotation = None;
+                 decorators = [];
+                 location;
+                 call_target = Target.create_object name;
+               });
+        ]
       else if
         Expression.show annotation |> String.is_substring ~substring:"TaintSink["
         || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
       then
         let name = name_to_reference_exn name in
-        Ok
-          [
-            ParsedAttribute
-              {
-                name;
-                source_annotation = None;
-                sink_annotation = Some annotation;
-                decorators = [];
-                location;
-                call_target = Target.create_object name;
-              };
-          ]
+        [
+          Ok
+            (ParsedAttribute
+               {
+                 name;
+                 source_annotation = None;
+                 sink_annotation = Some annotation;
+                 decorators = [];
+                 location;
+                 call_target = Target.create_object name;
+               });
+        ]
       else if Expression.show annotation |> String.equal "ViaTypeOf" then
         let name = name_to_reference_exn name in
-        Ok
-          [
-            ParsedAttribute
-              {
-                name;
-                source_annotation = None;
-                sink_annotation = Some annotation;
-                decorators = [];
-                location;
-                call_target = Target.create_object name;
-              };
-          ]
+        [
+          Ok
+            (ParsedAttribute
+               {
+                 name;
+                 source_annotation = None;
+                 sink_annotation = Some annotation;
+                 decorators = [];
+                 location;
+                 call_target = Target.create_object name;
+               });
+        ]
       else
-        Error
-          [
-            model_verification_error
-              ~path
-              ~location
-              (InvalidTaintAnnotation
-                 { taint_annotation = annotation; reason = "Unsupported annotation for attributes" });
-          ]
+        [
+          Error
+            (model_verification_error
+               ~path
+               ~location
+               (InvalidTaintAnnotation
+                  {
+                    taint_annotation = annotation;
+                    reason = "Unsupported annotation for attributes";
+                  }));
+        ]
   | {
    Node.value =
      Expression
@@ -3136,7 +3193,7 @@ let rec parse_statement
          _;
        };
    location;
-  } ->
+  } -> (
       let parse_model_sources ~name ~path expression =
         match expression with
         | Some ({ Node.value; location } as expression) ->
@@ -3175,12 +3232,12 @@ let rec parse_statement
                        ~taint_configuration
                        ~source_sink_filter
                        ~callables
-                       ~stubs)
+                       ~stubs
+                       ~python_version)
+            >>| List.concat
             >>| List.partition_result
             >>| (fun (results, errors) ->
-                  let results, remainder =
-                    List.zip_with_remainder (List.concat results) model_strings
-                  in
+                  let results, remainder = List.zip_with_remainder results model_strings in
                   let parsed_results, parsed_errors =
                     List.partition_map results ~f:(fun (result, model_source) ->
                         match result with
@@ -3203,7 +3260,7 @@ let rec parse_statement
                                       models_clause = Option.value_exn expression;
                                     })))
                   in
-                  let errors = List.concat errors @ parsed_errors in
+                  let errors = errors @ parsed_errors in
                   if List.is_empty errors then
                     match remainder with
                     | None -> Ok parsed_results
@@ -3240,50 +3297,118 @@ let rec parse_statement
       in
       ModelQueryArguments.parse_arguments ~path ~location arguments
       |> as_result_error_list
-      >>= fun {
-                ModelQueryArguments.name;
-                logging_group_name;
-                find_clause;
-                where_clause;
-                model_clause;
-                expected_models_clause;
-                unexpected_models_clause;
-              } ->
-      parse_find_clause ~path find_clause
-      |> as_result_error_list
-      >>= fun find ->
-      parse_where_clause ~path ~find_clause:find where_clause
-      |> as_result_error_list
-      >>= fun where ->
-      parse_model_clause
-        ~path
-        ~taint_configuration
-        ~find_clause:find
-        ~is_object_target:(not (ModelQuery.Find.is_callable find))
-        model_clause
-      >>= check_write_to_cache_models ~path ~location ~where
-      |> as_result_error_list
-      >>= fun models ->
-      parse_output_models_clause ~name ~path expected_models_clause
-      >>= fun expected_models ->
-      parse_output_models_clause ~name ~path unexpected_models_clause
-      >>| fun unexpected_models ->
-      [
-        ParsedQuery
-          {
-            ModelQuery.find;
-            where;
-            models;
-            name;
-            logging_group_name;
-            path;
-            location;
-            expected_models;
-            unexpected_models;
-          };
-      ]
+      >>= (fun {
+                 ModelQueryArguments.name;
+                 logging_group_name;
+                 find_clause;
+                 where_clause;
+                 model_clause;
+                 expected_models_clause;
+                 unexpected_models_clause;
+               } ->
+            parse_find_clause ~path find_clause
+            |> as_result_error_list
+            >>= fun find ->
+            parse_where_clause ~path ~find_clause:find where_clause
+            |> as_result_error_list
+            >>= fun where ->
+            parse_model_clause
+              ~path
+              ~taint_configuration
+              ~find_clause:find
+              ~is_object_target:(not (ModelQuery.Find.is_callable find))
+              model_clause
+            >>= check_write_to_cache_models ~path ~location ~where
+            |> as_result_error_list
+            >>= fun models ->
+            parse_output_models_clause ~name ~path expected_models_clause
+            >>= fun expected_models ->
+            parse_output_models_clause ~name ~path unexpected_models_clause
+            >>| fun unexpected_models ->
+            [
+              Ok
+                (ParsedQuery
+                   {
+                     ModelQuery.find;
+                     where;
+                     models;
+                     name;
+                     logging_group_name;
+                     path;
+                     location;
+                     expected_models;
+                     unexpected_models;
+                   });
+            ])
+      |> function
+      | Ok parsed_statements_list -> parsed_statements_list
+      | Error errors_list -> List.map ~f:(fun error -> Error error) errors_list)
+  | {
+   Node.value =
+     If
+       {
+         If.body;
+         If.test =
+           {
+             Node.value =
+               ComparisonOperator
+                 {
+                   ComparisonOperator.left =
+                     {
+                       Node.value =
+                         Name
+                           (Name.Attribute
+                             {
+                               base = { Node.value = Name (Name.Identifier "sys"); _ };
+                               attribute = "version";
+                               _;
+                             });
+                       _;
+                     };
+                   ComparisonOperator.operator;
+                   ComparisonOperator.right = { Node.value = Tuple tuple; _ };
+                 };
+             _;
+           };
+         If.orelse;
+       };
+   location;
+  } -> (
+      let perform_comparison test_version =
+        PythonVersion.compare_with python_version operator test_version
+        |> function
+        | Error unsupported_operator ->
+            [
+              Error
+                (model_verification_error
+                   ~path
+                   ~location
+                   (UnsupportedComparisonOperator unsupported_operator));
+            ]
+        | Ok comparison_result ->
+            let statements = if comparison_result then body else orelse in
+            statements
+            |> List.map
+                 ~f:
+                   (parse_statement
+                      ~resolution
+                      ~path
+                      ~taint_configuration
+                      ~source_sink_filter
+                      ~callables
+                      ~stubs
+                      ~python_version)
+            |> List.concat
+      in
+      PythonVersion.parse_from_tuple tuple
+      |> function
+      | Error error ->
+          [Error (model_verification_error ~path ~location (UnsupportedVersionConstant error))]
+      | Ok test_version -> perform_comparison test_version)
+  | { Node.value = If { If.test; _ }; location } ->
+      [Error (model_verification_error ~path ~location (UnsupportedIfCondition test))]
   | { Node.location; _ } ->
-      Error [model_verification_error ~path ~location (UnexpectedStatement statement)]
+      [Error (model_verification_error ~path ~location (UnexpectedStatement statement))]
 
 
 let verify_no_duplicate_model_query_names ~path (results, errors) =
@@ -3301,7 +3426,16 @@ let verify_no_duplicate_model_query_names ~path (results, errors) =
   | None -> results, errors
 
 
-let create ~resolution ~path ~taint_configuration ~source_sink_filter ~callables ~stubs source =
+let create
+    ~resolution
+    ~path
+    ~taint_configuration
+    ~source_sink_filter
+    ~callables
+    ~stubs
+    ~python_version
+    source
+  =
   let signatures_and_queries, errors =
     let open Core.Result in
     String.split ~on:'\n' source
@@ -3316,9 +3450,11 @@ let create ~resolution ~path ~taint_configuration ~source_sink_filter ~callables
                ~taint_configuration
                ~source_sink_filter
                ~callables
-               ~stubs)
+               ~stubs
+               ~python_version)
+    >>| List.concat
     >>| List.partition_result
-    >>| (fun (results, errors) -> List.concat results, errors)
+    >>| (fun (results, errors) -> results, [errors])
     >>| verify_no_duplicate_model_query_names ~path
     |> function
     | Ok results_errors -> results_errors
@@ -3416,9 +3552,27 @@ let get_model_sources ~paths =
   model_files |> List.map ~f:File.create |> List.filter_map ~f:path_and_content
 
 
-let parse ~resolution ?path ~source ~taint_configuration ~source_sink_filter ~callables ~stubs () =
+let parse
+    ~resolution
+    ?path
+    ~source
+    ~taint_configuration
+    ~source_sink_filter
+    ~callables
+    ~stubs
+    ~python_version
+    ()
+  =
   let new_models_and_queries, errors =
-    create ~resolution ~path ~taint_configuration ~source_sink_filter ~callables ~stubs source
+    create
+      ~resolution
+      ~path
+      ~taint_configuration
+      ~source_sink_filter
+      ~callables
+      ~stubs
+      ~python_version
+      source
     |> List.partition_result
   in
   let new_models, new_queries =

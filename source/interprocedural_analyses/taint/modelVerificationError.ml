@@ -125,6 +125,9 @@ type kind =
   | UnsupportedClassConstraintCallee of Expression.t
   | UnsupportedDecoratorConstraint of Expression.t
   | UnsupportedDecoratorConstraintCallee of Expression.t
+  | UnsupportedIfCondition of Expression.t
+  | UnsupportedVersionConstant of string
+  | UnsupportedComparisonOperator of Expression.ComparisonOperator.operator
   | DeprecatedConstraint of {
       deprecated: string;
       suggested: string;
@@ -404,6 +407,19 @@ let description error =
         (Expression.show constraint_name)
   | UnsupportedDecoratorConstraintCallee callee ->
       Format.sprintf "Unsupported callee for decorator constraint: `%s`" (Expression.show callee)
+  | UnsupportedIfCondition condition ->
+      Format.sprintf
+        "Unsupported if condition: `%s`. If conditions need to be of the form: `sys.version \
+         operator version_tuple`. All models inside the if-block (along with those in else-if and \
+         else block, if present) will be ignored."
+        (Expression.show condition)
+  | UnsupportedVersionConstant error ->
+      Format.sprintf "Unsupported element type in version tuple in if condition: %s" error
+  | UnsupportedComparisonOperator operator ->
+      Format.asprintf
+        "The operator `%a` in the if condition is not supported"
+        Expression.ComparisonOperator.pp_comparison_operator
+        operator
   | DeprecatedConstraint { deprecated; suggested } ->
       Format.sprintf "Constraint `%s` is deprecated, use `%s` instead." deprecated suggested
   | UnsupportedFindClause clause -> Format.sprintf "Unsupported find clause `%s`" clause
@@ -563,6 +579,9 @@ let code { kind; _ } =
   | ModelQueryDuplicateParameter _ -> 65
   | InvalidModelQueryNameClause _ -> 66
   | NoOutputFromModelQueryGroup _ -> 67
+  | UnsupportedIfCondition _ -> 68
+  | UnsupportedVersionConstant _ -> 69
+  | UnsupportedComparisonOperator _ -> 70
 
 
 let display { kind = error; path; location } =

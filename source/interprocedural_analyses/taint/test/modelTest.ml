@@ -101,6 +101,7 @@ let set_up_environment
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
       ~callables:None
       ~stubs:(Target.HashSet.create ())
+      ~python_version:ModelParser.PythonVersion.default
       ()
   in
   assert_bool
@@ -200,6 +201,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ~source:(Test.trim_extra_indentation model_source)
       ~callables:None
       ~stubs:(Target.HashSet.create ())
+      ~python_version:ModelParser.PythonVersion.default
       ()
     |> fun { ModelParseResult.errors; _ } ->
     if List.is_empty errors then
@@ -224,6 +226,301 @@ let assert_queries ?source ?rules ~context ~model_source ~expect () =
     ~printer:(List.to_string ~f:ModelParseResult.ModelQuery.show)
     expect
     queries
+
+
+let test_models_with_if context =
+  let assert_model = assert_model ~context in
+  let assert_invalid_model = assert_invalid_model ~context in
+  (* valid conditional operators *)
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version < (1,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version < (100,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version > (1,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version > (100,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version <= (1,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version <= (100,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version >= (1,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version >= (100,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version == (1,0,0): # Always False
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version != (1,0,0): # Always True
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  (* Nested if conditions *)
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version != (1,0,0):
+        if sys.version >= (1,0,0):
+          def test.foo(x: TaintSource[Test]): ...
+        else:
+          def test.foo(y: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version == (1,0,0):
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        if sys.version <= (1,0,0):
+          def test.foo(x: TaintSource[Test]): ...
+        else:
+          def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          "test.foo";
+      ]
+    ();
+  (* Invalid operators *)
+  assert_invalid_model
+    ~model_source:{|
+      if sys.version in (1,2,3):
+        pass
+    |}
+    ~expect:"The operator `in` in the if condition is not supported"
+    ();
+  assert_invalid_model
+    ~model_source:{|
+      if sys.version not in (1,2,3):
+        pass
+    |}
+    ~expect:"The operator `not in` in the if condition is not supported"
+    ();
+  assert_invalid_model
+    ~model_source:{|
+      if sys.version is (1,2,3):
+        pass
+    |}
+    ~expect:"The operator `is` in the if condition is not supported"
+    ();
+  (* Invalid if conditions *)
+  assert_invalid_model
+    ~model_source:{|
+      if True:
+        pass
+    |}
+    ~expect:
+      "Unsupported if condition: `True`. If conditions need to be of the form: `sys.version \
+       operator version_tuple`. All models inside the if-block (along with those in else-if and \
+       else block, if present) will be ignored."
+    ();
+  assert_invalid_model
+    ~model_source:{|
+      if foo.version == (0,0,0):
+        pass
+    |}
+    ~expect:
+      "Unsupported if condition: `foo.version == (0, 0, 0)`. If conditions need to be of the form: \
+       `sys.version operator version_tuple`. All models inside the if-block (along with those in \
+       else-if and else block, if present) will be ignored."
+    ();
+  assert_invalid_model
+    ~model_source:{|
+      if sys.version == "foo":
+        pass
+    |}
+    ~expect:
+      "Unsupported if condition: `sys.version == \"foo\"`. If conditions need to be of the form: \
+       `sys.version operator version_tuple`. All models inside the if-block (along with those in \
+       else-if and else block, if present) will be ignored."
+    ();
+  ()
 
 
 let test_source_models context =
@@ -7036,5 +7333,6 @@ let () =
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
          "access_path" >:: test_access_path;
          "parse_decorator_modes" >:: test_parse_decorator_modes;
+         "models_with_if" >:: test_models_with_if;
        ]
   |> Test.run

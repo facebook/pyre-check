@@ -121,6 +121,9 @@ type kind =
   | UnsupportedClassConstraintCallee of Expression.t
   | UnsupportedDecoratorConstraint of Expression.t
   | UnsupportedDecoratorConstraintCallee of Expression.t
+  | UnsupportedIfCondition of Expression.t
+  | UnsupportedVersionConstant of string
+  | UnsupportedComparisonOperator of Expression.ComparisonOperator.operator
   | DeprecatedConstraint of {
       deprecated: string;
       suggested: string;

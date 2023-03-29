@@ -140,6 +140,7 @@ let parse_models_and_queries_from_sources
     ~source_sink_filter
     ~callables
     ~stubs
+    ~python_version
     sources
   =
   (* TODO(T117715045): Do not pass all callables and stubs explicitly to map_reduce,
@@ -155,6 +156,7 @@ let parse_models_and_queries_from_sources
           ~source_sink_filter:(Some source_sink_filter)
           ~callables
           ~stubs
+          ~python_version
           ()
         |> ModelParseResult.join state)
   in
@@ -175,16 +177,16 @@ let parse_models_and_queries_from_sources
 
 let parse_models_and_queries_from_configuration
     ~scheduler
-    ~static_analysis_configuration:
-      { Configuration.StaticAnalysis.verify_models; configuration = { taint_model_paths; _ }; _ }
+    ~static_analysis_configuration:{ Configuration.StaticAnalysis.verify_models; configuration; _ }
     ~taint_configuration
     ~resolution
     ~source_sink_filter
     ~callables
     ~stubs
   =
+  let python_version = ModelParser.PythonVersion.from_configuration configuration in
   let ({ ModelParseResult.errors; _ } as parse_result) =
-    ModelParser.get_model_sources ~paths:taint_model_paths
+    ModelParser.get_model_sources ~paths:configuration.taint_model_paths
     |> parse_models_and_queries_from_sources
          ~taint_configuration
          ~scheduler
@@ -192,6 +194,7 @@ let parse_models_and_queries_from_configuration
          ~source_sink_filter
          ~callables
          ~stubs
+         ~python_version
   in
   let () = ModelVerificationError.verify_models_and_dsl errors verify_models in
   parse_result

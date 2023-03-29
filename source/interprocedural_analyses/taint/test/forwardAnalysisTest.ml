@@ -46,6 +46,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~source_sink_filter:None
         ~callables:None
         ~stubs:(Target.HashSet.create ())
+        ~python_version:ModelParser.PythonVersion.default
         ()
     in
     let () = assert_bool "Error while parsing models." (List.is_empty errors) in

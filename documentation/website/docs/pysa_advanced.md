@@ -6,6 +6,33 @@ sidebar_label: Advanced Topics
 
 This page documents less straightforward bits of Pysa.
 
+## Conditional models based on Python version
+
+Pysa models support if conditions but only for version comparisons for the python
+version used to run pysa. This allows for conditional parsing of models and allows
+different models to be used for different versions of python.
+
+```python
+if sys.version == (3,9,0):
+    def module.foo(): ...
+else:
+    def module.bar(): ...
+```
+In this example, the first model will only be parsed and honoured if the python
+version in the system or virtual environment from which Pysa is run is equal
+to "3.9.0". In all other conditions, the second model will be parsed and honoured.
+
+sys.version is the only allowed left hand expression and the right hand expression
+has to be a tuple of integers of the form (major, minor, micro). Only the major
+version number is required and the other two are optional.
+
+The comparison operators supported include '==' (equal to), '!=' (not equal to),
+'&lt;' (less than), '&gt;' greater than, '&lt;=' (less than or equal to), and
+'&gt;=' (greater than or equal to).
+
+If conditions can also be nested inside one another and follow the same behavior
+as python if conditions.
+
 ## Obscure models
 
 When Pysa does not have enough information about a function or method, it will
