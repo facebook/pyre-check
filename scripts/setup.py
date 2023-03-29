@@ -136,6 +136,9 @@ class Setup(NamedTuple):
                 LOG.error("CHECK_IF_PREINSTALLED=false ./scripts/setup.sh")
                 raise OCamlbuildAlreadyInstalled
 
+    def already_initialized(self) -> bool:
+        return Path(self.opam_root.as_posix()).is_dir()
+
     def validate_opam_version(self) -> None:
         version = self.run(["opam", "--version"])
         if version[:1] != "2":
@@ -353,6 +356,8 @@ def setup(runner_type: Type[Setup]) -> None:
         runner.initialize_opam_switch()
         LOG.info("Environment built successfully, stopping here as requested.")
     else:
+        if not runner.already_initialized():
+            runner.initialize_opam_switch()
         runner.full_setup(
             pyre_directory,
             run_tests=not parsed.no_tests,
