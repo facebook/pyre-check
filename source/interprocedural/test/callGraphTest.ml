@@ -2798,38 +2798,24 @@ let test_call_graph_of_define context =
         token: str = ""
 
       def foo(obj: Token, x: str):
-        return object.__setattr__(obj, "token", x)
+        return obj.__setattr__(obj, "token", x)
     |}
     ~define_name:"test.foo"
     ~expected:
       [
-        ( "6:9-6:44",
-          LocationCallees.Compound
-            (SerializableStringMap.of_alist_exn
-               [
-                 ( "__setattr__",
-                   ExpressionCallees.from_call
-                     (CallCallees.create
-                        ~call_targets:
-                          [
-                            CallTarget.create
-                              (Target.Method
-                                 {
-                                   class_name = "object";
-                                   method_name = "__setattr__";
-                                   kind = Normal;
-                                 });
-                          ]
-                        ()) );
-                 ( "token",
-                   ExpressionCallees.from_attribute_access
-                     {
-                       AttributeAccessCallees.property_targets = [];
-                       global_targets =
-                         [CallTarget.create ~return_type:None (Target.Object "test.Token.token")];
-                       is_attribute = true;
-                     } );
-               ]) );
+        ( "6:9-6:41",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.Primitive "test.Token")
+                        (Target.Method
+                           { class_name = "object"; method_name = "__setattr__"; kind = Normal });
+                    ]
+                  ())) );
       ]
     ();
   assert_call_graph_of_define
