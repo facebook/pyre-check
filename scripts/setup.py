@@ -222,7 +222,7 @@ class Setup(NamedTuple):
 
         return opam_environment_variables
 
-    def set_opam_switch_and_install_dependencies(self) -> Mapping[str, str]:
+    def set_opam_switch_and_install_dependencies(self, rust_path: Optional[Path]) -> Mapping[str, str]:
         self.run(
             [
                 "opam",
@@ -234,12 +234,24 @@ class Setup(NamedTuple):
             ]
         )
 
-        opam_environment_variables = self.opam_environment_variables()
+        environment_variables = self.opam_environment_variables()
+        if rust_path is not None:
+            environment_variables["PATH"] = str(rust_path) + ":" + environment_variables["PATH"]
+
+        opam_install_command = ["opam", "install", "--yes"]
+
+        if sys.platform == "linux":
+            # osx fails on sandcastle with exit status 2 (illegal argument) with this.
+            # unable to repro locally on osx.
+            opam_install_command.append("--assume-depexts")
+
+        opam_install_command += DEPENDENCIES
+
         self.run(
-            ["opam", "install", "--yes"] + DEPENDENCIES,
-            add_environment_variables=opam_environment_variables,
+            opam_install_command,
+            add_environment_variables=environment_variables
         )
-        return opam_environment_variables
+        return environment_variables
 
     def full_setup(
         self,
@@ -248,10 +260,11 @@ class Setup(NamedTuple):
         run_tests: bool = False,
         run_clean: bool = False,
         build_type_override: Optional[BuildType] = None,
+        rust_path: Optional[Path] = None
     ) -> None:
         opam_environment_variables: Mapping[
             str, str
-        ] = self.set_opam_switch_and_install_dependencies()
+        ] = self.set_opam_switch_and_install_dependencies(rust_path=rust_path)
 
         def run_in_opam_environment(command: List[str]) -> None:
             self.run(
@@ -339,6 +352,7 @@ def setup(runner_type: Type[Setup]) -> None:
     parser.add_argument("--release", action="store_true")
     parser.add_argument("--build-type", type=BuildType)
     parser.add_argument("--no-tests", action="store_true")
+    parser.add_argument("--rust-path", type=Path)
 
     parsed = parser.parse_args()
 
@@ -362,6 +376,7 @@ def setup(runner_type: Type[Setup]) -> None:
             pyre_directory,
             run_tests=not parsed.no_tests,
             build_type_override=parsed.build_type,
+            rust_path=parsed.rust_path
         )
 
 
