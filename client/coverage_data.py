@@ -41,8 +41,14 @@ class AnnotationInfo:
 
 
 @dataclasses.dataclass(frozen=True)
+class FunctionIdentifier:
+    parent: Optional[str]
+    name: str
+
+
+@dataclasses.dataclass(frozen=True)
 class ParameterAnnotationInfo:
-    function_name: str
+    function_identifier: FunctionIdentifier
     name: str
     is_annotated: bool
     code_range: CodeRange
@@ -50,7 +56,7 @@ class ParameterAnnotationInfo:
 
 @dataclasses.dataclass(frozen=True)
 class ReturnAnnotationInfo:
-    function_name: str
+    function_identifier: FunctionIdentifier
     is_annotated: bool
     code_range: CodeRange
 
@@ -177,8 +183,13 @@ class AnnotationContext:
 
     # Queries of the context
 
-    def name_of(self, node: libcst.FunctionDef) -> str:
-        return ".".join((*self.class_name_stack, node.name.value))
+    def get_function_identifier(self, node: libcst.FunctionDef) -> FunctionIdentifier:
+        return FunctionIdentifier(
+            parent=",".join(*self.class_name_stack)
+            if len(self.class_name_stack) > 0
+            else None,
+            name=node.name.value,
+        )
 
     def assignments_are_function_local(self) -> bool:
         return self.define_depth > 0
@@ -214,12 +225,12 @@ class AnnotationCollector(VisitorWithPositionData):
 
     def get_parameter_annotation_info(
         self,
-        function_name: str,
+        function_identifier: FunctionIdentifier,
         params: Sequence[libcst.Param],
     ) -> List[ParameterAnnotationInfo]:
         return [
             ParameterAnnotationInfo(
-                function_name=function_name,
+                function_identifier=function_identifier,
                 name=node.name.value,
                 is_annotated=node.annotation is not None,
                 code_range=self.code_range(node),
@@ -234,17 +245,17 @@ class AnnotationCollector(VisitorWithPositionData):
         self.context.update_for_exit_class()
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
-        function_name = self.context.name_of(node)
+        function_identifier = self.context.get_function_identifier(node)
         self.context.update_for_enter_define(node)
 
         returns = ReturnAnnotationInfo(
-            function_name=function_name,
+            function_identifier=function_identifier,
             is_annotated=node.returns is not None,
             code_range=self.code_range(node.name),
         )
 
         parameters = self.get_parameter_annotation_info(
-            function_name=function_name,
+            function_identifier=function_identifier,
             params=node.params.params,
         )
 
