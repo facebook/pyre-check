@@ -4877,6 +4877,68 @@ let test_call_graph_of_define context =
                   ())) );
       ]
     ();
+  assert_call_graph_of_define
+    ~object_targets:[Target.Object "test.x"]
+      (* TODO(T123109154): y should also be tracked as a global *)
+    ~source:
+      {|
+      class Object:
+        pass
+
+      x = Object()
+      y = Object()
+
+      def foo():
+        x.bar = ""
+        y.bar = ""
+
+        baz(x)
+        baz(y)
+
+      def baz(x: Object):
+        pass
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "9:2-9:3",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               {
+                 IdentifierCallees.global_targets =
+                   [CallTarget.create ~index:0 ~return_type:None (Target.Object "test.x")];
+               }) );
+        ( "12:2-12:8",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~index:0
+                        (Target.Function { name = "test.baz"; kind = Normal });
+                    ]
+                  ())) );
+        ( "12:6-12:7",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               {
+                 IdentifierCallees.global_targets =
+                   [CallTarget.create ~index:1 ~return_type:None (Target.Object "test.x")];
+               }) );
+        ( "13:2-13:8",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~index:1
+                        (Target.Function { name = "test.baz"; kind = Normal });
+                    ]
+                  ())) );
+      ]
+    ();
   ()
 
 
