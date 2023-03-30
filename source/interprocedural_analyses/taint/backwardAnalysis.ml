@@ -2349,10 +2349,7 @@ let extract_tito_and_sink_models
     in
 
     let essential =
-      if is_constructor then
-        BackwardState.Tree.essential_for_constructor tree
-      else
-        BackwardState.Tree.essential tree
+      BackwardState.Tree.essential ~preserve_return_access_paths:is_constructor tree
     in
     BackwardState.Tree.shape
       ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))

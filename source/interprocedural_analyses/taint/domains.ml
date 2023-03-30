@@ -548,10 +548,7 @@ module type TAINT_DOMAIN = sig
     t
 
   (* Return the taint with only essential elements. *)
-  val essential
-    :  return_access_paths:(Features.ReturnAccessPathTree.t -> Features.ReturnAccessPathTree.t) ->
-    t ->
-    t
+  val essential : preserve_return_access_paths:bool -> t -> t
 
   val to_json
     :  expand_overrides:OverrideGraph.SharedMemory.t option ->
@@ -1280,34 +1277,23 @@ end = struct
     Map.transform LocalTaintDomain.Self Map ~f:apply_local_taint taint
 
 
-  let essential ~return_access_paths taint =
-    let apply (_, local_taint) =
-      let call_info = CallInfo.Declaration { leaf_name_provided = false } in
-      let local_taint =
-        local_taint
-        |> LocalTaintDomain.update
-             LocalTaintDomain.Slots.TitoPosition
-             Features.TitoPositionSet.bottom
-        |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb Features.BreadcrumbSet.empty
-        |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex Features.FirstIndexSet.bottom
-        |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
-        |> LocalTaintDomain.update
-             LocalTaintDomain.Slots.ExtraTraceFirstHopSet
-             ExtraTraceFirstHop.Set.bottom
+  let essential ~preserve_return_access_paths taint =
+    if not preserve_return_access_paths then
+      let add kind sofar = singleton CallInfo.declaration kind Frame.initial |> join sofar in
+      Map.fold kind ~f:add ~init:bottom taint
+    else
+      let add kind return_access_paths sofar =
+        Frame.initial
+        |> Frame.update Frame.Slots.ReturnAccessPath return_access_paths
+        |> singleton CallInfo.declaration kind
+        |> join sofar
       in
-      let apply_frame frame =
-        frame
-        |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
-        |> Frame.update Frame.Slots.Breadcrumb Features.BreadcrumbSet.bottom
-        |> Frame.update Frame.Slots.FirstIndex Features.FirstIndexSet.bottom
-        |> Frame.update Frame.Slots.FirstField Features.FirstFieldSet.bottom
-        |> Frame.update Frame.Slots.LeafName Features.LeafNameSet.bottom
-        |> Frame.transform Features.ReturnAccessPathTree.Self Map ~f:return_access_paths
-      in
-      let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
-      call_info, local_taint
-    in
-    Map.transform Map.KeyValue Map ~f:apply taint
+      Map.reduce
+        Features.ReturnAccessPathTree.Self
+        ~using:(Context (kind, Acc))
+        ~f:add
+        ~init:bottom
+        taint
 
 
   let add_extra_traces ~extra_traces taint =
@@ -1400,14 +1386,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let is_empty = is_bottom
 
-  (* Return the taint tree with only the essential structure. *)
-  let essential tree =
-    let return_access_paths _ = Features.ReturnAccessPathTree.bottom in
-    transform Taint.Self Map ~f:(Taint.essential ~return_access_paths) tree
-
-
-  let essential_for_constructor tree =
-    transform Taint.Self Map ~f:(Taint.essential ~return_access_paths:Fn.id) tree
+  let essential ~preserve_return_access_paths tree =
+    transform Taint.Self Map ~f:(Taint.essential ~preserve_return_access_paths) tree
 
 
   let prune_maximum_length maximum_length =

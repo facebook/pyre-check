@@ -2934,11 +2934,10 @@ let extract_source_model
           ForwardState.Tree.prune_maximum_length maximum_trace_length tree
       | _ -> tree
     in
-    let essential = ForwardState.Tree.essential tree in
     ForwardState.Tree.shape
       ~transform:(ForwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
       tree
-      ~mold:essential
+      ~mold:(ForwardState.Tree.essential ~preserve_return_access_paths:false tree)
     |> ForwardState.Tree.add_local_breadcrumbs return_type_breadcrumbs
     |> ForwardState.Tree.limit_to
          ~breadcrumbs:(Features.widen_broadening_set ())
