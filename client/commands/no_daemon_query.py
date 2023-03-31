@@ -146,5 +146,5 @@ def execute_query(
         # Interpretation of the return code needs to be kept in sync with
         # `source/command/noDaemonQueryCommand.ml`.
         if return_code == 0:
-            raw_response = result.stdout.decode("utf-8")
+            raw_response = result.stdout.decode("utf-8", errors="replace")
             return query_response.Response.parse(raw_response)
