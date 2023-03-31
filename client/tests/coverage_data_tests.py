@@ -13,6 +13,7 @@ import libcst as cst
 import testslide
 from libcst.metadata import CodePosition, CodeRange, MetadataWrapper
 
+from .. import coverage_data
 from ..coverage_data import (
     AnnotationCollector,
     find_module_paths,
@@ -23,10 +24,8 @@ from ..coverage_data import (
     module_from_code,
     module_from_path,
     ModuleMode,
-    ModuleModeCollector,
     ParameterAnnotationInfo,
     ReturnAnnotationInfo,
-    SuppressionCollector,
     SuppressionKind,
     TypeErrorSuppression,
 )
@@ -112,9 +111,7 @@ class AnnotationCollectorTest(testslide.TestCase):
         expected: Sequence[FunctionAnnotationInfo],
     ) -> None:
         module = parse_code(code)
-        collector = AnnotationCollector()
-        module.visit(collector)
-        actual = collector.functions
+        actual = coverage_data.collect_function_annotations(module)
         self.assertEqual(
             actual,
             expected,
@@ -502,7 +499,7 @@ class SuppressionCollectorTest(testslide.TestCase):
             .replace("PYRE_IGNORE", "pyre-ignore")
             .replace("TYPE_IGNORE", "type: ignore")
         )
-        actual = SuppressionCollector().collect(source_module)
+        actual = coverage_data.collect_suppressions(source_module)
         self.assertEqual(actual, expected)
 
     def test_find_fixmes__simple(self) -> None:
@@ -737,7 +734,7 @@ class ModuleModecollectorTest(testslide.TestCase):
         explicit_comment_line: Optional[int],
     ) -> None:
         source_module = parse_code(source)
-        result = ModuleModeCollector(default_strict).collect(source_module)
+        result = coverage_data.collect_mode_info(source_module, default_strict)
         self.assertEqual(mode, result.mode)
         self.assertEqual(explicit_comment_line, result.explicit_comment_line)
 

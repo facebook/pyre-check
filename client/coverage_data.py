@@ -383,13 +383,6 @@ class SuppressionCollector(VisitorWithPositionData):
         for suppression in self.suppression_from_comment(node):
             self.suppressions.append(suppression)
 
-    def collect(
-        self,
-        module: libcst.MetadataWrapper,
-    ) -> Sequence[TypeErrorSuppression]:
-        module.visit(self)
-        return self.suppressions
-
 
 class ModuleModeCollector(VisitorWithPositionData):
     unsafe_regex: Pattern[str] = compile(r" ?#+ *pyre-unsafe")
@@ -425,15 +418,33 @@ class ModuleModeCollector(VisitorWithPositionData):
             self.mode = ModuleMode.IGNORE_ALL
             self.explicit_comment_line = self.code_range(node).start.line
 
-    def collect(
-        self,
-        module: libcst.MetadataWrapper,
-    ) -> ModuleModeInfo:
-        module.visit(self)
-        return ModuleModeInfo(
-            mode=self.mode,
-            explicit_comment_line=self.explicit_comment_line,
-        )
+
+def collect_mode_info(
+    module: libcst.MetadataWrapper,
+    strict_by_default: bool,
+) -> ModuleModeInfo:
+    visitor = ModuleModeCollector(strict_by_default)
+    module.visit(visitor)
+    return ModuleModeInfo(
+        mode=visitor.mode,
+        explicit_comment_line=visitor.explicit_comment_line,
+    )
+
+
+def collect_function_annotations(
+    module: libcst.MetadataWrapper,
+) -> Sequence[FunctionAnnotationInfo]:
+    visitor = AnnotationCollector()
+    module.visit(visitor)
+    return visitor.functions
+
+
+def collect_suppressions(
+    module: libcst.MetadataWrapper,
+) -> Sequence[TypeErrorSuppression]:
+    visitor = SuppressionCollector()
+    module.visit(visitor)
+    return visitor.suppressions
 
 
 def module_from_code(code: str) -> Optional[libcst.MetadataWrapper]:
