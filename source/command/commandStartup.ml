@@ -40,6 +40,8 @@ module BaseConfiguration = struct
     enable_readonly_analysis: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
+    (* Parser controls *)
+    use_errpy_parser: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -122,6 +124,10 @@ module BaseConfiguration = struct
              "include_suppressed_errors"
              ~default:Configuration.Analysis.default_include_suppressed_errors
       in
+      let use_errpy_parser =
+        json
+        |> bool_member "use_errpy_parser" ~default:Configuration.Analysis.default_use_errpy_parser
+      in
       Result.Ok
         {
           source_paths;
@@ -145,6 +151,7 @@ module BaseConfiguration = struct
           enable_readonly_analysis;
           enable_unawaited_awaitable_analysis;
           include_suppressed_errors;
+          use_errpy_parser;
         }
     with
     | Type_error (message, _)

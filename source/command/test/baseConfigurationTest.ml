@@ -41,6 +41,7 @@ let dummy_base_configuration =
     profiling_output = None;
     memory_profiling_output = None;
     include_suppressed_errors = false;
+    use_errpy_parser = false;
   }
 
 

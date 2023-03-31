@@ -80,6 +80,7 @@ module CheckConfiguration = struct
             remote_logging = _;
             profiling_output = _;
             memory_profiling_output = _;
+            use_errpy_parser;
           };
         show_error_traces;
         strict;
@@ -113,6 +114,7 @@ module CheckConfiguration = struct
       ~enable_readonly_analysis
       ~enable_unawaited_awaitable_analysis
       ~include_suppressed_errors
+      ~use_errpy_parser
       ()
 end
 

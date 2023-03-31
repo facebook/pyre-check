@@ -331,6 +331,8 @@ module Analysis = struct
 
   let default_include_suppressed_errors = false
 
+  let default_use_errpy_parser = false
+
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -360,6 +362,7 @@ module Analysis = struct
     enable_readonly_analysis: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
+    use_errpy_parser: bool;
   }
   [@@deriving show]
 
@@ -393,6 +396,7 @@ module Analysis = struct
       ?(enable_readonly_analysis = default_enable_readonly_analysis)
       ?(enable_unawaited_awaitable_analysis = default_enable_unawaited_awaitable_analysis)
       ?(include_suppressed_errors = default_include_suppressed_errors)
+      ?(use_errpy_parser = default_use_errpy_parser)
       ~source_paths
       ()
     =
@@ -439,6 +443,7 @@ module Analysis = struct
       enable_readonly_analysis;
       enable_unawaited_awaitable_analysis;
       include_suppressed_errors;
+      use_errpy_parser;
     }
 
 
