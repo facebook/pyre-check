@@ -24,6 +24,12 @@ def jsonpickle.unpickler.loadrepr(reprstr: TaintSink[ExecDeserializationSink]): 
 def jsonpickle.util.is_installed(module: TaintSink[ExecDeserializationSink]): ...
 def jsonpickle.backend.JSONBackend.load_backend(self, name: TaintSink[ExecDeserializationSink]): ...
 
+# PyTorch function for loading a pickle, which can result in RCE when `weights_only=False`
+def torch.serialization.load(
+    weights_only,
+    f: TaintSink[ExecDeserializationSink, ViaValueOf[weights_only]],
+): ...
+
 # asyncssh module
 async def asyncssh.channel.SSHClientChannel.create(
     command: TaintSink[RemoteCodeExecution],
