@@ -283,7 +283,46 @@ module FromReadOnlyUpstream = struct
         is_suppressed: bool;
       }
 
-  let parse_source
+  let create_parse_result
+      ~configuration
+      ~typecheck_flags
+      ~line
+      ~column
+      ~end_line
+      ~end_column
+      ~message
+      ()
+    =
+    let is_suppressed =
+      let { Source.TypecheckFlags.local_mode; ignore_codes; _ } = typecheck_flags in
+      match Source.mode ~configuration ~local_mode with
+      | Source.Declare -> true
+      | _ ->
+          (* NOTE: The number needs to be updated when the error code changes. *)
+          List.exists ignore_codes ~f:(Int.equal 404)
+    in
+    let location =
+      (* CPython set line/column number to -1 in some exceptional cases. *)
+      let replace_invalid_position number = if number <= 0 then 1 else number in
+      let start =
+        { Location.line = replace_invalid_position line; column = replace_invalid_position column }
+      in
+      let stop =
+        (* Work around CPython bug where the end location sometimes precedes start location. *)
+        if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
+          start
+        else
+          {
+            Location.line = replace_invalid_position end_line;
+            column = replace_invalid_position end_column;
+          }
+      in
+      { Location.start; stop }
+    in
+    Error { location; message; is_suppressed }
+
+
+  let parse_source_with_cpython
       ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
       ~context
       ~module_tracker
@@ -298,37 +337,56 @@ module FromReadOnlyUpstream = struct
       with
       | Ok statements -> Success (create_source ~typecheck_flags ~module_path statements)
       | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
-          let is_suppressed =
-            let { Source.TypecheckFlags.local_mode; ignore_codes; _ } = typecheck_flags in
-            match Source.mode ~configuration ~local_mode with
-            | Source.Declare -> true
-            | _ ->
-                (* NOTE: The number needs to be updated when the error code changes. *)
-                List.exists ignore_codes ~f:(Int.equal 404)
-          in
-          let location =
-            (* CPython set line/column number to -1 in some exceptional cases. *)
-            let replace_invalid_position number = if number <= 0 then 1 else number in
-            let start =
+          create_parse_result
+            ~configuration
+            ~typecheck_flags
+            ~line
+            ~column
+            ~end_line
+            ~end_column
+            ~message
+            ()
+    in
+    match ModuleTracker.ReadOnly.get_raw_code module_tracker module_path with
+    | Ok raw_code -> parse raw_code
+    | Error message ->
+        Error
+          {
+            location =
               {
-                Location.line = replace_invalid_position line;
-                column = replace_invalid_position column;
-              }
-            in
-            let stop =
-              (* Work around CPython bug where the end location sometimes precedes start
-                 location. *)
-              if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
-                start
-              else
-                {
-                  Location.line = replace_invalid_position end_line;
-                  column = replace_invalid_position end_column;
-                }
-            in
-            { Location.start; stop }
-          in
-          Error { location; message; is_suppressed }
+                Location.start = { Location.line = 1; column = 1 };
+                stop = { Location.line = 1; column = 1 };
+              };
+            message;
+            is_suppressed = false;
+          }
+
+
+  let parse_source_with_errpy
+      ~configuration
+      ~module_tracker
+      ({ ModulePath.qualifier; _ } as module_path)
+    =
+    let parse raw_code =
+      let typecheck_flags =
+        Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n')
+      in
+      match PyreErrpyParser.parse_module raw_code with
+      | Ok statements -> Success (create_source ~typecheck_flags ~module_path statements)
+      | Error parserError -> (
+          match parserError with
+          | Recoverable recoverable ->
+              Success (create_source ~typecheck_flags ~module_path recoverable.recovered_ast)
+          | Unrecoverable error_string ->
+              create_parse_result
+                ~configuration
+                ~typecheck_flags
+                ~line:1
+                ~column:1
+                ~end_line:1
+                ~end_column:1
+                ~message:error_string
+                ())
     in
     match ModuleTracker.ReadOnly.get_raw_code module_tracker module_path with
     | Ok raw_code -> parse raw_code
@@ -346,10 +404,10 @@ module FromReadOnlyUpstream = struct
 
 
   let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
-    let do_parse context =
-      let controls = ModuleTracker.ReadOnly.controls module_tracker in
-      let configuration = EnvironmentControls.configuration controls in
-      match parse_source ~configuration ~context ~module_tracker module_path with
+    let controls = ModuleTracker.ReadOnly.controls module_tracker in
+    let configuration = EnvironmentControls.configuration controls in
+    let augment_parser_output from_parser =
+      match from_parser with
       | Success source ->
           let source =
             let EnvironmentControls.PythonVersionInfo.
@@ -370,7 +428,14 @@ module FromReadOnlyUpstream = struct
             raw_sources
             { ParserError.module_path; location; message; is_suppressed }
     in
-    PyreNewParser.with_context do_parse
+    (match configuration with
+    | { use_errpy_parser = false; _ } ->
+        let do_parse context =
+          parse_source_with_cpython ~configuration ~context ~module_tracker module_path
+        in
+        PyreNewParser.with_context do_parse
+    | _ -> parse_source_with_errpy ~configuration ~module_tracker module_path)
+    |> augment_parser_output
 
 
   let load_raw_sources ~scheduler ~ast_environment module_paths =
