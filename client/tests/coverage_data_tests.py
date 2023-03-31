@@ -364,58 +364,58 @@ class AnnotationCollectorTest(testslide.TestCase):
         )
 
     def test_function_annotations__partially_annotated_static_method(self) -> None:
-        a_dot_f = FunctionIdentifier(
-            parent="A",
+        a_dot_inner_dot_f = FunctionIdentifier(
+            parent="A.Inner",
             name="f",
         )
         self._assert_function_annotations(
             """
             class A:
-
-                @staticmethod
-                def f(self, x: int) -> None:
-                    pass
+                class Inner:
+                    @staticmethod
+                    def f(self, x: int) -> None:
+                        pass
             """,
             [
                 FunctionAnnotationInfo(
                     location=Location(
                         start_line=5,
-                        start_column=4,
+                        start_column=8,
                         end_line=6,
-                        end_column=12,
+                        end_column=16,
                     ),
                     annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
-                        function_identifier=a_dot_f,
+                        function_identifier=a_dot_inner_dot_f,
                         is_annotated=True,
                         location=Location(
                             start_line=5,
-                            start_column=8,
+                            start_column=12,
                             end_line=5,
-                            end_column=9,
+                            end_column=13,
                         ),
                     ),
                     parameters=[
                         ParameterAnnotationInfo(
-                            function_identifier=a_dot_f,
+                            function_identifier=a_dot_inner_dot_f,
                             name="self",
                             is_annotated=False,
                             location=Location(
                                 start_line=5,
-                                start_column=10,
+                                start_column=14,
                                 end_line=5,
-                                end_column=14,
+                                end_column=18,
                             ),
                         ),
                         ParameterAnnotationInfo(
-                            function_identifier=a_dot_f,
+                            function_identifier=a_dot_inner_dot_f,
                             name="x",
                             is_annotated=True,
                             location=Location(
                                 start_line=5,
-                                start_column=16,
+                                start_column=20,
                                 end_line=5,
-                                end_column=17,
+                                end_column=21,
                             ),
                         ),
                     ],

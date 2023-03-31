@@ -204,7 +204,7 @@ class AnnotationContext:
 
     def get_function_identifier(self, node: libcst.FunctionDef) -> FunctionIdentifier:
         return FunctionIdentifier(
-            parent=",".join(*self.class_name_stack)
+            parent=".".join(self.class_name_stack)
             if len(self.class_name_stack) > 0
             else None,
             name=node.name.value,
