@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Optional
 
 import libcst
-from libcst.metadata import CodeRange
+from libcst.metadata import CodePosition, CodeRange
 
 from .. import (
     command_arguments,
@@ -34,6 +34,24 @@ from . import commands
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+def location_to_code_range(location: coverage_data.Location) -> CodeRange:
+    """
+    Convert a location back to a libcst.CodeRange.
+
+    This is only needed for backward-compatibility of statistics json ouptut.
+    """
+    return CodeRange(
+        start=CodePosition(
+            line=location.start_line,
+            column=location.start_column,
+        ),
+        end=CodePosition(
+            line=location.end_line,
+            column=location.end_column,
+        ),
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -69,7 +87,7 @@ class SuppressionCountCollector(coverage_data.VisitorWithPositionData):
         error_codes = self.error_codes(node.value)
         if error_codes is None:
             return
-        suppression_line = self.code_range(node).start.line
+        suppression_line = self.location(node).start_line
         if len(error_codes) == 0:
             self.no_code.append(suppression_line)
             return
@@ -144,24 +162,46 @@ class AnnotationCountCollector(coverage_data.AnnotationCollector):
         module.visit(self)
         return ModuleAnnotationData(
             line_count=self.line_count,
-            total_functions=[function.code_range for function in self.functions],
+            total_functions=[
+                location_to_code_range(function.location) for function in self.functions
+            ],
             partially_annotated_functions=[
-                f.code_range for f in self.functions if f.is_partially_annotated
+                location_to_code_range(f.location)
+                for f in self.functions
+                if f.is_partially_annotated
             ],
             fully_annotated_functions=[
-                f.code_range for f in self.functions if f.is_fully_annotated
+                location_to_code_range(f.location)
+                for f in self.functions
+                if f.is_fully_annotated
             ],
-            total_parameters=[p.code_range for p in list(self.parameters())],
+            total_parameters=[
+                location_to_code_range(p.location) for p in list(self.parameters())
+            ],
             annotated_parameters=[
-                p.code_range for p in self.parameters() if p.is_annotated
+                location_to_code_range(p.location)
+                for p in self.parameters()
+                if p.is_annotated
             ],
-            total_returns=[r.code_range for r in self.returns()],
-            annotated_returns=[r.code_range for r in self.returns() if r.is_annotated],
-            total_globals=[g.code_range for g in self.globals],
-            annotated_globals=[g.code_range for g in self.globals if g.is_annotated],
-            total_attributes=[a.code_range for a in self.attributes],
+            total_returns=[location_to_code_range(r.location) for r in self.returns()],
+            annotated_returns=[
+                location_to_code_range(r.location)
+                for r in self.returns()
+                if r.is_annotated
+            ],
+            total_globals=[location_to_code_range(g.location) for g in self.globals],
+            annotated_globals=[
+                location_to_code_range(g.location)
+                for g in self.globals
+                if g.is_annotated
+            ],
+            total_attributes=[
+                location_to_code_range(a.location) for a in self.attributes
+            ],
             annotated_attributes=[
-                a.code_range for a in self.attributes if a.is_annotated
+                location_to_code_range(a.location)
+                for a in self.attributes
+                if a.is_annotated
             ],
         )
 

@@ -11,7 +11,7 @@ from typing import Optional, Sequence
 import libcst as cst
 
 import testslide
-from libcst.metadata import CodePosition, CodeRange, MetadataWrapper
+from libcst.metadata import MetadataWrapper
 
 from .. import coverage_data
 from ..coverage_data import (
@@ -21,6 +21,7 @@ from ..coverage_data import (
     FunctionAnnotationKind,
     FunctionIdentifier,
     get_paths_to_collect,
+    Location,
     module_from_code,
     module_from_path,
     ModuleMode,
@@ -81,7 +82,7 @@ class AnnotationCollectorTest(testslide.TestCase):
         source_module.visit(collector)
         return collector
 
-    def test_return_code_range(self) -> None:
+    def test_return_location(self) -> None:
         collector = self._build_and_visit_annotation_collector(
             """
             def foobar():
@@ -91,8 +92,13 @@ class AnnotationCollectorTest(testslide.TestCase):
         returns = list(collector.returns())
         self.assertEqual(len(returns), 1)
         self.assertEqual(
-            returns[0].code_range,
-            CodeRange(CodePosition(2, 4), CodePosition(2, 10)),
+            returns[0].location,
+            Location(
+                start_line=2,
+                start_column=4,
+                end_line=2,
+                end_column=10,
+            ),
         )
 
     def test_line_count(self) -> None:
@@ -129,17 +135,21 @@ class AnnotationCollectorTest(testslide.TestCase):
             """,
             [
                 FunctionAnnotationInfo(
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=0),
-                        end=CodePosition(line=3, column=8),
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=3,
+                        end_column=8,
                     ),
                     annotation_kind=FunctionAnnotationKind.NOT_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=f,
                         is_annotated=False,
-                        code_range=CodeRange(
-                            start=CodePosition(line=2, column=4),
-                            end=CodePosition(line=2, column=5),
+                        location=Location(
+                            start_line=2,
+                            start_column=4,
+                            end_line=2,
+                            end_column=5,
                         ),
                     ),
                     parameters=[
@@ -147,9 +157,11 @@ class AnnotationCollectorTest(testslide.TestCase):
                             function_identifier=f,
                             name="x",
                             is_annotated=False,
-                            code_range=CodeRange(
-                                start=CodePosition(line=2, column=6),
-                                end=CodePosition(line=2, column=7),
+                            location=Location(
+                                start_line=2,
+                                start_column=6,
+                                end_line=2,
+                                end_column=7,
                             ),
                         )
                     ],
@@ -177,17 +189,21 @@ class AnnotationCollectorTest(testslide.TestCase):
             """,
             [
                 FunctionAnnotationInfo(
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=0),
-                        end=CodePosition(line=3, column=8),
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=3,
+                        end_column=8,
                     ),
                     annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=f,
                         is_annotated=True,
-                        code_range=CodeRange(
-                            start=CodePosition(line=2, column=4),
-                            end=CodePosition(line=2, column=5),
+                        location=Location(
+                            start_line=2,
+                            start_column=4,
+                            end_line=2,
+                            end_column=5,
                         ),
                     ),
                     parameters=[
@@ -195,26 +211,32 @@ class AnnotationCollectorTest(testslide.TestCase):
                             function_identifier=f,
                             name="x",
                             is_annotated=False,
-                            code_range=CodeRange(
-                                start=CodePosition(line=2, column=6),
-                                end=CodePosition(line=2, column=7),
+                            location=Location(
+                                start_line=2,
+                                start_column=6,
+                                end_line=2,
+                                end_column=7,
                             ),
                         )
                     ],
                     is_method_or_classmethod=False,
                 ),
                 FunctionAnnotationInfo(
-                    code_range=CodeRange(
-                        start=CodePosition(line=5, column=0),
-                        end=CodePosition(line=6, column=8),
+                    location=Location(
+                        start_line=5,
+                        start_column=0,
+                        end_line=6,
+                        end_column=8,
                     ),
                     annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=g,
                         is_annotated=False,
-                        code_range=CodeRange(
-                            start=CodePosition(line=5, column=4),
-                            end=CodePosition(line=5, column=5),
+                        location=Location(
+                            start_line=5,
+                            start_column=4,
+                            end_line=5,
+                            end_column=5,
                         ),
                     ),
                     parameters=[
@@ -222,9 +244,11 @@ class AnnotationCollectorTest(testslide.TestCase):
                             function_identifier=g,
                             name="x",
                             is_annotated=True,
-                            code_range=CodeRange(
-                                start=CodePosition(line=5, column=6),
-                                end=CodePosition(line=5, column=7),
+                            location=Location(
+                                start_line=5,
+                                start_column=6,
+                                end_line=5,
+                                end_column=7,
                             ),
                         )
                     ],
@@ -245,17 +269,21 @@ class AnnotationCollectorTest(testslide.TestCase):
             """,
             [
                 FunctionAnnotationInfo(
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=0),
-                        end=CodePosition(line=3, column=8),
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=3,
+                        end_column=8,
                     ),
                     annotation_kind=FunctionAnnotationKind.FULLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=f,
                         is_annotated=True,
-                        code_range=CodeRange(
-                            start=CodePosition(line=2, column=4),
-                            end=CodePosition(line=2, column=5),
+                        location=Location(
+                            start_line=2,
+                            start_column=4,
+                            end_line=2,
+                            end_column=5,
                         ),
                     ),
                     parameters=[
@@ -263,9 +291,11 @@ class AnnotationCollectorTest(testslide.TestCase):
                             function_identifier=f,
                             name="x",
                             is_annotated=True,
-                            code_range=CodeRange(
-                                start=CodePosition(line=2, column=6),
-                                end=CodePosition(line=2, column=7),
+                            location=Location(
+                                start_line=2,
+                                start_column=6,
+                                end_line=2,
+                                end_column=7,
                             ),
                         )
                     ],
@@ -287,17 +317,21 @@ class AnnotationCollectorTest(testslide.TestCase):
             """,
             [
                 FunctionAnnotationInfo(
-                    code_range=CodeRange(
-                        start=CodePosition(line=3, column=4),
-                        end=CodePosition(line=4, column=12),
+                    location=Location(
+                        start_line=3,
+                        start_column=4,
+                        end_line=4,
+                        end_column=12,
                     ),
                     annotation_kind=FunctionAnnotationKind.FULLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=a_dot_f,
                         is_annotated=True,
-                        code_range=CodeRange(
-                            start=CodePosition(line=3, column=8),
-                            end=CodePosition(line=3, column=9),
+                        location=Location(
+                            start_line=3,
+                            start_column=8,
+                            end_line=3,
+                            end_column=9,
                         ),
                     ),
                     parameters=[
@@ -305,18 +339,22 @@ class AnnotationCollectorTest(testslide.TestCase):
                             function_identifier=a_dot_f,
                             name="self",
                             is_annotated=False,
-                            code_range=CodeRange(
-                                start=CodePosition(line=3, column=10),
-                                end=CodePosition(line=3, column=14),
+                            location=Location(
+                                start_line=3,
+                                start_column=10,
+                                end_line=3,
+                                end_column=14,
                             ),
                         ),
                         ParameterAnnotationInfo(
                             function_identifier=a_dot_f,
                             name="x",
                             is_annotated=True,
-                            code_range=CodeRange(
-                                start=CodePosition(line=3, column=16),
-                                end=CodePosition(line=3, column=17),
+                            location=Location(
+                                start_line=3,
+                                start_column=16,
+                                end_line=3,
+                                end_column=17,
                             ),
                         ),
                     ],
@@ -340,17 +378,21 @@ class AnnotationCollectorTest(testslide.TestCase):
             """,
             [
                 FunctionAnnotationInfo(
-                    code_range=CodeRange(
-                        start=CodePosition(line=5, column=4),
-                        end=CodePosition(line=6, column=12),
+                    location=Location(
+                        start_line=5,
+                        start_column=4,
+                        end_line=6,
+                        end_column=12,
                     ),
                     annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=a_dot_f,
                         is_annotated=True,
-                        code_range=CodeRange(
-                            start=CodePosition(line=5, column=8),
-                            end=CodePosition(line=5, column=9),
+                        location=Location(
+                            start_line=5,
+                            start_column=8,
+                            end_line=5,
+                            end_column=9,
                         ),
                     ),
                     parameters=[
@@ -358,18 +400,22 @@ class AnnotationCollectorTest(testslide.TestCase):
                             function_identifier=a_dot_f,
                             name="self",
                             is_annotated=False,
-                            code_range=CodeRange(
-                                start=CodePosition(line=5, column=10),
-                                end=CodePosition(line=5, column=14),
+                            location=Location(
+                                start_line=5,
+                                start_column=10,
+                                end_line=5,
+                                end_column=14,
                             ),
                         ),
                         ParameterAnnotationInfo(
                             function_identifier=a_dot_f,
                             name="x",
                             is_annotated=True,
-                            code_range=CodeRange(
-                                start=CodePosition(line=5, column=16),
-                                end=CodePosition(line=5, column=17),
+                            location=Location(
+                                start_line=5,
+                                start_column=16,
+                                end_line=5,
+                                end_column=17,
                             ),
                         ),
                     ],
@@ -514,41 +560,51 @@ class SuppressionCollectorTest(testslide.TestCase):
             [
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_FIXME,
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=0),
-                        end=CodePosition(line=2, column=12),
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=12,
                     ),
                     error_codes=None,
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_FIXME,
-                    code_range=CodeRange(
-                        start=CodePosition(line=3, column=0),
-                        end=CodePosition(line=3, column=25),
+                    location=Location(
+                        start_line=3,
+                        start_column=0,
+                        end_line=3,
+                        end_column=25,
                     ),
                     error_codes=None,
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_FIXME,
-                    code_range=CodeRange(
-                        start=CodePosition(line=4, column=0),
-                        end=CodePosition(line=4, column=15),
+                    location=Location(
+                        start_line=4,
+                        start_column=0,
+                        end_line=4,
+                        end_column=15,
                     ),
                     error_codes=[1],
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_FIXME,
-                    code_range=CodeRange(
-                        start=CodePosition(line=5, column=0),
-                        end=CodePosition(line=5, column=33),
+                    location=Location(
+                        start_line=5,
+                        start_column=0,
+                        end_line=5,
+                        end_column=33,
                     ),
                     error_codes=[10, 11],
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_FIXME,
-                    code_range=CodeRange(
-                        start=CodePosition(line=6, column=0),
-                        end=CodePosition(line=6, column=65),
+                    location=Location(
+                        start_line=6,
+                        start_column=0,
+                        end_line=6,
+                        end_column=65,
                     ),
                     error_codes=[],
                 ),
@@ -568,49 +624,61 @@ class SuppressionCollectorTest(testslide.TestCase):
             [
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=0),
-                        end=CodePosition(line=2, column=13),
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=13,
                     ),
                     error_codes=None,
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=3, column=0),
-                        end=CodePosition(line=3, column=26),
+                    location=Location(
+                        start_line=3,
+                        start_column=0,
+                        end_line=3,
+                        end_column=26,
                     ),
                     error_codes=None,
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=4, column=0),
-                        end=CodePosition(line=4, column=16),
+                    location=Location(
+                        start_line=4,
+                        start_column=0,
+                        end_line=4,
+                        end_column=16,
                     ),
                     error_codes=[1],
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=5, column=0),
-                        end=CodePosition(line=5, column=21),
+                    location=Location(
+                        start_line=5,
+                        start_column=0,
+                        end_line=5,
+                        end_column=21,
                     ),
                     error_codes=[10, 11],
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=6, column=0),
-                        end=CodePosition(line=6, column=34),
+                    location=Location(
+                        start_line=6,
+                        start_column=0,
+                        end_line=6,
+                        end_column=34,
                     ),
                     error_codes=[10, 11],
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=7, column=0),
-                        end=CodePosition(line=7, column=66),
+                    location=Location(
+                        start_line=7,
+                        start_column=0,
+                        end_line=7,
+                        end_column=66,
                     ),
                     error_codes=[],
                 ),
@@ -626,17 +694,21 @@ class SuppressionCollectorTest(testslide.TestCase):
             [
                 TypeErrorSuppression(
                     kind=SuppressionKind.TYPE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=0),
-                        end=CodePosition(line=2, column=14),
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=14,
                     ),
                     error_codes=None,
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.TYPE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=3, column=0),
-                        end=CodePosition(line=3, column=42),
+                    location=Location(
+                        start_line=3,
+                        start_column=0,
+                        end_line=3,
+                        end_column=42,
                     ),
                     error_codes=None,
                 ),
@@ -654,33 +726,41 @@ class SuppressionCollectorTest(testslide.TestCase):
             [
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_FIXME,
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=14),
-                        end=CodePosition(line=2, column=26),
+                    location=Location(
+                        start_line=2,
+                        start_column=14,
+                        end_line=2,
+                        end_column=26,
                     ),
                     error_codes=None,
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_FIXME,
-                    code_range=CodeRange(
-                        start=CodePosition(line=3, column=14),
-                        end=CodePosition(line=3, column=50),
+                    location=Location(
+                        start_line=3,
+                        start_column=14,
+                        end_line=3,
+                        end_column=50,
                     ),
                     error_codes=[3, 4],
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=4, column=14),
-                        end=CodePosition(line=4, column=48),
+                    location=Location(
+                        start_line=4,
+                        start_column=14,
+                        end_line=4,
+                        end_column=48,
                     ),
                     error_codes=[5],
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.TYPE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=5, column=14),
-                        end=CodePosition(line=5, column=46),
+                    location=Location(
+                        start_line=5,
+                        start_column=14,
+                        end_line=5,
+                        end_column=46,
                     ),
                     error_codes=None,
                 ),
@@ -707,17 +787,21 @@ class SuppressionCollectorTest(testslide.TestCase):
             [
                 TypeErrorSuppression(
                     kind=SuppressionKind.PYRE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=0),
-                        end=CodePosition(line=2, column=30),
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=30,
                     ),
                     error_codes=None,
                 ),
                 TypeErrorSuppression(
                     kind=SuppressionKind.TYPE_IGNORE,
-                    code_range=CodeRange(
-                        start=CodePosition(line=2, column=0),
-                        end=CodePosition(line=2, column=30),
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=30,
                     ),
                     error_codes=None,
                 ),

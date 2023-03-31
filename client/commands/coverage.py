@@ -27,7 +27,6 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Set, Tuple
 
 import libcst as cst
-from libcst.metadata import CodeRange
 
 from .. import (
     command_arguments,
@@ -39,12 +38,6 @@ from .. import (
 from . import commands
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-@dataclasses.dataclass(frozen=True)
-class CoveredAndUncoveredRanges:
-    covered_ranges: List[CodeRange]
-    uncovered_ranges: List[CodeRange]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -78,26 +71,28 @@ class CoverageCollector(coverage_data.AnnotationCollector):
             return [f for f in self.functions if not f.is_annotated]
 
     def covered_and_uncovered_lines(self) -> CoveredAndUncoveredLines:
-        def num_lines(code_range_and_is_covered: Tuple[CodeRange, bool]) -> int:
-            code_range, _ = code_range_and_is_covered
-            return code_range.end.line - code_range.start.line + 1
+        def num_lines(
+            location_and_is_covered: Tuple[coverage_data.Location, bool]
+        ) -> int:
+            location, _ = location_and_is_covered
+            return location.end_line - location.start_line + 1
 
         # When the code ranges are nested, we want to respect the innermost
         # one. By processing in descending order of number of lines we can
         # ensure that.
         uncovered_lines = set()
-        for code_range, is_covered in sorted(
+        for location, is_covered in sorted(
             [
-                *((f.code_range, False) for f in self.uncovered_functions()),
-                *((f.code_range, True) for f in self.covered_functions()),
+                *((f.location, False) for f in self.uncovered_functions()),
+                *((f.location, True) for f in self.covered_functions()),
             ],
             key=num_lines,
             reverse=True,
         ):
             if is_covered:
-                uncovered_lines -= _code_range_to_lines(code_range)
+                uncovered_lines -= _location_to_covered_lines(location)
             else:
-                uncovered_lines |= _code_range_to_lines(code_range)
+                uncovered_lines |= _location_to_covered_lines(location)
         covered_lines = set(range(0, self.line_count)) - uncovered_lines
         return CoveredAndUncoveredLines(covered_lines, uncovered_lines)
 
@@ -132,8 +127,8 @@ def collect_coverage_for_module(
     )
 
 
-def _code_range_to_lines(code_range: CodeRange) -> Set[int]:
-    return set(range(code_range.start.line - 1, code_range.end.line))
+def _location_to_covered_lines(location: coverage_data.Location) -> Set[int]:
+    return set(range(location.start_line - 1, location.end_line))
 
 
 def to_absolute_path(given: str, working_directory: Path) -> Path:

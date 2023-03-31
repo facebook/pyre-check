@@ -27,6 +27,8 @@ import libcst
 from libcst.metadata import CodeRange, PositionProvider
 from typing_extensions import TypeAlias
 
+from . import dataclasses_json_extensions as json_mixins
+
 LOG: logging.Logger = logging.getLogger(__name__)
 
 ErrorCode: TypeAlias = int
@@ -34,31 +36,48 @@ LineNumber: TypeAlias = int
 
 
 @dataclasses.dataclass(frozen=True)
-class AnnotationInfo:
-    node: libcst.CSTNode
-    is_annotated: bool
-    code_range: CodeRange
+class Location(json_mixins.SnakeCaseAndExcludeJsonMixin):
+    start_line: int
+    start_column: int
+    end_line: int
+    end_column: int
+
+    @staticmethod
+    def from_code_range(code_range: CodeRange) -> Location:
+        return Location(
+            start_line=code_range.start.line,
+            start_column=code_range.start.column,
+            end_line=code_range.end.line,
+            end_column=code_range.end.column,
+        )
 
 
 @dataclasses.dataclass(frozen=True)
-class FunctionIdentifier:
+class AnnotationInfo:
+    node: libcst.CSTNode
+    is_annotated: bool
+    location: Location
+
+
+@dataclasses.dataclass(frozen=True)
+class FunctionIdentifier(json_mixins.SnakeCaseAndExcludeJsonMixin):
     parent: Optional[str]
     name: str
 
 
 @dataclasses.dataclass(frozen=True)
-class ParameterAnnotationInfo:
+class ParameterAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     function_identifier: FunctionIdentifier
     name: str
     is_annotated: bool
-    code_range: CodeRange
+    location: Location
 
 
 @dataclasses.dataclass(frozen=True)
-class ReturnAnnotationInfo:
+class ReturnAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     function_identifier: FunctionIdentifier
     is_annotated: bool
-    code_range: CodeRange
+    location: Location
 
 
 class ModuleMode(str, Enum):
@@ -68,15 +87,15 @@ class ModuleMode(str, Enum):
 
 
 @dataclasses.dataclass(frozen=True)
-class ModuleModeInfo:
+class ModuleModeInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     mode: ModuleMode
     explicit_comment_line: Optional[LineNumber]
 
 
-class FunctionAnnotationKind(Enum):
-    NOT_ANNOTATED = 0
-    PARTIALLY_ANNOTATED = 1
-    FULLY_ANNOTATED = 2
+class FunctionAnnotationKind(str, Enum):
+    NOT_ANNOTATED = "NOT_ANNOTATED"
+    PARTIALLY_ANNOTATED = "PARTIALLY_ANNOTATED"
+    FULLY_ANNOTATED = "FULLY_ANNOTATED"
 
     @staticmethod
     def from_function_data(
@@ -107,8 +126,8 @@ class FunctionAnnotationKind(Enum):
 
 
 @dataclasses.dataclass(frozen=True)
-class FunctionAnnotationInfo:
-    code_range: CodeRange
+class FunctionAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
+    location: Location
     annotation_kind: FunctionAnnotationKind
     returns: ReturnAnnotationInfo
     parameters: Sequence[ParameterAnnotationInfo]
@@ -140,8 +159,8 @@ class VisitorWithPositionData(libcst.CSTVisitor):
 
     METADATA_DEPENDENCIES = (PositionProvider,)
 
-    def code_range(self, node: libcst.CSTNode) -> CodeRange:
-        return self.get_metadata(PositionProvider, node)
+    def location(self, node: libcst.CSTNode) -> Location:
+        return Location.from_code_range(self.get_metadata(PositionProvider, node))
 
 
 class AnnotationContext:
@@ -233,7 +252,7 @@ class AnnotationCollector(VisitorWithPositionData):
                 function_identifier=function_identifier,
                 name=node.name.value,
                 is_annotated=node.annotation is not None,
-                code_range=self.code_range(node),
+                location=self.location(node),
             )
             for node in params
         ]
@@ -251,7 +270,7 @@ class AnnotationCollector(VisitorWithPositionData):
         returns = ReturnAnnotationInfo(
             function_identifier=function_identifier,
             is_annotated=node.returns is not None,
-            code_range=self.code_range(node.name),
+            location=self.location(node.name),
         )
 
         parameters = self.get_parameter_annotation_info(
@@ -266,7 +285,7 @@ class AnnotationCollector(VisitorWithPositionData):
         )
         self.functions.append(
             FunctionAnnotationInfo(
-                self.code_range(node),
+                self.location(node),
                 annotation_kind,
                 returns,
                 parameters,
@@ -291,23 +310,23 @@ class AnnotationCollector(VisitorWithPositionData):
             # annotation. Erring on the side of reporting these as annotated to
             # avoid showing false positives to users.
             implicitly_annotated_value = True
-        code_range = self.code_range(node)
+        location = self.location(node)
         if self.context.assignments_are_class_level():
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
-            self.attributes.append(AnnotationInfo(node, is_annotated, code_range))
+            self.attributes.append(AnnotationInfo(node, is_annotated, location))
         else:
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
-            self.globals.append(AnnotationInfo(node, is_annotated, code_range))
+            self.globals.append(AnnotationInfo(node, is_annotated, location))
 
     def visit_AnnAssign(self, node: libcst.AnnAssign) -> None:
         node.annotation
         if self.context.assignments_are_function_local():
             return
-        code_range = self.code_range(node)
+        location = self.location(node)
         if self.context.assignments_are_class_level():
-            self.attributes.append(AnnotationInfo(node, True, code_range))
+            self.attributes.append(AnnotationInfo(node, True, location))
         else:
-            self.globals.append(AnnotationInfo(node, True, code_range))
+            self.globals.append(AnnotationInfo(node, True, location))
 
     def leave_Module(self, original_node: libcst.Module) -> None:
         file_range = self.get_metadata(PositionProvider, original_node)
@@ -319,16 +338,16 @@ class AnnotationCollector(VisitorWithPositionData):
             self.line_count = file_range.end.line - 1
 
 
-class SuppressionKind(Enum):
+class SuppressionKind(str, Enum):
     PYRE_FIXME = "PYRE_FIXME"
     PYRE_IGNORE = "PYRE_IGNORE"
     TYPE_IGNORE = "TYPE_IGNORE"
 
 
 @dataclasses.dataclass(frozen=True)
-class TypeErrorSuppression:
+class TypeErrorSuppression(json_mixins.SnakeCaseAndExcludeJsonMixin):
     kind: SuppressionKind
-    code_range: CodeRange
+    location: Location
     error_codes: Optional[Sequence[ErrorCode]]
 
 
@@ -366,16 +385,16 @@ class SuppressionCollector(VisitorWithPositionData):
         self,
         node: libcst.Comment,
     ) -> Iterable[TypeErrorSuppression]:
-        code_range = self.code_range(node)
+        location = self.location(node)
         for suppression_kind, regex in self.suppression_regexes.items():
             match = re.match(regex, node.value)
             if match is not None:
                 yield TypeErrorSuppression(
                     kind=suppression_kind,
-                    code_range=code_range,
+                    location=location,
                     error_codes=self._error_codes_from_re_group(
                         match=match,
-                        line=code_range.start.line,
+                        line=location.start_line,
                     ),
                 )
 
@@ -408,15 +427,15 @@ class ModuleModeCollector(VisitorWithPositionData):
     def visit_Comment(self, node: libcst.Comment) -> None:
         if self.strict_regex.match(node.value):
             self.mode = ModuleMode.STRICT
-            self.explicit_comment_line = self.code_range(node).start.line
+            self.explicit_comment_line = self.location(node).start_line
         elif self.unsafe_regex.match(node.value):
             self.mode = ModuleMode.UNSAFE
-            self.explicit_comment_line = self.code_range(node).start.line
+            self.explicit_comment_line = self.location(node).start_line
         elif self.ignore_all_regex.match(
             node.value
         ) and not self.ignore_all_by_code_regex.match(node.value):
             self.mode = ModuleMode.IGNORE_ALL
-            self.explicit_comment_line = self.code_range(node).start.line
+            self.explicit_comment_line = self.location(node).start_line
 
 
 def collect_mode_info(
