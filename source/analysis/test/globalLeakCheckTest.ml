@@ -792,7 +792,10 @@ let test_object_global_leaks context =
       def foo():
         MyClass.x = 2
     |}
-    [ (* TODO (T142189949): writes to class attributes should be detected *) ];
+    [
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
+    ];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -801,7 +804,10 @@ let test_object_global_leaks context =
       def foo():
         MyClass.x = 2
     |}
-    [ (* TODO (T142189949): writes to class attributes should be detected *) ];
+    [
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
+    ];
   assert_global_leak_errors
     {|
       class MyClass:
