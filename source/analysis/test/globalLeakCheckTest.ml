@@ -742,11 +742,7 @@ let test_object_global_leaks context =
       def foo():
         MyClass().my_list.append(1)
     |}
-    [
-      (* TODO (T142189949): leaks should not be detected for instantiating a class *)
-      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
-    ];
+    [];
   assert_global_leak_errors
     {|
       import collections
@@ -857,11 +853,7 @@ let test_object_global_leaks context =
         B().x = 6
         C.x = 6
     |}
-    [
-      (* TODO (T142189949): errors should not be found for instantiated local writes *)
-      "Global leak [3100]: Data is leaked to global `test.B` of type `typing.Type[test.A]`.";
-      "Global leak [3100]: Data is leaked to global `test.C` of type `typing.Type[test.A]`.";
-    ];
+    ["Global leak [3100]: Data is leaked to global `test.C` of type `typing.Type[test.A]`."];
   assert_global_leak_errors
     (* tests that returning a class from a function will still find a global leak *)
     {|
@@ -881,19 +873,20 @@ let test_object_global_leaks context =
        `typing.Callable(test.get_class)[[], typing.Type[test.MyClass]]`.";
     ];
   assert_global_leak_errors
-    (* tests that returning a class and instantiating it doesn't find a global leak *)
+    (* tests that returning a class from a function will still find a global leak *)
     {|
       class MyClass:
-        x: List[int] = []
+        x: int = 1
 
       def get_class() -> Type[MyClass]:
         return MyClass
 
       def foo() -> None:
-        get_class()().x.append(5)
+        get_class().x = 5
     |}
     [
-      (* TODO (T142189949): errors should not be found for instantiated local writes *)
+      (* TODO (T142189949): add more user-friendly error message for classes returned from
+         callables *)
       "Global leak [3100]: Data is leaked to global `test.get_class` of type \
        `typing.Callable(test.get_class)[[], typing.Type[test.MyClass]]`.";
     ];
@@ -916,11 +909,7 @@ let test_object_global_leaks context =
       def foo() -> None:
         MyClass.get_current().x.append(2)
     |}
-    [
-      (* TODO (T142189949): errors should not be found for instantiated local writes *)
-      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
-    ];
+    [];
   assert_global_leak_errors
     (* tests getting a class and instantiating it from a function finds a leak with assignment *)
     {|
@@ -933,11 +922,20 @@ let test_object_global_leaks context =
       def foo() -> None:
         get_class()().x = 5
     |}
-    [
-      (* TODO (T142189949): errors should not be found for instantiated local writes *)
-      "Global leak [3100]: Data is leaked to global `test.get_class` of type \
-       `typing.Callable(test.get_class)[[], typing.Type[test.MyClass]]`.";
-    ];
+    [];
+  assert_global_leak_errors
+    (* tests getting a class and instantiating it doesn't find a global leak with a mutable call *)
+    {|
+      class MyClass:
+        x: List[int] = []
+
+      def get_class() -> Type[MyClass]:
+        return MyClass
+
+      def foo() -> None:
+        get_class()().x.append(5)
+    |}
+    [];
   assert_global_leak_errors
     (* tests that a mutation on something returned from a class does not result in an error *)
     {|
@@ -957,11 +955,7 @@ let test_object_global_leaks context =
       def foo() -> None:
         MyClass.get_current().x = 2
     |}
-    [
-      (* TODO (T142189949): errors should not be found for instantiated local writes *)
-      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
-    ];
+    [];
   ()
 
 
@@ -1048,12 +1042,7 @@ let test_global_statements context =
       def foo():
         MyClass().x = my_global
     |}
-    [
-      (* TODO (T142189949): leaks should be detected for writing a global into a local *)
-      (* TODO (T142189949): leaks should not be detected for instantiating a class *)
-      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
-    ];
+    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
   assert_global_leak_errors
     {|
       class MyClass:

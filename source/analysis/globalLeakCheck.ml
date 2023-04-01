@@ -113,7 +113,7 @@ module State (Context : Context) = struct
     || is_blocklisted_method ()
 
 
-  let rec forward_expression ~resolution { Node.value; location } =
+  let rec forward_expression ~resolution ({ Node.value; location } as expression) =
     let forward_expression = forward_expression ~resolution in
     let forward_generator { Comprehension.Generator.target; iterator; conditions; _ } =
       let { errors = target_errors; _ } = forward_expression target in
@@ -146,12 +146,27 @@ module State (Context : Context) = struct
         else
           { sub_expression_result with reachable_globals }
     | Call { callee; arguments } ->
-        List.fold
-          ~init:(forward_expression callee)
-          ~f:(fun ({ errors; _ } as result) { value; _ } ->
-            let { errors = argument_errors; _ } = forward_expression value in
-            { result with errors = argument_errors @ errors })
-          arguments
+        let should_reachable_globals_persist =
+          match callee with
+          | { Node.value = Expression.Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } ->
+              true
+          (* if this call is `__getitem__`, assume a mutation on the return value mutates reachable
+             globals (i.e. `my_global[5].append(3)` would be a mutation) *)
+          | _ -> Resolution.resolve_expression_to_type resolution expression |> Type.is_meta
+          (* if this expression (the result of the call) returns a class reference/type, then treat
+             it as a global (i.e. `get_class().x = 5` for `def get_class() -> Type[MyClass]: ...` is
+             a global mutation) *)
+        in
+        let { errors; reachable_globals } = forward_expression callee in
+        let reachable_globals =
+          if should_reachable_globals_persist then reachable_globals else []
+        in
+        let get_errors_from_forward_expression { Call.Argument.value; _ } =
+          let { errors; _ } = forward_expression value in
+          errors
+        in
+        List.concat_map ~f:get_errors_from_forward_expression arguments
+        |> fun argument_errors -> { errors = argument_errors @ errors; reachable_globals }
     | Expression.Constant _
     | Yield None ->
         empty_result
