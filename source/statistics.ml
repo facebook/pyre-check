@@ -81,11 +81,21 @@ let format_as_json ~integers ~normals () =
 
 
 let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
+  let environment_variable name =
+    match Sys.getenv name with
+    | Some value -> Some (String.lowercase name, value)
+    | None -> None
+  in
   let normals =
     if metadata then
-      let normals_with_sandcastle_alias =
-        match Sys.getenv "SANDCASTLE_ALIAS" with
-        | Some sandcastle_alias -> ("sandcastle_alias", sandcastle_alias) :: normals
+      let normals =
+        match environment_variable "SANDCASTLE_ALIAS" with
+        | Some normal -> normal :: normals
+        | None -> normals
+      in
+      let normals =
+        match environment_variable "SANDCASTLE_JOB_OWNER" with
+        | Some normal -> normal :: normals
         | None -> normals
       in
       [
@@ -96,23 +106,22 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
         "identifier", GlobalState.global_state.log_identifier;
         "project_root", GlobalState.global_state.project_root;
       ]
-      @ normals_with_sandcastle_alias
+      @ normals
     else
       normals
   in
   let integers =
     if metadata then
-      let integers_with_sandcastle_instance_id =
-        match Sys.getenv "SANDCASTLE_INSTANCE_ID" with
-        | Some sandcastle_instance_id ->
-            ("sandcastle_instance_id", int_of_string sandcastle_instance_id) :: integers
+      let integers =
+        match environment_variable "SANDCASTLE_INSTANCE_ID" with
+        | Some (name, value) -> (name, int_of_string value) :: integers
         | None -> integers
       in
       [
         "time", Core_unix.time () |> Int.of_float;
         "start_time", GlobalState.global_state.start_time |> Int.of_float;
       ]
-      @ integers_with_sandcastle_instance_id
+      @ integers
     else
       integers
   in
