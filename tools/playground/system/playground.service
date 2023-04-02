@@ -13,6 +13,8 @@ Environment="PYSA_PLAYGROUND_CACHE_DIRECTORY=/var/pysa_cache/"
 ExecStart=/home/ubuntu/play-env/bin/gunicorn --workers 10 --timeout 120 --bind 127.0.0.1:5000 wsgi:application
 StandardOutput=file:/var/log/playground.out
 StandardError=file:/var/log/playground.err
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
