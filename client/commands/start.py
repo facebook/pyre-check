@@ -385,7 +385,7 @@ def create_server_arguments(
             configuration.get_project_identifier(),
             flavor=start_arguments.flavor,
         ),
-        use_errpy_parser=False if use_errpy_parser is None else use_errpy_parser,
+        use_errpy_parser=use_errpy_parser,
     )
 
 

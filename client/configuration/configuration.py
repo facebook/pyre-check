@@ -583,7 +583,7 @@ class Configuration:
     unwatched_dependency: Optional[unwatched.UnwatchedDependency] = None
     use_buck2: bool = False
     version_hash: Optional[str] = None
-    use_errpy_parser: Optional[bool] = None
+    use_errpy_parser: bool = False
 
     @staticmethod
     def from_partial_configuration(
@@ -643,7 +643,9 @@ class Configuration:
                 partial_configuration.use_buck2, default=False
             ),
             version_hash=partial_configuration.version_hash,
-            use_errpy_parser=partial_configuration.use_errpy_parser,
+            use_errpy_parser=_get_optional_value(
+                partial_configuration.use_errpy_parser, default=False
+            ),
         )
 
     @property
