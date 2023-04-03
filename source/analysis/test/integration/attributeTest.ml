@@ -1379,7 +1379,7 @@ let test_check_missing_attribute context =
     ];
   assert_strict_type_errors
     ~context
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "other.pyi";
@@ -1671,7 +1671,7 @@ let test_check_getattr context =
     in
     assert_type_errors
       ~context
-      ~update_environment_with:
+      ~other_sources:
         [
           getattr_stub;
           getattr_stub_str;
@@ -2000,7 +2000,7 @@ let test_class_with_same_name_as_local_variable context =
   (* TODO(T121169620): Due to a comedy of errors, Pyre resolves `some_module.Foo.Foo` to
      `some_module.Foo.Foo.Foo`, which does not exist. *)
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         (* This makes `some_module.Foo` map to `some_module.Bar.Foo`. *)
         {

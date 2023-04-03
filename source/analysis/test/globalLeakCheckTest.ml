@@ -40,16 +40,14 @@ let instantiate_and_stringify ~lookup errors =
 
 let assert_global_leak_errors
     ?(skip_type_check = false)
-    ?(update_environment_with = [])
+    ?(other_sources = [])
     ~context
     source
     expected
   =
   let source_with_imports = "      from typing import *" ^ source in
   let preliminary_type_check_errors =
-    let environment =
-      List.map ~f:(fun { handle; source } -> handle, source) update_environment_with
-    in
+    let environment = List.map ~f:(fun { handle; source } -> handle, source) other_sources in
     let project =
       ScratchProject.setup ~context ~strict:true (("test.py", source_with_imports) :: environment)
     in
@@ -68,7 +66,7 @@ let assert_global_leak_errors
       ~strict:true
       ~include_suppressed_errors:true
       ~debug:true
-      ~update_environment_with
+      ~other_sources
       source_with_imports
       expected
   else
@@ -791,7 +789,7 @@ let test_object_global_leaks context =
        `typing.Type[test.MyClass]`.";
     ];
   assert_global_leak_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "other_module.py";
@@ -1482,7 +1480,7 @@ let test_global_statements context =
     |}
     ["Global leak [3100]: Data is leaked to global `other_module.my_list` of type `unknown`."];
   assert_global_leak_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "other_module.py";
@@ -1503,7 +1501,7 @@ let test_global_statements context =
        `typing.List[int]`.";
     ];
   assert_global_leak_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "other_module.py";

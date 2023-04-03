@@ -3232,7 +3232,7 @@ module ScratchProject = struct
       artifact_paths
 end
 
-type test_update_environment_with_t = {
+type test_other_sources_t = {
   handle: string;
   source: string;
 }
@@ -3244,7 +3244,7 @@ let assert_errors
     ?(show_error_traces = false)
     ?(concise = false)
     ?(handle = "test.py")
-    ?(update_environment_with = [])
+    ?(other_sources = [])
     ?(include_line_numbers = false)
     ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
     ?enable_readonly_analysis
@@ -3255,7 +3255,7 @@ let assert_errors
     source
     errors
   =
-  let in_memory = List.is_empty update_environment_with in
+  let in_memory = List.is_empty other_sources in
   (if ModulePath.qualifier_of_relative handle |> Reference.is_empty then
      let message =
        Format.sprintf
@@ -3269,7 +3269,7 @@ let assert_errors
       let sources, environment =
         let project =
           let external_sources =
-            List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
+            List.map other_sources ~f:(fun { handle; source } -> handle, source)
           in
           ScratchProject.setup
             ~context

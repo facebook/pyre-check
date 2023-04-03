@@ -51,7 +51,7 @@ let test_check_typed_dictionaries context =
     in
     assert_type_errors
       ~context
-      ~update_environment_with:[mypy_extensions_stub; typed_dictionary_for_import]
+      ~other_sources:[mypy_extensions_stub; typed_dictionary_for_import]
       source
   in
   assert_test_typed_dictionary
@@ -1093,7 +1093,7 @@ let test_check_typed_dictionary_inference context =
           |};
       }
     in
-    assert_type_errors ~context ~update_environment_with:[mypy_extensions_stub] source
+    assert_type_errors ~context ~other_sources:[mypy_extensions_stub] source
   in
   assert_test_typed_dictionary
     {|
@@ -1255,7 +1255,7 @@ let test_check_typed_dictionary_inheritance context =
     in
     assert_type_errors
       ~context
-      ~update_environment_with:[mypy_extensions_stub; typed_dictionary_helpers]
+      ~other_sources:[mypy_extensions_stub; typed_dictionary_helpers]
       source
   in
   assert_test_typed_dictionary
@@ -1810,7 +1810,7 @@ let test_check_typed_dictionary_in_alias context =
     in
     assert_type_errors
       ~context
-      ~update_environment_with:[mypy_extensions_stub; typed_dictionary_helpers]
+      ~other_sources:[mypy_extensions_stub; typed_dictionary_helpers]
       source
   in
   assert_test_typed_dictionary

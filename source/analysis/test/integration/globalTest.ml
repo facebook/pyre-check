@@ -267,7 +267,7 @@ let test_check_globals context =
     |}
     [];
   assert_type_errors
-    ~update_environment_with:[{ handle = "export.py"; source = "a, b, c = 1, 2, 3" }]
+    ~other_sources:[{ handle = "export.py"; source = "a, b, c = 1, 2, 3" }]
     {|
       from export import a
       def foo() -> str:
@@ -275,7 +275,7 @@ let test_check_globals context =
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [{ handle = "export.py"; source = {|
           str_to_int_dictionary = {"a": 1}
         |} }]
@@ -286,7 +286,7 @@ let test_check_globals context =
     |}
     ["Incompatible return type [7]: Expected `str` but got `Dict[str, int]`."];
   assert_type_errors
-    ~update_environment_with:[{ handle = "export.py"; source = "x = 1" }]
+    ~other_sources:[{ handle = "export.py"; source = "x = 1" }]
     {|
       from export import x
       def foo() -> str:
@@ -436,7 +436,7 @@ let test_check_builtin_globals context =
     |}
     ["Revealed type [-1]: Revealed type for `__debug__` is `bool`."];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         { handle = "__init__.pyi"; source = {|
               def bar() -> None: pass

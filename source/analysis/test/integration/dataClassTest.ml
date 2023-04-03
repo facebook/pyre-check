@@ -188,7 +188,7 @@ let test_check_data_class context =
 let test_check_attr context =
   assert_type_errors
     ~context
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "attr/__init__.pyi";

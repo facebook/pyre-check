@@ -337,7 +337,7 @@ let test_bound_method context =
 let test_reexported_callable context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "reexports_callable.pyi";
@@ -371,7 +371,7 @@ let test_reexported_callable context =
        `typing.Callable(Foo.my_method)[[Named(self, Foo)], int]`.";
     ];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "reexports_callable.pyi";

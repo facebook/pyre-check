@@ -13,11 +13,9 @@ open Interprocedural
 open Statement
 open Test
 
-let setup ?(update_environment_with = []) ~context ~handle source =
+let setup ?(other_sources = []) ~context ~handle source =
   let project =
-    let external_sources =
-      List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
-    in
+    let external_sources = List.map other_sources ~f:(fun { handle; source } -> handle, source) in
     ScratchProject.setup ~context ~external_sources [handle, source]
   in
   let { ScratchProject.BuiltTypeEnvironment.sources; type_environment; _ } =
@@ -30,9 +28,9 @@ let setup ?(update_environment_with = []) ~context ~handle source =
   source, type_environment, ScratchProject.configuration_of project
 
 
-let create_call_graph ?(update_environment_with = []) ~context source_text =
+let create_call_graph ?(other_sources = []) ~context source_text =
   let source, environment, configuration =
-    setup ~update_environment_with ~context ~handle:"test.py" source_text
+    setup ~other_sources ~context ~handle:"test.py" source_text
   in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let override_graph =
@@ -96,9 +94,9 @@ let compare_dependency_graph call_graph ~expected =
   assert_equal ~printer expected call_graph
 
 
-let assert_call_graph ?update_environment_with ~context source ~expected =
+let assert_call_graph ?other_sources ~context source ~expected =
   let graph =
-    create_call_graph ?update_environment_with ~context source
+    create_call_graph ?other_sources ~context source
     |> DependencyGraph.Reversed.from_call_graph
     |> DependencyGraph.Reversed.to_target_graph
     |> TargetGraph.to_alist
@@ -178,7 +176,7 @@ let test_construction context =
         `Method "test.B.__init__", [`Method "test.A.__init__"; `Method "object.__new__"];
       ];
   assert_call_graph
-    ~update_environment_with:
+    ~other_sources:
       [{ handle = "foobar.pyi"; source = {|
             def bar(x: str) -> str: ...
           |} }]
@@ -188,7 +186,7 @@ let test_construction context =
     |}
     ~expected:[`Function "test.$toplevel", []; `Function "test.foo", [`Function "foobar.bar"]];
   assert_call_graph
-    ~update_environment_with:
+    ~other_sources:
       [{ handle = "bar/baz/qux.pyi"; source = {|
             def derp() -> str: ...
           |} }]

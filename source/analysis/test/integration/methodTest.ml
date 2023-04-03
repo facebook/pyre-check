@@ -11,7 +11,7 @@ open IntegrationTest
 
 let assert_type_errors
     ?include_line_numbers
-    ?update_environment_with
+    ?other_sources
     ?show_error_traces
     ~context
     source
@@ -21,7 +21,7 @@ let assert_type_errors
     ~context
     ~constraint_solving_style:Configuration.Analysis.ExpressionLevel
     ?include_line_numbers
-    ?update_environment_with
+    ?other_sources
     ?show_error_traces
     source
     expected_errors;
@@ -29,7 +29,7 @@ let assert_type_errors
     ~context
     ~constraint_solving_style:Configuration.Analysis.FunctionCallLevel
     ?include_line_numbers
-    ?update_environment_with
+    ?other_sources
     ?show_error_traces
     source
     expected_errors
@@ -1042,7 +1042,7 @@ let test_check_method_parameters context =
 
 
 let test_check_abstract_methods context =
-  let update_environment_with =
+  let other_sources =
     [
       {
         handle = "abc.pyi";
@@ -1058,7 +1058,7 @@ let test_check_abstract_methods context =
   in
   assert_type_errors
     ~context
-    ~update_environment_with
+    ~other_sources
     {|
       import abc
       @abc.abstractmethod
@@ -1068,7 +1068,7 @@ let test_check_abstract_methods context =
     [];
   assert_type_errors
     ~context
-    ~update_environment_with
+    ~other_sources
     {|
       import abc
       @abc.abstractproperty

@@ -294,14 +294,14 @@ let test_concise context =
     |}
     ["Incompatible variable type [9]: x has type `int`; used as `str`."];
   assert_type_errors
-    ~update_environment_with:[{ handle = "export.py"; source = "class Foo:\n  a: int = 1" }]
+    ~other_sources:[{ handle = "export.py"; source = "class Foo:\n  a: int = 1" }]
     {|
       from export import Foo
       Foo.a = "string"
     |}
     ["Incompatible attribute type [8]: Attribute has type `int`; used as `str`."];
   assert_type_errors
-    ~update_environment_with:[{ handle = "export.py"; source = "a: int = 1" }]
+    ~other_sources:[{ handle = "export.py"; source = "a: int = 1" }]
     {|
       import export
       export.a = "string"
@@ -310,7 +310,7 @@ let test_concise context =
 
   (* Inconsistent Override *)
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "export.py";

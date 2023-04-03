@@ -553,7 +553,7 @@ let test_check_user_decorators context =
     |}
     ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], str]`."];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         { handle = "indirect.py"; source = "from actual import decorator as indirected" };
         {
@@ -608,7 +608,7 @@ let test_check_user_decorators context =
     |}
     ["Revealed type [-1]: Revealed type for `test.bar` is `int`."];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "other.py";
@@ -954,7 +954,7 @@ let test_decorator_factories context =
       "Revealed type [-1]: Revealed type for `test.g` is `str`.";
     ];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "second.py";
@@ -1243,7 +1243,7 @@ let test_invalid_decorators context =
 let test_six_decorators context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "six.py";

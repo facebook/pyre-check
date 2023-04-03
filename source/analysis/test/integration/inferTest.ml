@@ -152,7 +152,7 @@ let test_check_missing_return context =
     |}
     ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_type_errors
-    ~update_environment_with:[{ handle = "export.py"; source = "MyType = typing.List[typing.Any]" }]
+    ~other_sources:[{ handle = "export.py"; source = "MyType = typing.List[typing.Any]" }]
     {|
       import typing
       from export import MyType

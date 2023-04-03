@@ -60,7 +60,7 @@ let test_check_imports context =
     ["Incompatible return type [7]: Expected `None` but got `int`."];
 
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "durp.py";
@@ -81,7 +81,7 @@ let test_check_imports context =
     |}
     [];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "durp.py";
@@ -106,7 +106,7 @@ let test_check_imports context =
       "Undefined import [21]: Could not find a module corresponding to import `durp.c`.";
     ];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "durp.py";
@@ -132,7 +132,7 @@ let test_check_imports context =
       "Undefined import [21]: Could not find a module corresponding to import `durp.c`.";
     ];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "constants.py";
@@ -155,7 +155,7 @@ let test_check_imports context =
     |}
     [];
   assert_type_errors
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "utils/constants.py";
@@ -179,7 +179,7 @@ let test_check_imports context =
     [];
   let source = { Test.handle = "existing_module.py"; source = {| class Foo: ... |} } in
   assert_type_errors
-    ~update_environment_with:[source]
+    ~other_sources:[source]
     {|
       from typing import Optional
 
@@ -193,7 +193,7 @@ let test_check_imports context =
   (* TODO(T80454071): This should raise an error about `existing_module` since it was not
      imported. *)
   assert_type_errors
-    ~update_environment_with:[source]
+    ~other_sources:[source]
     {|
       from typing import Optional
 
@@ -211,7 +211,7 @@ let test_check_stub_imports context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     ~show_error_traces:true
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "stubbed.pyi";
@@ -264,7 +264,7 @@ let test_check_stub_imports context =
     ];
   assert_type_errors
     ~show_error_traces:true
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "qualifier.stubbed.pyi";
@@ -295,7 +295,7 @@ let test_check_stub_imports context =
   assert_strict_type_errors
     ~context
     ~show_error_traces:true
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "stubbed.pyi";
@@ -332,7 +332,7 @@ let test_check_stub_imports context =
   assert_strict_type_errors
     ~context
     ~show_error_traces:true
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "stubbed.pyi";
@@ -374,7 +374,7 @@ let test_check_stub_imports context =
   assert_strict_type_errors
     ~context
     ~show_error_traces:true
-    ~update_environment_with:
+    ~other_sources:
       [
         { handle = "stubbed.pyi"; source = {|
              a: Any = ...

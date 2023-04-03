@@ -16,7 +16,7 @@ let test_basic context =
   assert_default_type_errors "def bad_syntax(" ["Parsing failure [404]: '(' was never closed"];
   assert_default_type_errors
     "def good_syntax() -> int: ..."
-    ~update_environment_with:[{ Test.handle = "foo.py"; source = "def bad_syntax(" }]
+    ~other_sources:[{ Test.handle = "foo.py"; source = "def bad_syntax(" }]
     [];
   assert_default_type_errors {|
       # pyre-ignore-all-errors

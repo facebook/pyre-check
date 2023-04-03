@@ -11,11 +11,9 @@ open Ast
 open Interprocedural
 open Test
 
-let setup ?(update_environment_with = []) ~context ~handle source =
+let setup ?(other_sources = []) ~context ~handle source =
   let project =
-    let external_sources =
-      List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
-    in
+    let external_sources = List.map other_sources ~f:(fun { handle; source } -> handle, source) in
     ScratchProject.setup ~context ~external_sources [handle, source]
   in
   let { ScratchProject.BuiltTypeEnvironment.sources; type_environment; _ } =
@@ -29,15 +27,14 @@ let setup ?(update_environment_with = []) ~context ~handle source =
 
 
 let test_method_overrides context =
-  let assert_method_overrides ?(update_environment_with = []) ?(handle = "test.py") source ~expected
-    =
+  let assert_method_overrides ?(other_sources = []) ?(handle = "test.py") source ~expected =
     let expected =
       let create_callables (member, overriding_types) =
         Target.create_method !&member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in
-    let source, environment, _ = setup ~update_environment_with ~context ~handle source in
+    let source, environment, _ = setup ~other_sources ~context ~handle source in
     let overrides_map =
       OverrideGraph.Heap.from_source ~environment ~include_unit_tests:false ~source
     in
@@ -75,7 +72,7 @@ let test_method_overrides context =
     |}
     ~expected:[];
   assert_method_overrides
-    ~update_environment_with:
+    ~other_sources:
       [
         {
           handle = "module.py";

@@ -2036,7 +2036,7 @@ let test_generic_aliases context =
   (* `Optional` is imported as `foo.bar.baz.Optional`, which is an alias we resolve to
      `typing.Optional`. *)
   assert_type_errors
-    ~update_environment_with:sources_exporting_generic_classes
+    ~other_sources:sources_exporting_generic_classes
     {|
       from baz import *
       from typing import List as MyList
@@ -2056,7 +2056,7 @@ let test_generic_aliases context =
        `typing.Type[foo.SomeGenericClass]`.";
     ];
   assert_type_errors
-    ~update_environment_with:sources_exporting_generic_classes
+    ~other_sources:sources_exporting_generic_classes
     {|
       from baz import *
       from typing import List as MyList, TypeVar
@@ -2075,7 +2075,7 @@ let test_generic_aliases context =
     ];
   (* We should correctly resolve nested generic aliases like `baz.Dict`. *)
   assert_type_errors
-    ~update_environment_with:sources_exporting_generic_classes
+    ~other_sources:sources_exporting_generic_classes
     {|
       from baz import *
 
@@ -2094,7 +2094,7 @@ let test_generic_aliases context =
     ]
   in
   assert_type_errors
-    ~update_environment_with:sources_exporting_generic_classes
+    ~other_sources:sources_exporting_generic_classes
     {|
       from bar.baz import Callable
 
