@@ -598,6 +598,7 @@ class PyreLanguageServerApi:
                 "is_dirty": self.server_state.opened_documents[document_path].is_dirty,
                 "truncated_file_contents": source_code_if_sampled,
                 "position": parameters.position.to_dict(),
+                "using_errpy_parser": self.server_state.server_options.using_errpy_parser,
                 **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,

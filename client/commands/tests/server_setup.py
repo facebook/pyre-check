@@ -49,6 +49,7 @@ DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
 DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 DEFAULT_FILE_CONTENTS: str = "```\nfoo.Foo\n```"
+DEFAULT_USE_ERRPY_PARSER: bool = False
 
 
 def create_server_options(
@@ -59,6 +60,7 @@ def create_server_options(
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
+    use_errpy_parser: bool = DEFAULT_USE_ERRPY_PARSER,
 ) -> PyreServerOptions:
     return PyreServerOptions(
         binary,
@@ -68,6 +70,7 @@ def create_server_options(
         strict_default,
         excludes if excludes else [],
         flavor,
+        use_errpy_parser,
     )
 
 
