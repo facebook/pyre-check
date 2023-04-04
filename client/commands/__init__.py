@@ -30,6 +30,7 @@ from . import (  # noqa F401
     pysa_server,
     query,
     rage,
+    report,
     restart,
     servers,
     start,
