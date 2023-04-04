@@ -8,14 +8,22 @@ This module provides the entrypoint for `pyre report`, a command to
 collect data about code and how well Pyre can understand its types.
 
 """
+from __future__ import annotations
+
+import dataclasses
+import json
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Sequence
+
+import libcst
 
 from .. import (
     configuration as configuration_module,
     coverage_data,
+    dataclasses_json_extensions as json_mixins,
     frontend_configuration,
+    log,
 )
 from . import commands
 
@@ -38,6 +46,66 @@ def get_module_paths(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
+    path: str
+    mode: coverage_data.ModuleModeInfo
+    suppressions: Sequence[coverage_data.TypeErrorSuppression]
+    function_annotations: Sequence[coverage_data.FunctionAnnotationInfo]
+
+    @staticmethod
+    def collect(
+        module: libcst.MetadataWrapper, strict_by_default: bool, path: Path
+    ) -> ModuleData:
+        mode = coverage_data.collect_mode_info(module, strict_by_default)
+        suppressions = coverage_data.collect_suppressions(module)
+        function_annotations = coverage_data.collect_function_annotations(module)
+        return ModuleData(
+            mode=mode,
+            suppressions=suppressions,
+            function_annotations=function_annotations,
+            # `path` is relative here so that data isn't tied to one machine.
+            path=str(path.relative_to(Path.cwd())),
+        )
+
+    @staticmethod
+    def collect_from_path(
+        path: Path,
+        strict_by_default: bool,
+    ) -> Optional[ModuleData]:
+        module = coverage_data.module_from_path(path)
+        if module is None:
+            return None
+        else:
+            return ModuleData.collect(
+                module,
+                strict_by_default,
+                path,
+            )
+
+    @staticmethod
+    def collect_from_paths(
+        module_paths: Sequence[Path],
+        strict_by_default: bool,
+    ) -> List[ModuleData]:
+        return [
+            module_data
+            for path in module_paths
+            if (
+                module_data := ModuleData.collect_from_path(
+                    path,
+                    strict_by_default,
+                )
+            )
+            is not None
+        ]
+
+
+def print_data_as_json(data: Sequence[ModuleData]) -> None:
+    raw_data = [module_data.to_dict() for module_data in data]
+    json.dump(raw_data, log.stdout)
+
+
 def run(
     raw_configuration: configuration_module.Configuration,
     paths: Optional[List[Path]],
@@ -47,6 +115,9 @@ def run(
         configuration=configuration,
         paths=paths,
     )
-    LOG.warning("`pyre report` is not yet fully implemented.")
-    LOG.info(f"Module paths: {list(module_paths)}")
+    data = ModuleData.collect_from_paths(
+        module_paths,
+        strict_by_default=configuration.is_strict(),
+    )
+    print_data_as_json(data)
     return commands.ExitCode.SUCCESS
