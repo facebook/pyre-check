@@ -1390,6 +1390,18 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     transform Taint.Self Map ~f:(Taint.essential ~preserve_return_access_paths) tree
 
 
+  let shape ~mold_with_return_access_paths ~breadcrumbs tree =
+    let shape_partitioned_tree tree =
+      T.shape
+        ~transform:(Taint.add_local_breadcrumbs breadcrumbs)
+        tree
+        ~mold:(essential ~preserve_return_access_paths:mold_with_return_access_paths tree)
+    in
+    T.partition Taint.kind By ~f:Fn.id tree
+    |> Core.Map.Poly.map ~f:shape_partitioned_tree
+    |> Core.Map.Poly.fold ~init:T.bottom ~f:(fun ~key:_ ~data:left right -> T.join left right)
+
+
   let prune_maximum_length maximum_length =
     transform Taint.Self Map ~f:(Taint.prune_maximum_length maximum_length)
 

@@ -2348,13 +2348,10 @@ let extract_tito_and_sink_models
       |> Features.type_breadcrumbs_from_annotation ~resolution
     in
 
-    let essential =
-      BackwardState.Tree.essential ~preserve_return_access_paths:is_constructor tree
-    in
-    BackwardState.Tree.shape
-      ~transform:(BackwardTaint.add_local_breadcrumbs (Features.widen_broadening_set ()))
-      tree
-      ~mold:essential
+    tree
+    |> BackwardState.Tree.shape
+         ~mold_with_return_access_paths:is_constructor
+         ~breadcrumbs:(Features.widen_broadening_set ())
     |> BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs
     |> BackwardState.Tree.limit_to
          ~breadcrumbs:(Features.widen_broadening_set ())

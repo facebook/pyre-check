@@ -846,3 +846,147 @@
     ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_simplification.shape_multi_sink",
+    "sinks": [
+      {
+        "port": "formal(obj)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": {
+              "filename": "model_simplification.py",
+              "line": 97,
+              "start": 9,
+              "end": 16
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": {
+              "filename": "model_simplification.py",
+              "line": 98,
+              "start": 9,
+              "end": 16
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": {
+              "filename": "model_simplification.py",
+              "line": 99,
+              "start": 9,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(obj)[bar]",
+        "taint": [
+          {
+            "kinds": [ { "leaves": [ { "name": "_sql" } ], "kind": "SQL" } ],
+            "origin": {
+              "filename": "model_simplification.py",
+              "line": 100,
+              "start": 9,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_simplification.shape_multi_source",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_user_controlled" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": {
+              "filename": "model_simplification.py",
+              "line": 106,
+              "start": 17,
+              "end": 35
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_user_controlled" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": {
+              "filename": "model_simplification.py",
+              "line": 107,
+              "start": 23,
+              "end": 41
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_user_controlled" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
+            ],
+            "origin": {
+              "filename": "model_simplification.py",
+              "line": 108,
+              "start": 29,
+              "end": 47
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[a][b]",
+        "taint": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "_cookies" } ], "kind": "Cookies" }
+            ],
+            "origin": {
+              "filename": "model_simplification.py",
+              "line": 112,
+              "start": 23,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

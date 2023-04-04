@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import _test_source, _test_sink
+from builtins import _test_source, _test_sink, _rce, _sql, _user_controlled, _cookies
 from typing import Any, cast, Dict, List
 
 
@@ -91,3 +91,23 @@ def recursive_sink_parent_attribute(obj):
         recursive_sink_parent_attribute(obj.parent)
     else:
         _test_sink(obj.attribute)
+
+
+def shape_multi_sink(obj):
+    _rce(obj.foo)
+    _rce(obj.bar)
+    _rce(obj)
+    _sql(obj.bar)
+
+
+def shape_multi_source():
+    if 1 > 2:
+        return {
+            "a": _user_controlled(),
+            "a": {"b": _user_controlled()},
+            "a": {"b": {"c": _user_controlled()}},
+        }
+    else:
+        return {
+            "a": {"b": _cookies()},
+        }

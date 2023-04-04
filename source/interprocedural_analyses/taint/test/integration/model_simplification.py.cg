@@ -7,6 +7,8 @@ model_simplification._asdict_inner (fun) -> [dict::items (method) getattr (fun) 
 model_simplification.asdict (fun) -> [model_simplification._asdict_inner (fun)]
 model_simplification.asdict_test (fun) -> [model_simplification.asdict (fun)]
 model_simplification.obscure_test (fun) -> [_test_source (fun) type::__init__ (method) type::__new__ (method)]
+model_simplification.shape_multi_sink (fun) -> [_rce (fun) _sql (fun)]
+model_simplification.shape_multi_source (fun) -> [_cookies (fun) _user_controlled (fun) int::__gt__ (method) int::__le__ (method)]
 model_simplification.DictRecord::$class_toplevel (method) -> []
 model_simplification.MutableRecord::$class_toplevel (method) -> []
 model_simplification.RecordSchema::$class_toplevel (method) -> []
