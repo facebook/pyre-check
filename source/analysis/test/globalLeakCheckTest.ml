@@ -907,10 +907,8 @@ let test_object_global_leaks context =
         get_class().x.append(5)
     |}
     [
-      (* TODO (T142189949): add more user-friendly error message for classes returned from
-         callables *)
-      "Global leak [3100]: Data is leaked to global `test.get_class` of type \
-       `typing.Callable(test.get_class)[[], typing.Type[test.MyClass]]`.";
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
     ];
   assert_global_leak_errors
     (* tests that returning a class from a function will still find a global leak *)
@@ -925,10 +923,24 @@ let test_object_global_leaks context =
         get_class().x = 5
     |}
     [
-      (* TODO (T142189949): add more user-friendly error message for classes returned from
-         callables *)
-      "Global leak [3100]: Data is leaked to global `test.get_class` of type \
-       `typing.Callable(test.get_class)[[], typing.Type[test.MyClass]]`.";
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
+    ];
+  assert_global_leak_errors
+    (* tests that returning a class from a function will still find a global leak *)
+    {|
+      class MyClass:
+        x: int = 1
+
+      def foo() -> None:
+        def get_class() -> Type[MyClass]:
+          return MyClass
+
+        get_class().x = 5
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
+       `typing.Type[test.MyClass]`.";
     ];
   assert_global_leak_errors
     (* tests that a mutation on something returned from a class does not result in an error *)

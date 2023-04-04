@@ -146,20 +146,22 @@ module State (Context : Context) = struct
         else
           { sub_expression_result with reachable_globals }
     | Call { callee; arguments } ->
-        let should_reachable_globals_persist =
-          match callee with
-          | { Node.value = Expression.Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } ->
-              true
-          (* if this call is `__getitem__`, assume a mutation on the return value mutates reachable
-             globals (i.e. `my_global[5].append(3)` would be a mutation) *)
-          | _ -> Resolution.resolve_expression_to_type resolution expression |> Type.is_meta
-          (* if this expression (the result of the call) returns a class reference/type, then treat
-             it as a global (i.e. `get_class().x = 5` for `def get_class() -> Type[MyClass]: ...` is
-             a global mutation) *)
-        in
         let { errors; reachable_globals } = forward_expression callee in
         let reachable_globals =
-          if should_reachable_globals_persist then reachable_globals else []
+          match callee with
+          | { Node.value = Expression.Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } ->
+              reachable_globals
+          (* if this call is `__getitem__`, assume a mutation on the return value mutates reachable
+             globals (i.e. `my_global[5].append(3)` would be a mutation) *)
+          | _ -> (
+              let expression_type = Resolution.resolve_expression_to_type resolution expression in
+              match Type.extract_meta expression_type with
+              | Some class_name ->
+                  (* if this expression (the result of the call) returns a class reference/type,
+                     then treat it as a global (i.e. `get_class().x = 5` for `def get_class() ->
+                     Type[MyClass]: ...` is a global mutation) *)
+                  [Type.class_name class_name]
+              | _ -> [])
         in
         let get_errors_from_forward_expression { Call.Argument.value; _ } =
           let { errors; _ } = forward_expression value in

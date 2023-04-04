@@ -475,6 +475,8 @@ val mapping_primitive : string
 
 val meta : t -> t
 
+val extract_meta : t -> t option
+
 val named_tuple : t
 
 val none : t

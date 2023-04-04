@@ -2280,6 +2280,11 @@ let list parameter = Parametric { name = "list"; parameters = [Single parameter]
 
 let meta annotation = Parametric { name = "type"; parameters = [Single annotation] }
 
+let extract_meta = function
+  | Parametric { name = "type"; parameters = [Single annotation] } -> Some annotation
+  | _ -> None
+
+
 let named_tuple = Primitive "typing.NamedTuple"
 
 let none = NoneType
