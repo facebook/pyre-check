@@ -10,6 +10,13 @@ This command allows users to get some simple information about the number of
 code objects (e.g. returns, parameters), how many of those code objects have
 annotations, and some other information such as the number of strict files
 and pyre-fixme and pyre-ignore directives.
+
+We intend to replace this command with the newer `pyre report`, which uses
+a more ganular and tabular data format that will work better for downstream
+purproses.
+
+The `pyre statistics` command is in maintenance mode while we build out `pyre
+report` and migrate use cases.
 """
 
 
