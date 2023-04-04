@@ -57,7 +57,7 @@ module ModelQueryRegistryMap = struct
   let get_models = String.Map.data
 
   let merge_all_registries ~model_join registries =
-    List.fold registries ~init:Registry.empty ~f:(Registry.merge ~join:model_join)
+    Algorithms.fold_balanced registries ~init:Registry.empty ~f:(Registry.merge ~join:model_join)
 
 
   let get_registry ~model_join model_query_map =
