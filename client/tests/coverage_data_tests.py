@@ -18,7 +18,7 @@ from ..coverage_data import (
     AnnotationCollector,
     find_module_paths,
     FunctionAnnotationInfo,
-    FunctionAnnotationKind,
+    FunctionAnnotationStatus,
     FunctionIdentifier,
     get_paths_to_collect,
     Location,
@@ -141,7 +141,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                         end_line=3,
                         end_column=8,
                     ),
-                    annotation_kind=FunctionAnnotationKind.NOT_ANNOTATED,
+                    annotation_status=FunctionAnnotationStatus.NOT_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=f,
                         is_annotated=False,
@@ -195,7 +195,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                         end_line=3,
                         end_column=8,
                     ),
-                    annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+                    annotation_status=FunctionAnnotationStatus.PARTIALLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=f,
                         is_annotated=True,
@@ -228,7 +228,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                         end_line=6,
                         end_column=8,
                     ),
-                    annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+                    annotation_status=FunctionAnnotationStatus.PARTIALLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=g,
                         is_annotated=False,
@@ -275,7 +275,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                         end_line=3,
                         end_column=8,
                     ),
-                    annotation_kind=FunctionAnnotationKind.FULLY_ANNOTATED,
+                    annotation_status=FunctionAnnotationStatus.FULLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=f,
                         is_annotated=True,
@@ -323,7 +323,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                         end_line=4,
                         end_column=12,
                     ),
-                    annotation_kind=FunctionAnnotationKind.FULLY_ANNOTATED,
+                    annotation_status=FunctionAnnotationStatus.FULLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=a_dot_f,
                         is_annotated=True,
@@ -384,7 +384,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                         end_line=6,
                         end_column=16,
                     ),
-                    annotation_kind=FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+                    annotation_status=FunctionAnnotationStatus.PARTIALLY_ANNOTATED,
                     returns=ReturnAnnotationInfo(
                         function_identifier=a_dot_inner_dot_f,
                         is_annotated=True,
@@ -425,7 +425,7 @@ class AnnotationCollectorTest(testslide.TestCase):
         )
 
 
-class FunctionAnnotationKindTest(testslide.TestCase):
+class FunctionAnnotationStatusTest(testslide.TestCase):
 
     ANNOTATION = cst.Annotation(cst.Name("Foo"))
 
@@ -437,7 +437,7 @@ class FunctionAnnotationKindTest(testslide.TestCase):
 
     def test_from_function_data(self) -> None:
         self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
+            FunctionAnnotationStatus.from_function_data(
                 is_return_annotated=True,
                 is_non_static_method=False,
                 parameters=[
@@ -446,10 +446,10 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                     self._parameter("x2", annotated=True),
                 ],
             ),
-            FunctionAnnotationKind.FULLY_ANNOTATED,
+            FunctionAnnotationStatus.FULLY_ANNOTATED,
         )
         self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
+            FunctionAnnotationStatus.from_function_data(
                 is_return_annotated=True,
                 is_non_static_method=False,
                 parameters=[
@@ -458,10 +458,10 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                     self._parameter("x2", annotated=False),
                 ],
             ),
-            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+            FunctionAnnotationStatus.PARTIALLY_ANNOTATED,
         )
         self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
+            FunctionAnnotationStatus.from_function_data(
                 is_return_annotated=False,
                 is_non_static_method=False,
                 parameters=[
@@ -470,10 +470,10 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                     self._parameter("x2", annotated=False),
                 ],
             ),
-            FunctionAnnotationKind.NOT_ANNOTATED,
+            FunctionAnnotationStatus.NOT_ANNOTATED,
         )
         self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
+            FunctionAnnotationStatus.from_function_data(
                 is_return_annotated=False,
                 is_non_static_method=False,
                 parameters=[
@@ -482,7 +482,7 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                     self._parameter("x2", annotated=False),
                 ],
             ),
-            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+            FunctionAnnotationStatus.PARTIALLY_ANNOTATED,
         )
         # An untyped `self` parameter of a method is not required, but it also
         # does not count for partial annotation. As per PEP 484, we need an
@@ -490,7 +490,7 @@ class FunctionAnnotationKindTest(testslide.TestCase):
         #
         # Check several edge cases related to this.
         self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
+            FunctionAnnotationStatus.from_function_data(
                 is_return_annotated=True,
                 is_non_static_method=True,
                 parameters=[
@@ -498,10 +498,10 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                     self._parameter("x1", annotated=False),
                 ],
             ),
-            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+            FunctionAnnotationStatus.PARTIALLY_ANNOTATED,
         )
         self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
+            FunctionAnnotationStatus.from_function_data(
                 is_return_annotated=True,
                 is_non_static_method=True,
                 parameters=[
@@ -509,28 +509,28 @@ class FunctionAnnotationKindTest(testslide.TestCase):
                     self._parameter("x1", annotated=False),
                 ],
             ),
-            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+            FunctionAnnotationStatus.PARTIALLY_ANNOTATED,
         )
         self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
+            FunctionAnnotationStatus.from_function_data(
                 is_return_annotated=True,
                 is_non_static_method=True,
                 parameters=[
                     self._parameter("self", annotated=False),
                 ],
             ),
-            FunctionAnnotationKind.FULLY_ANNOTATED,
+            FunctionAnnotationStatus.FULLY_ANNOTATED,
         )
         # An explicitly annotated `self` suffices to make Pyre typecheck the method.
         self.assertEqual(
-            FunctionAnnotationKind.from_function_data(
+            FunctionAnnotationStatus.from_function_data(
                 is_return_annotated=False,
                 is_non_static_method=True,
                 parameters=[
                     self._parameter("self", annotated=True),
                 ],
             ),
-            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+            FunctionAnnotationStatus.PARTIALLY_ANNOTATED,
         )
 
 

@@ -92,7 +92,7 @@ class ModuleModeInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     explicit_comment_line: Optional[LineNumber]
 
 
-class FunctionAnnotationKind(str, Enum):
+class FunctionAnnotationStatus(str, Enum):
     NOT_ANNOTATED = "NOT_ANNOTATED"
     PARTIALLY_ANNOTATED = "PARTIALLY_ANNOTATED"
     FULLY_ANNOTATED = "FULLY_ANNOTATED"
@@ -102,7 +102,7 @@ class FunctionAnnotationKind(str, Enum):
         is_non_static_method: bool,
         is_return_annotated: bool,
         parameters: Sequence[libcst.Param],
-    ) -> "FunctionAnnotationKind":
+    ) -> "FunctionAnnotationStatus":
         if is_return_annotated:
             parameters_requiring_annotation = (
                 parameters[1:] if is_non_static_method else parameters
@@ -112,23 +112,23 @@ class FunctionAnnotationKind(str, Enum):
                 for parameter in parameters_requiring_annotation
             )
             if all_parameters_annotated:
-                return FunctionAnnotationKind.FULLY_ANNOTATED
+                return FunctionAnnotationStatus.FULLY_ANNOTATED
             else:
-                return FunctionAnnotationKind.PARTIALLY_ANNOTATED
+                return FunctionAnnotationStatus.PARTIALLY_ANNOTATED
         else:
             any_parameter_annotated = any(
                 parameter.annotation is not None for parameter in parameters
             )
             if any_parameter_annotated:
-                return FunctionAnnotationKind.PARTIALLY_ANNOTATED
+                return FunctionAnnotationStatus.PARTIALLY_ANNOTATED
             else:
-                return FunctionAnnotationKind.NOT_ANNOTATED
+                return FunctionAnnotationStatus.NOT_ANNOTATED
 
 
 @dataclasses.dataclass(frozen=True)
 class FunctionAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     location: Location
-    annotation_kind: FunctionAnnotationKind
+    annotation_status: FunctionAnnotationStatus
     returns: ReturnAnnotationInfo
     parameters: Sequence[ParameterAnnotationInfo]
     is_method_or_classmethod: bool
@@ -141,15 +141,15 @@ class FunctionAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
 
     @property
     def is_annotated(self) -> bool:
-        return self.annotation_kind != FunctionAnnotationKind.NOT_ANNOTATED
+        return self.annotation_status != FunctionAnnotationStatus.NOT_ANNOTATED
 
     @property
     def is_partially_annotated(self) -> bool:
-        return self.annotation_kind == FunctionAnnotationKind.PARTIALLY_ANNOTATED
+        return self.annotation_status == FunctionAnnotationStatus.PARTIALLY_ANNOTATED
 
     @property
     def is_fully_annotated(self) -> bool:
-        return self.annotation_kind == FunctionAnnotationKind.FULLY_ANNOTATED
+        return self.annotation_status == FunctionAnnotationStatus.FULLY_ANNOTATED
 
 
 class VisitorWithPositionData(libcst.CSTVisitor):
@@ -278,7 +278,7 @@ class AnnotationCollector(VisitorWithPositionData):
             params=node.params.params,
         )
 
-        annotation_kind = FunctionAnnotationKind.from_function_data(
+        annotation_status = FunctionAnnotationStatus.from_function_data(
             is_non_static_method=self.context.is_non_static_method(),
             is_return_annotated=returns.is_annotated,
             parameters=node.params.params,
@@ -286,7 +286,7 @@ class AnnotationCollector(VisitorWithPositionData):
         self.functions.append(
             FunctionAnnotationInfo(
                 self.location(node),
-                annotation_kind,
+                annotation_status,
                 returns,
                 parameters,
                 self.context.is_non_static_method(),
