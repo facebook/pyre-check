@@ -13,6 +13,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
+import multiprocessing
 from pathlib import Path
 from typing import List, Optional, Sequence
 
@@ -55,7 +56,9 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
 
     @staticmethod
     def collect(
-        module: libcst.MetadataWrapper, strict_by_default: bool, path: Path
+        module: libcst.MetadataWrapper,
+        path: Path,
+        strict_by_default: bool,
     ) -> ModuleData:
         mode = coverage_data.collect_mode_info(module, strict_by_default)
         suppressions = coverage_data.collect_suppressions(module)
@@ -68,37 +71,51 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
             path=str(path.relative_to(Path.cwd())),
         )
 
+    @dataclasses.dataclass(frozen=True)
+    class CollectFromPathArgs:
+        """
+        Multiprocessing requires mapping a function over a list of single
+        arguments, so we have to make a struct in order to parallelize
+        collect_from_path.
+        """
+
+        path: Path
+        strict_by_default: bool
+
     @staticmethod
     def collect_from_path(
-        path: Path,
-        strict_by_default: bool,
+        args: ModuleData.CollectFromPathArgs,
     ) -> Optional[ModuleData]:
-        module = coverage_data.module_from_path(path)
+        module = coverage_data.module_from_path(args.path)
         if module is None:
             return None
         else:
             return ModuleData.collect(
                 module,
-                strict_by_default,
-                path,
+                args.path,
+                args.strict_by_default,
             )
 
     @staticmethod
     def collect_from_paths(
         module_paths: Sequence[Path],
         strict_by_default: bool,
+        number_of_workers: int,
     ) -> List[ModuleData]:
-        return [
-            module_data
-            for path in module_paths
-            if (
-                module_data := ModuleData.collect_from_path(
-                    path,
-                    strict_by_default,
-                )
+        tasks = [
+            ModuleData.CollectFromPathArgs(
+                path=path, strict_by_default=strict_by_default
             )
-            is not None
+            for path in module_paths
         ]
+        with multiprocessing.Pool(number_of_workers) as pool:
+            return [
+                module_data
+                for module_data in pool.imap_unordered(
+                    ModuleData.collect_from_path, tasks
+                )
+                if module_data is not None
+            ]
 
 
 def print_data_as_json(data: Sequence[ModuleData]) -> None:
@@ -118,6 +135,7 @@ def run(
     data = ModuleData.collect_from_paths(
         module_paths,
         strict_by_default=configuration.is_strict(),
+        number_of_workers=configuration.get_number_of_workers(),
     )
     print_data_as_json(data)
     return commands.ExitCode.SUCCESS
