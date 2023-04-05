@@ -67,7 +67,7 @@ def show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
     binary_version: Optional[str] = None
     client_version: str = __version__
     try:
-        configuration = configuration_module.create_configuration(arguments, Path("."))
+        configuration = _create_configuration(arguments, Path("."))
         binary_version = configuration.get_binary_version()
     except Exception:
         pass
@@ -89,8 +89,7 @@ def start_logging_to_directory(
 def _run_check_command(
     arguments: command_arguments.CommandArguments,
 ) -> commands.ExitCode:
-    configuration = configuration_module.create_configuration(arguments, Path("."))
-    _check_open_source_version(configuration)
+    configuration = _create_and_check_configuration(arguments, Path("."))
     start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     check_arguments = command_arguments.CheckArguments.create(arguments)
     return commands.check.run(configuration, check_arguments)
@@ -101,8 +100,7 @@ def _run_incremental_command(
     no_start_server: bool,
     no_watchman: bool,
 ) -> commands.ExitCode:
-    configuration = configuration_module.create_configuration(arguments, Path("."))
-    _check_open_source_version(configuration)
+    configuration = _create_and_check_configuration(arguments, Path("."))
     start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     start_arguments = command_arguments.StartArguments.create(
         arguments,
@@ -165,6 +163,36 @@ def _check_open_source_version(
             )
     except ImportError:
         pass
+
+
+def _create_configuration(
+    arguments: command_arguments.CommandArguments,
+    base_directory: Path,
+) -> configuration_module.Configuration:
+    configuration = configuration_module.create_configuration(arguments, base_directory)
+    return configuration
+
+
+def _create_and_check_configuration(
+    arguments: command_arguments.CommandArguments,
+    base_directory: Path,
+) -> configuration_module.Configuration:
+    configuration = _create_configuration(arguments, base_directory)
+    _check_open_source_version(configuration)
+    return configuration
+
+
+def _create_and_check_codenav_configuration(
+    arguments: command_arguments.CommandArguments,
+    base_directory: Path,
+) -> configuration_module.Configuration:
+    configuration = configuration_module.create_overridden_configuration(
+        arguments,
+        base_directory,
+        find_directories.CODENAV_CONFIGURATION_FILE,
+    )
+    _check_open_source_version(configuration)
+    return configuration
 
 
 @click.group(
@@ -557,10 +585,7 @@ def analyze(
         show_pyre_version(command_argument)
         return commands.ExitCode.SUCCESS
 
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
-    _check_open_source_version(configuration)
+    configuration = _create_and_check_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.analyze.run(
         configuration,
@@ -758,9 +783,7 @@ def infer(
     ignored unless the `--in-place` flag is set.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     working_directory = Path.cwd()
     modify_paths = (
         None
@@ -825,9 +848,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
     Force all running Pyre servers to terminate.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     return commands.kill.run(configuration, with_fire)
 
 
@@ -953,9 +974,7 @@ def persistent(
         use_lazy_module_tracking=use_lazy_module_tracking,
     )
     base_directory: Path = Path(".").resolve()
-    configuration = configuration_module.create_configuration(
-        command_argument, base_directory
-    )
+    configuration = _create_configuration(command_argument, base_directory)
     start_logging_to_directory(
         configuration.log_directory,
         flavor=start_command_argument.flavor,
@@ -1017,9 +1036,7 @@ def profile(context: click.Context, profile_output: str) -> int:
         raise ValueError(f"Unrecognized value for --profile-output: {profile_output}")
 
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     return commands.profile.run(configuration, get_profile_output(profile_output))
 
 
@@ -1033,9 +1050,7 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
     and responses from the Pysa server to stdout.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.pysa_server.run(
         configuration,
@@ -1069,9 +1084,7 @@ def query(
     To get a full list of queries, you can run `pyre query help`.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.query.run(
         configuration,
@@ -1105,9 +1118,7 @@ def rage(
     to the terminal or to a file.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     return commands.rage.run(
         configuration,
         command_arguments.RageArguments(
@@ -1127,9 +1138,7 @@ def info(
     to the terminal or to a file.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     return commands.info.run(
         configuration,
         command_argument,
@@ -1163,10 +1172,7 @@ def restart(
     Restarts a server. Equivalent to `pyre stop && pyre`.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
-    _check_open_source_version(configuration)
+    configuration = _create_and_check_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     start_arguments = command_arguments.StartArguments.create(
         command_argument=command_argument,
@@ -1295,17 +1301,11 @@ def start(
     )
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     if flavor_choice == identifiers.PyreFlavor.CODE_NAVIGATION:
-        base_directory = Path(".").resolve()
-        configuration = configuration_module.create_overridden_configuration(
-            command_argument,
-            base_directory,
-            find_directories.CODENAV_CONFIGURATION_FILE,
-        )
-    else:
-        configuration = configuration_module.create_configuration(
+        configuration = _create_and_check_codenav_configuration(
             command_argument, Path(".")
         )
-    _check_open_source_version(configuration)
+    else:
+        configuration = _create_and_check_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.log_directory, flavor_choice)
     return commands.start.run(
         configuration,
@@ -1382,9 +1382,7 @@ def statistics(
     instead, which provides a more useful data format, for new use cases.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     paths: Optional[Sequence[Path]] = [Path(d) for d in files_and_directories]
     paths = None if len(paths) == 0 else paths
     return commands.statistics.run(
@@ -1438,9 +1436,7 @@ def coverage(
     Collect line-level type coverage.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     paths = list(paths)
     paths_deprecated = list(paths_deprecated)
     paths = paths if len(paths) > 0 else paths_deprecated
@@ -1473,15 +1469,11 @@ def stop(context: click.Context, flavor: Optional[str]) -> int:
         identifiers.PyreFlavor(flavor) if flavor is not None else CLASSIC_FLAVOR
     )
     if flavor_choice == identifiers.PyreFlavor.CODE_NAVIGATION:
-        configuration = configuration_module.create_overridden_configuration(
-            command_argument,
-            Path(".").resolve(),
-            find_directories.CODENAV_CONFIGURATION_FILE,
-        )
-    else:
-        configuration = configuration_module.create_configuration(
+        configuration = _create_and_check_codenav_configuration(
             command_argument, Path(".")
         )
+    else:
+        configuration = _create_and_check_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.log_directory, flavor_choice)
     return commands.stop.run(configuration, flavor_choice)
 
@@ -1493,9 +1485,7 @@ def validate_models(context: click.Context) -> int:
     Validate the taint models for the given project by querying the Pyre server.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
+    configuration = _create_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.log_directory, CLASSIC_FLAVOR)
     return commands.validate_models.run(configuration, output=command_argument.output)
 
