@@ -1323,6 +1323,29 @@ def start(
 
 
 @pyre.command()
+@click.pass_context
+@click.argument("files_and_directories", type=str, nargs=-1)
+def report(
+    context: click.Context,
+    files_and_directories: Iterable[str],
+) -> int:
+    """
+    Subcommands of `pyre report` will provide statistics about the code and
+    how well Pyre can understand types.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
+    paths: Optional[Sequence[Path]] = [Path(d) for d in files_and_directories]
+    paths = None if len(paths) == 0 else paths
+    return commands.report.run(
+        raw_configuration=configuration,
+        paths=paths,
+    )
+
+
+@pyre.command()
 @click.argument("files_and_directories", type=str, nargs=-1)
 @click.option(
     "--log-results",
@@ -1354,6 +1377,9 @@ def statistics(
     Collect various syntactic metrics on type coverage.
 
     If no paths are specified, defaults to counting all sources in the project.
+
+    NOTE: `pyre statistics` is now in maintenance mode. Use `pyre report`
+    instead, which provides a more useful data format, for new use cases.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = configuration_module.create_configuration(
