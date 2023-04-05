@@ -88,7 +88,7 @@ let test_global_assignment context =
     |}
     [];
   assert_global_leak_errors
-    (* my_global here is not actually a global, this is a valid assignment *)
+    (* Note: my_global here is not actually a global, this is a valid assignment. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -548,7 +548,7 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
-    ~skip_type_check:true (* Pyre is finding an issue with the test, but it is runnable in repl *)
+    ~skip_type_check:true (* Pyre is finding an issue with the test, but it is runnable in repl. *)
     {|
       my_global: Dict[str, int] = {}
       def test() -> Dict[str, int]:
@@ -635,7 +635,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
-    ~skip_type_check:true (* type checker errors on Set not being an AbstractSet *)
+    ~skip_type_check:true (* Type checker errors on Set not being an AbstractSet. *)
     {|
       my_global: Set[int] = set()
       def ior_my_global() -> None:
@@ -862,9 +862,9 @@ let test_object_global_leaks context =
       myclass = MyClass(1)
     |}
     [];
-  assert_global_leak_errors (* tests that global leaks are found in calls to constructors *)
+  assert_global_leak_errors (* Global leaks are found in calls to constructors. *)
     ~skip_type_check:true
-      (* the types don't match up, but this is an easy way to verify leaks in calls *)
+      (* The types don't match up correctly, but this is an easy way to verify leaks in calls. *)
     {|
       my_global: Dict[str, int] = {}
 
@@ -881,7 +881,7 @@ let test_object_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
-    (* tests that aliasing a class will still properly interact with global leaks *)
+    (* Aliasing a class will still properly interact with global leaks. *)
     {|
       class A:
         x: int = 5
@@ -895,7 +895,7 @@ let test_object_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.C` of type `typing.Type[test.A]`."];
   assert_global_leak_errors
-    (* tests that returning a class from a function will still find a global leak *)
+    (* Returning a class from a function will still find a global leak. *)
     {|
       class MyClass:
         x: List[int] = []
@@ -911,7 +911,7 @@ let test_object_global_leaks context =
        `typing.Type[test.MyClass]`.";
     ];
   assert_global_leak_errors
-    (* tests that returning a class from a function will still find a global leak *)
+    (* Returning a class from a function will still find a global leak. *)
     {|
       class MyClass:
         x: int = 1
@@ -927,7 +927,7 @@ let test_object_global_leaks context =
        `typing.Type[test.MyClass]`.";
     ];
   assert_global_leak_errors
-    (* tests that returning a class from a function will still find a global leak *)
+    (* Returning a class from a function will still find a global leak. *)
     {|
       class MyClass:
         x: int = 1
@@ -943,7 +943,7 @@ let test_object_global_leaks context =
        `typing.Type[test.MyClass]`.";
     ];
   assert_global_leak_errors
-    (* tests that a mutation on something returned from a class does not result in an error *)
+    (* A mutation on something returned from a class does not result in an error. *)
     {|
       class MyClass:
         current: Optional[MyClass] = None
@@ -965,7 +965,7 @@ let test_object_global_leaks context =
     |}
     [];
   assert_global_leak_errors
-    (* tests getting a class and instantiating it from a function finds a leak with assignment *)
+    (* Getting a class and instantiating it from a function finds a leak with assignment. *)
     {|
       class MyClass:
         x: int = 1
@@ -978,7 +978,7 @@ let test_object_global_leaks context =
     |}
     [];
   assert_global_leak_errors
-    (* tests getting a class and instantiating it doesn't find a global leak with a mutable call *)
+    (* Getting a class and instantiating it doesn't find a global leak with a mutable call. *)
     {|
       class MyClass:
         x: List[int] = []
@@ -991,7 +991,7 @@ let test_object_global_leaks context =
     |}
     [];
   assert_global_leak_errors
-    (* tests that a mutation on something returned from a class does not result in an error *)
+    (* A mutation on something returned from a class does not result in an error. *)
     {|
       class MyClass:
         current: Optional[MyClass] = None
@@ -1017,13 +1017,6 @@ let test_object_global_leaks context =
 
 let test_global_statements context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
-  assert_global_leak_errors
-    {|
-      my_global: int = 1
-      def foo() -> int:
-        return my_global
-    |}
-    [ (* TODO (T142189949): a global should not be able to be returned by a function *) ];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1251,7 +1244,8 @@ let test_global_statements context =
        int]`.";
     ];
   assert_global_leak_errors
-    ~skip_type_check:true (* bug in Pyre, where scoping rules are not always correctly applied *)
+    ~skip_type_check:true
+      (* This is a bug in Pyre, where scoping rules are not always correctly applied. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -1260,7 +1254,8 @@ let test_global_statements context =
     |}
     [];
   assert_global_leak_errors
-    ~skip_type_check:true (* bug in Pyre, where scoping rules are not always correctly applied *)
+    ~skip_type_check:true
+      (* This is a bug in Pyre, where scoping rules are not always correctly applied. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -1483,7 +1478,7 @@ let test_global_statements context =
     (* TODO (T142189949): should pyre figure out the right type here? *)
     ["Global leak [3100]: Data is leaked to global `my_global` of type `unknown`."];
   assert_global_leak_errors
-    ~skip_type_check:true (* this is invalid, but we want to make sure unknown type stuff works *)
+    ~skip_type_check:true (* This is invalid, but we want to make sure unknown type stuff works. *)
     {|
       from other_module import my_list
       def foo() -> None:
@@ -1832,6 +1827,38 @@ let test_recursive_coverage context =
   ()
 
 
+let test_global_returns context =
+  let assert_global_leak_errors = assert_global_leak_errors ~context in
+  assert_global_leak_errors
+    (* Returning a global results in an error. *)
+    {|
+      my_global: int = 1
+      def foo() -> int:
+        return my_global
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+  assert_global_leak_errors
+    (* Returning a member from a global results in an error. *)
+    {|
+      my_global: List[int]
+      def foo() -> int:
+        return my_global[0]
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
+  assert_global_leak_errors
+    (* Returning an attribute from a global results in an error. *)
+    {|
+      class MyClass:
+        x: int = 5
+
+      my_global: MyClass = MyClass()
+      def foo() -> int:
+        return my_global.x
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `test.MyClass`."];
+  ()
+
+
 let () =
   "global_leaks"
   >::: [
@@ -1842,5 +1869,6 @@ let () =
          "object_global_leaks" >:: test_object_global_leaks;
          "global_statements" >:: test_global_statements;
          "recursive_coverage" >:: test_recursive_coverage;
+         "global_returns" >:: test_global_returns;
        ]
   |> Test.run

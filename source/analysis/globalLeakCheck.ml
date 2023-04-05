@@ -46,6 +46,11 @@ end
 module State (Context : Context) = struct
   type t = unit [@@deriving show]
 
+  type reachable_global = {
+    global: Reference.t;
+    expression_type: Type.t;
+  }
+
   type leaked_global = {
     reference: Reference.t;
     location: Location.t;
@@ -56,14 +61,14 @@ module State (Context : Context) = struct
        mutated if a wrapping statement or expression is a known mutation (i.e. the globals that will
        be mutated if the wrapping expression is a known mutable method or wrapping statement is an
        assignment) *)
-    reachable_globals: Reference.t list;
+    reachable_globals: reachable_global list;
     (* represents the list of reachable globals and their locations that have been confirmed to
        result in a mutation *)
     errors: leaked_global list;
   }
 
   let append_errors_for_globals ~location globals errors =
-    List.map ~f:(fun global -> { reference = global; location }) globals @ errors
+    List.map ~f:(fun { global; _ } -> { reference = global; location }) globals @ errors
 
 
   let empty_result = { reachable_globals = []; errors = [] }
@@ -128,17 +133,22 @@ module State (Context : Context) = struct
       target_errors @ iterator_errors @ condition_errors
     in
     let append_errors_for_globals = append_errors_for_globals ~location in
+    let expression_type () = Resolution.resolve_expression_to_type resolution expression in
     match value with
     (* interesting cases *)
     | Expression.Name (Name.Identifier _ as name) ->
         Context.get_non_builtin_global_reference ~resolution name
-        >>| (fun reference -> { reachable_globals = [reference]; errors = [] })
+        >>| (fun global ->
+              {
+                reachable_globals = [{ global; expression_type = expression_type () }];
+                errors = [];
+              })
         |> Option.value ~default:empty_result
     | Name (Name.Attribute { base; attribute; _ } as name) ->
         let ({ reachable_globals; errors } as sub_expression_result) = forward_expression base in
         let reachable_globals =
           Context.get_non_builtin_global_reference ~resolution name
-          >>| (fun reference -> reference :: reachable_globals)
+          >>| (fun global -> { global; expression_type = expression_type () } :: reachable_globals)
           |> Option.value ~default:reachable_globals
         in
         if is_known_mutation_method ~resolution base attribute then
@@ -154,13 +164,18 @@ module State (Context : Context) = struct
           (* if this call is `__getitem__`, assume a mutation on the return value mutates reachable
              globals (i.e. `my_global[5].append(3)` would be a mutation) *)
           | _ -> (
-              let expression_type = Resolution.resolve_expression_to_type resolution expression in
-              match Type.extract_meta expression_type with
+              let resolved_expression_type = expression_type () in
+              match Type.extract_meta resolved_expression_type with
               | Some class_name ->
                   (* if this expression (the result of the call) returns a class reference/type,
                      then treat it as a global (i.e. `get_class().x = 5` for `def get_class() ->
                      Type[MyClass]: ...` is a global mutation) *)
-                  [Type.class_name class_name]
+                  [
+                    {
+                      global = Type.class_name class_name;
+                      expression_type = resolved_expression_type;
+                    };
+                  ]
               | _ -> [])
         in
         let get_errors_from_forward_expression { Call.Argument.value; _ } =
@@ -262,17 +277,26 @@ module State (Context : Context) = struct
 
   and forward_assignment_target ~resolution ({ Node.value; _ } as expression) =
     let forward_assignment_target = forward_assignment_target ~resolution in
+    let expression_type () = Resolution.resolve_expression_to_type resolution expression in
     match value with
     | Expression.Name (Name.Identifier _ as name) ->
         Context.get_non_builtin_global_reference ~resolution name
-        >>| (fun reference -> { reachable_globals = [reference]; errors = [] })
+        >>| (fun global ->
+              {
+                reachable_globals = [{ global; expression_type = expression_type () }];
+                errors = [];
+              })
         |> Option.value ~default:empty_result
     | Name (Name.Attribute { base; _ } as name) ->
         let ({ reachable_globals = base_globals; _ } as base_result) =
           forward_assignment_target base
         in
         Context.get_non_builtin_global_reference ~resolution name
-        >>| (fun reference -> { base_result with reachable_globals = reference :: base_globals })
+        >>| (fun global ->
+              {
+                base_result with
+                reachable_globals = { global; expression_type = expression_type () } :: base_globals;
+              })
         |> Option.value ~default:base_result
     | Call _ -> forward_expression ~resolution expression
     | Constant _
@@ -383,8 +407,12 @@ module State (Context : Context) = struct
           in
           get_errors expression @ get_errors from
       | Return { expression = Some expression; _ } ->
-          let { errors; _ } = forward_expression ~resolution expression in
-          errors
+          let { errors; reachable_globals } = forward_expression ~resolution expression in
+          let reachable_globals =
+            let is_safe_global { expression_type; _ } = not (Type.is_meta expression_type) in
+            List.filter ~f:is_safe_global reachable_globals
+          in
+          prepare_globals_for_errors reachable_globals errors
       | Delete _
       | Return _ ->
           []
