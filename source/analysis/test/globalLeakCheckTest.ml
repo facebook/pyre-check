@@ -706,6 +706,7 @@ let test_tuple_global_leaks context =
 let test_dict_global_leaks context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
+    (* Mutating a local dict does not result in an error. *)
     {|
       def foo() -> None:
         my_local: Dict[str, int] = {}
@@ -713,6 +714,7 @@ let test_dict_global_leaks context =
     |}
     [];
   assert_global_leak_errors
+    (* Setting the key and value of a global dict results in an error. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
@@ -723,6 +725,7 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Setting the key and value of a global dict results in an error. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
@@ -733,6 +736,7 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Calling a known mutable method on a dict results in an error. *)
     {|
       my_global: Dict[str, int] = {}
       def update_global_dict() -> None:
@@ -744,6 +748,7 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Calling a known mutable method on a dict results in an error. *)
     {|
       my_global: Dict[str, int] = {}
       def setdefault_global_dict() -> None:
@@ -754,6 +759,7 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+  (* Calling a known mutable method on a starred dict results in an error. *)
     ~skip_type_check:true (* Pyre is finding an issue with the test, but it is runnable in repl. *)
     {|
       my_global: Dict[str, int] = {}
@@ -766,6 +772,7 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Calling a known mutable method in dict construction results in an error. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
@@ -777,6 +784,7 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Calling a known mutable method in dict construction results in an error. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
@@ -788,6 +796,8 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Calling a known mutable method in a dict comprehension for element key results in an
+       error. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
@@ -799,6 +809,8 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Calling a known mutable method in a dict comprehension for element value results in an
+       error. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
@@ -810,6 +822,7 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Calling a known mutable method in a dict comprehension for generator results in an error. *)
     {|
       my_global: Dict[str, int] = {"a": 1}
       def foo() -> None:
@@ -820,7 +833,14 @@ let test_dict_global_leaks context =
       "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
        int]`.";
     ];
-
+  assert_global_leak_errors
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        my_dict: Dict[int, str] = {}
+        my_dict[my_global] = "my_global"
+    |}
+    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
   ()
 
 
@@ -1230,14 +1250,6 @@ let test_global_statements context =
         y: int = my_global
     |}
     [ (* TODO (T142189949): leaks should be detected on global assignment to a local variable *) ];
-  assert_global_leak_errors
-    {|
-      my_global: int = 1
-      def foo() -> None:
-        my_dict: Dict[int, str] = {}
-        my_dict[my_global] = "my_global"
-    |}
-    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
   assert_global_leak_errors
     {|
       my_global: int = 1
