@@ -67,7 +67,6 @@ class FunctionIdentifier(json_mixins.SnakeCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class ParameterAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
-    function_identifier: FunctionIdentifier
     name: str
     is_annotated: bool
     location: Location
@@ -75,7 +74,6 @@ class ParameterAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class ReturnAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
-    function_identifier: FunctionIdentifier
     is_annotated: bool
     location: Location
 
@@ -127,6 +125,7 @@ class FunctionAnnotationStatus(str, Enum):
 
 @dataclasses.dataclass(frozen=True)
 class FunctionAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
+    identifier: FunctionIdentifier
     location: Location
     annotation_status: FunctionAnnotationStatus
     returns: ReturnAnnotationInfo
@@ -244,12 +243,10 @@ class AnnotationCollector(VisitorWithPositionData):
 
     def get_parameter_annotation_info(
         self,
-        function_identifier: FunctionIdentifier,
         params: Sequence[libcst.Param],
     ) -> List[ParameterAnnotationInfo]:
         return [
             ParameterAnnotationInfo(
-                function_identifier=function_identifier,
                 name=node.name.value,
                 is_annotated=node.annotation is not None,
                 location=self.location(node),
@@ -264,17 +261,15 @@ class AnnotationCollector(VisitorWithPositionData):
         self.context.update_for_exit_class()
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
-        function_identifier = self.context.get_function_identifier(node)
+        identifier = self.context.get_function_identifier(node)
         self.context.update_for_enter_define(node)
 
         returns = ReturnAnnotationInfo(
-            function_identifier=function_identifier,
             is_annotated=node.returns is not None,
             location=self.location(node.name),
         )
 
         parameters = self.get_parameter_annotation_info(
-            function_identifier=function_identifier,
             params=node.params.params,
         )
 
@@ -285,6 +280,7 @@ class AnnotationCollector(VisitorWithPositionData):
         )
         self.functions.append(
             FunctionAnnotationInfo(
+                identifier,
                 self.location(node),
                 annotation_status,
                 returns,
