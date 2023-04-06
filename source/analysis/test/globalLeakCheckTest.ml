@@ -76,11 +76,15 @@ let assert_global_leak_errors
 
 let test_global_assignment context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
-  assert_global_leak_errors {|
+  assert_global_leak_errors
+    (* Assignment to a non-global doesn't error. *)
+    {|
       def foo() -> None:
          x = 1
-    |} [];
+    |}
+    [];
   assert_global_leak_errors
+    (* Assignment to a non-global doesn't error. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -88,6 +92,7 @@ let test_global_assignment context =
     |}
     [];
   assert_global_leak_errors
+    (* Assignment to a non-global doesn't error. *)
     (* Note: my_global here is not actually a global, this is a valid assignment. *)
     {|
       my_global: int = 1
@@ -96,6 +101,7 @@ let test_global_assignment context =
     |}
     [];
   assert_global_leak_errors
+    (* Assignment to a non-global doesn't error. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -106,6 +112,7 @@ let test_global_assignment context =
     |}
     [];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -114,6 +121,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -122,6 +130,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -130,6 +139,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a non-global doesn't error. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -138,6 +148,7 @@ let test_global_assignment context =
     |}
     [];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -146,6 +157,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -154,6 +166,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -166,6 +179,7 @@ let test_global_assignment context =
       "Global leak [3100]: Data is leaked to global `test.my_global` of type `int`.";
     ];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -176,6 +190,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a non-global doesn't error. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -184,6 +199,7 @@ let test_global_assignment context =
     |}
     [];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -192,6 +208,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -201,6 +218,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a global errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -210,6 +228,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a non-global doesn't error. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -219,6 +238,7 @@ let test_global_assignment context =
     |}
     [];
   assert_global_leak_errors
+    (* Assignment to a global in a list deconstruction errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -227,6 +247,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a global in a tuple deconstruction errors. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -235,6 +256,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
+    (* Assignment to a position of a global in a list deconstruction errors. *)
     {|
       my_global: List[int] = []
       def foo() -> None:
@@ -243,6 +265,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
   assert_global_leak_errors
+    (* Assignment to a position of a non-global in a tuple deconstruction does not errors. *)
     {|
       my_global: List[int] = []
       def foo() -> None:
@@ -252,6 +275,7 @@ let test_global_assignment context =
     |}
     [];
   assert_global_leak_errors
+    (* Assignment to a position of a global in a tuple deconstruction errors. *)
     {|
       my_global: List[int] = []
       def foo() -> None:
@@ -260,6 +284,7 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
   assert_global_leak_errors
+    (* Assignment to a key of a global in a tuple deconstruction errors. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
@@ -270,6 +295,7 @@ let test_global_assignment context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Assignment to a starred global results in error. *)
     {|
       my_global: List[int] = []
       def foo() -> None:
