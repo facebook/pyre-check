@@ -884,3 +884,4 @@ let parse_module text =
                  errors = List.map ~f:make_syntax_error recoverable_errors;
                }))
   | Error error_string -> Result.Error (ParserError.Unrecoverable error_string)
+  | exception e -> Result.Error (ParserError.Unrecoverable (Printexc.to_string e))
