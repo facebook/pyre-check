@@ -105,16 +105,6 @@ let test_global_assignment context =
         inner()
     |}
     [];
-  assert_global_leak_errors {|
-      def foo() -> None:
-        raise Exception()
-    |} [];
-  assert_global_leak_errors
-    {|
-      def foo() -> None:
-        raise Exception() from Exception()
-    |}
-    [];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -288,6 +278,139 @@ let test_global_assignment context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
 
+  ()
+
+
+let test_global_exceptions context =
+  let assert_global_leak_errors = assert_global_leak_errors ~context in
+  assert_global_leak_errors
+    (* Raising an exception doesn't result in an error. *)
+    {|
+      def foo() -> None:
+        raise Exception()
+    |}
+    [];
+  assert_global_leak_errors
+    (* Raising an exception doesn't result in an error. *)
+    {|
+      def foo() -> None:
+        raise Exception() from Exception()
+    |}
+    [];
+  assert_global_leak_errors
+    (* Raising an exception results in an error if it mutates a global. *)
+    {|
+      my_global: Dict[str, int] = {}
+      def setdefault_global_dict() -> None:
+        raise TypeError(str(my_global.setdefault("a", 1)))
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
+       int]`.";
+    ];
+  assert_global_leak_errors
+    (* Raising an exception results in an error if it mutates a global. *)
+    {|
+      my_global: Dict[str, int] = {}
+      def setdefault_global_dict() -> None:
+        raise Exception() from Exception(my_global.setdefault("a", 1))
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
+       int]`.";
+    ];
+  assert_global_leak_errors
+    (* Handling exceptions doesn't result in an error. *)
+    {|
+      def foo() -> None:
+        try:
+          x = 5
+        except:
+          print("An exception occurred")
+    |}
+    [];
+  assert_global_leak_errors
+    (* Handling exceptions doesn't result in an error. *)
+    {|
+      def foo() -> None:
+        try:
+          x = 5
+        except:
+          print("An exception occurred")
+        else:
+          print("No exception")
+    |}
+    [];
+  assert_global_leak_errors
+    (* Handling exceptions doesn't result in an error. *)
+    {|
+      def foo() -> None:
+        try:
+          x = 5
+        except:
+          print("An exception occurred")
+        finally:
+          print("try except is complete")
+    |}
+    [];
+  assert_global_leak_errors
+    (* Handling exceptions doesn't result in an error. *)
+    {|
+      def foo() -> None:
+        try:
+          my_local = 1
+        except Exception as e:
+          my_local = 2
+    |}
+    [];
+  assert_global_leak_errors
+    (* Handling an exception results in an error if it mutates a global. *)
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        global my_global
+        try:
+          my_local = 1
+        except Exception as my_global:
+          my_local = 2
+    |}
+    ["Global leak [3100]: Data is leaked to global `my_global` of type `unknown`."];
+  assert_global_leak_errors
+    (* Handling an exception results in an error if it mutates a global. *)
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        global my_global
+        try:
+          my_global = 1
+        except:
+          print("An exception occurred")
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+  assert_global_leak_errors
+    (* Handling an exception results in an error if it mutates a global. *)
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        try:
+          global my_global
+          my_global = 1
+        except:
+          print("An exception occurred")
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+  assert_global_leak_errors
+    (* Handling exceptions doesn't result in an error. *)
+    {|
+      def foo() -> None:
+        try:
+          my_local= 5
+        except NameError:
+          print("Variable my_local is not defined")
+        except:
+          print("An exception occurred")
+    |}
+    [];
   ()
 
 
@@ -1584,26 +1707,6 @@ let test_recursive_coverage context =
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
-      def setdefault_global_dict() -> None:
-        raise TypeError(str(my_global.setdefault("a", 1)))
-    |}
-    [
-      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
-       int]`.";
-    ];
-  assert_global_leak_errors
-    {|
-      my_global: Dict[str, int] = {}
-      def setdefault_global_dict() -> None:
-        raise Exception() from Exception(my_global.setdefault("a", 1))
-    |}
-    [
-      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
-       int]`.";
-    ];
-  assert_global_leak_errors
-    {|
-      my_global: Dict[str, int] = {}
       def test() -> Generator[int, None, None]:
         global my_global
         yield my_global.setdefault("a", 1)
@@ -1682,90 +1785,6 @@ let test_recursive_coverage context =
       "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Dict[str, \
        int]`.";
     ];
-  assert_global_leak_errors
-    {|
-      def foo() -> None:
-        try:
-          x = 5
-        except:
-          print("An exception occurred")
-    |}
-    [];
-  assert_global_leak_errors
-    {|
-      def foo() -> None:
-        try:
-          my_local= 5
-        except NameError:
-          print("Variable my_local is not defined")
-        except:
-          print("An exception occurred")
-    |}
-    [];
-  assert_global_leak_errors
-    {|
-      def foo() -> None:
-        try:
-          x = 5
-        except:
-          print("An exception occurred")
-        else:
-          print("No exception")
-    |}
-    [];
-  assert_global_leak_errors
-    {|
-      def foo() -> None:
-        try:
-          x = 5
-        except:
-          print("An exception occurred")
-        finally:
-          print("try except is complete")
-    |}
-    [];
-  assert_global_leak_errors
-    {|
-      def foo() -> None:
-        try:
-          my_local = 1
-        except Exception as e:
-          my_local = 2
-    |}
-    [];
-  assert_global_leak_errors
-    {|
-      my_global: int = 1
-      def foo() -> None:
-        global my_global
-        try:
-          my_local = 1
-        except Exception as my_global:
-          my_local = 2
-    |}
-    ["Global leak [3100]: Data is leaked to global `my_global` of type `unknown`."];
-  assert_global_leak_errors
-    {|
-      my_global: int = 1
-      def foo() -> None:
-        global my_global
-        try:
-          my_global = 1
-        except:
-          print("An exception occurred")
-    |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
-  assert_global_leak_errors
-    {|
-      my_global: int = 1
-      def foo() -> None:
-        try:
-          global my_global
-          my_global = 1
-        except:
-          print("An exception occurred")
-    |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1863,6 +1882,7 @@ let () =
   "global_leaks"
   >::: [
          "global_assignment" >:: test_global_assignment;
+         "global_exceptions" >:: test_global_exceptions;
          "list_global_leaks" >:: test_list_global_leaks;
          "dict_global_leaks" >:: test_dict_global_leaks;
          "set_global_leaks" >:: test_set_global_leaks;
