@@ -233,7 +233,7 @@ def collect_statistics(
             annotations = AnnotationCountCollector().collect(module)
             fixmes = FixmeCountCollector().collect(module)
             ignores = IgnoreCountCollector().collect(module)
-            modes = coverage_data.collect_mode_info(module, strict_default)
+            modes = coverage_data.collect_mode(module, strict_default)
             statistics_data = StatisticsData(
                 annotations,
                 fixmes,

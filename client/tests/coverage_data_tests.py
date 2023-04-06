@@ -117,7 +117,7 @@ class AnnotationCollectorTest(testslide.TestCase):
         expected: Sequence[FunctionAnnotationInfo],
     ) -> None:
         module = parse_code(code)
-        actual = coverage_data.collect_function_annotations(module)
+        actual = coverage_data.collect_functions(module)
         self.assertEqual(
             actual,
             expected,
@@ -804,7 +804,7 @@ class ModuleModecollectorTest(testslide.TestCase):
         explicit_comment_line: Optional[int],
     ) -> None:
         source_module = parse_code(source)
-        result = coverage_data.collect_mode_info(source_module, default_strict)
+        result = coverage_data.collect_mode(source_module, default_strict)
         self.assertEqual(mode, result.mode)
         self.assertEqual(explicit_comment_line, result.explicit_comment_line)
 

@@ -52,7 +52,7 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
     path: str
     mode: coverage_data.ModuleModeInfo
     suppressions: Sequence[coverage_data.TypeErrorSuppression]
-    function_annotations: Sequence[coverage_data.FunctionAnnotationInfo]
+    functions: Sequence[coverage_data.FunctionAnnotationInfo]
 
     @staticmethod
     def collect(
@@ -60,13 +60,13 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
         path: Path,
         strict_by_default: bool,
     ) -> ModuleData:
-        mode = coverage_data.collect_mode_info(module, strict_by_default)
+        mode = coverage_data.collect_mode(module, strict_by_default)
         suppressions = coverage_data.collect_suppressions(module)
-        function_annotations = coverage_data.collect_function_annotations(module)
+        functions = coverage_data.collect_functions(module)
         return ModuleData(
             mode=mode,
             suppressions=suppressions,
-            function_annotations=function_annotations,
+            functions=functions,
             # `path` is relative here so that data isn't tied to one machine.
             path=str(path.relative_to(Path.cwd())),
         )

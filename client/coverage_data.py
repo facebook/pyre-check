@@ -434,7 +434,7 @@ class ModuleModeCollector(VisitorWithPositionData):
             self.explicit_comment_line = self.location(node).start_line
 
 
-def collect_mode_info(
+def collect_mode(
     module: libcst.MetadataWrapper,
     strict_by_default: bool,
 ) -> ModuleModeInfo:
@@ -446,7 +446,7 @@ def collect_mode_info(
     )
 
 
-def collect_function_annotations(
+def collect_functions(
     module: libcst.MetadataWrapper,
 ) -> Sequence[FunctionAnnotationInfo]:
     visitor = AnnotationCollector()
