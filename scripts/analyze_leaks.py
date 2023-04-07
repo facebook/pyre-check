@@ -300,6 +300,91 @@ class LeakAnalysisResult:
             }
         )
 
+def is_valid_callee(callee: str) -> bool:
+    components = callee.strip().split(".")
+    is_valid_callee = all(component.isidentifier() and not keyword.iskeyword(component) for component in components)
+    return is_valid_callee
+
+
+def prepare_issues_for_query(callees: List[str]) -> str:
+    single_callee_query = [f"global_leaks({callee})" for callee in callees if is_valid_callee(callee)]
+    return "batch(" + ", ".join(single_callee_query) + ")"
+
+
+def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
+    global_leaks: List[Dict[str, JSON]] = []
+    query_errors: List[JSON] = []
+    script_errors: List[LeakAnalysisScriptError] = []
+    if not isinstance(pyre_results, dict):
+        raise RuntimeError(
+            f"Expected dict for Pyre query results, got {type(pyre_results)}: {pyre_results}"
+        )
+    if "response" not in pyre_results:
+        raise RuntimeError("`response` key not in Pyre query results", pyre_results)
+    if not isinstance(pyre_results["response"], list):
+        response = pyre_results["response"]
+        raise RuntimeError(
+            f"Expected response value type to be list, got {type(response)}: {response}"
+        )
+    for query_response in pyre_results["response"]:
+        if not isinstance(query_response, dict):
+            script_errors.append(
+                LeakAnalysisScriptError(
+                    error_message=f"Expected dict for pyre response list type, got {type(query_response)}",
+                    bad_value=query_response,
+                )
+            )
+        elif "error" in query_response:
+            query_errors.append(query_response["error"])
+        elif (
+            "response" in query_response and "errors" in query_response["response"]
+        ):
+            global_leaks += query_response["response"]["errors"]
+        else:
+            script_errors.append(
+                LeakAnalysisScriptError(
+                    error_message="Unexpected single query response from Pyre",
+                    bad_value=query_response,
+                )
+            )
+
+    return LeakAnalysisResult(
+        global_leaks=global_leaks,
+        query_errors=query_errors,
+        script_errors=script_errors,
+    )
+
+def find_issues(query_str: str, search_start_path: Path) -> LeakAnalysisResult:
+    project_root = find_directories.find_global_and_local_root(search_start_path)
+    if not project_root:
+        raise ValueError(
+            f"Given project path {search_start_path} is not in a Pyre project"
+        )
+
+    local_relative_path = (
+        str(project_root.local_root.relative_to(project_root.global_root))
+        if project_root.local_root
+        else None
+    )
+
+    project_identifier = identifiers.get_project_identifier(
+        project_root.global_root, local_relative_path
+    )
+
+    socket_path = daemon_socket.get_socket_path(
+        project_identifier,
+        flavor=identifiers.PyreFlavor.CLASSIC,
+    )
+
+    try:
+        response = daemon_query.execute_query(socket_path, query_str)
+        collected_results = collect_pyre_query_results(response.payload)
+        return collected_results
+    except connections.ConnectionFailure as e:
+        raise RuntimeError(
+            "A running Pyre server is required for queries to be responded. "
+            "Please run `pyre` first to set up a server."
+        ) from e
 
 class CallGraph:
     call_graph: Dict[str, Set[str]]
@@ -327,61 +412,6 @@ class CallGraph:
                 ]
 
         return transitive_callees
-
-    @staticmethod
-    def is_valid_callee(callee: str) -> bool:
-        components = callee.strip().split(".")
-        is_valid_callee = all(component.isidentifier() and not keyword.iskeyword(component) for component in components)
-        return is_valid_callee
-
-    @staticmethod
-    def prepare_issues_for_query(callees: Collection[str]) -> str:
-        single_callee_query = [f"global_leaks({callee})" for callee in callees if CallGraph.is_valid_callee(callee)]
-        return "batch(" + ", ".join(single_callee_query) + ")"
-
-    @staticmethod
-    def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
-        global_leaks: List[Dict[str, JSON]] = []
-        query_errors: List[JSON] = []
-        script_errors: List[LeakAnalysisScriptError] = []
-        if not isinstance(pyre_results, dict):
-            raise RuntimeError(
-                f"Expected dict for Pyre query results, got {type(pyre_results)}: {pyre_results}"
-            )
-        if "response" not in pyre_results:
-            raise RuntimeError("`response` key not in Pyre query results", pyre_results)
-        if not isinstance(pyre_results["response"], list):
-            response = pyre_results["response"]
-            raise RuntimeError(
-                f"Expected response value type to be list, got {type(response)}: {response}"
-            )
-        for query_response in pyre_results["response"]:
-            if not isinstance(query_response, dict):
-                script_errors.append(
-                    LeakAnalysisScriptError(
-                        error_message=f"Expected dict for pyre response list type, got {type(query_response)}",
-                        bad_value=query_response,
-                    )
-                )
-            elif "error" in query_response:
-                query_errors.append(query_response["error"])
-            elif (
-                "response" in query_response and "errors" in query_response["response"]
-            ):
-                global_leaks += query_response["response"]["errors"]
-            else:
-                script_errors.append(
-                    LeakAnalysisScriptError(
-                        error_message="Unexpected single query response from Pyre",
-                        bad_value=query_response,
-                    )
-                )
-
-        return LeakAnalysisResult(
-            global_leaks=global_leaks,
-            query_errors=query_errors,
-            script_errors=script_errors,
-        )
 
     @staticmethod
     def attach_trace_to_query_results(
@@ -412,40 +442,10 @@ class CallGraph:
 
     def find_issues(self, search_start_path: Path) -> LeakAnalysisResult:
         all_callables = self.get_transitive_callees_and_traces()
-        query_str = self.prepare_issues_for_query(all_callables.keys())
-
-        project_root = find_directories.find_global_and_local_root(search_start_path)
-        if not project_root:
-            raise ValueError(
-                f"Given project path {search_start_path} is not in a Pyre project"
-            )
-
-        local_relative_path = (
-            str(project_root.local_root.relative_to(project_root.global_root))
-            if project_root.local_root
-            else None
-        )
-
-        project_identifier = identifiers.get_project_identifier(
-            project_root.global_root, local_relative_path
-        )
-
-        socket_path = daemon_socket.get_socket_path(
-            project_identifier,
-            flavor=identifiers.PyreFlavor.CLASSIC,
-        )
-
-        try:
-            response = daemon_query.execute_query(socket_path, query_str)
-            collected_results = self.collect_pyre_query_results(response.payload)
-            self.attach_trace_to_query_results(collected_results, all_callables)
-            return collected_results
-        except connections.ConnectionFailure as e:
-            raise RuntimeError(
-                "A running Pyre server is required for queries to be responded. "
-                "Please run `pyre` first to set up a server."
-            ) from e
-
+        query_str = prepare_issues_for_query(list(all_callables.keys()))
+        collected_results = find_issues(query_str, search_start_path)
+        self.attach_trace_to_query_results(collected_results, all_callables)
+        return collected_results
 
 def validate_json_list(json_list: JSON, from_file: str, level: str) -> None:
     if not isinstance(json_list, list):
