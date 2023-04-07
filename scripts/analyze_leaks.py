@@ -521,7 +521,7 @@ def callable_leaks(
     The given directory or parent directory must have a global .pyre_configuration. \
     Default: current directory.",
 )
-def leaks(
+def entrypoint_leaks(
     call_graph_kind_and_path: Tuple[Tuple[str, TextIO], ...],
     entrypoints_file: TextIO,
     project_path: str,
@@ -542,7 +542,7 @@ def leaks(
         return from `pyre analyze --dump-call-graph ...` or `pyre query "dump_call_graph()"`)
     ENTRYPOINTS_FILE: a file containing a JSON list of qualified paths for entrypoints
 
-    Example usage: ./analyze_leaks.py -- leaks <ENTRYPOINTS_FILE> --call-graph-kind-and-path <KIND1> <CALL_GRAPH_1> --call-graph-kind-and-path <KIND2> <CALL_GRAPH2>
+    Example usage: ./analyze_leaks.py -- entrypoint-leaks <ENTRYPOINTS_FILE> --call-graph-kind-and-path <KIND1> <CALL_GRAPH_1> --call-graph-kind-and-path <KIND2> <CALL_GRAPH2>
     """
     entrypoints_json = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
     input_format = UnionCallGraphFormat()
