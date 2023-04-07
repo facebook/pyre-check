@@ -354,7 +354,8 @@ def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
         script_errors=script_errors,
     )
 
-def find_issues(query_str: str, search_start_path: Path) -> LeakAnalysisResult:
+def find_issues(callees: List[str], search_start_path: Path) -> LeakAnalysisResult:
+    query_str = prepare_issues_for_query(callees)
     project_root = find_directories.find_global_and_local_root(search_start_path)
     if not project_root:
         raise ValueError(
@@ -439,12 +440,6 @@ class CallGraph:
 
         return transitive_callees
 
-    def find_issues(self, search_start_path: Path) -> LeakAnalysisResult:
-        all_callables = self.get_transitive_callees_and_traces()
-        query_str = prepare_issues_for_query(list(all_callables.keys()))
-        collected_results = find_issues(query_str, search_start_path)
-        attach_trace_to_query_results(collected_results, all_callables)
-        return collected_results
 
 def validate_json_list(json_list: JSON, from_file: str, level: str) -> None:
     if not isinstance(json_list, list):
@@ -504,8 +499,7 @@ def callable_leaks(
     """
     callables = load_json_from_file(callables_file, "CALLABLES_FILE")
     validate_json_list(callables, "CALLABLES_FILE", "top level")
-    query_str = prepare_issues_for_query(cast(List[str], callables))
-    issues = find_issues(query_str, Path(project_path))
+    issues = find_issues(cast(List[str], callables), Path(project_path))
     print(issues.to_json())
 
 
@@ -557,7 +551,9 @@ def entrypoint_leaks(
 
     call_graph = CallGraph(input_format, entrypoints)
 
-    issues = call_graph.find_issues(Path(project_path))
+    all_callables = call_graph.get_transitive_callees_and_traces()
+    issues = find_issues(list(all_callables.keys()), Path(project_path))
+    attach_trace_to_query_results(issues, all_callables)
     print(issues.to_json())
 
 
