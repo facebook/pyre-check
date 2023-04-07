@@ -847,6 +847,7 @@ let test_dict_global_leaks context =
 let test_set_global_leaks context =
   let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Set[int] = set()
       def add_global_set() -> None:
@@ -854,6 +855,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Set[int] = set()
       def update_my_global() -> None:
@@ -861,6 +863,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+  (* Calling a known mutable method on a global set results in an error. *)
     ~skip_type_check:true (* Type checker errors on Set not being an AbstractSet. *)
     {|
       my_global: Set[int] = set()
@@ -871,6 +874,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Set[int] = set()
       def intersection_update_my_global() -> None:
@@ -878,6 +882,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Set[int] = set()
       def iand_my_global() -> None:
@@ -886,6 +891,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Set[int] = set()
       def difference_update_my_global() -> None:
@@ -893,6 +899,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Set[int] = set()
       def isub_my_global() -> None:
@@ -901,6 +908,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Set[int] = set()
       def symmetric_difference_update_my_global() -> None:
@@ -908,6 +916,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Set[int] = set()
       def ixor_my_global() -> None:
@@ -916,6 +925,7 @@ let test_set_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.Set[int]`."];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
@@ -927,6 +937,7 @@ let test_set_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Calling a known mutable method on a global set results in an error. *)
     {|
       my_global: Dict[str, int] = {}
       def foo() -> None:
