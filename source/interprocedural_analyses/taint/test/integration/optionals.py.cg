@@ -1,7 +1,7 @@
 @generated
 Call dependencies
-optionals.$toplevel (fun) -> [object::__init__ (method) object::__new__ (method)]
-optionals.test (fun) -> [_test_source (fun) optionals.Client::offer (method) optionals.ClientSingleton::get_instance (method)]
+optionals.$toplevel (fun) -> [object::__init__ (method) object::__new__ (method) optionals.client (object)]
+optionals.test (fun) -> [_test_source (fun) optionals.Client::offer (method) optionals.ClientSingleton::get_instance (method) optionals.client (object)]
 optionals.Client::$class_toplevel (method) -> []
 optionals.Client::offer (method) -> [_test_sink (fun)]
 optionals.ClientSingleton::$class_toplevel (method) -> []

@@ -88,7 +88,7 @@ sanitize.sink_taint_sanitize_a_sanitize_b (fun) -> [sanitize.sanitize_b_source_t
 sanitize.sink_taint_sanitize_a_sanitize_b_santize_test (fun) -> [sanitize.sanitize_test_source_tito (fun) sanitize.sink_taint_sanitize_a_sanitize_b (fun)]
 sanitize.sink_taint_sanitize_b_sanitize_a (fun) -> [sanitize.sanitize_a_source_tito (fun) sanitize.sink_taint_sanitize_b (fun)]
 sanitize.sink_taint_sanitize_b_sanitize_a_santize_test (fun) -> [sanitize.sanitize_test_source_tito (fun) sanitize.sink_taint_sanitize_b_sanitize_a (fun)]
-sanitize.$toplevel (fun) -> []
+sanitize.$toplevel (fun) -> [sanitize.T (object)]
 sanitize.no_issue_fixpoint_sanitize (fun) -> [sanitize.no_issue_fixpoint_sanitize_sinks (fun) sanitize.no_issue_fixpoint_sanitize_sources (fun)]
 sanitize.no_propagation_of_a_sink (fun) -> [sanitize.a_sink (fun) sanitize.sanitize_a_sink_tito (fun)]
 sanitize.partial_issue_sanitize (fun) -> [sanitize.partial_issue_sinks (fun) sanitize.partial_issue_sources (fun)]

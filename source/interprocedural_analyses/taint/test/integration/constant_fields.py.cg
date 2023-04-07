@@ -1,9 +1,9 @@
 @generated
 Call dependencies
-constant_fields.$toplevel (fun) -> []
-constant_fields.test_untracked_constant (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
-constant_fields.tracked_constant_A (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
-constant_fields.tracked_constant_B (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
+constant_fields.$toplevel (fun) -> [constant_fields.CONSTANT_A (object) constant_fields.CONSTANT_B (object) constant_fields.untracked_constant (object)]
+constant_fields.test_untracked_constant (fun) -> [_test_source (fun) constant_fields.untracked_constant (object) dict::__getitem__ (method) dict::__setitem__ (method)]
+constant_fields.tracked_constant_A (fun) -> [_test_source (fun) constant_fields.CONSTANT_A (object) dict::__getitem__ (method) dict::__setitem__ (method)]
+constant_fields.tracked_constant_B (fun) -> [_test_source (fun) constant_fields.CONSTANT_B (object) dict::__getitem__ (method) dict::__setitem__ (method)]
 constant_fields.tracked_index (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
 constant_fields.untracked_index_a (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
 constant_fields.untracked_index_b (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]

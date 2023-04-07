@@ -13,7 +13,7 @@ named_tuples.aliased_indicies_forward (fun) -> [_test_sink (fun) named_tuples.ta
 named_tuples.inherited_tuple (fun) -> [_test_source (fun) named_tuples.MyNamedTuple::__init__ (method) named_tuples.MyNamedTuple::__new__ (method)]
 named_tuples.issue_with_bad (fun) -> [_test_sink (fun) named_tuples.tainted_tuple (fun)]
 named_tuples.no_issue_with_benign (fun) -> [_test_sink (fun) named_tuples.tainted_tuple (fun)]
-named_tuples.tainted_old_tuple (fun) -> [_test_source (fun) named_tuples.OldSchoolNamedTuple::__init__ (method) named_tuples.OldSchoolNamedTuple::__new__ (method)]
+named_tuples.tainted_old_tuple (fun) -> [_test_source (fun) named_tuples.OldSchoolNamedTuple (object) named_tuples.OldSchoolNamedTuple::__init__ (method) named_tuples.OldSchoolNamedTuple::__new__ (method)]
 named_tuples.tainted_tuple (fun) -> [_test_source (fun) named_tuples.MyNamedTuple::__init__ (method) named_tuples.MyNamedTuple::__new__ (method)]
 named_tuples.InheritedNamedTuple::$class_toplevel (method) -> []
 named_tuples.MyNamedTuple::$class_toplevel (method) -> []

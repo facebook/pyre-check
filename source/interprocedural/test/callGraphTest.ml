@@ -1721,6 +1721,24 @@ let test_call_graph_of_define context =
     ~define_name:"test.calls_d_method"
     ~expected:
       [
+        ( "11:2-11:3",
+          LocationCallees.Compound
+            (SerializableStringMap.of_alist_exn
+               [
+                 ( "$local_test$d",
+                   ExpressionCallees.from_identifier
+                     {
+                       IdentifierCallees.global_targets =
+                         [CallTarget.create ~return_type:None (Target.Object "test.d")];
+                     } );
+                 ( "__getitem__",
+                   ExpressionCallees.from_attribute_access
+                     {
+                       AttributeAccessCallees.property_targets = [];
+                       global_targets = [];
+                       is_attribute = true;
+                     } );
+               ]) );
         ( "11:2-11:6",
           LocationCallees.Singleton
             (ExpressionCallees.from_call
@@ -2832,7 +2850,6 @@ let test_call_graph_of_define context =
     ~expected:[] (* TODO(T137969662): We should see a call to `Test.__setattr__` *)
     ();
   assert_call_graph_of_define
-    ~object_targets:[Target.Object "test.x"]
     ~source:{|
       x = "x"
 
@@ -4864,8 +4881,6 @@ let test_call_graph_of_define context =
       ]
     ();
   assert_call_graph_of_define
-    ~object_targets:[Target.Object "test.x"]
-      (* TODO(T123109154): y should also be tracked as a global *)
     ~source:
       {|
       class Object:
@@ -4893,6 +4908,13 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~index:0 ~return_type:None (Target.Object "test.x")];
+               }) );
+        ( "10:2-10:3",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               {
+                 IdentifierCallees.global_targets =
+                   [CallTarget.create ~index:0 ~return_type:None (Target.Object "test.y")];
                }) );
         ( "12:2-12:8",
           LocationCallees.Singleton
@@ -4923,6 +4945,13 @@ let test_call_graph_of_define context =
                         (Target.Function { name = "test.baz"; kind = Normal });
                     ]
                   ())) );
+        ( "13:6-13:7",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               {
+                 IdentifierCallees.global_targets =
+                   [CallTarget.create ~index:1 ~return_type:None (Target.Object "test.y")];
+               }) );
       ]
     ();
   ()

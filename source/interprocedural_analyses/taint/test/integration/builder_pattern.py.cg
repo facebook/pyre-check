@@ -4,7 +4,7 @@ builder_pattern.test_issue_with_sub_builder (fun) -> [_test_source (fun) builder
 builder_pattern.test_issue_with_type_var (fun) -> [_test_source (fun) builder_pattern.Builder::__init__ (method) builder_pattern.Builder::async_save (method) builder_pattern.Builder::set_not_saved_through_typevar (method) builder_pattern.Builder::set_saved_through_typevar (method) object::__new__ (method)]
 builder_pattern.test_no_issue_with_sub_builder (fun) -> [_test_source (fun) builder_pattern.Builder::__init__ (method) builder_pattern.Builder::async_save (method) builder_pattern.Builder::set_not_saved_through_typevar (method) builder_pattern.Builder::set_saved_through_typevar (method) object::__new__ (method)]
 builder_pattern.test_no_issue_with_type_var (fun) -> [_test_source (fun) builder_pattern.Builder::__init__ (method) builder_pattern.Builder::async_save (method) builder_pattern.Builder::set_not_saved_through_typevar (method) builder_pattern.Builder::set_saved_through_typevar (method) object::__new__ (method)]
-builder_pattern.$toplevel (fun) -> []
+builder_pattern.$toplevel (fun) -> [builder_pattern.T (object)]
 builder_pattern.test_issue (fun) -> [_test_source (fun) builder_pattern.Builder::__init__ (method) builder_pattern.Builder::async_save (method) builder_pattern.Builder::set_not_saved (method) builder_pattern.Builder::set_saved (method) object::__new__ (method)]
 builder_pattern.test_no_issue (fun) -> [_test_source (fun) builder_pattern.Builder::__init__ (method) builder_pattern.Builder::async_save (method) builder_pattern.Builder::set_not_saved (method) builder_pattern.Builder::set_saved (method) object::__new__ (method)]
 builder_pattern.Builder::set_not_saved_through_typevar (method) -> []

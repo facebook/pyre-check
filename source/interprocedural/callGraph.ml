@@ -1666,6 +1666,8 @@ let as_global_reference ~resolution expression =
   | _ -> None
 
 
+let is_builtin_reference reference = reference |> Reference.single |> Option.is_some
+
 let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special =
   let expression =
     Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
@@ -1756,12 +1758,12 @@ let resolve_attribute_access
   { AttributeAccessCallees.property_targets; global_targets; is_attribute }
 
 
-let resolve_identifier ~resolution ~call_indexer ~attribute_targets ~identifier =
+let resolve_identifier ~resolution ~call_indexer ~identifier =
   Expression.Name (Name.Identifier identifier)
   |> Node.create_with_default_location
   |> as_global_reference ~resolution
+  |> Option.filter ~f:(Fn.non is_builtin_reference)
   >>| Target.create_object
-  |> Option.filter ~f:(Hash_set.mem attribute_targets)
   >>| fun global ->
   {
     IdentifierCallees.global_targets =
@@ -1892,7 +1894,7 @@ struct
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
-            resolve_identifier ~resolution ~call_indexer ~attribute_targets ~identifier
+            resolve_identifier ~resolution ~call_indexer ~identifier
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
