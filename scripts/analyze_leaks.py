@@ -475,6 +475,40 @@ def analyze() -> None:
     """
     pass
 
+@analyze.command()
+@click.argument("callables_file", type=click.File("r"))
+@click.option(
+    "--project-path",
+    type=str,
+    default=DEFAULT_WORKING_DIRECTORY,
+    help="The path to the project in which global leaks will be searched for. \
+    The given directory or parent directory must have a global .pyre_configuration. \
+    Default: current directory.",
+)
+def callable_leaks(
+    callables_file: TextIO,
+    project_path: str,
+) -> None:
+    """
+    Run local global leak analysis per callable given in the callables_file.
+
+    The output of this script will be a JSON object containing three keys:
+    - `global_leaks`: any global leaks that are returned from `pyre query "global_leaks(...)"` for
+        callable checked.
+    - `query_errors`: any errors that occurred during pyre's analysis, for example, no qualifier found
+    - `script_errors`: any errors that occurred during the analysis, for example, a definition not
+        found for a callable
+
+    CALLABLES_FILE: a file containing a JSON list of fully qualified paths of callables
+
+    Example usage: ./analyze_leaks.py -- callable-leaks <CALLABLES_FILE>
+    """
+    callables = load_json_from_file(callables_file, "CALLABLES_FILE")
+    validate_json_list(callables, "CALLABLES_FILE", "top level")
+    query_str = prepare_issues_for_query(cast(List[str], callables))
+    issues = find_issues(query_str, Path(project_path))
+    print(issues.to_json())
+
 
 @analyze.command()
 @click.option("--call-graph-kind-and-path", type=(click.Choice(InputType.members(), case_sensitive=False), click.File("r")), multiple=True, required=True)
