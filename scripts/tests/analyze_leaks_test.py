@@ -9,6 +9,7 @@ import unittest
 from typing import cast, Dict, List, Set
 
 from ..analyze_leaks import (
+    attach_trace_to_query_results,
     CallGraph,
     collect_pyre_query_results,
     DependencyGraph,
@@ -784,9 +785,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         }
 
         self.assertNotEqual(pyre_results, expected)
-        CallGraph.attach_trace_to_query_results(pyre_results, callables_and_traces)
-        print(pyre_results)
-        print(expected)
+        attach_trace_to_query_results(pyre_results, callables_and_traces)
         self.assertEqual(pyre_results, expected)
 
     def assert_format_qualifier(self, input: str, expected: str) -> None:
