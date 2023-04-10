@@ -123,7 +123,10 @@ and invalid_argument =
 
 and precondition_mismatch =
   | Found of mismatch
-  | NotFound of Type.t Type.Callable.Parameter.t
+  | NotFound of {
+      parameter: Type.t Type.Callable.Parameter.t;
+      parameter_exists_in_overridden_signature: bool;
+    }
 
 and override =
   | StrengthenedPrecondition of precondition_mismatch

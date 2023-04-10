@@ -1289,7 +1289,11 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       class Bar(Foo):
         def foo(self, a) -> None: pass
     |}
-    ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
+    [
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
+       inconsistently. Could not find parameter `a` in overridden signature.";
+      "Missing parameter annotation [2]: Parameter `a` has no type specified.";
+    ];
   assert_type_errors
     {|
       class Foo():
@@ -1308,6 +1312,9 @@ let test_check_behavioral_subtyping__weakened_precondition context =
     [
       "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Could not find parameter `a` in overriding signature.";
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
+       inconsistently. "
+      ^ "Could not find parameter `b` in overridden signature.";
     ];
   assert_type_errors
     ~show_error_traces:true

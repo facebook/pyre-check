@@ -157,7 +157,10 @@ and invalid_argument =
 
 and precondition_mismatch =
   | Found of mismatch
-  | NotFound of Type.t Type.Callable.Parameter.t
+  | NotFound of {
+      parameter: Type.t Type.Callable.Parameter.t;
+      parameter_exists_in_overridden_signature: bool;
+    }
 
 and override =
   | StrengthenedPrecondition of precondition_mismatch
@@ -1488,7 +1491,8 @@ let rec messages ~concise ~signature location kind =
               pp_type
               expected
               extra_detail
-        | StrengthenedPrecondition (NotFound parameter) ->
+        | StrengthenedPrecondition
+            (NotFound { parameter; parameter_exists_in_overridden_signature }) ->
             let parameter =
               match parameter with
               | KeywordOnly { name; _ }
@@ -1496,8 +1500,15 @@ let rec messages ~concise ~signature location kind =
                   Format.asprintf "%a" pp_identifier name
               | _ -> Type.Callable.Parameter.show_concise parameter
             in
-            Format.asprintf "Could not find parameter `%s` in overriding signature." parameter
+            let signature_description =
+              if parameter_exists_in_overridden_signature then "overriding" else "overridden"
+            in
+            Format.asprintf
+              "Could not find parameter `%s` in %s signature."
+              parameter
+              signature_description
       in
+
       [
         Format.asprintf
           "`%a` overrides %s defined in `%a` inconsistently.%s"

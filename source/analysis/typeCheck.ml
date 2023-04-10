@@ -6205,9 +6205,9 @@ module State (Context : Context) = struct
                 | Type.Parametric
                     {
                       name = "BoundMethod";
-                      parameters = [Single (Type.Callable { implementation; _ }); _];
+                      parameters = [Single (Type.Callable { implementation; kind; _ }); _];
                     }
-                | Type.Callable { Type.Callable.implementation; _ } ->
+                | Type.Callable { Type.Callable.implementation; kind; _ } ->
                     let original_implementation =
                       resolve_reference_type ~resolution name
                       |> function
@@ -6264,20 +6264,21 @@ module State (Context : Context) = struct
                           { StatementDefine.signature = { parameters; _ }; _ }
                           ~resolution
                         =
-                        let element { Node.value = { Parameter.name; annotation; _ }; _ } =
+                        let element { Node.value = { Parameter.name; annotation; value; _ }; _ } =
                           let annotation =
                             annotation
                             >>| (fun annotation ->
                                   GlobalResolution.parse_annotation resolution annotation)
                             |> Option.value ~default:Type.Top
                           in
-                          name, annotation
+                          name, annotation, value
                         in
                         List.map parameters ~f:element
                       in
                       parameter_annotations define ~resolution:global_resolution
-                      |> List.map ~f:(fun (name, annotation) ->
-                             { Type.Callable.Parameter.name; annotation; default = false })
+                      |> List.map ~f:(fun (name, annotation, value) ->
+                             let default = Option.is_some value in
+                             { Type.Callable.Parameter.name; annotation; default })
                       |> Type.Callable.Parameter.create
                     in
                     let validate_match ~errors ~index ~overridden_parameter ~expected = function
@@ -6347,7 +6348,11 @@ module State (Context : Context) = struct
                                        Attribute.parent overridden_attribute |> Reference.create;
                                      override =
                                        Error.StrengthenedPrecondition
-                                         (Error.NotFound overridden_parameter);
+                                         (Error.NotFound
+                                            {
+                                              parameter = overridden_parameter;
+                                              parameter_exists_in_overridden_signature = true;
+                                            });
                                    })
                     in
                     let check_parameter index errors = function
@@ -6373,7 +6378,65 @@ module State (Context : Context) = struct
                           | Some expected ->
                               validate_match ~errors ~index ~overridden_parameter ~expected None
                           | None -> errors)
-                      | `Right _ -> errors
+                      | `Right overriding_parameter ->
+                          let is_args_kwargs_or_has_default =
+                            match overriding_parameter with
+                            | Type.Callable.RecordParameter.Keywords _ -> true
+                            | Variable _ -> true
+                            | Named { default = has_default; _ } -> has_default
+                            | KeywordOnly { default = has_default; _ } -> has_default
+                            | PositionalOnly { default = has_default; _ } -> has_default
+                          in
+                          (* TODO(T150016653): Figure out how to handle abstract class methods and
+                             decorators that result in Anonymous kinds *)
+                          let cannot_evaluate =
+                            match kind with
+                            | Anonymous -> true
+                            | Named function_name -> (
+                                let is_abstract_class_method_decorator = function
+                                  | { Node.value = decorator; _ } -> (
+                                      match decorator with
+                                      | Expression.Name decorator_name ->
+                                          [%compare.equal: Reference.t option]
+                                            (name_to_reference decorator_name)
+                                            (Option.some
+                                               (Reference.create "abc.abstractclassmethod"))
+                                      | _ -> false)
+                                in
+                                let definition =
+                                  GlobalResolution.define_body global_resolution function_name
+                                in
+                                match definition with
+                                | None -> false
+                                | Some
+                                    {
+                                      Node.value =
+                                        { StatementDefine.signature = { decorators; _ }; _ };
+                                      _;
+                                    } ->
+                                    List.exists decorators ~f:is_abstract_class_method_decorator)
+                          in
+                          if is_args_kwargs_or_has_default || cannot_evaluate then
+                            errors
+                          else
+                            emit_error
+                              ~errors
+                              ~location
+                              ~kind:
+                                (Error.InconsistentOverride
+                                   {
+                                     overridden_method = StatementDefine.unqualified_name define;
+                                     parent =
+                                       Attribute.parent overridden_attribute |> Reference.create;
+                                     override_kind = Method;
+                                     override =
+                                       Error.StrengthenedPrecondition
+                                         (Error.NotFound
+                                            {
+                                              parameter = overriding_parameter;
+                                              parameter_exists_in_overridden_signature = false;
+                                            });
+                                   })
                     in
                     let overridden_parameters =
                       Type.Callable.Overload.parameters implementation |> Option.value ~default:[]
