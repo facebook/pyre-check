@@ -50,7 +50,6 @@ module ReadOnly : sig
 
   val is_module_tracked : t -> Ast.Reference.t -> bool
 
-  (* Either `Ok (raw_code)` or `Error (message)` *)
   val get_raw_code : t -> Ast.ModulePath.t -> (raw_code, message) Result.t
 end
 
