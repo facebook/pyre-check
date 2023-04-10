@@ -82,6 +82,13 @@ let is_in_stub_package path =
   |> Option.value ~default:false
 
 
+let file_name_parts_for_relative_path path =
+  Filename.parts path
+  |> (* `Filename.parts` for a relative path "foo/bar.py" returns `["."; "foo"; "bar.py"]`. Strip
+        the current directory ".". *)
+  List.tl_exn
+
+
 let qualifier_of_relative relative =
   match relative with
   | "" -> Reference.empty
@@ -100,10 +107,7 @@ let qualifier_of_relative relative =
         | None -> name
       in
       let reversed_elements =
-        Filename.parts relative
-        |> (* Strip current directory. *) List.tl_exn
-        |> List.map ~f:strip_stub_suffix
-        |> List.rev
+        file_name_parts_for_relative_path relative |> List.map ~f:strip_stub_suffix |> List.rev
       in
       let last_without_suffix =
         let last = List.hd_exn reversed_elements in
