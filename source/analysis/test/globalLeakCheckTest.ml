@@ -837,14 +837,6 @@ let test_dict_global_leaks context =
     {|
       my_global: int = 1
       def foo() -> None:
-        my_dict: Dict[int, str] = {}
-        my_dict[my_global] = "my_global"
-    |}
-    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
-  assert_global_leak_errors
-    {|
-      my_global: int = 1
-      def foo() -> None:
         my_dict: Dict[str, int] = {}
         my_dict["my_global"] = my_global
     |}
