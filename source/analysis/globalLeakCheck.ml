@@ -234,9 +234,13 @@ module State (Context : Context) = struct
         { empty_result with errors = left_errors @ right_errors }
     | WalrusOperator { target; value } ->
         let { reachable_globals; errors } = forward_assignment_target ~resolution target in
-        let { errors = value_errors; _ } = forward_expression value in
+        let { reachable_globals = value_globals; errors = value_errors } =
+          forward_expression value
+        in
+        (* We keep the value_globals as reachable globals since they can immediately be written to
+           outside of the walrus expression, causing a global leak. *)
         {
-          empty_result with
+          reachable_globals = value_globals;
           errors = append_errors_for_globals reachable_globals (value_errors @ errors);
         }
     | Dictionary { entries; keywords } ->

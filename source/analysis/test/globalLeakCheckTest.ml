@@ -187,6 +187,14 @@ let test_global_assignment context =
           print("hi")
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+  assert_global_leak_errors
+    (* Assignment to a global using the walrus operator errors. *)
+    {|
+      my_global: List[int] = [1, 2, 3]
+      def foo() -> None:
+        (a := my_global).append(4)
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
   ()
 
 
