@@ -370,6 +370,7 @@ end
 
 module ExplicitModules = struct
   module Value = struct
+    (* A list of paths that map to the same qualifier, ordered by priority. *)
     type t = ModulePath.t list [@@deriving compare]
 
     let empty = []
