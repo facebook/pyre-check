@@ -73,6 +73,15 @@ let pp formatter { raw; qualifier; is_stub; is_external; is_init } =
     is_init
 
 
+(* Stub packages have their directories named as `XXX-stubs`. See PEP 561. *)
+let is_in_stub_package path =
+  Filename.parts path
+  (* Strip current directory. *)
+  |> List.tl
+  >>| List.exists ~f:(String.is_suffix ~suffix:"-stubs")
+  |> Option.value ~default:false
+
+
 let qualifier_of_relative relative =
   match relative with
   | "" -> Reference.empty
@@ -245,8 +254,21 @@ let same_module_compare
     let is_slash char = Char.equal char (Char.of_string "/") in
     String.count right_path ~f:is_slash - String.count left_path ~f:is_slash
   in
+  let stub_package_shadows_regular_path _ =
+    match is_in_stub_package left_path, is_in_stub_package right_path with
+    | true, false -> -1
+    | false, true -> 1
+    | _ -> 0
+  in
   let priority_order =
-    [stub_priority; number_priority; is_init_priority; extension_priority; file_path_priority]
+    [
+      stub_priority;
+      number_priority;
+      is_init_priority;
+      extension_priority;
+      stub_package_shadows_regular_path;
+      file_path_priority;
+    ]
   in
   (* Return the first nonzero comparison *)
   Option.value

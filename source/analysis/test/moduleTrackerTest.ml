@@ -1188,6 +1188,66 @@ let test_namespace_modules context =
   ()
 
 
+let test_stub_package_priority context =
+  let ({ Configuration.Analysis.local_root; _ } as configuration), _ =
+    create_test_configuration
+      ~context
+      ~local_tree:
+        [
+          TestFiles.Directory
+            { relative = "foo"; children = [TestFiles.File "my_stub.pyi"; TestFiles.File "bar.py"] };
+          TestFiles.Directory
+            {
+              relative = "foo-stubs";
+              children = [TestFiles.File "my_stub.pyi"; TestFiles.File "bar.py"];
+            };
+        ]
+      ~external_tree:[]
+  in
+  let assert_module_path = assert_module_path ~configuration in
+  let lazy_module_tracker =
+    EnvironmentControls.create configuration ~use_lazy_module_tracking:true
+    |> ModuleTracker.create
+    |> ModuleTracker.read_only
+  in
+  (* TODO(T150247738): This is a bug where the lazy tracker doesn't search for paths in the stub
+     package directory. *)
+  assert_module_path
+    (lookup_exn lazy_module_tracker (Reference.create "foo.my_stub"))
+    ~search_root:local_root
+    ~relative:"foo/my_stub.pyi"
+    ~priority:1
+    ~is_stub:true
+    ~is_external:false;
+  assert_module_path
+    (lookup_exn lazy_module_tracker (Reference.create "foo.bar"))
+    ~search_root:local_root
+    ~relative:"foo/bar.py"
+    ~priority:1
+    ~is_stub:false
+    ~is_external:false;
+  let eager_module_tracker =
+    EnvironmentControls.create configuration ~use_lazy_module_tracking:false
+    |> ModuleTracker.create
+    |> ModuleTracker.read_only
+  in
+  assert_module_path
+    (lookup_exn eager_module_tracker (Reference.create "foo.my_stub"))
+    ~search_root:local_root
+    ~relative:"foo-stubs/my_stub.pyi"
+    ~priority:1
+    ~is_stub:true
+    ~is_external:false;
+  assert_module_path
+    (lookup_exn eager_module_tracker (Reference.create "foo.bar"))
+    ~search_root:local_root
+    ~relative:"foo-stubs/bar.py"
+    ~priority:1
+    ~is_stub:false
+    ~is_external:false;
+  ()
+
+
 module IncrementalTest = struct
   module FileOperation = struct
     type t =
@@ -2064,6 +2124,7 @@ let () =
          "hidden_files " >:: test_hidden_files;
          "hidden_files2 " >:: test_hidden_files2;
          "namespace_modules " >:: test_namespace_modules;
+         "stub_package_priority" >:: test_stub_package_priority;
          "update_new_files" >:: test_update_new_files;
          "update_remove_files" >:: test_update_remove_files;
          "update_changed_files" >:: test_update_changed_files;
