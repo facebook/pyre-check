@@ -86,38 +86,36 @@ let qualifier_of_relative relative =
   match relative with
   | "" -> Reference.empty
   | _ ->
-      let qualifier =
-        let reversed_elements =
-          let strip_stub_suffix name =
-            (* Stub packages have their directories named as `XXX-stubs`. See PEP 561. *)
-            match String.chop_suffix name ~suffix:"-stubs" with
-            | Some result -> result
-            | None -> name
-          in
-          Filename.parts relative
-          |> (* Strip current directory. *) List.tl_exn
-          |> List.map ~f:strip_stub_suffix
-          |> List.rev
-        in
-        let last_without_suffix =
-          let last = List.hd_exn reversed_elements in
-          match String.rindex last '.' with
-          | Some index -> String.slice last 0 index
-          | _ -> last
-        in
-        let strip = function
-          | ["builtins"]
-          | ["builtins"; "future"] ->
-              []
-          | "__init__" :: tail -> tail
-          | elements -> elements
-        in
-        last_without_suffix :: List.tl_exn reversed_elements
-        |> strip
-        |> List.rev_map ~f:(String.split ~on:'.')
-        |> List.concat
+      let strip = function
+        | ["builtins"]
+        | ["builtins"; "future"] ->
+            []
+        | "__init__" :: tail -> tail
+        | elements -> elements
       in
-      Reference.create_from_list qualifier
+      let strip_stub_suffix name =
+        (* Stub packages have their directories named as `XXX-stubs`. See PEP 561. *)
+        match String.chop_suffix name ~suffix:"-stubs" with
+        | Some result -> result
+        | None -> name
+      in
+      let reversed_elements =
+        Filename.parts relative
+        |> (* Strip current directory. *) List.tl_exn
+        |> List.map ~f:strip_stub_suffix
+        |> List.rev
+      in
+      let last_without_suffix =
+        let last = List.hd_exn reversed_elements in
+        match String.rindex last '.' with
+        | Some index -> String.slice last 0 index
+        | _ -> last
+      in
+      last_without_suffix :: List.tl_exn reversed_elements
+      |> strip
+      |> List.rev_map ~f:(String.split ~on:'.')
+      |> List.concat
+      |> Reference.create_from_list
 
 
 let is_internal_path
