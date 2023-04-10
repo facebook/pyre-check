@@ -28,7 +28,7 @@ let legacy_parse ~handle source =
   match Parser.parse ~relative:handle lines with
   | Result.Ok statements ->
       let typecheck_flags =
-        let qualifier = ModulePath.qualifier_of_relative handle in
+        let qualifier = ModulePath.qualifier_from_relative_path handle in
         Source.TypecheckFlags.parse ~qualifier lines
       in
       Source.create ~typecheck_flags ~relative:handle statements

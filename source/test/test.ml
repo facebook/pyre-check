@@ -98,7 +98,7 @@ let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
     match PyreNewParser.parse_module ~context ~enable_type_comment:true source with
     | Result.Ok statements ->
         let typecheck_flags =
-          let qualifier = ModulePath.qualifier_of_relative handle in
+          let qualifier = ModulePath.qualifier_from_relative_path handle in
           Source.TypecheckFlags.parse ~qualifier (String.split source ~on:'\n')
         in
         let source = Source.create ~typecheck_flags ~relative:handle statements in
@@ -3257,7 +3257,7 @@ let assert_errors
     errors
   =
   let in_memory = List.is_empty other_sources in
-  (if ModulePath.qualifier_of_relative handle |> Reference.is_empty then
+  (if ModulePath.qualifier_from_relative_path handle |> Reference.is_empty then
      let message =
        Format.sprintf
          "Cannot use %s as test file name: Empty qualifier in test is no longer acceptable."

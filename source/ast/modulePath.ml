@@ -97,7 +97,7 @@ let is_in_stub_package path =
   [%compare.equal: string list] (strip_stub_package path_parts) path_parts |> not
 
 
-let qualifier_of_relative relative =
+let qualifier_from_relative_path relative =
   match relative with
   | "" -> Reference.empty
   | _ ->
@@ -163,8 +163,8 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
       | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
         when include_suffix_in_module_qualifier ->
           (* Ensure extension is not stripped when creating qualifier *)
-          qualifier_of_relative (relative ^ ".py")
-      | _ -> qualifier_of_relative relative
+          qualifier_from_relative_path (relative ^ ".py")
+      | _ -> qualifier_from_relative_path relative
     in
     let is_stub = PyrePath.is_path_python_stub relative in
     let is_init = PyrePath.is_path_python_init relative in
@@ -188,7 +188,7 @@ let is_in_project { is_external; _ } = not is_external
 
 let create_for_testing ~relative ~is_external ~priority =
   let raw = Raw.{ relative; priority } in
-  let qualifier = qualifier_of_relative relative in
+  let qualifier = qualifier_from_relative_path relative in
   let is_stub = PyrePath.is_path_python_stub relative in
   let is_init = PyrePath.is_path_python_init relative in
   { raw; qualifier; is_stub; is_external; is_init }

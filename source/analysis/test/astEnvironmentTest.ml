@@ -730,7 +730,7 @@ module IncrementalTest = struct
       (if force_load_external_sources then
          (* If we don't do this, external sources are ignored due to lazy loading *)
          let load_source { handle; _ } =
-           let qualifier = ModulePath.qualifier_of_relative handle in
+           let qualifier = ModulePath.qualifier_from_relative_path handle in
            let _ = AstEnvironment.ReadOnly.get_raw_source ast_environment qualifier in
            ()
          in

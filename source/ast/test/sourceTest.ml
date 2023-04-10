@@ -214,26 +214,28 @@ let test_mode _ =
 
 let test_qualifier _ =
   let qualifier = Reference.create_from_list in
-  assert_equal (ModulePath.qualifier_of_relative "module.py") (qualifier ["module"]);
+  assert_equal (ModulePath.qualifier_from_relative_path "module.py") (qualifier ["module"]);
   assert_equal
-    (ModulePath.qualifier_of_relative "module/submodule.py")
+    (ModulePath.qualifier_from_relative_path "module/submodule.py")
     (qualifier ["module"; "submodule"]);
-  assert_equal (ModulePath.qualifier_of_relative "builtins.pyi") (qualifier []);
-  assert_equal (ModulePath.qualifier_of_relative "future/builtins.pyi") (qualifier []);
+  assert_equal (ModulePath.qualifier_from_relative_path "builtins.pyi") (qualifier []);
+  assert_equal (ModulePath.qualifier_from_relative_path "future/builtins.pyi") (qualifier []);
   assert_equal
-    (ModulePath.qualifier_of_relative "module/builtins.py")
+    (ModulePath.qualifier_from_relative_path "module/builtins.py")
     (qualifier ["module"; "builtins"]);
-  assert_equal (ModulePath.qualifier_of_relative "module/__init__.pyi") (qualifier ["module"]);
   assert_equal
-    (ModulePath.qualifier_of_relative "foo/bar-stubs/baz.py")
+    (ModulePath.qualifier_from_relative_path "module/__init__.pyi")
+    (qualifier ["module"]);
+  assert_equal
+    (ModulePath.qualifier_from_relative_path "foo/bar-stubs/baz.py")
     (qualifier ["foo"; "bar"; "baz"]);
   assert_equal
-    (ModulePath.qualifier_of_relative "foo/bar-stubs/__init__.pyi")
+    (ModulePath.qualifier_from_relative_path "foo/bar-stubs/__init__.pyi")
     (qualifier ["foo"; "bar"]);
   (* It's unclear what should be done in this case. For now, strip the `-stubs` suffix for all
      directories. *)
   assert_equal
-    (ModulePath.qualifier_of_relative "foo-stubs/bar-stubs/baz.pyi")
+    (ModulePath.qualifier_from_relative_path "foo-stubs/bar-stubs/baz.pyi")
     (qualifier ["foo"; "bar"; "baz"]);
   ()
 

@@ -46,7 +46,7 @@ val is_in_project : t -> bool
 
 val create_for_testing : relative:string -> is_external:bool -> priority:int -> t
 
-val qualifier_of_relative : string -> Reference.t
+val qualifier_from_relative_path : string -> Reference.t
 
 val full_path : configuration:Configuration.Analysis.t -> t -> ArtifactPath.t
 
