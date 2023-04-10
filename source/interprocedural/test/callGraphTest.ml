@@ -2693,13 +2693,16 @@ let test_call_graph_of_define context =
       class Token:
         token: str = ""
 
-      def foo(obj: Token):
-        return obj.token
+      class Token2:
+        token2: str = ""
+
+      def foo(obj: Token, obj2: Token2):
+        return obj.token, obj2.token2
     |}
     ~define_name:"test.foo"
     ~expected:
       [
-        ( "6:9-6:18",
+        ( "9:9-9:18",
           LocationCallees.Singleton
             (ExpressionCallees.from_attribute_access
                {
@@ -4951,6 +4954,29 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~index:1 ~return_type:None (Target.Object "test.y")];
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      class Object:
+        pass
+
+      x = Object()
+
+      def foo():
+        return x.bar
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "8:9-8:10",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               {
+                 IdentifierCallees.global_targets =
+                   [CallTarget.create ~return_type:None (Target.Object "test.x")];
                }) );
       ]
     ();
