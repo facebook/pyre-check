@@ -784,6 +784,7 @@ let test_parser_update context =
 
   let open IncrementalTest in
   let assert_parser_update = assert_parser_update ~context in
+
   (* Single project file update *)
   assert_parser_update
     [{ handle = "test.py"; old_source = None; new_source = Some "def foo() -> None: ..." }]
@@ -835,11 +836,6 @@ let test_parser_update context =
      Otherwise, they would be ignored due to laziness. *)
   assert_parser_update
     ~external_setups:
-      [{ handle = "test.pyi"; old_source = None; new_source = Some "def foo() -> None: ..." }]
-    []
-    ~expected:(Expectation.create []);
-  assert_parser_update
-    ~external_setups:
       [{ handle = "test.pyi"; old_source = Some "def foo() -> None: ..."; new_source = None }]
     []
     ~expected:(Expectation.create [!&"test"]);
@@ -865,6 +861,14 @@ let test_parser_update context =
       ]
     []
     ~expected:(Expectation.create [!&"test"]);
+  (* TODO(T150184864) This is a bug: if we first try to load an external module that does not exist
+     (remember we are force-loading in these unit tests) and then it later is added, we fail to
+     include it in the invalidated modules. *)
+  assert_parser_update
+    ~external_setups:
+      [{ handle = "test.pyi"; old_source = None; new_source = Some "def foo() -> None: ..." }]
+    []
+    ~expected:(Expectation.create []);
 
   (* Multi-file updates *)
   assert_parser_update
