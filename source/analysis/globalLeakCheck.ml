@@ -155,6 +155,28 @@ module State (Context : Context) = struct
           { reachable_globals = []; errors = append_errors_for_globals reachable_globals errors }
         else
           { sub_expression_result with reachable_globals }
+    | Call
+        {
+          callee = { Node.value = Name (Name.Attribute { attribute = "__setattr__"; _ }); _ };
+          arguments = [{ Call.Argument.value = object_; _ }; _; { Call.Argument.value; _ }];
+        }
+    | Call
+        {
+          callee = { Node.value = Name (Name.Identifier "setattr"); _ };
+          arguments = [{ Call.Argument.value = object_; _ }; _; { Call.Argument.value; _ }];
+        } ->
+        (* Adds special casing for `<anything>.__setattr__(...)` and `setattr(...)` to error if the
+           first argument (the object) has a reachable global or a mutation occurs in the third
+           argument (the value). These need to be special cased since we want to error on specific
+           arguments having reachable globals rather than the callee of the expression. *)
+        let { reachable_globals; errors } = forward_expression object_ in
+        (* TODO (T142189949): forward reachable globals for value if assigning globals is
+           disallowed *)
+        let { errors = value_errors; _ } = forward_expression value in
+        {
+          empty_result with
+          errors = append_errors_for_globals reachable_globals (value_errors @ errors);
+        }
     | Call { callee; arguments } ->
         let { errors; reachable_globals } = forward_expression callee in
         let reachable_globals =
