@@ -763,7 +763,15 @@ module IncrementalTest = struct
              "Expected dependencies %s are not a subset of actual dependencies %s"
              (Reference.Set.sexp_of_t expected_set |> Sexp.to_string)
              (Reference.Set.sexp_of_t actual_set |> Sexp.to_string))
-          false
+          false;
+      if not (Set.is_subset actual_set ~of_:expected_set) then
+        assert_bool
+          (Format.asprintf
+             "Actual dependencies %s are not a subset of expected dependencies %s"
+             (Reference.Set.sexp_of_t actual_set |> Sexp.to_string)
+             (Reference.Set.sexp_of_t expected_set |> Sexp.to_string))
+          false;
+      ()
     in
     assert_parser_dependency expected_dependencies invalidated_modules;
 
@@ -811,7 +819,7 @@ let test_parser_update context =
         new_source = Some "def foo   (x  :    int)  ->    None: ...";
       };
     ]
-    ~expected:(Expectation.create []);
+    ~expected:(Expectation.create [!&"test"]);
   assert_parser_update
     [
       {
@@ -925,7 +933,7 @@ let test_parser_update context =
     ~preprocess_all_sources:true
     ~external_setups:[{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 2" }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    ~expected:(Expectation.create [!&"a"]);
+    ~expected:(Expectation.create [!&"a"; !&"b"]);
   assert_parser_update
     ~preprocess_all_sources:true
     ~external_setups:
@@ -955,7 +963,7 @@ let test_parser_update context =
         new_source = Some "from a import *\nfrom b import *";
       };
     ]
-    ~expected:(Expectation.create [!&"a"; !&"b"]);
+    ~expected:(Expectation.create [!&"a"; !&"b"; !&"c"]);
   assert_parser_update
     ~preprocess_all_sources:true
     [
@@ -995,7 +1003,7 @@ let test_parser_update context =
       { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
       { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" };
     ]
-    ~expected:(Expectation.create [!&"a"]);
+    ~expected:(Expectation.create [!&"a"; !&"b"; !&"c"]);
   assert_parser_update
     ~preprocess_all_sources:true
     [
@@ -1011,7 +1019,7 @@ let test_parser_update context =
     ~external_setups:
       [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "def x() -> None: ..." }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    ~expected:(Expectation.create [!&"a"]);
+    ~expected:(Expectation.create [!&"a"; !&"b"]);
   ()
 
 
