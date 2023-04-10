@@ -93,7 +93,7 @@ let qualifier_of_relative relative =
   match relative with
   | "" -> Reference.empty
   | _ ->
-      let strip = function
+      let strip_implicit_qualifier_parts = function
         | ["builtins"]
         | ["builtins"; "future"] ->
             []
@@ -116,7 +116,7 @@ let qualifier_of_relative relative =
         | _ -> last
       in
       last_without_suffix :: List.tl_exn reversed_elements
-      |> strip
+      |> strip_implicit_qualifier_parts
       |> List.rev_map ~f:(String.split ~on:'.')
       |> List.concat
       |> Reference.create_from_list
