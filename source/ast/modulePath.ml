@@ -73,20 +73,28 @@ let pp formatter { raw; qualifier; is_stub; is_external; is_init } =
     is_init
 
 
-(* Stub packages have their directories named as `XXX-stubs`. See PEP 561. *)
-let is_in_stub_package path =
-  Filename.parts path
-  (* Strip current directory. *)
-  |> List.tl
-  >>| List.exists ~f:(String.is_suffix ~suffix:"-stubs")
-  |> Option.value ~default:false
-
-
 let file_name_parts_for_relative_path path =
   Filename.parts path
   |> (* `Filename.parts` for a relative path "foo/bar.py" returns `["."; "foo"; "bar.py"]`. Strip
         the current directory ".". *)
   List.tl_exn
+
+
+let strip_stub_package path_parts =
+  let strip_stub_suffix name =
+    (* Stub packages have their directories named as `XXX-stubs`. See PEP 561. *)
+    match String.chop_suffix name ~suffix:"-stubs" with
+    | Some result -> result
+    | None -> name
+  in
+  (* NOTE: We currently assume that `foo-stubs` may occur at any level in the path. This does not
+     match PEP 561: https://peps.python.org/pep-0561/#stub-only-packages. *)
+  List.map path_parts ~f:strip_stub_suffix
+
+
+let is_in_stub_package path =
+  let path_parts = file_name_parts_for_relative_path path in
+  [%compare.equal: string list] (strip_stub_package path_parts) path_parts |> not
 
 
 let qualifier_of_relative relative =
@@ -100,14 +108,8 @@ let qualifier_of_relative relative =
         | "__init__" :: tail -> tail
         | elements -> elements
       in
-      let strip_stub_suffix name =
-        (* Stub packages have their directories named as `XXX-stubs`. See PEP 561. *)
-        match String.chop_suffix name ~suffix:"-stubs" with
-        | Some result -> result
-        | None -> name
-      in
       let reversed_elements =
-        file_name_parts_for_relative_path relative |> List.map ~f:strip_stub_suffix |> List.rev
+        file_name_parts_for_relative_path relative |> strip_stub_package |> List.rev
       in
       let last_without_suffix =
         let last = List.hd_exn reversed_elements in
