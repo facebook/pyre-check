@@ -70,7 +70,7 @@ let test_update_root context =
               return "x"
         |}]
   in
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   let errors_environment = ScratchProject.ReadWrite.errors_environment project in
   ErrorsEnvironment.project_qualifiers errors_environment
   |> ErrorsEnvironment.populate_for_modules errors_environment ~scheduler:(Test.mock_scheduler ());
@@ -114,7 +114,7 @@ let test_update_lazy_root context =
               return "x"
         |}]
   in
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   let errors_environment = ScratchProject.ReadWrite.errors_environment project in
   let overlaid_environment = OverlaidEnvironment.create errors_environment in
   assert_root_errors_for_qualifier
@@ -165,7 +165,7 @@ let test_update_overlays context =
   in
   let project = ScratchProject.setup ~context ["a.py", foo_has_no_errors] in
   let artifact_path =
-    let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+    let local_root = ScratchProject.local_root_of project in
     Test.relative_artifact_path ~root:local_root ~relative:"a.py"
   in
   let overlaid_environment =
@@ -243,7 +243,7 @@ let test_overlay_propagation context =
         "in_overlay.py", in_overlay_code ~varname:"x";
       ]
   in
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   let artifact_path = Test.relative_artifact_path ~root:local_root ~relative:"in_overlay.py" in
   let overlaid_environment =
     ScratchProject.ReadWrite.errors_environment project |> OverlaidEnvironment.create

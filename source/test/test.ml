@@ -3100,6 +3100,11 @@ module ScratchProject = struct
 
   let configuration_of { controls; _ } = EnvironmentControls.configuration controls
 
+  let local_root_of project =
+    let { Configuration.Analysis.local_root; _ } = configuration_of project in
+    local_root
+
+
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
      here. *)
   let add_source project ~is_external (relative, content) =
@@ -3215,14 +3220,14 @@ module ScratchProject = struct
 
 
   let add_file project content ~relative =
-    let { Configuration.Analysis.local_root; _ } = configuration_of project in
+    let local_root = local_root_of project in
     let content = trim_extra_indentation content in
     let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
     File.write file
 
 
   let delete_file project ~relative =
-    let { Configuration.Analysis.local_root; _ } = configuration_of project in
+    let local_root = local_root_of project in
     PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core_unix.remove
 
 

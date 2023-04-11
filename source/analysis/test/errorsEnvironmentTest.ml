@@ -156,7 +156,7 @@ let test_update_ancestor context =
     class A:
       x: int = 5
   |};
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   ScratchProject.update_environment
     project
     [
@@ -200,7 +200,7 @@ let test_update_mode context =
     def foo(x):
       return x
   |};
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   ScratchProject.update_environment
     project
     [
@@ -246,7 +246,7 @@ let test_overlay context =
     !&"code_changes"
     ["code_changes.py 3: Incompatible attribute type [8]: Attribute has type `int`; used as `str`."];
   assert_overlay_errors ~context ~project ~overlay !&"unsafe_to_strict" [];
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   ErrorsEnvironment.Overlay.update_overlaid_code
     overlay
     ~code_updates:

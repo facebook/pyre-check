@@ -1026,7 +1026,7 @@ let test_parser_update context =
 
 let make_overlay_testing_functions ~context ~test_sources =
   let project = ScratchProject.setup ~context test_sources in
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   let parent_read_only =
     ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
   in

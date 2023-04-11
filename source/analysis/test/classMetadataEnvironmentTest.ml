@@ -504,7 +504,7 @@ let test_overlay_dependency_filtering context =
       "c.Ca", ["a.A"; "a.Base0"; "object"];
       "c.Cb", ["b.B"; "a.Base0"; "object"];
     ];
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   (* Update just a.py so that A inherits from Base1 rather than Base0. This should not affect
      results for c.py at all, but should affect results for a.py *)
   ClassMetadataEnvironment.Overlay.update_overlaid_code
@@ -600,7 +600,7 @@ let test_overlay_propagation context =
       "in_overlay.D", ["on_filesystem.B"; "on_filesystem.A"; "object"];
     ];
   (* After we update the overlay, the overlay should see consistent state *)
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   ClassMetadataEnvironment.Overlay.update_overlaid_code
     overlay
     ~code_updates:
@@ -641,7 +641,7 @@ let test_overlay_propagation context =
       class B: pass
       class C(A): pass
     |};
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   let parent_update_result =
     ScratchProject.update_environment
       project

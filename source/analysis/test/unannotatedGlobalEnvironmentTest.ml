@@ -1182,6 +1182,44 @@ let test_get_unannotated_global context =
       ]
     ();
 
+  (* Removing a source should trigger lookup dependencies *)
+  assert_updates
+    ~original_source:{|
+      from target import member
+    |}
+    ~middle_actions:
+      [
+        `Global
+          ( Reference.create "test.member",
+            dependency,
+            Some
+              (UnannotatedGlobal.Imported
+                 (UnannotatedGlobal.ImportEntry.Name
+                    { from = !&"target"; target = "member"; implicit_alias = true })) );
+      ]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`Global (Reference.create "test.member", dependency, None)]
+    ();
+
+  (* Adding a source should trigger lookup dependencies *)
+  assert_updates
+    ~new_source:{|
+      from target import member
+    |}
+    ~middle_actions:[`Global (Reference.create "test.member", dependency, None)]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        `Global
+          ( Reference.create "test.member",
+            dependency,
+            Some
+              (UnannotatedGlobal.Imported
+                 (UnannotatedGlobal.ImportEntry.Name
+                    { from = !&"target"; target = "member"; implicit_alias = true })) );
+      ]
+    ();
+
   (* Don't infer * as a real thing *)
   assert_updates
     ~original_source:{|
@@ -2350,7 +2388,7 @@ let create_overlay_test_functions ~project ~parent ~environment =
   let update_and_assert_invalidated_modules ~expected code_updates =
     let code_updates =
       let relative_to_artifact_path (relative, code) =
-        let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+        let local_root = ScratchProject.local_root_of project in
         Test.relative_artifact_path ~root:local_root ~relative, code
       in
       List.map code_updates ~f:relative_to_artifact_path
@@ -2555,7 +2593,7 @@ let test_overlay_propagation context =
   update_code "on_filesystem.py" {|
     on_filesystem_new = 5
   |};
-  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let local_root = ScratchProject.local_root_of project in
   let parent_update_result =
     ScratchProject.update_environment
       project
