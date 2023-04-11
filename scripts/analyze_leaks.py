@@ -198,8 +198,6 @@ class Entrypoints:
     def __init__(self, entrypoints_json: JSON, known_callers: Set[str]) -> None:
         self.entrypoints = set()
 
-        validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top-level")
-
         for entrypoint in cast(List[str], entrypoints_json):
             if entrypoint in known_callers:
                 self.entrypoints.add(entrypoint)
@@ -538,6 +536,8 @@ def entrypoint_leaks(
     Example usage: ./analyze_leaks.py -- entrypoint-leaks <ENTRYPOINTS_FILE> --call-graph-kind-and-path <KIND1> <CALL_GRAPH_1> --call-graph-kind-and-path <KIND2> <CALL_GRAPH2>
     """
     entrypoints_json = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
+    validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top-level")
+
     input_format = UnionCallGraphFormat()
     for call_graph_kind, call_graph_file in call_graph_kind_and_path:
         call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
@@ -594,6 +594,7 @@ def trace(
     issues = load_json_from_file(issues_file, "ISSUES_FILE")
     call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
     entrypoints_json = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
+    validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top-level")
 
     input_format_type = InputType[call_graph_kind.upper()].value
     input_format = input_format_type(call_graph_data)

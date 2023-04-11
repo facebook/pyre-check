@@ -23,6 +23,7 @@ from ..analyze_leaks import (
     PyreCallGraphInputFormat,
     PysaCallGraphInputFormat,
     UnionCallGraphFormat,
+    validate_json_list,
 )
 
 
@@ -479,15 +480,13 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         entrypoints_list: JSON = {"not_a_list": True}
 
         with self.assertRaises(ValueError):
-            input_format = PysaCallGraphInputFormat({"my.entrypoint.one": ["print"]})
-            Entrypoints(entrypoints_list, input_format.get_keys())
+            validate_json_list(entrypoints_list, "ENTRYPOINTS_FILE", "top-level")
 
     def test_validate_entrypoints_file_bad_list_elements(self) -> None:
         entrypoints_list: JSON = [True, 1]
 
         with self.assertRaises(ValueError):
-            input_format = PysaCallGraphInputFormat({"my.entrypoint.one": ["print"]})
-            Entrypoints(entrypoints_list, input_format.get_keys())
+            validate_json_list(entrypoints_list, "ENTRYPOINTS_FILE", "top-level")
 
     def test_get_transitive_callees_empty(self) -> None:
         entrypoints_list: JSON = []
