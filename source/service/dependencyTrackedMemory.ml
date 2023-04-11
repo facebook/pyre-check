@@ -69,9 +69,9 @@ type 'keyset transaction_element = {
 
 module DependencyKey = struct
   module type S = sig
-    type key
+    type key [@@deriving compare, sexp]
 
-    type registered
+    type registered [@@deriving compare, sexp]
 
     module RegisteredSet : Set.S with type elt = registered
 
@@ -111,9 +111,9 @@ module DependencyKey = struct
   end
 
   module Make (In : In) = struct
-    type key = In.key
+    type key = In.key [@@deriving compare, sexp]
 
-    type registered = In.registered
+    type registered = In.registered [@@deriving compare, sexp]
 
     module KeySet = In.KeySet
     module RegisteredSet = In.RegisteredSet

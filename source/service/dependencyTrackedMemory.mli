@@ -28,9 +28,9 @@ end
 
 module DependencyKey : sig
   module type S = sig
-    type key
+    type key [@@deriving compare, sexp]
 
-    type registered
+    type registered [@@deriving compare, sexp]
 
     module RegisteredSet : Set.S with type elt = registered
 
