@@ -10,20 +10,23 @@ from typing import cast, Dict, List, Set
 
 from ..analyze_leaks import (
     attach_trace_to_query_results,
-    CallGraph,
     collect_pyre_query_results,
-    DependencyGraph,
-    DynamicCallGraphInputFormat,
-    Entrypoints,
     is_valid_callee,
-    JSON,
     LeakAnalysisResult,
     LeakAnalysisScriptError,
     prepare_issues_for_query,
+    validate_json_list,
+)
+
+from ..callgraph_utilities import (
+    CallGraph,
+    DependencyGraph,
+    DynamicCallGraphInputFormat,
+    Entrypoints,
+    JSON,
     PyreCallGraphInputFormat,
     PysaCallGraphInputFormat,
     UnionCallGraphFormat,
-    validate_json_list,
 )
 
 
