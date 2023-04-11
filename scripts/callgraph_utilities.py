@@ -5,9 +5,21 @@
 
 import abc
 import enum
+import json
 import sys
 from collections import defaultdict, deque
-from typing import cast, Collection, Deque, Dict, List, Optional, Set, Tuple, Union
+from typing import (
+    cast,
+    Collection,
+    Deque,
+    Dict,
+    List,
+    Optional,
+    Set,
+    TextIO,
+    Tuple,
+    Union,
+)
 
 from typing_extensions import TypeAlias
 
@@ -15,6 +27,11 @@ from typing_extensions import TypeAlias
 Trace: TypeAlias = List[str]
 JSON = Union[Dict[str, "JSON"], List["JSON"], str, int, float, bool, None]
 
+def load_json_from_file(file_handle: TextIO, file_name: str) -> JSON:
+    try:
+        return json.load(file_handle)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Error loading {file_name} as JSON") from e
 
 class InputFormat(abc.ABC):
     call_graph: Dict[str, Set[str]]
@@ -274,3 +291,13 @@ class CallGraph:
                 ]
 
         return transitive_callees
+
+def get_union_callgraph_format(call_graph_kind_and_path: Tuple[Tuple[str, TextIO], ...]) -> UnionCallGraphFormat:
+    union_call_graph_format = UnionCallGraphFormat()
+    for call_graph_kind, call_graph_file in call_graph_kind_and_path:
+        call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
+
+        current_input_format_type = InputType[call_graph_kind.upper()].value
+        current_input_format = current_input_format_type(call_graph_data)
+        union_call_graph_format.union_call_graph(current_input_format.call_graph)
+    return union_call_graph_format

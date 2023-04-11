@@ -12,19 +12,20 @@ from typing import cast, Dict, List, TextIO, Tuple
 
 import click
 
+from ..client import daemon_socket, find_directories, identifiers
+from ..client.commands import daemon_query
+from ..client.language_server import connections
+
 from .callgraph_utilities import (
     CallGraph,
     DependencyGraph,
     Entrypoints,
+    get_union_callgraph_format,
     InputType,
     JSON,
+    load_json_from_file,
     Trace,
-    UnionCallGraphFormat,
 )
-
-from ..client import daemon_socket, find_directories, identifiers
-from ..client.commands import daemon_query
-from ..client.language_server import connections
 
 
 DEFAULT_WORKING_DIRECTORY: str = os.getcwd()
@@ -183,13 +184,6 @@ def validate_json_list(json_list: JSON, from_file: str, level: str) -> None:
             )
 
 
-def load_json_from_file(file_handle: TextIO, file_name: str) -> JSON:
-    try:
-        return json.load(file_handle)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Error loading {file_name} as JSON") from e
-
-
 @click.group()
 def analyze() -> None:
     """
@@ -268,13 +262,7 @@ def entrypoint_leaks(
     entrypoints_json = load_json_from_file(entrypoints_file, "ENTRYPOINTS_FILE")
     validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top-level")
 
-    input_format = UnionCallGraphFormat()
-    for call_graph_kind, call_graph_file in call_graph_kind_and_path:
-        call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")
-
-        current_input_format_type = InputType[call_graph_kind.upper()].value
-        current_input_format = current_input_format_type(call_graph_data)
-        input_format.union_call_graph(current_input_format.call_graph)
+    input_format = get_union_callgraph_format(call_graph_kind_and_path)
 
 
     entrypoints = Entrypoints(entrypoints_json, input_format.get_keys())
