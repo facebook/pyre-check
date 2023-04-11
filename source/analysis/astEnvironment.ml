@@ -231,13 +231,14 @@ end
 
 module FromReadOnlyUpstream = struct
   module RawSourceValue = struct
-    type t = (Source.t, ParserError.t) Result.t
+    type t = (Source.t, ParserError.t) Result.t option
 
     let prefix = Prefix.make ()
 
     let description = "Unprocessed source"
 
-    let equal = Memory.equal_from_compare (Result.compare Source.compare ParserError.compare)
+    let equal =
+      Memory.equal_from_compare (Option.compare (Result.compare Source.compare ParserError.compare))
   end
 
   module RawSources = struct
@@ -248,14 +249,14 @@ module FromReadOnlyUpstream = struct
         (RawSourceValue)
 
     let add_parsed_source table ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
-      add table qualifier (Result.Ok source)
+      add table qualifier (Some (Result.Ok source))
 
 
     let add_unparsed_source
         table
         ({ ParserError.module_path = { ModulePath.qualifier; _ }; _ } as error)
       =
-      add table qualifier (Result.Error error)
+      add table qualifier (Some (Result.Error error))
 
 
     let update_and_compute_dependencies table ~update ~scheduler qualifiers =
@@ -455,22 +456,20 @@ module FromReadOnlyUpstream = struct
 
 
   module LazyRawSources = struct
-    let load ~ast_environment:({ module_tracker; _ } as ast_environment) qualifier =
+    let load ~ast_environment:({ module_tracker; raw_sources; _ } as ast_environment) qualifier =
       match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
-      | Some module_path ->
-          load_raw_source ~ast_environment module_path;
-          true
-      | None -> false
+      | Some module_path -> load_raw_source ~ast_environment module_path
+      | None -> RawSources.add raw_sources qualifier None
 
 
     let get ~ast_environment:({ raw_sources; _ } as ast_environment) ?dependency qualifier =
       match RawSources.get raw_sources ?dependency qualifier with
-      | Some _ as source -> source
-      | None ->
-          if load ~ast_environment qualifier then
-            RawSources.get raw_sources ?dependency qualifier
-          else
-            None
+      | Some result -> result
+      | None -> (
+          load ~ast_environment qualifier;
+          match RawSources.get raw_sources ?dependency qualifier with
+          | Some result -> result
+          | None -> failwith "impossible - all code paths of `load` add some value")
   end
 
   (* This code is factored out so that in tests we can use it as a hack to free up memory *)
