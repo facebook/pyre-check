@@ -555,6 +555,7 @@ let run_taint_analysis
     let timer = Timer.start () in
     let () =
       MultiSourcePostProcessing.update_multi_source_issues
+        ~filename_lookup
         ~taint_configuration
         ~callables:callables_to_analyze
         ~fixpoint_state

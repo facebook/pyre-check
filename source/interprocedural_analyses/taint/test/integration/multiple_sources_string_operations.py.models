@@ -43,13 +43,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:59:17 (leaf)",
                 "origin": { "line": 59, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:63:7 (leaf)",
                 "origin": { "line": 63, "start": 7, "end": 12 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -127,13 +127,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:59:17 (leaf)",
                 "origin": { "line": 59, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:61:7 (leaf)",
                 "origin": { "line": 61, "start": 7, "end": 12 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -211,13 +211,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:49:4 (leaf)",
                 "origin": { "line": 49, "start": 4, "end": 30 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:49:4 (leaf)",
                 "origin": { "line": 49, "start": 4, "end": 30 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -293,13 +293,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:87:4 (leaf)",
                 "origin": { "line": 87, "start": 4, "end": 27 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:87:4 (leaf)",
                 "origin": { "line": 87, "start": 4, "end": 27 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -385,13 +385,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:87:4 (leaf)",
                 "origin": { "line": 87, "start": 4, "end": 27 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:87:4 (leaf)",
                 "origin": { "line": 87, "start": 4, "end": 27 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -477,13 +477,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:67:17 (leaf)",
                 "origin": { "line": 67, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:68:7 (leaf)",
                 "origin": { "line": 68, "start": 7, "end": 12 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -571,13 +571,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:55:4 (leaf)",
                 "origin": { "line": 55, "start": 4, "end": 30 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:55:4 (leaf)",
                 "origin": { "line": 55, "start": 4, "end": 30 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -655,13 +655,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:54:4 (leaf)",
                 "origin": { "line": 54, "start": 4, "end": 30 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:54:4 (leaf)",
                 "origin": { "line": 54, "start": 4, "end": 30 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -739,13 +739,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:27:17 (leaf)",
                 "origin": { "line": 27, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:31:4 (leaf)",
                 "origin": { "line": 31, "start": 4, "end": 9 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -823,13 +823,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:27:17 (leaf)",
                 "origin": { "line": 27, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:30:4 (leaf)",
                 "origin": { "line": 30, "start": 4, "end": 9 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -907,13 +907,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:27:17 (leaf)",
                 "origin": { "line": 27, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:36:4 (leaf)",
                 "origin": { "line": 36, "start": 4, "end": 9 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -991,13 +991,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:27:17 (leaf)",
                 "origin": { "line": 27, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:34:22 (leaf)",
                 "origin": { "line": 34, "start": 22, "end": 27 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -1072,13 +1072,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:27:17 (leaf)",
                 "origin": { "line": 27, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:33:4 (leaf)",
                 "origin": { "line": 33, "start": 4, "end": 9 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -1274,13 +1274,13 @@
           {
             "extra_traces": [
               {
-                "message": "Source trace of the secondary flow: StringMayBeSQL",
+                "message": "Source trace of secondary flow from StringMayBeSQL begins at multiple_sources_string_operations.py:82:17 (leaf)",
                 "origin": { "line": 82, "start": 17, "end": 25 },
                 "leaf_kind": "StringMayBeSQL",
                 "trace_kind": "source"
               },
               {
-                "message": "Sink trace of the secondary flow: TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
+                "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]] begins at multiple_sources_string_operations.py:83:32 (resolving to: multiple_sources_string_operations.format_string_triggered_sql)",
                 "call": {
                   "position": { "line": 83, "start": 32, "end": 37 },
                   "resolves_to": [

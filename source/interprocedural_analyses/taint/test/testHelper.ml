@@ -816,28 +816,26 @@ let end_to_end_integration_test path context =
         ~max_iterations:100
         ~epoch:Fixpoint.Epoch.initial
     in
-    let serialize_model callable : string =
-      let externalization =
-        let filename_lookup =
-          TypeEnvironment.ReadOnly.module_tracker type_environment
-          |> ModuleTracker.ReadOnly.lookup_relative_path
-        in
-        Reporting.fetch_and_externalize
-          ~taint_configuration
-          ~fixpoint_state
-          ~filename_lookup
-          ~override_graph:override_graph_shared_memory
-          callable
-        |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
-        |> String.concat ~sep:""
-      in
-      externalization
+    let filename_lookup =
+      TypeEnvironment.ReadOnly.module_tracker type_environment
+      |> ModuleTracker.ReadOnly.lookup_relative_path
+    in
+    let serialize_model callable =
+      Reporting.fetch_and_externalize
+        ~taint_configuration
+        ~fixpoint_state
+        ~filename_lookup
+        ~override_graph:override_graph_shared_memory
+        callable
+      |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
+      |> String.concat ~sep:""
     in
 
     let divergent_files =
       [create_call_graph_files whole_program_call_graph; create_overrides_files override_graph_heap]
     in
     MultiSourcePostProcessing.update_multi_source_issues
+      ~filename_lookup
       ~taint_configuration
       ~callables:callables_to_analyze
       ~fixpoint_state;
