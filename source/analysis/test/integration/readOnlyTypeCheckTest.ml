@@ -1190,6 +1190,59 @@ let test_ignored_module context =
   ()
 
 
+let test_typechecking_errors_are_prioritized context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_mutable_int(x: ReadOnly[int]) -> None: ...
+
+      def main(s: str) -> None:
+        expect_mutable_int(s)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_mutable_int`, for 1st positional argument, \
+       expected `pyre_extensions.ReadOnly[int]` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        def expect_mutable_self(self, x: int) -> None: ...
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        readonly_foo.expect_mutable_self("hello")
+        readonly_foo.non_existent_method("hello")
+    |}
+    [
+      "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+       `test.Foo.expect_mutable_self` may modify its object. Cannot call it on readonly expression \
+       `readonly_foo` of type `pyre_extensions.ReadOnly[Foo]`.";
+      "Incompatible parameter type [6]: In call `Foo.expect_mutable_self`, for 1st positional \
+       argument, expected `int` but got `str`.";
+      "Undefined attribute [16]: `Foo` has no attribute `non_existent_method`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        x: int = 42
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        readonly_foo.x = "wrong type"
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type \
+       `pyre_extensions.ReadOnly[int]` but is used as type `str`.";
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
+       since it is readonly";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -1207,5 +1260,6 @@ let () =
          >:: test_captured_variable_for_specially_decorated_functions;
          "return_type" >:: test_return_type;
          "ignored_module" >:: test_ignored_module;
+         "typechecking_errors_are_prioritized" >:: test_typechecking_errors_are_prioritized;
        ]
   |> Test.run
