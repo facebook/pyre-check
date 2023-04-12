@@ -3,18 +3,44 @@
  (public_name pyrelib.taint)
  (modules :standard \ taintAnalysis)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries core core_unix sexplib yojson re2 ppx_deriving_yojson ppx_deriving
-   pyrelib.ast pyrelib.analysis pyrelib.domains pyrelib.interprocedural
-   pyrelib.pyreParser pyrelib.recognized pyrelib.statistics pyrelib.file
-   pyrelib.data_structures pyrelib.taintAnalysisFeatureStats))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
+ (libraries
+  core
+  core_unix
+  sexplib
+  yojson
+  re2
+  ppx_deriving_yojson
+  ppx_deriving
+  pyrelib.ast
+  pyrelib.analysis
+  pyrelib.domains
+  pyrelib.interprocedural
+  pyrelib.pyreParser
+  pyrelib.recognized
+  pyrelib.statistics
+  pyrelib.file
+  pyrelib.data_structures
+  pyrelib.taintAnalysisFeatureStats))
 
 (library
  (name taintAnalysis)
  (public_name pyrelib.taintAnalysis)
  (modules taintAnalysis)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
  (libraries pyrelib.taint pyrelib.interprocedural pyrelib.server))

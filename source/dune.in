@@ -20,8 +20,13 @@
  (modules version)
  (public_name pyrelib.version)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries pyrelib.log core))
 
 (library
@@ -29,8 +34,13 @@
  (modules timer)
  (public_name pyrelib.timer)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries base mtime mtime.clock.os))
 
 (library
@@ -38,8 +48,13 @@
  (public_name pyrelib.log)
  (modules log)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries core core_unix.time_unix core_unix.sys_unix))
 
 (library
@@ -47,8 +62,13 @@
  (modules recognized)
  (public_name pyrelib.recognized)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries core))
 
 (library
@@ -56,8 +76,13 @@
  (modules decorators)
  (public_name pyrelib.decorators)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries core pyrelib.ast pyrelib.type))
 
 (library
@@ -65,8 +90,13 @@
  (modules fetchSavedState)
  (public_name pyrelib.fetchSavedState)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries core yojson pyrelib.lwtsubprocess pyrelib.path))
 
 (library
@@ -74,8 +104,13 @@
  (modules specialCallResolution)
  (public_name pyrelib.specialCallResolution)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries pyrelib.analysis))
 
 (library
@@ -83,8 +118,13 @@
  (modules taintAnalysisFeatureStats)
  (public_name pyrelib.taintAnalysisFeatureStats)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries core))
 
 (library
@@ -100,8 +140,13 @@
  (modules lwtSubprocess)
  (public_name pyrelib.lwtsubprocess)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries lwt lwt.unix))
 
 (library
@@ -109,18 +154,31 @@
  (modules profiling)
  (public_name pyrelib.profiling)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries pyrelib.configuration pyrelib.timer pyrelib.file
-   ppx_deriving_yojson.runtime))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  pyrelib.configuration
+  pyrelib.timer
+  pyrelib.file
+  ppx_deriving_yojson.runtime))
 
 (library
  (name statistics)
  (modules statistics)
  (public_name pyrelib.statistics)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries pyrelib.configuration pyrelib.timer pyrelib.profiling yojson))
 
 (library
@@ -128,18 +186,34 @@
  (public_name pyrelib.path)
  (modules pyrePath)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries core core_unix core_unix.filename_unix
-    sexplib ppxlib ppx_deriving pyrelib.log))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  core_unix
+  core_unix.filename_unix
+  sexplib
+  ppxlib
+  ppx_deriving
+  pyrelib.log))
 
 (library
  (name sourcePath)
  (public_name pyrelib.sourcepath)
  (modules sourcePath)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
 
 (library
@@ -147,8 +221,13 @@
  (public_name pyrelib.artifactpath)
  (modules artifactPath)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
 
 (library
@@ -156,10 +235,21 @@
  (public_name pyrelib.search_path)
  (modules searchPath)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path
-   pyrelib.artifactpath))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  pyrelib.log
+  pyrelib.path
+  pyrelib.artifactpath))
 
 (library
  (name jsonParsing)
@@ -178,57 +268,126 @@
  (modules file)
  (public_name pyrelib.file)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries core core_unix.sys_unix sexplib ppxlib ppx_deriving hack_parallel
-   pyrelib.configuration pyrelib.pyre pyrelib.path pyrelib.search_path))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  core_unix.sys_unix
+  sexplib
+  ppxlib
+  ppx_deriving
+  hack_parallel
+  pyrelib.configuration
+  pyrelib.pyre
+  pyrelib.path
+  pyrelib.search_path))
 
 (library
  (name pyre)
  (public_name pyrelib.pyre)
  (modules pyre)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare))
- (libraries core sexplib ppxlib ppx_deriving hack_parallel pyrelib.sourcepath
-   pyrelib.artifactpath))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  hack_parallel
+  pyrelib.sourcepath
+  pyrelib.artifactpath))
 
 (library
  (name configuration)
  (public_name pyrelib.configuration)
  (modules configuration)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries core ppx_deriving pyrelib.pyre pyrelib.path pyrelib.search_path
-   pyrelib.json_parsing))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  ppx_deriving
+  pyrelib.pyre
+  pyrelib.path
+  pyrelib.search_path
+  pyrelib.json_parsing))
 
 (library
  (name pyrelib)
  (public_name pyrelib)
  (modules ())
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries pyrelib.pyreParser pyrelib.analysis pyrelib.ast pyrelib.service
-   pyrelib.commands pyrelib.configuration pyrelib.pyre pyrelib.taint
-   pyrelib.timer pyrelib.file pyrelib.version))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  pyrelib.pyreParser
+  pyrelib.analysis
+  pyrelib.ast
+  pyrelib.service
+  pyrelib.commands
+  pyrelib.configuration
+  pyrelib.pyre
+  pyrelib.taint
+  pyrelib.timer
+  pyrelib.file
+  pyrelib.version))
 
 (tests
- (names decoratorsTest specialCallResolutionTest internalTaintIntegrationTest)
- (modules decoratorsTest specialCallResolutionTest internalTaintIntegrationTest)
+ (names
+  decoratorsTest
+  specialCallResolutionTest
+  internalTaintIntegrationTest)
+ (modules
+  decoratorsTest
+  specialCallResolutionTest
+  internalTaintIntegrationTest)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries pyrelib ounit2 test pyrelib.integrationTest
-   pyrelib.internalTaintIntegrationTestFiles pyrelib.taintTestHelper))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  pyrelib
+  ounit2
+  test
+  pyrelib.integrationTest
+  pyrelib.internalTaintIntegrationTestFiles
+  pyrelib.taintTestHelper))
 
 (executable
  (name main)
  (modules main)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (ocamlc_flags
   (:standard -custom))
  %CUSTOM_LINKER_OPTION%

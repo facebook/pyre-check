@@ -3,8 +3,14 @@
  (modules scope)
  (public_name pyrelib.scope)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
  (libraries core sexplib yojson ppx_deriving_yojson ppx_deriving pyrelib.ast))
 
 (library
@@ -12,32 +18,85 @@
  (modules preprocessing)
  (public_name pyrelib.preprocessing)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries core sexplib yojson ppx_deriving_yojson ppx_deriving pyrelib.ast
-   pyrelib.pyreParser pyrelib.recognized pyrelib.statistics pyrelib.file
-   scope))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
+ (libraries
+  core
+  sexplib
+  yojson
+  ppx_deriving_yojson
+  ppx_deriving
+  pyrelib.ast
+  pyrelib.pyreParser
+  pyrelib.recognized
+  pyrelib.statistics
+  pyrelib.file
+  scope))
 
 (library
  (name type)
  (modules type)
  (public_name pyrelib.type)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries core sexplib yojson ppx_deriving_yojson ppx_deriving pyrelib.ast
-   pyrelib.scheduler pyrelib.pyreParser pyrelib.recognized pyrelib.statistics
-   preprocessing pyrelib.file))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
+ (libraries
+  core
+  sexplib
+  yojson
+  ppx_deriving_yojson
+  ppx_deriving
+  pyrelib.ast
+  pyrelib.scheduler
+  pyrelib.pyreParser
+  pyrelib.recognized
+  pyrelib.statistics
+  preprocessing
+  pyrelib.file))
 
 (library
  (name analysis)
  (modules :standard \ type preprocessing scope)
  (public_name pyrelib.analysis)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries core sexplib yojson ppx_deriving_yojson ppx_deriving pyrelib.ast
-   pyrelib.domains pyrelib.memory pyrelib.dependencyTrackedMemory
-   pyrelib.scheduler pyrelib.pyreParser pyrelib.pyreErrpyParser pyrelib.pyreNewParser pyrelib.recognized
-   pyrelib.statistics pyrelib.file type preprocessing pyrelib.decorators
-   pyrelib.algorithms))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
+ (libraries
+  core
+  sexplib
+  yojson
+  ppx_deriving_yojson
+  ppx_deriving
+  pyrelib.ast
+  pyrelib.domains
+  pyrelib.memory
+  pyrelib.dependencyTrackedMemory
+  pyrelib.scheduler
+  pyrelib.pyreParser
+  pyrelib.pyreErrpyParser
+  pyrelib.pyreNewParser
+  pyrelib.recognized
+  pyrelib.statistics
+  pyrelib.file
+  type
+  preprocessing
+  pyrelib.decorators
+  pyrelib.algorithms))

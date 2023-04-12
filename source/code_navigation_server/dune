@@ -2,9 +2,28 @@
  (name codeNavigationServer)
  (public_name pyrelib.codeNavigationServer)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson lwt_ppx))
- (libraries core core_unix ppx_deriving_yojson.runtime pyrelib.lwtsocketserver
-   pyrelib.lwtsubprocess pyrelib.service pyrelib.ast pyrelib.analysis
-   pyrelib.fetchSavedState pyrelib.pyre pyrelib.version pyrelib.buck
-   pyrelib.json_parsing pyrelib.taint pyrelib.server))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson
+   lwt_ppx))
+ (libraries
+  core
+  core_unix
+  ppx_deriving_yojson.runtime
+  pyrelib.lwtsocketserver
+  pyrelib.lwtsubprocess
+  pyrelib.service
+  pyrelib.ast
+  pyrelib.analysis
+  pyrelib.fetchSavedState
+  pyrelib.pyre
+  pyrelib.version
+  pyrelib.buck
+  pyrelib.json_parsing
+  pyrelib.taint
+  pyrelib.server))

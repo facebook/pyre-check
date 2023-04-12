@@ -2,8 +2,25 @@
  (name typeInference)
  (public_name pyrelib.typeInference)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries core sexplib yojson ppx_deriving_yojson ppx_deriving pyrelib.ast
-   pyrelib.analysis pyrelib.interprocedural pyrelib.pyreParser
-   pyrelib.recognized pyrelib.statistics pyrelib.file pyrelib.domains))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
+ (libraries
+  core
+  sexplib
+  yojson
+  ppx_deriving_yojson
+  ppx_deriving
+  pyrelib.ast
+  pyrelib.analysis
+  pyrelib.interprocedural
+  pyrelib.pyreParser
+  pyrelib.recognized
+  pyrelib.statistics
+  pyrelib.file
+  pyrelib.domains))

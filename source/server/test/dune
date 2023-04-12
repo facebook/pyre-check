@@ -1,6 +1,14 @@
 (tests
- (names startupNotificationTest basicTest watchmanTest savedStateTest
-   lockTest buildSystemTest queryTest criticalFileTest checksumMapTest)
+ (names
+  startupNotificationTest
+  basicTest
+  watchmanTest
+  savedStateTest
+  lockTest
+  buildSystemTest
+  queryTest
+  criticalFileTest
+  checksumMapTest)
  (preprocess
   (pps ppx_compare ppx_sexp_conv ppx_sexp_message ppx_hash))
  (libraries ounit2 ounit2-lwt pyrelib.server pyrelib.test))

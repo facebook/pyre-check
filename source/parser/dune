@@ -7,6 +7,11 @@
  (name pyreParser)
  (public_name pyrelib.pyreParser)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_deriving_yojson))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_deriving_yojson))
  (libraries core sexplib ppxlib yojson ppx_deriving_yojson pyrelib.ast))

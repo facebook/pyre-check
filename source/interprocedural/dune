@@ -2,10 +2,28 @@
  (name interprocedural)
  (public_name pyrelib.interprocedural)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries core core_unix.interval_lib
-   sexplib yojson ppxlib ppx_deriving_yojson ppx_deriving
-   pyrelib.analysis pyrelib.ast pyrelib.pyreParser pyrelib.recognized
-   pyrelib.scheduler pyrelib.specialCallResolution pyrelib.statistics
-   pyrelib.version pyrelib.file))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
+ (libraries
+  core
+  core_unix.interval_lib
+  sexplib
+  yojson
+  ppxlib
+  ppx_deriving_yojson
+  ppx_deriving
+  pyrelib.analysis
+  pyrelib.ast
+  pyrelib.pyreParser
+  pyrelib.recognized
+  pyrelib.scheduler
+  pyrelib.specialCallResolution
+  pyrelib.statistics
+  pyrelib.version
+  pyrelib.file))

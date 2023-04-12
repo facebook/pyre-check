@@ -3,11 +3,15 @@
   (language c)
   (names hh_assert hh_shared hh_shared_sqlite)
   (flags
-   (:standard -I%{project_root}/hack_parallel/hack_parallel/third-party/lz4
-     -I%{project_root}/hack_parallel/hack_parallel/third-party/sqlite3)))
+   (:standard
+    -I%{project_root}/hack_parallel/hack_parallel/third-party/lz4
+    -I%{project_root}/hack_parallel/hack_parallel/third-party/sqlite3)))
  (name heap)
  (public_name hack_parallel.heap)
  (wrapped false)
  (modules (:standard))
- (libraries hack_parallel.collections hack_parallel.lz4 hack_parallel.sqlite3
-   hack_parallel.utils))
+ (libraries
+  hack_parallel.collections
+  hack_parallel.lz4
+  hack_parallel.sqlite3
+  hack_parallel.utils))

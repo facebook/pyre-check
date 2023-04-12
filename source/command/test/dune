@@ -1,6 +1,11 @@
 (tests
- (names baseConfigurationTest AnalyzeTest CheckTest CodeNavigationTest
-   InferTest ServerTest)
+ (names
+  baseConfigurationTest
+  AnalyzeTest
+  CheckTest
+  CodeNavigationTest
+  InferTest
+  ServerTest)
  (preprocess
   (pps ppx_compare ppx_sexp_conv))
  (libraries ounit2 pyrelib.test pyrelib.commands))

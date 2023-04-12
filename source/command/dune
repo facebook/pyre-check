@@ -2,10 +2,29 @@
  (name commands)
  (public_name pyrelib.commands)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries core core_unix core_unix.filename_unix
-   sexplib ppxlib yojson ppx_deriving
-   ppx_deriving_yojson ppx_deriving_yojson.runtime pyrelib.service
-   pyrelib.ast pyrelib.analysis pyrelib.pyre pyrelib.server
-   pyrelib.codeNavigationServer pyrelib.version pyrelib.taintAnalysis))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
+ (libraries
+  core
+  core_unix
+  core_unix.filename_unix
+  sexplib
+  ppxlib
+  yojson
+  ppx_deriving
+  ppx_deriving_yojson
+  ppx_deriving_yojson.runtime
+  pyrelib.service
+  pyrelib.ast
+  pyrelib.analysis
+  pyrelib.pyre
+  pyrelib.server
+  pyrelib.codeNavigationServer
+  pyrelib.version
+  pyrelib.taintAnalysis))

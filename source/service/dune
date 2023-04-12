@@ -3,37 +3,80 @@
  (public_name pyrelib.service)
  (modules :standard \ scheduler memory dependencyTrackedMemory)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_deriving_yojson))
- (libraries base64 core sexplib ppxlib pyrelib.ast pyrelib.analysis
-   pyrelib.interprocedural pyrelib.path pyrelib.taint pyrelib.typeInference
-   pyrelib.scheduler pyrelib.memory))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_deriving_yojson))
+ (libraries
+  base64
+  core
+  sexplib
+  ppxlib
+  pyrelib.ast
+  pyrelib.analysis
+  pyrelib.interprocedural
+  pyrelib.path
+  pyrelib.taint
+  pyrelib.typeInference
+  pyrelib.scheduler
+  pyrelib.memory))
 
 (library
  (name dependencyTrackedMemory)
  (public_name pyrelib.dependencyTrackedMemory)
  (modules dependencyTrackedMemory)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_deriving_yojson))
- (libraries core sexplib ppxlib pyrelib.configuration pyrelib.memory
-   pyrelib.scheduler pyrelib.statistics hack_parallel))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_deriving_yojson))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  pyrelib.configuration
+  pyrelib.memory
+  pyrelib.scheduler
+  pyrelib.statistics
+  hack_parallel))
 
 (library
  (name scheduler)
  (public_name pyrelib.scheduler)
  (modules scheduler)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_deriving_yojson))
- (libraries core sexplib ppxlib pyrelib.configuration pyrelib.memory
-   pyrelib.statistics hack_parallel))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_deriving_yojson))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  pyrelib.configuration
+  pyrelib.memory
+  pyrelib.statistics
+  hack_parallel))
 
 (library
  (name memory)
  (public_name pyrelib.memory)
  (modules memory)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_deriving_yojson))
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_deriving_yojson))
  (libraries base64 core sexplib ppxlib pyrelib.configuration hack_parallel))
