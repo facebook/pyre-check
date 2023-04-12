@@ -397,7 +397,7 @@ module ReadOnly = struct
     | AssigningToReadOnlyAttribute { attribute_name } ->
         [
           Format.asprintf
-            "Cannot assign to attribute `%s` since it is readonly%s"
+            "Cannot assign to attribute `%s` since it is readonly.%s"
             attribute_name
             readonly_entrypoint_message;
         ]

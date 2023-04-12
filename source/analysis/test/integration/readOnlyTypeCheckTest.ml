@@ -238,7 +238,7 @@ let test_assignment context =
     |}
     [
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
-       `some_attribute` since it is readonly";
+       `some_attribute` since it is readonly.";
     ];
   (* It is ok to reassign to a readonly attribute of a mutable object, since we aren't actually
      modifying the value that has been marked as readonly. *)
@@ -353,7 +353,7 @@ let test_assignment context =
     |}
     [
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
-       `mutable_attribute` since it is readonly";
+       `mutable_attribute` since it is readonly.";
     ];
   ()
 
@@ -990,7 +990,7 @@ let test_captured_variable_for_specially_decorated_functions context =
     [
       "Revealed type [-1]: Revealed type for `parameter` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
-       since it is readonly\n\
+       since it is readonly.\n\
        Note that this is a zone entrypoint and any captured variables are treated as readonly";
       "Revealed type [-1]: Revealed type for `not_captured` is `Foo`.";
     ];
@@ -1014,7 +1014,7 @@ let test_captured_variable_for_specially_decorated_functions context =
     [
       "Revealed type [-1]: Revealed type for `local_variable` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
-       since it is readonly\n\
+       since it is readonly.\n\
        Note that this is a zone entrypoint and any captured variables are treated as readonly";
     ];
   assert_type_errors
@@ -1058,7 +1058,7 @@ let test_captured_variable_for_specially_decorated_functions context =
     [
       "Revealed type [-1]: Revealed type for `self` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
-       since it is readonly\n\
+       since it is readonly.\n\
        Note that this is a zone entrypoint and any captured variables are treated as readonly";
     ];
   (* `cls` captured in a nested entrypoint should be marked as readonly. *)
@@ -1238,7 +1238,7 @@ let test_typechecking_errors_are_prioritized context =
       "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type \
        `pyre_extensions.ReadOnly[int]` but is used as type `str`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
-       since it is readonly";
+       since it is readonly.";
     ];
   ()
 
