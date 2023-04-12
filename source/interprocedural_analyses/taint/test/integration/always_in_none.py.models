@@ -131,6 +131,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "always_in_none.ComplicatedService.serve_tainted_request"
                   }
                 ],
@@ -151,6 +152,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "always_in_none.ComplicatedService.serve_tainted_request"
                   }
                 ],

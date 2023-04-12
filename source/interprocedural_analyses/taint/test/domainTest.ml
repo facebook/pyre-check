@@ -50,7 +50,7 @@ let test_partition_call_map context =
       ~callee
       ~arguments:[]
       ~port:AccessPath.Root.LocalResult
-      ~path:[]
+      ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
       ~element:taint
       ~is_self_call:false
       ~caller_class_interval:Interprocedural.ClassIntervalSet.top

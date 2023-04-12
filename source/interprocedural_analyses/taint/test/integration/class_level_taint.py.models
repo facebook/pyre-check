@@ -82,7 +82,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "class_level_taint.ClassSource.source" }
+                  {
+                    "port": "leaf:return",
+                    "name": "class_level_taint.ClassSource.source"
+                  }
                 ],
                 "kind": "Test"
               }

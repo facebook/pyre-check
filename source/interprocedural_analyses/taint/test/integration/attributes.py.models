@@ -18,7 +18,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -37,7 +39,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.Sink.token}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.Sink.token}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -79,7 +86,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -98,7 +107,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.Sink.token}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.Sink.token}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -140,7 +154,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -215,7 +231,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -290,7 +308,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -311,7 +331,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.D.buffer}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.D.buffer}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -480,7 +505,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.Token.token}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.Token.token}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -583,7 +613,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.Token.token}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.Token.token}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -645,7 +680,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.Token.token}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.Token.token}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -757,7 +797,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -795,7 +837,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.Token.token}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.Token.token}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -871,7 +918,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.C.dictionary}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[text]",
+                    "name": "Obj{attributes.C.dictionary}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -964,7 +1016,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.Token.token}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.Token.token}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1002,7 +1059,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{attributes.Token.token}" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{attributes.Token.token}"
+                  }
+                ],
                 "kind": "Test"
               }
             ],

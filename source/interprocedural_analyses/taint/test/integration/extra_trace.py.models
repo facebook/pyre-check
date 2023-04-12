@@ -25,7 +25,9 @@
             ],
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "TransformX@TestSource"
               }
             ],
@@ -202,11 +204,15 @@
             ],
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "TransformX@TestSource"
               },
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "TransformY:TransformX@TestSource"
               }
             ],
@@ -347,11 +353,15 @@
             ],
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "TestSource"
               },
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "TransformX@TestSource"
               }
             ],
@@ -510,7 +520,9 @@
             ],
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "TransformZ:TransformY:TransformX@TestSource"
               }
             ],
@@ -558,7 +570,9 @@
             ],
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "TransformY:TransformX@TestSource"
               }
             ],

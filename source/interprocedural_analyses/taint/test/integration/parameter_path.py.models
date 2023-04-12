@@ -18,7 +18,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -93,7 +95,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -160,7 +164,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -227,7 +233,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -294,7 +302,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -360,7 +370,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "parameter_path.source_on_first" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[0]",
+                    "name": "parameter_path.source_on_first"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -422,7 +437,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "parameter_path.source_on_key_a" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "parameter_path.source_on_key_a"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -491,7 +511,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "parameter_path.source_on_second" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[1]",
+                    "name": "parameter_path.source_on_second"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -554,7 +579,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -629,7 +656,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -704,7 +733,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -779,7 +810,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -848,7 +881,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -917,7 +952,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -983,7 +1020,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "parameter_path.source_on_member_a" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "parameter_path.source_on_member_a"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1110,7 +1152,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "parameter_path.source_on_0_1" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[0][1]",
+                    "name": "parameter_path.source_on_0_1"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1144,7 +1191,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "parameter_path.source_on_0_1" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[0][1]",
+                    "name": "parameter_path.source_on_0_1"
+                  }
+                ],
                 "kind": "Test"
               }
             ],

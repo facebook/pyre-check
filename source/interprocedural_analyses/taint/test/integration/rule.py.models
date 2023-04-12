@@ -17,7 +17,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "rule.source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "rule.source" }
+                ],
                 "kind": "MyTestSource"
               }
             ],

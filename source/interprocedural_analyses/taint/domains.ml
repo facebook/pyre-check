@@ -1243,7 +1243,12 @@ end = struct
               let open Features in
               let make_leaf_name callee =
                 let port =
-                  AccessPath.Root.parameter_name port
+                  let root_name =
+                    match port with
+                    | AccessPath.Root.LocalResult -> Some "return"
+                    | _ -> AccessPath.Root.parameter_name port
+                  in
+                  root_name
                   |> Option.map ~f:(fun root ->
                          Format.asprintf "leaf:%s%a" root Abstract.TreeDomain.Label.pp_path path)
                 in

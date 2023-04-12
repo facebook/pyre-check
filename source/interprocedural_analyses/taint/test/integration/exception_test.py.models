@@ -18,7 +18,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -165,7 +167,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -202,7 +206,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -259,7 +265,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "BaseException.__str__" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "BaseException.__str__" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -286,7 +294,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "BaseException.__str__" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "BaseException.__str__" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -313,7 +323,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "BaseException.__str__" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "BaseException.__str__" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -362,7 +374,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -390,7 +404,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -418,7 +434,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -493,7 +511,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],

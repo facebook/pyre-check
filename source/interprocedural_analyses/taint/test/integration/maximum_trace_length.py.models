@@ -17,7 +17,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "length": 2,
                 "kind": "Test"
               }
@@ -88,7 +90,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "length": 2,
                 "kind": "Test"
               }
@@ -159,7 +163,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -335,7 +341,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -366,7 +374,12 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "maximum_trace_length.py",

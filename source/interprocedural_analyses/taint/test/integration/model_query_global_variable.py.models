@@ -16,7 +16,12 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query_global_variable.py",
@@ -74,7 +79,12 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "Obj{os.environ}" } ], "kind": "Test" }
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{os.environ}" }
+                ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query_global_variable.py",
@@ -134,7 +144,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query_global_variable.foo}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_global_variable.foo}"
+                  }
                 ],
                 "kind": "Test1"
               }

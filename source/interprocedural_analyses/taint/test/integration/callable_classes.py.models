@@ -69,7 +69,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "callable_classes.CallableProtocol.__call__" }
+                  {
+                    "port": "leaf:return",
+                    "name": "callable_classes.CallableProtocol.__call__"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -100,7 +103,12 @@
             "is_self_call": false,
             "kinds": [
               {
-                "leaves": [ { "name": "callable_classes.P.__call__" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "callable_classes.P.__call__"
+                  }
+                ],
                 "kind": "Test"
               }
             ],

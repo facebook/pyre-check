@@ -17,7 +17,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "parametric_models.f" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "parametric_models.f" }
+                ],
                 "kind": "WithSubkind[A]"
               }
             ],
@@ -31,7 +33,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "parametric_models.g" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "parametric_models.g" }
+                ],
                 "kind": "WithSubkind[B]"
               }
             ],
@@ -93,7 +97,12 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "parametric_models.py",

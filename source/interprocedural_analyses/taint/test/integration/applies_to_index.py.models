@@ -18,7 +18,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "applies_to_index.only_applies_to_a_key" }
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "applies_to_index.only_applies_to_a_key"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -89,7 +92,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "applies_to_index.only_applies_to_first" }
+                  {
+                    "port": "leaf:return[0]",
+                    "name": "applies_to_index.only_applies_to_first"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -153,7 +159,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "applies_to_index.only_applies_to_second" }
+                  {
+                    "port": "leaf:return[1]",
+                    "name": "applies_to_index.only_applies_to_second"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -217,7 +226,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "applies_to_index.only_applies_to_a_member" }
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "applies_to_index.only_applies_to_a_member"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -327,7 +339,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "applies_to_index.only_applies_to_nested" }
+                  {
+                    "port": "leaf:return[0][1]",
+                    "name": "applies_to_index.only_applies_to_nested"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -363,7 +378,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "applies_to_index.only_applies_to_nested" }
+                  {
+                    "port": "leaf:return[0][1]",
+                    "name": "applies_to_index.only_applies_to_nested"
+                  }
                 ],
                 "kind": "Test"
               }

@@ -17,7 +17,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "sanitize_parametric.a_source_y" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "sanitize_parametric.a_source_y"
+                  }
+                ],
                 "length": 1,
                 "kind": "TestA[Y]"
               }
@@ -199,7 +204,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "sanitize_parametric.a_source_x" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "sanitize_parametric.a_source_x"
+                  }
+                ],
                 "kind": "NotSink[TestA]@TestA[X]"
               }
             ],
@@ -215,7 +225,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "sanitize_parametric.a_source_y" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "sanitize_parametric.a_source_y"
+                  }
+                ],
                 "kind": "TestA[Y]"
               }
             ],

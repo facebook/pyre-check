@@ -18,7 +18,12 @@
             "kinds": [
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "multi_sink_ports.source"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -141,7 +146,12 @@
             "kinds": [
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "multi_sink_ports.source"
+                  }
+                ],
                 "kind": "Test"
               }
             ],

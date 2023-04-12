@@ -18,7 +18,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -39,6 +41,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{class_flows.C.__class__.tainted_class_attribute}"
                   }
                 ],
@@ -83,7 +86,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -103,7 +108,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{class_flows.C.tainted_attribute}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{class_flows.C.tainted_attribute}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -146,7 +154,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -166,7 +176,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{class_flows.C.tainted_attribute}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{class_flows.C.tainted_attribute}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -209,7 +222,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -230,6 +245,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{class_flows.C.__class__.tainted_class_attribute}"
                   }
                 ],
@@ -274,7 +290,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -295,6 +313,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{class_flows.C.__class__.tainted_class_attribute}"
                   }
                 ],
@@ -339,7 +358,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -360,6 +381,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{class_flows.C.__class__.tainted_class_attribute}"
                   }
                 ],
@@ -404,7 +426,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -476,7 +500,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],

@@ -16,7 +16,12 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -34,7 +39,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query.AttributeTestClass3.instance}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query.AttributeTestClass3.instance}"
+                  }
                 ],
                 "kind": "SinkC"
               }
@@ -75,7 +83,12 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -93,7 +106,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query.AttributeTestClass3.instance}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query.AttributeTestClass3.instance}"
+                  }
                 ],
                 "kind": "SinkA"
               }
@@ -688,6 +704,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass1.attribute}"
                   }
                 ],
@@ -780,6 +797,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass5.foo_instance}"
                   }
                 ],
@@ -872,6 +890,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass6.foo_attribute}"
                   }
                 ],
@@ -964,6 +983,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass6.foo_instance}"
                   }
                 ],
@@ -1055,7 +1075,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query.AttributeTestClass1.instance}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query.AttributeTestClass1.instance}"
+                  }
                 ],
                 "kind": "SourceA"
               }
@@ -1146,6 +1169,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass2.attribute}"
                   }
                 ],
@@ -1237,7 +1261,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query.AttributeTestClass2.instance}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query.AttributeTestClass2.instance}"
+                  }
                 ],
                 "kind": "SourceA"
               }
@@ -1300,6 +1327,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass3.attribute}"
                   }
                 ],
@@ -1308,6 +1336,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass3.attribute}"
                   }
                 ],
@@ -1367,6 +1396,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass3.attribute}"
                   }
                 ],
@@ -1433,6 +1463,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass3.attribute}"
                   }
                 ],
@@ -1471,6 +1502,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass4.attribute}"
                   }
                 ],
@@ -1479,6 +1511,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass4.attribute}"
                   }
                 ],
@@ -1534,6 +1567,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass4.attribute}"
                   }
                 ],
@@ -1589,6 +1623,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass4.attribute}"
                   }
                 ],
@@ -1670,7 +1705,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query.AttributeTestClass4.instance}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query.AttributeTestClass4.instance}"
+                  }
                 ],
                 "kind": "SourceE"
               }
@@ -1733,7 +1771,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query.AttributeTestClass4.instance}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query.AttributeTestClass4.instance}"
+                  }
                 ],
                 "kind": "SourceC"
               }
@@ -1824,6 +1865,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query.AttributeTestClass5.foo_attribute}"
                   }
                 ],

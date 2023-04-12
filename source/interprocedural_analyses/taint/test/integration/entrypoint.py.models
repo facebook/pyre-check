@@ -19,7 +19,9 @@
             "is_self_call": false,
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                ],
                 "kind": "GlobalSource"
               }
             ],
@@ -84,7 +86,9 @@
             "is_self_call": false,
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                ],
                 "kind": "GlobalSource"
               }
             ],
@@ -147,7 +151,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                ],
                 "kind": "GlobalSource"
               }
             ],
@@ -208,7 +214,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                ],
                 "kind": "GlobalSource"
               }
             ],
@@ -269,7 +277,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                ],
                 "kind": "GlobalSource"
               }
             ],
@@ -330,7 +340,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                ],
                 "kind": "GlobalSource"
               }
             ],
@@ -398,7 +410,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                ],
                 "kind": "GlobalSource"
               }
             ],
@@ -459,7 +473,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{entrypoint.glob}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                ],
                 "kind": "GlobalSource"
               }
             ],

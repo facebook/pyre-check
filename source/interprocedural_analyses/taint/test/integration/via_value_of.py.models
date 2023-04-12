@@ -103,7 +103,9 @@
                     "parameter": "PositionalParameter {position = 0; name = \"parameter\";\n  positional_only = false}"
                   }
                 ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -131,7 +133,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_parameter_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_parameter_name"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -163,7 +168,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_parameter_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_parameter_name"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -403,7 +411,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -435,7 +446,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -497,7 +511,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -561,7 +577,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_parameter_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_parameter_name"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -591,7 +610,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_parameter_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_parameter_name"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -621,7 +643,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -651,7 +676,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_parameter_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_parameter_name"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -681,7 +709,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -711,7 +742,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_parameter_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_parameter_name"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -741,7 +775,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -771,7 +808,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_including_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_including_name"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -803,7 +843,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -833,7 +876,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -936,7 +982,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_parameter_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_parameter_name"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -964,7 +1013,12 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
             ],
             "local_features": [
               { "always-via-value": "second" }, { "always-via": "tito" }
@@ -994,7 +1048,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1026,7 +1083,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1058,7 +1118,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1088,7 +1151,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1120,7 +1186,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1152,7 +1221,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1184,7 +1256,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1216,7 +1291,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1248,7 +1326,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1278,7 +1359,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "via_value_of.return_via_second_parameter" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_second_parameter"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -1313,7 +1397,10 @@
                   { "always-via-value": "<unknown:positional>" }
                 ],
                 "leaves": [
-                  { "name": "via_value_of.return_via_parameter_name" }
+                  {
+                    "port": "leaf:return",
+                    "name": "via_value_of.return_via_parameter_name"
+                  }
                 ],
                 "length": 1,
                 "kind": "Test"

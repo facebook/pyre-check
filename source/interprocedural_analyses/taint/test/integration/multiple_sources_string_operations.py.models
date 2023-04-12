@@ -19,6 +19,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -102,6 +103,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -185,6 +187,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -268,6 +271,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -306,7 +310,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|0:b96631c9caec05e78abe0bc41f8c6929"
                 ],
-                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{<format-string>}" }
+                ],
                 "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
@@ -357,6 +363,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -395,7 +402,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|0:b96631c9caec05e78abe0bc41f8c6929"
                 ],
-                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{<format-string>}" }
+                ],
                 "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
@@ -446,6 +455,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -484,7 +494,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|1:73a6a34a52dcde0077fbaa00dc17df2c"
                 ],
-                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{<format-string>}" }
+                ],
                 "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
@@ -535,6 +547,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -618,6 +631,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -701,6 +715,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -784,6 +799,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -867,6 +883,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -950,6 +967,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -1030,6 +1048,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -1107,7 +1126,7 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations:4324:0:StringFormat|str.format|0|2:c106ea0d96d7c3c2f1fc49524b367174"
                 ],
-                "leaves": [ { "name": "str.format" } ],
+                "leaves": [ { "port": "leaf:return", "name": "str.format" } ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
@@ -1137,7 +1156,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|0:b96631c9caec05e78abe0bc41f8c6929"
                 ],
-                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{<format-string>}" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -1159,7 +1180,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|0:b96631c9caec05e78abe0bc41f8c6929"
                 ],
-                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{<format-string>}" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -1189,7 +1212,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_triggered_sql:4324:0:StringFormat|Obj{<format-string>}|0|1:8f6cacd47cabf12bbc63da564ccba4b3"
                 ],
-                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{<format-string>}" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],
@@ -1225,6 +1250,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -1305,7 +1331,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.format_string_triggered_user_controlled:4324:0:StringFormat|Obj{<format-string>}|0|1:73a6a34a52dcde0077fbaa00dc17df2c"
                 ],
-                "leaves": [ { "name": "Obj{<format-string>}" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "Obj{<format-string>}" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[main]]"
               }
             ],
@@ -1334,6 +1362,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "multiple_sources_string_operations.user_controlled_input"
                   }
                 ],
@@ -1377,7 +1406,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources_string_operations.stradd_triggered_user_controlled:4324:0:StringFormat|str.__add__|0|1:c4a91de91595fbdd1778f0feee3981bb"
                 ],
-                "leaves": [ { "name": "str.__add__" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "str.__add__" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]"
               }
             ],

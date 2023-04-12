@@ -17,7 +17,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "multi_subkind.source_a" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "multi_subkind.source_a" }
+                ],
                 "kind": "SourceA[KindA]"
               }
             ],
@@ -31,7 +33,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "multi_subkind.source_b" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "multi_subkind.source_b" }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],

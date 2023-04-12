@@ -18,7 +18,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -388,9 +390,11 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query_transitive_extends.Test1_C1.attribute}"
                   },
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query_transitive_extends.Test1_C.attribute}"
                   }
                 ],
@@ -485,10 +489,12 @@
               {
                 "leaves": [
                   {
-                    "name": "Obj{model_query_transitive_extends.Test1_C1.instance}"
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}"
                   },
                   {
-                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}"
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_transitive_extends.Test1_C1.instance}"
                   }
                 ],
                 "kind": "Test"
@@ -582,13 +588,16 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_transitive_extends.Test1_C2.attribute}"
+                  },
+                  {
+                    "port": "leaf:return",
                     "name": "Obj{model_query_transitive_extends.Test1_C1.attribute}"
                   },
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query_transitive_extends.Test1_C.attribute}"
-                  },
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C2.attribute}"
                   }
                 ],
                 "kind": "Test"
@@ -682,13 +691,16 @@
               {
                 "leaves": [
                   {
-                    "name": "Obj{model_query_transitive_extends.Test1_C1.instance}"
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}"
                   },
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query_transitive_extends.Test1_C2.instance}"
                   },
                   {
-                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}"
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_transitive_extends.Test1_C1.instance}"
                   }
                 ],
                 "kind": "Test"
@@ -782,6 +794,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query_transitive_extends.Test1_C.attribute}"
                   }
                 ],
@@ -876,6 +889,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{model_query_transitive_extends.Test1_C.instance}"
                   }
                 ],

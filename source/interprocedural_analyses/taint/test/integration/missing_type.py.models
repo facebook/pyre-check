@@ -144,6 +144,7 @@
               {
                 "leaves": [
                   {
+                    "port": "leaf:return",
                     "name": "Obj{missing_type.UnknownSourceAttribute.unknown}"
                   }
                 ],

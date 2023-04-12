@@ -18,7 +18,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query_annotated.Test1_C.a}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_annotated.Test1_C.a}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -88,7 +91,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query_annotated.Test1_C.b}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_annotated.Test1_C.b}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -158,7 +164,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query_annotated.Test1_C.x}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_annotated.Test1_C.x}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -228,7 +237,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query_annotated.Test1_C.y}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_annotated.Test1_C.y}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -298,7 +310,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query_annotated.Test2_C.a}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_annotated.Test2_C.a}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -368,7 +383,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{model_query_annotated.Test2_C.x}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{model_query_annotated.Test2_C.x}"
+                  }
                 ],
                 "kind": "Test"
               }

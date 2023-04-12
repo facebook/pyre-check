@@ -18,7 +18,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{django.http.request.HttpRequest.GET}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{django.http.request.HttpRequest.GET}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -82,7 +85,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{django.http.request.HttpRequest.GET}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{django.http.request.HttpRequest.GET}"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -146,7 +152,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{django.http.request.HttpRequest.GET}" }
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{django.http.request.HttpRequest.GET}"
+                  }
                 ],
                 "kind": "Test"
               }

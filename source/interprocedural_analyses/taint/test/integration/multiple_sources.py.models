@@ -18,7 +18,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "kind": "UserControlled"
               }
@@ -106,7 +109,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.permissive_context" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.permissive_context"
+                  }
                 ],
                 "kind": "PermissiveContext"
               }
@@ -185,7 +191,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.permissive_context" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.permissive_context"
+                  }
                 ],
                 "kind": "PermissiveContext"
               }
@@ -264,7 +273,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.permissive_context" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.permissive_context"
+                  }
                 ],
                 "kind": "PermissiveContext"
               }
@@ -343,7 +355,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "kind": "UserControlled"
               }
@@ -444,7 +459,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "kind": "UserControlled"
               }
@@ -523,7 +541,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "kind": "UserControlled"
               }
@@ -831,7 +852,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "kind": "UserControlled"
               }
@@ -959,7 +983,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "length": 1,
                 "kind": "UserControlled"
@@ -1158,7 +1185,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "kind": "UserControlled"
               }
@@ -1252,7 +1282,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "kind": "UserControlled"
               }
@@ -1469,7 +1502,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "multiple_sources.user_controlled_input" }
+                  {
+                    "port": "leaf:return",
+                    "name": "multiple_sources.user_controlled_input"
+                  }
                 ],
                 "kind": "UserControlled"
               }

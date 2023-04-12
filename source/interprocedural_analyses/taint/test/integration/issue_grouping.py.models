@@ -17,7 +17,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "issue_grouping.source_b" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "issue_grouping.source_b"
+                  }
+                ],
                 "kind": "SourceB"
               }
             ],
@@ -88,7 +93,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "issue_grouping.source_a" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "issue_grouping.source_a"
+                  }
+                ],
                 "kind": "SourceA"
               }
             ],

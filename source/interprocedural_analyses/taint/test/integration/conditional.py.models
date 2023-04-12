@@ -17,7 +17,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "conditional.some_source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "conditional.some_source"
+                  }
+                ],
                 "kind": "MySource"
               }
             ],
@@ -69,7 +74,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "conditional.some_source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "conditional.some_source"
+                  }
+                ],
                 "kind": "MySource"
               }
             ],

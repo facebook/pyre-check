@@ -17,7 +17,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[b]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],
@@ -88,11 +93,21 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[b]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],
@@ -161,7 +176,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[b]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],
@@ -224,11 +244,21 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[b]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],
@@ -297,11 +327,21 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[b]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],
@@ -372,7 +412,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindA]"
               }
             ],
@@ -435,11 +480,21 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[b]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],
@@ -502,11 +557,21 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[b]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],
@@ -569,11 +634,21 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[a]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:return[b]",
+                    "name": "lineage_analysis.source"
+                  }
+                ],
                 "kind": "SourceA[KindB]"
               }
             ],
