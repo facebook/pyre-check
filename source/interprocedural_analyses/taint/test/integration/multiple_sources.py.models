@@ -50,13 +50,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from PermissiveContext begins at multiple_sources.py:31:9 (leaf)",
-                "origin": { "line": 31, "start": 9, "end": 29 },
+                "origin": { "line": 32, "start": 4, "end": 16 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledAndVC[vc]] begins at multiple_sources.py:32:22 (leaf)",
-                "origin": { "line": 32, "start": 22, "end": 24 },
+                "origin": { "line": 32, "start": 4, "end": 16 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
               }
@@ -133,13 +133,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from TestA begins at multiple_sources.py:129:8 (leaf)",
-                "origin": { "line": 129, "start": 8, "end": 18 },
+                "origin": { "line": 131, "start": 34, "end": 54 },
                 "leaf_kind": "TestA",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[ExpectsEitherTest[a]] begins at multiple_sources.py:131:31 (leaf)",
-                "origin": { "line": 131, "start": 31, "end": 32 },
+                "origin": { "line": 131, "start": 34, "end": 54 },
                 "leaf_kind": "TriggeredPartialSink[ExpectsEitherTest[a]]",
                 "trace_kind": "sink"
               }
@@ -215,13 +215,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from TestB begins at multiple_sources.py:90:31 (leaf)",
-                "origin": { "line": 90, "start": 31, "end": 41 },
+                "origin": { "line": 90, "start": 43, "end": 63 },
                 "leaf_kind": "TestB",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[ExpectsEitherTest[a]] begins at multiple_sources.py:90:31 (leaf)",
-                "origin": { "line": 90, "start": 31, "end": 41 },
+                "origin": { "line": 90, "start": 43, "end": 63 },
                 "leaf_kind": "TriggeredPartialSink[ExpectsEitherTest[a]]",
                 "trace_kind": "sink"
               }
@@ -297,13 +297,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from TestA begins at multiple_sources.py:89:31 (leaf)",
-                "origin": { "line": 89, "start": 31, "end": 41 },
+                "origin": { "line": 89, "start": 43, "end": 63 },
                 "leaf_kind": "TestA",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[ExpectsEitherTest[a]] begins at multiple_sources.py:89:31 (leaf)",
-                "origin": { "line": 89, "start": 31, "end": 41 },
+                "origin": { "line": 89, "start": 43, "end": 63 },
                 "leaf_kind": "TriggeredPartialSink[ExpectsEitherTest[a]]",
                 "trace_kind": "sink"
               }
@@ -379,13 +379,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from PermissiveContext begins at multiple_sources.py:41:9 (leaf)",
-                "origin": { "line": 41, "start": 9, "end": 29 },
+                "origin": { "line": 47, "start": 32, "end": 34 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledAndVC[vc]] begins at multiple_sources.py:42:22 (leaf)",
-                "origin": { "line": 42, "start": 22, "end": 24 },
+                "origin": { "line": 47, "start": 32, "end": 34 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
               }
@@ -483,13 +483,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from PermissiveContext begins at multiple_sources.py:166:47 (leaf)",
-                "origin": { "line": 166, "start": 47, "end": 67 },
+                "origin": { "line": 166, "start": 22, "end": 45 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledAndVC[vc]] begins at multiple_sources.py:166:47 (leaf)",
-                "origin": { "line": 166, "start": 47, "end": 67 },
+                "origin": { "line": 166, "start": 22, "end": 45 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
               }
@@ -565,13 +565,13 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from PermissiveContext begins at multiple_sources.py:166:47 (leaf)",
-                "origin": { "line": 166, "start": 47, "end": 67 },
+                "origin": { "line": 166, "start": 22, "end": 45 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledAndVC[vc]] begins at multiple_sources.py:166:47 (leaf)",
-                "origin": { "line": 166, "start": 47, "end": 67 },
+                "origin": { "line": 166, "start": 22, "end": 45 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
               }
@@ -884,14 +884,14 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from PermissiveContext begins at multiple_sources.py:51:9 (leaf)",
-                "origin": { "line": 51, "start": 9, "end": 29 },
+                "origin": { "line": 37, "start": 4, "end": 16 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledAndVC[vc]] begins at multiple_sources.py:52:34 (resolving to: multiple_sources.demonstrate_triggered_context)",
                 "call": {
-                  "position": { "line": 52, "start": 34, "end": 36 },
+                  "position": { "line": 37, "start": 4, "end": 16 },
                   "resolves_to": [
                     "multiple_sources.demonstrate_triggered_context"
                   ],
@@ -1022,14 +1022,14 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from PermissiveContext begins at multiple_sources.py:150:9 (leaf)",
-                "origin": { "line": 150, "start": 9, "end": 29 },
+                "origin": { "line": 146, "start": 4, "end": 16 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledAndVC[vc]] begins at multiple_sources.py:151:44 (resolving to: multiple_sources.demonstrate_triggered_context_more_hops)",
                 "call": {
-                  "position": { "line": 151, "start": 44, "end": 46 },
+                  "position": { "line": 146, "start": 4, "end": 16 },
                   "resolves_to": [
                     "multiple_sources.demonstrate_triggered_context_more_hops"
                   ],
@@ -1217,14 +1217,14 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from PermissiveContext begins at multiple_sources.py:171:9 (leaf)",
-                "origin": { "line": 171, "start": 9, "end": 29 },
+                "origin": { "line": 179, "start": 4, "end": 17 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledAndVC[vc]] begins at multiple_sources.py:172:31 (resolving to: multiple_sources.multiple_triggered_context)",
                 "call": {
-                  "position": { "line": 172, "start": 31, "end": 33 },
+                  "position": { "line": 179, "start": 4, "end": 17 },
                   "resolves_to": [
                     "multiple_sources.multiple_triggered_context"
                   ],
@@ -1314,14 +1314,14 @@
             "extra_traces": [
               {
                 "message": "Source trace of secondary flow from PermissiveContext begins at multiple_sources.py:171:9 (leaf)",
-                "origin": { "line": 171, "start": 9, "end": 29 },
+                "origin": { "line": 177, "start": 4, "end": 17 },
                 "leaf_kind": "PermissiveContext",
                 "trace_kind": "source"
               },
               {
                 "message": "Sink trace of secondary flow leading to TriggeredPartialSink[UserControlledAndVC[vc]] begins at multiple_sources.py:172:31 (resolving to: multiple_sources.multiple_triggered_context)",
                 "call": {
-                  "position": { "line": 172, "start": 31, "end": 33 },
+                  "position": { "line": 177, "start": 4, "end": 17 },
                   "resolves_to": [
                     "multiple_sources.multiple_triggered_context"
                   ],

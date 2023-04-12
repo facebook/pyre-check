@@ -180,6 +180,15 @@ module CallInfo = struct
         CallSite { port; path; location = Location.WithModule.any; callees }
     | Declaration _ -> Declaration { leaf_name_provided = false }
     | Tito -> Tito
+
+
+  let replace_location ~location call_info =
+    match call_info with
+    | Tito
+    | Declaration _ ->
+        call_info
+    | Origin _ -> Origin location
+    | CallSite callsite -> CallSite { callsite with location }
 end
 
 module TraceLength = struct

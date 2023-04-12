@@ -837,14 +837,16 @@ module MultiSource = struct
           (callees |> List.map ~f:Target.external_name |> String.concat ~sep:"; ")
 
 
-  let get_first_sink_hops ~filename_lookup { flow = { Flow.sink_taint; _ }; _ } =
+  let get_first_sink_hops ~main_issue_location ~filename_lookup { flow = { Flow.sink_taint; _ }; _ }
+    =
     BackwardTaint.reduce
       BackwardTaint.kind
       ~using:(Context (BackwardTaint.call_info, Acc))
       ~f:(fun call_info sink_kind so_far ->
         let extra_trace =
           {
-            ExtraTraceFirstHop.call_info;
+            ExtraTraceFirstHop.call_info =
+              CallInfo.replace_location ~location:main_issue_location call_info;
             leaf_kind = Sink sink_kind;
             message =
               Some
@@ -859,14 +861,19 @@ module MultiSource = struct
       sink_taint
 
 
-  let get_first_source_hops ~filename_lookup { flow = { Flow.source_taint; _ }; _ } =
+  let get_first_source_hops
+      ~main_issue_location
+      ~filename_lookup
+      { flow = { Flow.source_taint; _ }; _ }
+    =
     ForwardTaint.reduce
       ForwardTaint.kind
       ~using:(Context (ForwardTaint.call_info, Acc))
       ~f:(fun call_info source_kind so_far ->
         let extra_trace =
           {
-            ExtraTraceFirstHop.call_info;
+            ExtraTraceFirstHop.call_info =
+              CallInfo.replace_location ~location:main_issue_location call_info;
             leaf_kind = Source source_kind;
             message =
               Some
