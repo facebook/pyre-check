@@ -3,4 +3,4 @@
    InferTest ServerTest)
  (preprocess
   (pps ppx_compare ppx_sexp_conv))
- (libraries oUnit pyrelib.test pyrelib.commands))
+ (libraries ounit2 pyrelib.test pyrelib.commands))

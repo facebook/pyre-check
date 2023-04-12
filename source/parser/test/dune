@@ -1,3 +1,3 @@
 (tests
  (names generatorTest locationTest)
- (libraries oUnit pyrelib.test pyrelib.ast pyrelib.pyreParser))
+ (libraries ounit2 pyrelib.test pyrelib.ast pyrelib.pyreParser))

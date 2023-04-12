@@ -1,4 +1,4 @@
 (tests
  (names expressionTest statementTest locationTest)
- (libraries oUnit pyrelib.test errpy pyreErrpyParser)
+ (libraries ounit2 pyrelib.test errpy pyreErrpyParser)
 )

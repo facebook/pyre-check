@@ -5,7 +5,7 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
     ppx_deriving_yojson))
- (libraries core core_unix core_unix.filename_unix oUnit pyrelib.service pyrelib.analysis))
+ (libraries core core_unix core_unix.filename_unix ounit2 pyrelib.service pyrelib.analysis))
 
 (tests
  (names configurationTest fileTest logTest pyrePathTest searchPathTest
@@ -14,5 +14,5 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
     ppx_deriving_yojson))
- (libraries oUnit pyrelib.service pyrelib.analysis pyrelib.test
+ (libraries ounit2 pyrelib.service pyrelib.analysis pyrelib.test
    pyrelib.algorithms))

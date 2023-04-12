@@ -2,5 +2,5 @@
  (names typeInferenceGlobalTest typeInferenceLocalTest)
  (preprocess
   (pps ppx_sexp_message ppx_deriving.show ppx_deriving.eq))
- (libraries oUnit re2 pyrelib.test pyrelib.ast pyrelib.analysis
+ (libraries ounit2 re2 pyrelib.test pyrelib.ast pyrelib.analysis
    pyrelib.interprocedural pyrelib.typeInference))
