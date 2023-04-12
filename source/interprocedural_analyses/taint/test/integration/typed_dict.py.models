@@ -35,7 +35,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -93,7 +96,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -154,7 +160,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -224,7 +233,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -295,7 +307,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -362,7 +377,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -429,7 +447,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -496,7 +517,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -561,7 +585,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -626,7 +653,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",
@@ -688,7 +718,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "typed_dict.py",

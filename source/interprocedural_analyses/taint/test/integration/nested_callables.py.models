@@ -42,7 +42,7 @@
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
                 ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 2,
                 "kind": "Test"
               }
@@ -115,7 +115,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "kind": "Test"
               }
             ],
@@ -504,7 +504,7 @@
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
                 ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -540,7 +540,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "kind": "Test"
               }
             ],
@@ -575,7 +575,7 @@
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
                 ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 2,
                 "kind": "Test"
               }
@@ -617,7 +617,7 @@
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
                 ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -682,7 +682,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "kind": "Test"
               }
             ],

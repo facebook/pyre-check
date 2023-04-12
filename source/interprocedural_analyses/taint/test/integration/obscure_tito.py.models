@@ -157,7 +157,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Ovr{obscure_tito.C::taint_parameter}" }
+                  {
+                    "port": "leaf:tainted_parameter",
+                    "name": "Ovr{obscure_tito.C::taint_parameter}"
+                  }
                 ],
                 "kind": "Test"
               }

@@ -41,7 +41,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 2,
                 "kind": "Test"
               }
@@ -112,7 +112,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -183,7 +183,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -276,7 +276,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -307,7 +307,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "maximum_trace_length.py",

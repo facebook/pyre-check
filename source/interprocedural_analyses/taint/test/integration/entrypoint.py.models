@@ -40,7 +40,7 @@
             "is_self_call": false,
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -105,7 +105,7 @@
             "is_self_call": false,
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -166,7 +166,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -227,7 +227,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -288,7 +288,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -349,7 +349,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "length": 1,
                 "kind": "MutationSink"
               }
@@ -417,7 +417,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -478,7 +478,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -527,7 +527,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append" } ],
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
                 "kind": "MutationSink"
               }
             ],

@@ -38,11 +38,15 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[b]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindB]"
               }
             ],
@@ -107,11 +111,15 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[b]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindB]"
               }
             ],
@@ -172,7 +180,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               }
             ],
@@ -237,11 +247,15 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[b]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindB]"
               }
             ],
@@ -308,11 +322,15 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               },
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[b]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindB]"
               }
             ],
@@ -373,7 +391,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               }
             ],
@@ -438,7 +458,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               }
             ],
@@ -503,7 +525,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               }
             ],
@@ -568,7 +592,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "lineage_analysis.sink" } ],
+                "leaves": [
+                  { "port": "leaf:arg[a]", "name": "lineage_analysis.sink" }
+                ],
                 "kind": "SinkA[KindA]"
               }
             ],

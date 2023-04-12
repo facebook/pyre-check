@@ -1242,8 +1242,12 @@ end = struct
             else
               let open Features in
               let make_leaf_name callee =
-                LeafName.{ leaf = Target.external_name callee; port = None }
-                |> LeafNameInterned.intern
+                let port =
+                  AccessPath.Root.parameter_name port
+                  |> Option.map ~f:(fun root ->
+                         Format.asprintf "leaf:%s%a" root Abstract.TreeDomain.Label.pp_path path)
+                in
+                LeafName.{ leaf = Target.external_name callee; port } |> LeafNameInterned.intern
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
           in

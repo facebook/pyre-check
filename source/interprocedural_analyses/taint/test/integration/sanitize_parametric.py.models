@@ -41,7 +41,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "sanitize_parametric.a_sink_x" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:x",
+                    "name": "sanitize_parametric.a_sink_x"
+                  }
+                ],
                 "length": 1,
                 "kind": "TestA[X]"
               }
@@ -141,7 +146,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "sanitize_parametric.a_sink_x" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:x",
+                    "name": "sanitize_parametric.a_sink_x"
+                  }
+                ],
                 "kind": "TestA[X]"
               }
             ],
@@ -155,7 +165,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "sanitize_parametric.a_sink_y" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:x",
+                    "name": "sanitize_parametric.a_sink_y"
+                  }
+                ],
                 "kind": "NotSource[TestA]@TestA[Y]"
               }
             ],

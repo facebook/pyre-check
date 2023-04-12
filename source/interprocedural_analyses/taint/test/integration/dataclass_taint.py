@@ -56,6 +56,11 @@ def test_weird_dataclass_taint() -> WeirdDataClass:
     return WeirdDataClass(bad=1, another=2)
 
 
+def issue_with_weird_dataclass():
+    wdc = WeirdDataClass(bad=1, another=2)
+    _test_sink(wdc.bad)
+
+
 @final
 @dataclass(frozen=True)
 class DataClassWithSource:
@@ -134,3 +139,7 @@ class DataClassSwapArguments:
     def __init__(self, foo: str, bar: str) -> None:
         self.foo = bar
         self.bar = foo
+
+
+def test_dataclass_parameter_path(dc: DataClass):
+    _test_sink(dc.bad)

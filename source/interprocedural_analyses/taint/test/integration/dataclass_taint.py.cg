@@ -1,8 +1,10 @@
 @generated
 Call dependencies
 dataclass_taint.issue_in_dataclass_constructor (fun) -> [_test_source (fun) dataclass_taint.DataClassWIthInit::__init__ (method) object::__new__ (method)]
+dataclass_taint.issue_with_weird_dataclass (fun) -> [_test_sink (fun) dataclass_taint.WeirdDataClass::__init__ (method) object::__new__ (method)]
 dataclass_taint.test_class_attr_model_tainted_directly (fun) -> [_test_source (fun) dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad (object) dataclass_taint.DataClassWithClassAttributeTaintedDirectly::__init__ (method) object::__new__ (method)]
 dataclass_taint.test_class_attr_model_tainted_in_constructor (fun) -> [_test_source (fun) dataclass_taint.DataClassWithClassAttributeTaintedInConstructor::__init__ (method) object::__new__ (method)]
+dataclass_taint.test_dataclass_parameter_path (fun) -> [_test_sink (fun)]
 dataclass_taint.test_dataclass_with_other_source (fun) -> [_test_sink (fun) dataclass_taint.DataClassWithOtherSource.tainted (object)]
 dataclass_taint.test_dataclass_with_source (fun) -> [_test_sink (fun) dataclass_taint.DataClassWithSource.tainted (object)]
 dataclass_taint.test_weird_dataclass_taint (fun) -> [dataclass_taint.WeirdDataClass::__init__ (method) object::__new__ (method)]

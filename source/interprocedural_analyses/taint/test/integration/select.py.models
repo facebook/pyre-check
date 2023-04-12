@@ -334,7 +334,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -368,7 +368,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "select.view_entry_field" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:request",
+                    "name": "select.view_entry_field"
+                  }
+                ],
                 "kind": "UserControlled"
               }
             ],
@@ -390,7 +395,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -425,7 +430,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -490,7 +495,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -537,7 +542,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -574,7 +579,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "select.view_entry_index" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:request",
+                    "name": "select.view_entry_index"
+                  }
+                ],
                 "kind": "UserControlled"
               }
             ],
@@ -599,7 +609,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],

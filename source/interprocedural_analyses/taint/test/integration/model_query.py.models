@@ -651,7 +651,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -705,7 +708,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -737,7 +743,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -791,7 +800,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -823,7 +835,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -877,7 +892,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -909,7 +927,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -963,7 +984,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -995,7 +1019,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1047,7 +1074,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1079,7 +1109,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1133,7 +1166,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1165,7 +1201,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1217,7 +1256,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1302,7 +1344,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "model_query.alarm_5" } ],
+                "leaves": [
+                  { "port": "leaf:source", "name": "model_query.alarm_5" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1366,7 +1410,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "model_query.alarm_5" } ],
+                "leaves": [
+                  { "port": "leaf:source", "name": "model_query.alarm_5" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1588,7 +1634,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1640,7 +1689,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1700,7 +1752,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1732,7 +1787,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1786,7 +1844,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1890,7 +1951,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1906,7 +1970,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1930,7 +1997,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",
@@ -1941,7 +2011,10 @@
           },
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query.py",

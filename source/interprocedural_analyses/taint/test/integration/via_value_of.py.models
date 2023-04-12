@@ -56,7 +56,7 @@
                     "parameter": "PositionalParameter {position = 1; name = \"feature\"; positional_only = false}"
                   }
                 ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "kind": "Test"
               }
             ],
@@ -192,7 +192,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "via_value_of.sink_via_value_of" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:x",
+                    "name": "via_value_of.sink_via_value_of"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -222,7 +227,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "via_value_of.sink_via_value_of" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:x",
+                    "name": "via_value_of.sink_via_value_of"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -250,7 +260,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "via_value_of.sink_via_value_of" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:x",
+                    "name": "via_value_of.sink_via_value_of"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -449,7 +464,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -847,7 +862,12 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "via_value_of.sink_via_value_of" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:x",
+                    "name": "via_value_of.sink_via_value_of"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -878,7 +898,12 @@
                 "features": [
                   { "always-via-value": "<unknown:positional>" }
                 ],
-                "leaves": [ { "name": "via_value_of.sink_via_value_of" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:x",
+                    "name": "via_value_of.sink_via_value_of"
+                  }
+                ],
                 "length": 1,
                 "kind": "Test"
               }

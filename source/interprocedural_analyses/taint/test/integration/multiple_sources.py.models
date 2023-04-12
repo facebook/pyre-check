@@ -385,7 +385,12 @@
                   { "first-index": "<unknown>" },
                   { "always-via": "tito" }
                 ],
-                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:self",
+                    "name": "multiple_sources.Node.send"
+                  }
+                ],
                 "length": 1,
                 "kind": "TriggeredPartialSink[UserControlledAndVC[id]]"
               }
@@ -789,7 +794,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources.demonstrate_triggered_context:4321:0:Call|multiple_sources.Node.send|0|formal(self):38285492ef9da9445793b0ffeda245a0"
                 ],
-                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "leaves": [
+                  { "port": "leaf:vc", "name": "multiple_sources.Node.send" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
             ],
@@ -915,7 +922,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources.demonstrate_triggered_context_more_hops:4321:0:Call|multiple_sources.Node.send|0|formal(self):b1f7e0b31503976da817a2722618a44a"
                 ],
-                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "leaves": [
+                  { "port": "leaf:vc", "name": "multiple_sources.Node.send" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
             ],
@@ -1048,7 +1057,12 @@
                 "multi_source_issue_handles": [
                   "multiple_sources.demonstrate_triggered_input:4321:0:Call|multiple_sources.Node.send|0|formal(vc):024b0576a3b4d78da137c2e0a5d278be"
                 ],
-                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "leaves": [
+                  {
+                    "port": "leaf:self",
+                    "name": "multiple_sources.Node.send"
+                  }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[id]]"
               }
             ],
@@ -1086,7 +1100,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources.multiple_triggered_context:4321:0:Call|multiple_sources.Node.send|0|formal(self):a2be6d22a1aa8362f6500da78375547f"
                 ],
-                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "leaves": [
+                  { "port": "leaf:vc", "name": "multiple_sources.Node.send" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
             ],
@@ -1105,7 +1121,9 @@
                 "multi_source_issue_handles": [
                   "multiple_sources.multiple_triggered_context:4321:0:Call|multiple_sources.Node.send|1|formal(self):9c1d7ba0ef713f59efda3f6d1469d2a5"
                 ],
-                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "leaves": [
+                  { "port": "leaf:vc", "name": "multiple_sources.Node.send" }
+                ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
             ],

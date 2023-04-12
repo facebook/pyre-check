@@ -32,7 +32,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query_global_variable.py",
@@ -87,7 +90,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
             ],
             "origin": {
               "filename": "model_query_global_variable.py",
@@ -147,7 +153,10 @@
         "roots": [
           {
             "kinds": [
-              { "leaves": [ { "name": "list.append" } ], "kind": "Test1" }
+              {
+                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "kind": "Test1"
+              }
             ],
             "origin": {
               "filename": "model_query_global_variable.py",

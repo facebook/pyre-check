@@ -44,8 +44,8 @@
                   { "via": "tito" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkA" },
-                  { "name": "multi_sink_ports.sinkC" }
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
                 ],
                 "length": 1,
                 "kind": "Demo"
@@ -60,10 +60,10 @@
                   { "via": "tito" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkA" },
-                  { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" },
-                  { "name": "multi_sink_ports.sinkD" }
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkD" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -84,7 +84,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "b_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" }
+                ],
                 "length": 2,
                 "kind": "GetAttr"
               }
@@ -171,8 +173,8 @@
                   { "via": "tito" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkA" },
-                  { "name": "multi_sink_ports.sinkC" }
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
                 ],
                 "length": 2,
                 "kind": "Demo"
@@ -187,10 +189,10 @@
                   { "via": "tito" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkA" },
-                  { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" },
-                  { "name": "multi_sink_ports.sinkD" }
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkD" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
                 ],
                 "length": 2,
                 "kind": "Test"
@@ -211,7 +213,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "b_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" }
+                ],
                 "length": 4,
                 "kind": "GetAttr"
               }
@@ -291,13 +295,17 @@
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
+                ],
                 "length": 2,
                 "kind": "Demo"
               },
               {
                 "features": [ { "always-via": "b_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" }
+                ],
                 "length": 2,
                 "kind": "GetAttr"
               },
@@ -308,9 +316,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" },
-                  { "name": "multi_sink_ports.sinkD" }
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkD" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
                 ],
                 "length": 2,
                 "kind": "Test"
@@ -365,12 +373,16 @@
             "kinds": [
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "kind": "Demo"
               },
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -390,12 +402,16 @@
             "kinds": [
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "kind": "Demo"
               },
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -545,12 +561,16 @@
             "kinds": [
               {
                 "features": [ { "always-via": "b_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" }
+                ],
                 "kind": "GetAttr"
               },
               {
                 "features": [ { "always-via": "b_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -565,12 +585,16 @@
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
+                ],
                 "kind": "Demo"
               },
               {
                 "features": [ { "always-via": "c_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -585,7 +609,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "d_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkD" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkD" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -630,13 +656,17 @@
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
+                ],
                 "length": 1,
                 "kind": "Demo"
               },
               {
                 "features": [ { "always-via": "b_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" }
+                ],
                 "length": 1,
                 "kind": "GetAttr"
               },
@@ -647,9 +677,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" },
-                  { "name": "multi_sink_ports.sinkD" }
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkD" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -704,12 +734,16 @@
             "kinds": [
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "kind": "Demo"
               },
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -728,7 +762,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
+                ],
                 "length": 1,
                 "kind": "Demo"
               },
@@ -739,9 +775,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" },
-                  { "name": "multi_sink_ports.sinkD" }
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkD" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -767,7 +803,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "b_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" }
+                ],
                 "length": 1,
                 "kind": "GetAttr"
               }
@@ -800,13 +838,17 @@
             "kinds": [
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "length": 1,
                 "kind": "Demo"
               },
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -828,7 +870,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkC" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
+                ],
                 "length": 3,
                 "kind": "Demo"
               },
@@ -839,9 +883,9 @@
                   { "via": "b_feature" }
                 ],
                 "leaves": [
-                  { "name": "multi_sink_ports.sinkC" },
-                  { "name": "multi_sink_ports.sinkB" },
-                  { "name": "multi_sink_ports.sinkD" }
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkD" },
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkC" }
                 ],
                 "length": 3,
                 "kind": "Test"
@@ -862,13 +906,17 @@
             "kinds": [
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "length": 1,
                 "kind": "Demo"
               },
               {
                 "features": [ { "always-via": "a_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkA" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkA" }
+                ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -899,7 +947,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "b_feature" } ],
-                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "leaves": [
+                  { "port": "leaf:x", "name": "multi_sink_ports.sinkB" }
+                ],
                 "length": 3,
                 "kind": "GetAttr"
               }

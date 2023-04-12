@@ -39,7 +39,9 @@
                 "features": [
                   { "has": "first-index" }, { "first-index": "b" }
                 ],
-                "leaves": [ { "name": "issue_grouping.sink_b" } ],
+                "leaves": [
+                  { "port": "leaf:arg", "name": "issue_grouping.sink_b" }
+                ],
                 "length": 1,
                 "kind": "SinkB"
               }
@@ -108,7 +110,9 @@
                 "features": [
                   { "has": "first-index" }, { "first-index": "a" }
                 ],
-                "leaves": [ { "name": "issue_grouping.sink_a" } ],
+                "leaves": [
+                  { "port": "leaf:arg", "name": "issue_grouping.sink_a" }
+                ],
                 "length": 1,
                 "kind": "SinkA"
               }
@@ -148,7 +152,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "issue_grouping.sink_a" } ],
+                "leaves": [
+                  { "port": "leaf:arg", "name": "issue_grouping.sink_a" }
+                ],
                 "kind": "SinkA"
               }
             ],
@@ -170,7 +176,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "issue_grouping.sink_b" } ],
+                "leaves": [
+                  { "port": "leaf:arg", "name": "issue_grouping.sink_b" }
+                ],
                 "kind": "SinkB"
               }
             ],

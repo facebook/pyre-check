@@ -38,7 +38,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.test1_f1" }
+                  {
+                    "port": "leaf:a",
+                    "name": "model_query_parameters_viatypeof.test1_f1"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -105,7 +108,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.test1_f1" }
+                  {
+                    "port": "leaf:b",
+                    "name": "model_query_parameters_viatypeof.test1_f1"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -175,7 +181,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.test1_f1" }
+                  {
+                    "port": "leaf:c",
+                    "name": "model_query_parameters_viatypeof.test1_f1"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -247,7 +256,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.Test2_C.f1" }
+                  {
+                    "port": "leaf:a",
+                    "name": "model_query_parameters_viatypeof.Test2_C.f1"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -316,7 +328,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.Test2_C.f1" }
+                  {
+                    "port": "leaf:b",
+                    "name": "model_query_parameters_viatypeof.Test2_C.f1"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -388,7 +403,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.Test2_C.f1" }
+                  {
+                    "port": "leaf:c",
+                    "name": "model_query_parameters_viatypeof.Test2_C.f1"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -465,7 +483,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.Test2_C.f2" }
+                  {
+                    "port": "leaf:a",
+                    "name": "model_query_parameters_viatypeof.Test2_C.f2"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -537,7 +558,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.Test2_C.f2" }
+                  {
+                    "port": "leaf:b",
+                    "name": "model_query_parameters_viatypeof.Test2_C.f2"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -614,7 +638,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "model_query_parameters_viatypeof.Test2_C.f2" }
+                  {
+                    "port": "leaf:c",
+                    "name": "model_query_parameters_viatypeof.Test2_C.f2"
+                  }
                 ],
                 "kind": "Test"
               }

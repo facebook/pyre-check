@@ -255,7 +255,10 @@
         "taint": [
           {
             "kinds": [
-              { "leaves": [ { "name": "getattr" } ], "kind": "GetAttr" }
+              {
+                "leaves": [ { "port": "leaf:name", "name": "getattr" } ],
+                "kind": "GetAttr"
+              }
             ],
             "local_features": [
               { "always-via": "obscure:model" },
@@ -282,7 +285,7 @@
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
-                "leaves": [ { "name": "getattr" } ],
+                "leaves": [ { "port": "leaf:name", "name": "getattr" } ],
                 "length": 1,
                 "kind": "GetAttr"
               }
@@ -313,7 +316,7 @@
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
-                "leaves": [ { "name": "getattr" } ],
+                "leaves": [ { "port": "leaf:name", "name": "getattr" } ],
                 "length": 1,
                 "kind": "GetAttr"
               }
@@ -340,7 +343,7 @@
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
-                "leaves": [ { "name": "getattr" } ],
+                "leaves": [ { "port": "leaf:name", "name": "getattr" } ],
                 "length": 1,
                 "kind": "GetAttr"
               }
@@ -372,7 +375,7 @@
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
-                "leaves": [ { "name": "getattr" } ],
+                "leaves": [ { "port": "leaf:name", "name": "getattr" } ],
                 "length": 1,
                 "kind": "GetAttr"
               }
@@ -450,7 +453,7 @@
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
-                "leaves": [ { "name": "getattr" } ],
+                "leaves": [ { "port": "leaf:name", "name": "getattr" } ],
                 "length": 1,
                 "kind": "GetAttr"
               }
@@ -532,7 +535,7 @@
                   { "always-via": "broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
-                "leaves": [ { "name": "getattr" } ],
+                "leaves": [ { "port": "leaf:name", "name": "getattr" } ],
                 "length": 2,
                 "kind": "GetAttr"
               }
@@ -642,7 +645,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "kind": "Test"
               }
             ],
@@ -657,7 +660,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -690,7 +693,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "kind": "Test"
               }
             ],
@@ -710,7 +713,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -737,7 +740,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 2,
                 "kind": "Test"
               }
@@ -764,7 +767,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 3,
                 "kind": "Test"
               }
@@ -791,7 +794,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 4,
                 "kind": "Test"
               }
@@ -820,7 +823,7 @@
                   { "via": "broadening" },
                   { "via": "issue-broadening" }
                 ],
-                "leaves": [ { "name": "_test_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 5,
                 "kind": "Test"
               }
@@ -857,7 +860,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce" } ],
+                "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -871,7 +874,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce" } ],
+                "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -885,7 +888,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce" } ],
+                "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -902,7 +905,12 @@
         "port": "formal(obj)[bar]",
         "taint": [
           {
-            "kinds": [ { "leaves": [ { "name": "_sql" } ], "kind": "SQL" } ],
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:argument", "name": "_sql" } ],
+                "kind": "SQL"
+              }
+            ],
             "origin": {
               "filename": "model_simplification.py",
               "line": 100,

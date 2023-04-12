@@ -576,17 +576,21 @@ let initialize
             ~stubs:(Target.HashSet.of_list stubs)
             queries
         in
+        let dumped_models_equal left right =
+          let left, right = Yojson.Safe.from_string left, Yojson.Safe.from_string right in
+          Yojson.Safe.equal left right
+        in
         (match taint_configuration.dump_model_query_results_path, expected_dump_string with
         | Some path, Some expected_string ->
             ModelQueryExecution.DumpModelQueryResults.dump_to_file_and_string
               ~model_query_results
               ~path
-            |> assert_equal ~cmp:String.equal ~printer:Fn.id expected_string
+            |> assert_equal ~cmp:dumped_models_equal ~printer:Fn.id expected_string
         | Some path, None ->
             ModelQueryExecution.DumpModelQueryResults.dump_to_file ~model_query_results ~path
         | None, Some expected_string ->
             ModelQueryExecution.DumpModelQueryResults.dump_to_string ~model_query_results
-            |> assert_equal ~cmp:String.equal ~printer:Fn.id expected_string
+            |> assert_equal ~cmp:dumped_models_equal ~printer:Fn.id expected_string
         | None, None -> ());
         let verify = static_analysis_configuration.verify_models && verify_model_queries in
         ModelVerificationError.verify_models_and_dsl errors verify;
