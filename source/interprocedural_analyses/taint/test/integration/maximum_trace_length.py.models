@@ -280,13 +280,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
               "position": {
                 "filename": "maximum_trace_length.py",
@@ -339,15 +333,7 @@
         "port": "result",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
               "position": {
                 "filename": "maximum_trace_length.py",

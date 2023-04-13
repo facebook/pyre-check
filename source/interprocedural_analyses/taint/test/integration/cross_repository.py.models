@@ -438,12 +438,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "port": "producer:1:formal(x)",
-                    "name": "crossRepositorySink"
-                  }
-                ],
                 "length": 6,
                 "kind": "Test"
               }
@@ -512,12 +506,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "port": "producer:1:result",
-                    "name": "crossRepositorySource"
-                  }
-                ],
                 "length": 4,
                 "kind": "UserControlled"
               }

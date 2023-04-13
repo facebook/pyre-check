@@ -510,7 +510,6 @@
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
                 ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -581,7 +580,6 @@
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
                 ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 2,
                 "kind": "Test"
               }
@@ -623,7 +621,6 @@
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
                 ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }

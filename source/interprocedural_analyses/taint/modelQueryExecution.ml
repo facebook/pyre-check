@@ -248,6 +248,7 @@ module DumpModelQueryResults = struct
               ~expand_overrides:None
               ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
               ~filename_lookup:None
+              ~export_leaf_names:Domains.ExportLeafNames.Always
               callable
               model );
         ]

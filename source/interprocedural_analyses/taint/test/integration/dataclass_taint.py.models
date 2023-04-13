@@ -1482,12 +1482,6 @@
                 "features": [
                   { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
-                "leaves": [
-                  {
-                    "port": "leaf:bad",
-                    "name": "dataclass_taint.WeirdDataClass.__init__"
-                  }
-                ],
                 "length": 1,
                 "kind": "UserControlled"
               }

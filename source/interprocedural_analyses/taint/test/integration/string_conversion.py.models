@@ -1517,12 +1517,6 @@
                 "features": [
                   { "has": "first-index" }, { "first-index": "tainted" }
                 ],
-                "leaves": [
-                  {
-                    "port": "leaf:return",
-                    "name": "Obj{django.http.Request.GET}"
-                  }
-                ],
                 "length": 1,
                 "kind": "UserControlled"
               }
@@ -1777,18 +1771,7 @@
           {
             "receiver_interval": [ { "lower": 10, "upper": 11 } ],
             "is_self_call": false,
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "port": "leaf:return",
-                    "name": "Obj{string_conversion.C.g}"
-                  }
-                ],
-                "length": 1,
-                "kind": "UserControlled"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "UserControlled" } ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
               "position": {
@@ -1853,12 +1836,6 @@
               {
                 "features": [
                   { "has": "first-index" }, { "first-index": "tainted" }
-                ],
-                "leaves": [
-                  {
-                    "port": "leaf:return",
-                    "name": "Obj{django.http.Request.GET}"
-                  }
                 ],
                 "length": 1,
                 "kind": "UserControlled"

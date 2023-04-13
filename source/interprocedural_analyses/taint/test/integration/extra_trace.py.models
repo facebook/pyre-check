@@ -247,15 +247,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  { "port": "leaf:arg", "name": "extra_trace.transform_x" }
-                ],
-                "length": 1,
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
               "position": {
                 "filename": "extra_trace.py",
@@ -652,15 +644,7 @@
             }
           },
           {
-            "kinds": [
-              {
-                "leaves": [
-                  { "port": "leaf:arg", "name": "extra_trace.transform_x" }
-                ],
-                "length": 1,
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
               "position": {
                 "filename": "extra_trace.py",

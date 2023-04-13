@@ -647,6 +647,7 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lo
       ~expand_overrides
       ~is_valid_callee
       ~filename_lookup:(Some filename_lookup)
+      ~export_leaf_names:ExportLeafNames.Always
       issue.flow.source_taint
   in
   let sink_traces =
@@ -654,6 +655,7 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lo
       ~expand_overrides
       ~is_valid_callee
       ~filename_lookup:(Some filename_lookup)
+      ~export_leaf_names:ExportLeafNames.Always
       issue.flow.sink_taint
   in
   let features = get_issue_features issue.flow in

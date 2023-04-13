@@ -109,6 +109,7 @@ let externalize
       ~expand_overrides:(Some override_graph)
       ~is_valid_callee:(has_significant_summary ~fixpoint_state)
       ~filename_lookup:(Some filename_lookup)
+      ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
       callable
       model
     :: issues

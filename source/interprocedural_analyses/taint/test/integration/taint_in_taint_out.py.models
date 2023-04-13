@@ -1328,7 +1328,6 @@
                   { "always-via": "special_sink" },
                   { "always-via": "string_concat_lhs" }
                 ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
               }

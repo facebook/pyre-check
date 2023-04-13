@@ -2129,9 +2129,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [
-                  { "port": "leaf:return", "name": "sanitize.a_source" }
-                ],
                 "length": 1,
                 "kind": "NotSink[TestB]@NotSink[TestA]:TestA"
               }
@@ -2196,7 +2193,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "port": "leaf:x", "name": "sanitize.a_sink" } ],
                 "length": 1,
                 "kind": "NotSource[TestB]@NotSource[TestA]:TestA"
               }
@@ -2706,11 +2702,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "NotSource[UserControlled]:Test"
-              }
+              { "length": 1, "kind": "NotSource[UserControlled]:Test" }
             ],
             "call": {
               "position": {
@@ -2813,11 +2805,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "leaves": [ { "port": "leaf:argument", "name": "_sql" } ],
-                "length": 1,
-                "kind": "NotSource[UserControlled]:SQL"
-              }
+              { "length": 1, "kind": "NotSource[UserControlled]:SQL" }
             ],
             "call": {
               "position": {
@@ -2838,13 +2826,7 @@
         "port": "formal(a)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
-                "length": 1,
-                "kind": "RemoteCodeExecution"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "RemoteCodeExecution" } ],
             "call": {
               "position": {
                 "filename": "sanitize.py",
@@ -2945,9 +2927,6 @@
           {
             "kinds": [
               {
-                "leaves": [
-                  { "port": "leaf:return", "name": "_user_controlled" }
-                ],
                 "length": 1,
                 "kind": "NotSink[RemoteCodeExecution]:UserControlled"
               }
@@ -4931,7 +4910,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
                 "length": 1,
                 "kind": "NotSource[TestB]@NotSource[TestA]:RemoteCodeExecution"
               }
@@ -4966,7 +4944,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
                 "length": 2,
                 "kind": "NotSource[Test]@NotSource[TestB]:NotSource[TestA]:RemoteCodeExecution"
               }
@@ -5030,7 +5007,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
                 "length": 1,
                 "kind": "NotSource[TestA]@NotSource[TestB]:RemoteCodeExecution"
               }
@@ -5065,7 +5041,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
                 "length": 2,
                 "kind": "NotSource[Test]@NotSource[TestA]:NotSource[TestB]:RemoteCodeExecution"
               }

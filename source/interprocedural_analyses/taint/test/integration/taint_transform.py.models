@@ -1822,18 +1822,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
-                "length": 1,
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -2059,12 +2048,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
                 "length": 1,
                 "kind": "TransformX:ExtraTraceSink"
               }
@@ -3047,12 +3030,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
                 "length": 1,
                 "kind": "TransformX:ExtraTraceSink"
               }
@@ -3109,12 +3086,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
                 "length": 1,
                 "kind": "TransformX:ExtraTraceSink"
               }
@@ -3170,18 +3141,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
-                "length": 1,
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -3231,18 +3191,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
-                "length": 1,
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 570, "start": 33, "end": 36 } ],
             "call": {
@@ -3297,12 +3246,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
                 "length": 1,
                 "kind": "TransformX:ExtraTraceSink"
               }
@@ -3359,12 +3302,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
                 "length": 1,
                 "kind": "TransformX:ExtraTraceSink"
               }
@@ -3420,18 +3357,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
-                "length": 1,
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
@@ -3481,18 +3407,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
-                "length": 1,
-                "kind": "TransformX:ExtraTraceSink"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 546, "start": 35, "end": 38 } ],
             "call": {
@@ -3547,12 +3462,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_x"
-                  }
-                ],
                 "length": 1,
                 "kind": "TransformX:ExtraTraceSink"
               }
@@ -3586,16 +3495,7 @@
               }
             ],
             "kinds": [
-              {
-                "leaves": [
-                  {
-                    "port": "leaf:arg",
-                    "name": "taint_transform.transform_y"
-                  }
-                ],
-                "length": 1,
-                "kind": "TransformX@TransformY:ExtraTraceSink"
-              }
+              { "length": 1, "kind": "TransformX@TransformY:ExtraTraceSink" }
             ],
             "local_features": [
               { "always-via": "transform-tito-depth:2" },

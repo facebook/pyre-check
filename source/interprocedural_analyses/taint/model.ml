@@ -59,6 +59,7 @@ module Forward = struct
             ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
             ~filename_lookup:None
+            ~export_leaf_names:ExportLeafNames.Always
             source_taint))
 
 
@@ -98,6 +99,7 @@ module Backward = struct
             ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
             ~filename_lookup:None
+            ~export_leaf_names:ExportLeafNames.Always
             taint_in_taint_out))
       (json_to_string
          ~indent:"    "
@@ -105,6 +107,7 @@ module Backward = struct
             ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
             ~filename_lookup:None
+            ~export_leaf_names:ExportLeafNames.Always
             sink_taint))
 
 
@@ -664,6 +667,7 @@ let to_json
     ~expand_overrides
     ~is_valid_callee
     ~filename_lookup
+    ~export_leaf_names
     callable
     {
       forward = { source_taint };
@@ -680,7 +684,12 @@ let to_json
       model_json
       @ [
           ( "sources",
-            ForwardState.to_json ~expand_overrides ~is_valid_callee ~filename_lookup source_taint );
+            ForwardState.to_json
+              ~expand_overrides
+              ~is_valid_callee
+              ~filename_lookup
+              ~export_leaf_names
+              source_taint );
         ]
     else
       model_json
@@ -690,7 +699,12 @@ let to_json
       model_json
       @ [
           ( "sinks",
-            BackwardState.to_json ~expand_overrides ~is_valid_callee ~filename_lookup sink_taint );
+            BackwardState.to_json
+              ~expand_overrides
+              ~is_valid_callee
+              ~filename_lookup
+              ~export_leaf_names
+              sink_taint );
         ]
     else
       model_json
@@ -704,6 +718,7 @@ let to_json
               ~expand_overrides
               ~is_valid_callee
               ~filename_lookup
+              ~export_leaf_names
               taint_in_taint_out );
         ]
     else

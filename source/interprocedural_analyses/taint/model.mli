@@ -113,6 +113,7 @@ val to_json
   is_valid_callee:
     (port:AccessPath.Root.t -> path:Abstract.TreeDomain.Label.path -> callee:Target.t -> bool) ->
   filename_lookup:(Ast.Reference.t -> string option) option ->
+  export_leaf_names:ExportLeafNames.t ->
   Target.t ->
   t ->
   Yojson.Safe.t

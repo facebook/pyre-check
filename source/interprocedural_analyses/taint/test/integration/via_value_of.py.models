@@ -476,13 +476,7 @@
         "port": "formal(parameter)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "Test" } ],
             "local_features": [ { "always-via-value": "attached to sink" } ],
             "call": {
               "position": {
@@ -509,15 +503,7 @@
         "port": "result",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
+            "kinds": [ { "length": 1, "kind": "Test" } ],
             "local_features": [
               { "always-via-value": "attached to source" }
             ],
@@ -943,12 +929,6 @@
               {
                 "features": [
                   { "always-via-value": "<unknown:positional>" }
-                ],
-                "leaves": [
-                  {
-                    "port": "leaf:x",
-                    "name": "via_value_of.sink_via_value_of"
-                  }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -1395,12 +1375,6 @@
               {
                 "features": [
                   { "always-via-value": "<unknown:positional>" }
-                ],
-                "leaves": [
-                  {
-                    "port": "leaf:return",
-                    "name": "via_value_of.return_via_parameter_name"
-                  }
                 ],
                 "length": 1,
                 "kind": "Test"

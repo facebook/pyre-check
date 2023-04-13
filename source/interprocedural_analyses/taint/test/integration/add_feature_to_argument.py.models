@@ -478,12 +478,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "string_concat_rhs" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:second",
-                    "name": "add_feature_to_argument.add_feature_to_second"
-                  }
-                ],
                 "length": 1,
                 "kind": "AddFeatureToArgument"
               }
@@ -510,12 +504,6 @@
             "kinds": [
               {
                 "features": [ { "always-via": "string_concat_lhs" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:first",
-                    "name": "add_feature_to_argument.add_feature_to_first"
-                  }
-                ],
                 "length": 1,
                 "kind": "AddFeatureToArgument"
               }

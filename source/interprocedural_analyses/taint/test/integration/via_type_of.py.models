@@ -1958,12 +1958,6 @@
             "kinds": [
               {
                 "features": [ { "always-via-type": "typing.Any" } ],
-                "leaves": [
-                  {
-                    "port": "leaf:return",
-                    "name": "via_type_of.return_via_parameter_type"
-                  }
-                ],
                 "length": 1,
                 "kind": "Test"
               }
