@@ -274,10 +274,12 @@ class Setup(NamedTuple):
             )
 
         self.produce_dune_file(pyre_directory, build_type_override)
-        # Note: we do not run `make clean` because we want the result of the
-        # explicit `produce_dune_file` to remain.
         if run_clean:
-            run_in_opam_environment(["dune", "clean"])
+            # Note: we do not run `make clean` because we want the result of the
+            # explicit `produce_dune_file` to remain.
+            # Dune 3.7 runs into `rmdir` failure when cleaning the `_build` directory
+            # for some reason. Manually clean the dir to work around the issue.
+            run_in_opam_environment(["rm", "-rf", "_build"])
         if self.release:
             LOG.info("Running a release build. This may take a while.")
             run_in_opam_environment(["make", "release"])
