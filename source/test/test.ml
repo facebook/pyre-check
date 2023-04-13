@@ -148,8 +148,8 @@ let parse_single_define source =
   | _ -> failwith "Could not parse single define"
 
 
-let parse_single_class source =
-  match parse_single_statement source with
+let parse_single_class ?(preprocess = false) source =
+  match parse_single_statement ~preprocess source with
   | { Node.value = Statement.Class definition; _ } -> definition
   | _ -> failwith "Could not parse single class"
 

@@ -92,11 +92,17 @@ module ClassAttributes : sig
   val empty : unit -> t
 
   (* Exposed for testing only *)
-  module Private : sig
+  module Testing : sig
     val assigned_by_define
       :  Define.t ->
       definition:Class.t ->
       Attribute.t Identifier.SerializableMap.t
+
+    val attributes
+      :  include_generated_attributes:bool ->
+      in_test:bool ->
+      t ->
+      Attribute.attribute Node.t Identifier.SerializableMap.t
   end
 end
 

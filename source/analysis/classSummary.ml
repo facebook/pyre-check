@@ -1020,8 +1020,10 @@ module ClassAttributes = struct
 
 
   (* Exposed for testing only *)
-  module Private = struct
+  module Testing = struct
     let assigned_by_define = assigned_by_define
+
+    let attributes = attributes
   end
 end
 

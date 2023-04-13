@@ -18,6 +18,7 @@
   classHierarchyTest
   classHierarchyEnvironmentTest
   classMetadataEnvironmentTest
+  classSummaryTest
   constraintsSetTest
   dataClassTest
   errorsEnvironmentTest

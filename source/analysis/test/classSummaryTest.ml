@@ -51,14 +51,20 @@ let test_attributes _ =
       List.map expected ~f:attribute
     in
     let definition =
-      { Class.name = + !&""; bases = []; body = []; decorators = []; top_level_unbound_names = [] }
+      {
+        Class.name = !&"";
+        base_arguments = [];
+        body = [];
+        decorators = [];
+        top_level_unbound_names = [];
+      }
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> Attribute.location_insensitive_compare left right = 0))
       ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
       expected
       (parse_single_define source
-      |> ClassAttributes.Private.assigned_by_define ~definition
+      |> ClassAttributes.Testing.assigned_by_define ~definition
       |> Identifier.SerializableMap.bindings
       |> List.map ~f:snd)
   in
@@ -181,7 +187,7 @@ let test_attributes _ =
           if number_of_defines > 0 then
             let define =
               {
-                Define.Signature.name = + !&"foo";
+                Define.Signature.name = !&"foo";
                 parameters = [];
                 decorators = [];
                 return_annotation = Some !"int";
@@ -226,7 +232,9 @@ let test_attributes _ =
       in
       List.map expected ~f:attribute
     in
-    let printer attributes = List.map attributes ~f:Attribute.show |> String.concat ~sep:"\n\n" in
+    let printer attributes =
+      Format.asprintf "%a" Sexp.pp_hum ([%sexp_of: Attribute.t list] attributes)
+    in
     let equal
         { Node.value = { Attribute.kind = left; name = left_name }; location = left_location }
         { Node.value = { Attribute.kind = right; name = right_name }; location = right_location }
@@ -239,7 +247,8 @@ let test_attributes _ =
               Expression.location_insensitive_compare left right = 0
             in
             let origin_and_value_equal left right =
-              equal_origin left.origin right.origin && expression_equal left.value right.value
+              [%compare.equal: origin] left.origin right.origin
+              && expression_equal left.value right.value
             in
             Option.equal expression_equal left.annotation right.annotation
             && List.equal origin_and_value_equal left.values right.values
@@ -256,9 +265,9 @@ let test_attributes _ =
       ~cmp:(List.equal equal)
       ~printer
       expected
-      (parse_single_class source
+      (parse_single_class ~preprocess:true source
       |> ClassAttributes.create
-      |> ClassAttributes.attributes ~in_test ~include_generated_attributes
+      |> ClassAttributes.Testing.attributes ~in_test ~include_generated_attributes
       |> Identifier.SerializableMap.bindings
       |> List.map ~f:snd)
   in
@@ -287,11 +296,12 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        Foo.attribute: int
+        attribute: int
         def __init__(self) -> None:
           self.attribute = value
     |}
     [
+      attribute ~name:"__init__" ~number_of_defines:1 ();
       attribute
         ~name:"attribute"
         ~annotation:Type.integer
@@ -301,18 +311,18 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        Foo.attribute: int = value
+        attribute: int = value
     |}
     [attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Explicit] ()];
   assert_attributes
     {|
       class Foo:
-        def Foo.__init__(self):
+        def __init__(self):
           self.implicit = implicit
           self.whatever()['asdf'] = 5
           if True:
             self.ignored = ignored
-        Foo.attribute: int = value
+        attribute: int = value
         whatever()['asdf'] = 5
     |}
     [
@@ -325,16 +335,16 @@ let test_attributes _ =
     {|
       class Foo:
         @overload
-        def Foo.f(self, x: int) -> int: ...
-        def Foo.f(self, x: str) -> str: ...
+        def f(self, x: int) -> int: ...
+        def f(self, x: str) -> str: ...
     |}
     [attribute ~name:"f" ~number_of_defines:2 ()];
   assert_attributes
     {|
       class Foo:
-        def Foo.__init__(self):
+        def __init__(self):
           self.attribute = value  # Prioritize explicit declaration
-        Foo.attribute: int = value
+        attribute: int = value
     |}
     [
       attribute ~name:"__init__" ~number_of_defines:1 ();
@@ -347,11 +357,11 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        def Foo.__init__(self):
+        def __init__(self):
           self.init()
-        def Foo.init(self):
+        def init(self):
           self.attribute: int = value
-        def Foo.not_inlined(self):
+        def not_inlined(self):
           self.other: int = 1
     |}
     [
@@ -364,7 +374,7 @@ let test_attributes _ =
     {|
       class Foo:
         @property
-        def Foo.property(self) -> int:
+        def property(self) -> int:
           pass
     |}
     [attribute ~name:"property" ~annotation:Type.integer ~property:true ()];
@@ -372,13 +382,13 @@ let test_attributes _ =
     {|
       class Foo:
         @property
-        def Foo.property(self) -> int: ...
+        def property(self) -> int: ...
     |}
     [attribute ~name:"property" ~annotation:Type.integer ~property:true ()];
   assert_attributes
     {|
       class Foo:
-        class Foo.Bar:  # no preprocessing in tests
+        class Bar:
           ...
     |}
     [
@@ -392,9 +402,9 @@ let test_attributes _ =
     {|
       class Foo:
         @property
-        def Foo.x(self) -> int: ...
+        def x(self) -> int: ...
         @x.setter
-        def Foo.x(self, value:str) -> None: ...
+        def x(self, value:str) -> None: ...
     |}
     [
       attribute
@@ -410,7 +420,7 @@ let test_attributes _ =
     {|
       class Foo:
         @pyre_extensions.classproperty
-        def Foo.property(self) -> int: ...
+        def property(self) -> int: ...
     |}
     [attribute ~name:"property" ~annotation:Type.integer ~property:true ~class_property:true ()];
 
@@ -418,7 +428,7 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        Foo.a, Foo.b = 1, 2
+        a, b = 1, 2
      |}
     [
       "a", None, None, ["1", Attribute.Explicit], false, 0, false, false, false;
@@ -427,7 +437,7 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        Foo.a, Foo.b = list(range(2))
+        a, b = list(range(2))
     |}
     [
       "a", None, None, ["list(range(2))[0]", Attribute.Explicit], false, 0, false, false, false;
@@ -439,7 +449,7 @@ let test_attributes _ =
     ~in_test:true
     {|
       class Test:
-        def Test.setUp(self):
+        def setUp(self):
           self.attribute = value
     |}
     [
@@ -450,9 +460,9 @@ let test_attributes _ =
     ~in_test:true
     {|
       class Test:
-        def Test.setUp(self):
+        def setUp(self):
           self.attribute = value
-        def Test.with_context(self):
+        def with_context(self):
           self.context = value
     |}
     [
@@ -465,7 +475,7 @@ let test_attributes _ =
     ~in_test:true
     {|
       class Test:
-        def Test.setUpClass(self):
+        def setUpClass(self):
           self.attribute = value
     |}
     [
@@ -479,41 +489,45 @@ let test_attributes _ =
       class Foo:
         __slots__ = ['attribute']
     |}
-    [attribute ~name:"attribute" ()];
+    [
+      attribute ~name:"__slots__" ~values:["['attribute']", Attribute.Explicit] ();
+      attribute ~name:"attribute" ();
+    ];
   assert_attributes
     {|
       class Foo:
         __slots__ = ['name', 'identifier']
     |}
-    [attribute ~name:"identifier" (); attribute ~name:"name" ()];
+    [
+      attribute ~name:"__slots__" ~values:["['name', 'identifier']", Attribute.Explicit] ();
+      attribute ~name:"identifier" ();
+      attribute ~name:"name" ();
+    ];
   assert_attributes
     {|
       class Foo:
-        Foo.x, Foo.y = 1, 2
+        x, y = 1, 2
     |}
     [
-      attribute ~location:((3, 2), (3, 7)) ~name:"x" ~values:["1", Attribute.Explicit] ();
-      attribute ~location:((3, 9), (3, 14)) ~name:"y" ~values:["2", Attribute.Explicit] ();
-    ]
+      attribute ~name:"x" ~values:["1", Attribute.Explicit] ();
+      attribute ~name:"y" ~values:["2", Attribute.Explicit] ();
+    ];
+  ()
 
 
 let test_is_final _ =
-  let decorator ~name =
-    { Decorator.name = Node.create_with_default_location (Reference.create name); arguments = None }
-  in
   let class_summary ~decorators =
     {
-      name = Reference.create "foo";
+      ClassSummary.name = Reference.create "foo";
       qualifier = Reference.create "bar";
-      bases = [];
+      bases = { base_classes = []; metaclass = None; init_subclass_arguments = [] };
       decorators;
-      attribute_components = ClassAttributes.empty ();
+      class_attributes = ClassAttributes.empty ();
     }
   in
   assert_false (ClassSummary.is_final (class_summary ~decorators:[]));
-  assert_true (ClassSummary.is_final (class_summary ~decorators:[decorator ~name:"typing.final"]));
-  assert_true
-    (ClassSummary.is_final (class_summary ~decorators:[decorator ~name:"typing_extensions.final"]));
+  assert_true (ClassSummary.is_final (class_summary ~decorators:[!"typing.final"]));
+  assert_true (ClassSummary.is_final (class_summary ~decorators:[!"typing_extensions.final"]));
   ()
 
 
