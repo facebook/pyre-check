@@ -30,6 +30,7 @@ from .callgraph_utilities import (
 
 DEFAULT_WORKING_DIRECTORY: str = os.getcwd()
 
+
 @dataclass(frozen=True)
 class LeakAnalysisScriptError:
     error_message: str
@@ -57,14 +58,20 @@ class LeakAnalysisResult:
             }
         )
 
+
 def is_valid_callee(callee: str) -> bool:
     components = callee.strip().split(".")
-    is_valid_callee = all(component.isidentifier() and not keyword.iskeyword(component) for component in components)
+    is_valid_callee = all(
+        component.isidentifier() and not keyword.iskeyword(component)
+        for component in components
+    )
     return is_valid_callee
 
 
 def prepare_issues_for_query(callees: List[str]) -> str:
-    single_callee_query = [f"global_leaks({callee})" for callee in callees if is_valid_callee(callee)]
+    single_callee_query = [
+        f"global_leaks({callee})" for callee in callees if is_valid_callee(callee)
+    ]
     return "batch(" + ", ".join(single_callee_query) + ")"
 
 
@@ -93,9 +100,7 @@ def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
             )
         elif "error" in query_response:
             query_errors.append(query_response["error"])
-        elif (
-            "response" in query_response and "errors" in query_response["response"]
-        ):
+        elif "response" in query_response and "errors" in query_response["response"]:
             global_leaks += query_response["response"]["errors"]
         else:
             script_errors.append(
@@ -110,6 +115,7 @@ def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
         query_errors=query_errors,
         script_errors=script_errors,
     )
+
 
 def find_issues(callees: List[str], search_start_path: Path) -> LeakAnalysisResult:
     query_str = prepare_issues_for_query(callees)
@@ -144,6 +150,7 @@ def find_issues(callees: List[str], search_start_path: Path) -> LeakAnalysisResu
             "Please run `pyre` first to set up a server."
         ) from e
 
+
 def attach_trace_to_query_results(
     pyre_results: LeakAnalysisResult, callables_and_traces: Dict[str, Trace]
 ) -> None:
@@ -170,6 +177,7 @@ def attach_trace_to_query_results(
         trace = callables_and_traces[define]
         issue["trace"] = cast(JSON, trace)
 
+
 def validate_json_list(json_list: JSON, from_file: str, level: str) -> None:
     if not isinstance(json_list, list):
         raise ValueError(
@@ -190,6 +198,7 @@ def analyze() -> None:
     Performs analyses over Pyre's results using a call graph and list of entrypoints.
     """
     pass
+
 
 @analyze.command()
 @click.argument("callables_file", type=click.File("r"))
@@ -226,7 +235,12 @@ def callable_leaks(
 
 
 @analyze.command()
-@click.option("--call-graph-kind-and-path", type=(click.Choice(InputType.members(), case_sensitive=False), click.File("r")), multiple=True, required=True)
+@click.option(
+    "--call-graph-kind-and-path",
+    type=(click.Choice(InputType.members(), case_sensitive=False), click.File("r")),
+    multiple=True,
+    required=True,
+)
 @click.argument("entrypoints_file", type=click.File("r"))
 @click.option(
     "--project-path",
@@ -263,7 +277,6 @@ def entrypoint_leaks(
     validate_json_list(entrypoints_json, "ENTRYPOINTS_FILE", "top-level")
 
     input_format = get_union_callgraph_format(call_graph_kind_and_path)
-
 
     entrypoints = Entrypoints(entrypoints_json, input_format.get_keys())
 

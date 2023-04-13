@@ -580,7 +580,6 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         self.assertFalse(is_valid_callee("-f1.f2"))
         self.assertFalse(is_valid_callee("f1#f2"))
 
-
     def test_prepare_issues_for_query(self) -> None:
         callees = ["f1", "f2", "f3", "f1#f2", "f1.f2.f3", "11", "-f1.f2"]
 
@@ -588,7 +587,6 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         expected_query = "batch(global_leaks(f1), global_leaks(f2), global_leaks(f3), global_leaks(f1.f2.f3))"
 
         self.assertEqual(result_query, expected_query)
-
 
     def test_collect_pyre_query_results(self) -> None:
         example_pyre_stdout = {
