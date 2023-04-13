@@ -41,5 +41,6 @@ clean:
 .PHONY: configure
 configure: dune;
 
-dune: dune.in
+dune: dune.in $(wildcard **/dune)
 	../scripts/setup.sh --configure
+	dune build @fmt --auto-promote || true
