@@ -30,18 +30,19 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 COMPILER_VERSION = "4.14.0"
 DEPENDENCIES = [
-    "base64.3.5.0",
+    "base64.3.5.1",
     "core.v0.15.1",
     "core_unix.v0.15.2",
     "re2.v0.15.0",
-    "dune.3.4.1",
+    "dune.3.7.1",
     "yojson.2.0.2",
     "ppx_deriving_yojson.3.7.0",
-    "ounit.2.2.6",
+    "ppx_yojson_conv.v0.15.1",
+    "ounit2.2.2.7",
     "menhir.20220210",
     "lwt.5.6.1",
     "lwt_ppx.2.1.0",
-    "ounit2-lwt.2.2.6",
+    "ounit2-lwt.2.2.7",
     "pyre-ast.0.1.8",
     "mtime.1.4.0",
     "errpy.0.0.7",
