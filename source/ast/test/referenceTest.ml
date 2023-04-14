@@ -170,11 +170,17 @@ let test_prefix _ =
   assert_prefix "a" (Some "");
   assert_prefix "a.b" (Some "a");
   assert_prefix "a.b.c" (Some "a.b");
+  ()
+
+
+let test_last _ =
   let assert_last reference last =
     assert_equal last (Reference.last (Reference.create reference))
   in
+  assert_last "" "";
   assert_last "a" "a";
-  assert_last "a.b" "b"
+  assert_last "a.b" "b";
+  ()
 
 
 let test_map_last _ =
@@ -235,6 +241,7 @@ let () =
          "name" >:: test_name;
          "delocalize" >:: test_delocalize;
          "prefix" >:: test_prefix;
+         "last" >:: test_last;
          "map_last" >:: test_map_last;
          "this_and_all_parents" >:: test_this_and_all_parents;
          "possible_qualifiers_after_delocalize" >:: test_possible_qualifiers_after_delocalize;

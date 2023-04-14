@@ -168,10 +168,7 @@ let first = function
   | head :: _ -> head
 
 
-let last = function
-  | [] -> ""
-  | reference -> List.last_exn reference
-
+let last reference = List.last reference |> Option.value ~default:""
 
 let map_last ~f reference =
   match List.rev reference with
