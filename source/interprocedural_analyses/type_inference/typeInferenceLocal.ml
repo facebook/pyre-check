@@ -738,18 +738,18 @@ module State (Context : Context) = struct
                         let rec refine resolution parameter_annotation argument_expression =
                           match argument_expression, parameter_annotation with
                           | ({ Node.value = Expression.Name name; _ } as argument), _
-                            when is_simple_name name
-                                 && not
-                                      (Type.is_untyped parameter_annotation
-                                      || Type.is_object parameter_annotation) ->
-                              forward_expression ~state ~expression:argument
-                              |> resolve_usage parameter_annotation
-                              >>| (fun refined ->
-                                    Resolution.refine_local
-                                      resolution
-                                      ~reference:(name_to_reference_exn name)
-                                      ~annotation:(Annotation.create_mutable refined))
-                              |> Option.value ~default:resolution
+                            when not
+                                   (Type.is_untyped parameter_annotation
+                                   || Type.is_object parameter_annotation) -> (
+                              match name_to_reference name with
+                              | Some reference ->
+                                  forward_expression ~state ~expression:argument
+                                  |> resolve_usage parameter_annotation
+                                  >>| Annotation.create_mutable
+                                  >>| (fun annotation ->
+                                        Resolution.refine_local resolution ~reference ~annotation)
+                                  |> Option.value ~default:resolution
+                              | _ -> resolution)
                           | ( { Node.value = Expression.Tuple argument_names; _ },
                               Type.Tuple (Concrete parameter_annotations) )
                             when List.length argument_names = List.length parameter_annotations ->
