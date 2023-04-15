@@ -729,9 +729,12 @@ module State (Context : Context) = struct
                         |> Option.value ~default:resolution
                     | _ -> resolution)
                 | ( { Node.value = Expression.Tuple argument_names; _ },
-                    Type.Tuple (Concrete parameter_annotations) )
-                  when List.length argument_names = List.length parameter_annotations ->
-                    List.fold2_exn ~init:resolution ~f:refine parameter_annotations argument_names
+                    Type.Tuple (Concrete parameter_annotations) ) -> (
+                    match
+                      List.fold2 ~init:resolution ~f:refine parameter_annotations argument_names
+                    with
+                    | Ok new_resolution -> new_resolution
+                    | Unequal_lengths -> resolution)
                 | _ -> resolution
               in
               match argument with
