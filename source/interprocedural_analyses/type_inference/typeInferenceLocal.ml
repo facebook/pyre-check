@@ -676,6 +676,55 @@ module State (Context : Context) = struct
     Resolution.resolve_expression_to_type resolution expression
 
 
+  let propagate_parameter_type_to_arguments ~state ~resolution ~parameter arguments =
+    let open Type.Callable in
+    match parameter, arguments with
+    | _, []
+    | Parameter.Variable _, _ ->
+        resolution
+    | Parameter.PositionalOnly { annotation = parameter_annotation; _ }, arguments
+    | Parameter.KeywordOnly { annotation = parameter_annotation; _ }, arguments
+    | Parameter.Named { annotation = parameter_annotation; _ }, arguments
+    | Parameter.Keywords parameter_annotation, arguments ->
+        let refine_argument resolution argument =
+          let rec refine_names_in_argument resolution parameter_annotation argument_expression =
+            match argument_expression, parameter_annotation with
+            | ({ Node.value = Expression.Name name; _ } as argument), _
+              when not (Type.is_untyped parameter_annotation || Type.is_object parameter_annotation)
+              -> (
+                match name_to_reference name with
+                | Some reference ->
+                    forward_expression ~state argument
+                    |> inferred_type_for_rhs_variable
+                         ~global_resolution:(Resolution.global_resolution resolution)
+                         ~target_type:parameter_annotation
+                    >>| Annotation.create_mutable
+                    >>| (fun annotation ->
+                          Resolution.refine_local resolution ~reference ~annotation)
+                    |> Option.value ~default:resolution
+                | _ -> resolution)
+            | ( { Node.value = Expression.Tuple argument_names; _ },
+                Type.Tuple (Concrete parameter_annotations) ) -> (
+                match
+                  List.fold2
+                    ~init:resolution
+                    ~f:refine_names_in_argument
+                    parameter_annotations
+                    argument_names
+                with
+                | Ok new_resolution -> new_resolution
+                | Unequal_lengths -> resolution)
+            | _ -> resolution
+          in
+          match argument with
+          | AttributeResolution.MatchedArgument
+              { argument = { expression = Some expression; _ }; _ } ->
+              refine_names_in_argument resolution parameter_annotation expression
+          | _ -> resolution
+        in
+        List.fold ~f:refine_argument ~init:resolution arguments
+
+
   (* For each call in `statement`, use the parameter type to infer the type of any variables in the
      argument.
 
@@ -700,51 +749,6 @@ module State (Context : Context) = struct
         |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
         parameter_argument_mapping
       in
-      let propagate_parameter_type_to_arguments resolution ~parameter ~arguments =
-        let open Type.Callable in
-        match parameter, arguments with
-        | _, []
-        | Parameter.Variable _, _ ->
-            resolution
-        | Parameter.PositionalOnly { annotation = parameter_annotation; _ }, arguments
-        | Parameter.KeywordOnly { annotation = parameter_annotation; _ }, arguments
-        | Parameter.Named { annotation = parameter_annotation; _ }, arguments
-        | Parameter.Keywords parameter_annotation, arguments ->
-            let refine_argument resolution argument =
-              let rec refine resolution parameter_annotation argument_expression =
-                match argument_expression, parameter_annotation with
-                | ({ Node.value = Expression.Name name; _ } as argument), _
-                  when not
-                         (Type.is_untyped parameter_annotation
-                         || Type.is_object parameter_annotation) -> (
-                    match name_to_reference name with
-                    | Some reference ->
-                        forward_expression ~state argument
-                        |> inferred_type_for_rhs_variable
-                             ~global_resolution:(Resolution.global_resolution resolution)
-                             ~target_type:parameter_annotation
-                        >>| Annotation.create_mutable
-                        >>| (fun annotation ->
-                              Resolution.refine_local resolution ~reference ~annotation)
-                        |> Option.value ~default:resolution
-                    | _ -> resolution)
-                | ( { Node.value = Expression.Tuple argument_names; _ },
-                    Type.Tuple (Concrete parameter_annotations) ) -> (
-                    match
-                      List.fold2 ~init:resolution ~f:refine parameter_annotations argument_names
-                    with
-                    | Ok new_resolution -> new_resolution
-                    | Unequal_lengths -> resolution)
-                | _ -> resolution
-              in
-              match argument with
-              | AttributeResolution.MatchedArgument
-                  { argument = { expression = Some expression; _ }; _ } ->
-                  refine resolution parameter_annotation expression
-              | _ -> resolution
-            in
-            List.fold ~f:refine_argument ~init:resolution arguments
-      in
       let callable_parameters { Type.Callable.implementation; _ } =
         Type.Callable.Overload.parameters implementation
       in
@@ -767,8 +771,8 @@ module State (Context : Context) = struct
       callable
       >>= callable_parameters
       >>| parameter_argument_mapping ~arguments
-      >>| Map.fold ~init:resolution ~f:(fun ~key ~data ->
-              propagate_parameter_type_to_arguments ~parameter:key ~arguments:data)
+      >>| Map.fold ~init:resolution ~f:(fun ~key ~data resolution ->
+              propagate_parameter_type_to_arguments ~state ~resolution ~parameter:key data)
       |> Option.value ~default:resolution
     in
     Visit.collect_calls statement
