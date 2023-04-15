@@ -663,13 +663,16 @@ module State (Context : Context) = struct
   let backward_statement ~state:({ resolution; snapshot_resolution; _ } as state) statement =
     Type.Variable.Namespace.reset ();
     let global_resolution = Resolution.global_resolution resolution in
-    let resolve_usage value_type target_type =
+    (* After seeing an assignment of the form `target = rhs_variable`, we infer the new type of
+       `rhs_variable` to be the `meet` of `target_type` and the type inferred for `rhs_variable`
+       from statements that come after this one. *)
+    let inferred_type_for_rhs_variable ~target_type rhs_variable_type =
       let target_type = Type.weaken_literals target_type in
-      match value_type, target_type with
+      match rhs_variable_type, target_type with
       | Type.Top, Type.Top -> None
       | Type.Top, target_type -> Some target_type
       | value_type, Type.Top -> Some value_type
-      | _ -> Some (GlobalResolution.meet global_resolution value_type target_type)
+      | _ -> Some (GlobalResolution.meet global_resolution rhs_variable_type target_type)
     in
     let forward_expression ~state:{ resolution; _ } ~expression =
       Resolution.resolve_expression_to_type resolution expression
@@ -740,7 +743,7 @@ module State (Context : Context) = struct
                           match name_to_reference name with
                           | Some reference ->
                               forward_expression ~state ~expression:argument
-                              |> resolve_usage parameter_annotation
+                              |> inferred_type_for_rhs_variable ~target_type:parameter_annotation
                               >>| Annotation.create_mutable
                               >>| (fun annotation ->
                                     Resolution.refine_local resolution ~reference ~annotation)
@@ -778,13 +781,13 @@ module State (Context : Context) = struct
       match Node.value statement with
       | Statement.Assign { Assign.target; value; _ } -> (
           (* Get the annotations of the targets and set the 'value' to be the meet *)
-          let rec propagate_assign resolution target_annotation value =
+          let rec propagate_assign resolution target_type value =
             let state = { state with resolution } in
             match Node.value value with
             | Expression.Name (Name.Identifier identifier) ->
                 let resolution =
                   let resolved = forward_expression ~state ~expression:value in
-                  resolve_usage target_annotation resolved
+                  inferred_type_for_rhs_variable ~target_type resolved
                   >>| (fun refined ->
                         Resolution.refine_local
                           resolution
@@ -806,7 +809,8 @@ module State (Context : Context) = struct
                   arguments = [{ Call.Argument.value; _ }];
                 } ->
                 let resolution =
-                  resolve_usage target_annotation (forward_expression ~state ~expression:value)
+                  forward_expression ~state ~expression:value
+                  |> inferred_type_for_rhs_variable ~target_type
                   >>| (fun refined ->
                         refine_local
                           ~resolution
@@ -821,7 +825,7 @@ module State (Context : Context) = struct
             (* Recursively break down tuples such as x : Tuple[int, string] = y, z *)
             | Tuple values ->
                 let parameters =
-                  match target_annotation with
+                  match target_type with
                   | Type.Tuple (Concrete parameters) -> parameters
                   | Type.Tuple (Concatenation concatenation) ->
                       Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation
