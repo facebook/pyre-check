@@ -682,6 +682,70 @@ module State (Context : Context) = struct
      For example, if we have `expect_str(x)`, then we know `type_x <: str`. *)
   let infer_argument_types_using_parameter_types ~state ~resolution statement =
     let propagate resolution { Call.callee; arguments } =
+      let parameter_argument_mapping ~arguments parameters =
+        let arguments =
+          let process_argument argument =
+            let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+            forward_expression ~state expression
+            |> fun resolved ->
+            { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+          in
+          List.map arguments ~f:process_argument
+        in
+        let open AttributeResolution in
+        SignatureSelection.prepare_arguments_for_signature_selection ~self_argument:None arguments
+        |> SignatureSelection.get_parameter_argument_mapping
+             ~all_parameters:(Type.Callable.Defined parameters)
+             ~parameters
+             ~self_argument:None
+        |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
+        parameter_argument_mapping
+      in
+      let propagate_inferred_annotation resolution ~parameter ~arguments =
+        let open Type.Callable in
+        match parameter, arguments with
+        | _, []
+        | Parameter.Variable _, _ ->
+            resolution
+        | Parameter.PositionalOnly { annotation = parameter_annotation; _ }, arguments
+        | Parameter.KeywordOnly { annotation = parameter_annotation; _ }, arguments
+        | Parameter.Named { annotation = parameter_annotation; _ }, arguments
+        | Parameter.Keywords parameter_annotation, arguments ->
+            let refine_argument resolution argument =
+              let rec refine resolution parameter_annotation argument_expression =
+                match argument_expression, parameter_annotation with
+                | ({ Node.value = Expression.Name name; _ } as argument), _
+                  when not
+                         (Type.is_untyped parameter_annotation
+                         || Type.is_object parameter_annotation) -> (
+                    match name_to_reference name with
+                    | Some reference ->
+                        forward_expression ~state argument
+                        |> inferred_type_for_rhs_variable
+                             ~global_resolution:(Resolution.global_resolution resolution)
+                             ~target_type:parameter_annotation
+                        >>| Annotation.create_mutable
+                        >>| (fun annotation ->
+                              Resolution.refine_local resolution ~reference ~annotation)
+                        |> Option.value ~default:resolution
+                    | _ -> resolution)
+                | ( { Node.value = Expression.Tuple argument_names; _ },
+                    Type.Tuple (Concrete parameter_annotations) )
+                  when List.length argument_names = List.length parameter_annotations ->
+                    List.fold2_exn ~init:resolution ~f:refine parameter_annotations argument_names
+                | _ -> resolution
+              in
+              match argument with
+              | AttributeResolution.MatchedArgument
+                  { argument = { expression = Some expression; _ }; _ } ->
+                  refine resolution parameter_annotation expression
+              | _ -> resolution
+            in
+            List.fold ~f:refine_argument ~init:resolution arguments
+      in
+      let callable_parameters { Type.Callable.implementation; _ } =
+        Type.Callable.Overload.parameters implementation
+      in
       let callable =
         let resolved_callee = forward_expression ~state callee in
         match resolved_callee with
@@ -698,85 +762,12 @@ module State (Context : Context) = struct
             | _ -> None)
         | _ -> None
       in
-      match callable with
-      | Some
-          {
-            Type.Callable.implementation =
-              { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
-            _;
-          } ->
-          let parameter_argument_mapping =
-            let arguments =
-              let process_argument argument =
-                let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-                forward_expression ~state expression
-                |> fun resolved ->
-                { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-              in
-              List.map arguments ~f:process_argument
-            in
-            let open AttributeResolution in
-            SignatureSelection.prepare_arguments_for_signature_selection
-              ~self_argument:None
-              arguments
-            |> SignatureSelection.get_parameter_argument_mapping
-                 ~all_parameters:(Type.Callable.Defined parameters)
-                 ~parameters
-                 ~self_argument:None
-            |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
-            parameter_argument_mapping
-          in
-          let propagate_inferred_annotation resolution ~parameter ~arguments =
-            let open Type.Callable in
-            match parameter, arguments with
-            | _, []
-            | Parameter.Variable _, _ ->
-                resolution
-            | Parameter.PositionalOnly { annotation = parameter_annotation; _ }, arguments
-            | Parameter.KeywordOnly { annotation = parameter_annotation; _ }, arguments
-            | Parameter.Named { annotation = parameter_annotation; _ }, arguments
-            | Parameter.Keywords parameter_annotation, arguments ->
-                let refine_argument resolution argument =
-                  let rec refine resolution parameter_annotation argument_expression =
-                    match argument_expression, parameter_annotation with
-                    | ({ Node.value = Expression.Name name; _ } as argument), _
-                      when not
-                             (Type.is_untyped parameter_annotation
-                             || Type.is_object parameter_annotation) -> (
-                        match name_to_reference name with
-                        | Some reference ->
-                            forward_expression ~state argument
-                            |> inferred_type_for_rhs_variable
-                                 ~global_resolution:(Resolution.global_resolution resolution)
-                                 ~target_type:parameter_annotation
-                            >>| Annotation.create_mutable
-                            >>| (fun annotation ->
-                                  Resolution.refine_local resolution ~reference ~annotation)
-                            |> Option.value ~default:resolution
-                        | _ -> resolution)
-                    | ( { Node.value = Expression.Tuple argument_names; _ },
-                        Type.Tuple (Concrete parameter_annotations) )
-                      when List.length argument_names = List.length parameter_annotations ->
-                        List.fold2_exn
-                          ~init:resolution
-                          ~f:refine
-                          parameter_annotations
-                          argument_names
-                    | _ -> resolution
-                  in
-                  match argument with
-                  | AttributeResolution.MatchedArgument
-                      { argument = { expression = Some expression; _ }; _ } ->
-                      refine resolution parameter_annotation expression
-                  | _ -> resolution
-                in
-                List.fold ~f:refine_argument ~init:resolution arguments
-          in
-          Map.fold
-            ~init:resolution
-            ~f:(fun ~key ~data -> propagate_inferred_annotation ~parameter:key ~arguments:data)
-            parameter_argument_mapping
-      | _ -> resolution
+      callable
+      >>= callable_parameters
+      >>| parameter_argument_mapping ~arguments
+      >>| Map.fold ~init:resolution ~f:(fun ~key ~data ->
+              propagate_inferred_annotation ~parameter:key ~arguments:data)
+      |> Option.value ~default:resolution
     in
     Visit.collect_calls statement
     |> List.map ~f:Node.value
