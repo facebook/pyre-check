@@ -672,12 +672,13 @@ module State (Context : Context) = struct
     | _ -> Some (GlobalResolution.meet global_resolution rhs_variable_type target_type)
 
 
+  let forward_expression ~state:{ resolution; _ } expression =
+    Resolution.resolve_expression_to_type resolution expression
+
+
   let backward_statement ~state:({ resolution; snapshot_resolution; _ } as state) statement =
     Type.Variable.Namespace.reset ();
     let global_resolution = Resolution.global_resolution resolution in
-    let forward_expression ~state:{ resolution; _ } ~expression =
-      Resolution.resolve_expression_to_type resolution expression
-    in
     (* For each call in `statement`, use the parameter type to infer the type of any variables in
        the argument.
 
@@ -685,7 +686,7 @@ module State (Context : Context) = struct
     let infer_argument_types_using_parameter_types ~resolution statement =
       let propagate resolution { Call.callee; arguments } =
         let callable =
-          let resolved_callee = forward_expression ~state ~expression:callee in
+          let resolved_callee = forward_expression ~state callee in
           match resolved_callee with
           | Type.Callable callable -> Some callable
           | Type.Parametric { name = "BoundMethod"; _ } -> (
@@ -711,7 +712,7 @@ module State (Context : Context) = struct
               let arguments =
                 let process_argument argument =
                   let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-                  forward_expression ~state ~expression
+                  forward_expression ~state expression
                   |> fun resolved ->
                   { AttributeResolution.Argument.kind; expression = Some expression; resolved }
                 in
@@ -747,7 +748,7 @@ module State (Context : Context) = struct
                                || Type.is_object parameter_annotation) -> (
                           match name_to_reference name with
                           | Some reference ->
-                              forward_expression ~state ~expression:argument
+                              forward_expression ~state argument
                               |> inferred_type_for_rhs_variable
                                    ~global_resolution
                                    ~target_type:parameter_annotation
@@ -793,7 +794,7 @@ module State (Context : Context) = struct
             match Node.value value with
             | Expression.Name (Name.Identifier identifier) ->
                 let resolution =
-                  let resolved = forward_expression ~state ~expression:value in
+                  let resolved = forward_expression ~state value in
                   inferred_type_for_rhs_variable ~global_resolution ~target_type resolved
                   >>| (fun refined ->
                         Resolution.refine_local
@@ -816,7 +817,7 @@ module State (Context : Context) = struct
                   arguments = [{ Call.Argument.value; _ }];
                 } ->
                 let resolution =
-                  forward_expression ~state ~expression:value
+                  forward_expression ~state value
                   |> inferred_type_for_rhs_variable ~global_resolution ~target_type
                   >>| (fun refined ->
                         refine_local
@@ -851,15 +852,13 @@ module State (Context : Context) = struct
           | Tuple targets, Tuple values when List.length targets = List.length values ->
               let target_annotations =
                 let resolve expression =
-                  forward_expression ~state:{ state with resolution } ~expression
+                  forward_expression ~state:{ state with resolution } expression
                 in
                 List.map targets ~f:resolve
               in
               List.fold2_exn ~init:resolution ~f:propagate_assign target_annotations values
           | _, _ ->
-              let resolved =
-                forward_expression ~state:{ state with resolution } ~expression:target
-              in
+              let resolved = forward_expression ~state:{ state with resolution } target in
               propagate_assign resolution resolved value)
       | Return { Return.expression = Some { Node.value = Name name; _ }; _ }
         when is_simple_name name ->
@@ -900,13 +899,10 @@ module State (Context : Context) = struct
           let wiped_resolution = Resolution.unset_local resolution ~reference:target_reference in
           let augmented_snapshot_resolution =
             let existing_snapshot =
-              forward_expression
-                ~state:{ state with resolution = snapshot_resolution }
-                ~expression:target
+              forward_expression ~state:{ state with resolution = snapshot_resolution } target
             in
             let current_snapshot =
-              forward_expression ~state:{ state with resolution } ~expression:target
-              |> Type.weaken_literals
+              forward_expression ~state:{ state with resolution } target |> Type.weaken_literals
             in
             let snapshot =
               match existing_snapshot, current_snapshot with
