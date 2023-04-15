@@ -683,17 +683,16 @@ module State (Context : Context) = struct
   let infer_argument_types_using_parameter_types ~state ~resolution statement =
     let propagate resolution { Call.callee; arguments } =
       let parameter_argument_mapping ~arguments parameters =
-        let arguments =
-          let process_argument argument =
-            let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-            forward_expression ~state expression
-            |> fun resolved ->
-            { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-          in
-          List.map arguments ~f:process_argument
-        in
         let open AttributeResolution in
-        SignatureSelection.prepare_arguments_for_signature_selection ~self_argument:None arguments
+        let resolve_argument argument =
+          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+          forward_expression ~state expression
+          |> fun resolved ->
+          { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+        in
+        arguments
+        |> List.map ~f:resolve_argument
+        |> SignatureSelection.prepare_arguments_for_signature_selection ~self_argument:None
         |> SignatureSelection.get_parameter_argument_mapping
              ~all_parameters:(Type.Callable.Defined parameters)
              ~parameters
@@ -701,7 +700,7 @@ module State (Context : Context) = struct
         |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
         parameter_argument_mapping
       in
-      let propagate_inferred_annotation resolution ~parameter ~arguments =
+      let propagate_parameter_type_to_arguments resolution ~parameter ~arguments =
         let open Type.Callable in
         match parameter, arguments with
         | _, []
@@ -766,7 +765,7 @@ module State (Context : Context) = struct
       >>= callable_parameters
       >>| parameter_argument_mapping ~arguments
       >>| Map.fold ~init:resolution ~f:(fun ~key ~data ->
-              propagate_inferred_annotation ~parameter:key ~arguments:data)
+              propagate_parameter_type_to_arguments ~parameter:key ~arguments:data)
       |> Option.value ~default:resolution
     in
     Visit.collect_calls statement
