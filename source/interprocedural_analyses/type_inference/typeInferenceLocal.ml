@@ -660,20 +660,21 @@ module State (Context : Context) = struct
                   }))
 
 
+  (* After seeing an assignment of the form `target = rhs_variable`, we infer the new type of
+     `rhs_variable` to be the `meet` of `target_type` and the type inferred for `rhs_variable` from
+     statements that come after this one. *)
+  let inferred_type_for_rhs_variable ~global_resolution ~target_type rhs_variable_type =
+    let target_type = Type.weaken_literals target_type in
+    match rhs_variable_type, target_type with
+    | Type.Top, Type.Top -> None
+    | Type.Top, target_type -> Some target_type
+    | value_type, Type.Top -> Some value_type
+    | _ -> Some (GlobalResolution.meet global_resolution rhs_variable_type target_type)
+
+
   let backward_statement ~state:({ resolution; snapshot_resolution; _ } as state) statement =
     Type.Variable.Namespace.reset ();
     let global_resolution = Resolution.global_resolution resolution in
-    (* After seeing an assignment of the form `target = rhs_variable`, we infer the new type of
-       `rhs_variable` to be the `meet` of `target_type` and the type inferred for `rhs_variable`
-       from statements that come after this one. *)
-    let inferred_type_for_rhs_variable ~target_type rhs_variable_type =
-      let target_type = Type.weaken_literals target_type in
-      match rhs_variable_type, target_type with
-      | Type.Top, Type.Top -> None
-      | Type.Top, target_type -> Some target_type
-      | value_type, Type.Top -> Some value_type
-      | _ -> Some (GlobalResolution.meet global_resolution rhs_variable_type target_type)
-    in
     let forward_expression ~state:{ resolution; _ } ~expression =
       Resolution.resolve_expression_to_type resolution expression
     in
@@ -747,7 +748,9 @@ module State (Context : Context) = struct
                           match name_to_reference name with
                           | Some reference ->
                               forward_expression ~state ~expression:argument
-                              |> inferred_type_for_rhs_variable ~target_type:parameter_annotation
+                              |> inferred_type_for_rhs_variable
+                                   ~global_resolution
+                                   ~target_type:parameter_annotation
                               >>| Annotation.create_mutable
                               >>| (fun annotation ->
                                     Resolution.refine_local resolution ~reference ~annotation)
@@ -791,7 +794,7 @@ module State (Context : Context) = struct
             | Expression.Name (Name.Identifier identifier) ->
                 let resolution =
                   let resolved = forward_expression ~state ~expression:value in
-                  inferred_type_for_rhs_variable ~target_type resolved
+                  inferred_type_for_rhs_variable ~global_resolution ~target_type resolved
                   >>| (fun refined ->
                         Resolution.refine_local
                           resolution
@@ -814,7 +817,7 @@ module State (Context : Context) = struct
                 } ->
                 let resolution =
                   forward_expression ~state ~expression:value
-                  |> inferred_type_for_rhs_variable ~target_type
+                  |> inferred_type_for_rhs_variable ~global_resolution ~target_type
                   >>| (fun refined ->
                         refine_local
                           ~resolution
