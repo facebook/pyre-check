@@ -677,7 +677,11 @@ module State (Context : Context) = struct
     let forward_expression ~state:{ resolution; _ } ~expression =
       Resolution.resolve_expression_to_type resolution expression
     in
-    let annotate_call_accesses statement resolution =
+    (* For each call in `statement`, use the parameter type to infer the type of any variables in
+       the argument.
+
+       For example, if we have `expect_str(x)`, then we know `type_x <: str`. *)
+    let infer_argument_types_using_parameter_types ~resolution statement =
       let propagate resolution { Call.callee; arguments } =
         let callable =
           let resolved_callee = forward_expression ~state ~expression:callee in
@@ -795,7 +799,7 @@ module State (Context : Context) = struct
                           ~annotation:(Annotation.create_mutable refined))
                   |> Option.value ~default:resolution
                 in
-                annotate_call_accesses statement resolution
+                infer_argument_types_using_parameter_types ~resolution statement
             | Call
                 {
                   callee =
@@ -818,10 +822,10 @@ module State (Context : Context) = struct
                           ~annotation:(Annotation.create_mutable refined))
                   |> Option.value ~default:resolution
                 in
-                annotate_call_accesses statement resolution
+                infer_argument_types_using_parameter_types ~resolution statement
             | Call _
             | Name _ ->
-                annotate_call_accesses statement resolution
+                infer_argument_types_using_parameter_types ~resolution statement
             (* Recursively break down tuples such as x : Tuple[int, string] = y, z *)
             | Tuple values ->
                 let parameters =
@@ -881,7 +885,7 @@ module State (Context : Context) = struct
                         ~annotation:(Annotation.create_mutable annotation)
                   | _ -> resolution)
           | _ -> resolution)
-      | _ -> annotate_call_accesses statement resolution
+      | _ -> infer_argument_types_using_parameter_types ~resolution statement
     in
     let resolution, snapshot_resolution =
       (* Reset inferred annotation of a variable to Top if we see it being assigned to, but save the
