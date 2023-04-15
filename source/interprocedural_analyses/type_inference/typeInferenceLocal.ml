@@ -732,45 +732,46 @@ module State (Context : Context) = struct
 
      For example, if we have `expect_str(x)`, then we know `type_x <: str`. *)
   let infer_argument_types_using_parameter_types ~state ~resolution statement =
+    let parameter_argument_mapping ~arguments parameters =
+      let open AttributeResolution in
+      let resolve_argument argument =
+        let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+        forward_expression ~state expression
+        |> fun resolved ->
+        { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+      in
+      arguments
+      |> List.map ~f:resolve_argument
+      |> SignatureSelection.prepare_arguments_for_signature_selection ~self_argument:None
+      |> SignatureSelection.get_parameter_argument_mapping
+           ~all_parameters:(Type.Callable.Defined parameters)
+           ~parameters
+           ~self_argument:None
+      |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
+      parameter_argument_mapping
+    in
+    let callable_parameters { Type.Callable.implementation; _ } =
+      Type.Callable.Overload.parameters implementation
+    in
+    let callable_from_expression callee =
+      let resolved_callee = forward_expression ~state callee in
+      match resolved_callee with
+      | Type.Callable callable -> Some callable
+      | Type.Parametric { name = "BoundMethod"; _ } -> (
+          GlobalResolution.attribute_from_annotation
+            (Resolution.global_resolution resolution)
+            ~parent:resolved_callee
+            ~name:"__call__"
+          >>| Annotated.Attribute.annotation
+          >>| Annotation.annotation
+          >>= function
+          | Type.Callable callable -> Some callable
+          | _ -> None)
+      | _ -> None
+    in
     let propagate resolution { Call.callee; arguments } =
-      let parameter_argument_mapping ~arguments parameters =
-        let open AttributeResolution in
-        let resolve_argument argument =
-          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-          forward_expression ~state expression
-          |> fun resolved ->
-          { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-        in
-        arguments
-        |> List.map ~f:resolve_argument
-        |> SignatureSelection.prepare_arguments_for_signature_selection ~self_argument:None
-        |> SignatureSelection.get_parameter_argument_mapping
-             ~all_parameters:(Type.Callable.Defined parameters)
-             ~parameters
-             ~self_argument:None
-        |> fun { ParameterArgumentMapping.parameter_argument_mapping; _ } ->
-        parameter_argument_mapping
-      in
-      let callable_parameters { Type.Callable.implementation; _ } =
-        Type.Callable.Overload.parameters implementation
-      in
-      let callable =
-        let resolved_callee = forward_expression ~state callee in
-        match resolved_callee with
-        | Type.Callable callable -> Some callable
-        | Type.Parametric { name = "BoundMethod"; _ } -> (
-            GlobalResolution.attribute_from_annotation
-              (Resolution.global_resolution resolution)
-              ~parent:resolved_callee
-              ~name:"__call__"
-            >>| Annotated.Attribute.annotation
-            >>| Annotation.annotation
-            >>= function
-            | Type.Callable callable -> Some callable
-            | _ -> None)
-        | _ -> None
-      in
-      callable
+      callee
+      |> callable_from_expression
       >>= callable_parameters
       >>| parameter_argument_mapping ~arguments
       >>| Map.fold ~init:resolution ~f:(fun ~key ~data resolution ->
