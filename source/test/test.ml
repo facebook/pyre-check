@@ -3133,6 +3133,16 @@ module ScratchProject = struct
     delete_from_root ~root ~relative
 
 
+  let add_to_external_root project content ~relative =
+    let root = external_root_of project in
+    add_to_root content ~root ~relative
+
+
+  let delete_from_external_root project ~relative =
+    let root = external_root_of project in
+    delete_from_root ~root ~relative
+
+
   module ReadWrite = struct
     let errors_environment { errors_environment; _ } = errors_environment
 
