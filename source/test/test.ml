@@ -3113,20 +3113,6 @@ module ScratchProject = struct
         failwith "Scratch projects should have the external root at the start of their search path."
 
 
-  let add_source project ~is_external (relative, content) =
-    let path =
-      let root =
-        if is_external then
-          external_root_of project
-        else
-          local_root_of project
-      in
-      PyrePath.create_relative ~root ~relative
-    in
-    let file = File.create ~content path in
-    File.write file
-
-
   let add_to_root content ~root ~relative =
     let content = trim_extra_indentation content in
     let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
