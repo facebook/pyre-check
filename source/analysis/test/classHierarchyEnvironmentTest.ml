@@ -252,8 +252,8 @@ let test_updates context =
     in
     List.iter middle_actions ~f:execute_action;
     if Option.is_some original_source then
-      ScratchProject.delete_file project ~relative:"test.py";
-    Option.iter new_source ~f:(ScratchProject.add_file project ~relative:"test.py");
+      ScratchProject.delete_from_local_root project ~relative:"test.py";
+    Option.iter new_source ~f:(ScratchProject.add_to_local_root project ~relative:"test.py");
     let update_result =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map

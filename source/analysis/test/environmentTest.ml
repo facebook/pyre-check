@@ -1253,9 +1253,9 @@ let test_update_and_compute_dependencies context =
       global untracked_global_resolution primitive |> Option.is_some |> assert_equal expected
     in
     let dependents =
-      ScratchProject.delete_file project ~relative:"source.py";
+      ScratchProject.delete_from_local_root project ~relative:"source.py";
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
-      ScratchProject.add_file project repopulate_source_to ~relative:"source.py";
+      ScratchProject.add_to_local_root project repopulate_source_to ~relative:"source.py";
       let update_result =
         let local_root = ScratchProject.local_root_of project in
         let event =

@@ -326,9 +326,9 @@ let test_updates context =
     in
     List.iter middle_actions ~f:execute_action;
     List.iter original_sources ~f:(fun (relative, _) ->
-        ScratchProject.delete_file project ~relative);
+        ScratchProject.delete_from_local_root project ~relative);
     List.iter new_sources ~f:(fun (relative, content) ->
-        ScratchProject.add_file project ~relative content);
+        ScratchProject.add_to_local_root project ~relative content);
     let update_result =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map new_sources ~f:(fun (relative, _) ->

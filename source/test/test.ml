@@ -3113,8 +3113,6 @@ module ScratchProject = struct
         failwith "Scratch projects should have the external root at the start of their search path."
 
 
-  (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
-     here. *)
   let add_source project ~is_external (relative, content) =
     let path =
       let root =
@@ -3127,6 +3125,26 @@ module ScratchProject = struct
     in
     let file = File.create ~content path in
     File.write file
+
+
+  let add_to_root content ~root ~relative =
+    let content = trim_extra_indentation content in
+    let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
+    File.write file
+
+
+  let delete_from_root ~root ~relative =
+    PyrePath.create_relative ~root ~relative |> PyrePath.absolute |> Core_unix.remove
+
+
+  let add_to_local_root project content ~relative =
+    let root = local_root_of project in
+    add_to_root content ~root ~relative
+
+
+  let delete_from_local_root project ~relative =
+    let root = local_root_of project in
+    delete_from_root ~root ~relative
 
 
   module ReadWrite = struct
@@ -3218,18 +3236,6 @@ module ScratchProject = struct
     TypeCheck.resolution
       global_resolution (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module TypeCheck.DummyContext)
-
-
-  let add_file project content ~relative =
-    let local_root = local_root_of project in
-    let content = trim_extra_indentation content in
-    let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
-    File.write file
-
-
-  let delete_file project ~relative =
-    let local_root = local_root_of project in
-    PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core_unix.remove
 
 
   let update_environment { errors_environment; _ } ?(scheduler = mock_scheduler ()) artifact_paths =

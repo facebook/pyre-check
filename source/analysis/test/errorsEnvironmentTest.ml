@@ -148,8 +148,8 @@ let test_update_ancestor context =
     ];
   (* update and validate new errors *)
   let update_code relative new_code =
-    ScratchProject.delete_file project ~relative;
-    ScratchProject.add_file project ~relative new_code;
+    ScratchProject.delete_from_local_root project ~relative;
+    ScratchProject.add_to_local_root project ~relative new_code;
     ()
   in
   update_code "a.py" {|
@@ -188,8 +188,8 @@ let test_update_mode context =
   assert_errors ~context ~project [];
   (* update and validate new errors *)
   let update_code relative new_code =
-    ScratchProject.delete_file project ~relative;
-    ScratchProject.add_file project ~relative new_code;
+    ScratchProject.delete_from_local_root project ~relative;
+    ScratchProject.add_to_local_root project ~relative new_code;
     ()
   in
   update_code

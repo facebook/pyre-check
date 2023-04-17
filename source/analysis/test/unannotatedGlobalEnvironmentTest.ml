@@ -876,8 +876,10 @@ let assert_updates
   in
   List.iter middle_actions ~f:execute_action;
   if Option.is_some original_source then
-    ScratchProject.delete_file project ~relative:"test.py";
-  new_source >>| ScratchProject.add_file project ~relative:"test.py" |> Option.value ~default:();
+    ScratchProject.delete_from_local_root project ~relative:"test.py";
+  new_source
+  >>| ScratchProject.add_to_local_root project ~relative:"test.py"
+  |> Option.value ~default:();
   let { Configuration.Analysis.local_root; _ } = configuration in
   let event =
     Test.relative_artifact_path ~root:local_root ~relative:"test.py"
@@ -2586,8 +2588,8 @@ let test_overlay_propagation context =
      should see the updated information (this is a grey-box test, updating only the parent is an
      illegal operation with undefined behavior in production!) *)
   let update_code relative new_code =
-    ScratchProject.delete_file project ~relative;
-    ScratchProject.add_file project ~relative new_code;
+    ScratchProject.delete_from_local_root project ~relative;
+    ScratchProject.add_to_local_root project ~relative new_code;
     ()
   in
   update_code "on_filesystem.py" {|

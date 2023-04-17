@@ -80,8 +80,8 @@ let test_update_root context =
     ~overlaid_environment
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `str`."];
   let update_code relative new_code =
-    ScratchProject.delete_file project ~relative;
-    ScratchProject.add_file project ~relative new_code;
+    ScratchProject.delete_from_local_root project ~relative;
+    ScratchProject.add_to_local_root project ~relative new_code;
     ()
   in
   update_code "a.py" {|
@@ -123,8 +123,8 @@ let test_update_lazy_root context =
     ~qualifier:(Reference.create "a")
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `str`."];
   let update_code relative new_code =
-    ScratchProject.delete_file project ~relative;
-    ScratchProject.add_file project ~relative new_code;
+    ScratchProject.delete_from_local_root project ~relative;
+    ScratchProject.add_to_local_root project ~relative new_code;
     ()
   in
   update_code "a.py" {|
@@ -273,8 +273,8 @@ let test_overlay_propagation context =
     ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.z` is `str`."];
   (* Update the parent environment and make sure the changes propagate *)
   let update_code relative new_code =
-    ScratchProject.delete_file project ~relative;
-    ScratchProject.add_file project ~relative new_code;
+    ScratchProject.delete_from_local_root project ~relative;
+    ScratchProject.add_to_local_root project ~relative new_code;
     ()
   in
   update_code "on_filesystem.py" (on_filesystem_code ~x_type:"float" ~y_type:"str" ~z_type:"int");
