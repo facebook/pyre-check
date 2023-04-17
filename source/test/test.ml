@@ -3105,22 +3105,23 @@ module ScratchProject = struct
     local_root
 
 
+  let external_root_of project =
+    let { Configuration.Analysis.search_paths; _ } = configuration_of project in
+    match search_paths with
+    | SearchPath.Root root :: _ -> root
+    | _ ->
+        failwith "Scratch projects should have the external root at the start of their search path."
+
+
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
      here. *)
   let add_source project ~is_external (relative, content) =
-    let { Configuration.Analysis.source_paths; search_paths; _ } = configuration_of project in
     let path =
       let root =
         if is_external then
-          match search_paths with
-          | SearchPath.Root root :: _ -> root
-          | _ ->
-              failwith
-                "Scratch projects should have the external root at the start of their search path."
+          external_root_of project
         else
-          match source_paths with
-          | SearchPath.Root root :: _ -> root
-          | _ -> failwith "Scratch projects should have only one source path."
+          local_root_of project
       in
       PyrePath.create_relative ~root ~relative
     in
