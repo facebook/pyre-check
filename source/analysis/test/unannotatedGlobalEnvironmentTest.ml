@@ -759,26 +759,42 @@ let test_resolve_exports context =
   ()
 
 
-let assert_updates
+(* Create a convenient marker type for sources in update tests *)
+module AssertUpdateSource = struct
+  type t =
+    | Local of string * string
+    | External of string * string
+
+  (* This is just here to suppress an unused constructor error *)
+  let _ = External ("", "")
+end
+
+let assert_update
     ~context
-    ?original_source
-    ?new_source
+    ~original_sources
+    ~new_sources
     ~middle_actions
     ~expected_triggers
     ?post_actions
     ()
   =
   Memory.reset_shared_memory ();
-  let sources = original_source >>| (fun source -> "test.py", source) |> Option.to_list in
   let project =
+    let original_local_sources, original_external_sources =
+      let partition = function
+        | AssertUpdateSource.Local (relative, code) -> Either.First (relative, code)
+        | AssertUpdateSource.External (relative, code) -> Either.Second (relative, code)
+      in
+      List.partition_map ~f:partition original_sources
+    in
     ScratchProject.setup
       ~include_typeshed_stubs:false
       ~track_dependencies:true
       ~in_memory:false
-      sources
+      original_local_sources
+      ~external_sources:original_external_sources
       ~context
   in
-  let configuration = ScratchProject.configuration_of project in
   let read_only =
     ScratchProject.errors_environment project
     |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
@@ -875,18 +891,35 @@ let assert_updates
         |> ignore
   in
   List.iter middle_actions ~f:execute_action;
-  if Option.is_some original_source then
-    ScratchProject.delete_from_local_root project ~relative:"test.py";
-  new_source
-  >>| ScratchProject.add_to_local_root project ~relative:"test.py"
-  |> Option.value ~default:();
-  let { Configuration.Analysis.local_root; _ } = configuration in
-  let event =
-    Test.relative_artifact_path ~root:local_root ~relative:"test.py"
-    |> ArtifactPath.Event.(create ~kind:Kind.Unknown)
+  let remove_source = function
+    | AssertUpdateSource.Local (relative, _) ->
+        ScratchProject.delete_from_local_root project ~relative
+    | AssertUpdateSource.External (relative, _) ->
+        ScratchProject.delete_from_external_root project ~relative
+  in
+  List.iter original_sources ~f:remove_source;
+  let add_source = function
+    | AssertUpdateSource.Local (relative, code) ->
+        ScratchProject.add_to_local_root project ~relative code
+    | AssertUpdateSource.External (relative, code) ->
+        ScratchProject.add_to_external_root project ~relative code
+  in
+  List.iter new_sources ~f:add_source;
+  let events =
+    let local_root = ScratchProject.local_root_of project in
+    let external_root = ScratchProject.external_root_of project in
+    let to_event assert_update_source =
+      let root, relative =
+        match assert_update_source with
+        | AssertUpdateSource.Local (relative, _) -> local_root, relative
+        | AssertUpdateSource.External (relative, _) -> external_root, relative
+      in
+      Test.relative_artifact_path ~root ~relative |> ArtifactPath.Event.(create ~kind:Kind.Unknown)
+    in
+    List.concat [original_sources; new_sources] |> List.map ~f:to_event
   in
   let update_result =
-    ScratchProject.update_environment project [event]
+    ScratchProject.update_environment project events
     |> ErrorsEnvironment.Testing.UpdateResult.unannotated_global_environment
   in
   let printer set =
@@ -915,96 +948,139 @@ let alias_dependency =
 
 
 let test_get_class_summary context =
-  let assert_updates = assert_updates ~context in
+  let assert_update = assert_update ~context in
   let dependency = type_check_dependency in
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-    |}
-    ~new_source:{|
-      class Foo:
-        x: str
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: str
+      |})]
     ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
     ~expected_triggers:[dependency]
     ();
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-    |}
-    ~new_source:{|
-      class Foo:
-        x: str
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: str
+      |})]
     ~middle_actions:[`Get ("test.Missing", dependency, None)]
     ~expected_triggers:[]
     ();
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-    |}
-    ~new_source:{|
-      class Unrelated:
-        x: int
-      class Foo:
-        x: int
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              class Unrelated:
+                x: int
+              class Foo:
+                x: int
+            |}
+          );
+      ]
     ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
     ~expected_triggers:[dependency]
     ();
 
   (* Last class definition wins *)
-  assert_updates
-    ~original_source:
-      {|
-      class Foo:
-        x: int
-      class Foo:
-        x: int
-        y: int
-    |}
-    ~new_source:{|
-      class Unrelated:
-        x: int
-      class Foo:
-        x: int
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              class Foo:
+                x: int
+              class Foo:
+                x: int
+                y: int
+            |}
+          );
+      ]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              class Unrelated:
+                x: int
+              class Foo:
+                x: int
+            |}
+          );
+      ]
     ~middle_actions:[`Get ("test.Foo", dependency, Some 2)]
     ~expected_triggers:[dependency]
     ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
     ();
-  assert_updates
-    ~original_source:
-      {|
-      class Foo:
-        def method(self) -> None:
-         print("hello")
-    |}
-    ~new_source:{|
-      class Foo:
-        def method(self) -> int:
-          return 1
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              class Foo:
+                def method(self) -> None:
+                  print("hello")
+            |}
+          );
+      ]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              class Foo:
+                def method(self) -> int:
+                  return 1
+            |}
+          );
+      ]
     ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
     ~expected_triggers:[dependency]
     ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
     ();
-  assert_updates
-    ~original_source:
-      {|
-      class Foo:
-        def method(self) -> None:
-         print("hellobo")
-    |}
-    ~new_source:
-      {|
-      class Foo:
-        def method(self) -> None:
-         print("goodbye")
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              class Foo:
+                def method(self) -> None:
+                  print("hellobo")
+            |}
+          );
+      ]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              class Foo:
+                def method(self) -> None:
+                  print("goodbye")
+            |}
+          );
+      ]
     ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
     ~expected_triggers:[]
     ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
@@ -1013,64 +1089,78 @@ let test_get_class_summary context =
 
 
 let test_class_exists_and_all_classes context =
-  let assert_updates = assert_updates ~context in
+  let assert_update = assert_update ~context in
   let dependency = type_check_dependency in
 
   (* class exists *)
-  assert_updates
-    ~new_source:{|
-      class Foo:
-        x: int
-    |}
+  assert_update
+    ~original_sources:[]
     ~middle_actions:[`Mem ("test.Foo", dependency, false)]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
     ~expected_triggers:[dependency]
     ();
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
     ~middle_actions:[`Mem ("test.Foo", dependency, true)]
+    ~new_sources:[]
     ~expected_triggers:[dependency]
     ();
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-    |}
-    ~new_source:{|
-      class Foo:
-        x: int
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
     ~middle_actions:[`Mem ("test.Foo", dependency, true)]
     ~expected_triggers:[]
     ();
 
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-    |}
-    ~new_source:{|
-      class Foo:
-        x: str
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: str
+      |})]
     ~middle_actions:[`Mem ("test.Foo", dependency, true)]
     ~expected_triggers:[]
     ();
 
   (* all_classes *)
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-      class Bar:
-        y: str
-    |}
-    ~new_source:{|
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+            class Foo:
+              x: int
+            class Bar:
+              y: str
+          |}
+          );
+      ]
+    ~new_sources:[AssertUpdateSource.Local ("test.py", {|
       class Foo:
         x: str
-    |}
+    |})]
     ~middle_actions:[`AllClasses ["test.Bar"; "test.Foo"]]
     ~expected_triggers:[]
     ~post_actions:[`AllClasses ["test.Foo"]]
@@ -1079,16 +1169,16 @@ let test_class_exists_and_all_classes context =
 
 
 let test_get_unannotated_global context =
-  let assert_updates = assert_updates ~context in
+  let assert_update = assert_update ~context in
   let dependency = alias_dependency in
 
-  assert_updates
-    ~original_source:{|
-      x: int = 7
-    |}
-    ~new_source:{|
-      x: int = 9
-    |}
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("test.py", {|
+        x: int = 7
+      |})]
+    ~new_sources:[AssertUpdateSource.Local ("test.py", {|
+        x: int = 9
+      |})]
     ~middle_actions:
       [
         `Global
@@ -1119,13 +1209,15 @@ let test_get_unannotated_global context =
                  }) );
       ]
     ();
-  assert_updates
-    ~original_source:{|
-      import target.member as alias
-    |}
-    ~new_source:{|
-      import target.member as new_alias
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        import target.member as alias
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        import target.member as new_alias
+      |})]
     ~middle_actions:
       [
         `Global
@@ -1139,13 +1231,21 @@ let test_get_unannotated_global context =
     ~expected_triggers:[dependency]
     ~post_actions:[`Global (Reference.create "test.alias", dependency, None)]
     ();
-  assert_updates
-    ~original_source:{|
-      from target import member, other_member
-    |}
-    ~new_source:{|
-      from target import other_member, member
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ("test.py", {|
+        from target import member, other_member
+      |});
+      ]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ("test.py", {|
+        from target import other_member, member
+      |});
+      ]
     ~middle_actions:
       [
         `Global
@@ -1185,10 +1285,11 @@ let test_get_unannotated_global context =
     ();
 
   (* Removing a source should trigger lookup dependencies *)
-  assert_updates
-    ~original_source:{|
-      from target import member
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        from target import member
+      |})]
     ~middle_actions:
       [
         `Global
@@ -1199,15 +1300,18 @@ let test_get_unannotated_global context =
                  (UnannotatedGlobal.ImportEntry.Name
                     { from = !&"target"; target = "member"; implicit_alias = true })) );
       ]
+    ~new_sources:[]
     ~expected_triggers:[dependency]
     ~post_actions:[`Global (Reference.create "test.member", dependency, None)]
     ();
 
   (* Adding a source should trigger lookup dependencies *)
-  assert_updates
-    ~new_source:{|
-      from target import member
-    |}
+  assert_update
+    ~original_sources:[]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        from target import member
+      |})]
     ~middle_actions:[`Global (Reference.create "test.member", dependency, None)]
     ~expected_triggers:[dependency]
     ~post_actions:
@@ -1223,11 +1327,12 @@ let test_get_unannotated_global context =
     ();
 
   (* Don't infer * as a real thing *)
-  assert_updates
-    ~original_source:{|
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("test.py", {|
       from target import *
-    |}
+    |})]
     ~middle_actions:[`Global (Reference.create "test.*", dependency, None)]
+    ~new_sources:[]
     ~expected_triggers:[]
     ();
 
@@ -1244,10 +1349,11 @@ let test_get_unannotated_global context =
            node ~start:(2, 20) ~stop:(2, 24) (Expression.Name (Name.Identifier "bool"));
          ])
   in
-  assert_updates
-    ~original_source:{|
-      X, Y, Z = int, str, bool
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        X, Y, Z = int, str, bool
+      |})]
     ~middle_actions:
       [
         `Global
@@ -1284,19 +1390,21 @@ let test_get_unannotated_global context =
                    total_length = 3;
                  }) );
       ]
+    ~new_sources:[]
     ~expected_triggers:[dependency]
     ();
 
   (* First global wins. *)
-  assert_updates
-    ~original_source:{|
-      X = int
-      X = str
-    |}
-    ~new_source:{|
-      X = int
-      X = str
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        X = int
+        X = str
+      |})]
+    ~new_sources:[AssertUpdateSource.Local ("test.py", {|
+        X = int
+        X = str
+      |})]
     ~middle_actions:
       [
         `Global
@@ -1315,19 +1423,31 @@ let test_get_unannotated_global context =
     ();
 
   (* Only recurse into ifs *)
-  assert_updates
-    ~original_source:{|
-      if condition:
-        X = int
-      else:
-        X = str
-    |}
-    ~new_source:{|
-      if condition:
-        X = int
-      else:
-        X = str
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+            if condition:
+              X = int
+            else:
+              X = str
+          |}
+          );
+      ]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+            if condition:
+              X = int
+            else:
+              X = str
+          |}
+          );
+      ]
     ~middle_actions:
       [
         `Global
@@ -1373,15 +1493,23 @@ let test_get_unannotated_global context =
     }
   in
 
-  assert_updates
-    ~original_source:{|
-      def foo() -> None:
-       print("hellobo")
-    |}
-    ~new_source:{|
-      def foo() -> None:
-       print("goodbye")
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ("test.py", {|
+            def foo() -> None:
+              print("hellobo")
+          |});
+      ]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ("test.py", {|
+            def foo() -> None:
+              print("goodbye")
+          |});
+      ]
     ~middle_actions:
       [
         `Global
@@ -1392,7 +1520,7 @@ let test_get_unannotated_global context =
                  [
                    create_simple_signature
                      ~start:(2, 0)
-                     ~stop:(3, 17)
+                     ~stop:(3, 18)
                      !&"test.foo"
                      (Some
                         (node
@@ -1412,7 +1540,7 @@ let test_get_unannotated_global context =
                  [
                    create_simple_signature
                      ~start:(2, 0)
-                     ~stop:(3, 17)
+                     ~stop:(3, 18)
                      !&"test.foo"
                      (Some
                         (node
@@ -1426,18 +1554,20 @@ let test_get_unannotated_global context =
 
 
 let test_dependencies_and_new_values context =
-  let assert_updates = assert_updates ~context in
+  let assert_update = assert_update ~context in
 
   (* we should be able to keep different dependencies straight *)
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-    |}
-    ~new_source:{|
-      class Foo:2376
-        x: str
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:
+          x: int
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        class Foo:2376
+          x: str
+      |})]
     ~middle_actions:
       [
         `Get ("test.Foo", alias_dependency, Some 1); `Get ("test.Foo", type_check_dependency, Some 1);
@@ -1446,12 +1576,12 @@ let test_dependencies_and_new_values context =
     ();
 
   (* Addition should add values when previously they were missing *)
-  assert_updates
-    ~original_source:{|
-    |}
-    ~new_source:{|
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("test.py", {|
+    |})]
+    ~new_sources:[AssertUpdateSource.Local ("test.py", {|
       x: int = 9
-    |}
+    |})]
     ~middle_actions:[`Global (Reference.create "test.x", alias_dependency, None)]
     ~expected_triggers:[alias_dependency]
     ~post_actions:
@@ -1471,12 +1601,11 @@ let test_dependencies_and_new_values context =
     ();
 
   (* We should propagate triggered dependencies from AstEnvironment *)
-  assert_updates
-    ~original_source:{|
-    |}
-    ~new_source:{|
-      x: int = 9
-    |}
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("test.py", {||})]
+    ~new_sources:[AssertUpdateSource.Local ("test.py", {|
+        x: int = 9
+      |})]
     ~middle_actions:[`GetRawSource (Reference.create "test", alias_dependency)]
     ~expected_triggers:[alias_dependency]
     ();
@@ -1484,7 +1613,7 @@ let test_dependencies_and_new_values context =
 
 
 let test_get_define_body context =
-  let assert_updates = assert_updates ~context in
+  let assert_update = assert_update ~context in
   let dependency = type_check_dependency in
   let open Statement in
   let open Expression in
@@ -1516,15 +1645,17 @@ let test_get_define_body context =
       }
   in
   (* Body doesn't change *)
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
-    |}
-    ~new_source:{|
-      def foo():
-        return 1
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 1
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 1
+      |})]
     ~middle_actions:
       [
         `DefineBody
@@ -1563,15 +1694,17 @@ let test_get_define_body context =
     ();
 
   (* Body changes *)
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
-    |}
-    ~new_source:{|
-      def foo():
-        return 2
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 1
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 2
+      |})]
     ~middle_actions:
       [
         `DefineBody
@@ -1609,17 +1742,24 @@ let test_get_define_body context =
       ]
     ();
 
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
-    |}
-    ~new_source:{|
-      def foo():
-        return 2
-      def foo():
-        return 3
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 1
+      |})]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+            def foo():
+              return 2
+            def foo():
+              return 3
+          |}
+          );
+      ]
     ~middle_actions:
       [
         `DefineBody
@@ -1657,17 +1797,24 @@ let test_get_define_body context =
                  ]) );
       ]
     ();
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
-      def foo():
-        return 2
-    |}
-    ~new_source:{|
-      def foo():
-        return 3
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+            def foo():
+              return 1
+            def foo():
+              return 2
+          |}
+          );
+      ]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 3
+      |})]
     ~middle_actions:
       [
         (* Last define wins *)
@@ -1706,27 +1853,37 @@ let test_get_define_body context =
       ]
     ();
 
-  assert_updates
-    ~original_source:
-      {|
-      from typing import overload
-      @overload
-      def foo(x: int) -> int: ...
-      @overload
-      def foo(x: str) -> str: ...
-      def foo(x):
-        return x
-    |}
-    ~new_source:
-      {|
-      from typing import overload
-      @overload
-      def foo(x: str) -> str: ...
-      def foo(x):
-        return x
-      @overload
-      def foo(x: int) -> int: ...
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              from typing import overload
+              @overload
+              def foo(x: int) -> int: ...
+              @overload
+              def foo(x: str) -> str: ...
+              def foo(x):
+                return x
+            |}
+          );
+      ]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              from typing import overload
+              @overload
+              def foo(x: str) -> str: ...
+              def foo(x):
+                return x
+              @overload
+              def foo(x: int) -> int: ...
+            |}
+          );
+      ]
     ~middle_actions:
       [
         (let body =
@@ -1966,25 +2123,35 @@ let test_get_define_body context =
             ];
         }
     in
-    assert_updates
-      ~original_source:
-        {|
-      from typing import overload
-      @overload
-      def foo(x: int) -> int: ...
-      def foo(x):
-        return x
-    |}
-      ~new_source:
-        {|
-      from typing import overload
-      @overload
-      def foo(x: int) -> int: ...
-      def foo(x):
-        return x
-      @overload
-      def foo(x: str) -> str: ...
-    |}
+    assert_update
+      ~original_sources:
+        [
+          AssertUpdateSource.Local
+            ( "test.py",
+              {|
+                from typing import overload
+                @overload
+                def foo(x: int) -> int: ...
+                def foo(x):
+                  return x
+              |}
+            );
+        ]
+      ~new_sources:
+        [
+          AssertUpdateSource.Local
+            ( "test.py",
+              {|
+                from typing import overload
+                @overload
+                def foo(x: int) -> int: ...
+                def foo(x):
+                  return x
+                @overload
+                def foo(x: str) -> str: ...
+              |}
+            );
+        ]
       ~middle_actions:
         [
           (let definition =
@@ -2012,19 +2179,25 @@ let test_get_define_body context =
       ()
   in
 
-  assert_updates
-    ~original_source:{|
-      class A:
-        foo: int
-    |}
-    ~new_source:
-      {|
-      class A:
-        @property
-        def foo(self) -> int: ...
-        @foo.setter
-        def foo(self, value: int) -> None: ...
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+          class A:
+            foo: int
+        |})]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              class A:
+                @property
+                def foo(self) -> int: ...
+                @foo.setter
+                def foo(self, value: int) -> None: ...
+            |}
+          );
+      ]
     ~middle_actions:[`Define (!&"test.A.foo", dependency, None)]
     ~expected_triggers:[dependency]
     ~post_actions:
@@ -2152,17 +2325,23 @@ let test_get_define_body context =
     ();
 
   (* Location-only change *)
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
-    |}
-    ~new_source:
-      {|
-      # The truth is, the game was rigged from the start.
-      def foo():
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
           return 1
-    |}
+      |})]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+              # The truth is, the game was rigged from the start.
+              def foo():
+                  return 1
+            |}
+          );
+      ]
     ~middle_actions:
       [
         `DefineBody
@@ -2201,13 +2380,16 @@ let test_get_define_body context =
     ();
 
   (* Added define *)
-  assert_updates
-    ~original_source:{|
-    |}
-    ~new_source:{|
-      def foo():
-        return 2
-    |}
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("test.py", {||})]
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ("test.py", {|
+            def foo():
+              return 2
+          |});
+      ]
     ~middle_actions:[`DefineBody (!&"test.foo", dependency, None)]
     ~expected_triggers:[dependency]
     ~post_actions:
@@ -2230,13 +2412,15 @@ let test_get_define_body context =
     ();
 
   (* Removed define *)
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
-    |}
-    ~new_source:{|
-    |}
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local ("test.py", {|
+          def foo():
+            return 1
+        |});
+      ]
+    ~new_sources:[AssertUpdateSource.Local ("test.py", {||})]
     ~middle_actions:
       [
         `DefineBody
@@ -2261,50 +2445,66 @@ let test_get_define_body context =
 
 
 let test_get_define_names context =
-  let assert_updates = assert_updates ~context in
+  let assert_update = assert_update ~context in
   let dependency = alias_dependency in
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 1
+      |})]
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 5
+      |})]
     ~middle_actions:[`GetDefineNames (!&"test", dependency, 2)]
-    ~new_source:{|
-      def foo():
-        return 5
-    |}
     ~expected_triggers:[]
     ~post_actions:[`GetDefineNames (!&"test", dependency, 2)]
     ();
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
-    |}
+  assert_update
+    ~original_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 1
+      |})]
     ~middle_actions:[`GetDefineNames (!&"test", dependency, 2)]
-    ~new_source:{|
-      def foo():
-        return 1
+    ~new_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+            def foo():
+              return 1
 
-      def bar():
-        return 1
-    |}
+            def bar():
+              return 1
+          |}
+          );
+      ]
     ~expected_triggers:[dependency]
     ~post_actions:[`GetDefineNames (!&"test", dependency, 3)]
     ();
-  assert_updates
-    ~original_source:{|
-      def foo():
-        return 1
+  assert_update
+    ~original_sources:
+      [
+        AssertUpdateSource.Local
+          ( "test.py",
+            {|
+          def foo():
+            return 1
 
-      def bar():
-        return 1
-    |}
+          def bar():
+            return 1
+        |}
+          );
+      ]
     ~middle_actions:[`GetDefineNames (!&"test", dependency, 3)]
-    ~new_source:{|
-      def foo():
-        return 1
-    |}
+    ~new_sources:
+      [AssertUpdateSource.Local ("test.py", {|
+        def foo():
+          return 1
+      |})]
     ~expected_triggers:[dependency]
     ~post_actions:[`GetDefineNames (!&"test", dependency, 2)]
     ();
