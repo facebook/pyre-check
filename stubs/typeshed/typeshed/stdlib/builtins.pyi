@@ -1,4 +1,4 @@
-import _ast
+import ast
 import _typeshed
 import sys
 import types
@@ -1236,7 +1236,7 @@ if sys.version_info >= (3, 10):
 if sys.version_info >= (3, 8):
     @overload
     def compile(
-        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        source: str | ReadableBuffer | ast.Module | ast.Expression | ast.Interactive,
         filename: str | ReadableBuffer | _PathLike[Any],
         mode: str,
         flags: Literal[0],
@@ -1247,7 +1247,7 @@ if sys.version_info >= (3, 8):
     ) -> CodeType: ...
     @overload
     def compile(
-        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        source: str | ReadableBuffer | ast.Module | ast.Expression | ast.Interactive,
         filename: str | ReadableBuffer | _PathLike[Any],
         mode: str,
         *,
@@ -1257,7 +1257,7 @@ if sys.version_info >= (3, 8):
     ) -> CodeType: ...
     @overload
     def compile(
-        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        source: str | ReadableBuffer | ast.Module | ast.Expression | ast.Interactive,
         filename: str | ReadableBuffer | _PathLike[Any],
         mode: str,
         flags: Literal[1024],
@@ -1265,10 +1265,10 @@ if sys.version_info >= (3, 8):
         optimize: int = -1,
         *,
         _feature_version: int = -1,
-    ) -> _ast.AST: ...
+    ) -> ast.AST: ...
     @overload
     def compile(
-        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        source: str | ReadableBuffer | ast.Module | ast.Expression | ast.Interactive,
         filename: str | ReadableBuffer | _PathLike[Any],
         mode: str,
         flags: int,
@@ -1281,7 +1281,7 @@ if sys.version_info >= (3, 8):
 else:
     @overload
     def compile(
-        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        source: str | ReadableBuffer | ast.Module | ast.Expression | ast.Interactive,
         filename: str | ReadableBuffer | _PathLike[Any],
         mode: str,
         flags: Literal[0],
@@ -1290,7 +1290,7 @@ else:
     ) -> CodeType: ...
     @overload
     def compile(
-        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        source: str | ReadableBuffer | ast.Module | ast.Expression | ast.Interactive,
         filename: str | ReadableBuffer | _PathLike[Any],
         mode: str,
         *,
@@ -1299,16 +1299,16 @@ else:
     ) -> CodeType: ...
     @overload
     def compile(
-        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        source: str | ReadableBuffer | ast.Module | ast.Expression | ast.Interactive,
         filename: str | ReadableBuffer | _PathLike[Any],
         mode: str,
         flags: Literal[1024],
         dont_inherit: bool = False,
         optimize: int = -1,
-    ) -> _ast.AST: ...
+    ) -> ast.AST: ...
     @overload
     def compile(
-        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        source: str | ReadableBuffer | ast.Module | ast.Expression | ast.Interactive,
         filename: str | ReadableBuffer | _PathLike[Any],
         mode: str,
         flags: int,
