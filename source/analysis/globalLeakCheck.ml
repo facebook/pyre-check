@@ -287,7 +287,13 @@ module State (Context : Context) = struct
            outside of the walrus expression, causing a global leak. *)
         {
           reachable_globals = value_globals;
-          errors = append_errors_for_globals reachable_globals (value_errors @ errors);
+          errors =
+            append_errors_for_reachable_globals
+              ~resolution
+              ~location
+              construct_write_to_global_variable_kind
+              reachable_globals
+              (value_errors @ errors);
         }
     | Dictionary { entries; keywords } ->
         let forward_entries { Dictionary.Entry.key; value } =
