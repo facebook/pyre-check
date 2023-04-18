@@ -74,6 +74,21 @@ module State (Context : Context) = struct
     Error.GlobalLeak { global_name = delocalized_reference; global_type = target_type }
 
 
+  let construct_write_to_global_variable_kind ~resolution global =
+    let target_type = Resolution.resolve_reference resolution global in
+    let delocalized_reference = Reference.delocalize global in
+    let category =
+      match target_type with
+      | Primitive _ -> Error.GlobalLeaks.Primitive
+      | Parametric { name = "type"; _ } -> Error.GlobalLeaks.Class
+      | Parametric { name = "list" | "dict" | "set"; _ } -> Error.GlobalLeaks.MutableDataStructure
+      | _ -> Error.GlobalLeaks.Other
+    in
+    Error.LeakToGlobal
+      (WriteToGlobalVariable
+         { global_name = delocalized_reference; global_type = target_type; category })
+
+
   let append_errors_for_globals ~resolution ~location construct_leak_kind globals errors =
     List.map
       ~f:(fun { global; _ } ->
@@ -432,9 +447,16 @@ module State (Context : Context) = struct
           let { errors = value_errors; reachable_globals = value_reachable_globals } =
             forward_expression ~resolution value
           in
-          prepare_globals_for_errors
-            (reachable_globals @ value_reachable_globals)
-            (value_errors @ errors)
+          let leaks_to_global_variables =
+            append_errors_for_globals
+              ~resolution
+              ~location
+              construct_write_to_global_variable_kind
+              reachable_globals
+              []
+          in
+          leaks_to_global_variables
+          @ prepare_globals_for_errors value_reachable_globals (value_errors @ errors)
       | Expression expression ->
           let { errors; _ } = forward_expression ~resolution expression in
           errors
