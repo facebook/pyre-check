@@ -201,8 +201,8 @@ module State (Context : Context) = struct
               | _ -> [])
         in
         let get_errors_from_forward_expression { Call.Argument.value; _ } =
-          let { errors; _ } = forward_expression value in
-          errors
+          let { errors; reachable_globals } = forward_expression value in
+          append_errors_for_globals reachable_globals errors
         in
         List.concat_map ~f:get_errors_from_forward_expression arguments
         |> fun argument_errors -> { errors = argument_errors @ errors; reachable_globals }

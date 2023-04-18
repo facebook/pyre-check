@@ -282,6 +282,7 @@ let test_global_exceptions context =
     [];
   assert_global_leak_errors
     (* Handling an exception results in an error if it mutates a global. *)
+    (* TODO (T142189949): de-duplicate errors on globals detected at the same location. *)
     {|
       my_global: int = 1
       def foo() -> None:
@@ -291,7 +292,10 @@ let test_global_exceptions context =
         except Exception as my_global:
           my_local = 2
     |}
-    ["Global leak [3100]: Data is leaked to global `my_global` of type `unknown`."];
+    [
+      "Global leak [3100]: Data is leaked to global `my_global` of type `typing.Any`.";
+      "Global leak [3100]: Data is leaked to global `my_global` of type `unknown`.";
+    ];
   assert_global_leak_errors
     (* Handling an exception results in an error if it mutates a global. *)
     {|
@@ -525,8 +529,10 @@ let test_list_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
-    (* Using a global in a list accessor when the global is not mutated does not result in an
-       error. *)
+    (* Using a global in a list accessor when the global is not mutated results in a global read
+       error. This is because we consider globals passed as function parameters as potential
+       leaks.*)
+    (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
     {|
       my_global: int = 1
 
@@ -535,7 +541,7 @@ let test_list_global_leaks context =
 
         my_list[my_global].append(4)
     |}
-    [];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
     (* Mutating a global with the walrus operator in a list constructor results in an error. *)
     {|
@@ -583,13 +589,18 @@ let test_list_global_leaks context =
     |}
     ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
   assert_global_leak_errors
+    (* Using a global in a list append when the global is not mutated results in a global read
+       error. This is because we consider globals passed as function parameters as potential
+       leaks.*)
+    (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
+    (* TODO (T142189949): leaks should be detected for writing a global into a local *)
     {|
       my_global: int = 1
       def foo() -> None:
         my_list: List[int] = []
         my_list.append(my_global)
     |}
-    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   ()
 
 
@@ -834,13 +845,16 @@ let test_dict_global_leaks context =
        int]`.";
     ];
   assert_global_leak_errors
+    (* Passing global as a function parameter results in an error. *)
+    (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
+    (* TODO (T142189949): leaks should be detected for writing a global into a local *)
     {|
       my_global: int = 1
       def foo() -> None:
         my_dict: Dict[str, int] = {}
         my_dict["my_global"] = my_global
     |}
-    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   ()
 
 
@@ -1364,7 +1378,7 @@ let test_object_global_leaks context =
 
         def __init__(self) -> None:
           self.x = 1
-	
+
         @classmethod
         def get_current(cls) -> MyClass:
           current = cls.current
@@ -1390,13 +1404,16 @@ let test_global_statements context =
     |}
     [ (* TODO (T142189949): leaks should be detected on global assignment to a local variable *) ];
   assert_global_leak_errors
+    (* Passing global as a function parameter results in an error. *)
+    (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
+    (* TODO (T142189949): leaks should be detected for writing a global into a local *)
     {|
       my_global: int = 1
       def foo() -> None:
         my_set: Set[int] = set()
         my_set.add(my_global)
     |}
-    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1719,13 +1736,17 @@ let test_global_statements context =
     |}
     [];
   assert_global_leak_errors
+    (* Using a global in a range function when the global is not mutated results in a global read
+       error. This is because we consider globals passed as function parameters as potential
+       leaks.*)
+    (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
     {|
       my_global: int = 1
       def foo() -> None:
         for i in range(0, my_global):
           print("hi")
     |}
-    [];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2085,6 +2106,123 @@ let test_global_returns context =
   ()
 
 
+let test_globals_passed_as_function_parameters context =
+  let assert_global_leak_errors = assert_global_leak_errors ~context in
+  assert_global_leak_errors
+    (* Passing a non-global as a parameter does not result in an error. *)
+    {|
+      my_global: int = 1
+      def foo() -> None:
+        my_local = 1
+        print(my_local)
+    |}
+    [];
+  assert_global_leak_errors
+    (* Passing a global as a parameter results in an error. *)
+    {|
+      my_global: List[int]
+      def foo() -> None:
+        print(my_global)
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
+  assert_global_leak_errors
+    (* Passing multiple globals as parameters results in an error.*)
+    {|
+      my_global: List[int] = []
+      my_global_int: int = 1
+      def bar(x: List[int], y: int) -> None:
+        print(x)
+        print(y)
+
+      def foo() -> None:
+        global my_global_int
+        bar(my_global, my_global_int)
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
+      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`.";
+    ];
+  assert_global_leak_errors
+    (* Passing a global multiple times as a parameter results in multiple errors.*)
+    {|
+      my_global: List[int] = []
+      my_global_int: int = 1
+      def bar(x: int, y: int) -> None:
+        print(x)
+        print(y)
+
+      def foo() -> None:
+        global my_global_int
+        bar(my_global_int, my_global_int)
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
+      "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
+    ];
+  assert_global_leak_errors
+    (* Passing multiple globals as parameters in nested calls results in an error.*)
+    {|
+      my_global: List[int] = []
+      my_global_int: int = 1
+      def baz(x: int) -> int:
+        return x
+
+      def bar(x: List[int], y: int) -> None:
+        print(x)
+        print(y)
+
+      def foo() -> None:
+        global my_global_int
+        bar(my_global, baz(my_global_int))
+    |}
+    [
+      "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
+      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`.";
+    ];
+  assert_global_leak_errors
+    (* Passing a global as a parameter to a class function results in an error. *)
+    {|
+      my_global_int: int = 1
+      class MyClass:
+        def __init__(self) -> None:
+          self.x = 0
+
+        def set_x(self, x: int) -> None:
+          self.x = x
+
+      def foo() -> None:
+        my_local: MyClass = MyClass()
+        my_local.set_x(my_global_int)
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`."];
+  assert_global_leak_errors
+    (* Passing a global as a parameter to a class initialization results in an error. *)
+    {|
+      my_global_int: int = 1
+      class MyClass:
+        def __init__(self, x: int) -> None:
+          self.x = x
+
+      def foo() -> None:
+        my_local: MyClass = MyClass(my_global_int)
+
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`."];
+  assert_global_leak_errors
+    (* Using a global in a list append when the global is not mutated results in a global read
+       error. This is because we consider globals passed as function parameters as potential
+       leaks.*)
+    (* TODO (T142189949): leaks should be detected when values of globals are written to locals *)
+    {|
+      my_global: List[int] = []
+      def foo() -> None:
+        my_list: List[int] = []
+        my_list.append(my_global.pop(3))
+    |}
+    [];
+  ()
+
+
 let () =
   "global_leaks"
   >::: [
@@ -2099,5 +2237,6 @@ let () =
          "recursive_coverage" >:: test_recursive_coverage;
          "global_returns" >:: test_global_returns;
          "global_exceptions" >:: test_global_exceptions;
+         "global_reads" >:: test_globals_passed_as_function_parameters;
        ]
   |> Test.run
