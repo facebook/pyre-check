@@ -15,7 +15,6 @@ let test_extra_overriding_parameter context =
       import typing
       T = typing.TypeVar("T")
 
-      # lets AstLintRule ignore these no_op implementations
       def decorate(f: typing.Callable[['C', T], None]) -> typing.Callable[['C', T], None]:
         ...
 
@@ -25,7 +24,25 @@ let test_extra_overriding_parameter context =
           pass
 
       class D(C):
-        def f(self, y: int) -> None:
+        def f(self, x: int, y: int, z: int) -> None:
+          pass
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T")
+
+      def decorate(f: T) -> T:
+        ...
+
+      class C:
+        def f(self) -> None:
+          pass
+
+      class D(C):
+        @decorate
+        def f(self, x: int) -> None:
           pass
     |}
     [];

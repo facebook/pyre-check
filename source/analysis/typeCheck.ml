@@ -6163,7 +6163,7 @@ module State (Context : Context) = struct
           let open Annotated in
           begin
             match define with
-            | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
+            | { Ast.Statement.Define.signature = { parent = Some parent; decorators; _ }; _ } -> (
                 GlobalResolution.overrides
                   (Reference.show parent)
                   ~resolution:global_resolution
@@ -6387,22 +6387,11 @@ module State (Context : Context) = struct
                             | KeywordOnly { default = has_default; _ } -> has_default
                             | PositionalOnly { default = has_default; _ } -> has_default
                           in
-                          (* TODO(T150016653): Figure out how to handle abstract class methods and
-                             decorators that result in Anonymous kinds *)
-                          let cannot_evaluate =
+                          let is_overriding_function_decorated = not (List.is_empty decorators) in
+                          let is_overridden_function_decorated =
                             match kind with
                             | Anonymous -> true
                             | Named function_name -> (
-                                let is_abstract_class_method_decorator = function
-                                  | { Node.value = decorator; _ } -> (
-                                      match decorator with
-                                      | Expression.Name decorator_name ->
-                                          [%compare.equal: Reference.t option]
-                                            (name_to_reference decorator_name)
-                                            (Option.some
-                                               (Reference.create "abc.abstractclassmethod"))
-                                      | _ -> false)
-                                in
                                 let definition =
                                   GlobalResolution.define_body global_resolution function_name
                                 in
@@ -6414,9 +6403,15 @@ module State (Context : Context) = struct
                                         { StatementDefine.signature = { decorators; _ }; _ };
                                       _;
                                     } ->
-                                    List.exists decorators ~f:is_abstract_class_method_decorator)
+                                    not (List.is_empty decorators))
+                            (* TODO(T150016653): Figure out how to handle decorators *)
                           in
-                          if is_args_kwargs_or_has_default || cannot_evaluate then
+
+                          if
+                            is_args_kwargs_or_has_default
+                            || is_overriding_function_decorated
+                            || is_overridden_function_decorated
+                          then
                             errors
                           else
                             emit_error
