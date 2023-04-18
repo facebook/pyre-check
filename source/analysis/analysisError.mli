@@ -259,6 +259,43 @@ and tuple_concatenation_problem =
   | UnpackingNonIterable of { annotation: Type.t }
 [@@deriving compare, sexp, show, hash]
 
+module GlobalLeaks : sig
+  type type_category =
+    | MutableDataStructure
+    | Primitive
+    | Class
+    | Other
+  [@@deriving compare, sexp, show, hash]
+
+  type leak =
+    | WriteToGlobalVariable of {
+        global_name: Reference.t;
+        global_type: Type.t;
+        category: type_category;
+      }
+    | WriteToClassAttribute of {
+        class_name: Reference.t;
+        attribute_name: Reference.t;
+        attribute_type: Type.t;
+      }
+    | WriteToLocalVariable of {
+        global_name: Reference.t;
+        global_type: Type.t;
+        local_name: Reference.t;
+      }
+    | WriteToMethodArgument of {
+        global_name: Reference.t;
+        global_type: Type.t;
+        method_name: Reference.t;
+      }
+    | ReturnOfGlobalVariable of {
+        global_name: Reference.t;
+        global_type: Type.t;
+        method_name: Reference.t option;
+      }
+  [@@deriving compare, sexp, show, hash]
+end
+
 module ReadOnly : sig
   type readonlyness_mismatch =
     | IncompatibleVariableType of {
@@ -383,6 +420,7 @@ and kind =
       decorator: invalid_override_kind;
     }
   | InvalidAssignment of invalid_assignment_kind
+  | LeakToGlobal of GlobalLeaks.leak
   | MissingArgument of {
       callee: Reference.t option;
       parameter: SignatureSelectionTypes.missing_argument;

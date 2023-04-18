@@ -301,6 +301,140 @@ let join_mismatch ~resolution left right =
   }
 
 
+module GlobalLeaks = struct
+  type type_category =
+    | MutableDataStructure
+    | Primitive
+    | Class
+    | Other
+  [@@deriving compare, sexp, show, hash]
+
+  type leak =
+    | WriteToGlobalVariable of {
+        global_name: Reference.t;
+        global_type: Type.t;
+        category: type_category;
+      }
+    | WriteToClassAttribute of {
+        class_name: Reference.t;
+        attribute_name: Reference.t;
+        attribute_type: Type.t;
+      }
+    | WriteToLocalVariable of {
+        global_name: Reference.t;
+        global_type: Type.t;
+        local_name: Reference.t;
+      }
+    | WriteToMethodArgument of {
+        global_name: Reference.t;
+        global_type: Type.t;
+        method_name: Reference.t;
+      }
+    | ReturnOfGlobalVariable of {
+        global_name: Reference.t;
+        global_type: Type.t;
+        method_name: Reference.t option;
+      }
+  [@@deriving compare, sexp, show, hash]
+
+  let error_messages ~concise kind =
+    let pp_reference = pp_reference ~concise in
+    let message =
+      match kind with
+      | WriteToGlobalVariable { global_name; global_type; _ } ->
+          [
+            Format.asprintf
+              "Data write to global variable `%a` of type `%a`."
+              pp_reference
+              global_name
+              Type.pp
+              global_type;
+          ]
+      | WriteToClassAttribute { class_name; attribute_name; attribute_type } ->
+          [
+            Format.asprintf
+              "Data write to class attribute `%a` of type `%a` defined in class `%a`"
+              pp_reference
+              attribute_name
+              Type.pp
+              attribute_type
+              pp_reference
+              class_name;
+          ]
+      | WriteToLocalVariable { global_name; global_type; local_name } ->
+          [
+            Format.asprintf
+              "Potential data leak to global `%a` of type `%a` via alias to local `%a`"
+              pp_reference
+              global_name
+              Type.pp
+              global_type
+              pp_reference
+              local_name;
+          ]
+      | WriteToMethodArgument { global_name; global_type; method_name } ->
+          [
+            Format.asprintf
+              "Potential data leak to global `%a` of type `%a` via method arguments to method `%a`."
+              pp_reference
+              global_name
+              Type.pp
+              global_type
+              pp_reference
+              method_name;
+          ]
+      | ReturnOfGlobalVariable { global_name; global_type; method_name } -> (
+          match method_name with
+          | Some name ->
+              [
+                Format.asprintf
+                  "Potential data leak to global `%a` of type `%a` via return from method `%a`."
+                  pp_reference
+                  global_name
+                  Type.pp
+                  global_type
+                  pp_reference
+                  name;
+              ]
+          | None ->
+              [
+                Format.asprintf
+                  "Potential data leak to global `%a` of type `%a`."
+                  pp_reference
+                  global_name
+                  Type.pp
+                  global_type;
+              ])
+    in
+    message
+
+
+  let code_of_kind = function
+    | WriteToGlobalVariable { category; _ } -> (
+        match category with
+        | MutableDataStructure -> 3101
+        | Primitive -> 3102
+        | Class -> 3103
+        | Other -> 3104)
+    | WriteToClassAttribute _ -> 3105
+    | WriteToLocalVariable _ -> 3106
+    | WriteToMethodArgument _ -> 3107
+    | ReturnOfGlobalVariable _ -> 3108
+
+
+  let name_of_kind = function
+    | WriteToGlobalVariable { category; _ } -> (
+        match category with
+        | MutableDataStructure -> "Leak to a mutable datastructure"
+        | Primitive -> "Leak to a primitive global"
+        | Class -> "Leak to a class variable"
+        | Other -> "Leak to other types")
+    | WriteToClassAttribute _ -> "Leak to a class attribute"
+    | WriteToLocalVariable _ -> "Leak via local variable"
+    | WriteToMethodArgument _ -> "Leak via method argument"
+    | ReturnOfGlobalVariable _ -> "Leak via method return"
+end
+
 module ReadOnly = struct
   type readonlyness_mismatch =
     | IncompatibleVariableType of {
@@ -635,6 +769,7 @@ and kind =
       decorator: invalid_override_kind;
     }
   | InvalidAssignment of invalid_assignment_kind
+  | LeakToGlobal of GlobalLeaks.leak
   | MissingArgument of {
       callee: Reference.t option;
       parameter: SignatureSelectionTypes.missing_argument;
@@ -819,6 +954,7 @@ let code_of_kind = function
   (* Privacy-related errors: 3xxx. *)
   | ReadOnlynessMismatch kind -> ReadOnly.code_of_kind kind
   | GlobalLeak _ -> 3100
+  | LeakToGlobal kind -> GlobalLeaks.code_of_kind kind
 
 
 let name_of_kind = function
@@ -852,6 +988,7 @@ let name_of_kind = function
   | InvalidInheritance _ -> "Invalid inheritance"
   | InvalidOverride _ -> "Invalid override"
   | InvalidAssignment _ -> "Invalid assignment"
+  | LeakToGlobal kind -> GlobalLeaks.name_of_kind kind
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
   | MissingCaptureAnnotation _ -> "Missing annotation for captured variable"
@@ -2033,6 +2170,7 @@ let rec messages ~concise ~signature location kind =
               class_name
               (if concise then "." else method_message);
           ])
+  | LeakToGlobal kind -> GlobalLeaks.error_messages ~concise kind
   | MissingArgument { parameter = Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { parameter = PositionalOnly index; _ } when concise ->
@@ -3072,6 +3210,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidType _
   | IncompatibleOverload _
   | IncompleteType _
+  | LeakToGlobal _
   | MissingArgument _
   | MissingAttributeAnnotation _
   | MissingCaptureAnnotation _
@@ -3188,6 +3327,8 @@ let join ~resolution left right =
     | InvalidTypeParameters left, InvalidTypeParameters right
       when [%compare.equal: AttributeResolution.type_parameters_mismatch] left right ->
         InvalidTypeParameters left
+    | LeakToGlobal left, LeakToGlobal right when [%compare.equal: GlobalLeaks.leak] left right ->
+        LeakToGlobal left
     | ( MissingArgument { callee = left_callee; parameter = Named left_name },
         MissingArgument { callee = right_callee; parameter = Named right_name } )
       when Option.equal Reference.equal_sanitized left_callee right_callee
@@ -3578,6 +3719,7 @@ let join ~resolution left right =
     | InvalidOverride _, _
     | InvalidAssignment _, _
     | InvalidClassInstantiation _, _
+    | LeakToGlobal _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingCaptureAnnotation _, _
@@ -4062,6 +4204,7 @@ let dequalify
     | InvalidAssignment kind -> InvalidAssignment (dequalify_invalid_assignment kind)
     | InvalidClassInstantiation kind ->
         InvalidClassInstantiation (dequalify_invalid_class_instantiation kind)
+    | LeakToGlobal leak -> LeakToGlobal leak
     | TooManyArguments ({ callee; _ } as extra_argument) ->
         TooManyArguments { extra_argument with callee = Option.map ~f:dequalify_reference callee }
     | Top -> Top
