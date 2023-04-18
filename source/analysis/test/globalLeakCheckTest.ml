@@ -1402,7 +1402,7 @@ let test_global_statements context =
       def foo() -> None:
         y: int = my_global
     |}
-    [ (* TODO (T142189949): leaks should be detected on global assignment to a local variable *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
     (* Passing global as a function parameter results in an error. *)
     (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
@@ -1427,7 +1427,7 @@ let test_global_statements context =
         my_obj: MyClass = MyClass(1)
         my_obj.x = my_global
     |}
-    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1440,7 +1440,7 @@ let test_global_statements context =
       def foo() -> None:
         MyClass(1).x = my_global
     |}
-    [ (* TODO (T142189949): leaks should be detected for writing a global into a local *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1453,7 +1453,7 @@ let test_global_statements context =
       def foo() -> None:
         my_local = my_global.x
     |}
-    [ (* TODO (T142189949): should this be allowed? *) ];
+    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `test.MyClass`."];
   assert_global_leak_errors
     {|
       async def test() -> AsyncGenerator[None, None]:
@@ -2179,6 +2179,18 @@ let test_globals_passed_as_function_parameters context =
       "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
       "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`.";
     ];
+  assert_global_leak_errors
+    (* Passing globals as parameters in calls in assignment statement results in an error.*)
+    {|
+      my_global_int: int = 1
+      def baz(x: int) -> int:
+        return x
+
+      def foo() -> None:
+        global my_global_int
+        a = baz(my_global_int)
+    |}
+    ["Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`."];
   assert_global_leak_errors
     (* Passing a global as a parameter to a class function results in an error. *)
     {|

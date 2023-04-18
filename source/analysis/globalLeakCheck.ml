@@ -419,8 +419,12 @@ module State (Context : Context) = struct
           errors
       | Assign { target; value; _ } ->
           let { reachable_globals; errors } = forward_assignment_target ~resolution target in
-          let { errors = value_errors; _ } = forward_expression ~resolution value in
-          prepare_globals_for_errors reachable_globals (value_errors @ errors)
+          let { errors = value_errors; reachable_globals = value_reachable_globals } =
+            forward_expression ~resolution value
+          in
+          prepare_globals_for_errors
+            (reachable_globals @ value_reachable_globals)
+            (value_errors @ errors)
       | Expression expression ->
           let { errors; _ } = forward_expression ~resolution expression in
           errors
