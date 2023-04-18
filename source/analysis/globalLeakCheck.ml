@@ -53,6 +53,7 @@ module State (Context : Context) = struct
 
   type leaked_global = {
     reference: Reference.t;
+    kind: Error.kind;
     location: Location.t;
   }
 
@@ -67,8 +68,18 @@ module State (Context : Context) = struct
     errors: leaked_global list;
   }
 
-  let append_errors_for_globals ~location globals errors =
-    List.map ~f:(fun { global; _ } -> { reference = global; location }) globals @ errors
+  let construct_global_leak_kind ~resolution global =
+    let target_type = Resolution.resolve_reference resolution global in
+    let delocalized_reference = Reference.delocalize global in
+    Error.GlobalLeak { global_name = delocalized_reference; global_type = target_type }
+
+
+  let append_errors_for_globals ~resolution ~location construct_leak_kind globals errors =
+    List.map
+      ~f:(fun { global; _ } ->
+        { reference = global; location; kind = construct_leak_kind ~resolution global })
+      globals
+    @ errors
 
 
   let empty_result = { reachable_globals = []; errors = [] }
@@ -132,7 +143,9 @@ module State (Context : Context) = struct
       in
       target_errors @ iterator_errors @ condition_errors
     in
-    let append_errors_for_globals = append_errors_for_globals ~location in
+    let append_errors_for_globals =
+      append_errors_for_globals ~resolution ~location construct_global_leak_kind
+    in
     let expression_type () = Resolution.resolve_expression_to_type resolution expression in
     match value with
     (* interesting cases *)
@@ -383,7 +396,9 @@ module State (Context : Context) = struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)
     in
-    let prepare_globals_for_errors = append_errors_for_globals ~location in
+    let prepare_globals_for_errors =
+      append_errors_for_globals ~resolution ~location construct_global_leak_kind
+    in
     let module_reference =
       let rec get_module_qualifier qualifier =
         let module_tracker = GlobalResolution.module_tracker Context.global_resolution in
@@ -400,15 +415,10 @@ module State (Context : Context) = struct
       in
       get_module_qualifier (Context.qualifier |> Reference.delocalize)
     in
-    let emit_error_for_global { reference; location } =
-      let target_type = Resolution.resolve_reference resolution reference in
-      let delocalized_reference = Reference.delocalize reference in
+    let emit_error_for_global { location; kind; _ } =
+      let location_with_module_reference = Location.with_module ~module_reference location in
       let error =
-        Error.create
-          ~location:(Location.with_module ~module_reference location)
-          ~kind:
-            (Error.GlobalLeak { global_name = delocalized_reference; global_type = target_type })
-          ~define:Context.define
+        Error.create ~location:location_with_module_reference ~kind ~define:Context.define
       in
       LocalErrorMap.append Context.error_map ~statement_key ~error
     in
