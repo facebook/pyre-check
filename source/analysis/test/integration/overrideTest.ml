@@ -78,18 +78,30 @@ let test_extra_overriding_parameter context =
   assert_type_errors
     {|
       class A:
-          def test(self, /, n: int) -> int:
+          def test(self, n: int, /) -> int:
               return 5
 
 
       class B(A):
-          def test(self, /, n: int, m: int) -> int:
+          def test(self, n: int, m: float, /) -> int:
               return n
     |}
     [
       "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. \
-       Could not find parameter `m` in overridden signature.";
+       Could not find parameter of type `float` at index 2 in overridden signature.";
     ];
+  assert_type_errors
+    {|
+      class A:
+          def test(self, n: int, /) -> int:
+              return 5
+
+
+      class B(A):
+          def test(self, m: int, /) -> int:
+              return m
+    |}
+    [];
   assert_type_errors
     {|
       class A:

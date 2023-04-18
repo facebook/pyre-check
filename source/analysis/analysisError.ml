@@ -1497,14 +1497,19 @@ let rec messages ~concise ~signature location kind =
               match parameter with
               | KeywordOnly { name; _ }
               | Named { name; _ } ->
-                  Format.asprintf "%a" pp_identifier name
-              | _ -> Type.Callable.Parameter.show_concise parameter
+                  Format.asprintf "`%a`" pp_identifier name
+              | PositionalOnly { index; _ } ->
+                  Format.asprintf
+                    "of type `%s` at index %d"
+                    (Type.Callable.Parameter.show_concise parameter)
+                    index
+              | _ -> Format.asprintf "`%s`" (Type.Callable.Parameter.show_concise parameter)
             in
             let signature_description =
               if parameter_exists_in_overridden_signature then "overriding" else "overridden"
             in
             Format.asprintf
-              "Could not find parameter `%s` in %s signature."
+              "Could not find parameter %s in %s signature."
               parameter
               signature_description
       in
