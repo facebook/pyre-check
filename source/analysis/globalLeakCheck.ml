@@ -89,7 +89,7 @@ module State (Context : Context) = struct
          { global_name = delocalized_reference; global_type = target_type; category })
 
 
-  let append_errors_for_globals ~resolution ~location construct_leak_kind globals errors =
+  let append_errors_for_reachable_globals ~resolution ~location construct_leak_kind globals errors =
     List.map
       ~f:(fun { global; _ } ->
         { reference = global; location; kind = construct_leak_kind ~resolution global })
@@ -159,7 +159,7 @@ module State (Context : Context) = struct
       target_errors @ iterator_errors @ condition_errors
     in
     let append_errors_for_globals =
-      append_errors_for_globals ~resolution ~location construct_global_leak_kind
+      append_errors_for_reachable_globals ~resolution ~location construct_global_leak_kind
     in
     let expression_type () = Resolution.resolve_expression_to_type resolution expression in
     match value with
@@ -180,7 +180,16 @@ module State (Context : Context) = struct
           |> Option.value ~default:reachable_globals
         in
         if is_known_mutation_method ~resolution base attribute then
-          { reachable_globals = []; errors = append_errors_for_globals reachable_globals errors }
+          {
+            reachable_globals = [];
+            errors =
+              append_errors_for_reachable_globals
+                ~resolution
+                ~location
+                construct_write_to_global_variable_kind
+                reachable_globals
+                errors;
+          }
         else
           { sub_expression_result with reachable_globals }
     | Call
@@ -412,7 +421,7 @@ module State (Context : Context) = struct
         (module TypeCheck.DummyContext)
     in
     let prepare_globals_for_errors =
-      append_errors_for_globals ~resolution ~location construct_global_leak_kind
+      append_errors_for_reachable_globals ~resolution ~location construct_global_leak_kind
     in
     let module_reference =
       let rec get_module_qualifier qualifier =
@@ -448,7 +457,7 @@ module State (Context : Context) = struct
             forward_expression ~resolution value
           in
           let leaks_to_global_variables =
-            append_errors_for_globals
+            append_errors_for_reachable_globals
               ~resolution
               ~location
               construct_write_to_global_variable_kind

@@ -3338,11 +3338,11 @@ let test_global_leaks context =
                   "stop_line": 21,
                   "stop_column": 15,
                   "path": "%s",
-                  "code": 3100,
-                  "name": "Global leak",
-                  "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
-                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
-                  "concise_description": "Global leak [3100]: Data is leaked to global `glob` of type `typing.List[int]`.",
+                  "code": 3101,
+                  "name": "Leak to a mutable datastructure",
+                  "description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
+                  "long_description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
+                  "concise_description": "Leak to a mutable datastructure [3101]: Data write to global variable `glob` of type `typing.List[int]`.",
                   "define": "foo.immediate_example"
                 }
               ]
@@ -3371,11 +3371,11 @@ let test_global_leaks context =
                   "stop_line": 8,
                   "stop_column": 19,
                   "path": "%s",
-                  "code": 3100,
-                  "name": "Global leak",
-                  "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
-                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
-                  "concise_description": "Global leak [3100]: Data is leaked to global `glob` of type `typing.List[int]`.",
+                  "code": 3101,
+                  "name": "Leak to a mutable datastructure",
+                  "description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
+                  "long_description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
+                  "concise_description": "Leak to a mutable datastructure [3101]: Data write to global variable `glob` of type `typing.List[int]`.",
                   "define": "foo.nested_run.do_the_thing"
                 }
               ]
@@ -3395,11 +3395,11 @@ let test_global_leaks context =
                   "stop_line": 15,
                   "stop_column": 22,
                   "path": "%s",
-                  "code": 3100,
-                  "name": "Global leak",
-                  "description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
-                  "long_description": "Global leak [3100]: Data is leaked to global `foo.glob` of type `typing.List[int]`.",
-                  "concise_description": "Global leak [3100]: Data is leaked to global `glob` of type `typing.List[int]`.",
+                  "code": 3101,
+                  "name": "Leak to a mutable datastructure",
+                  "description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
+                  "long_description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
+                  "concise_description": "Leak to a mutable datastructure [3101]: Data write to global variable `glob` of type `typing.List[int]`.",
                   "define": "foo.nested_run_2.do_the_thing_2.another_nest"
                 }
               ]
