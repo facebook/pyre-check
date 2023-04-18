@@ -68,15 +68,17 @@ module State (Context : Context) = struct
     errors: leaked_global list;
   }
 
+  let get_type_and_reference ~resolution global =
+    Resolution.resolve_reference resolution global, Reference.delocalize global
+
+
   let construct_global_leak_kind ~resolution global =
-    let target_type = Resolution.resolve_reference resolution global in
-    let delocalized_reference = Reference.delocalize global in
+    let target_type, delocalized_reference = get_type_and_reference ~resolution global in
     Error.GlobalLeak { global_name = delocalized_reference; global_type = target_type }
 
 
   let construct_write_to_global_variable_kind ~resolution global =
-    let target_type = Resolution.resolve_reference resolution global in
-    let delocalized_reference = Reference.delocalize global in
+    let target_type, delocalized_reference = get_type_and_reference ~resolution global in
     let category =
       match target_type with
       | Primitive _ -> Error.GlobalLeaks.Primitive
