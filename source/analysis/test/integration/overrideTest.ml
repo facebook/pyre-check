@@ -12,6 +12,17 @@ let test_extra_overriding_parameter context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      class Obj:
+        def __format__(self, __format_spec: str) -> str:
+          return 'hello'
+
+      class Data(Obj):
+        def __format__(self, format_spec: str) -> str:
+          return 'hello ' + format_spec
+    |}
+    [];
+  assert_type_errors
+    {|
       import typing
       T = typing.TypeVar("T")
 
@@ -102,6 +113,21 @@ let test_extra_overriding_parameter context =
       class B(A):
           def test(self, n: int, m: float, /) -> int:
               return n
+    |}
+    [
+      "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. \
+       Could not find parameter of type `float` at index 2 in overridden signature.";
+    ];
+  assert_type_errors
+    {|
+      class A:
+          def test(self, __n: int) -> int:
+              return 5
+
+
+      class B(A):
+          def test(self, __n: int, __m: float) -> int:
+              return 5
     |}
     [
       "Inconsistent override [14]: `test.B.test` overrides method defined in `A` inconsistently. \

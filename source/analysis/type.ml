@@ -2943,7 +2943,8 @@ module Callable = struct
      * `Left left` means the parameter `left` from `left_parameters` does not match any parameter in `right_parameters`.
      * `Right right` means the parameter `right` from `right_parameters` does not match any parameters in `left_parameters`.
      *
-     * All parameters from `left_parameters` and `right_parameters` only appear once in the result.
+     * All parameters from `left_parameters` and `right_parameters` only appear once in the result. The kinds of the matched parameters
+     * do not necessarily match -- in particular, positional-only parameters can match named ones.
      *)
     let zip left_parameters right_parameters =
       let find_positional_parameter index parameters = List.nth parameters index in
@@ -2986,12 +2987,31 @@ module Callable = struct
         | Some right_parameter -> `Both (left_parameter, right_parameter)
         | None -> `Left left_parameter
       in
+
+      let left_matches = List.map ~f:process_left left_parameters in
+      (* It's okay for named args to override positional ones *)
+      let has_same_name left_name = function
+        | Named { name; _ } -> name == left_name
+        | _ -> false
+      in
+      let is_matched_with_positional_only right_param = function
+        | `Both (overridden_parameter, overriding_parameter) -> (
+            match overridden_parameter, overriding_parameter with
+            | PositionalOnly _, Named { name; _ } -> has_same_name name right_param
+            | _ -> false)
+        | _ -> false
+      in
       let process_right right_parameter =
         match find_matching_parameter left_parameters right_parameter with
         | Some _ -> None
-        | None -> Some (`Right right_parameter)
+        | None ->
+            if List.exists left_matches ~f:(is_matched_with_positional_only right_parameter) then
+              None
+            else
+              Some (`Right right_parameter)
       in
-      List.map ~f:process_left left_parameters @ List.filter_map ~f:process_right right_parameters
+      let right_matches = List.filter_map ~f:process_right right_parameters in
+      left_matches @ right_matches
   end
 
   include Record.Callable
