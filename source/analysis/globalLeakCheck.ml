@@ -77,6 +77,13 @@ module State (Context : Context) = struct
     Error.GlobalLeak { global_name = delocalized_reference; global_type = target_type }
 
 
+  let construct_global_return method_name ~resolution global =
+    let target_type, delocalized_reference = get_type_and_reference ~resolution global in
+    Error.LeakToGlobal
+      (ReturnOfGlobalVariable
+         { global_name = delocalized_reference; global_type = target_type; method_name })
+
+
   let construct_write_to_global_variable_kind ~resolution global =
     let target_type, delocalized_reference = get_type_and_reference ~resolution global in
     let category =
@@ -410,14 +417,14 @@ module State (Context : Context) = struct
 
 
   let forward ~statement_key _ ~statement:{ Node.value; location } =
-    let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
+    let { Node.value = { Define.signature = { Define.Signature.parent = name; _ }; _ }; _ } =
       Context.define
     in
     let resolution =
       TypeCheck.resolution_with_key
         ~global_resolution:Context.global_resolution
         ~local_annotations:Context.local_annotations
-        ~parent
+        ~parent:name
         ~statement_key
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)
@@ -485,7 +492,15 @@ module State (Context : Context) = struct
             let is_safe_global { expression_type; _ } = not (Type.is_meta expression_type) in
             List.filter ~f:is_safe_global reachable_globals
           in
-          prepare_globals_for_errors reachable_globals errors
+          let leak_to_global_returns =
+            append_errors_for_reachable_globals
+              ~resolution
+              ~location
+              (construct_global_return name)
+              reachable_globals
+              []
+          in
+          leak_to_global_returns @ prepare_globals_for_errors [] errors
       | Delete _
       | Return _ ->
           []

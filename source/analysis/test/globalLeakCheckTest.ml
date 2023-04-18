@@ -2236,7 +2236,7 @@ let test_global_returns context =
       def foo() -> int:
         return my_global
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    ["Leak via method return [3108]: Potential data leak to global `test.my_global` of type `int`."];
   assert_global_leak_errors
     (* Returning a member from a global results in an error. *)
     {|
@@ -2244,7 +2244,10 @@ let test_global_returns context =
       def foo() -> int:
         return my_global[0]
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
+    [
+      "Leak via method return [3108]: Potential data leak to global `test.my_global` of type \
+       `typing.List[int]`.";
+    ];
   assert_global_leak_errors
     (* Returning an attribute from a global results in an error. *)
     {|
@@ -2255,7 +2258,10 @@ let test_global_returns context =
       def foo() -> int:
         return my_global.x
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `test.MyClass`."];
+    [
+      "Leak via method return [3108]: Potential data leak to global `test.my_global` of type \
+       `test.MyClass`.";
+    ];
   ()
 
 
