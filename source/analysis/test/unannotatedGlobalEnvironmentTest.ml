@@ -1450,7 +1450,7 @@ let test_get_unannotated_global context =
     |})]
     ~middle_actions:[`Global (Reference.create "test.*", dependency, None)]
     ~new_sources:[]
-    ~expected_triggers:[]
+    ~expected_triggers:[dependency]
     ();
 
   let open Statement in

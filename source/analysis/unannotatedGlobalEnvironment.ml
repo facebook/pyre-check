@@ -795,8 +795,17 @@ module FromReadOnlyUpstream = struct
         | None -> ()
 
 
-    let load_all_possible_modules loader ~is_qualifier reference =
-      let load_module_if_tracked = load_module_if_tracked loader in
+    (* Try to load a module, with dependency tracking of our attempt and caching of successful
+       reads. *)
+    let try_load_module_with_cache ?dependency ({ environment; _ } as loader) qualifier =
+      if not (Modules.mem environment.modules ?dependency qualifier) then
+        (* Note: a dependency should be registered above even if no module exists, so we no longer
+           need dependency tracking. *)
+        load_module_if_tracked loader qualifier
+
+
+    let load_all_possible_modules ?dependency loader ~is_qualifier reference =
+      let load_module_if_tracked = try_load_module_with_cache ?dependency loader in
       let ancestors_descending = Reference.possible_qualifiers_after_delocalize reference in
       List.iter ancestors_descending ~f:load_module_if_tracked;
       if is_qualifier then load_module_if_tracked reference;
@@ -853,7 +862,11 @@ module FromReadOnlyUpstream = struct
         | true -> true
         | false ->
             (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
-            LazyLoader.load_all_possible_modules loader ~is_qualifier (In.key_to_reference key);
+            LazyLoader.load_all_possible_modules
+              ?dependency
+              loader
+              ~is_qualifier
+              (In.key_to_reference key);
             (* We try fetching again *)
             In.mem table ?dependency key
 
@@ -864,7 +877,11 @@ module FromReadOnlyUpstream = struct
         | Some _ as hit -> hit
         | None ->
             (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
-            LazyLoader.load_all_possible_modules loader ~is_qualifier (In.key_to_reference key);
+            LazyLoader.load_all_possible_modules
+              ?dependency
+              loader
+              ~is_qualifier
+              (In.key_to_reference key);
             (* We try fetching again *)
             In.get table ?dependency key
     end
