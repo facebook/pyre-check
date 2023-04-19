@@ -6387,8 +6387,33 @@ module State (Context : Context) = struct
                             | KeywordOnly { default = has_default; _ } -> has_default
                             | PositionalOnly { default = has_default; _ } -> has_default
                           in
-                          let is_overriding_function_decorated = not (List.is_empty decorators) in
-                          let is_overridden_function_decorated =
+                          (* TODO(T150016653): Figure out how to handle decorators and clean up
+                             hardcoding. This is a yucky hack. *)
+                          let allowlisted_non_modifying_decorators =
+                            [
+                              Reference.create "staticmethod";
+                              Reference.create "classmethod";
+                              Reference.create "override";
+                            ]
+                          in
+                          let is_equal_to_decorator_ref name ref =
+                            [%compare.equal: Reference.t option]
+                              (name_to_reference name)
+                              (Option.some ref)
+                          in
+                          let is_non_modifying_decorator = function
+                            | { Node.value = decorator; _ } -> (
+                                match decorator with
+                                | Expression.Name decorator_name ->
+                                    List.exists
+                                      ~f:(is_equal_to_decorator_ref decorator_name)
+                                      allowlisted_non_modifying_decorators
+                                | _ -> false)
+                          in
+                          let are_overriding_function_possibly_changed =
+                            not (List.for_all ~f:is_non_modifying_decorator decorators)
+                          in
+                          let are_overridden_function_args_possibly_changed =
                             match kind with
                             | Anonymous -> true
                             | Named function_name -> (
@@ -6403,14 +6428,13 @@ module State (Context : Context) = struct
                                         { StatementDefine.signature = { decorators; _ }; _ };
                                       _;
                                     } ->
-                                    not (List.is_empty decorators))
-                            (* TODO(T150016653): Figure out how to handle decorators *)
+                                    not (List.for_all ~f:is_non_modifying_decorator decorators))
                           in
 
                           if
                             is_args_kwargs_or_has_default
-                            || is_overriding_function_decorated
-                            || is_overridden_function_decorated
+                            || are_overriding_function_possibly_changed
+                            || are_overridden_function_args_possibly_changed
                           then
                             errors
                           else

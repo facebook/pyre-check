@@ -23,6 +23,13 @@ let test_extra_overriding_parameter context =
     [];
   assert_type_errors
     {|
+      class Data:
+        def __format__(self, format_spec: str) -> str:
+          return 'hello ' + format_spec
+    |}
+    [];
+  assert_type_errors
+    {|
       import typing
       T = typing.TypeVar("T")
 
@@ -57,6 +64,21 @@ let test_extra_overriding_parameter context =
           pass
     |}
     [];
+  assert_type_errors
+    {|
+      class C:
+        def f(self) -> None:
+          pass
+
+      class D(C):
+        @classmethod
+        def f(self, x: int) -> None:
+          pass
+    |}
+    [
+      "Inconsistent override [14]: `test.D.f` overrides method defined in `C` inconsistently. \
+       Could not find parameter `x` in overridden signature.";
+    ];
   assert_type_errors
     {|
       import abc
