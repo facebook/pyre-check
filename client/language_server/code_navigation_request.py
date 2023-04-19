@@ -18,8 +18,6 @@ from .. import dataclasses_json_extensions as json_mixins
 
 from . import daemon_connection, protocol as lsp
 
-from .protocol import PyreHoverResponse
-
 
 @dataclasses.dataclass(frozen=True)
 class HoverRequest:
@@ -68,7 +66,7 @@ class ErrorResponse:
 
 @dataclasses.dataclass(frozen=True)
 class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    contents: List[PyreHoverResponse]
+    contents: List[lsp.PyreHoverResponse]
 
 
 @dataclasses.dataclass(frozen=True)
