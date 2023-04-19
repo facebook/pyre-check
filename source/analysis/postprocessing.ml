@@ -25,12 +25,8 @@ let handle_ignores_and_fixmes
     { Source.typecheck_flags = { Source.TypecheckFlags.ignore_lines; _ }; _ }
     errors
   =
-  let unused_ignores, ignore_lookup =
+  let unused_ignores =
     let unused_ignores = Location.Table.create () in
-    let ignore_lookup = Int.Table.create () in
-    List.iter ignore_lines ~f:(fun ignore ->
-        let key = Ignore.ignored_line ignore in
-        Hashtbl.add_multi ignore_lookup ~key ~data:ignore);
     let register_unused_ignore ignore =
       match Ignore.kind ignore with
       | Ignore.TypeIgnore ->
@@ -39,7 +35,12 @@ let handle_ignores_and_fixmes
       | _ -> Hashtbl.set unused_ignores ~key:(Ignore.location ignore) ~data:ignore
     in
     List.iter ignore_lines ~f:register_unused_ignore;
-    unused_ignores, ignore_lookup
+    unused_ignores
+  in
+  let line_number_to_ignores_lookup =
+    ignore_lines
+    |> List.map ~f:(fun ignore -> Ignore.ignored_line ignore, ignore)
+    |> Int.Table.of_alist_multi
   in
   let errors =
     let not_ignored error =
@@ -75,7 +76,7 @@ let handle_ignores_and_fixmes
         in
         line
       in
-      Hashtbl.find ignore_lookup key >>| List.iter ~f:process_ignore |> ignore;
+      Hashtbl.find line_number_to_ignores_lookup key >>| List.iter ~f:process_ignore |> ignore;
       not !ignored
     in
     List.filter ~f:not_ignored errors
