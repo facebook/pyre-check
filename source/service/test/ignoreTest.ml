@@ -12,6 +12,7 @@ open Test
 open TypeCheck
 
 let assert_errors ?(show_error_traces = false) ~context input_source expected_errors =
+  Memory.reset_shared_memory ();
   let module_tracker, type_errors =
     let project = ScratchProject.setup ~context ["test.py", input_source] in
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
@@ -37,8 +38,7 @@ let assert_errors ?(show_error_traces = false) ~context input_source expected_er
       (diff ~print:(fun format expected_errors ->
            Format.fprintf format "%s" (description_list_to_string expected_errors)))
     expected_errors
-    descriptions;
-  Memory.reset_shared_memory ()
+    descriptions
 
 
 let ignore_lines_test context =
