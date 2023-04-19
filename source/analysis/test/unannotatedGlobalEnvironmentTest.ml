@@ -800,6 +800,25 @@ let assert_update
     |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
   in
   let execute_action = function
+    | `ModuleMetadata (qualifier, dependency, expected) ->
+        let expected =
+          match expected with
+          | `None -> "None"
+          | `Explicit -> "Explicit"
+          | `Implicit -> "Implicit"
+        in
+        let actual =
+          match
+            UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
+              read_only
+              ~dependency
+              qualifier
+          with
+          | None -> "None"
+          | Some module_metadata ->
+              if Module.is_implicit module_metadata then "Implicit" else "Explicit"
+        in
+        assert_equal ~ctxt:context actual expected ~printer:Fn.id
     | `Get (class_name, dependency, expected_number_of_statements) ->
         let printer number =
           number >>| Format.sprintf "number of attributes: %d" |> Option.value ~default:"No class"
@@ -945,6 +964,74 @@ let type_check_dependency =
 
 let alias_dependency =
   SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "dep"))
+
+
+let test_get_module_metadata context =
+  let dependency = type_check_dependency in
+  let assert_update = assert_update ~context in
+  (* No actual change *)
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ~new_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
+    ~expected_triggers:[]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ();
+  assert_update
+    ~original_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ~new_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
+    ~expected_triggers:[]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ();
+  (* Updated code *)
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ~new_sources:[AssertUpdateSource.Local ("a.py", "a: int = 2")]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ();
+  assert_update
+    ~original_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ~new_sources:[AssertUpdateSource.External ("a.py", "a: int = 2")]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ();
+  (* Deleted code *)
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ~new_sources:[]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `None)]
+    ();
+  assert_update
+    ~original_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ~new_sources:[]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `None)]
+    ();
+  (* Added code *)
+  assert_update
+    ~original_sources:[]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `None)]
+    ~new_sources:[AssertUpdateSource.Local ("a.py", "x: int = 1")]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ();
+  (* TODO(T150184864): lack of dependency tracking in the lazy loader leads AstEnvironment to not
+     know it needs to propagate this update. *)
+  assert_update
+    ~original_sources:[]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `None)]
+    ~new_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
+    ~expected_triggers:[]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ();
+  ()
 
 
 let test_get_class_summary context =
@@ -2836,6 +2923,7 @@ let () =
          "legacy_resolve_exports" >:: test_legacy_resolve_exports;
          "resolve_exports" >:: test_resolve_exports;
          (* Tests of dependency tracking across an update *)
+         "get_module_metadata" >:: test_get_module_metadata;
          "get_class_summary" >:: test_get_class_summary;
          "class_exists_and_all_classes" >:: test_class_exists_and_all_classes;
          "get_unannotated_global" >:: test_get_unannotated_global;
