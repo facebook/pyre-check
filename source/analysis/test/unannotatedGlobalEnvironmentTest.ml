@@ -1051,13 +1051,12 @@ let test_get_implicit_module_metadata context =
     ~expected_triggers:[dependency]
     ~post_actions:[`ModuleMetadata (!&"a", dependency, `None)]
     ();
-  (* Added nested module -> added implicit
-   * TODO(T150184864): we are failing to propagate the deletion here *)
+  (* Added nested module -> added implicit *)
   assert_update
     ~original_sources:[]
     ~new_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 1")]
     ~middle_actions:[`ModuleMetadata (!&"a", dependency, `None)]
-    ~expected_triggers:[]
+    ~expected_triggers:[dependency]
     ~post_actions:[`ModuleMetadata (!&"a", dependency, `Implicit)]
     ();
   ()

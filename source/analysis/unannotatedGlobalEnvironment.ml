@@ -990,14 +990,8 @@ module FromReadOnlyUpstream = struct
   let update ({ ast_environment; key_tracker; define_names; _ } as environment) ~scheduler upstream =
     let invalidated_modules = AstEnvironment.UpdateResult.invalidated_modules upstream in
     let map sources =
-      let register qualifier =
-        AstEnvironment.ReadOnly.get_processed_source
-          ~track_dependency:true
-          ast_environment
-          qualifier
-        >>| set_module_data environment
-        |> Option.value ~default:()
-      in
+      let loader = LazyLoader.{ environment; ast_environment } in
+      let register qualifier = LazyLoader.load_module_if_tracked loader qualifier in
       List.iter sources ~f:register
     in
     let update () =
