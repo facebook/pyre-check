@@ -966,7 +966,7 @@ let alias_dependency =
   SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "dep"))
 
 
-let test_get_module_metadata context =
+let test_get_explicit_module_metadata context =
   let dependency = type_check_dependency in
   let assert_update = assert_update ~context in
   (* No actual change *)
@@ -1028,6 +1028,38 @@ let test_get_module_metadata context =
     ~new_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
     ~expected_triggers:[dependency]
     ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
+    ();
+  ()
+
+
+let test_get_implicit_module_metadata context =
+  let dependency = type_check_dependency in
+  let assert_update = assert_update ~context in
+  (* Changed nested module -> no change to implicit *)
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 1")]
+    ~new_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 2")]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `Implicit)]
+    ~expected_triggers:[]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `Implicit)]
+    ();
+  (* Deleted nested module -> deleted implicit
+   * TODO(T150184864) This is a bug, we fail to trigger dependencies. *)
+  assert_update
+    ~original_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 1")]
+    ~new_sources:[]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `Implicit)]
+    ~expected_triggers:[]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `None)]
+    ();
+  (* Added nested module -> added implicit
+   * TODO(T150184864) This is a bug, we fail to trigger dependencies. *)
+  assert_update
+    ~original_sources:[]
+    ~new_sources:[AssertUpdateSource.Local ("a/b.py", "x: int = 1")]
+    ~middle_actions:[`ModuleMetadata (!&"a", dependency, `None)]
+    ~expected_triggers:[]
+    ~post_actions:[`ModuleMetadata (!&"a", dependency, `Implicit)]
     ();
   ()
 
@@ -2921,7 +2953,8 @@ let () =
          "legacy_resolve_exports" >:: test_legacy_resolve_exports;
          "resolve_exports" >:: test_resolve_exports;
          (* Tests of dependency tracking across an update *)
-         "get_module_metadata" >:: test_get_module_metadata;
+         "get_explicit_module_metadata" >:: test_get_explicit_module_metadata;
+         "get_implicit_module_metadata" >:: test_get_implicit_module_metadata;
          "get_class_summary" >:: test_get_class_summary;
          "class_exists_and_all_classes" >:: test_class_exists_and_all_classes;
          "get_unannotated_global" >:: test_get_unannotated_global;
