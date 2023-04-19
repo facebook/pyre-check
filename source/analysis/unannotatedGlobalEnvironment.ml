@@ -785,19 +785,14 @@ module FromReadOnlyUpstream = struct
 
     let load_module_if_tracked { environment; ast_environment } qualifier =
       if not (Modules.mem environment.modules qualifier) then
-        if
-          ModuleTracker.ReadOnly.is_module_tracked
-            (AstEnvironment.ReadOnly.module_tracker ast_environment)
+        match
+          AstEnvironment.ReadOnly.get_processed_source
+            ~track_dependency:true
+            ast_environment
             qualifier
-        then
-          match
-            AstEnvironment.ReadOnly.get_processed_source
-              ~track_dependency:true
-              ast_environment
-              qualifier
-          with
-          | Some source -> set_module_data environment source
-          | None -> ()
+        with
+        | Some source -> set_module_data environment source
+        | None -> ()
 
 
     let load_all_possible_modules loader ~is_qualifier reference =

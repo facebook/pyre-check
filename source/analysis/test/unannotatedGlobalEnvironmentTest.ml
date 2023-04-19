@@ -1022,13 +1022,11 @@ let test_get_module_metadata context =
     ~expected_triggers:[dependency]
     ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
     ();
-  (* TODO(T150184864): lack of dependency tracking in the lazy loader leads AstEnvironment to not
-     know it needs to propagate this update. *)
   assert_update
     ~original_sources:[]
     ~middle_actions:[`ModuleMetadata (!&"a", dependency, `None)]
     ~new_sources:[AssertUpdateSource.External ("a.py", "x: int = 1")]
-    ~expected_triggers:[]
+    ~expected_triggers:[dependency]
     ~post_actions:[`ModuleMetadata (!&"a", dependency, `Explicit)]
     ();
   ()
