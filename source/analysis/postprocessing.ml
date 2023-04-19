@@ -25,17 +25,17 @@ let handle_ignores_and_fixmes
     { Source.typecheck_flags = { Source.TypecheckFlags.ignore_lines; _ }; _ }
     errors
   =
-  let unused_ignores =
-    let unused_ignores = Location.Table.create () in
+  let location_to_unused_ignore_lookup =
+    let location_to_unused_ignore_lookup = Location.Table.create () in
     let register_unused_ignore ignore =
       match Ignore.kind ignore with
       | Ignore.TypeIgnore ->
           (* # type: ignore's don't throw unused ignore errors. *)
           ()
-      | _ -> Hashtbl.set unused_ignores ~key:(Ignore.location ignore) ~data:ignore
+      | _ -> Hashtbl.set location_to_unused_ignore_lookup ~key:(Ignore.location ignore) ~data:ignore
     in
     List.iter ignore_lines ~f:register_unused_ignore;
-    unused_ignores
+    location_to_unused_ignore_lookup
   in
   let line_number_to_ignores_lookup =
     ignore_lines
@@ -49,21 +49,21 @@ let handle_ignores_and_fixmes
       let process_ignore ignore =
         let codes = Ignore.codes ignore in
         if List.is_empty codes then (
-          Hashtbl.remove unused_ignores (Ignore.location ignore);
+          Hashtbl.remove location_to_unused_ignore_lookup (Ignore.location ignore);
           ignored := true
           (* We need to be a bit careful to support the following pattern:
            *  # pyre-ignore[7, 5]
            *  line_that_only_errors_on_7() *))
         else if List.mem ~equal:( = ) codes error_code then (
           begin
-            match Hashtbl.find unused_ignores (Ignore.location ignore) with
+            match Hashtbl.find location_to_unused_ignore_lookup (Ignore.location ignore) with
             | Some ({ Ignore.codes; _ } as ignore) ->
                 let new_codes = List.filter codes ~f:(fun code -> not (code = error_code)) in
                 if List.is_empty new_codes then
-                  Hashtbl.remove unused_ignores (Ignore.location ignore)
+                  Hashtbl.remove location_to_unused_ignore_lookup (Ignore.location ignore)
                 else
                   Hashtbl.set
-                    unused_ignores
+                    location_to_unused_ignore_lookup
                     ~key:(Ignore.location ignore)
                     ~data:{ ignore with Ignore.codes = new_codes }
             | _ -> ()
@@ -94,7 +94,7 @@ let handle_ignores_and_fixmes
           };
       }
     in
-    List.map (Hashtbl.data unused_ignores) ~f:to_error
+    List.map (Hashtbl.data location_to_unused_ignore_lookup) ~f:to_error
   in
   List.rev_append unused_ignore_errors errors
 
