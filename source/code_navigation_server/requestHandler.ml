@@ -449,6 +449,14 @@ let handle_query
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
+  | Request.Query.Completion _ ->
+      let f _state =
+        let response =
+          Response.Error (Response.ErrorKind.InvalidRequest "Autocomplete not yet implemented")
+        in
+        Lwt.return response
+      in
+      Server.ExclusiveLock.read state ~f
   | Request.Query.GetInfo ->
       Response.Info
         {

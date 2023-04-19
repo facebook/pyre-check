@@ -71,6 +71,11 @@ module Query = struct
         position: Ast.Location.position;
         client_id: string;
       }
+    | Completion of {
+        path: string;
+        position: Ast.Location.position;
+        client_id: string;
+      }
     | GetInfo (* Poll the server's state. *)
     | Superclasses of { class_: ClassExpression.t [@key "class"] }
   [@@deriving sexp, compare, yojson { strict = false }]

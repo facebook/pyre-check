@@ -359,6 +359,20 @@ module Testing : sig
             position: Ast.Location.position;
             client_id: string;
           }
+            (** A query that asks the server to return completion (also known as autocomplete)
+                information at a given location in a given module. The server will send back a
+                {!Response.Completion} response as a result. The server will respond with an empty
+                list if it does not have any completion content to show at the location.
+
+                If the given file was not previously opened by a `{!Command.FileOpened}` command for
+                the client, the server will respond with a {!Response.ErrorKind.FileNotOpened}
+                error. If the provided module is opened but not covered by the code navigation
+                server, the server will respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
+        | Completion of {
+            path: string;
+            position: Ast.Location.position;
+            client_id: string;
+          }
             (** A query that asks the server to return the location of definitions for a given
                 cursor point in a given module. The server will send back a
                 {!Response.LocationOfDefinition} response as result. The response will contain an
@@ -449,6 +463,13 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
+    module CompletionItem : sig
+      (** A type representing a completion (autocomplete) result.
+
+          TODO(T151099563): support other CompletionItem attributes *)
+      type t = { label: string } [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
     module Status : sig
       (** A type representing current status of the server. It usually gets sent from the server to
           its clients via the [ServerStatus] response. *)
@@ -493,6 +514,9 @@ module Testing : sig
               there can be many potential definitions for a given item, either because build system
               may map the same file to multiple modules, or because the same name may get redefined
               multiple times.*)
+      | Completion of { completions: CompletionItem.t list }
+          (** Response for {!Request.Completion}. [completions] contains a list of possible
+              completion items that will be shown to the user. *)
       | ServerStatus of Status.t
           (** Response the server may push if the client choose to establish a subscription on
               server status. *)

@@ -39,6 +39,10 @@ module DefinitionLocation = struct
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 
+module CompletionItem = struct
+  type t = { label: string } [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 module Status = struct
   type t =
     | Idle
@@ -54,6 +58,7 @@ type t =
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Hover of { contents: HoverContent.t list }
   | LocationOfDefinition of { definitions: DefinitionLocation.t list }
+  | Completion of { completions: CompletionItem.t list }
   | ServerStatus of Status.t
   | Info of {
       (* All fields are required to implement `pyre servers` *)
