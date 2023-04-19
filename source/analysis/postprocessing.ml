@@ -42,45 +42,41 @@ let handle_ignores_and_fixmes
     |> List.map ~f:(fun ignore -> Ignore.ignored_line ignore, ignore)
     |> Int.Table.of_alist_multi
   in
-  let errors =
-    let not_ignored error =
-      let ignored = ref false in
-      let error_code = Error.code error in
-      let process_ignore ignore =
-        let codes = Ignore.codes ignore in
-        if List.is_empty codes then (
-          Hashtbl.remove location_to_unused_ignore_lookup (Ignore.location ignore);
-          ignored := true
-          (* We need to be a bit careful to support the following pattern:
-           *  # pyre-ignore[7, 5]
-           *  line_that_only_errors_on_7() *))
-        else if List.mem ~equal:( = ) codes error_code then (
-          begin
-            match Hashtbl.find location_to_unused_ignore_lookup (Ignore.location ignore) with
-            | Some ({ Ignore.codes; _ } as ignore) ->
-                let new_codes = List.filter codes ~f:(fun code -> not (code = error_code)) in
-                if List.is_empty new_codes then
-                  Hashtbl.remove location_to_unused_ignore_lookup (Ignore.location ignore)
-                else
-                  Hashtbl.set
-                    location_to_unused_ignore_lookup
-                    ~key:(Ignore.location ignore)
-                    ~data:{ ignore with Ignore.codes = new_codes }
-            | _ -> ()
-          end;
-          ignored := true)
-      in
-      let key =
-        let { Error.location = { Location.WithModule.start = { Location.line; _ }; _ }; _ } =
-          error
-        in
-        line
-      in
-      Hashtbl.find line_number_to_ignores_lookup key >>| List.iter ~f:process_ignore |> ignore;
-      not !ignored
+  let not_ignored error =
+    let ignored = ref false in
+    let error_code = Error.code error in
+    let process_ignore ignore =
+      let codes = Ignore.codes ignore in
+      if List.is_empty codes then (
+        Hashtbl.remove location_to_unused_ignore_lookup (Ignore.location ignore);
+        ignored := true
+        (* We need to be a bit careful to support the following pattern:
+         *  # pyre-ignore[7, 5]
+         *  line_that_only_errors_on_7() *))
+      else if List.mem ~equal:( = ) codes error_code then (
+        begin
+          match Hashtbl.find location_to_unused_ignore_lookup (Ignore.location ignore) with
+          | Some ({ Ignore.codes; _ } as ignore) ->
+              let new_codes = List.filter codes ~f:(fun code -> not (code = error_code)) in
+              if List.is_empty new_codes then
+                Hashtbl.remove location_to_unused_ignore_lookup (Ignore.location ignore)
+              else
+                Hashtbl.set
+                  location_to_unused_ignore_lookup
+                  ~key:(Ignore.location ignore)
+                  ~data:{ ignore with Ignore.codes = new_codes }
+          | _ -> ()
+        end;
+        ignored := true)
     in
-    List.filter ~f:not_ignored errors
+    let key =
+      let { Error.location = { Location.WithModule.start = { Location.line; _ }; _ }; _ } = error in
+      line
+    in
+    Hashtbl.find line_number_to_ignores_lookup key >>| List.iter ~f:process_ignore |> ignore;
+    not !ignored
   in
+  let errors = List.filter ~f:not_ignored errors in
   let unused_ignore_errors =
     let to_error unused_ignore =
       {
