@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module is responsible for suppressing errors based on `# pyre-fixme/pyre-ignore` comments,
+   or filtering them based on the strictness of the mode.
+
+   This is also where we emit a special error for files that fail to parse. *)
 
 open Core
 open Ast
