@@ -456,8 +456,7 @@ def join_tito_collapse_test_3(x):
 def issue_join_tito_collapse_test_3():
     x = {"a": _test_source()}
     y = join_tito_collapse_test_3(x)
-    # TODO(T118287187): This should be an issue, it is currently a false negative.
-    _test_sink(y["foo"]["a"])
+    _test_sink(y["foo"]["a"])  # This is an issue.
 
 
 def user_declared_tito_no_collapse(arg):

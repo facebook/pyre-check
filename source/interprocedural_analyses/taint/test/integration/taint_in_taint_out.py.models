@@ -171,7 +171,7 @@
     "callable": "taint_in_taint_out.issue_join_tito_collapse_test_3",
     "callable_line": 456,
     "code": 5002,
-    "line": 460,
+    "line": 459,
     "start": 15,
     "end": 28,
     "filename": "taint_in_taint_out.py",
@@ -218,7 +218,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 460,
+              "line": 459,
               "start": 15,
               "end": 28
             }
@@ -246,9 +246,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
-    "callable_line": 483,
+    "callable_line": 482,
     "code": 5002,
-    "line": 486,
+    "line": 485,
     "start": 15,
     "end": 26,
     "filename": "taint_in_taint_out.py",
@@ -274,10 +274,10 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 485, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 484, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 484,
+              "line": 483,
               "start": 20,
               "end": 34
             }
@@ -297,7 +297,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 486,
+              "line": 485,
               "start": 15,
               "end": 26
             }
@@ -2771,7 +2771,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 505,
+              "line": 504,
               "start": 15,
               "end": 21
             }
