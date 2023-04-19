@@ -792,7 +792,13 @@ module FromReadOnlyUpstream = struct
             qualifier
         with
         | Some source -> set_module_data environment source
-        | None -> ()
+        | None ->
+            if
+              ModuleTracker.ReadOnly.is_module_tracked
+                (AstEnvironment.ReadOnly.module_tracker ast_environment)
+                qualifier
+            then
+              Modules.add environment.modules qualifier (Module.create_implicit ())
 
 
     (* Try to load a module, with dependency tracking of our attempt and caching of successful
@@ -932,12 +938,7 @@ module FromReadOnlyUpstream = struct
       in
       match Modules.get modules ?dependency qualifier with
       | Some _ as result -> result
-      | None -> (
-          (* Handle implicit namespace modules. These are tracked in ModuleTracker, but not by
-             AstEnvironment or by any of the tables in this environment. *)
-          match ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier with
-          | true -> Some (Module.create_implicit ())
-          | false -> None)
+      | None -> None
     in
     let module_exists ?dependency qualifier =
       let qualifier =
@@ -947,12 +948,7 @@ module FromReadOnlyUpstream = struct
             Reference.empty
         | _ -> qualifier
       in
-      match Modules.mem modules ?dependency qualifier with
-      | true -> true
-      | false ->
-          ModuleTracker.ReadOnly.is_module_tracked
-            (AstEnvironment.ReadOnly.module_tracker ast_environment)
-            qualifier
+      Modules.mem modules ?dependency qualifier
     in
     let get_class_summary = ClassSummaries.get class_summaries in
     let class_exists = ClassSummaries.mem class_summaries in
