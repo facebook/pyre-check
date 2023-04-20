@@ -1,0 +1,10 @@
+@generated
+Overrides
+combinatory_ports.A::__init__ (override) -> [combinatory_ports.A::__init__ (method)]
+combinatory_ports.A::method (override) -> [combinatory_ports.A::method (method)]
+combinatory_ports.B::__init__ (override) -> [combinatory_ports.B::__init__ (method)]
+combinatory_ports.B::method (override) -> [combinatory_ports.B::method (method)]
+combinatory_ports.Base::method (override) -> [combinatory_ports.A::method (override) combinatory_ports.B::method (override) combinatory_ports.Base::method (method) combinatory_ports.C::method (override)]
+combinatory_ports.C::__init__ (override) -> [combinatory_ports.C::__init__ (method)]
+combinatory_ports.C::method (override) -> [combinatory_ports.C::method (method)]
+type::__init__ (override) -> [combinatory_ports.A::__init__ (override) combinatory_ports.B::__init__ (override) combinatory_ports.C::__init__ (override) type::__init__ (method)]

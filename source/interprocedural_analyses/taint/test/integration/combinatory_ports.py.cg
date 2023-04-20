@@ -1,0 +1,14 @@
+@generated
+Call dependencies
+combinatory_ports.$toplevel (fun) -> []
+combinatory_ports.A::$class_toplevel (method) -> []
+combinatory_ports.A::__init__ (method) -> []
+combinatory_ports.A::method (method) -> [combinatory_ports.Base::method (override)]
+combinatory_ports.B::$class_toplevel (method) -> []
+combinatory_ports.B::__init__ (method) -> []
+combinatory_ports.B::method (method) -> [combinatory_ports.Base::method (override)]
+combinatory_ports.Base::$class_toplevel (method) -> []
+combinatory_ports.Base::method (method) -> []
+combinatory_ports.C::$class_toplevel (method) -> []
+combinatory_ports.C::__init__ (method) -> []
+combinatory_ports.C::method (method) -> [_test_sink (fun) combinatory_ports.Base::method (override)]
