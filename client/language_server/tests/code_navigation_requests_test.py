@@ -66,6 +66,23 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             ],
         )
 
+        completion_request = lsp.CompletionRequest(
+            path="/a/b.py",
+            client_id="foo",
+            position=lsp.PyrePosition(line=1, character=2),
+        )
+        self.assertEqual(
+            completion_request.to_json(),
+            [
+                "Completion",
+                {
+                    "path": "/a/b.py",
+                    "client_id": "foo",
+                    "position": {"line": 1, "column": 2},
+                },
+            ],
+        )
+
     def test_parse_raw_response(self) -> None:
         raw_response = json.dumps(
             [
@@ -154,6 +171,24 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                         ),
                     )
                 ]
+            ),
+        )
+
+    def test_completion_response(self) -> None:
+        response = {
+            "completions": [
+                {
+                    "label": "completion",
+                }
+            ]
+        }
+        self.assertEqual(
+            code_navigation_request.parse_response(
+                response,
+                response_type=lsp.CompletionResponse,
+            ),
+            lsp.CompletionResponse(
+                completions=[lsp.CompletionItem(label="completion")]
             ),
         )
 

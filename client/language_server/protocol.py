@@ -639,3 +639,33 @@ class DocumentSymbolsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     range: LspRange
     selection_range: LspRange
     children: List["DocumentSymbolsResponse"]
+
+
+@dataclasses.dataclass(frozen=True)
+class CompletionRequest:
+    path: str
+    client_id: str
+    position: PyrePosition
+
+    def to_json(self) -> List[object]:
+        return [
+            "Completion",
+            {
+                "path": self.path,
+                "client_id": self.client_id,
+                "position": {
+                    "line": self.position.line,
+                    "column": self.position.character,
+                },
+            },
+        ]
+
+
+@dataclasses.dataclass(frozen=True)
+class CompletionItem(json_mixins.CamlCaseAndExcludeJsonMixin):
+    label: str
+
+
+@dataclasses.dataclass(frozen=True)
+class CompletionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    completions: List[CompletionItem]

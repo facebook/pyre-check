@@ -274,6 +274,23 @@ async def async_handle_definition_request(
     )
 
 
+async def async_handle_completion_request(
+    socket_path: Path,
+    completion_request: lsp.CompletionRequest,
+) -> Union[lsp.CompletionResponse, ErrorResponse]:
+    raw_request = json.dumps(["Query", completion_request.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_request
+    )
+    if isinstance(response, daemon_connection.DaemonConnectionFailure):
+        return ErrorResponse(message=response.error_message)
+    return parse_raw_response(
+        response,
+        expected_response_kind="Completion",
+        response_type=lsp.CompletionResponse,
+    )
+
+
 async def async_handle_register_client(
     socket_path: Path, register_client: RegisterClient
 ) -> Union[str, daemon_connection.DaemonConnectionFailure]:
