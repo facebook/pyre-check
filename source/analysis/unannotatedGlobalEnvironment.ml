@@ -783,7 +783,7 @@ module FromReadOnlyUpstream = struct
       ast_environment: AstEnvironment.ReadOnly.t;
     }
 
-    let load_module_if_tracked { environment; ast_environment } qualifier =
+    let try_load_module { environment; ast_environment } qualifier =
       if not (Modules.mem environment.modules qualifier) then
         match
           AstEnvironment.ReadOnly.get_processed_source
@@ -807,7 +807,7 @@ module FromReadOnlyUpstream = struct
       if not (Modules.mem environment.modules ?dependency qualifier) then
         (* Note: a dependency should be registered above even if no module exists, so we no longer
            need dependency tracking. *)
-        load_module_if_tracked loader qualifier
+        try_load_module loader qualifier
 
 
     let load_all_possible_modules ?dependency loader ~is_qualifier reference =
@@ -991,7 +991,7 @@ module FromReadOnlyUpstream = struct
     let invalidated_modules = AstEnvironment.UpdateResult.invalidated_modules upstream in
     let map sources =
       let loader = LazyLoader.{ environment; ast_environment } in
-      let register qualifier = LazyLoader.load_module_if_tracked loader qualifier in
+      let register qualifier = LazyLoader.try_load_module loader qualifier in
       List.iter sources ~f:register
     in
     let update () =
