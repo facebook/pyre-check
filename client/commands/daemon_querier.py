@@ -135,6 +135,14 @@ class AbstractDaemonQuerier(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def get_completions(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def get_reference_locations(
         self,
         path: Path,
@@ -295,6 +303,15 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
                 for response in daemon_response.response
             ]
 
+    async def get_completions(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+        return daemon_query.DaemonQueryFailure(
+            "Completions is not supporting in the pyre persistent client. Please use code-navigation. "
+        )
+
     async def get_reference_locations(
         self,
         path: Path,
@@ -429,6 +446,23 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             definition_location.to_lsp_definition_response()
             for definition_location in response.definitions
         ]
+
+    async def get_completions(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+        completions_request = lsp.CompletionRequest(
+            path=str(path),
+            client_id=self._get_client_id(),
+            position=position,
+        )
+        response = await code_navigation_request.async_handle_completion_request(
+            self.socket_path, completions_request
+        )
+        if isinstance(response, code_navigation_request.ErrorResponse):
+            return daemon_query.DaemonQueryFailure(response.message)
+        return response.completions
 
     async def get_reference_locations(
         self,

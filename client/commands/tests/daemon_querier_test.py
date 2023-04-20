@@ -25,7 +25,7 @@ from ...language_server.features import (
     TypeCoverageAvailability,
 )
 from ...tests import setup
-from ..daemon_querier import PersistentDaemonQuerier
+from ..daemon_querier import CodeNavigationDaemonQuerier, PersistentDaemonQuerier
 from ..daemon_query import DaemonQueryFailure
 
 from ..tests import server_setup
@@ -456,3 +456,50 @@ class DaemonQuerierTest(testslide.TestCase):
                 position=lsp.PyrePosition(line=42, character=10),
             )
             self.assertTrue(isinstance(result, DaemonQueryFailure))
+
+    @setup.async_test
+    async def test_query_completions(self) -> None:
+        json_output = """
+        {
+            "completions": [
+                {
+                    "label": "completion_1"
+                },
+                {
+                    "label": "completion_2"
+                }
+            ]
+        }
+        """
+        querier = CodeNavigationDaemonQuerier(
+            server_state=server_setup.create_server_state_with_options(
+                language_server_features=LanguageServerFeatures(),
+            ),
+        )
+        memory_bytes_writer = MemoryBytesWriter()
+        flat_json = "".join(json_output.splitlines())
+        input_channel = create_memory_text_reader(f'["Completion", {flat_json}]\n')
+        output_channel = AsyncTextWriter(memory_bytes_writer)
+
+        with patch_connect_async(input_channel, output_channel):
+            response = await querier.get_completions(
+                path=Path("bar.py"),
+                position=lsp.PyrePosition(line=42, character=10),
+            )
+        items = memory_bytes_writer.items()
+        self.assertEqual(len(items), 1)
+        self.assertRegex(
+            str(items[0]),
+            """["Query", ["Completion", {"path": "bar.py", "client_id": "codenav_pid_[0-9]{6}", "position": {"line": 42, "column": 10}}]]""",
+        )
+        self.assertEqual(
+            response,
+            [
+                lsp.CompletionItem(
+                    label="completion_1",
+                ),
+                lsp.CompletionItem(
+                    label="completion_2",
+                ),
+            ],
+        )

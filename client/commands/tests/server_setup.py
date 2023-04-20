@@ -138,6 +138,7 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
         mock_hover_response: Optional[lsp.LspHoverResponse] = None,
         mock_definition_response: Optional[List[lsp.LspLocation]] = None,
+        mock_completion_response: Optional[List[lsp.CompletionItem]] = None,
         mock_references_response: Optional[List[lsp.LspLocation]] = None,
     ) -> None:
         self.requests: List[object] = []
@@ -145,6 +146,7 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
         self.mock_type_coverage = mock_type_coverage
         self.mock_hover_response = mock_hover_response
         self.mock_definition_response = mock_definition_response
+        self.mock_completion_response = mock_completion_response
         self.mock_references_response = mock_references_response
 
     async def get_type_errors(
@@ -181,6 +183,17 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
             raise ValueError("You need to set hover response in the mock querier")
         else:
             return self.mock_definition_response
+
+    async def get_completions(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
+        self.requests.append({"path": path, "position": position})
+        if self.mock_completion_response is None:
+            raise ValueError("You need to set hover response in the mock querier")
+        else:
+            return self.mock_completion_response
 
     async def get_reference_locations(
         self,
