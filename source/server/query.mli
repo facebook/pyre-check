@@ -21,7 +21,6 @@ module Request : sig
         qualifiers: Reference.t list;
         parse_errors: string list;
       }
-    | GlobalLeaksDeprecated of Reference.t
     | Help of string
     | HoverInfoForPosition of {
         path: PyrePath.t;

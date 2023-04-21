@@ -172,11 +172,6 @@ let test_parse_query context =
   assert_fails_to_parse "hover_info_for_position(path='/foo.py', column=10)";
   assert_fails_to_parse "hover_info_for_position(path=99, line=42, column=10)";
   assert_parses
-    "global_leaks_deprecated(path.to.my_function)"
-    (GlobalLeaksDeprecated !&"path.to.my_function");
-  assert_fails_to_parse "global_leaks_deprecated()";
-  assert_fails_to_parse "global_leaks_deprecated(my.function1, my.function2)";
-  assert_parses
     "global_leaks(path.to.my_function)"
     (GlobalLeaks { qualifiers = [!&"path.to.my_function"]; parse_errors = [] });
   assert_parses
@@ -3391,30 +3386,6 @@ let test_global_leaks context =
                   }
               ]
             } 
-          }
-        |}
-      );
-      ( "global_leaks_deprecated(foo.immediate_example)",
-        set_path_in_json
-          {|
-          {
-            "response": {
-              "errors": [
-                {
-                  "line": 21,
-                  "column": 4,
-                  "stop_line": 21,
-                  "stop_column": 15,
-                  "path": "%s",
-                  "code": 3101,
-                  "name": "Leak to a mutable datastructure",
-                  "description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
-                  "long_description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
-                  "concise_description": "Leak to a mutable datastructure [3101]: Data write to global variable `glob` of type `typing.List[int]`.",
-                  "define": "foo.immediate_example"
-                }
-              ]
-            }
           }
         |}
       );

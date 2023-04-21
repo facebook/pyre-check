@@ -29,7 +29,6 @@ module Request = struct
         qualifiers: Reference.t list;
         parse_errors: string list;
       }
-    | GlobalLeaksDeprecated of Reference.t
     | Help of string
     | HoverInfoForPosition of {
         path: PyrePath.t;
@@ -380,11 +379,6 @@ let help () =
         Some
           "global_leaks(function1, ...): analyzes the transitive call graph for the given function \
            and raises errors when global variables are mutated."
-    | GlobalLeaksDeprecated _ ->
-        Some
-          "global_leaks_deprecated(function): analyzes the transitive call graph for the given \
-           function and raises errors when global variables are mutated. This query corresponds to \
-           the old api and will be removed shortly."
     | HoverInfoForPosition _ ->
         Some
           "hover_info_for_position(path='<absolute path>', line=<line>, character=<character>): \
@@ -620,7 +614,6 @@ let rec parse_request_exn query =
           List.map ~f:single_argument_to_reference arguments
           |> List.partition_result
           |> fun (qualifiers, parse_errors) -> Request.GlobalLeaks { qualifiers; parse_errors }
-      | "global_leaks_deprecated", [name] -> Request.GlobalLeaksDeprecated (reference name)
       | "help", _ -> Request.Help (help ())
       | "hover_info_for_position", [path; line; column] ->
           Request.HoverInfoForPosition
@@ -1089,18 +1082,6 @@ let rec process_request ~type_environment ~build_system request =
         List.map ~f:find_leak_errors_for_qualifier qualifiers
         |> List.partition_result
         |> construct_result
-    | GlobalLeaksDeprecated qualifier ->
-        let lookup =
-          let module_tracker = GlobalResolution.module_tracker global_resolution in
-          PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker
-        in
-        Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
-        >>| List.map ~f:(fun error ->
-                AnalysisError.instantiate ~show_error_traces:true ~lookup error)
-        >>| (fun errors -> Single (Base.Errors errors))
-        |> Option.value
-             ~default:
-               (Error (Format.sprintf "No qualifier found for `%s`" (Reference.show qualifier)))
     | Help help_list -> Single (Base.Help help_list)
     | HoverInfoForPosition { path; position } ->
         module_of_path path
