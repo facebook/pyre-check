@@ -40,8 +40,6 @@ let hash = Hash.run hash_fold_t
 
 let create ~ignored_line ~codes ~location ~kind = { ignored_line; codes; location; kind }
 
-let ignored_line { ignored_line; _ } = ignored_line
-
 let codes { codes; _ } = codes
 
 let location { location; _ } = location
@@ -49,3 +47,7 @@ let location { location; _ } = location
 let kind { kind; _ } = kind
 
 let increment ({ ignored_line; _ } as ignore) = { ignore with ignored_line = ignored_line + 1 }
+
+let start_of_ignored_line_or_range { ignored_line; _ } = ignored_line
+
+let with_start_line ~start_line ignore = { ignore with ignored_line = start_line }

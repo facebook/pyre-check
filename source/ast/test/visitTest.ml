@@ -256,7 +256,7 @@ let test_collect_format_strings_with_ignores _ =
   let assert_format_strings_with_ignores source expected =
     let ({ Source.typecheck_flags = { ignore_lines; _ }; _ } as source) = parse source in
     let ignore_line_map =
-      List.map ignore_lines ~f:(fun ({ Ignore.ignored_line; _ } as ignore) -> ignored_line, ignore)
+      List.map ignore_lines ~f:(fun ignore -> Ignore.start_of_ignored_line_or_range ignore, ignore)
       |> Int.Map.of_alist_multi
     in
     let format_strings_with_ignores =
@@ -264,7 +264,8 @@ let test_collect_format_strings_with_ignores _ =
       |> List.map ~f:snd
       |> List.map
            ~f:
-             (List.map ~f:(fun { Ignore.codes; ignored_line; kind; _ } -> ignored_line, kind, codes))
+             (List.map ~f:(fun ({ Ignore.codes; kind; _ } as ignore) ->
+                  Ignore.start_of_ignored_line_or_range ignore, kind, codes))
     in
     assert_equal
       ~cmp:[%compare.equal: (int * Ignore.kind * int list) list list]

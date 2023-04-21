@@ -255,7 +255,7 @@ let synthesize_ignores_for_format_string
       first_line_ignores )
   =
   let copy_ignores_from_first_line line =
-    line, List.map first_line_ignores ~f:(fun ignore -> { ignore with Ignore.ignored_line = line })
+    line, List.map first_line_ignores ~f:(Ignore.with_start_line ~start_line:line)
   in
   List.range start_line (stop_line + 1) |> List.map ~f:copy_ignores_from_first_line
 
@@ -267,7 +267,7 @@ let ignored_lines_including_format_strings
     ({ typecheck_flags = { TypecheckFlags.ignore_lines; _ }; _ } as source)
   =
   let ignore_line_map =
-    List.map ignore_lines ~f:(fun ({ Ignore.ignored_line; _ } as ignore) -> ignored_line, ignore)
+    List.map ignore_lines ~f:(fun ignore -> Ignore.start_of_ignored_line_or_range ignore, ignore)
     |> Int.Map.of_alist_multi
   in
   collect_format_strings_with_ignores ~ignore_line_map source
