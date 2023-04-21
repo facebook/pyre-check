@@ -54,6 +54,10 @@ let create ~ignored_line ~codes ~location ~kind =
   { ignored_line_or_range = Line ignored_line; codes; location; kind }
 
 
+let create_with_range ~start_line ~end_line ~codes ~location ~kind =
+  { ignored_line_or_range = Range { start_line; end_line }; codes; location; kind }
+
+
 let codes { codes; _ } = codes
 
 let location { location; _ } = location
@@ -90,3 +94,13 @@ let with_start_line ~start_line ({ ignored_line_or_range; _ } as ignore) =
     | Range range -> Range { range with start_line }
   in
   { ignore with ignored_line_or_range }
+
+
+let cover_end_line ~end_line ({ ignored_line_or_range; _ } as ignore) =
+  let range =
+    match ignored_line_or_range with
+    | Line start_line -> Range { start_line; end_line }
+    | Range ({ end_line = old_end_line; _ } as range) ->
+        Range { range with end_line = Int.max old_end_line end_line }
+  in
+  { ignore with ignored_line_or_range = range }

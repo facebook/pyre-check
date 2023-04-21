@@ -29,6 +29,14 @@ type t = {
 
 val create : ignored_line:int -> codes:int list -> location:Location.t -> kind:kind -> t
 
+val create_with_range
+  :  start_line:int ->
+  end_line:int ->
+  codes:int list ->
+  location:Location.t ->
+  kind:kind ->
+  t
+
 val codes : t -> int list
 
 val location : t -> Location.t
@@ -42,3 +50,5 @@ val start_of_ignored_line_or_range : t -> int
 val lines_covered_by_ignore : t -> int list
 
 val with_start_line : start_line:int -> t -> t
+
+val cover_end_line : end_line:int -> t -> t

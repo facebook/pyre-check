@@ -12,6 +12,24 @@ open Statement
 open Ignore
 open Test
 
+let create_ignore_with_range
+    ~range_start_line
+    ~range_end_line
+    codes
+    kind
+    start_line
+    start_column
+    end_line
+    end_column
+  =
+  let location =
+    let start = { Location.line = start_line; column = start_column } in
+    let stop = { Location.line = end_line; column = end_column } in
+    { Location.start; stop }
+  in
+  create_with_range ~start_line:range_start_line ~end_line:range_end_line ~codes ~kind ~location
+
+
 let create_ignore ignored_line codes kind start_line start_column end_line end_column =
   let location =
     let start = { Location.line = start_line; column = start_column } in
@@ -314,9 +332,7 @@ let test_ignored_lines _ =
         x: str = 1
     |}
     [
-      create_ignore 5 [58; 42] PyreFixme 3 2 3 18;
-      create_ignore 6 [58; 42] PyreFixme 3 2 3 18;
-      create_ignore 7 [58; 42] PyreFixme 3 2 3 18;
+      create_ignore_with_range ~range_start_line:5 ~range_end_line:7 [58; 42] PyreFixme 3 2 3 18;
       create_ignore 10 [9] PyreFixme 9 2 9 17;
     ];
   assert_ignores
@@ -331,14 +347,7 @@ let test_ignored_lines _ =
         baz
         """
     |}
-    [
-      create_ignore 5 [7] PyreFixme 3 2 3 18;
-      create_ignore 6 [7] PyreFixme 3 2 3 18;
-      create_ignore 7 [7] PyreFixme 3 2 3 18;
-      create_ignore 8 [7] PyreFixme 3 2 3 18;
-      create_ignore 9 [7] PyreFixme 3 2 3 18;
-      create_ignore 10 [7] PyreFixme 3 2 3 18;
-    ];
+    [create_ignore_with_range ~range_start_line:5 ~range_end_line:10 [7] PyreFixme 3 2 3 17];
   ()
 
 
