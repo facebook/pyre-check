@@ -11,8 +11,16 @@ type kind =
   | PyreIgnore
 [@@deriving compare, show, sexp, hash]
 
+type line_or_range =
+  | Line of int
+  | Range of {
+      start_line: int;
+      end_line: int;
+    }
+[@@deriving show, sexp]
+
 type t = {
-  ignored_line: int;
+  ignored_line_or_range: line_or_range;
   codes: int list;
   location: Location.t;
   kind: kind;

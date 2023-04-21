@@ -15,8 +15,18 @@ type kind =
   | PyreIgnore
 [@@deriving compare, show, sexp, hash]
 
+type line_or_range =
+  | Line of int
+  | Range of {
+      start_line: int;
+      end_line: int;
+    }
+[@@deriving compare, show, sexp, hash]
+
 type t = {
-  ignored_line: int;
+  (* Ignore comments usually apply to one line. However, for multi-line f-strings, they need to
+     cover the range of lines spanned by the f-string. *)
+  ignored_line_or_range: line_or_range;
   codes: int list;
   location: Location.t;
   kind: kind;
@@ -26,19 +36,23 @@ type t = {
 let compare left right =
   let { Location.start = left_start; _ } = left.location in
   let { Location.start = right_start; _ } = right.location in
-  [%compare: int * int list * Location.position * kind]
-    (left.ignored_line, left.codes, left_start, left.kind)
-    (right.ignored_line, right.codes, right_start, right.kind)
+  [%compare: line_or_range * int list * Location.position * kind]
+    (left.ignored_line_or_range, left.codes, left_start, left.kind)
+    (right.ignored_line_or_range, right.codes, right_start, right.kind)
 
 
-let hash_fold_t state { ignored_line; codes; location; kind; _ } =
+let hash_fold_t state { ignored_line_or_range; codes; location; kind; _ } =
   let { Location.start; _ } = location in
-  [%hash_fold: int * int list * Location.position * kind] state (ignored_line, codes, start, kind)
+  [%hash_fold: line_or_range * int list * Location.position * kind]
+    state
+    (ignored_line_or_range, codes, start, kind)
 
 
 let hash = Hash.run hash_fold_t
 
-let create ~ignored_line ~codes ~location ~kind = { ignored_line; codes; location; kind }
+let create ~ignored_line ~codes ~location ~kind =
+  { ignored_line_or_range = Line ignored_line; codes; location; kind }
+
 
 let codes { codes; _ } = codes
 
@@ -46,8 +60,26 @@ let location { location; _ } = location
 
 let kind { kind; _ } = kind
 
-let increment ({ ignored_line; _ } as ignore) = { ignore with ignored_line = ignored_line + 1 }
+let increment ({ ignored_line_or_range; _ } as ignore) =
+  {
+    ignore with
+    ignored_line_or_range =
+      (match ignored_line_or_range with
+      | Line line -> Line (line + 1)
+      | Range ({ start_line; _ } as range) -> Range { range with start_line = start_line + 1 });
+  }
 
-let start_of_ignored_line_or_range { ignored_line; _ } = ignored_line
 
-let with_start_line ~start_line ignore = { ignore with ignored_line = start_line }
+let start_of_ignored_line_or_range { ignored_line_or_range; _ } =
+  match ignored_line_or_range with
+  | Line start -> start
+  | Range { start_line; _ } -> start_line
+
+
+let with_start_line ~start_line ({ ignored_line_or_range; _ } as ignore) =
+  let ignored_line_or_range =
+    match ignored_line_or_range with
+    | Line _ -> Line start_line
+    | Range range -> Range { range with start_line }
+  in
+  { ignore with ignored_line_or_range }
