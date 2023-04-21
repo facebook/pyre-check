@@ -26,6 +26,7 @@ module Request = struct
     | DumpCallGraph
     | ExpressionLevelCoverage of string list
     | GlobalLeaks of Reference.t
+    | GlobalLeaksDeprecated of Reference.t
     | Help of string
     | HoverInfoForPosition of {
         path: PyrePath.t;
@@ -358,6 +359,11 @@ let help () =
         Some
           "global_leaks(function): analyzes the transitive call graph for the given function and \
            raises errors when global variables are mutated."
+    | GlobalLeaksDeprecated _ ->
+        Some
+          "global_leaks_deprecated(function): analyzes the transitive call graph for the given \
+           function and raises errors when global variables are mutated. This query corresponds to \
+           the old api and will be removed shortly."
     | HoverInfoForPosition _ ->
         Some
           "hover_info_for_position(path='<absolute path>', line=<line>, character=<character>): \
@@ -578,6 +584,7 @@ let rec parse_request_exn query =
       | "expression_level_coverage", paths ->
           Request.ExpressionLevelCoverage (List.map ~f:string paths)
       | "global_leaks", [name] -> Request.GlobalLeaks (reference name)
+      | "global_leaks_deprecated", [name] -> Request.GlobalLeaksDeprecated (reference name)
       | "help", _ -> Request.Help (help ())
       | "hover_info_for_position", [path; line; column] ->
           Request.HoverInfoForPosition
@@ -1027,6 +1034,18 @@ let rec process_request ~type_environment ~build_system request =
         let results = List.concat_map paths ~f:extract_paths |> List.map ~f:find_resolved_types in
         Single (Base.ExpressionLevelCoverageResponse results)
     | GlobalLeaks qualifier ->
+        let lookup =
+          let module_tracker = GlobalResolution.module_tracker global_resolution in
+          PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker
+        in
+        Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
+        >>| List.map ~f:(fun error ->
+                AnalysisError.instantiate ~show_error_traces:true ~lookup error)
+        >>| (fun errors -> Single (Base.Errors errors))
+        |> Option.value
+             ~default:
+               (Error (Format.sprintf "No qualifier found for `%s`" (Reference.show qualifier)))
+    | GlobalLeaksDeprecated qualifier ->
         let lookup =
           let module_tracker = GlobalResolution.module_tracker global_resolution in
           PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker

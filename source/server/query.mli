@@ -18,6 +18,7 @@ module Request : sig
     | DumpCallGraph
     | ExpressionLevelCoverage of string list
     | GlobalLeaks of Reference.t
+    | GlobalLeaksDeprecated of Reference.t
     | Help of string
     | HoverInfoForPosition of {
         path: PyrePath.t;
