@@ -70,7 +70,9 @@ def is_valid_callee(callee: str) -> bool:
 
 def prepare_issues_for_query(callees: List[str]) -> str:
     single_callee_query = [
-        f"global_leaks({callee})" for callee in callees if is_valid_callee(callee)
+        f"global_leaks_deprecated({callee})"
+        for callee in callees
+        if is_valid_callee(callee)
     ]
     return "batch(" + ", ".join(single_callee_query) + ")"
 

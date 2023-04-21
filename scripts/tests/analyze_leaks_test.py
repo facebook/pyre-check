@@ -584,7 +584,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         callees = ["f1", "f2", "f3", "f1#f2", "f1.f2.f3", "11", "-f1.f2"]
 
         result_query = prepare_issues_for_query(callees)
-        expected_query = "batch(global_leaks(f1), global_leaks(f2), global_leaks(f3), global_leaks(f1.f2.f3))"
+        expected_query = "batch(global_leaks_deprecated(f1), global_leaks_deprecated(f2), global_leaks_deprecated(f3), global_leaks_deprecated(f1.f2.f3))"
 
         self.assertEqual(result_query, expected_query)
 
