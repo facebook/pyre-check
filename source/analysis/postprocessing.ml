@@ -15,84 +15,76 @@ open Ast
 open Pyre
 module Error = AnalysisError
 
-(* General idea: Keep two hash tables - one for unused ignores and fixmes, and one from ignored
-   lines -> list of ignores affecting the line. For each error, process the ignores on that line one
-   by one, and remove the used codes from the map of unused ignores. Since the hash tables are
-   initialized with only the sources we're considering, this is sufficient to determine all ignored
-   errors and unused ignores. *)
+module Ignore = struct
+  include Ignore
+  include Hashable.Make (Ignore)
+end
+
+let to_unused_ignore_error ~ignores_to_used_errors ~qualifier ({ Ignore.location; _ } as ignore) =
+  let make_unused_ignore_error unused_codes =
+    {
+      Error.location = Location.with_module ~module_reference:qualifier location;
+      kind = Error.UnusedIgnore unused_codes;
+      signature =
+        { Node.location; value = Statement.Define.Signature.create_toplevel ~qualifier:None };
+    }
+  in
+  match ignore, Hashtbl.find_multi ignores_to_used_errors ignore with
+  | { Ignore.kind = TypeIgnore; _ }, _ ->
+      (* Don't throw unused ignore errors for `# type: ignore` comments. *)
+      None
+  | unused_ignore, [] -> Ignore.codes unused_ignore |> make_unused_ignore_error |> Option.some
+  | { Ignore.codes = []; _ }, _ :: _ ->
+      (* A `pyre-ignore/fixme` without any codes is considered used if there exists at least one
+         error. So, don't emit an unused-ignore error. *)
+      None
+  | { Ignore.codes = _ :: _ as ignored_codes; _ }, errors_covered_by_ignore ->
+      let used_codes = List.map errors_covered_by_ignore ~f:Error.code |> Int.Set.of_list in
+      let unused_codes = Set.diff (Int.Set.of_list ignored_codes) used_codes in
+      Set.to_list unused_codes
+      |> make_unused_ignore_error
+      |> Option.some_if (not (Set.is_empty unused_codes))
+
+
+let errors_with_ignores_covering_error ~errors all_ignores =
+  let line_number_to_ignores_lookup =
+    all_ignores
+    |> List.map ~f:(fun ignore -> Ignore.ignored_line ignore, ignore)
+    |> Int.Table.of_alist_multi
+  in
+  let is_covered_by_ignore ~error ignore =
+    let ignored_codes = Ignore.codes ignore in
+    List.is_empty ignored_codes || List.mem ~equal:( = ) ignored_codes (Error.code error)
+  in
+  let ignores_covering_error
+      ({ Error.location = { Location.WithModule.start = { Location.line; _ }; _ }; _ } as error)
+    =
+    Hashtbl.find line_number_to_ignores_lookup line
+    >>| List.filter ~f:(is_covered_by_ignore ~error)
+    |> Option.value ~default:[]
+  in
+  List.map errors ~f:(fun error -> error, ignores_covering_error error)
+
+
 let handle_ignores_and_fixmes
     ~qualifier
     { Source.typecheck_flags = { Source.TypecheckFlags.ignore_lines; _ }; _ }
     errors
   =
-  let location_to_unused_ignore_lookup =
-    let location_to_unused_ignore_lookup = Location.Table.create () in
-    let register_unused_ignore ignore =
-      match Ignore.kind ignore with
-      | Ignore.TypeIgnore ->
-          (* # type: ignore's don't throw unused ignore errors. *)
-          ()
-      | _ -> Hashtbl.set location_to_unused_ignore_lookup ~key:(Ignore.location ignore) ~data:ignore
-    in
-    List.iter ignore_lines ~f:register_unused_ignore;
-    location_to_unused_ignore_lookup
+  let errors_and_ignores_covering_error = errors_with_ignores_covering_error ~errors ignore_lines in
+  let unignored_errors =
+    List.filter_map errors_and_ignores_covering_error ~f:(fun (error, ignores) ->
+        Option.some_if (List.is_empty ignores) error)
   in
-  let line_number_to_ignores_lookup =
-    ignore_lines
-    |> List.map ~f:(fun ignore -> Ignore.ignored_line ignore, ignore)
-    |> Int.Table.of_alist_multi
-  in
-  let not_ignored error =
-    let ignored = ref false in
-    let error_code = Error.code error in
-    let process_ignore ignore =
-      let codes = Ignore.codes ignore in
-      if List.is_empty codes then (
-        Hashtbl.remove location_to_unused_ignore_lookup (Ignore.location ignore);
-        ignored := true
-        (* We need to be a bit careful to support the following pattern:
-         *  # pyre-ignore[7, 5]
-         *  line_that_only_errors_on_7() *))
-      else if List.mem ~equal:( = ) codes error_code then (
-        begin
-          match Hashtbl.find location_to_unused_ignore_lookup (Ignore.location ignore) with
-          | Some ({ Ignore.codes; _ } as ignore) ->
-              let new_codes = List.filter codes ~f:(fun code -> not (code = error_code)) in
-              if List.is_empty new_codes then
-                Hashtbl.remove location_to_unused_ignore_lookup (Ignore.location ignore)
-              else
-                Hashtbl.set
-                  location_to_unused_ignore_lookup
-                  ~key:(Ignore.location ignore)
-                  ~data:{ ignore with Ignore.codes = new_codes }
-          | _ -> ()
-        end;
-        ignored := true)
-    in
-    let key =
-      let { Error.location = { Location.WithModule.start = { Location.line; _ }; _ }; _ } = error in
-      line
-    in
-    Hashtbl.find line_number_to_ignores_lookup key >>| List.iter ~f:process_ignore |> ignore;
-    not !ignored
-  in
-  let errors = List.filter ~f:not_ignored errors in
   let unused_ignore_errors =
-    let to_error unused_ignore =
-      {
-        Error.location =
-          Location.with_module ~module_reference:qualifier (Ignore.location unused_ignore);
-        kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
-        signature =
-          {
-            Node.location = Ignore.location unused_ignore;
-            value = Statement.Define.Signature.create_toplevel ~qualifier:None;
-          };
-      }
+    let ignores_to_used_errors =
+      List.concat_map errors_and_ignores_covering_error ~f:(fun (error, ignores) ->
+          List.map ignores ~f:(fun ignore -> ignore, error))
+      |> Ignore.Table.of_alist_multi
     in
-    List.map (Hashtbl.data location_to_unused_ignore_lookup) ~f:to_error
+    List.filter_map ignore_lines ~f:(to_unused_ignore_error ~ignores_to_used_errors ~qualifier)
   in
-  List.rev_append unused_ignore_errors errors
+  List.rev_append unused_ignore_errors unignored_errors
 
 
 let add_local_mode_errors

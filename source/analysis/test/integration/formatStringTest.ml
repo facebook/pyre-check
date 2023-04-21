@@ -83,7 +83,26 @@ let test_multiline_format_string context =
         # pyre-fixme[58]
         f"{1 + 'hello5'}"
     |}
-    [];
+    [
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+    ];
   (* Only one error ignored. *)
   assert_type_errors
     {|
@@ -97,7 +116,21 @@ let test_multiline_format_string context =
 
         """
     |}
-    ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."];
+    [
+      "Unused ignore [0]: The `pyre-ignore[6]` or `pyre-fixme[6]` comment is not suppressing type \
+       errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[6]` or `pyre-fixme[6]` comment is not suppressing type \
+       errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[6]` or `pyre-fixme[6]` comment is not suppressing type \
+       errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[6]` or `pyre-fixme[6]` comment is not suppressing type \
+       errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[6]` or `pyre-fixme[6]` comment is not suppressing type \
+       errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[6]` or `pyre-fixme[6]` comment is not suppressing type \
+       errors, please remove it.";
+      "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -124,6 +157,18 @@ let test_multiline_format_string context =
     [
       "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
        type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
     ];
   (* Even if there is a subexpression with no error, we won't get a spurious "unused ignore" because
      the fixme comment is being "used" by the subexpression that does have an error. *)
@@ -140,7 +185,20 @@ let test_multiline_format_string context =
         baz
         """
     |}
-    [];
+    [
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+    ];
   (* Note: We end up suppressing any error that happens to be on the last line of the format string.
      There's no good way to get around this since fixmes work on entire lines. *)
   assert_type_errors
@@ -153,7 +211,12 @@ let test_multiline_format_string context =
         bar
         """ + (1 + "hello")
     |}
-    [];
+    [
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+      "Unused ignore [0]: The `pyre-ignore[58]` or `pyre-fixme[58]` comment is not suppressing \
+       type errors, please remove it.";
+    ];
   ()
 
 
