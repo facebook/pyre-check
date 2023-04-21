@@ -19,6 +19,9 @@ type taint_kind =
 type source_or_sink = {
   name: string;
   kind: taint_kind;
+  (* taint config positioning information *)
+  taint_config_position: string;
+  taint_config_path: PyrePath.t;
 }
 
 let parse_source ~allowed ?subkind name =

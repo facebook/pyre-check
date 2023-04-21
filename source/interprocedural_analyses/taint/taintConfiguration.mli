@@ -144,12 +144,34 @@ module Error : sig
         labels: string list;
       }
     | InvalidMultiSink of string
-    | RuleCodeDuplicate of int
+    | RuleCodeDuplicate of {
+        code: int;
+        previous_position: string;
+        current_position: string;
+        previous_path: PyrePath.t;
+        current_path: PyrePath.t;
+      }
     | OptionDuplicate of string
-    | SourceDuplicate of string
-    | SinkDuplicate of string
+    | SourceDuplicate of {
+        name: string;
+        previous_position: string;
+        current_position: string;
+        previous_path: PyrePath.t;
+        current_path: PyrePath.t;
+      }
+    | SinkDuplicate of {
+        name: string;
+        previous_position: string;
+        current_position: string;
+        previous_path: PyrePath.t;
+        current_path: PyrePath.t;
+      }
     | TransformDuplicate of string
     | FeatureDuplicate of string
+    | JsonmParseError of {
+        message: string;
+        position: (int * int) * (int * int);
+      }
   [@@deriving equal, show]
 
   type t = {

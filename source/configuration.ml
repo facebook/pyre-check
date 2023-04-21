@@ -520,6 +520,7 @@ module StaticAnalysis = struct
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
     verify_dsl: bool;
+    verify_taint_configuration: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
@@ -553,6 +554,7 @@ module StaticAnalysis = struct
       ?dump_call_graph
       ?(verify_models = true)
       ?(verify_dsl = true)
+      ?(verify_taint_configuration = false)
       ?rule_filter
       ?source_filter
       ?sink_filter
@@ -583,6 +585,7 @@ module StaticAnalysis = struct
       dump_call_graph;
       verify_models;
       verify_dsl;
+      verify_taint_configuration;
       configuration;
       rule_filter;
       source_filter;

@@ -33,10 +33,11 @@ let initialize_configuration
         maximum_overrides_to_analyze;
         maximum_trace_length;
         maximum_tito_depth;
+        verify_taint_configuration;
         _;
       }
   =
-  Log.info "Verifying model syntax and configuration.";
+  Log.info "Verifying taint configuration.";
   let timer = Timer.start () in
   let taint_configuration =
     let open Core.Result in
@@ -65,18 +66,23 @@ let initialize_configuration
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
   (* In order to save time, sanity check models before starting the analysis. *)
-  let () =
-    ModelParser.get_model_sources ~paths:taint_model_paths
-    |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source)
-  in
-  let () =
-    Statistics.performance
-      ~name:"Verified model syntax and configuration"
-      ~phase_name:"Verifying model syntax and configuration"
-      ~timer
-      ()
-  in
-  taint_configuration, taint_configuration_shared_memory
+  if not verify_taint_configuration then (
+    Log.info "Verifying model syntax";
+    let () =
+      ModelParser.get_model_sources ~paths:taint_model_paths
+      |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source)
+    in
+    let () =
+      Statistics.performance
+        ~name:"Verified model syntax and configuration"
+        ~phase_name:"Verifying model syntax and configuration"
+        ~timer
+        ()
+    in
+    taint_configuration, taint_configuration_shared_memory)
+  else
+    let () = Log.info "Taint configuration checked successfully, skipping analysis." in
+    taint_configuration, taint_configuration_shared_memory
 
 
 let setup_decorator_preprocessing ~inline_decorators { Configuration.Analysis.taint_model_paths; _ }
@@ -321,7 +327,6 @@ let run_taint_analysis
     let taint_configuration, taint_configuration_shared_memory =
       initialize_configuration ~static_analysis_configuration
     in
-
     (* Parse taint models to find decorators to inline or discard. This must be done early because
        inlining is a preprocessing phase of type-checking. *)
     let () = setup_decorator_preprocessing ~inline_decorators configuration in

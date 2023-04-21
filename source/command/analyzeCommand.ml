@@ -43,6 +43,7 @@ module AnalyzeConfiguration = struct
     maximum_tito_depth: int option;
     no_verify: bool;
     verify_dsl: bool;
+    verify_taint_configuration: bool;
     repository_root: PyrePath.t option;
     rule_filter: int list option;
     source_filter: string list option;
@@ -105,6 +106,9 @@ module AnalyzeConfiguration = struct
           let maximum_tito_depth = optional_int_member "maximum_tito_depth" json in
           let no_verify = bool_member "no_verify" ~default:false json in
           let verify_dsl = bool_member "verify_dsl" ~default:false json in
+          let verify_taint_configuration =
+            bool_member "verify_taint_configuration" ~default:false json
+          in
           let repository_root = optional_path_member "repository_root" json in
           let rule_filter = optional_list_member ~f:to_int "rule_filter" json in
           let source_filter = optional_list_member ~f:to_string "source_filter" json in
@@ -140,6 +144,7 @@ module AnalyzeConfiguration = struct
               maximum_tito_depth;
               no_verify;
               verify_dsl;
+              verify_taint_configuration;
               repository_root;
               rule_filter;
               source_filter;
@@ -204,6 +209,7 @@ module AnalyzeConfiguration = struct
         maximum_tito_depth;
         no_verify;
         verify_dsl;
+        verify_taint_configuration;
         rule_filter;
         source_filter;
         sink_filter;
@@ -260,6 +266,7 @@ module AnalyzeConfiguration = struct
       dump_call_graph;
       verify_models = not no_verify;
       verify_dsl;
+      verify_taint_configuration;
       rule_filter;
       source_filter;
       sink_filter;
@@ -305,6 +312,16 @@ let with_performance_tracking ~debug ~f =
   result
 
 
+let verify_taint_configuration ~static_analysis_configuration () =
+  try TaintAnalysis.initialize_configuration ~static_analysis_configuration with
+  | Taint.TaintConfiguration.TaintConfigurationError _ as exn -> raise exn
+  | exn ->
+      (* The backtrace is lost if the exception is caught at the top level, because of `Lwt`. *
+         Let's print the exception here to ease debugging. *)
+      Log.log_exception "Taint analysis failed." exn (Worker.exception_backtrace exn);
+      raise exn
+
+
 let run_analyze analyze_configuration =
   let { AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; debug; _ }; _ }
     =
@@ -318,11 +335,15 @@ let run_analyze analyze_configuration =
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       Scheduler.with_scheduler ~configuration:analysis_configuration ~f:(fun scheduler ->
           with_performance_tracking ~debug ~f:(fun () ->
-              TaintAnalysis.run_taint_analysis
-                ~static_analysis_configuration
-                ~build_system
-                ~scheduler
-                ());
+              if static_analysis_configuration.verify_taint_configuration then
+                let _ = verify_taint_configuration ~static_analysis_configuration () in
+                ()
+              else
+                TaintAnalysis.run_taint_analysis
+                  ~static_analysis_configuration
+                  ~build_system
+                  ~scheduler
+                  ());
           Lwt.return (ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok)))
 
 

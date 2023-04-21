@@ -409,6 +409,12 @@ def pyre(
     help="Verify DSL model queries for the taint analysis.",
 )
 @click.option(
+    "--verify-taint-configuration",
+    is_flag=True,
+    default=False,
+    help="Verify taint.config files. Skips analysis.",
+)
+@click.option(
     "--version",
     is_flag=True,
     default=False,
@@ -550,6 +556,7 @@ def analyze(
     taint_models_path: Iterable[str],
     no_verify: bool,
     verify_dsl: bool,
+    verify_taint_configuration: bool,
     version: bool,
     save_results_to: Optional[str],
     output_format: Optional[str],
@@ -613,6 +620,7 @@ def analyze(
             maximum_trace_length=maximum_trace_length,
             no_verify=no_verify,
             verify_dsl=verify_dsl,
+            verify_taint_configuration=verify_taint_configuration,
             output=command_argument.output,
             repository_root=repository_root,
             rule=list(rule),

@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+val initialize_configuration
+  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  Taint.TaintConfiguration.Heap.t * Taint.TaintConfiguration.SharedMemory.t
+
 val run_taint_analysis
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   build_system:Server.BuildSystem.t ->

@@ -489,12 +489,24 @@ module Heap = struct
   let default =
     let sources =
       List.map
-        ~f:(fun name -> { AnnotationParser.name; kind = Named })
+        ~f:(fun name ->
+          {
+            AnnotationParser.name;
+            kind = Named;
+            taint_config_position = "";
+            taint_config_path = PyrePath.current_working_directory ();
+          })
         ["Demo"; "Test"; "UserControlled"; "PII"; "Secrets"; "Cookies"]
     in
     let sinks =
       List.map
-        ~f:(fun name -> { AnnotationParser.name; kind = Named })
+        ~f:(fun name ->
+          {
+            AnnotationParser.name;
+            kind = Named;
+            taint_config_position = "";
+            taint_config_path = PyrePath.current_working_directory ();
+          })
         [
           "Demo";
           "FileSystem";
@@ -520,6 +532,8 @@ module Heap = struct
           name = "Possible shell injection.";
           message_format =
             "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"];
@@ -528,6 +542,8 @@ module Heap = struct
           code = 5002;
           name = "Test flow.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
@@ -536,6 +552,8 @@ module Heap = struct
           code = 5005;
           name = "User controlled data to SQL execution.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources =
@@ -547,6 +565,8 @@ module Heap = struct
           code = 5006;
           name = "Restricted data being logged.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
@@ -555,6 +575,8 @@ module Heap = struct
           code = 5007;
           name = "User data to XML Parser.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
@@ -563,6 +585,8 @@ module Heap = struct
           code = 5008;
           name = "XSS";
           message_format = "Possible XSS due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "Demo"];
@@ -571,6 +595,8 @@ module Heap = struct
           code = 5009;
           name = "Demo flow.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
@@ -579,6 +605,8 @@ module Heap = struct
           code = 5010;
           name = "User data to getattr.";
           message_format = "Attacker may control at least one argument to getattr(,).";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "Test"];
@@ -588,6 +616,8 @@ module Heap = struct
           name = "Flow with one transform.";
           message_format =
             "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "Test"];
@@ -597,6 +627,8 @@ module Heap = struct
           name = "Flow with two transforms.";
           message_format =
             "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
         {
           sources = [Sources.NamedSource "Demo"];
@@ -606,6 +638,8 @@ module Heap = struct
           name = "Duplicate demo flow.";
           message_format =
             "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          taint_config_position = "";
+          taint_config_path = PyrePath.current_working_directory ();
         };
       ]
     in
@@ -687,6 +721,35 @@ module SharedMemory = struct
       None
 end
 
+module InternalJsonKeys = struct
+  let internal_prefix = "__pysa__.internal."
+
+  let line_number = internal_prefix ^ "line_number"
+
+  let column_number = internal_prefix ^ "column_number"
+
+  let value = internal_prefix ^ "value"
+end
+
+module JsonPosition = struct
+  type t = {
+    line_number: string;
+    column_number: string;
+  }
+  [@@deriving equal]
+
+  let to_string { line_number; column_number } =
+    Printf.sprintf "line number: `%s`, column number: `%s`" line_number column_number
+
+
+  let extract_position obj =
+    let line_number = Json.Util.member InternalJsonKeys.line_number obj |> Json.Util.to_string in
+    let column_number =
+      Json.Util.member InternalJsonKeys.column_number obj |> Json.Util.to_string
+    in
+    to_string { line_number; column_number }
+end
+
 module Error = struct
   type kind =
     | FileNotFound
@@ -717,12 +780,34 @@ module Error = struct
         labels: string list;
       }
     | InvalidMultiSink of string
-    | RuleCodeDuplicate of int
+    | RuleCodeDuplicate of {
+        code: int;
+        previous_position: string;
+        current_position: string;
+        previous_path: PyrePath.t;
+        current_path: PyrePath.t;
+      }
     | OptionDuplicate of string
-    | SourceDuplicate of string
-    | SinkDuplicate of string
+    | SourceDuplicate of {
+        name: string;
+        previous_position: string;
+        current_position: string;
+        previous_path: PyrePath.t;
+        current_path: PyrePath.t;
+      }
+    | SinkDuplicate of {
+        name: string;
+        previous_position: string;
+        current_position: string;
+        previous_path: PyrePath.t;
+        current_path: PyrePath.t;
+      }
     | TransformDuplicate of string
     | FeatureDuplicate of string
+    | JsonmParseError of {
+        message: string;
+        position: (int * int) * (int * int);
+      }
   [@@deriving equal]
 
   type t = {
@@ -778,14 +863,48 @@ module Error = struct
           sink
           (String.concat labels ~sep:", ")
     | InvalidMultiSink sink -> Format.fprintf formatter "`%s` is not a multi sink" sink
-    | RuleCodeDuplicate code ->
-        Format.fprintf formatter "Multiple rules share the same code `%d`" code
+    | RuleCodeDuplicate { code; previous_position; current_position; previous_path; current_path }
+      ->
+        Format.fprintf
+          formatter
+          "Multiple rules share the same code `%d`. First seen in `%s` at %s and now in `%s` at %s"
+          code
+          (PyrePath.show previous_path)
+          previous_position
+          (PyrePath.show current_path)
+          current_position
     | OptionDuplicate name ->
         Format.fprintf formatter "Multiple values were passed in for option `%s`" name
-    | SourceDuplicate name -> Format.fprintf formatter "Duplicate entry for source: `%s`" name
-    | SinkDuplicate name -> Format.fprintf formatter "Duplicate entry for sink: `%s`" name
+    | SourceDuplicate { name; previous_position; current_position; previous_path; current_path } ->
+        Format.fprintf
+          formatter
+          "Duplicate entry for source: `%s`. First seen in `%s` at %s and now in `%s` at %s"
+          name
+          (PyrePath.show previous_path)
+          previous_position
+          (PyrePath.show current_path)
+          current_position
+    | SinkDuplicate { name; previous_position; current_position; previous_path; current_path } ->
+        Format.fprintf
+          formatter
+          "Duplicate entry for sink: `%s`. First seen in `%s` at %s and now in `%s` at %s"
+          name
+          (PyrePath.show previous_path)
+          previous_position
+          (PyrePath.show current_path)
+          current_position
     | TransformDuplicate name -> Format.fprintf formatter "Duplicate entry for transform: `%s`" name
     | FeatureDuplicate name -> Format.fprintf formatter "Duplicate entry for feature: `%s`" name
+    | JsonmParseError { message; position } ->
+        let (start_line, start_column), (end_line, end_column) = position in
+        Format.fprintf
+          formatter
+          "Error while parsing json file - `%s` from line `%d` column `%d` to line `%d` column `%d`"
+          message
+          start_line
+          start_column
+          end_line
+          end_column
 
 
   let code = function
@@ -809,6 +928,7 @@ module Error = struct
     | FeatureDuplicate _ -> 18
     | UnsupportedTransform _ -> 19
     | TransformDuplicate _ -> 20
+    | JsonmParseError _ -> 21
 
 
   let show_kind = Format.asprintf "%a" pp_kind
@@ -841,17 +961,34 @@ let from_json_list source_json_list =
   let json_bool_member ~path key value ~default =
     json_exception_to_error ~path ~section:key (fun () ->
         Json.Util.member key value
-        |> Yojson.Safe.Util.to_bool_option
-        |> Option.value ~default
-        |> Result.return)
+        |> function
+        | `Null -> default |> Result.return
+        | obj ->
+            Json.Util.member InternalJsonKeys.value obj
+            |> Yojson.Safe.Util.to_bool_option
+            |> Option.value ~default
+            |> Result.return)
   in
   let json_string_member ~path key value =
     json_exception_to_error ~path ~section:key (fun () ->
-        Json.Util.member key value |> Json.Util.to_string |> Result.return)
+        Json.Util.member key value
+        |> Json.Util.member InternalJsonKeys.value
+        |> Json.Util.to_string
+        |> Result.return)
   in
-  let json_integer_member ~path key value =
+  let json_string_member_with_position ~path key value =
     json_exception_to_error ~path ~section:key (fun () ->
-        Json.Util.member key value |> Json.Util.to_int |> Result.return)
+        let obj = Json.Util.member key value in
+        let position = JsonPosition.extract_position obj in
+        let value = Json.Util.member InternalJsonKeys.value obj |> Json.Util.to_string in
+        (value, position) |> Result.return)
+  in
+  let json_integer_member_with_position ~path key value =
+    json_exception_to_error ~path ~section:key (fun () ->
+        let obj = Json.Util.member key value in
+        let position = JsonPosition.extract_position obj in
+        let value = Json.Util.member InternalJsonKeys.value obj |> Json.Util.to_int in
+        (value, position) |> Result.return)
   in
   let member name json =
     try Json.Util.member name json with
@@ -865,7 +1002,13 @@ let from_json_list source_json_list =
   in
   let json_string_list ~path ?section json =
     json_exception_to_error ~path ?section (fun () ->
-        Json.Util.to_list json |> List.map ~f:Json.Util.to_string |> Result.return)
+        Json.Util.to_list json
+        |> function
+        | [] -> Result.Ok []
+        | _ as l ->
+            List.map ~f:(Json.Util.member InternalJsonKeys.value) l
+            |> List.map ~f:Json.Util.to_string
+            |> Result.return)
   in
   let parse_kind ~path ?section json =
     match member "kind" json with
@@ -906,8 +1049,11 @@ let from_json_list source_json_list =
       ~current_keys:(Json.Util.keys json)
       ~valid_keys:["name"; "kind"; "comment"]
     >>= fun () ->
-    json_string_member ~path "name" json
-    >>= fun name -> parse_kind ~path json >>| fun kind -> { AnnotationParser.name; kind }
+    json_string_member_with_position ~path "name" json
+    >>= fun (name, position) ->
+    parse_kind ~path json
+    >>| fun kind ->
+    { AnnotationParser.name; kind; taint_config_position = position; taint_config_path = path }
   in
   let parse_source_annotations (path, json) =
     array_member ~path "sources" json
@@ -947,14 +1093,6 @@ let from_json_list source_json_list =
     |> Result.combine_errors
     |> Result.map_error ~f:List.concat
   in
-  let seen_rules = Int.Hash_set.create () in
-  let validate_code_uniqueness ~path code =
-    if Hash_set.mem seen_rules code then
-      Result.Error [Error.create ~path ~kind:(Error.RuleCodeDuplicate code)]
-    else (
-      Hash_set.add seen_rules code;
-      Result.Ok ())
-  in
   let parse_source_reference ~path ~allowed_sources source =
     AnnotationParser.parse_source ~allowed:allowed_sources source
     |> Result.map_error ~f:(fun _ -> Error.create ~path ~kind:(Error.UnsupportedSource source))
@@ -974,6 +1112,7 @@ let from_json_list source_json_list =
       name: string;
       message_format: string;
       code: int;
+      position: string;
     }
 
     let parse ~path json =
@@ -981,9 +1120,8 @@ let from_json_list source_json_list =
       >>= fun name ->
       json_string_member ~path "message_format" json
       >>= fun message_format ->
-      json_integer_member ~path "code" json
-      >>= fun code ->
-      validate_code_uniqueness ~path code >>= fun () -> Result.Ok { name; message_format; code }
+      json_integer_member_with_position ~path "code" json
+      >>= fun (code, position) -> Result.Ok { name; message_format; code; position }
   end
   in
   let parse_rules ~allowed_sources ~allowed_sinks ~allowed_transforms (path, json) =
@@ -1017,8 +1155,18 @@ let from_json_list source_json_list =
       |> Result.combine_errors
       >>= fun transforms ->
       RuleCommonAttributes.parse ~path json
-      >>= fun { name; message_format; code } ->
-      Result.Ok { Rule.sources; sinks; transforms; name; code; message_format }
+      >>= fun { name; message_format; code; position } ->
+      Result.Ok
+        {
+          Rule.sources;
+          sinks;
+          transforms;
+          name;
+          code;
+          message_format;
+          taint_config_position = position;
+          taint_config_path = path;
+        }
     in
     array_member ~path "rules" json
     >>= fun rules ->
@@ -1095,7 +1243,7 @@ let from_json_list source_json_list =
       ~partial_sink
       ~partial_sink_converter
       ~partial_sink_labels
-      ~rule_common_attributues:{ RuleCommonAttributes.name; message_format; code }
+      ~rule_common_attributues:{ RuleCommonAttributes.name; message_format; code; position }
       ~combined_source_rule_sources:
         { CombinedSourceRuleSources.main_sources; secondary_sources; main_label; secondary_label }
       ~path
@@ -1142,6 +1290,8 @@ let from_json_list source_json_list =
         name;
         code;
         message_format;
+        taint_config_position = position;
+        taint_config_path = path;
       }
     in
     let secondary_rule =
@@ -1152,6 +1302,8 @@ let from_json_list source_json_list =
         name;
         code;
         message_format;
+        taint_config_position = position;
+        taint_config_path = path;
       }
     in
     let partial_sink_converter =
@@ -1469,8 +1621,17 @@ let from_json_list source_json_list =
   }
 
 
+module TaintConfigHashTableEntry = struct
+  type t = {
+    position: string;
+    path: PyrePath.t;
+  }
+
+  let create position path = { position; path }
+end
+
 (** Perform additional checks on the taint configuration. *)
-let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration) =
+let validate ({ Heap.sources; sinks; transforms; features; rules; _ } as configuration) =
   let ensure_list_unique ~get_name ~get_error elements =
     let seen = String.Hash_set.create () in
     let ensure_unique element =
@@ -1485,15 +1646,73 @@ let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration)
     |> Result.combine_errors_unit
     |> Result.map_error ~f:List.concat
   in
+  let ensure_string_list_unique ~get_key_position_path ~get_error elements =
+    let seen_table = Hashtbl.create (module String) in
+    let ensure_unique element =
+      let key, position, path = get_key_position_path element in
+      Hashtbl.find seen_table key
+      |> function
+      | None ->
+          let _ =
+            Hashtbl.add seen_table ~key ~data:(TaintConfigHashTableEntry.create position path)
+          in
+          Result.Ok ()
+      | Some previous_entry ->
+          Result.Error [{ Error.path = None; kind = get_error element previous_entry }]
+    in
+    List.map elements ~f:ensure_unique
+    |> Result.combine_errors_unit
+    |> Result.map_error ~f:List.concat
+  in
+  let ensure_int_list_unique ~get_key_position_path ~get_error elements =
+    let seen_table = Hashtbl.create (module Int) in
+    let ensure_unique element =
+      let key, position, path = get_key_position_path element in
+      Hashtbl.find seen_table key
+      |> function
+      | None ->
+          let _ =
+            Hashtbl.add seen_table ~key ~data:(TaintConfigHashTableEntry.create position path)
+          in
+          Result.Ok ()
+      | Some previous_entry ->
+          Result.Error [{ Error.path = None; kind = get_error element previous_entry }]
+    in
+    List.map elements ~f:ensure_unique
+    |> Result.combine_errors_unit
+    |> Result.map_error ~f:List.concat
+  in
   Result.combine_errors_unit
     [
-      ensure_list_unique
-        ~get_name:(fun { AnnotationParser.name; _ } -> name)
-        ~get_error:(fun name -> Error.SourceDuplicate name)
+      ensure_string_list_unique
+        ~get_key_position_path:
+          (fun { AnnotationParser.name; taint_config_position; taint_config_path; _ } ->
+          name, taint_config_position, taint_config_path)
+        ~get_error:
+          (fun { AnnotationParser.name; taint_config_position; taint_config_path; _ } previous_entry ->
+          Error.SourceDuplicate
+            {
+              name;
+              current_position = taint_config_position;
+              previous_position = previous_entry.position;
+              current_path = taint_config_path;
+              previous_path = previous_entry.path;
+            })
         sources;
-      ensure_list_unique
-        ~get_name:(fun { AnnotationParser.name; _ } -> name)
-        ~get_error:(fun name -> Error.SinkDuplicate name)
+      ensure_string_list_unique
+        ~get_key_position_path:
+          (fun { AnnotationParser.name; taint_config_position; taint_config_path; _ } ->
+          name, taint_config_position, taint_config_path)
+        ~get_error:
+          (fun { AnnotationParser.name; taint_config_path; taint_config_position; _ } previous_entry ->
+          Error.SinkDuplicate
+            {
+              name;
+              current_position = taint_config_position;
+              previous_position = previous_entry.position;
+              current_path = taint_config_path;
+              previous_path = previous_entry.path;
+            })
         sinks;
       ensure_list_unique
         ~get_name:TaintTransform.show
@@ -1503,6 +1722,19 @@ let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration)
         ~get_name:Fn.id
         ~get_error:(fun name -> Error.FeatureDuplicate name)
         features;
+      ensure_int_list_unique
+        ~get_key_position_path:(fun { Rule.code; taint_config_position; taint_config_path; _ } ->
+          code, taint_config_position, taint_config_path)
+        ~get_error:(fun { Rule.code; taint_config_position; taint_config_path; _ } previous_entry ->
+          Error.RuleCodeDuplicate
+            {
+              code;
+              current_position = taint_config_position;
+              previous_position = previous_entry.position;
+              current_path = taint_config_path;
+              previous_path = previous_entry.path;
+            })
+        rules;
     ]
   |> Result.map_error ~f:List.concat
   |> Result.map ~f:(fun () -> configuration)
@@ -1528,6 +1760,8 @@ let obscure_flows_configuration configuration =
         code = 9001;
         name = "Obscure flow.";
         message_format = "Data from [{$sources}] source(s) may reach an obscure model";
+        taint_config_position = "";
+        taint_config_path = PyrePath.current_working_directory ();
       };
     ]
   in
@@ -1558,6 +1792,8 @@ let missing_type_flows_configuration configuration =
         code = 9002;
         name = "Unknown callee flow.";
         message_format = "Data from [{$sources}] source(s) may flow to an unknown callee";
+        taint_config_position = "";
+        taint_config_path = PyrePath.current_working_directory ();
       };
     ]
   in
@@ -1580,10 +1816,89 @@ let apply_missing_flows configuration = function
   | Configuration.MissingFlowKind.Type -> missing_type_flows_configuration configuration
 
 
+exception
+  JsonmException of {
+    message: string;
+    position: ((int * int) * (int * int));
+  }
+
 (** Create a taint configuration by finding `.config` files in the given directories. *)
 let from_taint_model_paths taint_model_paths =
   let file_paths =
     PyrePath.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths
+  in
+  let rec to_yojson_data_model = function
+    | `Null -> `Null
+    | `Bool b -> `Bool b
+    | `String s -> `String s
+    | `Float f -> `Int (int_of_float f)
+    | `A a -> `List (List.map ~f:to_yojson_data_model a)
+    | `O o ->
+        let obj = List.map ~f:(fun (key, value) -> key, to_yojson_data_model value) o in
+        `Assoc obj
+  in
+  let object_with_position_information value decoder =
+    let (line, column), _ = Jsonm.decoded_range decoder in
+    `O
+      [
+        InternalJsonKeys.line_number, `String (string_of_int line);
+        InternalJsonKeys.column_number, `String (string_of_int column);
+        InternalJsonKeys.value, value;
+      ]
+  in
+  let parse_with_jsonm parasable_string =
+    let decode decoder =
+      match Jsonm.decode decoder with
+      | `Lexeme lexeme -> lexeme
+      | `Error error ->
+          raise
+            (JsonmException
+               {
+                 message = Format.asprintf "%a" Jsonm.pp_error error;
+                 position = Jsonm.decoded_range decoder;
+               })
+      | `End
+      | `Await ->
+          raise
+            (JsonmException
+               {
+                 message = "Encountered end of file or input";
+                 position = Jsonm.decoded_range decoder;
+               })
+    in
+    let rec value element key decoder =
+      match element with
+      | `Os -> obj [] key decoder
+      | `As -> arr [] key decoder
+      | (`Null | `Bool _ | `String _ | `Float _) as data_value ->
+          key (object_with_position_information data_value decoder) decoder
+      | _ ->
+          raise
+            (JsonmException
+               {
+                 message = "Encountered unexpected token or element";
+                 position = Jsonm.decoded_range decoder;
+               })
+    and arr values key decoder =
+      match decode decoder with
+      | `Ae -> key (`A (List.rev values)) decoder
+      | element -> value element (fun value -> arr (value :: values) key) decoder
+    and obj ms key decoder =
+      match decode decoder with
+      | `Oe -> key (`O (List.rev ms)) decoder
+      | `Name name -> value (decode decoder) (fun value -> obj ((name, value) :: ms) key) decoder
+      | _ ->
+          raise
+            (JsonmException
+               {
+                 message = "Encountered unexpected token or object sequence";
+                 position = Jsonm.decoded_range decoder;
+               })
+    in
+    let decoder = Jsonm.decoder (`String parasable_string) in
+    let jsonm_results = value (decode decoder) (fun value _ -> value) decoder in
+    (* Convert Jsonm data model to that of YoJSON to make use of the later's utility functions. *)
+    to_yojson_data_model jsonm_results
   in
   let parse_json path =
     if not (PyrePath.file_exists path) then
@@ -1595,9 +1910,11 @@ let from_taint_model_paths taint_model_paths =
         |> File.content
         |> Result.of_option ~error:(Error.create ~path ~kind:FileRead)
       in
-      try content >>| Json.from_string >>| fun json -> path, json with
+      try content >>| parse_with_jsonm >>| fun json -> path, json with
       | Yojson.Json_error parse_error ->
           Result.Error (Error.create ~path ~kind:(Error.InvalidJson parse_error))
+      | JsonmException { message; position } ->
+          Result.Error (Error.create ~path ~kind:(Error.JsonmParseError { message; position }))
   in
   let configurations = file_paths |> List.map ~f:parse_json |> Result.combine_errors in
   match configurations with

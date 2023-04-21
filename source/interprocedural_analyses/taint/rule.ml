@@ -18,6 +18,9 @@ type t = {
   code: int;
   name: string;
   message_format: string; (* format *)
+  (* taint config positioning information *)
+  taint_config_position: string;
+  taint_config_path: PyrePath.t;
 }
 [@@deriving compare, show]
 

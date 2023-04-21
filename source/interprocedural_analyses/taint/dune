@@ -15,6 +15,7 @@
   core
   core_unix
   sexplib
+  jsonm
   yojson
   re2
   ppx_deriving_yojson
