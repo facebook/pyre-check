@@ -48,9 +48,10 @@ let to_unused_ignore_error ~ignores_to_used_errors ~qualifier ({ Ignore.location
 
 let errors_with_ignores_covering_error ~errors all_ignores =
   let line_number_to_ignores_lookup =
-    all_ignores
-    |> List.map ~f:(fun ignore -> Ignore.start_of_ignored_line_or_range ignore, ignore)
-    |> Int.Table.of_alist_multi
+    let line_ignore_pairs ignore =
+      Ignore.lines_covered_by_ignore ignore |> List.map ~f:(fun line -> line, ignore)
+    in
+    all_ignores |> List.concat_map ~f:line_ignore_pairs |> Int.Table.of_alist_multi
   in
   let is_covered_by_ignore ~error ignore =
     let ignored_codes = Ignore.codes ignore in

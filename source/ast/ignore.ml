@@ -76,6 +76,13 @@ let start_of_ignored_line_or_range { ignored_line_or_range; _ } =
   | Range { start_line; _ } -> start_line
 
 
+let lines_covered_by_ignore { ignored_line_or_range; _ } =
+  match ignored_line_or_range with
+  | Line line -> [line]
+  | Range { start_line; end_line } ->
+      List.init (end_line - start_line + 1) ~f:(fun offset -> start_line + offset)
+
+
 let with_start_line ~start_line ({ ignored_line_or_range; _ } as ignore) =
   let ignored_line_or_range =
     match ignored_line_or_range with

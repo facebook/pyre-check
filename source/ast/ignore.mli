@@ -39,4 +39,6 @@ val increment : t -> t
 
 val start_of_ignored_line_or_range : t -> int
 
+val lines_covered_by_ignore : t -> int list
+
 val with_start_line : start_line:int -> t -> t
