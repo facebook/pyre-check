@@ -811,6 +811,7 @@ and kind =
       annotation: Annotation.t;
       qualify: bool;
     }
+  | SuppressionCommentWithoutErrorCode of { suppressed_error_codes: int list }
   | UnsafeCast of {
       expression: Expression.t;
       annotation: Type.t;
@@ -944,6 +945,7 @@ let code_of_kind = function
   | TupleConcatenationError _ -> 60
   | UninitializedLocal _ -> 61
   | NonLiteralString _ -> 62
+  | SuppressionCommentWithoutErrorCode _ -> 63
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -1006,6 +1008,7 @@ let name_of_kind = function
   | RedundantCast _ -> "Redundant cast"
   | RevealedLocals _ -> "Revealed locals"
   | RevealedType _ -> "Revealed type"
+  | SuppressionCommentWithoutErrorCode _ -> "Suppression comment without error code"
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
   | TypedDictionaryAccessWithNonLiteral _ -> "TypedDict accessed with a non-literal"
@@ -2610,6 +2613,13 @@ let rec messages ~concise ~signature location kind =
           (show_sanitized_expression expression)
           (Annotation.display_as_revealed_type annotation);
       ]
+  | SuppressionCommentWithoutErrorCode { suppressed_error_codes } ->
+      [
+        Format.asprintf
+          "Using an `# pyre-ignore` or `# pyre-fixme` without an error code suppresses all Pyre \
+           errors. Use `# pyre-fixme[%s]` to suppress specific errors."
+          (List.map suppressed_error_codes ~f:[%show: int] |> String.concat ~sep:", ");
+      ]
   | UnsupportedOperand (Binary { operator_name; left_operand; right_operand }) ->
       [
         Format.asprintf
@@ -3232,6 +3242,7 @@ let due_to_analysis_limitations { kind; _ } =
   | RedefinedClass _
   | RevealedLocals _
   | RevealedType _
+  | SuppressionCommentWithoutErrorCode _
   | UnsafeCast _
   | UnawaitedAwaitable _
   | UnboundName _
@@ -3418,6 +3429,13 @@ let join ~resolution left right =
                 left_annotation
                 right_annotation;
             qualify = left_qualify || right_qualify (* lol *);
+          }
+    | ( SuppressionCommentWithoutErrorCode { suppressed_error_codes = left_error_codes },
+        SuppressionCommentWithoutErrorCode { suppressed_error_codes = right_error_codes } ) ->
+        SuppressionCommentWithoutErrorCode
+          {
+            suppressed_error_codes =
+              List.dedup_and_sort ~compare:[%compare: int] (left_error_codes @ right_error_codes);
           }
     | ( IncompatibleParameterType
           ({
@@ -3737,6 +3755,7 @@ let join ~resolution left right =
     | RedundantCast _, _
     | RevealedLocals _, _
     | RevealedType _, _
+    | SuppressionCommentWithoutErrorCode _, _
     | UnsafeCast _, _
     | TooManyArguments _, _
     | TupleConcatenationError _, _
@@ -4012,6 +4031,7 @@ let suppress ~mode ~ignore_codes error =
     | MissingAttributeAnnotation _
     | MissingGlobalAnnotation _
     | ProhibitedAny _
+    | SuppressionCommentWithoutErrorCode _
     | Unpack { unpack_problem = UnacceptableType Type.Any; _ }
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
         true
@@ -4313,6 +4333,8 @@ let dequalify
     | TupleConcatenationError expressions -> TupleConcatenationError expressions
     | ReadOnlynessMismatch mismatch ->
         ReadOnlynessMismatch (ReadOnly.dequalify ~dequalify_type:dequalify mismatch)
+    | SuppressionCommentWithoutErrorCode error_codes ->
+        SuppressionCommentWithoutErrorCode error_codes
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->

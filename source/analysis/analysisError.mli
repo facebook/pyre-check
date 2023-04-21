@@ -462,6 +462,7 @@ and kind =
       annotation: Annotation.t;
       qualify: bool;
     }
+  | SuppressionCommentWithoutErrorCode of { suppressed_error_codes: int list }
   | UnsafeCast of {
       expression: Expression.t;
       annotation: Type.t;
