@@ -69,48 +69,58 @@ def is_valid_callee(callee: str) -> bool:
 
 
 def prepare_issues_for_query(callees: List[str]) -> str:
-    single_callee_query = [
-        f"global_leaks_deprecated({callee})"
-        for callee in callees
-        if is_valid_callee(callee)
-    ]
-    return "batch(" + ", ".join(single_callee_query) + ")"
+    return "global_leaks(" + ", ".join(filter(is_valid_callee, callees)) + ")"
 
 
 def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
-    global_leaks: List[Dict[str, JSON]] = []
-    query_errors: List[JSON] = []
     script_errors: List[LeakAnalysisScriptError] = []
     if not isinstance(pyre_results, dict):
         raise RuntimeError(
             f"Expected dict for Pyre query results, got {type(pyre_results)}: {pyre_results}"
         )
-    if "response" not in pyre_results:
+    response = pyre_results.get("response")
+    if not response:
         raise RuntimeError("`response` key not in Pyre query results", pyre_results)
-    if not isinstance(pyre_results["response"], list):
-        response = pyre_results["response"]
+    if not isinstance(pyre_results["response"], dict):
         raise RuntimeError(
             f"Expected response value type to be list, got {type(response)}: {response}"
         )
-    for query_response in pyre_results["response"]:
-        if not isinstance(query_response, dict):
-            script_errors.append(
-                LeakAnalysisScriptError(
-                    error_message=f"Expected dict for pyre response list type, got {type(query_response)}",
-                    bad_value=query_response,
-                )
+
+    global_leaks = response.get("global_leaks")
+    if global_leaks is None:
+        script_errors.append(
+            LeakAnalysisScriptError(
+                error_message="Expected `global_leaks` key to be present in response",
+                bad_value=response,
             )
-        elif "error" in query_response:
-            query_errors.append(query_response["error"])
-        elif "response" in query_response and "errors" in query_response["response"]:
-            global_leaks += query_response["response"]["errors"]
-        else:
-            script_errors.append(
-                LeakAnalysisScriptError(
-                    error_message="Unexpected single query response from Pyre",
-                    bad_value=query_response,
-                )
+        )
+        global_leaks = []
+    elif not isinstance(global_leaks, list):
+        script_errors.append(
+            LeakAnalysisScriptError(
+                error_message="Expected `global_leaks` to be a list of error JSON objects",
+                bad_value=global_leaks,
             )
+        )
+        global_leaks = []
+
+    query_errors = response.get("query_errors")
+    if query_errors is None:
+        script_errors.append(
+            LeakAnalysisScriptError(
+                error_message="Expected `query_errors` key to be present in response",
+                bad_value=response,
+            )
+        )
+        query_errors = []
+    elif not isinstance(query_errors, list):
+        script_errors.append(
+            LeakAnalysisScriptError(
+                error_message="Expected `query_errors` to be a list of error JSON objects",
+                bad_value=query_errors,
+            )
+        )
+        query_errors = []
 
     return LeakAnalysisResult(
         global_leaks=global_leaks,

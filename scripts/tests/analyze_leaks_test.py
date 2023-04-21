@@ -584,39 +584,30 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         callees = ["f1", "f2", "f3", "f1#f2", "f1.f2.f3", "11", "-f1.f2"]
 
         result_query = prepare_issues_for_query(callees)
-        expected_query = "batch(global_leaks_deprecated(f1), global_leaks_deprecated(f2), global_leaks_deprecated(f3), global_leaks_deprecated(f1.f2.f3))"
+        expected_query = "global_leaks(f1, f2, f3, f1.f2.f3)"
 
         self.assertEqual(result_query, expected_query)
 
     def test_collect_pyre_query_results(self) -> None:
         example_pyre_stdout = {
-            "response": [
-                {"error": "we failed to find your callable"},
-                {
-                    "response": {
-                        "errors": [
-                            {
-                                "error_msg": "found an error for you",
-                                "location": "your_location",
-                            }
-                        ]
-                    }
-                },
-                {"error": "we failed to find your callable 2"},
-                {
-                    "response": {
-                        "errors": [
-                            {
-                                "error_msg": "found an error for you2",
-                                "location": "your_location2",
-                                "define": "my_func_with_trace",
-                            }
-                        ]
-                    }
-                },
-                ["not_expected"],
-                {"not_expected": 1},
-            ]
+            "response": {
+                "query_errors": [
+                    "we failed to find your callable",
+                    "we failed to find your callable 2",
+                ],
+                "global_leaks": [
+                    {
+                        "error_msg": "found an error for you",
+                        "location": "your_location",
+                    },
+                    {
+                        "error_msg": "found an error for you2",
+                        "location": "your_location2",
+                        "define": "my_func_with_trace",
+                    },
+                ],
+                "not_expected": 1,
+            },
         }
 
         results = collect_pyre_query_results(
@@ -638,80 +629,94 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "we failed to find your callable",
                 "we failed to find your callable 2",
             ],
-            script_errors=[
-                LeakAnalysisScriptError(
-                    error_message="Expected dict for pyre response list type, got <class 'list'>",
-                    bad_value=["not_expected"],
-                ),
-                LeakAnalysisScriptError(
-                    error_message="Unexpected single query response from Pyre",
-                    bad_value={"not_expected": 1},
-                ),
-            ],
+            script_errors=[],
         )
 
         self.assertEqual(results, expected_results)
 
     def test_collect_pyre_query_results_non_json(self) -> None:
-        example_pyre_stdout = """
+        example_pyre_response = """
             this is not a valid response
         """
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_stdout)
+            collect_pyre_query_results(example_pyre_response)
 
     def test_collect_pyre_query_results_not_top_level_dict(self) -> None:
-        example_pyre_stdout = """
-            ["this is a list"]
-        """
+        example_pyre_response = ["this is a list"]
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_stdout)
+            collect_pyre_query_results(example_pyre_response)
 
     def test_collect_pyre_query_results_no_response_present(self) -> None:
-        example_pyre_stdout = """
-            {"not a response": 1}
-        """
+        example_pyre_response = {"not a response": 1}
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_stdout)
+            collect_pyre_query_results(example_pyre_response)
 
     def test_collect_pyre_query_results_response_not_a_list(self) -> None:
-        example_pyre_stdout = """
-            {"response": 1}
-        """
+        example_pyre_response = {"response": 1}
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_stdout)
+            collect_pyre_query_results(example_pyre_response)
 
-    def test_collect_pyre_query_results_response_batch_response_not_a_dict(
+    def test_collect_pyre_query_results_response_not_a_dict(
         self,
     ) -> None:
-        example_pyre_stdout = """
-            {
-                "response": [
-                    123
-                ]
-            }
-        """
+        example_pyre_response = {"response": [123]}
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_stdout)
+            collect_pyre_query_results(example_pyre_response)
 
-    def test_collect_pyre_query_results_response_batch_response_no_nested_error_or_response(
+    def test_collect_pyre_query_results_response_no_nested_error_or_response(
         self,
     ) -> None:
-        example_pyre_stdout = """
-            {
-                "response": {
-                    "not_error": 123,
-                    "not_response": 456
-                }
-            }
-        """
+        response_body: JSON = {"not_error": 123, "not_response": 456}
+        example_pyre_response = {"response": response_body}
 
-        with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_stdout)
+        results = collect_pyre_query_results(example_pyre_response)
+
+        expected_results = LeakAnalysisResult(
+            global_leaks=[],
+            query_errors=[],
+            script_errors=[
+                LeakAnalysisScriptError(
+                    error_message="Expected `global_leaks` key to be present in response",
+                    bad_value=response_body,
+                ),
+                LeakAnalysisScriptError(
+                    error_message="Expected `query_errors` key to be present in response",
+                    bad_value=response_body,
+                ),
+            ],
+        )
+        self.assertEqual(results, expected_results)
+
+    def test_collect_pyre_query_results_response_wrong_global_leak_and_error_types(
+        self,
+    ) -> None:
+        global_leaks: JSON = {"a": 1}
+        errors: JSON = 2
+        example_pyre_response = {
+            "response": {"global_leaks": global_leaks, "query_errors": errors}
+        }
+
+        results = collect_pyre_query_results(example_pyre_response)
+        expected_results = LeakAnalysisResult(
+            global_leaks=[],
+            query_errors=[],
+            script_errors=[
+                LeakAnalysisScriptError(
+                    error_message="Expected `global_leaks` to be a list of error JSON objects",
+                    bad_value=global_leaks,
+                ),
+                LeakAnalysisScriptError(
+                    error_message="Expected `query_errors` to be a list of error JSON objects",
+                    bad_value=errors,
+                ),
+            ],
+        )
+        self.assertEqual(results, expected_results)
 
     def test_attach_trace_to_query_results(self) -> None:
         pyre_results = LeakAnalysisResult(
@@ -732,8 +737,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 },
             ],
             query_errors=[
-                {"errors": "we failed to find your callable"},
-                {"errors": "we failed to find your callable 2"},
+                "we failed to find your callable",
+                "we failed to find your callable 2",
             ],
             script_errors=[],
         )
@@ -759,8 +764,8 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 ],
             ),
             query_errors=[
-                {"errors": "we failed to find your callable"},
-                {"errors": "we failed to find your callable 2"},
+                "we failed to find your callable",
+                "we failed to find your callable 2",
             ],
             script_errors=[
                 LeakAnalysisScriptError(
