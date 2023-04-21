@@ -181,6 +181,12 @@ module Response = struct
     }
     [@@deriving sexp, compare, to_yojson]
 
+    type global_leak_errors = {
+      global_leaks: Analysis.AnalysisError.Instantiated.t list;
+      query_errors: string list;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
     type t =
       | Boolean of bool
       | Callees of Analysis.Callgraph.callee list
@@ -197,6 +203,7 @@ module Response = struct
       | FoundPath of string
       | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
+      | GlobalLeakErrors of global_leak_errors
       | Help of string
       | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
@@ -241,6 +248,17 @@ module Response = struct
             ]
       | ExpressionLevelCoverageResponse paths ->
           `List (List.map paths ~f:coverage_response_at_path_to_yojson)
+      | GlobalLeakErrors { global_leaks; query_errors } ->
+          let string_to_yojson string = `String string in
+          `Assoc
+            [
+              "query_errors", `List (List.map ~f:string_to_yojson query_errors);
+              ( "global_leaks",
+                `List
+                  (List.map
+                     ~f:(fun error -> AnalysisError.Instantiated.to_yojson error)
+                     global_leaks) );
+            ]
       | Help string -> `Assoc ["help", `String string]
       | ModelVerificationErrors errors ->
           `Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)]
@@ -1060,14 +1078,17 @@ let rec process_request ~type_environment ~build_system request =
           Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
           >>| List.map ~f:(fun error ->
                   AnalysisError.instantiate ~show_error_traces:true ~lookup error)
-          >>| (fun errors -> Single (Base.Errors errors))
-          |> Option.value
-               ~default:
-                 (Error (Format.sprintf "No qualifier found for `%s`" (Reference.show qualifier)))
+          |> Result.of_option
+               ~error:(Format.sprintf "No qualifier found for `%s`" (Reference.show qualifier))
         in
-        Batch
-          (List.map ~f:(fun error -> Error error) parse_errors
-          @ List.map ~f:find_leak_errors_for_qualifier qualifiers)
+        let construct_result (global_leaks, errors) =
+          Single
+            (Base.GlobalLeakErrors
+               { global_leaks = List.concat global_leaks; query_errors = parse_errors @ errors })
+        in
+        List.map ~f:find_leak_errors_for_qualifier qualifiers
+        |> List.partition_result
+        |> construct_result
     | GlobalLeaksDeprecated qualifier ->
         let lookup =
           let module_tracker = GlobalResolution.module_tracker global_resolution in

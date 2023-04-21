@@ -168,6 +168,12 @@ module Response : sig
     }
     [@@deriving sexp, compare, to_yojson]
 
+    type global_leak_errors = {
+      global_leaks: Analysis.AnalysisError.Instantiated.t list;
+      query_errors: string list;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
     type t =
       | Boolean of bool
       | Callees of Analysis.Callgraph.callee list
@@ -184,6 +190,7 @@ module Response : sig
       | FoundPath of string
       | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
+      | GlobalLeakErrors of global_leak_errors
       | Help of string
       | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
