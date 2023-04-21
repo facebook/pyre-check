@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module represents comments used to ignore Pyre errors, such as `type: ignore` (specified in
+   PEP 484) and `# pyre-fixme[9]` (Pyre's custom error-suppression comment, which allows suppressing
+   specific error codes). *)
 
 open Core
 
