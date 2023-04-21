@@ -114,12 +114,11 @@ let add_local_mode_errors
 
 
 let filter_errors
-    ~configuration
+    ~mode
     ~global_resolution
-    ~typecheck_flags:{ Source.TypecheckFlags.local_mode; ignore_codes; _ }
+    ~typecheck_flags:{ Source.TypecheckFlags.ignore_codes; _ }
     errors_by_define
   =
-  let mode = Source.mode ~configuration ~local_mode in
   let filter errors =
     let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
     List.filter ~f:keep_error errors
@@ -133,7 +132,12 @@ let filter_errors
    on the actual AST. *)
 let run_on_source
     ~environment
-    ~source:({ Source.typecheck_flags; module_path = { ModulePath.qualifier; _ }; _ } as source)
+    ~source:
+      ({
+         Source.typecheck_flags = { local_mode; _ } as typecheck_flags;
+         module_path = { ModulePath.qualifier; _ };
+         _;
+       } as source)
     errors_by_define
   =
   let suppress_errors_based_on_comments
@@ -147,11 +151,8 @@ let run_on_source
   in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let controls = TypeEnvironment.ReadOnly.controls environment in
-  filter_errors
-    ~configuration:(EnvironmentControls.configuration controls)
-    ~global_resolution
-    ~typecheck_flags
-    errors_by_define
+  let mode = Source.mode ~configuration:(EnvironmentControls.configuration controls) ~local_mode in
+  filter_errors ~mode ~global_resolution ~typecheck_flags errors_by_define
   |> add_local_mode_errors ~define:(Source.top_level_define_node source) source
   |> suppress_errors_based_on_comments ~controls:(EnvironmentControls.type_check_controls controls)
   |> List.map
