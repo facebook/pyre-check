@@ -25,7 +25,10 @@ module Request = struct
     | Defines of Reference.t list
     | DumpCallGraph
     | ExpressionLevelCoverage of string list
-    | GlobalLeaks of Reference.t
+    | GlobalLeaks of {
+        qualifiers: Reference.t list;
+        parse_errors: string list;
+      }
     | GlobalLeaksDeprecated of Reference.t
     | Help of string
     | HoverInfoForPosition of {
@@ -357,8 +360,8 @@ let help () =
            from above, along with a list of known coverage gaps."
     | GlobalLeaks _ ->
         Some
-          "global_leaks(function): analyzes the transitive call graph for the given function and \
-           raises errors when global variables are mutated."
+          "global_leaks(function1, ...): analyzes the transitive call graph for the given function \
+           and raises errors when global variables are mutated."
     | GlobalLeaksDeprecated _ ->
         Some
           "global_leaks_deprecated(function): analyzes the transitive call graph for the given \
@@ -583,7 +586,22 @@ let rec parse_request_exn query =
       | "dump_class_hierarchy", [] -> Request.Superclasses []
       | "expression_level_coverage", paths ->
           Request.ExpressionLevelCoverage (List.map ~f:string paths)
-      | "global_leaks", [name] -> Request.GlobalLeaks (reference name)
+      | "global_leaks", arguments ->
+          let single_argument_to_reference { Call.Argument.value = qualifier; _ } =
+            let construct_invalid_qualifier_string () =
+              Ast.Expression.show qualifier
+              |> Format.sprintf "Invalid qualifier provided, expected reference but got `%s`"
+            in
+            match qualifier with
+            | { Node.value = Name name; _ } -> (
+                match name_to_reference name with
+                | None -> Result.Error (construct_invalid_qualifier_string ())
+                | Some name -> Result.Ok name)
+            | _ -> Result.Error (construct_invalid_qualifier_string ())
+          in
+          List.map ~f:single_argument_to_reference arguments
+          |> List.partition_result
+          |> fun (qualifiers, parse_errors) -> Request.GlobalLeaks { qualifiers; parse_errors }
       | "global_leaks_deprecated", [name] -> Request.GlobalLeaksDeprecated (reference name)
       | "help", _ -> Request.Help (help ())
       | "hover_info_for_position", [path; line; column] ->
@@ -1033,18 +1051,23 @@ let rec process_request ~type_environment ~build_system request =
 
         let results = List.concat_map paths ~f:extract_paths |> List.map ~f:find_resolved_types in
         Single (Base.ExpressionLevelCoverageResponse results)
-    | GlobalLeaks qualifier ->
+    | GlobalLeaks { qualifiers; parse_errors } ->
         let lookup =
           let module_tracker = GlobalResolution.module_tracker global_resolution in
           PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker
         in
-        Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
-        >>| List.map ~f:(fun error ->
-                AnalysisError.instantiate ~show_error_traces:true ~lookup error)
-        >>| (fun errors -> Single (Base.Errors errors))
-        |> Option.value
-             ~default:
-               (Error (Format.sprintf "No qualifier found for `%s`" (Reference.show qualifier)))
+        let find_leak_errors_for_qualifier qualifier =
+          Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
+          >>| List.map ~f:(fun error ->
+                  AnalysisError.instantiate ~show_error_traces:true ~lookup error)
+          >>| (fun errors -> Single (Base.Errors errors))
+          |> Option.value
+               ~default:
+                 (Error (Format.sprintf "No qualifier found for `%s`" (Reference.show qualifier)))
+        in
+        Batch
+          (List.map ~f:(fun error -> Error error) parse_errors
+          @ List.map ~f:find_leak_errors_for_qualifier qualifiers)
     | GlobalLeaksDeprecated qualifier ->
         let lookup =
           let module_tracker = GlobalResolution.module_tracker global_resolution in

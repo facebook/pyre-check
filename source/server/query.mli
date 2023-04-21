@@ -17,7 +17,10 @@ module Request : sig
     | Defines of Reference.t list
     | DumpCallGraph
     | ExpressionLevelCoverage of string list
-    | GlobalLeaks of Reference.t
+    | GlobalLeaks of {
+        qualifiers: Reference.t list;
+        parse_errors: string list;
+      }
     | GlobalLeaksDeprecated of Reference.t
     | Help of string
     | HoverInfoForPosition of {
