@@ -19,7 +19,6 @@ import logging
 
 from .. import (
     command_arguments,
-    configuration as configuration_module,
     daemon_socket,
     frontend_configuration,
     identifiers,
@@ -101,12 +100,12 @@ def run_query(
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     query_arguments: command_arguments.QueryArguments,
 ) -> commands.ExitCode:
     if query_arguments.no_daemon:
         response = no_daemon_query.execute_query(
-            frontend_configuration.OpenSource(configuration),
+            configuration,
             query_arguments,
         )
         if response is not None:
@@ -115,6 +114,4 @@ def run(
         else:
             return commands.ExitCode.FAILURE
     else:
-        return run_query(
-            frontend_configuration.OpenSource(configuration), query_arguments.query
-        )
+        return run_query(configuration, query_arguments.query)

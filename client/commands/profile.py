@@ -25,13 +25,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from typing_extensions import Final
 
-from .. import (
-    backend_arguments,
-    command_arguments,
-    configuration as configuration_module,
-    frontend_configuration,
-    identifiers,
-)
+from .. import backend_arguments, command_arguments, frontend_configuration, identifiers
 from . import commands
 
 
@@ -403,7 +397,7 @@ def print_taint(log_directory: Path) -> None:
     print(json.dumps(to_taint(events), indent=2))
 
 
-def run_profile(
+def run(
     configuration: frontend_configuration.Base,
     output: command_arguments.ProfileOutput,
 ) -> commands.ExitCode:
@@ -428,10 +422,3 @@ def run_profile(
     else:
         raise RuntimeError(f"Unrecognized output format: {output}")
     return commands.ExitCode.SUCCESS
-
-
-def run(
-    configuration: configuration_module.Configuration,
-    output: command_arguments.ProfileOutput,
-) -> commands.ExitCode:
-    return run_profile(frontend_configuration.OpenSource(configuration), output)

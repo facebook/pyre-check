@@ -13,12 +13,7 @@ via a socket connection.
 import logging
 from pathlib import Path
 
-from .. import (
-    configuration as configuration_module,
-    daemon_socket,
-    frontend_configuration,
-    identifiers,
-)
+from .. import daemon_socket, frontend_configuration, identifiers
 from ..language_server import connections
 from . import commands
 
@@ -65,7 +60,7 @@ def remove_socket_if_exists(socket_path: Path) -> None:
         LOG.warning(f"Failed to remove lock file at `{socket_path}.lock`: {error}")
 
 
-def run_stop(
+def run(
     configuration: frontend_configuration.Base, flavor: identifiers.PyreFlavor
 ) -> commands.ExitCode:
     socket_path = daemon_socket.get_socket_path(
@@ -84,9 +79,3 @@ def run_stop(
         LOG.info("No running Pyre server to stop.\n")
         remove_socket_if_exists(socket_path)
         return commands.ExitCode.SERVER_NOT_FOUND
-
-
-def run(
-    configuration: configuration_module.Configuration, flavor: identifiers.PyreFlavor
-) -> commands.ExitCode:
-    return run_stop(frontend_configuration.OpenSource(configuration), flavor)

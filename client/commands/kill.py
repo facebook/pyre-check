@@ -17,13 +17,7 @@ import signal
 
 import psutil
 
-from .. import (
-    configuration as configuration_module,
-    daemon_socket,
-    find_directories,
-    frontend_configuration,
-    identifiers,
-)
+from .. import daemon_socket, find_directories, frontend_configuration, identifiers
 from . import commands, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -135,19 +129,18 @@ def _delete_caches(configuration: frontend_configuration.Base) -> None:
 
 
 def run(
-    configuration: configuration_module.Configuration, with_fire: bool
+    configuration: frontend_configuration.Base, with_fire: bool
 ) -> commands.ExitCode:
-    kill_configuration = frontend_configuration.OpenSource(configuration)
-    _kill_binary_processes(kill_configuration)
-    _kill_client_processes(kill_configuration)
+    _kill_binary_processes(configuration)
+    _kill_client_processes(configuration)
     # TODO (T85602550): Store a rage log before this happens.
     # TODO (T85614630): Delete client logs as well.
     for flavor in [
         identifiers.PyreFlavor.CLASSIC,
         identifiers.PyreFlavor.CODE_NAVIGATION,
     ]:
-        _delete_server_files(kill_configuration, flavor)
-    _delete_caches(kill_configuration)
+        _delete_server_files(configuration, flavor)
+    _delete_caches(configuration)
     if with_fire:
         LOG.warning(
             (

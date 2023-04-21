@@ -23,7 +23,6 @@ from typing import Dict, Iterable, List, Optional, Sequence
 from .. import (
     backend_arguments,
     command_arguments,
-    configuration as configuration_module,
     daemon_socket,
     error,
     frontend_configuration,
@@ -197,7 +196,7 @@ def run_incremental(
         raise commands.ClientException("Cannot find a running Pyre server.")
 
     LOG.info("Cannot find a running Pyre server. Starting a new one...")
-    start_status = start.run_start(configuration, incremental_arguments.start_arguments)
+    start_status = start.run(configuration, incremental_arguments.start_arguments)
     if start_status != commands.ExitCode.SUCCESS:
         raise commands.ClientException(
             f"`pyre start` failed with non-zero exit code: {start_status}"
@@ -219,14 +218,12 @@ def _exit_code_from_error_kind(error_kind: server_event.ErrorKind) -> commands.E
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> ExitStatus:
     try:
-        return run_incremental(
-            frontend_configuration.OpenSource(configuration), incremental_arguments
-        )
+        return run_incremental(configuration, incremental_arguments)
     except server_event.ServerStartException as error:
         raise commands.ClientException(
             f"{error}", exit_code=_exit_code_from_error_kind(error.kind)
-        )
+        ) from error

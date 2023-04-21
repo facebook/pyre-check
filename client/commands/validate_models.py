@@ -17,13 +17,7 @@ import os
 from pathlib import Path
 from typing import Dict, List
 
-from .. import (
-    configuration as configuration_module,
-    daemon_socket,
-    error as error_module,
-    frontend_configuration,
-    identifiers,
-)
+from .. import daemon_socket, error as error_module, frontend_configuration, identifiers
 from ..language_server import connections
 from . import commands, daemon_query
 
@@ -75,9 +69,7 @@ def parse_validation_errors_response(
     return parse_validation_errors(response_payload)
 
 
-def run_validate_models(
-    configuration: frontend_configuration.Base, output: str
-) -> commands.ExitCode:
+def run(configuration: frontend_configuration.Base, output: str) -> commands.ExitCode:
     socket_path = daemon_socket.get_socket_path(
         configuration.get_project_identifier(),
         flavor=identifiers.PyreFlavor.CLASSIC,
@@ -95,12 +87,3 @@ def run_validate_models(
             "Please run `pyre` first to set up a server."
         )
         return commands.ExitCode.SERVER_NOT_FOUND
-
-
-def run(
-    configuration: configuration_module.Configuration, output: str
-) -> commands.ExitCode:
-    return run_validate_models(
-        frontend_configuration.OpenSource(configuration),
-        output,
-    )

@@ -20,14 +20,7 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional, Sequence, TextIO, Tuple
 
-from .. import (
-    command_arguments,
-    configuration as configuration_module,
-    frontend_configuration,
-    identifiers,
-    log,
-    version,
-)
+from .. import command_arguments, frontend_configuration, identifiers, log, version
 from . import commands, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -226,15 +219,14 @@ def run_rage(
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     arguments: command_arguments.RageArguments,
 ) -> commands.ExitCode:
     output_path = arguments.output
-    rage_configuration = frontend_configuration.OpenSource(configuration)
     if output_path is None:
-        run_rage(rage_configuration, arguments, log.stdout)
+        run_rage(configuration, arguments, log.stdout)
     else:
         # lint-ignore: NoUnsafeFilesystemRule
         with open(output_path) as output:
-            run_rage(frontend_configuration, arguments, output)
+            run_rage(configuration, arguments, output)
     return commands.ExitCode.SUCCESS

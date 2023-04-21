@@ -372,7 +372,7 @@ def _run_analyze_command(
                 return commands.ExitCode.FAILURE
 
 
-def run_analyze(
+def run(
     configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> commands.ExitCode:
@@ -403,12 +403,3 @@ def run_analyze(
                 output=analyze_arguments.output,
                 forward_stdout=(analyze_arguments.save_results_to is None),
             )
-
-
-def run(
-    configuration: configuration_module.Configuration,
-    analyze_arguments: command_arguments.AnalyzeArguments,
-) -> commands.ExitCode:
-    return run_analyze(
-        frontend_configuration.OpenSource(configuration), analyze_arguments
-    )

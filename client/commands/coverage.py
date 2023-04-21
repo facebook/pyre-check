@@ -28,13 +28,7 @@ from typing import Iterable, List, Optional, Set, Tuple
 
 import libcst as cst
 
-from .. import (
-    command_arguments,
-    configuration as configuration_module,
-    coverage_data,
-    frontend_configuration,
-    log,
-)
+from .. import command_arguments, coverage_data, frontend_configuration, log
 from . import commands
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -220,11 +214,11 @@ def run_coverage(
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     coverage_arguments: command_arguments.CoverageArguments,
 ) -> commands.ExitCode:
     return run_coverage(
-        frontend_configuration.OpenSource(configuration),
+        configuration,
         coverage_arguments.working_directory,
         coverage_arguments.paths,
         coverage_arguments.print_summary,

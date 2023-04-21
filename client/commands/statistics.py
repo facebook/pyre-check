@@ -30,13 +30,7 @@ from typing import Dict, Iterable, List, Mapping, Optional
 import libcst
 from libcst.metadata import CodePosition, CodeRange
 
-from .. import (
-    command_arguments,
-    configuration as configuration_module,
-    coverage_data,
-    frontend_configuration,
-    log,
-)
+from .. import command_arguments, coverage_data, frontend_configuration, log
 from . import commands
 
 
@@ -413,10 +407,8 @@ def run_statistics(
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> commands.ExitCode:
     LOG.info("Collecting statistics...")
-    return run_statistics(
-        frontend_configuration.OpenSource(configuration), statistics_arguments
-    )
+    return run_statistics(configuration, statistics_arguments)

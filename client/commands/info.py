@@ -17,7 +17,6 @@ import dataclasses_json
 
 from .. import (
     command_arguments,
-    configuration as configuration_module,
     daemon_socket,
     frontend_configuration,
     identifiers,
@@ -111,11 +110,11 @@ def run_info(
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     arguments: command_arguments.CommandArguments,
 ) -> commands.ExitCode:
     run_info(
-        configuration=frontend_configuration.OpenSource(configuration),
+        configuration=configuration,
         arguments=arguments,
     )
     return commands.ExitCode.SUCCESS

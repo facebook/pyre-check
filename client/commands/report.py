@@ -20,7 +20,6 @@ from typing import List, Optional, Sequence
 import libcst
 
 from .. import (
-    configuration as configuration_module,
     coverage_data,
     dataclasses_json_extensions as json_mixins,
     frontend_configuration,
@@ -124,10 +123,9 @@ def print_data_as_json(data: Sequence[ModuleData]) -> None:
 
 
 def run(
-    raw_configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     paths: Optional[List[Path]],
 ) -> int:
-    configuration = frontend_configuration.OpenSource(raw_configuration)
     module_paths = get_module_paths(
         configuration=configuration,
         paths=paths,

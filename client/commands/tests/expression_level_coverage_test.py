@@ -439,12 +439,14 @@ class ExpressionLevelTest(testslide.TestCase):
                 root_path, {"source_directories": ["src"]}, relative="local"
             )
 
-            check_configuration = configuration.create_configuration(
-                command_arguments.CommandArguments(
-                    local_configuration="local",
-                    dot_pyre_directory=root_path / ".pyre",
-                ),
-                root_path,
+            check_configuration = frontend_configuration.OpenSource(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration="local",
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                )
             )
 
             self.mock_callable(daemon_query, "execute_query").to_raise(

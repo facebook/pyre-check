@@ -21,7 +21,6 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 import dataclasses_json
 
 from .. import (
-    configuration as configuration_module,
     coverage_data,
     daemon_socket,
     frontend_configuration,
@@ -343,18 +342,18 @@ def run_query(
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     paths: Iterable[str],
     print_summary: bool = False,
 ) -> commands.ExitCode:
     path_list = CoveragePaths.from_raw_path_arguments(
         raw_paths=paths,
-        configuration=frontend_configuration.OpenSource(configuration),
+        configuration=configuration,
     ).get_paths_for_backend()
     paths_string = ",".join([f"'{path}'" for path in path_list])
     query_text = f"expression_level_coverage({paths_string})"
     return run_query(
-        frontend_configuration.OpenSource(configuration),
+        configuration,
         query_text,
         print_summary,
     )

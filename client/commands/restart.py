@@ -12,12 +12,7 @@ is a single command that effectively runs `pyre stop` followed by
 
 import logging
 
-from .. import (
-    command_arguments,
-    configuration as configuration_module,
-    frontend_configuration,
-    identifiers,
-)
+from .. import command_arguments, frontend_configuration, identifiers
 from . import commands, incremental, stop
 
 
@@ -25,11 +20,8 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> commands.ExitCode:
-    restart_configuration = frontend_configuration.OpenSource(configuration)
-    stop.run_stop(restart_configuration, flavor=identifiers.PyreFlavor.CLASSIC)
-    return incremental.run_incremental(
-        restart_configuration, incremental_arguments
-    ).exit_code
+    stop.run(configuration, flavor=identifiers.PyreFlavor.CLASSIC)
+    return incremental.run_incremental(configuration, incremental_arguments).exit_code

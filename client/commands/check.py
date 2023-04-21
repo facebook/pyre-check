@@ -242,11 +242,9 @@ def run_check(
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     check_arguments: command_arguments.CheckArguments,
 ) -> commands.ExitCode:
-    check_result = run_check(
-        frontend_configuration.OpenSource(configuration), check_arguments
-    )
+    check_result = run_check(configuration, check_arguments)
     incremental.display_type_errors(check_result.errors, output=check_arguments.output)
     return check_result.exit_code

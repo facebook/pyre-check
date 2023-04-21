@@ -513,7 +513,7 @@ def _run_in_background(
         raise commands.ClientException("Interrupted by user. No server is spawned.")
 
 
-def run_start(
+def run(
     configuration: frontend_configuration.Base,
     start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
@@ -570,10 +570,3 @@ def run_start(
                     wait_on_initialization=start_arguments.wait_on_initialization
                 ),
             )
-
-
-def run(
-    configuration: configuration_module.Configuration,
-    start_arguments: command_arguments.StartArguments,
-) -> commands.ExitCode:
-    return run_start(frontend_configuration.OpenSource(configuration), start_arguments)

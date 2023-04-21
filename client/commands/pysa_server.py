@@ -315,20 +315,17 @@ async def run_persistent(
 
 
 def run(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     start_arguments: command_arguments.StartArguments,
 ) -> int:
-    binary_location = configuration.get_binary_respecting_override()
+    binary_location = configuration.get_binary_location()
     if binary_location is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
 
-    server_configuration = frontend_configuration.OpenSource(configuration)
-    project_identifier = server_configuration.get_project_identifier()
-    pyre_arguments = start.create_server_arguments(
-        server_configuration, start_arguments
-    )
+    project_identifier = configuration.get_project_identifier()
+    pyre_arguments = start.create_server_arguments(configuration, start_arguments)
     if pyre_arguments.watchman_root is None:
         raise commands.ClientException(
             (
@@ -338,5 +335,5 @@ def run(
         )
 
     return asyncio.get_event_loop().run_until_complete(
-        run_persistent(binary_location, project_identifier, pyre_arguments)
+        run_persistent(str(binary_location), project_identifier, pyre_arguments)
     )
