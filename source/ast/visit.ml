@@ -574,13 +574,13 @@ let rec collect_non_generic_type_names { Node.value; _ } =
 
 let collect_format_strings_with_ignores ~ignore_line_map source =
   let module CollectIgnoredFormatStrings = ExpressionCollector (struct
-    type t = Expression.t * Ignore.t list
+    type t = Expression.t
 
     let visit_children _ = true
 
     let predicate = function
       | { Node.value = Expression.FormatString _; location } as expression ->
-          Map.find ignore_line_map (Location.line location) >>| fun ignores -> expression, ignores
+          expression |> Option.some_if (Map.mem ignore_line_map (Location.line location))
       | _ -> None
   end)
   in

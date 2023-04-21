@@ -53,13 +53,13 @@ type t = {
 
 val ignored_lines_including_format_strings
   :  ?collect_format_strings_with_ignores:
-       (ignore_line_map:Ignore.t list Int.Map.t -> t -> (Expression.t * Ignore.t list) list) ->
+       (ignore_line_map:Ignore.t list Int.Map.t -> t -> Expression.t list) ->
   t ->
   Ignore.t list
 
 val create_from_module_path
   :  ?collect_format_strings_with_ignores:
-       (ignore_line_map:Ignore.t list Int.Map.t -> t -> (Expression.t * Ignore.t list) list) ->
+       (ignore_line_map:Ignore.t list Int.Map.t -> t -> Expression.t list) ->
   typecheck_flags:TypecheckFlags.t ->
   module_path:ModulePath.t ->
   Statement.t list ->

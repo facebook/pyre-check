@@ -267,14 +267,8 @@ let ignored_lines_including_format_strings
     Map.change map start_line ~f:(fun ignores ->
         ignores >>| List.map ~f:(Ignore.cover_end_line ~end_line))
   in
-  let format_strings_having_ignores =
-    collect_format_strings_with_ignores ~ignore_line_map:start_line_to_ignore_map source
-    |> List.map ~f:fst
-  in
-  List.fold
-    format_strings_having_ignores
-    ~init:start_line_to_ignore_map
-    ~f:make_ignore_span_all_lines
+  collect_format_strings_with_ignores ~ignore_line_map:start_line_to_ignore_map source
+  |> List.fold ~init:start_line_to_ignore_map ~f:make_ignore_span_all_lines
   |> Int.Map.data
   |> List.concat_map ~f:(List.dedup_and_sort ~compare:Ignore.compare)
 

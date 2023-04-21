@@ -261,19 +261,21 @@ let test_collect_format_strings_with_ignores _ =
     in
     let format_strings_with_ignores =
       Visit.collect_format_strings_with_ignores ~ignore_line_map source
-      |> List.map ~f:snd
       |> List.map
-           ~f:
-             (List.map ~f:(fun ({ Ignore.codes; kind; _ } as ignore) ->
-                  Ignore.start_of_ignored_line_or_range ignore, kind, codes))
+           ~f:(fun
+                ({
+                   Node.location =
+                     { start = { line = start_line; _ }; stop = { line = end_line; _ } };
+                   _;
+                 } as _format_string)
+              -> start_line, end_line)
     in
     assert_equal
-      ~cmp:[%compare.equal: (int * Ignore.kind * int list) list list]
-      ~printer:[%show: (int * Ignore.kind * int list) list list]
+      ~cmp:[%compare.equal: (int * int) list]
+      ~printer:[%show: (int * int) list]
       expected
       format_strings_with_ignores
   in
-  let open Ignore in
   assert_format_strings_with_ignores
     {|
       def foo() -> None:
@@ -287,7 +289,7 @@ let test_collect_format_strings_with_ignores _ =
         baz
         """
     |}
-    [[6, PyreIgnore, [7]; 6, PyreFixme, [58; 42]]];
+    [6, 11];
   assert_format_strings_with_ignores
     {|
       def foo() -> None:
@@ -301,7 +303,7 @@ let test_collect_format_strings_with_ignores _ =
         {1 + "hello4"}
         """
     |}
-    [[5, PyreFixme, [58]]];
+    [5, 11];
   assert_format_strings_with_ignores
     {|
       def foo() -> None:
@@ -311,7 +313,7 @@ let test_collect_format_strings_with_ignores _ =
         # pyre-fixme[58]
         f"{1 + 'hello'}"
     |}
-    [[7, PyreFixme, [58]]; [4, TypeIgnore, []]];
+    [7, 7; 4, 4];
   assert_format_strings_with_ignores
     {|
       def foo() -> None:

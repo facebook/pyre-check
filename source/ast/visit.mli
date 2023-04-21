@@ -135,4 +135,4 @@ val collect_non_generic_type_names : Expression.t -> Identifier.t list
 val collect_format_strings_with_ignores
   :  ignore_line_map:Ignore.t list Int.Map.t ->
   Source.t ->
-  (Expression.t * Ignore.t list) list
+  Expression.t list
