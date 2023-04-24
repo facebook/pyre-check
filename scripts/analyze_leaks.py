@@ -7,6 +7,7 @@ import json
 import keyword
 import os
 from dataclasses import dataclass
+from more_itertools import partition
 from pathlib import Path
 from typing import cast, Dict, List, TextIO, Tuple
 
@@ -68,12 +69,26 @@ def is_valid_callee(callee: str) -> bool:
     return is_valid_callee
 
 
+def partition_valid_invalid_callees(callees: List[str]) -> Tuple[List[str], List[str]]:
+    invalid, valid = partition(is_valid_callee, callees)
+    return list(valid), list(invalid)
+
+
 def prepare_issues_for_query(callees: List[str]) -> str:
-    return "global_leaks(" + ", ".join(filter(is_valid_callee, callees)) + ")"
+    return "global_leaks(" + ", ".join(callees) + ")"
 
 
-def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
-    script_errors: List[LeakAnalysisScriptError] = []
+def collect_pyre_query_results(
+    pyre_results: object, invalid_callees: List[str]
+) -> LeakAnalysisResult:
+    script_errors: List[LeakAnalysisScriptError] = [
+        LeakAnalysisScriptError(
+            error_message="Given callee is invalid",
+            bad_value=invalid_callee,
+        )
+        for invalid_callee in invalid_callees
+    ]
+
     if not isinstance(pyre_results, dict):
         raise RuntimeError(
             f"Expected dict for Pyre query results, got {type(pyre_results)}: {pyre_results}"
@@ -130,7 +145,8 @@ def collect_pyre_query_results(pyre_results: object) -> LeakAnalysisResult:
 
 
 def find_issues(callees: List[str], search_start_path: Path) -> LeakAnalysisResult:
-    query_str = prepare_issues_for_query(callees)
+    valid_callees, invalid_callees = partition_valid_invalid_callees(callees)
+    query_str = prepare_issues_for_query(valid_callees)
     project_root = find_directories.find_global_and_local_root(search_start_path)
     if not project_root:
         raise ValueError(
@@ -154,7 +170,9 @@ def find_issues(callees: List[str], search_start_path: Path) -> LeakAnalysisResu
 
     try:
         response = daemon_query.execute_query(socket_path, query_str)
-        collected_results = collect_pyre_query_results(response.payload)
+        collected_results = collect_pyre_query_results(
+            response.payload, invalid_callees
+        )
         return collected_results
     except connections.ConnectionFailure as e:
         raise RuntimeError(

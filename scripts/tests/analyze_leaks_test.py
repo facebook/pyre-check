@@ -14,6 +14,7 @@ from ..analyze_leaks import (
     is_valid_callee,
     LeakAnalysisResult,
     LeakAnalysisScriptError,
+    partition_valid_invalid_callees,
     prepare_issues_for_query,
     validate_json_list,
 )
@@ -583,9 +584,13 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
     def test_prepare_issues_for_query(self) -> None:
         callees = ["f1", "f2", "f3", "f1#f2", "f1.f2.f3", "11", "-f1.f2"]
 
-        result_query = prepare_issues_for_query(callees)
-        expected_query = "global_leaks(f1, f2, f3, f1.f2.f3)"
+        valid_callees, invalid_callees = partition_valid_invalid_callees(callees)
 
+        self.assertListEqual(valid_callees, ["f1", "f2", "f3", "f1.f2.f3"])
+        self.assertListEqual(invalid_callees, ["f1#f2", "11", "-f1.f2"])
+
+        result_query = prepare_issues_for_query(valid_callees)
+        expected_query = "global_leaks(f1, f2, f3, f1.f2.f3)"
         self.assertEqual(result_query, expected_query)
 
     def test_collect_pyre_query_results(self) -> None:
@@ -610,9 +615,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             },
         }
 
-        results = collect_pyre_query_results(
-            example_pyre_stdout,
-        )
+        results = collect_pyre_query_results(example_pyre_stdout, ["11"])
         expected_results = LeakAnalysisResult(
             global_leaks=[
                 {
@@ -629,7 +632,12 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
                 "we failed to find your callable",
                 "we failed to find your callable 2",
             ],
-            script_errors=[],
+            script_errors=[
+                LeakAnalysisScriptError(
+                    error_message="Given callee is invalid",
+                    bad_value="11",
+                )
+            ],
         )
 
         self.assertEqual(results, expected_results)
@@ -640,25 +648,25 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         """
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_response)
+            collect_pyre_query_results(example_pyre_response, [])
 
     def test_collect_pyre_query_results_not_top_level_dict(self) -> None:
         example_pyre_response = ["this is a list"]
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_response)
+            collect_pyre_query_results(example_pyre_response, [])
 
     def test_collect_pyre_query_results_no_response_present(self) -> None:
         example_pyre_response = {"not a response": 1}
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_response)
+            collect_pyre_query_results(example_pyre_response, [])
 
     def test_collect_pyre_query_results_response_not_a_list(self) -> None:
         example_pyre_response = {"response": 1}
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_response)
+            collect_pyre_query_results(example_pyre_response, [])
 
     def test_collect_pyre_query_results_response_not_a_dict(
         self,
@@ -666,7 +674,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         example_pyre_response = {"response": [123]}
 
         with self.assertRaises(RuntimeError):
-            collect_pyre_query_results(example_pyre_response)
+            collect_pyre_query_results(example_pyre_response, [])
 
     def test_collect_pyre_query_results_response_no_nested_error_or_response(
         self,
@@ -674,7 +682,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
         response_body: JSON = {"not_error": 123, "not_response": 456}
         example_pyre_response = {"response": response_body}
 
-        results = collect_pyre_query_results(example_pyre_response)
+        results = collect_pyre_query_results(example_pyre_response, [])
 
         expected_results = LeakAnalysisResult(
             global_leaks=[],
@@ -701,7 +709,7 @@ class AnalyzeIssueTraceTest(unittest.TestCase):
             "response": {"global_leaks": global_leaks, "query_errors": errors}
         }
 
-        results = collect_pyre_query_results(example_pyre_response)
+        results = collect_pyre_query_results(example_pyre_response, [])
         expected_results = LeakAnalysisResult(
             global_leaks=[],
             query_errors=[],
