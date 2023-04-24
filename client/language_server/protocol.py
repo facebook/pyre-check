@@ -385,6 +385,7 @@ class ServerCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     definition_provider: Optional[bool] = None
     document_symbol_provider: Optional[bool] = None
     references_provider: Optional[bool] = None
+    completion_provider: Optional[bool] = None
 
 
 @dataclasses.dataclass(frozen=True)
