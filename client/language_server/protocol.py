@@ -612,6 +612,18 @@ class PyreDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class CompletionParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+    text_document: TextDocumentIdentifier
+    position: LspPosition
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "CompletionParameters":
+        return _parse_parameters(parameters, target=CompletionParameters)
+
+
+@dataclasses.dataclass(frozen=True)
 class LspLocation(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains one possible definition for a symbol."""
 

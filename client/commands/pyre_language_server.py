@@ -604,6 +604,75 @@ class PyreLanguageServerApi:
             activity_key,
         )
 
+    async def process_completion_request(
+        self,
+        parameters: lsp.CompletionParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        document_path = document_path.resolve()
+
+        if document_path not in self.server_state.opened_documents:
+            return await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=[],
+                ),
+            )
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        completion_timer = timer.Timer()
+
+        await self.update_overlay_if_needed(document_path)
+        result = await self.querier.get_completions(
+            path=document_path,
+            position=parameters.position.to_pyre_position(),
+        )
+
+        error_message = None
+        if isinstance(result, DaemonQueryFailure):
+            LOG.info(
+                daemon_failure_string(
+                    "completion", str(type(result)), result.error_message
+                )
+            )
+            error_message = result.error_message
+            result = []
+        raw_result = lsp.CompletionResponse.cached_schema().dump(
+            result,
+        )
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                activity_key=activity_key,
+                result=raw_result,
+            ),
+        )
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "completion",
+                "filePath": str(document_path),
+                "nonEmpty": len(result) > 0,
+                "response": raw_result,
+                "duration_ms": completion_timer.stop_in_millisecond(),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "error_message": error_message,
+                "position": parameters.position.to_dict(),
+                **daemon_status_before.as_telemetry_dict(),
+            },
+            activity_key,
+        )
+
     async def process_document_symbols_request(
         self,
         parameters: lsp.DocumentSymbolsParameters,
@@ -754,6 +823,16 @@ class PyreLanguageServerDispatcher:
         elif request.method == "textDocument/definition":
             await self.api.process_definition_request(
                 lsp.DefinitionParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
+                request.id,
+                request.activity_key,
+            )
+            if not self.daemon_manager.is_task_running():
+                await self._try_restart_pyre_daemon()
+        elif request.method == "textDocument/completion":
+            await self.api.process_completion_request(
+                lsp.CompletionParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
                 request.id,
