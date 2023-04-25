@@ -78,8 +78,6 @@ module type LOGGER = sig
   val override_analysis_end : callable:Target.t -> timer:Timer.t -> unit
 
   val on_analyze_define_exception : iteration:int -> callable:Target.t -> exn:exn -> unit
-
-  val on_global_fixpoint_exception : exn:exn -> unit
 end
 
 (** Must be implemented to perform a global fixpoint. *)

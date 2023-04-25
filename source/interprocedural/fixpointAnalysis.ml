@@ -94,8 +94,6 @@ module type LOGGER = sig
   val override_analysis_end : callable:Target.t -> timer:Timer.t -> unit
 
   val on_analyze_define_exception : iteration:int -> callable:Target.t -> exn:exn -> unit
-
-  val on_global_fixpoint_exception : exn:exn -> unit
 end
 
 (** Must be implemented to compute a global fixpoint. *)
@@ -650,13 +648,8 @@ module Make (Analysis : ANALYSIS) = struct
         let () = Logger.iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer in
         iterate ~iteration:(iteration + 1) callables_to_analyze
     in
-    try
-      let iterations = iterate ~iteration:0 initial_callables_to_analyze in
-      FixpointReached { iterations }
-    with
-    | exn ->
-        let () = Logger.on_global_fixpoint_exception ~exn in
-        raise exn
+    let iterations = iterate ~iteration:0 initial_callables_to_analyze in
+    FixpointReached { iterations }
 
 
   let get_model (FixpointReached _) target = State.get_model target
@@ -690,8 +683,6 @@ module WithoutLogging = struct
   let override_analysis_end ~callable:_ ~timer:_ = ()
 
   let on_analyze_define_exception ~iteration:_ ~callable:_ ~exn:_ = ()
-
-  let on_global_fixpoint_exception ~exn:_ = ()
 end
 
 module WithLogging (Config : sig
@@ -801,8 +792,4 @@ struct
         callable
     in
     Log.log_exception message exn (Worker.exception_backtrace exn)
-
-
-  let on_global_fixpoint_exception ~exn =
-    Log.log_exception "Fixpoint iteration failed." exn (Worker.exception_backtrace exn)
 end

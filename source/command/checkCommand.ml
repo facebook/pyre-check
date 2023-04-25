@@ -180,18 +180,13 @@ let print_errors errors =
 
 
 let run_check ~build_system check_configuration =
-  try
-    let errors =
-      compute_errors
-        ~configuration:(CheckConfiguration.analysis_configuration_of check_configuration)
-        ~build_system
-        ()
-    in
-    print_errors errors
-  with
-  | exn ->
-      Log.log_exception "Pyre check failed." exn (Worker.exception_backtrace exn);
-      raise exn
+  let errors =
+    compute_errors
+      ~configuration:(CheckConfiguration.analysis_configuration_of check_configuration)
+      ~build_system
+      ()
+  in
+  print_errors errors
 
 
 let run_check_in_lwt check_configuration =
