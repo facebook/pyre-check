@@ -9,7 +9,7 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from .. import command_arguments, configuration, frontend_configuration
+from .. import command_arguments, configuration, frontend_configuration, identifiers
 from ..backend_arguments import (
     BaseArguments,
     BuckSourcePath,
@@ -18,6 +18,7 @@ from ..backend_arguments import (
     find_watchman_root,
     get_checked_directory_allowlist,
     get_source_path,
+    get_source_path_for_server,
     RemoteLogging,
     SimpleSourcePath,
     WithUnwatchedDependencySourcePath,
@@ -491,6 +492,40 @@ class ArgumentsTest(testslide.TestCase):
                     mode="opt",
                     isolation_prefix=".lsp",
                     bxl_builder="//ct:robo",
+                ),
+            )
+
+    def test_get_code_navigation_server_artifact_root(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "repo_root"])
+            setup.ensure_files_exist(
+                root_path, ["repo_root/.buckconfig", "repo_root/buck_root/.buckconfig"]
+            )
+            setup.write_configuration_file(
+                root_path / "repo_root" / "buck_root",
+                {"targets": ["//ct:lavos"], "bxl_builder": "//ct:robo"},
+            )
+            self.assertEqual(
+                get_source_path_for_server(
+                    frontend_configuration.OpenSource(
+                        configuration.create_configuration(
+                            command_arguments.CommandArguments(
+                                dot_pyre_directory=root_path / ".pyre",
+                                use_buck2=True,
+                            ),
+                            root_path / "repo_root" / "buck_root",
+                        )
+                    ),
+                    flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
+                ),
+                BuckSourcePath(
+                    source_root=root_path / "repo_root",
+                    artifact_root=root_path / ".pyre" / "link_trees__code_navigation",
+                    checked_directory=root_path / "repo_root" / "buck_root",
+                    targets=["//ct:lavos"],
+                    bxl_builder="//ct:robo",
+                    use_buck2=True,
                 ),
             )
 

@@ -29,6 +29,7 @@ from . import (
     configuration as configuration_module,
     find_directories,
     frontend_configuration,
+    identifiers,
 )
 
 from .configuration import search_path
@@ -349,10 +350,11 @@ def get_source_path(
 
 def get_source_path_for_server(
     configuration: frontend_configuration.Base,
+    flavor: identifiers.PyreFlavor,
 ) -> SourcePath:
     # We know that for each source root there could be at most one server alive.
     # Therefore artifact root name can be a fixed constant.
-    artifact_root_name = SERVER_ARTIFACT_ROOT_NAME
+    artifact_root_name = f"{SERVER_ARTIFACT_ROOT_NAME}{flavor.path_suffix()}"
     relative_local_root = configuration.get_relative_local_root()
     if relative_local_root is not None:
         # Prevent artifact roots of different local projects from clashing with
