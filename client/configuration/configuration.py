@@ -56,7 +56,6 @@ from ..find_directories import (
     CONFIGURATION_FILE,
     get_relative_local_root,
     LOCAL_CONFIGURATION_FILE,
-    LOG_DIRECTORY,
 )
 from . import (
     exceptions,
@@ -547,12 +546,12 @@ def merge_partial_configurations(
 @dataclasses.dataclass(frozen=True)
 class Configuration:
     project_root: str
-    dot_pyre_directory: Path
 
     binary: Optional[str] = None
     buck_mode: Optional[platform_aware.PlatformAware[str]] = None
     bxl_builder: Optional[str] = None
     only_check_paths: Sequence[str] = field(default_factory=list)
+    dot_pyre_directory: Optional[Path] = None
     enable_readonly_analysis: Optional[bool] = None
     enable_unawaited_awaitable_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(default_factory=list)
@@ -597,9 +596,7 @@ class Configuration:
 
         return Configuration(
             project_root=str(project_root),
-            dot_pyre_directory=_get_optional_value(
-                partial_configuration.dot_pyre_directory, project_root / LOG_DIRECTORY
-            ),
+            dot_pyre_directory=partial_configuration.dot_pyre_directory,
             binary=partial_configuration.binary,
             buck_mode=partial_configuration.buck_mode,
             bxl_builder=partial_configuration.bxl_builder,
@@ -659,12 +656,6 @@ class Configuration:
             Path(self.project_root),
             self.relative_local_root,
         )
-
-    @property
-    def log_directory(self) -> str:
-        if self.relative_local_root is None:
-            return str(self.dot_pyre_directory)
-        return str(self.dot_pyre_directory / self.relative_local_root)
 
     @property
     def local_root(self) -> Optional[str]:

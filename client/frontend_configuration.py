@@ -18,17 +18,13 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from . import configuration as configuration_module
+from . import configuration as configuration_module, find_directories
 
 # TODO(T120824066): Break this class down into smaller pieces. Ideally, one
 # class per command.
 class Base(abc.ABC):
     @abc.abstractmethod
     def get_dot_pyre_directory(self) -> Path:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_log_directory(self) -> Path:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -170,6 +166,15 @@ class Base(abc.ABC):
             return None
         return self.get_global_root() / relative_local_root
 
+    def get_log_directory(self) -> Path:
+        dot_pyre_directory = self.get_dot_pyre_directory()
+        relative_local_root = self.get_relative_local_root()
+        return (
+            dot_pyre_directory
+            if relative_local_root is None
+            else dot_pyre_directory / relative_local_root
+        )
+
 
 class OpenSource(Base):
     def __init__(
@@ -179,10 +184,10 @@ class OpenSource(Base):
         self.configuration = configuration
 
     def get_dot_pyre_directory(self) -> Path:
-        return self.configuration.dot_pyre_directory
-
-    def get_log_directory(self) -> Path:
-        return Path(self.configuration.log_directory)
+        return (
+            self.configuration.dot_pyre_directory
+            or self.get_global_root() / find_directories.LOG_DIRECTORY
+        )
 
     def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
         location = self.configuration.get_binary_respecting_override()

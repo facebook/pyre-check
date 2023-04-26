@@ -652,7 +652,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.buck_mode.get(), "opt")
         self.assertEqual(configuration.bxl_builder, "//some/bxl:build")
         self.assertListEqual(list(configuration.only_check_paths), ["root/foo"])
-        self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
+        self.assertEqual(configuration.dot_pyre_directory, None)
         self.assertEqual(configuration.enable_readonly_analysis, True)
         self.assertEqual(configuration.enable_unawaited_awaitable_analysis, True)
         self.assertListEqual(list(configuration.excludes), ["exclude"])
@@ -717,29 +717,6 @@ class ConfigurationTest(testslide.TestCase):
                 relative_local_root="bar/baz",
             ).local_root,
             "foo/bar/baz",
-        )
-
-        self.assertEqual(
-            Configuration(
-                project_root="foo", dot_pyre_directory=Path(".pyre")
-            ).log_directory,
-            ".pyre",
-        )
-        self.assertEqual(
-            Configuration(
-                project_root="foo",
-                dot_pyre_directory=Path(".pyre"),
-                relative_local_root="bar",
-            ).log_directory,
-            ".pyre/bar",
-        )
-        self.assertEqual(
-            Configuration(
-                project_root="foo",
-                dot_pyre_directory=Path(".pyre"),
-                relative_local_root="bar/baz",
-            ).log_directory,
-            ".pyre/bar/baz",
         )
 
     def test_existent_search_path_with_typeshed(self) -> None:
@@ -1062,7 +1039,7 @@ class ConfigurationTest(testslide.TestCase):
                 )
                 self.assertEqual(configuration.project_root, str(root_path))
                 self.assertEqual(configuration.relative_local_root, None)
-                self.assertEqual(configuration.dot_pyre_directory, root_path / ".pyre")
+                self.assertEqual(configuration.dot_pyre_directory, None)
                 self.assertListEqual(
                     list(configuration.source_directories or []),
                     [SimpleRawElement(str(root_path))],
