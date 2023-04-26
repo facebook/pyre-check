@@ -32,6 +32,10 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def get_typeshed_location(self, download_if_needed: bool = False) -> Optional[Path]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def get_binary_version(self) -> Optional[str]:
         raise NotImplementedError()
 
@@ -84,7 +88,7 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_existent_search_paths(
+    def get_existent_user_specified_search_paths(
         self,
     ) -> List[configuration_module.search_path.Element]:
         raise NotImplementedError()
@@ -175,6 +179,25 @@ class Base(abc.ABC):
             else dot_pyre_directory / relative_local_root
         )
 
+    def get_existent_typeshed_search_paths(
+        self,
+    ) -> List[configuration_module.search_path.Element]:
+        typeshed_root = self.get_typeshed_location(download_if_needed=True)
+        if typeshed_root is None:
+            return []
+        return [
+            configuration_module.search_path.SimpleElement(str(element))
+            for element in find_directories.find_typeshed_search_paths(typeshed_root)
+        ]
+
+    def get_existent_search_paths(
+        self,
+    ) -> List[configuration_module.search_path.Element]:
+        return [
+            *self.get_existent_user_specified_search_paths(),
+            *self.get_existent_typeshed_search_paths(),
+        ]
+
 
 class OpenSource(Base):
     def __init__(
@@ -191,6 +214,11 @@ class OpenSource(Base):
 
     def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
         location = self.configuration.get_binary_respecting_override()
+        # Auto-download is not supported in OSS
+        return Path(location) if location is not None else None
+
+    def get_typeshed_location(self, download_if_needed: bool = False) -> Optional[Path]:
+        location = self.configuration.get_typeshed_respecting_override()
         # Auto-download is not supported in OSS
         return Path(location) if location is not None else None
 
@@ -233,13 +261,10 @@ class OpenSource(Base):
     def get_only_check_paths(self) -> List[str]:
         return list(self.configuration.only_check_paths)
 
-    def get_existent_search_paths(
+    def get_existent_user_specified_search_paths(
         self,
     ) -> List[configuration_module.search_path.Element]:
-        return (
-            self.configuration.expand_and_get_existent_search_paths()
-            + self.configuration.expand_and_get_typeshed_search_paths()
-        )
+        return self.configuration.expand_and_get_existent_search_paths()
 
     def get_existent_source_directories(
         self,
