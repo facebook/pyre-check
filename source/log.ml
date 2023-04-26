@@ -27,6 +27,7 @@ type section =
   | `Progress
   | `Protocols
   | `Server
+  | `CallGraph
   | `Taint
   | `Warning
   ]
@@ -49,6 +50,7 @@ let section_to_string = function
   | `Progress -> "Progress"
   | `Protocols -> "Protocols"
   | `Server -> "Server"
+  | `CallGraph -> "CallGraph"
   | `Taint -> "Taint"
   | `Warning -> "Warning"
 

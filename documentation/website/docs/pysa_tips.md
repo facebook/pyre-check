@@ -124,9 +124,15 @@ of square brackets to access a dictionary.
 ### `pyre_dump()`
 
 You can insert a call to the (non-existent) `pyre_dump()` function in your code
-to enable verbose logging of the forward and backward analysis of the current
-function or method. This can be useful as a starting point to figure out why
-something is/isn't happening. This will produce *very* verbose output.
+to enable verbose logging of the call graph, forward and backward analysis of
+the current function or method. This can be useful as a starting point to figure
+out why something is/isn't happening. This will produce *very* verbose output.
+
+### `pyre_dump_call_graph`
+
+You can insert a call to `pyre_dump_call_graph` (no import needed) in a function
+or method to enable logging of the call graph building. This will produce
+verbose output.
 
 ### `reveal_type(YOUR_VARIABLE)`
 

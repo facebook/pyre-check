@@ -36,6 +36,7 @@ type section =
   | `Progress
   | `Protocols
   | `Server
+  | `CallGraph
   | `Taint
   | `Warning
   ]

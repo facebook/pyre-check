@@ -1502,86 +1502,6 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
   | _ -> None
 
 
-let resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_type ~callee =
-  let callee_type = CallResolution.resolve_ignoring_optional ~resolution callee in
-  let recognized_callees =
-    resolve_recognized_callees
-      ~resolution
-      ~override_graph
-      ~call_indexer
-      ~callee
-      ~return_type
-      ~callee_type
-    |> Option.value ~default:CallCallees.unresolved
-  in
-  if CallCallees.is_partially_resolved recognized_callees then
-    recognized_callees
-  else
-    let callee_kind = callee_kind ~resolution callee callee_type in
-    let calleees_from_type =
-      resolve_callees_from_type
-        ~resolution
-        ~override_graph
-        ~call_indexer
-        ~return_type
-        ~callee_kind
-        callee_type
-    in
-    if CallCallees.is_partially_resolved calleees_from_type then
-      calleees_from_type
-    else
-      resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type callee
-      >>| (fun target -> CallCallees.create ~call_targets:[target] ())
-      |> Option.value ~default:CallCallees.unresolved
-
-
-let resolve_callees
-    ~resolution
-    ~override_graph
-    ~call_indexer
-    ~call:({ Call.callee; arguments } as call)
-  =
-  let higher_order_parameters =
-    let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
-      let return_type =
-        lazy
-          (Expression.Call { callee = argument; arguments = [] }
-          |> Node.create_with_default_location
-          |> CallResolution.resolve_ignoring_untracked ~resolution)
-      in
-      match
-        ( resolve_regular_callees
-            ~resolution
-            ~override_graph
-            ~call_indexer
-            ~return_type
-            ~callee:argument,
-          argument )
-      with
-      | { CallCallees.call_targets = _ :: _ as regular_targets; unresolved; _ }, _ ->
-          Some { HigherOrderParameter.index; call_targets = regular_targets; unresolved }
-      | _, { Node.value = Expression.Lambda _; _ } ->
-          Some { HigherOrderParameter.index; call_targets = []; unresolved = true }
-      | _ -> None
-    in
-    List.filter_mapi arguments ~f:get_higher_order_function_targets
-    |> HigherOrderParameterMap.from_list
-  in
-  (* Resolving the return type can be costly, hence we prefer the annotation on the callee when
-     possible. When that does not work, we fallback to a full resolution of the call expression
-     (done lazily). *)
-  let return_type =
-    lazy
-      (Expression.Call call
-      |> Node.create_with_default_location
-      |> CallResolution.resolve_ignoring_untracked ~resolution)
-  in
-  let regular_callees =
-    resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_type ~callee
-  in
-  { regular_callees with higher_order_parameters }
-
-
 let get_defining_attributes ~resolution ~base_annotation ~attribute =
   let rec get_defining_parents annotation =
     match annotation with
@@ -1720,44 +1640,6 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
       find_targets [] base_annotation
 
 
-let resolve_attribute_access
-    ~resolution
-    ~override_graph
-    ~call_indexer
-    ~attribute_targets
-    ~base
-    ~attribute
-    ~special
-    ~setter
-  =
-  let base_annotation = CallResolution.resolve_ignoring_optional ~resolution base in
-
-  let { property_targets; is_attribute } =
-    resolve_attribute_access_properties
-      ~resolution
-      ~override_graph
-      ~call_indexer
-      ~base_annotation
-      ~attribute
-      ~setter
-  in
-
-  let global_targets =
-    resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special
-    |> List.map ~f:Target.create_object
-    |> List.filter ~f:(Hash_set.mem attribute_targets)
-    |> List.map
-         ~f:
-           (CallTargetIndexer.create_target
-              call_indexer
-              ~implicit_self:false
-              ~implicit_dunder_call:false
-              ~return_type:None)
-  in
-
-  { AttributeAccessCallees.property_targets; global_targets; is_attribute }
-
-
 let resolve_identifier ~resolution ~call_indexer ~identifier =
   Expression.Name (Name.Identifier identifier)
   |> Node.create_with_default_location
@@ -1791,6 +1673,8 @@ module DefineCallGraphFixpoint (Context : sig
 
   val parent : Reference.t option
 
+  val debug : bool
+
   val callees_at_location : UnprocessedLocationCallees.t Location.Table.t
 
   val override_graph : OverrideGraph.SharedMemory.t
@@ -1809,11 +1693,165 @@ struct
     assignment_target: assignment_target option;
   }
 
+  let log format =
+    if Context.debug then
+      Log.dump format
+    else
+      Log.log ~section:`CallGraph format
+
+
   let override_graph = Context.override_graph
 
   let call_indexer = Context.call_indexer
 
   let attribute_targets = Context.attribute_targets
+
+  let resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_type ~callee =
+    let callee_type = CallResolution.resolve_ignoring_optional ~resolution callee in
+    log
+      "Checking if `%a` is a callable, resolved type is `%a`"
+      Expression.pp
+      callee
+      Type.pp
+      callee_type;
+    let recognized_callees =
+      resolve_recognized_callees
+        ~resolution
+        ~override_graph
+        ~call_indexer
+        ~callee
+        ~return_type
+        ~callee_type
+      |> Option.value ~default:CallCallees.unresolved
+    in
+    if CallCallees.is_partially_resolved recognized_callees then
+      let () = log "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
+      recognized_callees
+    else
+      let callee_kind = callee_kind ~resolution callee callee_type in
+      let callees_from_type =
+        resolve_callees_from_type
+          ~resolution
+          ~override_graph
+          ~call_indexer
+          ~return_type
+          ~callee_kind
+          callee_type
+      in
+      if CallCallees.is_partially_resolved callees_from_type then
+        let () =
+          log "Resolved callee from its resolved type:@,`%a`" CallCallees.pp callees_from_type
+        in
+        callees_from_type
+      else
+        resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type callee
+        >>| (fun target ->
+              let () =
+                log
+                  "Bypassed decorators to resolve callees (using global resolution): `%a`"
+                  CallTarget.pp
+                  target
+              in
+              CallCallees.create ~call_targets:[target] ())
+        |> Option.value ~default:CallCallees.unresolved
+
+
+  let resolve_callees
+      ~resolution
+      ~override_graph
+      ~call_indexer
+      ~call:({ Call.callee; arguments } as call)
+    =
+    log
+      "Resolving function call `%a`"
+      Expression.pp
+      (Expression.Call call |> Node.create_with_default_location);
+    let higher_order_parameters =
+      let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
+        let return_type =
+          lazy
+            (Expression.Call { callee = argument; arguments = [] }
+            |> Node.create_with_default_location
+            |> CallResolution.resolve_ignoring_untracked ~resolution)
+        in
+        match
+          ( resolve_regular_callees
+              ~resolution
+              ~override_graph
+              ~call_indexer
+              ~return_type
+              ~callee:argument,
+            argument )
+        with
+        | { CallCallees.call_targets = _ :: _ as regular_targets; unresolved; _ }, _ ->
+            Some { HigherOrderParameter.index; call_targets = regular_targets; unresolved }
+        | _, { Node.value = Expression.Lambda _; _ } ->
+            Some { HigherOrderParameter.index; call_targets = []; unresolved = true }
+        | _ -> None
+      in
+      List.filter_mapi arguments ~f:get_higher_order_function_targets
+      |> HigherOrderParameterMap.from_list
+    in
+    (* Resolving the return type can be costly, hence we prefer the annotation on the callee when
+       possible. When that does not work, we fallback to a full resolution of the call expression
+       (done lazily). *)
+    let return_type =
+      lazy
+        (Expression.Call call
+        |> Node.create_with_default_location
+        |> CallResolution.resolve_ignoring_untracked ~resolution)
+    in
+    let regular_callees =
+      resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_type ~callee
+    in
+    { regular_callees with higher_order_parameters }
+
+
+  let resolve_attribute_access
+      ~resolution
+      ~override_graph
+      ~call_indexer
+      ~attribute_targets
+      ~base
+      ~attribute
+      ~special
+      ~setter
+    =
+    let base_annotation = CallResolution.resolve_ignoring_optional ~resolution base in
+    log
+      "Checking if `%s` is an attribute, property or global variable. Resolved type for base `%a` \
+       is `%a`"
+      attribute
+      Expression.pp
+      base
+      Type.pp
+      base_annotation;
+
+    let { property_targets; is_attribute } =
+      resolve_attribute_access_properties
+        ~resolution
+        ~override_graph
+        ~call_indexer
+        ~base_annotation
+        ~attribute
+        ~setter
+    in
+
+    let global_targets =
+      resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special
+      |> List.map ~f:Target.create_object
+      |> List.filter ~f:(Hash_set.mem attribute_targets)
+      |> List.map
+           ~f:
+             (CallTargetIndexer.create_target
+                call_indexer
+                ~implicit_self:false
+                ~implicit_dunder_call:false
+                ~return_type:None)
+    in
+
+    { AttributeAccessCallees.property_targets; global_targets; is_attribute }
+
 
   (* For the missing flow analysis (`--find-missing-flows=type`), we turn unresolved
    * calls into sinks, so that we may find sources flowing into those calls. *)
@@ -1862,6 +1900,12 @@ struct
       =
       CallTargetIndexer.generate_fresh_indices call_indexer;
       let register_targets ~expression_identifier ?(location = location) callees =
+        log
+          "Resolved callees for expression `%a`:@,%a"
+          Expression.pp
+          expression
+          ExpressionCallees.pp
+          callees;
         Location.Table.update Context.callees_at_location location ~f:(function
             | None -> UnprocessedLocationCallees.singleton ~expression_identifier ~callees
             | Some existing_callees ->
@@ -2161,6 +2205,7 @@ struct
     let widen ~previous:_ ~next:_ ~iteration:_ = ()
 
     let forward_statement ~resolution ~statement =
+      log "Building call graph of statement: `%a`" Ast.Statement.pp statement;
       match Node.value statement with
       | Statement.Assign { Assign.target; value; _ } ->
           CalleeVisitor.visit_expression
@@ -2209,6 +2254,8 @@ let call_graph_of_define
 
     let parent = parent
 
+    let debug = Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
+
     let callees_at_location = callees_at_location
 
     let override_graph = override_graph
@@ -2224,6 +2271,7 @@ let call_graph_of_define
         (Some Configuration.MissingFlowKind.Type)
   end)
   in
+  let () = DefineFixpoint.log "Building call graph of `%a`" Reference.pp name in
   (* Handle parameters. *)
   let () =
     let resolution =
