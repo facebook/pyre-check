@@ -872,13 +872,6 @@ class Configuration:
             LOG.info(f"Found: `{auto_determined_typeshed}`")
             return str(auto_determined_typeshed)
 
-    def get_version_hash_respecting_override(self) -> Optional[str]:
-        overriding_version_hash = os.getenv("PYRE_VERSION_HASH")
-        if overriding_version_hash:
-            LOG.warning(f"Version hash overridden with `{overriding_version_hash}`")
-            return overriding_version_hash
-        return self.version_hash
-
     def get_binary_version(self) -> Optional[str]:
         binary = self.get_binary_respecting_override()
         if binary is None:

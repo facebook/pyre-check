@@ -962,36 +962,6 @@ class ConfigurationTest(testslide.TestCase):
                 None,
             )
 
-    def test_get_version_hash_from_configuration(self) -> None:
-        with switch_environment({}):
-            self.assertEqual(
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    version_hash="abc",
-                ).get_version_hash_respecting_override(),
-                "abc",
-            )
-
-    def test_get_version_hash_environment_override(self) -> None:
-        with switch_environment({"PYRE_VERSION_HASH": "abc"}):
-            self.assertEqual(
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    version_hash=None,
-                ).get_version_hash_respecting_override(),
-                "abc",
-            )
-            self.assertEqual(
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    version_hash="def",
-                ).get_version_hash_respecting_override(),
-                "abc",
-            )
-
     def test_get_valid_extension_suffixes(self) -> None:
         self.assertListEqual(
             Configuration(
