@@ -26,15 +26,27 @@ val fetch_and_externalize
   Target.t ->
   Yojson.Safe.t list
 
-val report
+val produce_errors
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  taint_configuration:TaintConfiguration.SharedMemory.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
-  override_graph:OverrideGraph.SharedMemory.t ->
+  taint_configuration:TaintConfiguration.SharedMemory.t ->
   callables:Target.Set.t ->
-  skipped_overrides:Target.t list ->
-  model_verification_errors:ModelVerificationError.t list ->
   fixpoint_timer:Timer.t ->
   fixpoint_state:Fixpoint.t ->
   Yojson.Safe.t list
+
+val save_results_to_directory
+  :  scheduler:Scheduler.t ->
+  taint_configuration:TaintConfiguration.SharedMemory.t ->
+  result_directory:PyrePath.t ->
+  output_format:Configuration.TaintOutputFormat.t ->
+  local_root:PyrePath.t ->
+  filename_lookup:(Ast.Reference.t -> string option) ->
+  override_graph:OverrideGraph.SharedMemory.t ->
+  skipped_overrides:Target.t list ->
+  callables:Target.Set.t ->
+  model_verification_errors:ModelVerificationError.t list ->
+  fixpoint_state:Fixpoint.t ->
+  errors:Yojson.Safe.t list ->
+  unit

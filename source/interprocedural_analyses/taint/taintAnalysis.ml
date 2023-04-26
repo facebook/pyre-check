@@ -303,6 +303,17 @@ let purge_shared_memory ~environment ~qualifiers =
   ()
 
 
+let compact_ocaml_heap ~name =
+  let timer = Timer.start () in
+  let () = Log.info "Compacting OCaml heap: %s" name in
+  let original = Gc.get () in
+  Gc.set { original with space_overhead = 25; max_overhead = 25 };
+  Gc.compact ();
+  Gc.set original;
+  let name = Printf.sprintf "Compacted OCaml heap: %s" name in
+  Statistics.performance ~name ~phase_name:name ~timer ()
+
+
 let run_taint_analysis
     ~static_analysis_configuration:
       ({
@@ -502,6 +513,8 @@ let run_taint_analysis
 
   let () = Cache.save cache in
 
+  compact_ocaml_heap ~name:"before fixpoint";
+
   Log.info
     "Analysis fixpoint started for %d overrides and %d functions..."
     (List.length override_targets)
@@ -560,17 +573,47 @@ let run_taint_analysis
     ~timer
     ();
 
-  let summary =
-    Reporting.report
+  let errors =
+    Reporting.produce_errors
       ~scheduler
       ~static_analysis_configuration
       ~taint_configuration:taint_configuration_shared_memory
       ~filename_lookup
-      ~override_graph:override_graph_shared_memory
       ~callables
-      ~skipped_overrides
-      ~model_verification_errors
       ~fixpoint_timer
       ~fixpoint_state
+  in
+
+  compact_ocaml_heap ~name:"before saving results";
+
+  let {
+    Configuration.StaticAnalysis.save_results_to;
+    output_format;
+    configuration = { local_root; _ };
+    _;
+  }
+    =
+    static_analysis_configuration
+  in
+  (* Dump results to output directory if one was provided, and return a list of json (empty whenever
+     we dumped to a directory) to summarize *)
+  let summary =
+    match save_results_to with
+    | Some result_directory ->
+        Reporting.save_results_to_directory
+          ~scheduler
+          ~taint_configuration:taint_configuration_shared_memory
+          ~result_directory
+          ~output_format
+          ~local_root
+          ~filename_lookup
+          ~override_graph:override_graph_shared_memory
+          ~callables
+          ~skipped_overrides
+          ~model_verification_errors
+          ~fixpoint_state
+          ~errors;
+        []
+    | _ -> errors
   in
   Yojson.Safe.pretty_to_string (`List summary) |> Log.print "%s"
