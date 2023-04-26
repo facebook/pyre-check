@@ -158,7 +158,10 @@ let process_incremental_update_request
         |> List.dedup_and_sort ~compare:ArtifactPath.Event.compare
       in
       let () =
-        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        Scheduler.with_scheduler
+          ~configuration
+          ~should_log_exception:(fun _ -> true)
+          ~f:(fun scheduler ->
             OverlaidEnvironment.run_update_root overlaid_environment ~scheduler changed_paths)
       in
       List.filter subscriptions ~f:Subscription.wants_type_errors

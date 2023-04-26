@@ -141,7 +141,10 @@ let with_performance_tracking ~debug f =
 
 
 let do_check configuration =
-  Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+  Scheduler.with_scheduler
+    ~configuration
+    ~should_log_exception:(fun _ -> true)
+    ~f:(fun scheduler ->
       with_performance_tracking ~debug:configuration.debug (fun () ->
           let read_write_environment =
             Analysis.EnvironmentControls.create ~populate_call_graph:false configuration

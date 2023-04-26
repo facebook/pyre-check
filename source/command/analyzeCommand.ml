@@ -316,7 +316,13 @@ let run_analyze analyze_configuration =
     AnalyzeConfiguration.analysis_configuration_of analyze_configuration
   in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
-      Scheduler.with_scheduler ~configuration:analysis_configuration ~f:(fun scheduler ->
+      Scheduler.with_scheduler
+        ~configuration:analysis_configuration
+        ~should_log_exception:(function
+          | Taint.TaintConfiguration.TaintConfigurationError _ -> false
+          | Taint.ModelVerificationError.ModelVerificationErrors _ -> false
+          | _ -> true)
+        ~f:(fun scheduler ->
           with_performance_tracking ~debug ~f:(fun () ->
               TaintAnalysis.run_taint_analysis
                 ~static_analysis_configuration

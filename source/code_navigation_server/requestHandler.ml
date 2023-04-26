@@ -251,7 +251,10 @@ let handle_non_critical_file_update ~subscriptions ~environment artifact_path_ev
           |> ErrorsEnvironment.ReadOnly.controls
           |> EnvironmentControls.configuration
         in
-        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        Scheduler.with_scheduler
+          ~configuration
+          ~should_log_exception:(fun _ -> true)
+          ~f:(fun scheduler ->
             OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
         |> Lwt.return
       in

@@ -119,7 +119,7 @@ let destroy = function
   | ParallelScheduler workers -> List.iter workers ~f:Worker.kill
 
 
-let with_scheduler ~configuration ~f =
+let with_scheduler ~configuration ~should_log_exception ~f =
   let scheduler = create ~configuration () in
   match scheduler with
   | SequentialScheduler -> f SequentialScheduler
@@ -127,12 +127,13 @@ let with_scheduler ~configuration ~f =
       let wrapped_f scheduler =
         try f scheduler with
         | exn ->
-            (* The backtrace is lost if the exception is caught at the top level, because of Lwt.
-             * Let's print the exception here to ease debugging. *)
-            Log.log_exception
-              "Failure inside parallel with_scheduler operation."
-              exn
-              (Worker.exception_backtrace exn);
+            if should_log_exception exn then
+              (* The backtrace is lost if the exception is caught at the top level, because of Lwt.
+               * Let's print the exception here to ease debugging. *)
+              Log.log_exception
+                "Failure inside parallel with_scheduler operation."
+                exn
+                (Worker.exception_backtrace exn);
             raise exn
       in
       Exn.protectx ~f:wrapped_f scheduler ~finally:(fun _ -> destroy scheduler)

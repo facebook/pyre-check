@@ -53,7 +53,11 @@ val create_sequential : unit -> t
 
 val destroy : t -> unit
 
-val with_scheduler : configuration:Configuration.Analysis.t -> f:(t -> 'a) -> 'a
+val with_scheduler
+  :  configuration:Configuration.Analysis.t ->
+  should_log_exception:(exn -> bool) ->
+  f:(t -> 'a) ->
+  'a
 
 val run_process : (unit -> 'result) -> 'result
 

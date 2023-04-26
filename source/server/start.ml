@@ -218,7 +218,10 @@ let initialize_server_state
   let start_from_scratch ~build_system () =
     Log.info "Initializing server state from scratch...";
     let overlaid_environment =
-      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+      Scheduler.with_scheduler
+        ~configuration
+        ~should_log_exception:(fun _ -> true)
+        ~f:(fun scheduler ->
           let environment = Analysis.ErrorsEnvironment.create environment_controls in
           let () =
             if skip_initial_type_check then
