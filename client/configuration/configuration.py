@@ -657,12 +657,6 @@ class Configuration:
             self.relative_local_root,
         )
 
-    @property
-    def local_root(self) -> Optional[str]:
-        if self.relative_local_root is None:
-            return None
-        return str(self.global_root / self.relative_local_root)
-
     def to_json(self) -> Dict[str, object]:
         """
         This method is for display purpose only. Do *NOT* expect this method
@@ -1024,8 +1018,8 @@ def check_nested_local_configuration(configuration: Configuration) -> None:
     """
     Raises `InvalidConfiguration` if the check fails.
     """
-    local_root = configuration.local_root
-    if local_root is None:
+    relative_local_root = configuration.relative_local_root
+    if relative_local_root is None:
         return
 
     def is_subdirectory(child: Path, parent: Path) -> bool:
@@ -1033,7 +1027,7 @@ def check_nested_local_configuration(configuration: Configuration) -> None:
 
     # We search from the parent of the local root, looking for another local
     # configuration file that lives above the current one
-    local_root_path = Path(local_root).resolve()
+    local_root_path = (configuration.global_root / relative_local_root).resolve()
     current_directory = local_root_path.parent
     while True:
         found_root = find_directories.find_global_and_local_root(current_directory)

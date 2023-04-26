@@ -696,29 +696,6 @@ class ConfigurationTest(testslide.TestCase):
             get_default_site_roots(), [user_site_package, global_site_package]
         )
 
-    def test_derived_attributes(self) -> None:
-        self.assertIsNone(
-            Configuration(
-                global_root=Path("foo"), dot_pyre_directory=Path(".pyre")
-            ).local_root
-        )
-        self.assertEqual(
-            Configuration(
-                global_root=Path("foo"),
-                dot_pyre_directory=Path(".pyre"),
-                relative_local_root="bar",
-            ).local_root,
-            "foo/bar",
-        )
-        self.assertEqual(
-            Configuration(
-                global_root=Path("foo"),
-                dot_pyre_directory=Path(".pyre"),
-                relative_local_root="bar/baz",
-            ).local_root,
-            "foo/bar/baz",
-        )
-
     def test_existent_search_path_with_typeshed(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
