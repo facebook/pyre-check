@@ -382,6 +382,9 @@ def run(
             "Cannot locate a Pyre binary to run."
         )
 
+    save_results_to = analyze_arguments.save_results_to
+    if save_results_to is not None:
+        Path(save_results_to).mkdir(parents=True, exist_ok=True)
     with create_analyze_arguments_and_cleanup(
         configuration, analyze_arguments
     ) as arguments:
@@ -401,5 +404,5 @@ def run(
                 command=analyze_command,
                 environment=environment,
                 output=analyze_arguments.output,
-                forward_stdout=(analyze_arguments.save_results_to is None),
+                forward_stdout=(save_results_to is None),
             )

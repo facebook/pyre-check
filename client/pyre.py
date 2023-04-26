@@ -31,7 +31,6 @@ from . import (
     command_arguments,
     commands,
     configuration as configuration_module,
-    filesystem,
     find_directories,
     frontend_configuration,
     identifiers,
@@ -391,7 +390,7 @@ def pyre(
 @click.argument("analysis", type=str, default="taint")
 @click.option(
     "--taint-models-path",
-    type=filesystem.readable_directory,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True),
     multiple=True,
     help="Location of taint models.",
 )
@@ -415,7 +414,7 @@ def pyre(
 )
 @click.option(
     "--save-results-to",
-    type=filesystem.writable_directory,
+    type=click.Path(),
     help="Directory to write analysis results to.",
 )
 @click.option(
@@ -666,7 +665,7 @@ def incremental(
 @pyre.command()
 @click.argument(
     "paths_to_modify",
-    type=filesystem.file_or_directory_exists,
+    type=click.Path(exists=True),
     nargs=-1,
 )
 @click.option(
