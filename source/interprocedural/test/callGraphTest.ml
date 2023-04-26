@@ -1334,6 +1334,7 @@ let test_call_graph_of_define context =
                   ())) );
       ]
     ();
+  (* Imprecise call graph due to `@lru_cache` and inner functions. *)
   assert_call_graph_of_define
     ~source:
       {|
@@ -1360,6 +1361,43 @@ let test_call_graph_of_define context =
                         ~return_type:(Some ReturnType.integer)
                         ~receiver_type:(Type.Primitive "test.C")
                         (Target.Method { class_name = "test.C"; method_name = "m"; kind = Normal });
+                    ]
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from functools import lru_cache
+
+      def foo():
+        @lru_cache()
+        def inner() -> int:
+          return 0
+
+        inner()
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "9:2-9:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~return_type:(Some ReturnType.integer)
+                        ~implicit_self:true
+                        ~implicit_dunder_call:true
+                        ~receiver_type:
+                          (Type.parametric "functools._lru_cache_wrapper" [Single Type.integer])
+                        (Target.Method
+                           {
+                             class_name = "functools._lru_cache_wrapper";
+                             method_name = "__call__";
+                             kind = Normal;
+                           });
                     ]
                   ())) );
       ]
