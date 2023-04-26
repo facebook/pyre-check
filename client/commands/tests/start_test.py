@@ -295,7 +295,7 @@ class StartTest(testslide.TestCase):
 
     def test_get_saved_state_action(self) -> None:
         empty_configuration = configuration_module.Configuration(
-            project_root="irrelevant", dot_pyre_directory=Path("irrelevant")
+            global_root=Path("irrelevant"), dot_pyre_directory=Path("irrelevant")
         )
         self.assertIsNone(
             get_saved_state_action(

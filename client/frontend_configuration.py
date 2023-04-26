@@ -201,7 +201,7 @@ class OpenSource(Base):
         return json.dumps(self.configuration.to_json(), indent=2)
 
     def get_global_root(self) -> Path:
-        return Path(self.configuration.project_root)
+        return self.configuration.global_root
 
     def get_relative_local_root(self) -> Optional[str]:
         return self.configuration.relative_local_root

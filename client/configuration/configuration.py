@@ -545,7 +545,7 @@ def merge_partial_configurations(
 
 @dataclasses.dataclass(frozen=True)
 class Configuration:
-    project_root: str
+    global_root: Path
 
     binary: Optional[str] = None
     buck_mode: Optional[platform_aware.PlatformAware[str]] = None
@@ -586,7 +586,7 @@ class Configuration:
 
     @staticmethod
     def from_partial_configuration(
-        project_root: Path,
+        global_root: Path,
         relative_local_root: Optional[str],
         partial_configuration: PartialConfiguration,
     ) -> "Configuration":
@@ -595,13 +595,13 @@ class Configuration:
         only_check_paths = partial_configuration.only_check_paths
 
         return Configuration(
-            project_root=str(project_root),
+            global_root=global_root,
             dot_pyre_directory=partial_configuration.dot_pyre_directory,
             binary=partial_configuration.binary,
             buck_mode=partial_configuration.buck_mode,
             bxl_builder=partial_configuration.bxl_builder,
             only_check_paths=[
-                expand_global_root(path, global_root=str(project_root))
+                expand_global_root(path, global_root=str(global_root))
                 for path in only_check_paths
             ],
             enable_readonly_analysis=partial_configuration.enable_readonly_analysis,
@@ -611,7 +611,7 @@ class Configuration:
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             ignore_all_errors=_expand_all_globs(
-                expand_global_root(path, global_root=str(project_root))
+                expand_global_root(path, global_root=str(global_root))
                 for path in ignore_all_errors
             ),
             include_suppressed_errors=partial_configuration.include_suppressed_errors,
@@ -624,7 +624,7 @@ class Configuration:
             python_version=partial_configuration.python_version,
             relative_local_root=relative_local_root,
             search_path=[
-                path.expand_global_root(str(project_root)) for path in search_path
+                path.expand_global_root(str(global_root)) for path in search_path
             ],
             shared_memory=partial_configuration.shared_memory,
             site_package_search_strategy=partial_configuration.site_package_search_strategy
@@ -653,7 +653,7 @@ class Configuration:
         on fields that come from the command arguments.
         """
         return identifiers.get_project_identifier(
-            Path(self.project_root),
+            self.global_root,
             self.relative_local_root,
         )
 
@@ -661,7 +661,7 @@ class Configuration:
     def local_root(self) -> Optional[str]:
         if self.relative_local_root is None:
             return None
-        return os.path.join(self.project_root, self.relative_local_root)
+        return str(self.global_root / self.relative_local_root)
 
     def to_json(self) -> Dict[str, object]:
         """
@@ -686,7 +686,7 @@ class Configuration:
         unwatched_dependency = self.unwatched_dependency
         version_hash = self.version_hash
         return {
-            "global_root": self.project_root,
+            "global_root": str(self.global_root),
             "dot_pyre_directory": str(self.dot_pyre_directory),
             **({"binary": binary} if binary is not None else {}),
             **({"buck_mode": buck_mode.to_json()} if buck_mode is not None else {}),

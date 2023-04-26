@@ -22,7 +22,7 @@ class FrontendConfigurationTest(testslide.TestCase):
         self.assertEqual(
             frontend_configuration.OpenSource(
                 configuration_module.Configuration(
-                    project_root="foo", dot_pyre_directory=Path(".pyre")
+                    global_root=Path("foo"), dot_pyre_directory=Path(".pyre")
                 )
             ).get_dot_pyre_directory(),
             Path(".pyre"),
@@ -30,7 +30,7 @@ class FrontendConfigurationTest(testslide.TestCase):
         self.assertEqual(
             frontend_configuration.OpenSource(
                 configuration_module.Configuration(
-                    project_root="foo", dot_pyre_directory=None
+                    global_root=Path("foo"), dot_pyre_directory=None
                 )
             ).get_dot_pyre_directory(),
             Path("foo") / find_directories.LOG_DIRECTORY,
@@ -45,7 +45,7 @@ class FrontendConfigurationTest(testslide.TestCase):
             self.assertEqual(
                 frontend_configuration.OpenSource(
                     configuration_module.Configuration(
-                        project_root="foo",
+                        global_root=Path("foo"),
                         dot_pyre_directory=dot_pyre_directory,
                         relative_local_root=relative_local_root,
                     )

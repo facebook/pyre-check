@@ -292,7 +292,7 @@ class ArgumentsTest(testslide.TestCase):
                 get_source_path(
                     frontend_configuration.OpenSource(
                         configuration.Configuration(
-                            project_root=str(root_path / "project"),
+                            global_root=root_path / "project",
                             dot_pyre_directory=(root_path / ".pyre"),
                             source_directories=[raw_element],
                         )
@@ -311,7 +311,7 @@ class ArgumentsTest(testslide.TestCase):
                 get_source_path(
                     frontend_configuration.OpenSource(
                         configuration.Configuration(
-                            project_root=str(root_path / "project"),
+                            global_root=root_path / "project",
                             dot_pyre_directory=(root_path / ".pyre"),
                             source_directories=[raw_element],
                         )
@@ -339,7 +339,7 @@ class ArgumentsTest(testslide.TestCase):
                 get_source_path(
                     frontend_configuration.OpenSource(
                         configuration.Configuration(
-                            project_root=str(root_path / "project"),
+                            global_root=root_path / "project",
                             relative_local_root="local",
                             dot_pyre_directory=(root_path / ".pyre"),
                             source_directories=[raw_element],
@@ -371,7 +371,7 @@ class ArgumentsTest(testslide.TestCase):
                 get_source_path(
                     frontend_configuration.OpenSource(
                         configuration.Configuration(
-                            project_root=str(root_path / "project"),
+                            global_root=root_path / "project",
                             dot_pyre_directory=(root_path / ".pyre"),
                             source_directories=[raw_element],
                             unwatched_dependency=unwatched_dependency,
@@ -539,7 +539,7 @@ class ArgumentsTest(testslide.TestCase):
                 get_source_path(
                     frontend_configuration.OpenSource(
                         configuration.Configuration(
-                            project_root=str(root_path / "project"),
+                            global_root=root_path / "project",
                             dot_pyre_directory=(root_path / ".pyre"),
                             targets=["//ct:frog"],
                         )
@@ -552,7 +552,7 @@ class ArgumentsTest(testslide.TestCase):
             get_source_path(
                 frontend_configuration.OpenSource(
                     configuration.Configuration(
-                        project_root="project",
+                        global_root=Path("project"),
                         dot_pyre_directory=Path(".pyre"),
                         source_directories=None,
                         targets=None,
@@ -566,7 +566,7 @@ class ArgumentsTest(testslide.TestCase):
             get_source_path(
                 frontend_configuration.OpenSource(
                     configuration.Configuration(
-                        project_root="project",
+                        global_root=Path("project"),
                         dot_pyre_directory=Path(".pyre"),
                         source_directories=[search_path.SimpleRawElement("src")],
                         targets=["//ct:ayla"],
@@ -609,7 +609,7 @@ class ArgumentsTest(testslide.TestCase):
 
             test_configuration = frontend_configuration.OpenSource(
                 configuration.Configuration(
-                    project_root=str(root_path),
+                    global_root=root_path,
                     dot_pyre_directory=Path(".pyre"),
                     only_check_paths=[
                         str(root_path / "a"),
@@ -630,7 +630,7 @@ class ArgumentsTest(testslide.TestCase):
 
             test_configuration = frontend_configuration.OpenSource(
                 configuration.Configuration(
-                    project_root=str(root_path),
+                    global_root=root_path,
                     dot_pyre_directory=Path(".pyre"),
                     only_check_paths=[
                         str(root_path / "a"),
@@ -651,7 +651,7 @@ class ArgumentsTest(testslide.TestCase):
 
             test_configuration = frontend_configuration.OpenSource(
                 configuration.Configuration(
-                    project_root=str(root_path),
+                    global_root=root_path,
                     dot_pyre_directory=Path(".pyre"),
                     only_check_paths=[],
                 )

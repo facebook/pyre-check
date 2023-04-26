@@ -612,7 +612,7 @@ class PartialConfigurationTest(unittest.TestCase):
 class ConfigurationTest(testslide.TestCase):
     def test_from_partial_configuration(self) -> None:
         configuration = Configuration.from_partial_configuration(
-            project_root=Path("root"),
+            global_root=Path("root"),
             relative_local_root="local",
             partial_configuration=PartialConfiguration(
                 binary="binary",
@@ -645,7 +645,7 @@ class ConfigurationTest(testslide.TestCase):
                 version_hash="abc",
             ),
         )
-        self.assertEqual(configuration.project_root, "root")
+        self.assertEqual(configuration.global_root, Path("root"))
         self.assertEqual(configuration.relative_local_root, "local")
         self.assertEqual(configuration.binary, "binary")
         self.assertIsNotNone(configuration.buck_mode)
@@ -699,12 +699,12 @@ class ConfigurationTest(testslide.TestCase):
     def test_derived_attributes(self) -> None:
         self.assertIsNone(
             Configuration(
-                project_root="foo", dot_pyre_directory=Path(".pyre")
+                global_root=Path("foo"), dot_pyre_directory=Path(".pyre")
             ).local_root
         )
         self.assertEqual(
             Configuration(
-                project_root="foo",
+                global_root=Path("foo"),
                 dot_pyre_directory=Path(".pyre"),
                 relative_local_root="bar",
             ).local_root,
@@ -712,7 +712,7 @@ class ConfigurationTest(testslide.TestCase):
         )
         self.assertEqual(
             Configuration(
-                project_root="foo",
+                global_root=Path("foo"),
                 dot_pyre_directory=Path(".pyre"),
                 relative_local_root="bar/baz",
             ).local_root,
@@ -729,7 +729,7 @@ class ConfigurationTest(testslide.TestCase):
 
             self.assertListEqual(
                 Configuration(
-                    project_root="irrelevant",
+                    global_root=Path("irrelevant"),
                     dot_pyre_directory=Path(".pyre"),
                     search_path=[
                         SimpleRawElement(str(root_path / "a")),
@@ -751,7 +751,7 @@ class ConfigurationTest(testslide.TestCase):
 
             self.assertListEqual(
                 Configuration(
-                    project_root="irrelevant",
+                    global_root=Path("irrelevant"),
                     dot_pyre_directory=Path(".pyre"),
                     search_path=[
                         SimpleRawElement(str(root_path / "a")),
@@ -770,7 +770,7 @@ class ConfigurationTest(testslide.TestCase):
             ensure_files_exist(root_path, ["a/b"])
             self.assertIsNotNone(
                 Configuration(
-                    project_root=str(root_path),
+                    global_root=root_path,
                     dot_pyre_directory=Path(".pyre"),
                     unwatched_dependency=UnwatchedDependency(
                         change_indicator="indicator",
@@ -782,7 +782,7 @@ class ConfigurationTest(testslide.TestCase):
             )
             self.assertIsNone(
                 Configuration(
-                    project_root=str(root_path),
+                    global_root=root_path,
                     dot_pyre_directory=Path(".pyre"),
                     unwatched_dependency=UnwatchedDependency(
                         change_indicator="indicator",
@@ -794,7 +794,7 @@ class ConfigurationTest(testslide.TestCase):
             )
             self.assertIsNone(
                 Configuration(
-                    project_root=str(root_path),
+                    global_root=root_path,
                     dot_pyre_directory=Path(".pyre"),
                     unwatched_dependency=UnwatchedDependency(
                         change_indicator="indicator",
@@ -817,7 +817,7 @@ class ConfigurationTest(testslide.TestCase):
 
         self.assertEqual(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 binary=binary_path,
             ).get_binary_version(),
@@ -835,7 +835,7 @@ class ConfigurationTest(testslide.TestCase):
 
         self.assertIsNone(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 binary=binary_path,
             ).get_binary_version()
@@ -844,7 +844,7 @@ class ConfigurationTest(testslide.TestCase):
     def test_get_number_of_workers(self) -> None:
         self.assertEqual(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 number_of_workers=42,
             ).get_number_of_workers(),
@@ -853,7 +853,7 @@ class ConfigurationTest(testslide.TestCase):
         # Whatever the default number is, it should be positive
         self.assertGreater(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 number_of_workers=None,
             ).get_number_of_workers(),
@@ -863,7 +863,7 @@ class ConfigurationTest(testslide.TestCase):
     def test_get_python_versions(self) -> None:
         self.assertEqual(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 python_version=PythonVersion(major=3, minor=6, micro=7),
             ).get_python_version(),
@@ -871,7 +871,7 @@ class ConfigurationTest(testslide.TestCase):
         )
         self.assertEqual(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 python_version=None,
             ).get_python_version(),
@@ -886,7 +886,7 @@ class ConfigurationTest(testslide.TestCase):
         with switch_environment({}):
             self.assertEqual(
                 Configuration(
-                    project_root="irrelevant",
+                    global_root=Path("irrelevant"),
                     dot_pyre_directory=Path(".pyre"),
                     binary="foo",
                 ).get_binary_respecting_override(),
@@ -901,7 +901,7 @@ class ConfigurationTest(testslide.TestCase):
         with switch_environment({}):
             self.assertEqual(
                 Configuration(
-                    project_root="irrelevant",
+                    global_root=Path("irrelevant"),
                     dot_pyre_directory=Path(".pyre"),
                     binary=None,
                 ).get_binary_respecting_override(),
@@ -914,7 +914,7 @@ class ConfigurationTest(testslide.TestCase):
         with switch_environment({}):
             self.assertEqual(
                 Configuration(
-                    project_root="irrelevant",
+                    global_root=Path("irrelevant"),
                     dot_pyre_directory=Path(".pyre"),
                     binary=None,
                 ).get_binary_respecting_override(),
@@ -925,7 +925,7 @@ class ConfigurationTest(testslide.TestCase):
         with switch_environment({}):
             self.assertEqual(
                 Configuration(
-                    project_root="irrelevant",
+                    global_root=Path("irrelevant"),
                     dot_pyre_directory=Path(".pyre"),
                     typeshed="foo",
                 ).get_typeshed_respecting_override(),
@@ -940,7 +940,7 @@ class ConfigurationTest(testslide.TestCase):
         with switch_environment({}):
             self.assertEqual(
                 Configuration(
-                    project_root="irrelevant",
+                    global_root=Path("irrelevant"),
                     dot_pyre_directory=Path(".pyre"),
                     typeshed=None,
                 ).get_typeshed_respecting_override(),
@@ -955,7 +955,7 @@ class ConfigurationTest(testslide.TestCase):
         with switch_environment({}):
             self.assertEqual(
                 Configuration(
-                    project_root="irrelevant",
+                    global_root=Path("irrelevant"),
                     dot_pyre_directory=Path(".pyre"),
                     typeshed=None,
                 ).get_typeshed_respecting_override(),
@@ -965,7 +965,7 @@ class ConfigurationTest(testslide.TestCase):
     def test_get_valid_extension_suffixes(self) -> None:
         self.assertListEqual(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 extensions=[],
             ).get_valid_extension_suffixes(),
@@ -973,7 +973,7 @@ class ConfigurationTest(testslide.TestCase):
         )
         self.assertListEqual(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 extensions=[
                     ExtensionElement(".foo", False),
@@ -984,7 +984,7 @@ class ConfigurationTest(testslide.TestCase):
         )
         self.assertListEqual(
             Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 extensions=[
                     ExtensionElement("foo", False),
@@ -1007,7 +1007,7 @@ class ConfigurationTest(testslide.TestCase):
                     ),
                     base_directory=Path(root),
                 )
-                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.global_root, root_path)
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, None)
                 self.assertListEqual(
@@ -1029,7 +1029,7 @@ class ConfigurationTest(testslide.TestCase):
                     ),
                     base_directory=Path(root),
                 )
-                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.global_root, root_path)
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
@@ -1053,7 +1053,7 @@ class ConfigurationTest(testslide.TestCase):
                     ),
                     base_directory=Path(root),
                 )
-                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.global_root, root_path)
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
@@ -1076,7 +1076,7 @@ class ConfigurationTest(testslide.TestCase):
                     base_directory=Path("."),
                     configuration=CODENAV_CONFIGURATION_FILE,
                 )
-                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.global_root, root_path)
 
     def test_create_from_codenav_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -1095,7 +1095,7 @@ class ConfigurationTest(testslide.TestCase):
                     base_directory=Path(root),
                     configuration=CODENAV_CONFIGURATION_FILE,
                 )
-                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.global_root, root_path)
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
@@ -1147,7 +1147,7 @@ class ConfigurationTest(testslide.TestCase):
                     base_directory=Path(root),
                     configuration=CODENAV_CONFIGURATION_FILE,
                 )
-                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.global_root, root_path)
                 self.assertEqual(configuration.relative_local_root, None)
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
@@ -1178,7 +1178,7 @@ class ConfigurationTest(testslide.TestCase):
                     ),
                     base_directory=Path(root),
                 )
-                self.assertEqual(configuration.project_root, str(root_path))
+                self.assertEqual(configuration.global_root, root_path)
                 self.assertEqual(configuration.relative_local_root, "local")
                 self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
                 self.assertEqual(configuration.strict, True)
@@ -1204,7 +1204,7 @@ class ConfigurationTest(testslide.TestCase):
             try:
                 check_nested_local_configuration(
                     Configuration(
-                        project_root=root,
+                        global_root=root_path,
                         dot_pyre_directory=Path(".pyre"),
                         relative_local_root="local",
                     )
@@ -1222,7 +1222,7 @@ class ConfigurationTest(testslide.TestCase):
             with self.assertRaises(InvalidConfiguration):
                 check_nested_local_configuration(
                     Configuration(
-                        project_root=root,
+                        global_root=root_path,
                         dot_pyre_directory=Path(".pyre"),
                         relative_local_root="nest/local",
                     )
@@ -1242,7 +1242,7 @@ class ConfigurationTest(testslide.TestCase):
             try:
                 check_nested_local_configuration(
                     Configuration(
-                        project_root=root,
+                        global_root=root_path,
                         dot_pyre_directory=Path(".pyre"),
                         relative_local_root="nest/local",
                     )
@@ -1264,7 +1264,7 @@ class ConfigurationTest(testslide.TestCase):
             try:
                 check_nested_local_configuration(
                     Configuration(
-                        project_root=root,
+                        global_root=root_path,
                         dot_pyre_directory=Path(".pyre"),
                         relative_local_root="nest/local",
                     )
@@ -1287,7 +1287,7 @@ class ConfigurationTest(testslide.TestCase):
             with self.assertRaises(InvalidConfiguration):
                 check_nested_local_configuration(
                     Configuration(
-                        project_root=root,
+                        global_root=root_path,
                         dot_pyre_directory=Path(".pyre"),
                         relative_local_root="nest0/nest1/local",
                     )
@@ -1312,7 +1312,7 @@ class ConfigurationTest(testslide.TestCase):
             try:
                 check_nested_local_configuration(
                     Configuration(
-                        project_root=root,
+                        global_root=root_path,
                         dot_pyre_directory=Path(".pyre"),
                         relative_local_root="nest0/nest1/local",
                     )
@@ -1338,7 +1338,7 @@ class ConfigurationTest(testslide.TestCase):
 
             check_nested_local_configuration(
                 Configuration(
-                    project_root=root,
+                    global_root=root_path,
                     dot_pyre_directory=Path(".pyre"),
                     relative_local_root="nest0/nest1/local",
                 )
@@ -1358,7 +1358,7 @@ class ConfigurationTest(testslide.TestCase):
 
             check_nested_local_configuration(
                 Configuration(
-                    project_root=root,
+                    global_root=root_path,
                     dot_pyre_directory=Path(".pyre"),
                     relative_local_root="nest0/nest1/local",
                 )
@@ -1369,7 +1369,7 @@ class ConfigurationTest(testslide.TestCase):
             root_path = Path(root)
             ensure_directories_exists(root_path, ["a1", "a2", "b", "c"])
             source_directories = Configuration(
-                project_root="irrelevant",
+                global_root=Path("irrelevant"),
                 dot_pyre_directory=Path(".pyre"),
                 source_directories=[
                     SimpleRawElement(str(root_path / "a*")),

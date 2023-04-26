@@ -32,7 +32,7 @@ from ..daemon_launcher import (
 class FakeFrontendConfiguration(frontend_configuration.OpenSource):
     def __init__(self) -> None:
         self.configuration = configuration_module.Configuration(
-            project_root="test", targets=[]
+            global_root=Path("test"), targets=[]
         )
 
     def get_project_identifier(self) -> str:
