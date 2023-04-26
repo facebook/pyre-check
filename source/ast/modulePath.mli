@@ -60,3 +60,5 @@ val is_init : t -> bool
 val is_internal_path : configuration:Configuration.Analysis.t -> ArtifactPath.t -> bool
 
 val expand_relative_import : from:Reference.t -> t -> Reference.t
+
+val equal_raw_paths : t -> t -> bool

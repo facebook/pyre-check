@@ -311,3 +311,6 @@ let expand_relative_import ~from { is_init; qualifier; _ } =
           Reference.empty
       in
       Reference.combine prefix postfix
+
+
+let equal_raw_paths { raw = left; _ } { raw = right; _ } = Raw.equal left right

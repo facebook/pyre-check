@@ -382,6 +382,17 @@ module ExplicitModules = struct
       | [] -> None
 
 
+    let fail_on_module_path_invariant ~description ~left ~right =
+      let failure_message =
+        Format.asprintf
+          "Invariant violation (%s): left = %s, right = %s"
+          description
+          (ModulePath.sexp_of_t left |> Sexp.to_string)
+          (ModulePath.sexp_of_t right |> Sexp.to_string)
+      in
+      failwith failure_message
+
+
     let insert_module_path ~configuration ~to_insert existing_paths =
       let rec insert sofar = function
         | [] -> List.rev_append sofar [to_insert]
@@ -390,8 +401,11 @@ module ExplicitModules = struct
             | 0 ->
                 (* We have the following precondition for files that are in the same module: *)
                 (* `same_module_compare a b = 0` implies `equal a b` *)
-                assert (ModulePath.equal to_insert current_path);
-
+                if not (ModulePath.equal to_insert current_path) then
+                  fail_on_module_path_invariant
+                    ~description:"Module paths that compare with 0 should be equal when inserting"
+                    ~left:to_insert
+                    ~right:current_path;
                 (* Duplicate entry detected. Do nothing *)
                 existing_paths
             | x when x < 0 -> List.rev_append sofar (to_insert :: existing)
@@ -408,12 +422,15 @@ module ExplicitModules = struct
             | 0 ->
                 let () =
                   (* For removed files, we only check for equality on relative path & priority. *)
-                  (* There's a corner case (where symlink is involved) that may cause `removed` to
-                     have a different `is_external` flag. *)
-                  let partially_equal { ModulePath.raw = left; _ } { ModulePath.raw = right; _ } =
-                    ModulePath.Raw.equal left right
-                  in
-                  assert (partially_equal to_remove current_path)
+                  (* There's a corner case (where an in-project file's symlink gas been removed)
+                     that may cause `removed` to have a different `is_external` flag, since we
+                     cannot follow a deleted symlink. *)
+                  if not (ModulePath.equal_raw_paths to_remove current_path) then
+                    fail_on_module_path_invariant
+                      ~description:
+                        "Module paths that compare with 0 should have same raw path when removing"
+                      ~left:to_remove
+                      ~right:current_path
                 in
                 List.rev_append sofar rest
             | x when x < 0 -> existing_paths
