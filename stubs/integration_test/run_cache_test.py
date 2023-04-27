@@ -291,11 +291,11 @@ def run_test_changed_models(
     new_issue = {
         "code": 5001,
         "column": 9,
-        "define": "integration_test.lru_cache_test.test_cached_sanitizer",
+        "define": "integration_test.functools.test_cached_sanitizer",
         "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
         "line": 20,
         "name": "Possible shell injection",
-        "path": "fixture_source/integration_test/lru_cache_test.py",
+        "path": "fixture_source/integration_test/functools.py",
         "stop_column": 18,
         "stop_line": 20,
     }
