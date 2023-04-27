@@ -439,6 +439,14 @@ module CallCallees = struct
     is_method_of_class ~is_class_name callees
 
 
+  let is_string_method callees =
+    let is_class_name = function
+      | "str" -> true
+      | _ -> false
+    in
+    is_method_of_class ~is_class_name callees
+
+
   let is_object_new = function
     | [] -> (* Unresolved call, assume it's object.__new__ *) true
     | [

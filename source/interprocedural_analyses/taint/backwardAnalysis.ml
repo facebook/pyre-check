@@ -1751,77 +1751,37 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~string_literal:value
           [expression]
     | {
-        callee =
-          {
-            Node.value = Name (Name.Attribute { base; attribute = "__add__" as function_name; _ });
-            _;
-          };
-        arguments;
-      }
-    | {
-        callee =
-          {
-            Node.value = Name (Name.Attribute { base; attribute = "__mod__" as function_name; _ });
-            _;
-          };
-        arguments;
-      }
-    | {
-        callee =
-          {
-            Node.value = Name (Name.Attribute { base; attribute = "format" as function_name; _ });
-            _;
-          };
-        arguments;
-      } ->
-        (* User-defined or inferred models. *)
-        let state_from_normal_models =
-          apply_callees
-            ~resolution
-            ~is_property:false
-            ~call_location:location
-            ~state
-            ~callee
-            ~arguments
-            ~call_taint:taint
-            callees
+     callee =
+       {
+         Node.value =
+           Name
+             (Name.Attribute
+               { base; attribute = ("__add__" | "__mod__" | "format") as function_name; _ });
+         _;
+       };
+     arguments;
+    }
+      when CallGraph.CallCallees.is_string_method callees ->
+        let breadcrumbs =
+          match function_name with
+          | "__mod__"
+          | "format" ->
+              Features.BreadcrumbSet.singleton (Features.format_string ())
+          | _ -> Features.BreadcrumbSet.empty
         in
-        let is_string_format =
-          List.exists callees.call_targets ~f:(fun call_target ->
-              match Interprocedural.Target.class_name call_target.target with
-              | Some "str" -> true
-              | _ -> false)
+        let substrings =
+          arguments |> List.map ~f:(fun argument -> argument.Call.Argument.value) |> List.cons base
         in
-        if not is_string_format then
-          state_from_normal_models
-        else
-          (* Additional hard-coded models for analyzing implicit sinks during string formatting
-             operations. *)
-          let breadcrumbs =
-            match function_name with
-            | "__mod__"
-            | "format" ->
-                Features.BreadcrumbSet.singleton (Features.format_string ())
-            | _ -> Features.BreadcrumbSet.empty
-          in
-          let substrings =
-            arguments
-            |> List.map ~f:(fun argument -> argument.Call.Argument.value)
-            |> List.cons base
-          in
-          let string_literal, substrings = CallModel.arguments_for_string_format substrings in
-          let state_from_string_format =
-            analyze_joined_string
-              ~resolution
-              ~taint
-              ~state
-              ~location
-              ~breadcrumbs
-              ~increase_trace_length:true
-              ~string_literal
-              substrings
-          in
-          join state_from_normal_models state_from_string_format
+        let string_literal, substrings = CallModel.arguments_for_string_format substrings in
+        analyze_joined_string
+          ~resolution
+          ~taint
+          ~state
+          ~location
+          ~breadcrumbs
+          ~increase_trace_length:true
+          ~string_literal
+          substrings
     | {
      Call.callee = { Node.value = Name (Name.Identifier "reveal_taint"); _ };
      arguments = [{ Call.Argument.value = expression; _ }];

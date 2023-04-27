@@ -2167,11 +2167,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "special_sink" },
-                  { "via": "obscure:model" },
-                  { "always-via": "tito" }
+                  { "always-via": "special_sink" }, { "always-via": "tito" }
                 ],
-                "length": 2,
+                "length": 3,
                 "kind": "Test"
               }
             ],
@@ -2233,13 +2231,11 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
+                "length": 2,
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "via": "obscure:model" }, { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 95, "start": 17, "end": 18 } ],
             "call": {
               "position": {
@@ -2284,9 +2280,7 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "via": "obscure:model" }, { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 95, "start": 21, "end": 35 } ],
             "origin": {
               "filename": "decorator.py",
@@ -2328,7 +2322,6 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "via": "obscure:model" },
       { "always-via": "tito" }
     ],
     "sink_handle": {

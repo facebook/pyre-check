@@ -8,6 +8,7 @@
 # that are introduced onto expressions based on their runtime values (such as
 # SQL strings). Under the hood, the analysis leverages the multi-source rules.
 
+
 def user_controlled_input():
     return "evil"
 
@@ -102,3 +103,66 @@ def nested_stradd_and_fstring():
 def stradd_triggered_user_controlled(arg):
     x: str = user_controlled_input()
     x + arg.f  # The triggered sink should be on arg.f, not arg
+
+
+def test_large_string_add():
+    db_dir = "/mnt"
+    wal_dir = "/mnt"
+    key_size = 1
+    value_size = 2
+    block_size = 10
+    cache_size = 1
+    M = 1
+    G = 2
+    K = 3
+
+    const_params = (
+        " --db="
+        + str(db_dir)
+        + " --wal_dir="
+        + str(wal_dir)
+        + " --num_levels="
+        + str(6)
+        + " --key_size="
+        + str(key_size)
+        + " --value_size="
+        + str(value_size)
+        + " --block_size="
+        + str(block_size)
+        + " --cache_size="
+        + str(cache_size)
+        + " --cache_numshardbits="
+        + str(6)
+        + " --compression_type="
+        + str("snappy")
+        + " --compression_ratio="
+        + str(0.5)
+        + " --write_buffer_size="
+        + str(int(128 * M))
+        + " --max_write_buffer_number="
+        + str(2)
+        + " --target_file_size_base="
+        + str(int(128 * M))
+        + " --max_bytes_for_level_base="
+        + str(int(1 * G))
+        + " --sync="
+        + str(0)
+        + " --verify_checksum="
+        + str(1)
+        + " --delete_obsolete_files_period_micros="
+        + str(int(60 * M))
+        + " --statistics="
+        + str(1)
+        + " --stats_per_interval="
+        + str(1)
+        + " --stats_interval="
+        + str(int(1 * M))
+        + " --histogram="
+        + str(1)
+        + " --memtablerep="
+        + str("skip_list")
+        + " --bloom_bits="
+        + str(10)
+        + " --open_files="
+        + str(int(20 * K))
+    )

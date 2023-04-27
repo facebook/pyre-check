@@ -13,6 +13,7 @@ multiple_sources_string_operations.format_string_issue (fun) -> [<format-string>
 multiple_sources_string_operations.format_string_triggered_sql (fun) -> [<format-string> (object) multiple_sources_string_operations.user_controlled_input (fun)]
 multiple_sources_string_operations.nested_stradd_and_fstring (fun) -> [<format-string> (object) multiple_sources_string_operations.user_controlled_input (fun) str::__add__ (method) str::__str__ (method)]
 multiple_sources_string_operations.string_operations (fun) -> [multiple_sources_string_operations.global_query (object) multiple_sources_string_operations.user_controlled_input (fun) str::__add__ (method) str::__mod__ (method) str::format (method)]
+multiple_sources_string_operations.test_large_string_add (fun) -> [int::__mul__ (method) int::__new__ (method) object::__init__ (method) object::__repr__ (method) str::__add__ (method) str::__str__ (method)]
 multiple_sources_string_operations.user_controlled_input (fun) -> []
 multiple_sources_string_operations.DatabaseSchemaEditor::$class_toplevel (method) -> []
 multiple_sources_string_operations.DatabaseSchemaEditor::string_operations (method) -> [multiple_sources_string_operations.user_controlled_input (fun) str::format (method)]

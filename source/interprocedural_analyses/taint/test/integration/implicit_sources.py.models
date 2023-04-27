@@ -139,15 +139,13 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 0 },
+                "return_paths": { "": 4 },
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [
               { "line": 52, "start": 15, "end": 23 },
