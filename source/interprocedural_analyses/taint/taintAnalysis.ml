@@ -340,6 +340,8 @@ let run_taint_analysis
 
   let environment = type_check ~scheduler ~configuration ~cache in
 
+  compact_ocaml_heap ~name:"after type check";
+
   let qualifiers =
     Analysis.TypeEnvironment.module_tracker environment
     |> Analysis.ModuleTracker.read_only
