@@ -309,23 +309,6 @@ module SanitizedCallArgumentSet = Set.Make (struct
   let compare = sanitized_location_insensitive_compare
 end)
 
-let is_ancestor ~resolution ~is_transitive ~includes_self ancestor_class child_class =
-  if String.equal ancestor_class child_class then
-    includes_self
-  else if is_transitive then
-    try
-      GlobalResolution.is_transitive_successor
-        ~placeholder_subclass_extends_all:false
-        resolution
-        ~predecessor:child_class
-        ~successor:ancestor_class
-    with
-    | ClassHierarchy.Untracked _ -> false
-  else
-    let parents = GlobalResolution.immediate_parents ~resolution child_class in
-    List.mem parents ancestor_class ~equal:String.equal
-
-
 (* Store all regular expression captures in name constraints for WriteToCache queries. *)
 module NameCaptures : sig
   type t
@@ -345,6 +328,42 @@ end = struct
   let get results identifier =
     List.find_map !results ~f:(fun name_match -> Re2.Match.get ~sub:(`Name identifier) name_match)
 end
+
+let find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name =
+  let rec find_children_transitive ~class_hierarchy_graph to_process result =
+    match to_process with
+    | [] -> result
+    | class_name :: rest ->
+        let child_name_set =
+          ClassHierarchyGraph.SharedMemory.get ~class_name class_hierarchy_graph
+        in
+        let new_children = ClassHierarchyGraph.ClassNameSet.elements child_name_set in
+        let result =
+          List.fold ~f:(Fn.flip ClassHierarchyGraph.ClassNameSet.add) ~init:result new_children
+        in
+        find_children_transitive ~class_hierarchy_graph (List.rev_append new_children rest) result
+  in
+  let child_name_set =
+    if is_transitive then
+      match ClassHierarchyGraph.SharedMemory.get_transitive ~class_name class_hierarchy_graph with
+      | Some child_name_set -> child_name_set
+      (* cache miss, recalculate *)
+      | None ->
+          find_children_transitive
+            ~class_hierarchy_graph
+            [class_name]
+            ClassHierarchyGraph.ClassNameSet.empty
+    else
+      ClassHierarchyGraph.SharedMemory.get ~class_name class_hierarchy_graph
+  in
+  let child_name_set =
+    if includes_self then
+      ClassHierarchyGraph.ClassNameSet.add class_name child_name_set
+    else
+      child_name_set
+  in
+  child_name_set
+
 
 let matches_name_constraint ~name_captures ~name_constraint name =
   match name_constraint with
@@ -429,7 +448,13 @@ let rec matches_decorator_constraint ~name_captures ~decorator = function
                (SanitizedCallArgumentSet.of_list decorator_keyword_arguments))
 
 
-let matches_annotation_constraint ~resolution ~name_captures ~annotation_constraint annotation =
+let matches_annotation_constraint
+    ~resolution
+    ~class_hierarchy_graph
+    ~name_captures
+    ~annotation_constraint
+    annotation
+  =
   let open Expression in
   match annotation_constraint, annotation with
   | ( ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint,
@@ -487,13 +512,15 @@ let matches_annotation_constraint ~resolution ~name_captures ~annotation_constra
       let parsed_type = GlobalResolution.parse_annotation resolution annotation_expression in
       match extract_class_name parsed_type with
       | Some extracted_class_name ->
-          is_ancestor ~resolution ~is_transitive ~includes_self class_name extracted_class_name
+          find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
+          |> ClassHierarchyGraph.ClassNameSet.mem extracted_class_name
       | None -> false)
   | _ -> false
 
 
 let rec normalized_parameter_matches_constraint
     ~resolution
+    ~class_hierarchy_graph
     ~name_captures
     ~parameter:
       ((root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
@@ -501,7 +528,11 @@ let rec normalized_parameter_matches_constraint
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
-      >>| matches_annotation_constraint ~resolution ~name_captures ~annotation_constraint
+      >>| matches_annotation_constraint
+            ~resolution
+            ~class_hierarchy_graph
+            ~name_captures
+            ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_captures ~name_constraint (Identifier.sanitized parameter_name)
@@ -512,18 +543,29 @@ let rec normalized_parameter_matches_constraint
   | ModelQuery.ParameterConstraint.AnyOf constraints ->
       List.exists
         constraints
-        ~f:(normalized_parameter_matches_constraint ~resolution ~name_captures ~parameter)
+        ~f:
+          (normalized_parameter_matches_constraint
+             ~resolution
+             ~class_hierarchy_graph
+             ~name_captures
+             ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
       not
         (normalized_parameter_matches_constraint
            ~resolution
+           ~class_hierarchy_graph
            ~name_captures
            ~parameter
            query_constraint)
   | ModelQuery.ParameterConstraint.AllOf constraints ->
       List.for_all
         constraints
-        ~f:(normalized_parameter_matches_constraint ~resolution ~name_captures ~parameter)
+        ~f:
+          (normalized_parameter_matches_constraint
+             ~resolution
+             ~class_hierarchy_graph
+             ~name_captures
+             ~parameter)
 
 
 let class_matches_decorator_constraint ~name_captures ~resolution ~decorator_constraint class_name =
@@ -536,29 +578,6 @@ let class_matches_decorator_constraint ~name_captures ~resolution ~decorator_con
                   matches_decorator_constraint ~name_captures ~decorator decorator_constraint)
             |> Option.value ~default:false))
   |> Option.value ~default:false
-
-
-let rec find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name =
-  let child_name_set = ClassHierarchyGraph.SharedMemory.get ~class_name class_hierarchy_graph in
-  let child_name_set =
-    if is_transitive then
-      ClassHierarchyGraph.ClassNameSet.fold
-        (fun child_name set ->
-          ClassHierarchyGraph.ClassNameSet.union
-            set
-            (find_children ~class_hierarchy_graph ~is_transitive ~includes_self:false child_name))
-        child_name_set
-        child_name_set
-    else
-      child_name_set
-  in
-  let child_name_set =
-    if includes_self then
-      ClassHierarchyGraph.ClassNameSet.add class_name child_name_set
-    else
-      child_name_set
-  in
-  child_name_set
 
 
 let find_parents ~resolution ~is_transitive ~includes_self class_name =
@@ -604,7 +623,8 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captur
   | ModelQuery.ClassConstraint.FullyQualifiedNameConstraint name_constraint ->
       matches_name_constraint ~name_captures ~name_constraint name
   | ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self } ->
-      is_ancestor ~resolution ~is_transitive ~includes_self class_name name
+      find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
+      |> ClassHierarchyGraph.ClassNameSet.mem name
   | ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint ->
       class_matches_decorator_constraint ~name_captures ~resolution ~decorator_constraint name
   | ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive; includes_self }
@@ -760,11 +780,19 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures val
         (value |> Modelable.name |> Reference.show)
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
-      >>| matches_annotation_constraint ~resolution ~name_captures ~annotation_constraint
+      >>| matches_annotation_constraint
+            ~resolution
+            ~class_hierarchy_graph
+            ~name_captures
+            ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.ReturnConstraint annotation_constraint ->
       Modelable.return_annotation value
-      >>| matches_annotation_constraint ~resolution ~name_captures ~annotation_constraint
+      >>| matches_annotation_constraint
+            ~resolution
+            ~class_hierarchy_graph
+            ~name_captures
+            ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint ->
       Modelable.parameters value
@@ -772,6 +800,7 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures val
       |> List.exists ~f:(fun parameter ->
              normalized_parameter_matches_constraint
                ~resolution
+               ~class_hierarchy_graph
                ~name_captures
                ~parameter
                parameter_constraint)
@@ -983,6 +1012,7 @@ module type QUERY_KIND = sig
   (* Generate taint annotations from the `models` part of a given model query. *)
   val generate_annotations_from_query_models
     :  resolution:GlobalResolution.t ->
+    class_hierarchy_graph:ClassHierarchyGraph.SharedMemory.t ->
     modelable:Modelable.t ->
     ModelQuery.Model.t list ->
     annotation list
@@ -1042,7 +1072,11 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         ~modelable
         query
     then
-      QueryKind.generate_annotations_from_query_models ~resolution ~modelable models
+      QueryKind.generate_annotations_from_query_models
+        ~resolution
+        ~class_hierarchy_graph
+        ~modelable
+        models
     else
       []
 
@@ -1414,7 +1448,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
     Modelable.Callable { target = callable; signature }
 
 
-  let generate_annotations_from_query_models ~resolution ~modelable models =
+  let generate_annotations_from_query_models ~resolution ~class_hierarchy_graph ~modelable models =
     let production_to_taint ?(parameter = None) ~production annotation =
       let open Expression in
       let get_subkind_from_annotation ~pattern annotation =
@@ -1601,6 +1635,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                 ~f:
                   (normalized_parameter_matches_constraint
                      ~resolution
+                     ~class_hierarchy_graph
                      ~name_captures:None
                      ~parameter)
             then
@@ -1714,7 +1749,12 @@ module AttributeQueryExecutor = struct
       Modelable.Attribute { name; type_annotation }
 
 
-    let generate_annotations_from_query_models ~resolution:_ ~modelable:_ models =
+    let generate_annotations_from_query_models
+        ~resolution:_
+        ~class_hierarchy_graph:_
+        ~modelable:_
+        models
+      =
       let production_to_taint = function
         | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
         | _ -> None
@@ -1782,7 +1822,12 @@ module GlobalVariableQueryExecutor = struct
 
 
     (* Generate taint annotations from the `models` part of a given model query. *)
-    let generate_annotations_from_query_models ~resolution:_ ~modelable:_ models =
+    let generate_annotations_from_query_models
+        ~resolution:_
+        ~class_hierarchy_graph:_
+        ~modelable:_
+        models
+      =
       let production_to_taint = function
         | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation -> Some taint_annotation
         | _ -> None
@@ -1814,6 +1859,15 @@ let generate_models_from_queries
     ~stubs
     queries
   =
+  let extends_to_classnames =
+    ModelParseResult.ModelQuery.extract_extends_from_model_queries queries
+  in
+  let class_hierarchy_graph =
+    ClassHierarchyGraph.SharedMemory.from_heap
+      ~store_transitive_children_for:extends_to_classnames
+      class_hierarchy_graph
+  in
+
   let { PartitionTargetQueries.callable_queries; attribute_queries; global_queries } =
     PartitionTargetQueries.partition queries
   in

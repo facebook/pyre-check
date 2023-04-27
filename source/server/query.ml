@@ -827,8 +827,7 @@ let rec process_request ~type_environment ~build_system request =
         Taint.ModelQueryExecution.generate_models_from_queries
           ~resolution:global_resolution
           ~scheduler
-          ~class_hierarchy_graph:
-            (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
+          ~class_hierarchy_graph
           ~source_sink_filter:None
           ~verbose:false
           ~callables_and_stubs:

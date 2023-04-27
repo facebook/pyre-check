@@ -568,8 +568,7 @@ let initialize
           ModelQueryExecution.generate_models_from_queries
             ~resolution:global_resolution
             ~scheduler:(Test.mock_scheduler ())
-            ~class_hierarchy_graph:
-              (ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
+            ~class_hierarchy_graph
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~verbose:false
             ~callables_and_stubs:(List.rev_append stubs callables)

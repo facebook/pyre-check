@@ -140,7 +140,7 @@ end
 val generate_models_from_queries
   :  resolution:Analysis.GlobalResolution.t ->
   scheduler:Scheduler.t ->
-  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
+  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   verbose:bool ->
   callables_and_stubs:Interprocedural.Target.t list ->

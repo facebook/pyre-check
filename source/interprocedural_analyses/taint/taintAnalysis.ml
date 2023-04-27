@@ -414,8 +414,7 @@ let run_taint_analysis
       ~static_analysis_configuration
       ~taint_configuration
       ~taint_configuration_shared_memory
-      ~class_hierarchy_graph:
-        (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
+      ~class_hierarchy_graph
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~initial_callables
   in

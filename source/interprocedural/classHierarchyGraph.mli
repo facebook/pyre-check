@@ -51,7 +51,10 @@ end
 module SharedMemory : sig
   type t
 
-  val from_heap : Heap.t -> t
+  val from_heap : store_transitive_children_for:class_name list -> Heap.t -> t
 
   val get : t -> class_name:class_name -> ClassNameSet.t
+
+  (* Returns the set of transitive children, or `None` if we did not pre-compute it. *)
+  val get_transitive : t -> class_name:class_name -> ClassNameSet.t option
 end

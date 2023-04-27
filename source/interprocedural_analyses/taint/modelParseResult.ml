@@ -596,6 +596,47 @@ module ModelQuery = struct
   let unique_identifier = function
     | { name; path = None; _ } -> name
     | { name; path = Some path; _ } -> Format.sprintf "%s/%s" (PyrePath.get_suffix_path path) name
+
+
+  let extract_extends_from_model_queries model_queries =
+    let rec process_class_constraint result = function
+      | ClassConstraint.Extends { class_name; _ } -> class_name :: result
+      | ClassConstraint.AnyOf constraints
+      | ClassConstraint.AllOf constraints ->
+          List.fold ~f:process_class_constraint ~init:result constraints
+      | ClassConstraint.Not constraint_ -> process_class_constraint result constraint_
+      | _ -> result
+    in
+    let process_annotation_constraint result = function
+      | AnnotationConstraint.AnnotationClassExtends { class_name; _ } -> class_name :: result
+      | _ -> result
+    in
+    let rec process_parameter_constraint result = function
+      | ParameterConstraint.AnnotationConstraint annotation_constraint ->
+          process_annotation_constraint result annotation_constraint
+      | ParameterConstraint.AnyOf constraints
+      | ParameterConstraint.AllOf constraints ->
+          List.fold ~f:process_parameter_constraint ~init:result constraints
+      | ParameterConstraint.Not constraint_ -> process_parameter_constraint result constraint_
+      | _ -> result
+    in
+    let rec process_constraint result = function
+      | Constraint.ClassConstraint class_constraint ->
+          process_class_constraint result class_constraint
+      | Constraint.AnnotationConstraint annotation_constraint ->
+          process_annotation_constraint result annotation_constraint
+      | Constraint.AnyParameterConstraint parameter_constraint ->
+          process_parameter_constraint result parameter_constraint
+      | Constraint.AnyOf constraints
+      | Constraint.AllOf constraints ->
+          List.fold ~f:process_constraint ~init:result constraints
+      | Constraint.Not constraint_ -> process_constraint result constraint_
+      | _ -> result
+    in
+    List.fold
+      ~f:(fun result model_query -> List.fold ~f:process_constraint ~init:result model_query.where)
+      ~init:[]
+      model_queries
 end
 
 type t = {
