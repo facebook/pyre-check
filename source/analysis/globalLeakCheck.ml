@@ -72,11 +72,6 @@ module State (Context : Context) = struct
     Resolution.resolve_reference resolution global, Reference.delocalize global
 
 
-  let construct_global_leak_kind ~resolution global =
-    let target_type, delocalized_reference = get_type_and_reference ~resolution global in
-    Error.GlobalLeak { global_name = delocalized_reference; global_type = target_type }
-
-
   let construct_global_return method_name ~resolution global =
     let target_type, delocalized_reference = get_type_and_reference ~resolution global in
     Error.LeakToGlobal
@@ -497,9 +492,6 @@ module State (Context : Context) = struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)
     in
-    let prepare_globals_for_errors =
-      append_errors_for_reachable_globals ~resolution ~location construct_global_leak_kind
-    in
     let module_reference =
       let rec get_module_qualifier qualifier =
         let module_tracker = GlobalResolution.module_tracker Context.global_resolution in
@@ -575,7 +567,7 @@ module State (Context : Context) = struct
               reachable_globals
               []
           in
-          leak_to_global_returns @ prepare_globals_for_errors [] errors
+          leak_to_global_returns @ errors
       | Delete _
       | Return _ ->
           []

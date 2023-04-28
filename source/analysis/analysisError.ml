@@ -235,11 +235,6 @@ and unawaited_awaitable = {
   expression: Expression.t;
 }
 
-and leak_to_global = {
-  global_name: Reference.t;
-  global_type: Type.t;
-}
-
 and undefined_import =
   | UndefinedModule of Reference.t
   | UndefinedName of {
@@ -871,7 +866,6 @@ and kind =
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t
   | UnawaitedAwaitable of unawaited_awaitable
-  | GlobalLeak of leak_to_global
   (* Errors from type operators *)
   | BroadcastError of {
       expression: Expression.t;
@@ -954,7 +948,6 @@ let code_of_kind = function
   | BroadcastError _ -> 2001
   (* Privacy-related errors: 3xxx. *)
   | ReadOnlynessMismatch kind -> ReadOnly.code_of_kind kind
-  | GlobalLeak _ -> 3100
   | LeakToGlobal kind -> GlobalLeaks.code_of_kind kind
 
 
@@ -965,7 +958,6 @@ let name_of_kind = function
   | ParserFailure _ -> "Parsing failure"
   | DeadStore _ -> "Dead store"
   | Deobfuscation _ -> "Deobfuscation"
-  | GlobalLeak _ -> "Global leak"
   | IllegalAnnotationTarget _ -> "Illegal annotation target"
   | IncompatibleAsyncGeneratorReturnType _ -> "Incompatible async generator return type"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
@@ -1345,15 +1337,6 @@ let rec messages ~concise ~signature location kind =
   | ParserFailure message -> [message]
   | DeadStore name -> [Format.asprintf "Value assigned to `%a` is never used." pp_identifier name]
   | Deobfuscation source -> [Format.asprintf "\n%a" Source.pp source]
-  | GlobalLeak { global_name; global_type } ->
-      [
-        Format.asprintf
-          "Data is leaked to global `%a` of type `%a`."
-          pp_reference
-          global_name
-          Type.pp
-          global_type;
-      ]
   | IllegalAnnotationTarget _ when concise -> ["Target cannot be annotated."]
   | IllegalAnnotationTarget { target; kind } ->
       let reason =
@@ -3201,7 +3184,6 @@ let due_to_analysis_limitations { kind; _ } =
   | DeadStore _
   | Deobfuscation _
   | DuplicateTypeVariables _
-  | GlobalLeak _
   | IllegalAnnotationTarget _
   | IncompatibleAsyncGeneratorReturnType _
   | IncompatibleConstructorAnnotation _
@@ -3306,8 +3288,6 @@ let join ~resolution left right =
     | DeadStore left, DeadStore right when Identifier.equal left right -> DeadStore left
     | Deobfuscation left, Deobfuscation right when [%compare.equal: Source.t] left right ->
         Deobfuscation left
-    | GlobalLeak left, GlobalLeak right when [%compare.equal: leak_to_global] left right ->
-        GlobalLeak left
     | ( IllegalAnnotationTarget { target = left; kind = InvalidExpression },
         IllegalAnnotationTarget { target = right; kind = InvalidExpression } )
       when [%compare.equal: Expression.t] left right ->
@@ -3712,7 +3692,6 @@ let join ~resolution left right =
     | ParserFailure _, _
     | DeadStore _, _
     | Deobfuscation _, _
-    | GlobalLeak _, _
     | IllegalAnnotationTarget _, _
     | IncompatibleAsyncGeneratorReturnType _, _
     | IncompatibleAttributeType _, _
@@ -4168,7 +4147,6 @@ let dequalify
         BroadcastError { expression; left = dequalify left; right = dequalify right }
     | DeadStore name -> DeadStore name
     | Deobfuscation left -> Deobfuscation left
-    | GlobalLeak leak -> GlobalLeak leak
     | IllegalAnnotationTarget { target = left; kind } ->
         IllegalAnnotationTarget { target = left; kind }
     | IncompatibleAsyncGeneratorReturnType actual ->
