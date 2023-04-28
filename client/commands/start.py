@@ -524,6 +524,7 @@ def run(
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
+    LOG.info(f"Pyre binary is located at `{binary_location}`")
 
     log_directory = configuration.get_log_directory()
     server_arguments = create_server_arguments(configuration, start_arguments)

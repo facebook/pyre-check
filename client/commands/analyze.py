@@ -381,6 +381,7 @@ def run(
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
+    LOG.info(f"Pyre binary is located at `{binary_location}`")
 
     save_results_to = analyze_arguments.save_results_to
     if save_results_to is not None:

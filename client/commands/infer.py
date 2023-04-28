@@ -837,6 +837,7 @@ def _get_infer_command_output(
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
+    LOG.info(f"Pyre binary is located at `{binary_location}`")
 
     with create_infer_arguments_and_cleanup(
         configuration, infer_arguments

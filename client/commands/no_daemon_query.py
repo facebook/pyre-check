@@ -17,8 +17,9 @@ those that query a running pyre daemon.
 from __future__ import annotations
 
 import contextlib
-
 import dataclasses
+
+import logging
 import subprocess
 from typing import Any, Dict, Iterator, Optional
 
@@ -29,6 +30,8 @@ from .. import (
     frontend_configuration,
 )
 from . import query_response
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -123,6 +126,7 @@ def execute_query(
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
+    LOG.info(f"Pyre binary is located at `{binary_location}`")
 
     with create_no_daemon_arguments_and_cleanup(
         configuration, query_arguments
