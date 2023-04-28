@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -16,6 +17,7 @@ from .. import (
     find_directories,
     frontend_configuration,
 )
+from ..tests.setup import switch_environment
 
 
 class FrontendConfigurationTest(testslide.TestCase):
@@ -105,3 +107,47 @@ class FrontendConfigurationTest(testslide.TestCase):
                 )
             ).get_binary_version()
         )
+
+    def test_get_binary_from_configuration(self) -> None:
+        with switch_environment({}):
+            self.assertEqual(
+                frontend_configuration.OpenSource(
+                    configuration_module.Configuration(
+                        global_root=Path("irrelevant"),
+                        dot_pyre_directory=Path(".pyre"),
+                        binary="foo",
+                    )
+                ).get_binary_location(),
+                Path("foo"),
+            )
+
+    def test_get_binary_auto_determined(self) -> None:
+        self.mock_callable(shutil, "which").for_call(
+            find_directories.BINARY_NAME
+        ).to_return_value("foo").and_assert_called_once()
+
+        with switch_environment({}):
+            self.assertEqual(
+                frontend_configuration.OpenSource(
+                    configuration_module.Configuration(
+                        global_root=Path("irrelevant"),
+                        dot_pyre_directory=Path(".pyre"),
+                        binary=None,
+                    )
+                ).get_binary_location(),
+                Path("foo"),
+            )
+
+    def test_get_binary_cannot_auto_determine(self) -> None:
+        self.mock_callable(shutil, "which").to_return_value(None).and_assert_called()
+
+        with switch_environment({}):
+            self.assertIsNone(
+                frontend_configuration.OpenSource(
+                    configuration_module.Configuration(
+                        global_root=Path("irrelevant"),
+                        dot_pyre_directory=Path(".pyre"),
+                        binary=None,
+                    )
+                ).get_binary_location(),
+            )

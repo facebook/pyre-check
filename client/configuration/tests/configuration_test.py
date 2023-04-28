@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
-import shutil
 import site
 import sys
 import tempfile
@@ -14,7 +13,7 @@ from pathlib import Path
 import testslide
 
 from ... import command_arguments, find_directories
-from ...find_directories import BINARY_NAME, CODENAV_CONFIGURATION_FILE
+from ...find_directories import CODENAV_CONFIGURATION_FILE
 from ...tests.setup import (
     ensure_directories_exists,
     ensure_files_exist,
@@ -821,45 +820,6 @@ class ConfigurationTest(testslide.TestCase):
                 micro=sys.version_info.micro,
             ),
         )
-
-    def test_get_binary_from_configuration(self) -> None:
-        with switch_environment({}):
-            self.assertEqual(
-                Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    binary="foo",
-                ).get_binary_respecting_override(),
-                "foo",
-            )
-
-    def test_get_binary_auto_determined(self) -> None:
-        self.mock_callable(shutil, "which").for_call(BINARY_NAME).to_return_value(
-            "foo"
-        ).and_assert_called_once()
-
-        with switch_environment({}):
-            self.assertEqual(
-                Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    binary=None,
-                ).get_binary_respecting_override(),
-                "foo",
-            )
-
-    def test_get_binary_cannot_auto_determine(self) -> None:
-        self.mock_callable(shutil, "which").to_return_value(None).and_assert_called()
-
-        with switch_environment({}):
-            self.assertEqual(
-                Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    binary=None,
-                ).get_binary_respecting_override(),
-                None,
-            )
 
     def test_get_typeshed_from_configuration(self) -> None:
         with switch_environment({}):

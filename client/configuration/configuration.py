@@ -26,8 +26,6 @@ import dataclasses
 import glob
 import json
 import logging
-import os
-import shutil
 import site
 import sys
 from dataclasses import field
@@ -51,7 +49,6 @@ import psutil
 from .. import command_arguments, dataclasses_merge, find_directories, identifiers
 from ..filesystem import expand_global_root, expand_relative_path
 from ..find_directories import (
-    BINARY_NAME,
     CONFIGURATION_FILE,
     get_relative_local_root,
     LOCAL_CONFIGURATION_FILE,
@@ -831,22 +828,6 @@ class Configuration:
             )
         else:
             return []
-
-    def get_binary_respecting_override(self) -> Optional[str]:
-        binary = self.binary
-        if binary is not None:
-            return binary
-
-        LOG.info(f"No binary specified, looking for `{BINARY_NAME}` in PATH")
-        binary_candidate = shutil.which(BINARY_NAME)
-        if binary_candidate is None:
-            binary_candidate_name = os.path.join(
-                os.path.dirname(sys.argv[0]), BINARY_NAME
-            )
-            binary_candidate = shutil.which(binary_candidate_name)
-        if binary_candidate is not None:
-            return binary_candidate
-        return None
 
     def get_typeshed_respecting_override(self) -> Optional[str]:
         typeshed = self.typeshed

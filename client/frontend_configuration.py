@@ -15,11 +15,17 @@ with additional configuration, using open-source Pyre as a library.
 
 import abc
 import json
+import logging
+import os
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import List, Optional
 
 from . import configuration as configuration_module, find_directories
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 # TODO(T120824066): Break this class down into smaller pieces. Ideally, one
 # class per command.
@@ -214,9 +220,22 @@ class OpenSource(Base):
         )
 
     def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
-        location = self.configuration.get_binary_respecting_override()
+        binary = self.configuration.binary
+        if binary is not None:
+            return Path(binary)
+
+        LOG.info(
+            f"No binary specified, looking for `{find_directories.BINARY_NAME}` in PATH"
+        )
+        binary_candidate = shutil.which(find_directories.BINARY_NAME)
+        if binary_candidate is None:
+            binary_candidate_name = os.path.join(
+                os.path.dirname(sys.argv[0]), find_directories.BINARY_NAME
+            )
+            binary_candidate = shutil.which(binary_candidate_name)
+
         # Auto-download is not supported in OSS
-        return Path(location) if location is not None else None
+        return Path(binary_candidate) if binary_candidate is not None else None
 
     def get_typeshed_location(self, download_if_needed: bool = False) -> Optional[Path]:
         location = self.configuration.get_typeshed_respecting_override()
