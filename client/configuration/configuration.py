@@ -926,13 +926,6 @@ class Configuration:
 def create_configuration(
     arguments: command_arguments.CommandArguments, base_directory: Path
 ) -> Configuration:
-    if arguments.configuration_path:
-        LOG.info("using overridden configuration of " + arguments.configuration_path)
-        configuration_path = Path(arguments.configuration_path)
-
-        return create_overridden_configuration(
-            arguments, configuration_path.parent, configuration_path.name
-        )
     local_root_argument = arguments.local_configuration
     search_base = (
         base_directory

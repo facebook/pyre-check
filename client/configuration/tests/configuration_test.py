@@ -1015,30 +1015,6 @@ class ConfigurationTest(testslide.TestCase):
                     [SimpleRawElement(str(root_path))],
                 )
 
-    def test_create_from_configuration_with_override(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            write_configuration_file(root_path, {"strict": False}, codenav=True)
-
-            with switch_working_directory(root_path):
-                configuration = create_configuration(
-                    command_arguments.CommandArguments(
-                        strict=True,  # override configuration file
-                        source_directories=["."],
-                        dot_pyre_directory=Path(".pyre"),
-                        configuration_path=str(Path(root) / CODENAV_CONFIGURATION_FILE),
-                    ),
-                    base_directory=Path(root),
-                )
-                self.assertEqual(configuration.global_root, root_path)
-                self.assertEqual(configuration.relative_local_root, None)
-                self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
-                self.assertEqual(configuration.strict, True)
-                self.assertListEqual(
-                    list(configuration.source_directories or []),
-                    [SimpleRawElement(str(root_path))],
-                )
-
     def test_configurations_resolve_path(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
