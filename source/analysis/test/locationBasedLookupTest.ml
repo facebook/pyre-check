@@ -1105,6 +1105,17 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
          use_postcondition_info = false;
        });
+  (* TODO(T151907213) add closed-over variables to lookups in inner function scope *)
+  assert_narrowest_expression
+    ~source:
+      {|
+      def foo() -> None:
+        a = 5
+        def bar() -> None:
+          print(a)
+     # .        ^- cursor
+  |}
+    None;
   ()
 
 
