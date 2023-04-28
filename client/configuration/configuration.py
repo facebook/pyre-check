@@ -29,7 +29,6 @@ import logging
 import os
 import shutil
 import site
-import subprocess
 import sys
 from dataclasses import field
 from logging import Logger
@@ -865,16 +864,6 @@ class Configuration:
         else:
             LOG.info(f"Found: `{auto_determined_typeshed}`")
             return str(auto_determined_typeshed)
-
-    def get_binary_version(self) -> Optional[str]:
-        binary = self.get_binary_respecting_override()
-        if binary is None:
-            return None
-        # lint-ignore: NoUnsafeExecRule
-        status = subprocess.run(
-            [binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
-        )
-        return status.stdout.strip() if status.returncode == 0 else None
 
     def get_number_of_workers(self) -> int:
         number_of_workers = self.number_of_workers

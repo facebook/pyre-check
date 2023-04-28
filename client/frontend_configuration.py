@@ -15,6 +15,7 @@ with additional configuration, using open-source Pyre as a library.
 
 import abc
 import json
+import subprocess
 from pathlib import Path
 from typing import List, Optional
 
@@ -223,7 +224,14 @@ class OpenSource(Base):
         return Path(location) if location is not None else None
 
     def get_binary_version(self) -> Optional[str]:
-        return self.configuration.get_binary_version()
+        binary = self.configuration.get_binary_respecting_override()
+        if binary is None:
+            return None
+        # lint-ignore: NoUnsafeExecRule
+        status = subprocess.run(
+            [binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
+        )
+        return status.stdout.strip() if status.returncode == 0 else None
 
     def get_content_for_display(self) -> str:
         return json.dumps(self.configuration.to_json(), indent=2)

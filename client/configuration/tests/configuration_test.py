@@ -6,7 +6,6 @@
 import json
 import shutil
 import site
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -781,42 +780,6 @@ class ConfigurationTest(testslide.TestCase):
                     ),
                 ).get_existent_unwatched_dependency()
             )
-
-    def test_get_binary_version_ok(self) -> None:
-        binary_path = "foo"
-        version = "facefacefaceb00"
-
-        self.mock_callable(subprocess, "run").to_return_value(
-            subprocess.CompletedProcess(
-                args=[binary_path, "-version"], returncode=0, stdout=f"{version}\n"
-            )
-        ).and_assert_called_once()
-
-        self.assertEqual(
-            Configuration(
-                global_root=Path("irrelevant"),
-                dot_pyre_directory=Path(".pyre"),
-                binary=binary_path,
-            ).get_binary_version(),
-            version,
-        )
-
-    def test_get_binary_version_fail(self) -> None:
-        binary_path = "foo"
-
-        self.mock_callable(subprocess, "run").to_return_value(
-            subprocess.CompletedProcess(
-                args=[binary_path, "-version"], returncode=1, stdout="derp"
-            )
-        ).and_assert_called_once()
-
-        self.assertIsNone(
-            Configuration(
-                global_root=Path("irrelevant"),
-                dot_pyre_directory=Path(".pyre"),
-                binary=binary_path,
-            ).get_binary_version()
-        )
 
     def test_get_number_of_workers(self) -> None:
         self.assertEqual(
