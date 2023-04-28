@@ -12,12 +12,11 @@ from pathlib import Path
 
 import testslide
 
-from ... import command_arguments, find_directories
+from ... import command_arguments
 from ...find_directories import CODENAV_CONFIGURATION_FILE
 from ...tests.setup import (
     ensure_directories_exists,
     ensure_files_exist,
-    switch_environment,
     switch_working_directory,
     write_configuration_file,
 )
@@ -694,51 +693,6 @@ class ConfigurationTest(testslide.TestCase):
             get_default_site_roots(), [user_site_package, global_site_package]
         )
 
-    def test_existent_search_path_with_typeshed(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
-            ensure_directories_exists(root_path, ["a"])
-            ensure_directories_exists(
-                root_path, ["typeshed/stdlib", "typeshed/stubs/foo"]
-            )
-
-            self.assertListEqual(
-                Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    search_path=[
-                        SimpleRawElement(str(root_path / "a")),
-                    ],
-                    typeshed=str(root_path / "typeshed"),
-                ).expand_and_get_existent_search_paths(),
-                [
-                    SimpleElement(str(root_path / "a")),
-                ],
-            )
-
-    def test_typeshed_existent_search_path(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
-            ensure_directories_exists(root_path, ["a"])
-            ensure_directories_exists(
-                root_path, ["typeshed/stdlib", "typeshed/stubs/foo"]
-            )
-
-            self.assertListEqual(
-                Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    search_path=[
-                        SimpleRawElement(str(root_path / "a")),
-                    ],
-                    typeshed=str(root_path / "typeshed"),
-                ).expand_and_get_typeshed_search_paths(),
-                [
-                    SimpleElement(str(root_path / "typeshed/stdlib")),
-                    SimpleElement(str(root_path / "typeshed/stubs/foo")),
-                ],
-            )
-
     def test_existent_unwatched_dependency(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
@@ -820,47 +774,6 @@ class ConfigurationTest(testslide.TestCase):
                 micro=sys.version_info.micro,
             ),
         )
-
-    def test_get_typeshed_from_configuration(self) -> None:
-        with switch_environment({}):
-            self.assertEqual(
-                Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    typeshed="foo",
-                ).get_typeshed_respecting_override(),
-                "foo",
-            )
-
-    def test_get_typeshed_auto_determined(self) -> None:
-        self.mock_callable(
-            find_directories, "find_typeshed"
-        ).for_call().to_return_value(Path("foo")).and_assert_called_once()
-
-        with switch_environment({}):
-            self.assertEqual(
-                Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    typeshed=None,
-                ).get_typeshed_respecting_override(),
-                "foo",
-            )
-
-    def test_get_typeshed_cannot_auto_determine(self) -> None:
-        self.mock_callable(
-            find_directories, "find_typeshed"
-        ).for_call().to_return_value(None).and_assert_called_once()
-
-        with switch_environment({}):
-            self.assertEqual(
-                Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    typeshed=None,
-                ).get_typeshed_respecting_override(),
-                None,
-            )
 
     def test_get_valid_extension_suffixes(self) -> None:
         self.assertListEqual(

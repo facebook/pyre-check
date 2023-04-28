@@ -7,6 +7,7 @@
 
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -17,7 +18,8 @@ from .. import (
     find_directories,
     frontend_configuration,
 )
-from ..tests.setup import switch_environment
+from ..configuration.search_path import SimpleElement, SimpleRawElement
+from ..tests.setup import ensure_directories_exists, switch_environment
 
 
 class FrontendConfigurationTest(testslide.TestCase):
@@ -150,4 +152,101 @@ class FrontendConfigurationTest(testslide.TestCase):
                         binary=None,
                     )
                 ).get_binary_location(),
+            )
+
+    def test_typeshed_existent_search_path(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a"])
+            ensure_directories_exists(
+                root_path, ["typeshed/stdlib", "typeshed/stubs/foo"]
+            )
+
+            self.assertListEqual(
+                frontend_configuration.OpenSource(
+                    configuration_module.Configuration(
+                        global_root=Path("irrelevant"),
+                        dot_pyre_directory=Path(".pyre"),
+                        search_path=[
+                            SimpleRawElement(str(root_path / "a")),
+                        ],
+                        typeshed=str(root_path / "typeshed"),
+                    )
+                ).get_existent_typeshed_search_paths(),
+                [
+                    SimpleElement(str(root_path / "typeshed/stdlib")),
+                    SimpleElement(str(root_path / "typeshed/stubs/foo")),
+                ],
+            )
+
+    def test_existent_search_path_with_typeshed(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a"])
+            ensure_directories_exists(
+                root_path, ["typeshed/stdlib", "typeshed/stubs/foo"]
+            )
+
+            self.assertListEqual(
+                frontend_configuration.OpenSource(
+                    configuration_module.Configuration(
+                        global_root=Path("irrelevant"),
+                        dot_pyre_directory=Path(".pyre"),
+                        search_path=[
+                            SimpleRawElement(str(root_path / "a")),
+                        ],
+                        typeshed=str(root_path / "typeshed"),
+                    )
+                ).get_existent_search_paths(),
+                [
+                    SimpleElement(str(root_path / "a")),
+                    SimpleElement(str(root_path / "typeshed/stdlib")),
+                    SimpleElement(str(root_path / "typeshed/stubs/foo")),
+                ],
+            )
+
+    def test_get_typeshed_from_configuration(self) -> None:
+        with switch_environment({}):
+            self.assertEqual(
+                frontend_configuration.OpenSource(
+                    configuration_module.Configuration(
+                        global_root=Path("irrelevant"),
+                        dot_pyre_directory=Path(".pyre"),
+                        typeshed="foo",
+                    )
+                ).get_typeshed_location(),
+                Path("foo"),
+            )
+
+    def test_get_typeshed_auto_determined(self) -> None:
+        self.mock_callable(
+            find_directories, "find_typeshed"
+        ).for_call().to_return_value(Path("foo")).and_assert_called_once()
+
+        with switch_environment({}):
+            self.assertEqual(
+                frontend_configuration.OpenSource(
+                    configuration_module.Configuration(
+                        global_root=Path("irrelevant"),
+                        dot_pyre_directory=Path(".pyre"),
+                        typeshed=None,
+                    )
+                ).get_typeshed_location(),
+                Path("foo"),
+            )
+
+    def test_get_typeshed_cannot_auto_determine(self) -> None:
+        self.mock_callable(
+            find_directories, "find_typeshed"
+        ).for_call().to_return_value(None).and_assert_called_once()
+
+        with switch_environment({}):
+            self.assertIsNone(
+                frontend_configuration.OpenSource(
+                    configuration_module.Configuration(
+                        global_root=Path("irrelevant"),
+                        dot_pyre_directory=Path(".pyre"),
+                        typeshed=None,
+                    )
+                ).get_typeshed_location(),
             )

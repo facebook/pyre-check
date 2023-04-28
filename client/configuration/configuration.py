@@ -790,20 +790,6 @@ class Configuration:
             return site_roots
         return get_default_site_roots()
 
-    def expand_and_get_typeshed_search_paths(
-        self,
-    ) -> List[search_path_module.Element]:
-        typeshed_root = self.get_typeshed_respecting_override()
-        if typeshed_root is None:
-            return []
-
-        return [
-            search_path_module.SimpleElement(str(element))
-            for element in find_directories.find_typeshed_search_paths(
-                Path(typeshed_root)
-            )
-        ]
-
     def expand_and_get_existent_search_paths(
         self,
     ) -> List[search_path_module.Element]:
@@ -828,23 +814,6 @@ class Configuration:
             )
         else:
             return []
-
-    def get_typeshed_respecting_override(self) -> Optional[str]:
-        typeshed = self.typeshed
-        if typeshed is not None:
-            return typeshed
-
-        LOG.info("No typeshed specified, looking for it...")
-        auto_determined_typeshed = find_directories.find_typeshed()
-        if auto_determined_typeshed is None:
-            LOG.warning(
-                "Could not find a suitable typeshed. Types for Python builtins "
-                "and standard libraries may be missing!"
-            )
-            return None
-        else:
-            LOG.info(f"Found: `{auto_determined_typeshed}`")
-            return str(auto_determined_typeshed)
 
     def get_number_of_workers(self) -> int:
         number_of_workers = self.number_of_workers

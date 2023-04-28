@@ -238,9 +238,22 @@ class OpenSource(Base):
         return Path(binary_candidate) if binary_candidate is not None else None
 
     def get_typeshed_location(self, download_if_needed: bool = False) -> Optional[Path]:
-        location = self.configuration.get_typeshed_respecting_override()
-        # Auto-download is not supported in OSS
-        return Path(location) if location is not None else None
+        typeshed = self.configuration.typeshed
+        if typeshed is not None:
+            return Path(typeshed)
+
+        LOG.info("No typeshed specified, looking for it...")
+        auto_determined_typeshed = find_directories.find_typeshed()
+        if auto_determined_typeshed is None:
+            # Auto-download is not supported in OSS
+            LOG.warning(
+                "Could not find a suitable typeshed. Types for Python builtins "
+                "and standard libraries may be missing!"
+            )
+            return None
+        else:
+            LOG.info(f"Found: `{auto_determined_typeshed}`")
+            return auto_determined_typeshed
 
     def get_binary_version(self) -> Optional[str]:
         binary = self.get_binary_location()
