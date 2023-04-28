@@ -281,9 +281,9 @@
             ],
             "local_features": [
               { "always-via": "format-string" },
+              { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "issue-broadening" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 36, "start": 13, "end": 17 } ],
             "origin": {
@@ -312,9 +312,9 @@
     ],
     "features": [
       { "always-via": "format-string" },
+      { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "always-via": "issue-broadening" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle": "implicit_sinks.inline_issue_percent_format:1337:0:LiteralStringSink|Test:a3816965f707388cfddef3263d5a9c83"

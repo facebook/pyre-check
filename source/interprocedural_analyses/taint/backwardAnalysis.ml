@@ -1860,7 +1860,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               taint)
           ~init:taint
     in
-    let taint = BackwardState.Tree.add_local_breadcrumbs breadcrumbs taint in
+    let taint =
+      taint
+      |> BackwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ())
+      |> BackwardTaint.add_local_breadcrumbs breadcrumbs
+      |> BackwardState.Tree.create_leaf
+    in
     let analyze_stringify_callee
         ~taint_to_join
         ~state_to_join
