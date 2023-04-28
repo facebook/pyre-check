@@ -44,7 +44,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 CLASSIC_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 
 
-def _show_pyre_version_as_text(
+def show_pyre_version_as_text(
     binary_version: Optional[str], client_version: str
 ) -> None:
     if binary_version:
@@ -52,7 +52,7 @@ def _show_pyre_version_as_text(
     log.stdout.write(f"Client version: {__version__}\n")
 
 
-def _show_pyre_version_as_json(
+def show_pyre_version_as_json(
     binary_version: Optional[str], client_version: str
 ) -> None:
     version_json = {
@@ -62,18 +62,18 @@ def _show_pyre_version_as_json(
     log.stdout.write(f"{json.dumps(version_json)}\n")
 
 
-def show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
+def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
     binary_version: Optional[str] = None
     client_version: str = __version__
     try:
-        configuration = _create_configuration(arguments, Path("."))
-        binary_version = configuration.get_binary_version()
+        open_source_configuration = _create_configuration(arguments, Path("."))
+        binary_version = open_source_configuration.get_binary_version()
     except Exception:
         pass
     if arguments.output == command_arguments.JSON:
-        _show_pyre_version_as_json(binary_version, client_version)
+        show_pyre_version_as_json(binary_version, client_version)
     else:
-        _show_pyre_version_as_text(binary_version, client_version)
+        show_pyre_version_as_text(binary_version, client_version)
 
 
 def start_logging_to_directory(
@@ -580,7 +580,7 @@ def analyze(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     if version:
-        show_pyre_version(command_argument)
+        _show_pyre_version(command_argument)
         return commands.ExitCode.SUCCESS
 
     configuration = _create_and_check_configuration(command_argument, Path("."))
@@ -1501,7 +1501,7 @@ def run_default_command(
 ) -> commands.ExitCode:
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     if command_argument.version:
-        show_pyre_version(command_argument)
+        _show_pyre_version(command_argument)
         return commands.ExitCode.SUCCESS
     elif context.invoked_subcommand is None:
         return _run_default_command(command_argument)
