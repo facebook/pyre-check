@@ -1115,8 +1115,8 @@ let test_setattr_known_mutable_methods context =
           object.__setattr__(MyClass, "x", x)
     |}
     [
-      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a class attribute [3105]: Data write to class attribute `test.MyClass.x` of type \
+       `int` defined in class `test.MyClass`";
     ];
   assert_global_leak_errors
     (* Calling setattr on a global object results in an error. *)
@@ -1127,8 +1127,8 @@ let test_setattr_known_mutable_methods context =
           setattr(MyClass, "x", x)
     |}
     [
-      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a class attribute [3105]: Data write to class attribute `test.MyClass.x` of type \
+       `int` defined in class `test.MyClass`";
     ];
   assert_global_leak_errors
     (* Calling object.__setattr__ on a global object results in an error. *)
@@ -1140,8 +1140,8 @@ let test_setattr_known_mutable_methods context =
         object.__setattr__(MyClass, "x", 2)
     |}
     [
-      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a class attribute [3105]: Data write to class attribute `test.MyClass.x` of type \
+       `int` defined in class `test.MyClass`";
     ];
   assert_global_leak_errors
     (* Calling setattr on a global object results in an error. *)
@@ -1153,8 +1153,8 @@ let test_setattr_known_mutable_methods context =
         setattr(MyClass, "x", 3)
     |}
     [
-      "Global leak [3100]: Data is leaked to global `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a class attribute [3105]: Data write to class attribute `test.MyClass.x` of type \
+       `int` defined in class `test.MyClass`";
     ];
   assert_global_leak_errors
     (* Calling setattr with a global mutation in the value position results in an error *)

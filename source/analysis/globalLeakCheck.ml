@@ -84,6 +84,20 @@ module State (Context : Context) = struct
          { global_name = delocalized_reference; global_type = target_type; method_name })
 
 
+  let construct_write_to_class_attribute attribute_name ~resolution global =
+    let _, delocalized_reference_class = get_type_and_reference ~resolution global in
+    let target_type, delocalized_reference_class_attribute =
+      Reference.create ~prefix:global attribute_name |> get_type_and_reference ~resolution
+    in
+    Error.LeakToGlobal
+      (WriteToClassAttribute
+         {
+           class_name = delocalized_reference_class;
+           attribute_type = target_type;
+           attribute_name = delocalized_reference_class_attribute;
+         })
+
+
   let construct_write_to_global_variable_kind ~resolution global =
     let target_type, delocalized_reference = get_type_and_reference ~resolution global in
     let category =
@@ -204,12 +218,38 @@ module State (Context : Context) = struct
     | Call
         {
           callee = { Node.value = Name (Name.Attribute { attribute = "__setattr__"; _ }); _ };
-          arguments = [{ Call.Argument.value = object_; _ }; _; { Call.Argument.value; _ }];
+          arguments =
+            [
+              { Call.Argument.value = object_; _ };
+              {
+                Call.Argument.value =
+                  {
+                    Node.value =
+                      Constant (Constant.String { StringLiteral.value = attribute_name; _ });
+                    _;
+                  };
+                _;
+              };
+              { Call.Argument.value; _ };
+            ];
         }
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "setattr"); _ };
-          arguments = [{ Call.Argument.value = object_; _ }; _; { Call.Argument.value; _ }];
+          arguments =
+            [
+              { Call.Argument.value = object_; _ };
+              {
+                Call.Argument.value =
+                  {
+                    Node.value =
+                      Constant (Constant.String { StringLiteral.value = attribute_name; _ });
+                    _;
+                  };
+                _;
+              };
+              { Call.Argument.value; _ };
+            ];
         } ->
         (* Adds special casing for `<anything>.__setattr__(...)` and `setattr(...)` to error if the
            first argument (the object) has a reachable global or a mutation occurs in the third
@@ -221,7 +261,13 @@ module State (Context : Context) = struct
         let { errors = value_errors; _ } = forward_expression value in
         {
           empty_result with
-          errors = append_errors_for_globals reachable_globals (value_errors @ errors);
+          errors =
+            append_errors_for_reachable_globals
+              ~resolution
+              ~location
+              (construct_write_to_class_attribute attribute_name)
+              reachable_globals
+              (value_errors @ errors);
         }
     | Call { callee; arguments } ->
         let { errors; reachable_globals } = forward_expression callee in
