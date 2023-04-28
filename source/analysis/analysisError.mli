@@ -286,7 +286,7 @@ module GlobalLeaks : sig
     | WriteToMethodArgument of {
         global_name: Reference.t;
         global_type: Type.t;
-        method_name: Reference.t;
+        callee: Expression.t;
       }
     | ReturnOfGlobalVariable of {
         global_name: Reference.t;

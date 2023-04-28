@@ -328,7 +328,7 @@ module GlobalLeaks = struct
     | WriteToMethodArgument of {
         global_name: Reference.t;
         global_type: Type.t;
-        method_name: Reference.t;
+        callee: Expression.t;
       }
     | ReturnOfGlobalVariable of {
         global_name: Reference.t;
@@ -372,16 +372,15 @@ module GlobalLeaks = struct
               pp_reference
               local_name;
           ]
-      | WriteToMethodArgument { global_name; global_type; method_name } ->
+      | WriteToMethodArgument { global_name; global_type; callee } ->
           [
             Format.asprintf
-              "Potential data leak to global `%a` of type `%a` via method arguments to method `%a`."
+              "Potential data leak to global `%a` of type `%a` via method arguments to method `%s`."
               pp_reference
               global_name
               Type.pp
               global_type
-              pp_reference
-              method_name;
+              (Ast.Transform.sanitize_expression callee |> Expression.show);
           ]
       | ReturnOfGlobalVariable { global_name; global_type; method_name } -> (
           match method_name with

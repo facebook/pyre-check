@@ -112,6 +112,13 @@ module State (Context : Context) = struct
          { global_name = delocalized_reference; global_type = target_type; category })
 
 
+  let construct_write_to_method_argument_error callee ~resolution global =
+    let target_type, delocalized_reference = get_type_and_reference ~resolution global in
+    Error.LeakToGlobal
+      (WriteToMethodArgument
+         { global_name = delocalized_reference; global_type = target_type; callee })
+
+
   let append_errors_for_reachable_globals ~resolution ~location construct_leak_kind globals errors =
     List.map
       ~f:(fun { global; _ } ->
@@ -180,9 +187,6 @@ module State (Context : Context) = struct
           conditions
       in
       target_errors @ iterator_errors @ condition_errors
-    in
-    let append_errors_for_globals =
-      append_errors_for_reachable_globals ~resolution ~location construct_global_leak_kind
     in
     let expression_type () = Resolution.resolve_expression_to_type resolution expression in
     match value with
@@ -294,7 +298,12 @@ module State (Context : Context) = struct
         in
         let get_errors_from_forward_expression { Call.Argument.value; _ } =
           let { errors; reachable_globals } = forward_expression value in
-          append_errors_for_globals reachable_globals errors
+          append_errors_for_reachable_globals
+            ~resolution
+            ~location
+            (construct_write_to_method_argument_error callee)
+            reachable_globals
+            errors
         in
         List.concat_map ~f:get_errors_from_forward_expression arguments
         |> fun argument_errors -> { errors = argument_errors @ errors; reachable_globals }

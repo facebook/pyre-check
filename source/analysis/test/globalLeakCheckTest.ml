@@ -314,7 +314,8 @@ let test_global_exceptions context =
           my_local = 2
     |}
     [
-      "Global leak [3100]: Data is leaked to global `my_global` of type `typing.Any`.";
+      "Leak via method argument [3107]: Potential data leak to global `my_global` of type \
+       `typing.Any` via method arguments to method `isinstance`.";
       "Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`.";
     ];
   assert_global_leak_errors
@@ -589,7 +590,10 @@ let test_list_global_leaks context =
 
         my_list[my_global].append(4)
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `int` via method arguments to method `my_list.__getitem__`.";
+    ];
   assert_global_leak_errors
     (* Mutating a global with the walrus operator in a list constructor results in an error. *)
     {|
@@ -660,7 +664,10 @@ let test_list_global_leaks context =
         my_list: List[int] = []
         my_list.append(my_global)
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `int` via method arguments to method `my_list.append`.";
+    ];
   ()
 
 
@@ -929,7 +936,10 @@ let test_dict_global_leaks context =
         my_dict: Dict[str, int] = {}
         my_dict["my_global"] = my_global
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `int` via method arguments to method `my_dict.__setitem__`.";
+    ];
   ()
 
 
@@ -1527,7 +1537,10 @@ let test_global_statements context =
         my_set: Set[int] = set()
         my_set.add(my_global)
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `int` via method arguments to method `my_set.add`.";
+    ];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1893,7 +1906,10 @@ let test_global_statements context =
         for i in range(0, my_global):
           print("hi")
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `int` via method arguments to method `range`.";
+    ];
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2310,7 +2326,10 @@ let test_globals_passed_as_function_parameters context =
       def foo() -> None:
         print(my_global)
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `typing.List[int]` via method arguments to method `print`.";
+    ];
   assert_global_leak_errors
     (* Passing multiple globals as parameters results in an error.*)
     {|
@@ -2325,8 +2344,10 @@ let test_globals_passed_as_function_parameters context =
         bar(my_global, my_global_int)
     |}
     [
-      "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
-      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`.";
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
+       `int` via method arguments to method `test.bar`.";
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `typing.List[int]` via method arguments to method `test.bar`.";
     ];
   assert_global_leak_errors
     (* Passing a global multiple times as a parameter results in multiple errors.*)
@@ -2342,8 +2363,10 @@ let test_globals_passed_as_function_parameters context =
         bar(my_global_int, my_global_int)
     |}
     [
-      "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
-      "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
+       `int` via method arguments to method `test.bar`.";
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
+       `int` via method arguments to method `test.bar`.";
     ];
   assert_global_leak_errors
     (* Passing multiple globals as parameters in nested calls results in an error.*)
@@ -2362,8 +2385,10 @@ let test_globals_passed_as_function_parameters context =
         bar(my_global, baz(my_global_int))
     |}
     [
-      "Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`.";
-      "Global leak [3100]: Data is leaked to global `test.my_global` of type `typing.List[int]`.";
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
+       `int` via method arguments to method `test.baz`.";
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
+       `typing.List[int]` via method arguments to method `test.bar`.";
     ];
   assert_global_leak_errors
     (* Passing globals as parameters in calls in assignment statement results in an error.*)
@@ -2376,7 +2401,10 @@ let test_globals_passed_as_function_parameters context =
         global my_global_int
         a = baz(my_global_int)
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
+       `int` via method arguments to method `test.baz`.";
+    ];
   assert_global_leak_errors
     (* Passing a global as a parameter to a class function results in an error. *)
     {|
@@ -2392,7 +2420,10 @@ let test_globals_passed_as_function_parameters context =
         my_local: MyClass = MyClass()
         my_local.set_x(my_global_int)
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
+       `int` via method arguments to method `my_local.set_x`.";
+    ];
   assert_global_leak_errors
     (* Passing a global as a parameter to a class initialization results in an error. *)
     {|
@@ -2405,7 +2436,10 @@ let test_globals_passed_as_function_parameters context =
         my_local: MyClass = MyClass(my_global_int)
 
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global_int` of type `int`."];
+    [
+      "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
+       `int` via method arguments to method `test.MyClass`.";
+    ];
   assert_global_leak_errors
     (* Using a global in a list append when the global is not mutated results in a global read
        error. This is because we consider globals passed as function parameters as potential
