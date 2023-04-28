@@ -1303,7 +1303,7 @@ def start(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     if flavor_choice == identifiers.PyreFlavor.CODE_NAVIGATION:
         configuration = _create_and_check_codenav_configuration(
-            command_argument, Path(".")
+            command_argument, Path(".").resolve()
         )
     else:
         configuration = _create_and_check_configuration(command_argument, Path("."))
@@ -1471,7 +1471,7 @@ def stop(context: click.Context, flavor: Optional[str]) -> int:
     )
     if flavor_choice == identifiers.PyreFlavor.CODE_NAVIGATION:
         configuration = _create_and_check_codenav_configuration(
-            command_argument, Path(".")
+            command_argument, Path(".").resolve()
         )
     else:
         configuration = _create_and_check_configuration(command_argument, Path("."))
