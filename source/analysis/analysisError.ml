@@ -323,7 +323,8 @@ module GlobalLeaks = struct
     | WriteToLocalVariable of {
         global_name: Reference.t;
         global_type: Type.t;
-        local_name: Reference.t;
+        (* local can represent both x and local_variable.x *)
+        local: Expression.t;
       }
     | WriteToMethodArgument of {
         global_name: Reference.t;
@@ -361,16 +362,15 @@ module GlobalLeaks = struct
               pp_reference
               class_name;
           ]
-      | WriteToLocalVariable { global_name; global_type; local_name } ->
+      | WriteToLocalVariable { global_name; global_type; local } ->
           [
             Format.asprintf
-              "Potential data leak to global `%a` of type `%a` via alias to local `%a`"
+              "Potential data leak to global `%a` of type `%a` via alias to local `%s`."
               pp_reference
               global_name
               Type.pp
               global_type
-              pp_reference
-              local_name;
+              (Ast.Transform.sanitize_expression local |> Expression.show);
           ]
       | WriteToMethodArgument { global_name; global_type; callee } ->
           [

@@ -1526,7 +1526,10 @@ let test_global_statements context =
       def foo() -> None:
         y: int = my_global
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    [
+      "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
+       `int` via alias to local `y`.";
+    ];
   assert_global_leak_errors
     (* Passing global as a function parameter results in an error. *)
     (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
@@ -1554,7 +1557,10 @@ let test_global_statements context =
         my_obj: MyClass = MyClass(1)
         my_obj.x = my_global
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    [
+      "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
+       `int` via alias to local `my_obj.x`.";
+    ];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1567,7 +1573,10 @@ let test_global_statements context =
       def foo() -> None:
         MyClass(1).x = my_global
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `int`."];
+    [
+      "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
+       `int` via alias to local `test.MyClass(1).x`.";
+    ];
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1580,7 +1589,10 @@ let test_global_statements context =
       def foo() -> None:
         my_local = my_global.x
     |}
-    ["Global leak [3100]: Data is leaked to global `test.my_global` of type `test.MyClass`."];
+    [
+      "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
+       `test.MyClass` via alias to local `my_local`.";
+    ];
   assert_global_leak_errors
     {|
       async def test() -> AsyncGenerator[None, None]:

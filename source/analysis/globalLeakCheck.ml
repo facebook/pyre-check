@@ -112,6 +112,13 @@ module State (Context : Context) = struct
          { global_name = delocalized_reference; global_type = target_type; category })
 
 
+  let construct_global_write_to_local_variable local ~resolution global =
+    let target_type, delocalized_reference = get_type_and_reference ~resolution global in
+    Error.LeakToGlobal
+      (WriteToLocalVariable
+         { global_name = delocalized_reference; global_type = target_type; local })
+
+
   let construct_write_to_method_argument_error callee ~resolution global =
     let target_type, delocalized_reference = get_type_and_reference ~resolution global in
     Error.LeakToGlobal
@@ -534,8 +541,15 @@ module State (Context : Context) = struct
               reachable_globals
               []
           in
-          leaks_to_global_variables
-          @ prepare_globals_for_errors value_reachable_globals (value_errors @ errors)
+          let global_writes_to_locals =
+            append_errors_for_reachable_globals
+              ~resolution
+              ~location
+              (construct_global_write_to_local_variable target)
+              value_reachable_globals
+              []
+          in
+          leaks_to_global_variables @ global_writes_to_locals @ value_errors @ errors
       | Expression expression ->
           let { errors; _ } = forward_expression ~resolution expression in
           errors

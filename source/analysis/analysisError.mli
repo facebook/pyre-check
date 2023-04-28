@@ -281,7 +281,7 @@ module GlobalLeaks : sig
     | WriteToLocalVariable of {
         global_name: Reference.t;
         global_type: Type.t;
-        local_name: Reference.t;
+        local: Expression.t;
       }
     | WriteToMethodArgument of {
         global_name: Reference.t;
