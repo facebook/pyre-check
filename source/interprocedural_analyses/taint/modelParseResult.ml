@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Ast
 open Core
 open Interprocedural
+open Pyre
 
 (* ModelParseResult: defines the result of parsing pysa model files (`.pysa`). *)
 
@@ -637,6 +639,119 @@ module ModelQuery = struct
       ~f:(fun result model_query -> List.fold ~f:process_constraint ~init:result model_query.where)
       ~init:[]
       model_queries
+end
+
+(* Store all regular expression captures in name constraints for WriteToCache queries. *)
+module NameCaptures = struct
+  type t = Re2.Match.t list ref
+
+  let create () = ref []
+
+  let add results name_match = results := name_match :: !results
+
+  let get results identifier =
+    List.find_map !results ~f:(fun name_match -> Re2.Match.get ~sub:(`Name identifier) name_match)
+end
+
+module Modelable = struct
+  (* Use lazy values so we only query information when required. *)
+  type t =
+    | Callable of {
+        target: Target.t;
+        signature: Statement.Define.Signature.t Lazy.t;
+      }
+    | Attribute of {
+        name: Reference.t;
+        type_annotation: Expression.t option Lazy.t;
+      }
+    | Global of {
+        name: Reference.t;
+        type_annotation: Expression.t option Lazy.t;
+      }
+
+  let target = function
+    | Callable { target; _ } -> target
+    | Attribute { name; _ }
+    | Global { name; _ } ->
+        Target.create_object name
+
+
+  let name = function
+    | Callable { target; _ } -> Target.define_name target
+    | Attribute { name; _ }
+    | Global { name; _ } ->
+        name
+
+
+  let type_annotation = function
+    | Callable _ -> failwith "unexpected use of type_annotation on a callable"
+    | Attribute { type_annotation; _ }
+    | Global { type_annotation; _ } ->
+        Lazy.force type_annotation
+
+
+  let return_annotation = function
+    | Callable { signature; _ } ->
+        let { Statement.Define.Signature.return_annotation; _ } = Lazy.force signature in
+        return_annotation
+    | Attribute _
+    | Global _ ->
+        failwith "unexpected use of return_annotation on an attribute or global"
+
+
+  let parameters = function
+    | Callable { signature; _ } ->
+        let { Statement.Define.Signature.parameters; _ } = Lazy.force signature in
+        parameters
+    | Attribute _
+    | Global _ ->
+        failwith "unexpected use of any_parameter on an attribute or global"
+
+
+  let decorators = function
+    | Callable { signature; _ } ->
+        signature
+        |> Lazy.force
+        |> Analysis.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
+    | Attribute _
+    | Global _ ->
+        failwith "unexpected use of Decorator on an attribute or global"
+
+
+  let class_name = function
+    | Callable { target; _ } -> Target.class_name target
+    | Attribute { name; _ } -> Reference.prefix name >>| Reference.show
+    | Global _ -> failwith "unexpected use of a class constraint on a global"
+
+
+  let matches_find modelable find =
+    match find, modelable with
+    | ModelQuery.Find.Function, Callable { target = Target.Function _; _ }
+    | ModelQuery.Find.Method, Callable { target = Target.Method _; _ }
+    | ModelQuery.Find.Attribute, Attribute _
+    | ModelQuery.Find.Global, Global _ ->
+        true
+    | _ -> false
+
+
+  let expand_write_to_cache ~name_captures modelable name =
+    let expand_substring modelable substring =
+      match substring, modelable with
+      | ModelQuery.WriteToCache.Substring.Literal value, _ -> value
+      | FunctionName, Callable { target = Target.Function { name; _ }; _ } ->
+          Reference.create name |> Reference.last
+      | MethodName, Callable { target = Target.Method { method_name; _ }; _ } -> method_name
+      | ClassName, Callable { target = Target.Method { class_name; _ }; _ } ->
+          Reference.create class_name |> Reference.last
+      | Capture identifier, _ -> (
+          match NameCaptures.get name_captures identifier with
+          | Some value -> value
+          | None ->
+              let () = Log.warning "No match for capture `%s` in WriteToCache query" identifier in
+              "")
+      | _ -> failwith "unreachable"
+    in
+    name |> List.map ~f:(expand_substring modelable) |> String.concat ~sep:""
 end
 
 type t = {

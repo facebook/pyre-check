@@ -3599,23 +3599,21 @@ let invalid_model_query_error error =
 
 let create_callable_model_from_annotations
     ~resolution
-    ~callable
+    ~modelable
     ~source_sink_filter
     ~is_obscure
     annotations
   =
   let open Core.Result in
   let open ModelVerifier in
-  match Target.get_module_and_definition ~resolution callable with
-  | None ->
-      Error (invalid_model_query_error (NoCorrespondingCallable (Target.show_pretty callable)))
-  | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
+  match modelable with
+  | Modelable.Callable { signature = define; _ } ->
       resolve_global_callable
         ~path:None
         ~location:Location.any
         ~resolution
         ~verify_decorators:false
-        define
+        (Lazy.force define)
       >>| (function
             | Some (Global.Attribute (Type.Callable t))
             | Some
@@ -3639,6 +3637,7 @@ let create_callable_model_from_annotations
             ~source_sink_filter
             accumulator
             model_annotation)
+  | _ -> failwith "unreachable"
 
 
 let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filter annotations =

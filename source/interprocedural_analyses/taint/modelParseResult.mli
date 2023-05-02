@@ -348,6 +348,54 @@ module ModelQuery : sig
   val extract_extends_from_model_queries : t list -> string list
 end
 
+module NameCaptures : sig
+  type t
+
+  val create : unit -> t
+
+  val add : t -> Re2.Match.t -> unit
+
+  val get : t -> string -> string option
+end
+
+module Modelable : sig
+  type t =
+    | Callable of {
+        target: Interprocedural.Target.t;
+        signature: Ast.Statement.Define.Signature.t lazy_t;
+      }
+    | Attribute of {
+        name: Ast.Reference.t;
+        type_annotation: Ast.Expression.t option lazy_t;
+      }
+    | Global of {
+        name: Ast.Reference.t;
+        type_annotation: Ast.Expression.t option lazy_t;
+      }
+
+  val target : t -> Interprocedural.Target.t
+
+  val name : t -> Ast.Reference.t
+
+  val type_annotation : t -> Ast.Expression.t option
+
+  val return_annotation : t -> Ast.Expression.t option
+
+  val parameters : t -> Ast.Expression.Parameter.t list
+
+  val decorators : t -> Ast.Expression.t list
+
+  val class_name : t -> string option
+
+  val matches_find : t -> ModelQuery.Find.t -> bool
+
+  val expand_write_to_cache
+    :  name_captures:NameCaptures.t ->
+    t ->
+    ModelQuery.WriteToCache.Substring.t list ->
+    string
+end
+
 type t = {
   models: Registry.t;
   queries: ModelQuery.t list;

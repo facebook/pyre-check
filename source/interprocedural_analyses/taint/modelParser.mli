@@ -49,7 +49,7 @@ val parse_decorator_modes
 (* Exposed for model queries. *)
 val create_callable_model_from_annotations
   :  resolution:Analysis.GlobalResolution.t ->
-  callable:Interprocedural.Target.t ->
+  modelable:ModelParseResult.Modelable.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   is_obscure:bool ->
   ModelParseResult.ModelAnnotation.t list ->

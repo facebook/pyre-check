@@ -132,7 +132,6 @@ type kind =
       model_name: string;
       error: string;
     }
-  | NoCorrespondingCallable of string
   | InvalidAnnotationForAttributeModel of {
       name: Reference.t;
       annotation: string;

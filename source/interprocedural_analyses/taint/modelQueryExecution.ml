@@ -309,26 +309,6 @@ module SanitizedCallArgumentSet = Set.Make (struct
   let compare = sanitized_location_insensitive_compare
 end)
 
-(* Store all regular expression captures in name constraints for WriteToCache queries. *)
-module NameCaptures : sig
-  type t
-
-  val create : unit -> t
-
-  val add : t -> Re2.Match.t -> unit
-
-  val get : t -> string -> string option
-end = struct
-  type t = Re2.Match.t list ref
-
-  let create () = ref []
-
-  let add results name_match = results := name_match :: !results
-
-  let get results identifier =
-    List.find_map !results ~f:(fun name_match -> Re2.Match.get ~sub:(`Name identifier) name_match)
-end
-
 let find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name =
   let rec find_children_transitive ~class_hierarchy_graph to_process result =
     match to_process with
@@ -649,107 +629,6 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captur
                class_constraint)
 
 
-module Modelable = struct
-  (* Use lazy values so we only query information when required. *)
-  type t =
-    | Callable of {
-        target: Target.t;
-        signature: Statement.Define.Signature.t Lazy.t;
-      }
-    | Attribute of {
-        name: Reference.t;
-        type_annotation: Expression.t option Lazy.t;
-      }
-    | Global of {
-        name: Reference.t;
-        type_annotation: Expression.t option Lazy.t;
-      }
-
-  let target = function
-    | Callable { target; _ } -> target
-    | Attribute { name; _ }
-    | Global { name; _ } ->
-        Target.create_object name
-
-
-  let name = function
-    | Callable { target; _ } -> Target.define_name target
-    | Attribute { name; _ }
-    | Global { name; _ } ->
-        name
-
-
-  let type_annotation = function
-    | Callable _ -> failwith "unexpected use of type_annotation on a callable"
-    | Attribute { type_annotation; _ }
-    | Global { type_annotation; _ } ->
-        Lazy.force type_annotation
-
-
-  let return_annotation = function
-    | Callable { signature; _ } ->
-        let { Statement.Define.Signature.return_annotation; _ } = Lazy.force signature in
-        return_annotation
-    | Attribute _
-    | Global _ ->
-        failwith "unexpected use of return_annotation on an attribute or global"
-
-
-  let parameters = function
-    | Callable { signature; _ } ->
-        let { Statement.Define.Signature.parameters; _ } = Lazy.force signature in
-        parameters
-    | Attribute _
-    | Global _ ->
-        failwith "unexpected use of any_parameter on an attribute or global"
-
-
-  let decorators = function
-    | Callable { signature; _ } ->
-        signature
-        |> Lazy.force
-        |> Analysis.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
-    | Attribute _
-    | Global _ ->
-        failwith "unexpected use of Decorator on an attribute or global"
-
-
-  let class_name = function
-    | Callable { target; _ } -> Target.class_name target
-    | Attribute { name; _ } -> Reference.prefix name >>| Reference.show
-    | Global _ -> failwith "unexpected use of a class constraint on a global"
-
-
-  let matches_find modelable find =
-    match find, modelable with
-    | ModelQuery.Find.Function, Callable { target = Target.Function _; _ }
-    | ModelQuery.Find.Method, Callable { target = Target.Method _; _ }
-    | ModelQuery.Find.Attribute, Attribute _
-    | ModelQuery.Find.Global, Global _ ->
-        true
-    | _ -> false
-
-
-  let expand_write_to_cache ~name_captures modelable name =
-    let expand_substring modelable substring =
-      match substring, modelable with
-      | ModelQuery.WriteToCache.Substring.Literal value, _ -> value
-      | FunctionName, Callable { target = Target.Function { name; _ }; _ } ->
-          Reference.create name |> Reference.last
-      | MethodName, Callable { target = Target.Method { method_name; _ }; _ } -> method_name
-      | ClassName, Callable { target = Target.Method { class_name; _ }; _ } ->
-          Reference.create class_name |> Reference.last
-      | Capture identifier, _ -> (
-          match NameCaptures.get name_captures identifier with
-          | Some value -> value
-          | None ->
-              let () = Log.warning "No match for capture `%s` in WriteToCache query" identifier in
-              "")
-      | _ -> failwith "unreachable"
-    in
-    name |> List.map ~f:(expand_substring modelable) |> String.concat ~sep:""
-end
-
 let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures value query_constraint =
   match query_constraint with
   | ModelQuery.Constraint.AnyOf constraints ->
@@ -1022,6 +901,7 @@ module type QUERY_KIND = sig
     source_sink_filter:SourceSinkFilter.t option ->
     stubs:Target.t Hash_set.t ->
     target:Target.t ->
+    modelable:Modelable.t ->
     annotation list ->
     (Model.t, ModelVerificationError.t) result
 end
@@ -1105,6 +985,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~source_sink_filter
           ~stubs
           ~target
+          ~modelable
           annotations
         |> Result.map ~f:Option.some
 
@@ -1119,6 +1000,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       query
     =
     let fold registry target =
+      let modelable = QueryKind.make_modelable ~resolution target in
       match
         generate_model_from_query_on_target
           ~verbose
@@ -1127,7 +1009,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~source_sink_filter
           ~stubs
           ~target
-          ~modelable:(QueryKind.make_modelable ~resolution target)
+          ~modelable
           query
       with
       | Ok (Some model) -> Registry.add registry ~join:Model.join_user_models ~target ~model
@@ -1702,11 +1584,12 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       ~source_sink_filter
       ~stubs
       ~target:callable
+      ~modelable
       annotations
     =
     ModelParser.create_callable_model_from_annotations
       ~resolution
-      ~callable
+      ~modelable
       ~source_sink_filter
       ~is_obscure:(Hash_set.mem stubs callable)
       annotations
@@ -1803,7 +1686,13 @@ module AttributeQueryExecutor = struct
       List.concat_map models ~f:apply_model
 
 
-    let generate_model_from_annotations ~resolution ~source_sink_filter ~stubs:_ ~target annotations
+    let generate_model_from_annotations
+        ~resolution
+        ~source_sink_filter
+        ~stubs:_
+        ~target
+        ~modelable:_
+        annotations
       =
       ModelParser.create_attribute_model_from_annotations
         ~resolution
@@ -1875,7 +1764,13 @@ module GlobalVariableQueryExecutor = struct
       List.concat_map models ~f:apply_model
 
 
-    let generate_model_from_annotations ~resolution ~source_sink_filter ~stubs:_ ~target annotations
+    let generate_model_from_annotations
+        ~resolution
+        ~source_sink_filter
+        ~stubs:_
+        ~target
+        ~modelable:_
+        annotations
       =
       ModelParser.create_attribute_model_from_annotations
         ~resolution

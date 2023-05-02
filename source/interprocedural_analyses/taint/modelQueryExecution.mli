@@ -68,16 +68,12 @@ module CandidateTargetsFromCache : sig
   val from_constraint : ReadWriteCache.t -> ModelParseResult.ModelQuery.Constraint.t -> t
 end
 
-module Modelable : sig
-  type t
-end
-
 module CallableQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    modelable:Modelable.t ->
+    modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.ModelAnnotation.t list
 
@@ -92,7 +88,7 @@ module CallableQueryExecutor : sig
   val make_modelable
     :  resolution:Analysis.GlobalResolution.t ->
     Interprocedural.Target.t ->
-    Modelable.t
+    ModelParseResult.Modelable.t
 end
 
 module AttributeQueryExecutor : sig
@@ -100,7 +96,7 @@ module AttributeQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    modelable:Modelable.t ->
+    modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
 
@@ -123,7 +119,7 @@ module AttributeQueryExecutor : sig
   val make_modelable
     :  resolution:Analysis.GlobalResolution.t ->
     Interprocedural.Target.t ->
-    Modelable.t
+    ModelParseResult.Modelable.t
 end
 
 module GlobalVariableQueryExecutor : sig
@@ -131,7 +127,7 @@ module GlobalVariableQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    modelable:Modelable.t ->
+    modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
 
@@ -153,7 +149,7 @@ module GlobalVariableQueryExecutor : sig
   val make_modelable
     :  resolution:Analysis.GlobalResolution.t ->
     Interprocedural.Target.t ->
-    Modelable.t
+    ModelParseResult.Modelable.t
 end
 
 val generate_models_from_queries

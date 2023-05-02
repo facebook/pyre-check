@@ -136,7 +136,6 @@ type kind =
       model_name: string;
       error: string;
     }
-  | NoCorrespondingCallable of string
   | InvalidAnnotationForAttributeModel of {
       name: Reference.t;
       annotation: string;
@@ -427,8 +426,6 @@ let description error =
       Format.sprintf "Unexpected model expression: `%s`" (Expression.show expression)
   | InvalidModelForTaint { model_name; error } ->
       Format.sprintf "Invalid model for `%s`: %s" model_name error
-  | NoCorrespondingCallable callable ->
-      Format.sprintf "No callable corresponding to `%s` found." callable
   | InvalidAnnotationForAttributeModel { name; annotation } ->
       Format.sprintf
         "Invalid annotation for attribute model `%s`: `%s`."
@@ -548,7 +545,6 @@ let code { kind; _ } =
   | InvalidFindClauseType _ -> 34
   | InvalidReturnAnnotation _ -> 35
   | InvalidModelForTaint _ -> 36
-  | NoCorrespondingCallable _ -> 37
   | InvalidAnnotationForAttributeModel _ -> 38
   | InvalidDecoratorClause _ -> 39
   | DuplicateNameClauses _ -> 40
