@@ -11,7 +11,6 @@ from pyre_extensions import ParameterSpecification
 from typing_extensions import Annotated
 
 from ..function_tainter import (
-    _get_annotations_as_types,
     taint_callable_dataclass_fields_parameters,
     taint_callable_with_parameters_names,
 )
@@ -230,68 +229,5 @@ class FunctionTainterTest(unittest.TestCase):
                 "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1: TaintSource[UserControlled[data1___y], ParameterPath[_.y]], data2, x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
                 "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1, data2: TaintSource[UserControlled[data2___x1], ParameterPath[_.x1]], x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
                 "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1, data2: TaintSource[UserControlled[data2___y], ParameterPath[_.y]], x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
-            },
-        )
-
-
-class AnnotationAsTypesTester(unittest.TestCase):
-    def test_dataclass_parameters_annotation(self) -> None:
-        annotations = _get_annotations_as_types(
-            test_dataclass_parameter, strip_optional=True, strip_annotated=True
-        )
-        self.assertEqual(
-            annotations,
-            {"data": TestRequestDataclass, "return": TestReturnDataclass},
-        )
-
-    def test_simple_parameters_annotations(self) -> None:
-        annotations = _get_annotations_as_types(test_simple_parameter)
-        self.assertEqual(
-            annotations,
-            {"x1": str, "y": int, "return": None},
-        )
-
-    def test_annotated_parameters_annotations(self) -> None:
-        annotations = _get_annotations_as_types(
-            test_annotated_annotation, strip_optional=True, strip_annotated=True
-        )
-        self.assertEqual(
-            annotations,
-            {"data": TestRequestDataclass, "return": None},
-        )
-
-    def test_optional_parameters_annotations(self) -> None:
-        annotations = _get_annotations_as_types(
-            test_optional_annotation, strip_optional=True, strip_annotated=True
-        )
-        self.assertEqual(
-            annotations,
-            {"data": TestRequestDataclass, "return": None},
-        )
-
-    def test_no_parameters_annotations(self) -> None:
-        annotations = _get_annotations_as_types(
-            test_args_kwargs_without_annotation,
-            strip_optional=True,
-            strip_annotated=True,
-        )
-        self.assertEqual(
-            annotations,
-            {},
-        )
-
-    def test_with_mixed_args_annotations(self) -> None:
-        annotations = _get_annotations_as_types(
-            test_mixed_args,
-            strip_optional=True,
-            strip_annotated=True,
-        )
-        self.assertEqual(
-            annotations,
-            {
-                "data1": TestRequestDataclass,
-                "data2": TestRequestDataclass,
-                "x": str,
-                "return": None,
             },
         )

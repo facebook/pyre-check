@@ -7,20 +7,7 @@
 
 import dataclasses
 import re
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    get_args,
-    get_origin,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Union,
-)
-
-from typing_extensions import Annotated
+from typing import Callable, Iterable, List, Optional, Set
 
 from ...api import query
 from .generator_specifications import (
@@ -31,7 +18,7 @@ from .generator_specifications import (
     WhitelistSpecification,
 )
 
-from .inspect_parser import extract_qualified_name
+from .inspect_parser import extract_parameters_with_types, extract_qualified_name
 from .model import CallableModel, PyreFunctionDefinitionModel
 
 
@@ -89,54 +76,6 @@ def taint_pyre_functions(
     return tainted_functions
 
 
-def _get_annotations_as_types(
-    function: Callable[..., object],
-    strip_annotated: bool = False,
-    strip_optional: bool = False,
-) -> Dict[str, Any]:
-    # TODO(T148815848) Simply use "inspect.get_annotations(function_to_model, eval_str=True)" when migrated to python 3.10
-    try:
-        from inspect import get_annotations  # pyre-ignore
-
-        resolved_annotations = get_annotations(function, eval_str=True)  # pyre-ignore
-    except ImportError:
-        resolved_annotations = function.__annotations__
-    finally:
-        # Deal with common annotation for parameters like Optional[] and Annotated[]
-        for parameter, annotation in resolved_annotations.items():
-            annotation = (
-                _strip_optional_annotation(annotation) if strip_optional else annotation
-            )
-            resolved_annotations[parameter] = (
-                _strip_annotated_annotation(annotation)
-                if strip_annotated
-                else annotation
-            )
-    return resolved_annotations
-
-
-# pyre-ignore annotations are types as Any in typeshed
-def _strip_optional_annotation(annotation: Any) -> Any:
-    # Optional is defined as Union[type, NoneType]
-    if (
-        get_origin(annotation) is Union
-        and len(get_args(annotation)) == 2
-        and get_args(annotation)[1] == type(None)  # noqa E721
-    ):
-        return get_args(annotation)[0]
-    return annotation
-
-
-# pyre-ignore annotations are types as Any in typeshed
-def _strip_annotated_annotation(annotation: Any) -> Any:
-    # Annotated is defined as Annoted[type, annotation_details]
-    # doing this to identify if type is annotated because Annotated has type `typing_extensions._AnnotatedAlias`
-    #  and we want to avoid relying on implementation details (_AnnotatedAlias)
-    if isinstance(annotation, type(Annotated[int, "test"])):
-        return get_args(annotation)[0]
-    return annotation
-
-
 def get_specific_parameter_name_annotation(
     function_to_model: Callable[..., object],
     parameter_taint: str,
@@ -187,13 +126,13 @@ def taint_callable_dataclass_fields_parameters(
     def accounts.api.views.async_account_deactivation_login(data: TaintSource[UserControlled[data___device_id], ParameterPath[_.device_id]]) -> TaintSink[ReturnedToUser]: ...
     def accounts.api.views.async_account_deactivation_login(data: TaintSource[UserControlled[data___token], ParameterPath[_.token]]) -> TaintSink[ReturnedToUser]: ...
     """
-    parameters_annotations = _get_annotations_as_types(
+    parameters_annotations = extract_parameters_with_types(
         function_to_model, strip_optional=True, strip_annotated=True
     )
     parameters_dataclasses = {
         parameter_name: parameter_annotation
         for parameter_name, parameter_annotation in parameters_annotations.items()
-        if not parameter_name == "return"
+        if parameter_annotation is not None
         and dataclasses.is_dataclass(parameter_annotation)
     }
     unsafe_characters_regex = re.compile("[^a-zA-Z_0-9]")

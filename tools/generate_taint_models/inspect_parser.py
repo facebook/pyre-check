@@ -9,9 +9,21 @@
 import ast
 import inspect
 import types
-from typing import Callable, List, Mapping, Optional
+
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    get_args,
+    get_origin,
+    List,
+    Mapping,
+    Optional,
+    Union,
+)
 
 import astunparse
+from typing_extensions import Annotated
 
 from .parameter import Parameter
 
@@ -83,15 +95,87 @@ def strip_custom_annotations(annotation: str) -> str:
     # will return TestClass
     if annotation.startswith("Annotated["):
         parsed_annotation = ast.parse(annotation).body[0]
-        if (
-            isinstance(parsed_annotation, ast.Expr)
-            and isinstance(parsed_annotation.value, ast.Subscript)
+        if isinstance(parsed_annotation, ast.Expr) and isinstance(
+            parsed_annotation.value, ast.Subscript
         ):
-            if (isinstance(parsed_annotation.value.slice, ast.Tuple)):
+            if isinstance(parsed_annotation.value.slice, ast.Tuple):
                 return ast_to_pretty_string(parsed_annotation.value.slice.elts[0])
-            if (isinstance(parsed_annotation.value.slice, ast.Index) and isinstance(parsed_annotation.value.slice.value, ast.Tuple)):
+            if isinstance(parsed_annotation.value.slice, ast.Index) and isinstance(
+                parsed_annotation.value.slice.value, ast.Tuple
+            ):
                 return ast_to_pretty_string(parsed_annotation.value.slice.value.elts[0])
     return annotation
+
+
+def _get_annotations_as_types(
+    function: Callable[..., object],
+    strip_annotated: bool = False,
+    strip_optional: bool = False,
+) -> Dict[str, Any]:
+    # TODO(T148815848) Simply use "inspect.get_annotations(function_to_model, eval_str=True)" when migrated to python 3.10
+    try:
+        from inspect import get_annotations  # pyre-ignore
+
+        resolved_annotations = get_annotations(function, eval_str=True)  # pyre-ignore
+    except ImportError:
+        resolved_annotations = function.__annotations__
+    finally:
+        # Deal with common annotation for parameters like Optional[] and Annotated[]
+        for parameter, annotation in resolved_annotations.items():
+            annotation = (
+                _strip_optional_annotation_from_type(annotation)
+                if strip_optional
+                else annotation
+            )
+            resolved_annotations[parameter] = (
+                _strip_annotated_annotation_from_type(annotation)
+                if strip_annotated
+                else annotation
+            )
+    return resolved_annotations
+
+
+# pyre-ignore annotations are types as Any in typeshed
+def _strip_optional_annotation_from_type(annotation: Any) -> Any:
+    # Optional is defined as Union[type, NoneType]
+    if (
+        get_origin(annotation) is Union
+        and len(get_args(annotation)) == 2
+        and get_args(annotation)[1] == type(None)  # noqa E721
+    ):
+        return get_args(annotation)[0]
+    return annotation
+
+
+# pyre-ignore annotations are types as Any in typeshed
+def _strip_annotated_annotation_from_type(annotation: Any) -> Any:
+    # Annotated is defined as Annoted[type, annotation_details]
+    # doing this to identify if type is annotated because Annotated has type `typing_extensions._AnnotatedAlias`
+    #  and we want to avoid relying on implementation details (_AnnotatedAlias)
+    if isinstance(annotation, type(Annotated[int, "test"])):
+        return get_args(annotation)[0]
+    return annotation
+
+
+def extract_parameters_with_types(
+    function: Callable[..., object],
+    strip_annotated: bool = False,
+    strip_optional: bool = False,
+) -> Dict[str, Any]:
+    annotated_parameters = _get_annotations_as_types(
+        function, strip_annotated, strip_optional
+    )
+    if "kwargs" in annotated_parameters:
+        annotated_parameters["**kwargs"] = annotated_parameters.pop("kwargs")
+    if "args" in annotated_parameters:
+        annotated_parameters["*args"] = annotated_parameters.pop("args")
+    # we are interested in parameters not in the return type
+    annotated_parameters.pop("return", None)
+    all_parameters = [parameter.name for parameter in extract_parameters(function)]
+    for parameter in all_parameters:
+        if parameter not in annotated_parameters:
+            annotated_parameters[parameter] = None
+    return annotated_parameters
 
 
 def _extract_parameter_annotation(

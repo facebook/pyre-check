@@ -4,12 +4,15 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from typing import List
+from dataclasses import dataclass
+from typing import Any, final, List, Optional
 
 from testing.types import File
+from typing_extensions import Annotated
 
 from ..inspect_parser import (
     extract_parameters,
+    extract_parameters_with_types,
     extract_qualified_name,
     strip_custom_annotations,
 )
@@ -25,16 +28,59 @@ class TestDerived(TestClass):
     pass
 
 
+@final
+@dataclass(frozen=True)
+class TestRequestDataclass:
+    x1: str
+    y: int
+
+
+@final
+@dataclass(frozen=True)
+class TestReturnDataclass:
+    w: str
+    z: int
+
+
+@final
+@dataclass(frozen=True)
+class WhateverAnnotation:
+    value: str
+
+
 # pyre-ignore[2]: Annotations intentionally excluded
 def test_function(arg1, arg2: "TestClass", arg3: TestClass, *vararg, **kwarg) -> None:
     ...
 
 
 def test_annotated_parameter_function(
-    arg1: "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]",  # noqa # pyre-ignore
-    arg2: "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,)), ExampleOtherAnnotation(whatever=(Other.REVIEWED,))]",  # noqa # pyre-ignore
+    arg1: "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]",  # noqa
+    arg2: "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,)), ExampleOtherAnnotation(whatever=(Other.REVIEWED,))]",  # noqa
 ) -> None:
     ...
+
+
+def test_dataclass_parameter(data: TestRequestDataclass) -> TestReturnDataclass:
+    return TestReturnDataclass(w=data.x1, z=data.y)
+
+
+def test_args_kwargs_with_any_annotation(*args: Any, **kwargs: Any) -> None:
+    pass
+
+
+def test_no_parameters() -> None:
+    pass
+
+
+def test_mixed_args(
+    data1: Optional[TestRequestDataclass],
+    data2: Annotated[TestRequestDataclass, WhateverAnnotation(value="test")],
+    x: str,
+    y,  # pyre-ignore
+    *args,  # pyre-ignore
+    **kwargs,  # pyre-ignore
+) -> None:
+    pass
 
 
 class TestMethodClass:
@@ -120,14 +166,70 @@ class InspectParserTest(unittest.TestCase):
             "Tuple[int, int]",
         )
         self.assertEqual(
-            strip_custom_annotations("Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]"),
+            strip_custom_annotations(
+                "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]"
+            ),
             "TestClass",
         )
         self.assertEqual(
-            strip_custom_annotations("Annotated[Tuple[int, int], ExampleAnnotation(accesses=(Access.REVIEWED,))]"),
+            strip_custom_annotations(
+                "Annotated[Tuple[int, int], ExampleAnnotation(accesses=(Access.REVIEWED,))]"
+            ),
             "Tuple[int, int]",
         )
         self.assertEqual(
-            strip_custom_annotations("Annotated[Optional[TestClass], ExampleAnnotation(accesses=(Access.REVIEWED,))]"),
+            strip_custom_annotations(
+                "Annotated[Optional[TestClass], ExampleAnnotation(accesses=(Access.REVIEWED,))]"
+            ),
             "Optional[TestClass]",
+        )
+
+
+class ExtractParametersWithTypesTester(unittest.TestCase):
+    def test_dataclass_parameters_annotation(self) -> None:
+        annotations = extract_parameters_with_types(
+            test_dataclass_parameter, strip_optional=True, strip_annotated=True
+        )
+        self.assertEqual(
+            annotations,
+            {"data": TestRequestDataclass},
+        )
+
+    def test_with_mixed_args_annotations(self) -> None:
+        annotations = extract_parameters_with_types(
+            test_mixed_args,
+            strip_optional=True,
+            strip_annotated=True,
+        )
+        self.assertEqual(
+            annotations,
+            {
+                "data1": TestRequestDataclass,
+                "data2": TestRequestDataclass,
+                "x": str,
+                "y": None,
+                "**kwargs": None,
+                "*args": None,
+            },
+        )
+
+    def test_with_args_kwargs_with_any_annotation(self) -> None:
+        annotations = extract_parameters_with_types(
+            test_args_kwargs_with_any_annotation,
+        )
+        self.assertEqual(
+            annotations,
+            {
+                "*args": Any,
+                "**kwargs": Any,
+            },
+        )
+
+    def test_with_no_parameters_annotations(self) -> None:
+        annotations = extract_parameters_with_types(
+            test_no_parameters,
+        )
+        self.assertEqual(
+            annotations,
+            {},
         )
