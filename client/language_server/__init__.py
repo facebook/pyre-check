@@ -14,4 +14,5 @@ from . import (  # noqa F401
     daemon_connection,
     features,
     protocol,
+    remote_index,
 )

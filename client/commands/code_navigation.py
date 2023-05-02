@@ -20,7 +20,7 @@ import traceback
 from typing import Optional
 
 from .. import backend_arguments, background_tasks, log_lsp_event, timer, version
-from ..language_server import connections, features, protocol as lsp
+from ..language_server import connections, features, protocol as lsp, remote_index
 
 from . import (
     daemon_querier,
@@ -192,6 +192,7 @@ def process_initialize_request(
 async def async_run_code_navigation_client(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
+    index: remote_index.AbstractRemoteIndex,
 ) -> int:
     initial_server_options = launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler.read_server_options(
         server_options_reader, remote_logging
@@ -227,7 +228,10 @@ async def async_run_code_navigation_client(
         client_capabilities=client_capabilities,
         server_options=initial_server_options,
     )
-    querier = daemon_querier.CodeNavigationDaemonQuerier(server_state=server_state)
+    codenav_querier = daemon_querier.CodeNavigationDaemonQuerier(
+        server_state=server_state
+    )
+    querier = daemon_querier.RemoteIndexBackedQuerier(codenav_querier, index)
     client_type_error_handler = persistent.ClientTypeErrorHandler(
         stdout, server_state, remote_logging
     )
@@ -260,6 +264,7 @@ async def async_run_code_navigation_client(
 def run(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
+    index: remote_index.AbstractRemoteIndex,
 ) -> int:
     command_timer = timer.Timer()
     error_message: Optional[str] = None
@@ -268,6 +273,7 @@ def run(
             async_run_code_navigation_client(
                 server_options_reader,
                 remote_logging,
+                index,
             )
         )
     except Exception:

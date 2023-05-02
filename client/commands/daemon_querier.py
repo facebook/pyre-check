@@ -27,6 +27,7 @@ from ..language_server import (
     daemon_connection,
     features,
     protocol as lsp,
+    remote_index,
 )
 from . import daemon_query, expression_level_coverage, server_state as state
 
@@ -531,3 +532,83 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         return await code_navigation_request.async_handle_dispose_client(
             self.socket_path, dispose_client
         )
+
+
+class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
+    def __init__(
+        self,
+        base_querier: AbstractDaemonQuerier,
+        index: remote_index.AbstractRemoteIndex,
+    ) -> None:
+        self.base_querier: AbstractDaemonQuerier = base_querier
+        self.index: remote_index.AbstractRemoteIndex = index
+
+    async def get_type_errors(
+        self,
+        path: Path,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
+        return await self.base_querier.get_type_errors(path)
+
+    async def get_type_coverage(
+        self,
+        path: Path,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+        return await self.base_querier.get_type_coverage(path)
+
+    async def get_hover(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
+        return await self.base_querier.get_hover(path, position)
+
+    async def get_definition_locations(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+        return await self.base_querier.get_definition_locations(path, position)
+
+    async def get_completions(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+        return await self.base_querier.get_completions(path, position)
+
+    async def get_reference_locations(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+        return await self.index.hover(path, position)
+
+    async def handle_file_opened(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return await self.base_querier.handle_file_opened(path, code)
+
+    async def handle_file_closed(
+        self,
+        path: Path,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return await self.base_querier.handle_file_closed(path)
+
+    async def update_overlay(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return await self.base_querier.update_overlay(path, code)
+
+    async def handle_register_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return await self.base_querier.handle_register_client()
+
+    async def handle_dispose_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        return await self.base_querier.handle_dispose_client()
