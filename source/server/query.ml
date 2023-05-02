@@ -377,8 +377,8 @@ let help () =
            from above, along with a list of known coverage gaps."
     | GlobalLeaks _ ->
         Some
-          "global_leaks(function1, ...): analyzes the transitive call graph for the given function \
-           and raises errors when global variables are mutated."
+          "global_leaks(function1, ...): analyzes the given function(s) and emits errors when \
+           global variables are mutated."
     | HoverInfoForPosition _ ->
         Some
           "hover_info_for_position(path='<absolute path>', line=<line>, character=<character>): \
