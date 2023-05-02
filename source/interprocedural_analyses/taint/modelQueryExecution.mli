@@ -68,12 +68,16 @@ module CandidateTargetsFromCache : sig
   val from_constraint : ReadWriteCache.t -> ModelParseResult.ModelQuery.Constraint.t -> t
 end
 
+module Modelable : sig
+  type t
+end
+
 module CallableQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    target:Interprocedural.Target.t ->
+    modelable:Modelable.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.ModelAnnotation.t list
 
@@ -84,6 +88,11 @@ module CallableQueryExecutor : sig
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
+
+  val make_modelable
+    :  resolution:Analysis.GlobalResolution.t ->
+    Interprocedural.Target.t ->
+    Modelable.t
 end
 
 module AttributeQueryExecutor : sig
@@ -91,7 +100,7 @@ module AttributeQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    target:Interprocedural.Target.t ->
+    modelable:Modelable.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
 
@@ -110,6 +119,11 @@ module AttributeQueryExecutor : sig
     string ->
     string ->
     Ast.Expression.t option
+
+  val make_modelable
+    :  resolution:Analysis.GlobalResolution.t ->
+    Interprocedural.Target.t ->
+    Modelable.t
 end
 
 module GlobalVariableQueryExecutor : sig
@@ -117,7 +131,7 @@ module GlobalVariableQueryExecutor : sig
     :  verbose:bool ->
     resolution:Analysis.GlobalResolution.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    target:Interprocedural.Target.t ->
+    modelable:Modelable.t ->
     ModelParseResult.ModelQuery.t ->
     ModelParseResult.TaintAnnotation.t list
 
@@ -135,6 +149,11 @@ module GlobalVariableQueryExecutor : sig
     :  resolution:Analysis.GlobalResolution.t ->
     Ast.Reference.t ->
     Ast.Expression.t option
+
+  val make_modelable
+    :  resolution:Analysis.GlobalResolution.t ->
+    Interprocedural.Target.t ->
+    Modelable.t
 end
 
 val generate_models_from_queries

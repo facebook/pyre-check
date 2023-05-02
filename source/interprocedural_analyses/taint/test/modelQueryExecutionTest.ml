@@ -47,7 +47,10 @@ let test_generated_annotations context =
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
-        ~target:callable
+        ~modelable:
+          (ModelQueryExecution.CallableQueryExecutor.make_modelable
+             ~resolution:global_resolution
+             callable)
         query
     in
     assert_equal
@@ -68,12 +71,16 @@ let test_generated_annotations context =
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
     in
+    let target = name |> Ast.Reference.create |> Target.create_object in
     let actual =
       ModelQueryExecution.AttributeQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
-        ~target:(name |> Ast.Reference.create |> Target.create_object)
+        ~modelable:
+          (ModelQueryExecution.AttributeQueryExecutor.make_modelable
+             ~resolution:global_resolution
+             target)
         query
     in
     assert_equal
@@ -94,12 +101,16 @@ let test_generated_annotations context =
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
     in
+    let target = name |> Ast.Reference.create |> Target.create_object in
     let actual =
       ModelQueryExecution.GlobalVariableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~resolution:global_resolution
         ~class_hierarchy_graph
-        ~target:(name |> Ast.Reference.create |> Target.create_object)
+        ~modelable:
+          (ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable
+             ~resolution:global_resolution
+             target)
         query
     in
     assert_equal
