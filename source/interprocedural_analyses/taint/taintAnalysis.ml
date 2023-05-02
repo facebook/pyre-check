@@ -406,8 +406,6 @@ let run_taint_analysis
   (* Save the cache here, in case there is a model verification error. *)
   let () = Cache.save cache in
 
-  compact_ocaml_heap ~name:"before initial models";
-
   let { ModelParseResult.models = initial_models; errors = model_verification_errors; _ } =
     initialize_models
       ~scheduler
