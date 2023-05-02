@@ -790,11 +790,9 @@ let rec process_request ~type_environment ~build_system request =
           };
       }
     in
-    let setup_and_execute_model_queries ~taint_configuration model_queries =
+    let setup_and_execute_model_queries model_queries =
       let scheduler_wrapper scheduler =
-        let cache =
-          Taint.Cache.load ~scheduler ~configuration ~taint_configuration ~enabled:false
-        in
+        let cache = Taint.Cache.try_load ~scheduler ~configuration ~enabled:false in
         let initial_callables =
           Taint.Cache.initial_callables cache (fun () ->
               let timer = Timer.start () in
@@ -1167,9 +1165,7 @@ let rec process_request ~type_environment ~build_system request =
                          query_name
                          (PyrePath.show path))
                   else
-                    let models_and_names, errors =
-                      setup_and_execute_model_queries ~taint_configuration rules
-                    in
+                    let models_and_names, errors = setup_and_execute_model_queries rules in
                     let to_json (callable, model) =
                       `Assoc
                         [
@@ -1474,7 +1470,7 @@ let rec process_request ~type_environment ~build_system request =
         in
         let model_query_errors =
           if verify_dsl then
-            setup_and_execute_model_queries ~taint_configuration model_queries |> snd
+            setup_and_execute_model_queries model_queries |> snd
           else
             []
         in

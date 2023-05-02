@@ -61,9 +61,6 @@ let initialize_configuration
           ~maximum_tito_depth
     |> TaintConfiguration.exception_on_error
   in
-  let taint_configuration_shared_memory =
-    TaintConfiguration.SharedMemory.from_heap taint_configuration
-  in
   (* In order to save time, sanity check models before starting the analysis. *)
   let () =
     ModelParser.get_model_sources ~paths:taint_model_paths
@@ -76,7 +73,7 @@ let initialize_configuration
       ~timer
       ()
   in
-  taint_configuration, taint_configuration_shared_memory
+  taint_configuration
 
 
 let setup_decorator_preprocessing ~inline_decorators { Configuration.Analysis.taint_model_paths; _ }
@@ -328,15 +325,18 @@ let run_taint_analysis
     ~scheduler
     ()
   =
-  let taint_configuration, taint_configuration_shared_memory =
-    initialize_configuration ~static_analysis_configuration
-  in
+  let taint_configuration = initialize_configuration ~static_analysis_configuration in
 
   (* Parse taint models to find decorators to inline or discard. This must be done early because
      inlining is a preprocessing phase of type-checking. *)
   let () = setup_decorator_preprocessing ~inline_decorators configuration in
 
-  let cache = Cache.load ~scheduler ~configuration ~taint_configuration ~enabled:use_cache in
+  let cache = Cache.try_load ~scheduler ~configuration ~enabled:use_cache in
+
+  (* We should NOT store anything in memory before calling `Cache.try_load` *)
+  let taint_configuration_shared_memory =
+    TaintConfiguration.SharedMemory.from_heap taint_configuration
+  in
 
   let environment = type_check ~scheduler ~configuration ~cache in
 

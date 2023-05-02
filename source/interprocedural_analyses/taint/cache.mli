@@ -10,12 +10,7 @@ open Interprocedural
 
 type t
 
-val load
-  :  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  taint_configuration:TaintConfiguration.Heap.t ->
-  enabled:bool ->
-  t
+val try_load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> enabled:bool -> t
 
 val save : t -> unit
 
