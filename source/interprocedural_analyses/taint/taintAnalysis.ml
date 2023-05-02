@@ -425,6 +425,7 @@ let run_taint_analysis
     |> Analysis.TypeEnvironment.ReadOnly.module_tracker
   in
 
+  Log.info "Computing overrides...";
   let timer = Timer.start () in
   let {
     Interprocedural.OverrideGraph.override_graph_heap;
@@ -432,25 +433,16 @@ let run_taint_analysis
     skipped_overrides;
   }
     =
-    Cache.override_graph cache (fun () ->
-        Log.info "Computing overrides...";
-        let overrides =
-          Interprocedural.OverrideGraph.build_whole_program_overrides
-            ~static_analysis_configuration
-            ~scheduler
-            ~environment:(Analysis.TypeEnvironment.read_only environment)
-            ~include_unit_tests:false
-            ~skip_overrides:(Registry.skip_overrides initial_models)
-            ~maximum_overrides:(TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
-            ~qualifiers
-        in
-        Statistics.performance
-          ~name:"Overrides computed"
-          ~phase_name:"Computing overrides"
-          ~timer
-          ();
-        overrides)
+    Interprocedural.OverrideGraph.build_whole_program_overrides
+      ~static_analysis_configuration
+      ~scheduler
+      ~environment:(Analysis.TypeEnvironment.read_only environment)
+      ~include_unit_tests:false
+      ~skip_overrides:(Registry.skip_overrides initial_models)
+      ~maximum_overrides:(TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
+      ~qualifiers
   in
+  Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
 
   Log.info "Building call graph...";
   let timer = Timer.start () in

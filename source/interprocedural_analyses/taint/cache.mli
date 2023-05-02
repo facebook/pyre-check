@@ -19,8 +19,3 @@ val type_environment : t -> (unit -> TypeEnvironment.t) -> TypeEnvironment.t
 val class_hierarchy_graph : t -> (unit -> ClassHierarchyGraph.Heap.t) -> ClassHierarchyGraph.Heap.t
 
 val initial_callables : t -> (unit -> FetchCallables.t) -> FetchCallables.t
-
-val override_graph
-  :  t ->
-  (unit -> OverrideGraph.whole_program_overrides) ->
-  OverrideGraph.whole_program_overrides
