@@ -6,13 +6,11 @@
 # pyre-strict
 
 import dataclasses
-import re
 from typing import Callable, Iterable, List, Optional, Set
 
 from ...api import query
 from .generator_specifications import (
     AllParametersAnnotation,
-    AllParametersAnnotationWithParameterNameAsSubKind,
     AnnotationSpecification,
     PerParameterAnnotation,
     WhitelistSpecification,
@@ -76,43 +74,6 @@ def taint_pyre_functions(
     return tainted_functions
 
 
-def get_specific_parameter_name_annotation(
-    function_to_model: Callable[..., object],
-    parameter_taint: str,
-    parameter_kind: str,
-    return_annotation: Optional[str] = None,
-) -> AnnotationSpecification:
-    parameters_annotations = AllParametersAnnotationWithParameterNameAsSubKind(
-        parameter_taint, parameter_kind
-    )
-    return AnnotationSpecification(
-        parameter_annotation=parameters_annotations,
-        returns=return_annotation,
-    )
-
-
-def taint_callable_with_parameters_names(
-    function_to_model: Callable[..., object],
-    parameter_taint: str,
-    parameter_kind: str,
-    return_annotation: Optional[str] = None,
-    allowlist: Optional[WhitelistSpecification] = None,
-) -> CallableModel:
-    """
-    This function will generate a callable model tainting each parameter with a parametric kind annotation using the parameter name unless they are excluded in the allowlist parameter.
-    E.g if async_create has a data and a user_id parameter this model will be generated:
-    def accounts.api.views.async_create(data: TaintSource[UserControlled[data]], user_id:  TaintSource[UserControlled[user_id]]) -> TaintSink[ReturnedToUser]: ...
-    """
-    annotations = get_specific_parameter_name_annotation(
-        function_to_model, parameter_kind, parameter_taint, return_annotation
-    )
-    return CallableModel(
-        callable_object=function_to_model,
-        annotations=annotations,
-        whitelist=allowlist,
-    )
-
-
 def taint_callable_dataclass_fields_parameters(
     function_to_model: Callable[..., object],
     parameter_taint: str,
@@ -125,36 +86,40 @@ def taint_callable_dataclass_fields_parameters(
     E. g. if `data` parameter in async_account_deactivation_login is a dataclass with device_id and token attributes these models will be generated:
     def accounts.api.views.async_account_deactivation_login(data: TaintSource[UserControlled[data___device_id], ParameterPath[_.device_id]]) -> TaintSink[ReturnedToUser]: ...
     def accounts.api.views.async_account_deactivation_login(data: TaintSource[UserControlled[data___token], ParameterPath[_.token]]) -> TaintSink[ReturnedToUser]: ...
+    def accounts.api.views.async_account_deactivation_login(simple_param: TaintSource[UserControlled], simple_param2: TaintSource[UserControlled]) -> TaintSink[ReturnedToUser]: ...
     """
     parameters_annotations = extract_parameters_with_types(
         function_to_model, strip_optional=True, strip_annotated=True
     )
-    parameters_dataclasses = {
-        parameter_name: parameter_annotation
-        for parameter_name, parameter_annotation in parameters_annotations.items()
-        if parameter_annotation is not None
-        and dataclasses.is_dataclass(parameter_annotation)
-    }
-    unsafe_characters_regex = re.compile("[^a-zA-Z_0-9]")
     function_models = []
-    for parameter_name, parameter_type in parameters_dataclasses.items():
-        attributes = [field.name for field in dataclasses.fields(parameter_type)]
-        for attribute in attributes:
-            sanitized_parameter_name = unsafe_characters_regex.sub("", parameter_name)
-            sanitized_attribute = unsafe_characters_regex.sub("", attribute)
-            parameters_annotations_dict = {
-                parameter_name: f"{parameter_taint}[{parameter_kind}[{sanitized_parameter_name}___{sanitized_attribute}], ParameterPath[_.{attribute}]]"
-            }
-            annotation = AnnotationSpecification(
-                parameter_annotation=PerParameterAnnotation(
-                    parameters_annotations_dict
-                ),
-                returns=return_annotation,
-            )
-            model = CallableModel(
-                callable_object=function_to_model,
-                annotations=annotation,
-                whitelist=allowlist,
-            )
-            function_models.append(model)
+    attribute_parameters_annotations = []
+    simple_parameters_annotation = {}
+    # Compute models for dataclasses parameters
+    for parameter_name, parameter_type in parameters_annotations.items():
+        if parameter_type is not None and dataclasses.is_dataclass(parameter_type):
+            attributes = [field.name for field in dataclasses.fields(parameter_type)]
+            for attribute in attributes:
+                attribute_parameters_annotations.append(
+                    {
+                        parameter_name: f"{parameter_taint}[{parameter_kind}, ParameterPath[_.{attribute}]]"
+                    }
+                )
+        else:
+            simple_parameters_annotation[
+                parameter_name
+            ] = f"{parameter_taint}[{parameter_kind}]"
+
+    for parameter_annotation in attribute_parameters_annotations + [
+        simple_parameters_annotation
+    ]:
+        annotation = AnnotationSpecification(
+            parameter_annotation=PerParameterAnnotation(parameter_annotation),
+            returns=return_annotation,
+        )
+        model = CallableModel(
+            callable_object=function_to_model,
+            annotations=annotation,
+            whitelist=allowlist,
+        )
+        function_models.append(model)
     return function_models

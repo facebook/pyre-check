@@ -10,10 +10,7 @@ from typing import Any, final, Optional
 from pyre_extensions import ParameterSpecification
 from typing_extensions import Annotated
 
-from ..function_tainter import (
-    taint_callable_dataclass_fields_parameters,
-    taint_callable_with_parameters_names,
-)
+from ..function_tainter import taint_callable_dataclass_fields_parameters
 
 TestParams = ParameterSpecification("TestParams")
 
@@ -80,18 +77,6 @@ def test_mixed_args(
 
 
 class FunctionTainterTest(unittest.TestCase):
-    def test_taint_callable_with_simple_parameters(self) -> None:
-        simple_parameter_model = taint_callable_with_parameters_names(
-            test_simple_parameter,
-            "TaintSource",
-            "UserControlled",
-            "TaintSink[ReturnedToUser]",
-        )
-        self.assertEqual(
-            str(simple_parameter_model),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_simple_parameter(x1: TaintSource[UserControlled[x1]], y: TaintSource[UserControlled[y]]) -> TaintSink[ReturnedToUser]: ...",
-        )
-
     def test_taint_callable_with_dataclass(self) -> None:
         test_dataclass_parameter_models = taint_callable_dataclass_fields_parameters(
             test_dataclass_parameter,
@@ -101,25 +86,14 @@ class FunctionTainterTest(unittest.TestCase):
         )
         self.assertEqual(
             str(list(test_dataclass_parameter_models)[0]),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_dataclass_parameter(data: TaintSource[UserControlled[data___x1], ParameterPath[_.x1]]) -> TaintSink[ReturnedToUser]: ...",
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_dataclass_parameter(data: TaintSource[UserControlled, ParameterPath[_.x1]]) -> TaintSink[ReturnedToUser]: ...",
         )
         self.assertEqual(
             str(list(test_dataclass_parameter_models)[1]),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_dataclass_parameter(data: TaintSource[UserControlled[data___y], ParameterPath[_.y]]) -> TaintSink[ReturnedToUser]: ...",
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_dataclass_parameter(data: TaintSource[UserControlled, ParameterPath[_.y]]) -> TaintSink[ReturnedToUser]: ...",
         )
 
     def test_taint_callable_with_dataclass_and_simple_parameters(self) -> None:
-        simple_parameter_model = taint_callable_with_parameters_names(
-            test_simple_and_dataclass_parameters,
-            "TaintSource",
-            "UserControlled",
-            "TaintSink[ReturnedToUser]",
-        )
-        self.assertEqual(
-            str(simple_parameter_model),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_simple_and_dataclass_parameters(data: TaintSource[UserControlled[data]], x: TaintSource[UserControlled[x]]) -> TaintSink[ReturnedToUser]: ...",
-        )
-
         test_dataclass_parameter_models = taint_callable_dataclass_fields_parameters(
             test_simple_and_dataclass_parameters,
             "TaintSource",
@@ -128,59 +102,42 @@ class FunctionTainterTest(unittest.TestCase):
         )
         self.assertEqual(
             str(list(test_dataclass_parameter_models)[0]),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_simple_and_dataclass_parameters(data: TaintSource[UserControlled[data___x1], ParameterPath[_.x1]], x) -> TaintSink[ReturnedToUser]: ...",
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_simple_and_dataclass_parameters(data: TaintSource[UserControlled, ParameterPath[_.x1]], x) -> TaintSink[ReturnedToUser]: ...",
         )
         self.assertEqual(
             str(list(test_dataclass_parameter_models)[1]),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_simple_and_dataclass_parameters(data: TaintSource[UserControlled[data___y], ParameterPath[_.y]], x) -> TaintSink[ReturnedToUser]: ...",
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_simple_and_dataclass_parameters(data: TaintSource[UserControlled, ParameterPath[_.y]], x) -> TaintSink[ReturnedToUser]: ...",
         )
 
     def test_taint_callable_with_dataclass_and_simple_parameters_args_kwargs_without_annotation(
         self,
     ) -> None:
-        simple_parameter_model = taint_callable_with_parameters_names(
-            test_args_kwargs_without_annotation,
-            "TaintSource",
-            "UserControlled",
-            "TaintSink[ReturnedToUser]",
-        )
-        self.assertEqual(
-            str(simple_parameter_model),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_args_kwargs_without_annotation(*args: TaintSource[UserControlled[args]], **kwargs: TaintSource[UserControlled[kwargs]]) -> TaintSink[ReturnedToUser]: ...",
-        )
         test_dataclass_parameter_models = taint_callable_dataclass_fields_parameters(
             test_args_kwargs_without_annotation,
             "TaintSource",
             "UserControlled",
             "TaintSink[ReturnedToUser]",
         )
+        print(str(list(test_dataclass_parameter_models)[0]))
         self.assertEqual(
-            len(list(test_dataclass_parameter_models)),
-            0,
+            str(list(test_dataclass_parameter_models)[0]),
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_args_kwargs_without_annotation(*args: TaintSource[UserControlled], **kwargs: TaintSource[UserControlled]) -> TaintSink[ReturnedToUser]: ...",
         )
 
     def test_taint_callable_with_dataclass_and_simple_parameters_args_kwargs_any_annotation(
         self,
     ) -> None:
-        simple_parameter_model = taint_callable_with_parameters_names(
-            test_args_kwargs_with_any_annotation,
-            "TaintSource",
-            "UserControlled",
-            "TaintSink[ReturnedToUser]",
-        )
-        self.assertEqual(
-            str(simple_parameter_model),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_args_kwargs_with_any_annotation(*args: TaintSource[UserControlled[args]], **kwargs: TaintSource[UserControlled[kwargs]]) -> TaintSink[ReturnedToUser]: ...",
-        )
         test_dataclass_parameter_models = taint_callable_dataclass_fields_parameters(
             test_args_kwargs_with_any_annotation,
             "TaintSource",
             "UserControlled",
             "TaintSink[ReturnedToUser]",
         )
+        print(str(list(test_dataclass_parameter_models)[0]))
+
         self.assertEqual(
-            len(list(test_dataclass_parameter_models)),
-            0,
+            str(list(test_dataclass_parameter_models)[0]),
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_args_kwargs_with_any_annotation(*args: TaintSource[UserControlled], **kwargs: TaintSource[UserControlled]) -> TaintSink[ReturnedToUser]: ...",
         )
 
     def test_taint_callable_with_dataclass_with_optional_annotation(self) -> None:
@@ -192,11 +149,11 @@ class FunctionTainterTest(unittest.TestCase):
         )
         self.assertEqual(
             str(list(test_dataclass_parameter_models)[0]),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_optional_annotation(data: TaintSource[UserControlled[data___x1], ParameterPath[_.x1]]) -> TaintSink[ReturnedToUser]: ...",
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_optional_annotation(data: TaintSource[UserControlled, ParameterPath[_.x1]]) -> TaintSink[ReturnedToUser]: ...",
         )
         self.assertEqual(
             str(list(test_dataclass_parameter_models)[1]),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_optional_annotation(data: TaintSource[UserControlled[data___y], ParameterPath[_.y]]) -> TaintSink[ReturnedToUser]: ...",
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_optional_annotation(data: TaintSource[UserControlled, ParameterPath[_.y]]) -> TaintSink[ReturnedToUser]: ...",
         )
 
     def test_taint_callable_with_dataclass_with_annotated_annotation(self) -> None:
@@ -208,11 +165,11 @@ class FunctionTainterTest(unittest.TestCase):
         )
         self.assertEqual(
             str(list(test_dataclass_parameter_models)[0]),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_annotated_annotation(data: TaintSource[UserControlled[data___x1], ParameterPath[_.x1]]) -> TaintSink[ReturnedToUser]: ...",
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_annotated_annotation(data: TaintSource[UserControlled, ParameterPath[_.x1]]) -> TaintSink[ReturnedToUser]: ...",
         )
         self.assertEqual(
             str(list(test_dataclass_parameter_models)[1]),
-            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_annotated_annotation(data: TaintSource[UserControlled[data___y], ParameterPath[_.y]]) -> TaintSink[ReturnedToUser]: ...",
+            "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_annotated_annotation(data: TaintSource[UserControlled, ParameterPath[_.y]]) -> TaintSink[ReturnedToUser]: ...",
         )
 
     def test_taint_callable_with_mixed_args(self) -> None:
@@ -225,9 +182,10 @@ class FunctionTainterTest(unittest.TestCase):
         self.assertEqual(
             {str(model) for model in test_mixed_args_parameter_models},
             {
-                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1: TaintSource[UserControlled[data1___x1], ParameterPath[_.x1]], data2, x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
-                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1: TaintSource[UserControlled[data1___y], ParameterPath[_.y]], data2, x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
-                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1, data2: TaintSource[UserControlled[data2___x1], ParameterPath[_.x1]], x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
-                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1, data2: TaintSource[UserControlled[data2___y], ParameterPath[_.y]], x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
+                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1: TaintSource[UserControlled, ParameterPath[_.x1]], data2, x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
+                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1: TaintSource[UserControlled, ParameterPath[_.y]], data2, x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
+                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1, data2: TaintSource[UserControlled, ParameterPath[_.x1]], x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
+                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1, data2: TaintSource[UserControlled, ParameterPath[_.y]], x, *args, **kwargs) -> TaintSink[ReturnedToUser]: ...",
+                "def tools.pyre.tools.generate_taint_models.tests.function_tainter_test.test_mixed_args(data1, data2, x: TaintSource[UserControlled], *args: TaintSource[UserControlled], **kwargs: TaintSource[UserControlled]) -> TaintSink[ReturnedToUser]: ...",
             },
         )
