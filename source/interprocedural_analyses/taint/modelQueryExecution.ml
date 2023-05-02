@@ -29,7 +29,7 @@ module ModelQueryRegistryMap = struct
     if not (Registry.is_empty registry) then
       String.Map.update model_query_map model_query_identifier ~f:(function
           | None -> registry
-          | Some existing -> Registry.merge ~join:Model.join_user_models existing registry)
+          | Some existing -> Registry.merge_skewed ~join:Model.join_user_models existing registry)
     else
       model_query_map
 
@@ -38,7 +38,7 @@ module ModelQueryRegistryMap = struct
 
   let merge ~model_join left right =
     String.Map.merge left right ~f:(fun ~key:_ -> function
-      | `Both (models1, models2) -> Some (Registry.merge ~join:model_join models1 models2)
+      | `Both (models1, models2) -> Some (Registry.merge_skewed ~join:model_join models1 models2)
       | `Left models
       | `Right models ->
           Some models)

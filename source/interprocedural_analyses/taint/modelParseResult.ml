@@ -767,7 +767,7 @@ let join
     { models = models_right; queries = queries_right; errors = errors_right }
   =
   {
-    models = Registry.merge ~join:Model.join_user_models models_left models_right;
+    models = Registry.merge_skewed ~join:Model.join_user_models models_left models_right;
     queries = List.rev_append queries_right queries_left;
     errors = List.rev_append errors_right errors_left;
   }

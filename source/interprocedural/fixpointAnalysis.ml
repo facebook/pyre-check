@@ -164,6 +164,10 @@ module Make (Analysis : ANALYSIS) = struct
             Some model)
 
 
+    let merge_skewed ~join left right =
+      Target.Map.merge_skewed left right ~combine:(fun ~key:_ left right -> join left right)
+
+
     let of_alist ~join = Target.Map.of_alist_reduce ~f:join
 
     let to_alist registry = Target.Map.to_alist ~key_order:`Increasing registry
