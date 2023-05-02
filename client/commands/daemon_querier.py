@@ -470,7 +470,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
-        raise NotImplementedError()
+        return []
 
     async def update_overlay(
         self,
@@ -581,7 +581,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
-        return await self.index.hover(path, position)
+        return await self.index.references(path, position)
 
     async def handle_file_opened(
         self,
