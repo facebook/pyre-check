@@ -83,6 +83,9 @@ val count_defines : Source.t -> int
 (* List of class definitions in a source. *)
 val classes : Source.t -> Statement.Class.t Node.t list
 
+(* List of global variable assignments in a source. *)
+val toplevel_assigns : Source.t -> Statement.Assign.t Node.t list
+
 (* Creates a map used for dequalification from imports in the source *)
 val dequalify_map : Source.t -> Reference.t Reference.Map.t
 

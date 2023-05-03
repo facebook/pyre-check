@@ -1924,6 +1924,21 @@ let classes source =
   Collector.collect source
 
 
+let toplevel_assigns source =
+  let module Collector = Visit.StatementCollector (struct
+    type t = Assign.t Node.t
+
+    let visit_children _ = false
+
+    let predicate = function
+      | { Node.location; value = Statement.Assign assign } ->
+          Some { Node.location; Node.value = assign }
+      | _ -> None
+  end)
+  in
+  Collector.collect source
+
+
 let dequalify_map ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
   let module ImportDequalifier = Transform.MakeStatementTransformer (struct
     include Transform.Identity

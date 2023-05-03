@@ -3493,6 +3493,62 @@ let test_classes _ =
   assert_classes [+Statement.Class class_define] [class_define; inner]
 
 
+let test_toplevel_assigns _ =
+  let assert_assigns source expected =
+    let assign_to_statement { Node.location; Node.value = assign } =
+      { Node.location; Node.value = Statement.Assign assign }
+    in
+    assert_source_equal
+      ~location_insensitive:true
+      (source
+      |> parse
+      |> Preprocessing.toplevel_assigns
+      |> List.map ~f:assign_to_statement
+      |> List.rev
+      |> Source.create)
+      (parse expected)
+  in
+  assert_assigns {|
+    x = 1
+  |} {|
+    x = 1
+  |};
+  assert_assigns {|
+    x = 1
+    y = 2
+    def f(z):
+      w = 3
+  |} {|
+    x = 1
+    y = 2
+  |};
+  assert_assigns
+    {|
+    class F:
+      ...
+
+    x = F()
+    y = f"hello{x}"
+    def f(z):
+      def h():
+        w = ...
+      h = f
+    z = f
+  |}
+    {|
+    x = F()
+    y = f"hello{x}"
+    z = f
+  |};
+  (* TODO(T152322023): Desugar tuple assignment to multiple variable single assignment *)
+  assert_assigns {|
+    a, b = 1, 2
+    |} {|
+    (a, b) = (1, 2)
+  |};
+  ()
+
+
 let test_replace_lazy_import _ =
   let is_lazy_import { Node.value; _ } =
     match value with
@@ -7048,6 +7104,7 @@ let () =
          "expand_implicit_returns" >:: test_expand_implicit_returns;
          "defines" >:: test_defines;
          "classes" >:: test_classes;
+         "toplevel_assigns" >:: test_toplevel_assigns;
          "transform_ast" >:: test_transform_ast;
          "replace_lazy_import" >:: test_replace_lazy_import;
          "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
