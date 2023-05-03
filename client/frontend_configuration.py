@@ -14,6 +14,7 @@ with additional configuration, using open-source Pyre as a library.
 
 
 import abc
+import dataclasses
 import json
 import logging
 import os
@@ -26,6 +27,13 @@ from typing import List, Optional
 from . import configuration as configuration_module, find_directories
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+@dataclasses.dataclass(frozen=True)
+class SavedStateProject:
+    name: str
+    metadata: Optional[str] = None
+
 
 # TODO(T120824066): Break this class down into smaller pieces. Ideally, one
 # class per command.
@@ -161,7 +169,7 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_saved_state_project(self) -> Optional[str]:
+    def get_saved_state_project(self) -> Optional[SavedStateProject]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -348,7 +356,7 @@ class OpenSource(Base):
     def get_project_identifier(self) -> str:
         return self.configuration.project_identifier
 
-    def get_saved_state_project(self) -> Optional[str]:
+    def get_saved_state_project(self) -> Optional[SavedStateProject]:
         return None
 
     def get_include_suppressed_errors(self) -> Optional[bool]:

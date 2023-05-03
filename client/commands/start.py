@@ -282,16 +282,21 @@ def get_saved_state_action(
         )
 
     saved_state_project = (
-        start_arguments.saved_state_project
+        frontend_configuration.SavedStateProject(
+            name=start_arguments.saved_state_project,
+            metadata=(
+                relative_local_root.replace("/", "$")
+                if relative_local_root is not None
+                else None
+            ),
+        )
         if start_arguments.saved_state_project is not None
         else configuration.get_saved_state_project()
     )
     if saved_state_project is not None:
         return LoadSavedStateFromProject(
-            project_name=saved_state_project,
-            project_metadata=relative_local_root.replace("/", "$")
-            if relative_local_root is not None
-            else None,
+            project_name=saved_state_project.name,
+            project_metadata=saved_state_project.metadata,
         )
 
     return None

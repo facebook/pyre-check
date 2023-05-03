@@ -38,17 +38,19 @@ from ..start import (
 
 
 class TestSavedStateConfiguration(frontend_configuration.OpenSource):
-    saved_state_project: Optional[str]
+    saved_state_project: Optional[frontend_configuration.SavedStateProject]
 
     def __init__(
         self,
         configuration: configuration_module.Configuration,
-        saved_state_project: Optional[str] = None,
+        saved_state_project: Optional[frontend_configuration.SavedStateProject] = None,
     ) -> None:
         super().__init__(configuration)
         self.saved_state_project = saved_state_project
 
-    def get_saved_state_project(self) -> Optional[str]:
+    def get_saved_state_project(
+        self,
+    ) -> Optional[frontend_configuration.SavedStateProject]:
         return self.saved_state_project
 
     def get_include_suppressed_errors(self) -> Optional[bool]:
@@ -305,7 +307,10 @@ class StartTest(testslide.TestCase):
         )
 
         saved_state_configuration = TestSavedStateConfiguration(
-            empty_configuration, saved_state_project="test_saved_state"
+            empty_configuration,
+            saved_state_project=frontend_configuration.SavedStateProject(
+                name="test_saved_state"
+            ),
         )
         self.assertEqual(
             get_saved_state_action(
