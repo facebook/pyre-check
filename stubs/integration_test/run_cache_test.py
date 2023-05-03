@@ -347,7 +347,7 @@ def run_test_changed_source_files(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
 ) -> None:
     # Run Pysa after adding a new file to test cache invalidation.
-    # Pysa should detect that the source has chagned and fall back
+    # Pysa should detect that the source has changed and fall back
     # to doing a clean run.
     LOG.info("Testing cache invalidation after source files change:")
 
@@ -403,15 +403,15 @@ def run_tests() -> None:
 
     typeshed_path = Path("../typeshed/typeshed").absolute().as_posix()
     with open("result.json") as file:
-        expected = json.loads(file.read())
+        expected = json.load(file)
 
-        run_test_no_cache(typeshed_path, cache_path, expected)
-        run_test_cache_first_and_second_runs(typeshed_path, cache_path, expected)
-        run_test_invalid_cache_file(typeshed_path, cache_path, expected)
-        run_test_changed_pysa_file(typeshed_path, cache_path, expected)
-        run_test_changed_taint_config_file(typeshed_path, cache_path, expected)
-        run_test_changed_models(typeshed_path, cache_path, expected)
-        run_test_changed_source_files(typeshed_path, cache_path, expected)
+    run_test_no_cache(typeshed_path, cache_path, expected)
+    run_test_cache_first_and_second_runs(typeshed_path, cache_path, expected)
+    run_test_invalid_cache_file(typeshed_path, cache_path, expected)
+    run_test_changed_pysa_file(typeshed_path, cache_path, expected)
+    run_test_changed_taint_config_file(typeshed_path, cache_path, expected)
+    run_test_changed_models(typeshed_path, cache_path, expected)
+    run_test_changed_source_files(typeshed_path, cache_path, expected)
 
     LOG.info("All runs produced expected output.")
 
