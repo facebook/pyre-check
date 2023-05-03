@@ -6,7 +6,6 @@
 
 
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -68,46 +67,6 @@ class FrontendConfigurationTest(testslide.TestCase):
             dot_pyre_directory=Path(".pyre"),
             relative_local_root="bar/baz",
             expected=Path(".pyre/bar/baz"),
-        )
-
-    def test_get_binary_version_ok(self) -> None:
-        binary_path = "foo"
-        version = "facefacefaceb00"
-
-        self.mock_callable(subprocess, "run").to_return_value(
-            subprocess.CompletedProcess(
-                args=[binary_path, "-version"], returncode=0, stdout=f"{version}\n"
-            )
-        ).and_assert_called_once()
-
-        self.assertEqual(
-            frontend_configuration.OpenSource(
-                configuration_module.Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    binary=binary_path,
-                )
-            ).get_binary_version(),
-            version,
-        )
-
-    def test_get_binary_version_fail(self) -> None:
-        binary_path = "foo"
-
-        self.mock_callable(subprocess, "run").to_return_value(
-            subprocess.CompletedProcess(
-                args=[binary_path, "-version"], returncode=1, stdout="derp"
-            )
-        ).and_assert_called_once()
-
-        self.assertIsNone(
-            frontend_configuration.OpenSource(
-                configuration_module.Configuration(
-                    global_root=Path("irrelevant"),
-                    dot_pyre_directory=Path(".pyre"),
-                    binary=binary_path,
-                )
-            ).get_binary_version()
         )
 
     def test_get_binary_from_configuration(self) -> None:

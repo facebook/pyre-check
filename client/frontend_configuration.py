@@ -256,14 +256,7 @@ class OpenSource(Base):
             return auto_determined_typeshed
 
     def get_binary_version(self) -> Optional[str]:
-        binary = self.get_binary_location()
-        if binary is None:
-            return None
-        # lint-ignore: NoUnsafeExecRule
-        status = subprocess.run(
-            [str(binary), "-version"], stdout=subprocess.PIPE, universal_newlines=True
-        )
-        return status.stdout.strip() if status.returncode == 0 else None
+        return None
 
     def get_content_for_display(self) -> str:
         return json.dumps(self.configuration.to_json(), indent=2)
