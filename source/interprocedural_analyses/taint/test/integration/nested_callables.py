@@ -71,9 +71,49 @@ def nested_global_function(x: str) -> str:
     return g("/bin/bash", x)
 
 
-def access_variables_in_outer_scope():
+def access_variables_in_outer_scope_issue():
     x = _test_source()
 
     def inner():
         # TODO(T123114236): We should find an issue here
         _test_sink(x)
+
+    inner()
+
+
+def access_variables_in_outer_scope_source():
+    x = _test_source()
+
+    def inner():
+        return x
+
+    return inner()
+
+
+def test_access_variables_in_outer_scope_source():
+    # TODO(T123114236): We should find an issue here
+    _test_sink(access_variables_in_outer_scope_source())
+
+
+def access_parameter_in_inner_scope_sink(x):
+    def inner():
+        _test_sink(x)
+
+    inner()
+
+
+def test_access_parameter_in_inner_scope_sink():
+    # TODO(T123114236): We should find an issue here
+    access_parameter_in_inner_scope_sink(_test_source())
+
+
+def access_parameter_in_inner_scope_tito(x):
+    def inner():
+        return x
+
+    return inner()
+
+
+def test_access_parameter_in_inner_scope_tito():
+    # TODO(T123114236): We should find an issue here
+    _test_sink(access_parameter_in_inner_scope_tito(_test_source()))
