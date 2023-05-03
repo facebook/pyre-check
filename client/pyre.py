@@ -364,7 +364,6 @@ def pyre(
         save_initial_state_to=save_initial_state_to,
         load_initial_state_from=load_initial_state_from,
         changed_files_path=changed_files_path,
-        saved_state_project=None,
         dot_pyre_directory=Path(dot_pyre_directory)
         if dot_pyre_directory is not None
         else None,
