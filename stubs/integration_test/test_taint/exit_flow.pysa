@@ -1,0 +1,7 @@
+# django exit nodes
+def django.http.response.HttpResponse.__init__(
+    self,
+    content: TaintSink[ReturnedToUser] = ...,
+    *args,
+    **kwargs,
+): ...

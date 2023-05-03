@@ -2,6 +2,28 @@
   {
     "code": 5001,
     "column": 13,
+    "define": "integration_test.assignments_to_sinks.test_indirect",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 20,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/assignments_to_sinks.py",
+    "stop_column": 21,
+    "stop_line": 20
+  },
+  {
+    "code": 5001,
+    "column": 4,
+    "define": "integration_test.assignments_to_sinks.test_direct",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 24,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/assignments_to_sinks.py",
+    "stop_column": 21,
+    "stop_line": 24
+  },
+  {
+    "code": 5001,
+    "column": 13,
     "define": "integration_test.builtin_functions.test_enumerate",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "line": 15,
@@ -1692,6 +1714,17 @@
     "path": "fixture_source/integration_test/containers.py",
     "stop_column": 16,
     "stop_line": 403
+  },
+  {
+    "code": 5015,
+    "column": 32,
+    "define": "integration_test.exit_flow.test_to_response",
+    "description": "User input returned to user [5015]: Data from [UserControlled] source(s) may reach [ReturnedToUser] sink(s)",
+    "line": 16,
+    "name": "User input returned to user",
+    "path": "fixture_source/integration_test/exit_flow.py",
+    "stop_column": 38,
+    "stop_line": 16
   },
   {
     "code": 5001,

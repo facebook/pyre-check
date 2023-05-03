@@ -241,7 +241,7 @@ def run_test_changed_taint_config_file(
     # invalidated.
     LOG.info("Testing cache is not invalidated after taint.config change:")
 
-    test_taint_config = Path("test_taint/taint.config")
+    test_taint_config = Path("test_taint/test_taint.config")
     try:
         test_taint_config.unlink()
     except FileNotFoundError:
