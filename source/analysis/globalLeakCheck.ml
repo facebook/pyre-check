@@ -422,17 +422,26 @@ module State (Context : Context) = struct
                 errors = [];
               })
         |> Option.value ~default:empty_result
-    | Name (Name.Attribute { base; _ } as name) ->
+    | Name (Name.Attribute { base; attribute; _ } as name) ->
         let ({ reachable_globals = base_globals; _ } as base_result) =
           forward_assignment_target base
         in
-        Context.get_non_builtin_global_reference ~resolution name
-        >>| (fun global ->
-              {
-                base_result with
-                reachable_globals = { global; expression_type = expression_type () } :: base_globals;
-              })
-        |> Option.value ~default:base_result
+        let reachable_globals =
+          match base_globals with
+          | [] ->
+              Context.get_non_builtin_global_reference ~resolution name
+              >>| (fun global -> [{ global; expression_type = expression_type () }])
+              |> Option.value ~default:[]
+          | _ ->
+              List.map
+                ~f:(fun reachable_global ->
+                  {
+                    global = Reference.create ~prefix:reachable_global.global attribute;
+                    expression_type = expression_type ();
+                  })
+                base_globals
+        in
+        { base_result with reachable_globals }
     | Call _ -> forward_expression ~resolution expression
     | Constant _
     | UnaryOperator _

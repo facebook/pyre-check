@@ -1247,8 +1247,8 @@ let test_object_global_leaks context =
         my_global.x = 2
     |}
     [
-      "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
-       `test.MyClass`.";
+      "Leak to a primitive global [3102]: Data write to global variable `test.my_global.x` of type \
+       `int`.";
     ];
   assert_global_leak_errors
     {|
@@ -1284,8 +1284,8 @@ let test_object_global_leaks context =
         my_global.x.y = 3
     |}
     [
-      "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
-       `test.MyClass2`.";
+      "Leak to a primitive global [3102]: Data write to global variable `test.my_global.x.y` of \
+       type `int`.";
     ];
   assert_global_leak_errors
     {|
@@ -1347,8 +1347,8 @@ let test_object_global_leaks context =
         MyClass.x = 2
     |}
     [
-      "Leak to a class variable [3103]: Data write to global variable `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a primitive global [3102]: Data write to global variable `test.MyClass.x` of type \
+       `int`.";
     ];
   assert_global_leak_errors
     {|
@@ -1359,8 +1359,8 @@ let test_object_global_leaks context =
         MyClass.x = 2
     |}
     [
-      "Leak to a class variable [3103]: Data write to global variable `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a primitive global [3102]: Data write to global variable `test.MyClass.x` of type \
+       `int`.";
     ];
   assert_global_leak_errors (* Global leaks are found in calls to constructors. *)
     ~skip_type_check:true
@@ -1393,10 +1393,7 @@ let test_object_global_leaks context =
         B().x = 6
         C.x = 6
     |}
-    [
-      "Leak to a class variable [3103]: Data write to global variable `test.C` of type \
-       `typing.Type[test.A]`.";
-    ];
+    ["Leak to a primitive global [3102]: Data write to global variable `test.C.x` of type `int`."];
   assert_global_leak_errors
     (* Returning a class from a function will still find a global leak. *)
     {|
@@ -1426,8 +1423,8 @@ let test_object_global_leaks context =
         get_class().x = 5
     |}
     [
-      "Leak to a class variable [3103]: Data write to global variable `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a primitive global [3102]: Data write to global variable `test.MyClass.x` of type \
+       `int`.";
     ];
   assert_global_leak_errors
     (* Returning a class from a function will still find a global leak. *)
@@ -1442,8 +1439,8 @@ let test_object_global_leaks context =
         get_class().x = 5
     |}
     [
-      "Leak to a class variable [3103]: Data write to global variable `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a primitive global [3102]: Data write to global variable `test.MyClass.x` of type \
+       `int`.";
     ];
   assert_global_leak_errors
     (* A mutation on something returned from a class does not result in an error. *)
@@ -1515,6 +1512,30 @@ let test_object_global_leaks context =
         MyClass.get_current().x = 2
     |}
     [];
+  assert_global_leak_errors
+    {|
+      class MyClass:
+        x: int = 15
+
+      my_global1: MyClass = MyClass()
+      my_global2: MyClass = MyClass()
+
+      def foo() -> None:
+        (my_global1 if True else my_global2).x = 5
+    |}
+    [ (* TODO (T142189949): attribute write using a ternary operator should be detected. *) ];
+  assert_global_leak_errors
+    {|
+      class MyClass:
+        x: int = 15
+
+      my_global1: MyClass = MyClass()
+      my_global2: MyClass = MyClass()
+
+      def foo() -> None:
+        (my_global1, my_global2)[1].x = 5
+    |}
+    [ (* TODO (T142189949): attribute write via tuple access should be detected. *) ];
   ()
 
 
