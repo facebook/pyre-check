@@ -19,11 +19,17 @@ module Action : sig
   val to_mode : t -> string
 end
 
-val setup_preprocessing
-  :  decorator_actions:Action.t Reference.Map.t ->
-  enable_inlining:bool ->
-  enable_discarding:bool ->
-  unit
+module Configuration : sig
+  type t = {
+    actions: Action.t Reference.SerializableMap.t;
+    enable_inlining: bool;
+    enable_discarding: bool;
+  }
+end
+
+val setup_preprocessing : Configuration.t -> unit
+
+val get_configuration : unit -> Configuration.t option
 
 val original_name_from_inlined_name : Ast.Reference.t -> Ast.Reference.t option
 

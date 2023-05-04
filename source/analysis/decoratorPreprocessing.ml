@@ -29,6 +29,25 @@ module Action = struct
     | Discard -> "IgnoreDecorator"
 end
 
+module Configuration = struct
+  type t = {
+    actions: Action.t Reference.SerializableMap.t;
+    enable_inlining: bool;
+    enable_discarding: bool;
+  }
+end
+
+module ConfigurationSharedMemory =
+  Memory.WithCache.Make
+    (Memory.SingletonKey)
+    (struct
+      type t = Configuration.t
+
+      let prefix = Prefix.make ()
+
+      let description = "Configuration for decorator preprocessing."
+    end)
+
 module OptionsSharedMemory =
   Memory.WithCache.Make
     (SharedMemoryKeys.StringKey)
@@ -51,12 +70,16 @@ module DecoratorActionsSharedMemory =
       let description = "What action to take on a given decorator."
     end)
 
-let setup_preprocessing ~decorator_actions ~enable_inlining ~enable_discarding =
+let setup_preprocessing
+    ({ Configuration.actions; enable_inlining; enable_discarding } as configuration)
+  =
+  ConfigurationSharedMemory.add Memory.SingletonKey.key configuration;
   OptionsSharedMemory.add "enable_inlining" enable_inlining;
   OptionsSharedMemory.add "enable_discarding" enable_discarding;
-  Reference.Map.iteri decorator_actions ~f:(fun ~key:decorator ~data:action ->
-      DecoratorActionsSharedMemory.add decorator action)
+  Reference.SerializableMap.iter DecoratorActionsSharedMemory.add actions
 
+
+let get_configuration () = ConfigurationSharedMemory.get Memory.SingletonKey.key
 
 let inlined_original_function_name = "_original_function"
 

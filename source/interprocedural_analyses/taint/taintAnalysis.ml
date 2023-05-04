@@ -76,12 +76,18 @@ let initialize_configuration
   taint_configuration
 
 
-let setup_decorator_preprocessing ~inline_decorators { Configuration.Analysis.taint_model_paths; _ }
+let parse_decorator_preprocessing_configuration
+    ~static_analysis_configuration:
+      {
+        Configuration.StaticAnalysis.configuration = { taint_model_paths; _ };
+        inline_decorators;
+        _;
+      }
   =
   let timer = Timer.start () in
   let () = Log.info "Parsing taint models for decorator modes..." in
   let decorator_actions =
-    let combine_decorator_modes ~key:decorator left right =
+    let combine_decorator_modes decorator left right =
       let () =
         Log.warning
           "Found multiple modes for decorator `%a`: was @%s, it is now @%s"
@@ -90,27 +96,30 @@ let setup_decorator_preprocessing ~inline_decorators { Configuration.Analysis.ta
           (Analysis.DecoratorPreprocessing.Action.to_mode left)
           (Analysis.DecoratorPreprocessing.Action.to_mode right)
       in
-      right
+      Some right
     in
     ModelParser.get_model_sources ~paths:taint_model_paths
     |> List.map ~f:(fun (path, source) -> ModelParser.parse_decorator_modes ~path ~source)
     |> List.fold
-         ~init:Ast.Reference.Map.empty
-         ~f:(Ast.Reference.Map.merge_skewed ~combine:combine_decorator_modes)
+         ~init:Ast.Reference.SerializableMap.empty
+         ~f:(Ast.Reference.SerializableMap.union combine_decorator_modes)
   in
-  Analysis.DecoratorPreprocessing.setup_preprocessing
-    ~decorator_actions
-    ~enable_inlining:inline_decorators
-    ~enable_discarding:true;
-  Statistics.performance
-    ~name:"Parsed taint models for decorator modes"
-    ~phase_name:"Parsed taint models for decorator modes"
-    ~timer
-    ()
+  let () =
+    Statistics.performance
+      ~name:"Parsed taint models for decorator modes"
+      ~phase_name:"Parsed taint models for decorator modes"
+      ~timer
+      ()
+  in
+  {
+    Analysis.DecoratorPreprocessing.Configuration.actions = decorator_actions;
+    enable_inlining = inline_decorators;
+    enable_discarding = true;
+  }
 
 
 (** Perform a full type check and build a type environment. *)
-let type_check ~scheduler ~configuration ~cache =
+let type_check ~scheduler ~configuration ~decorator_configuration ~cache =
   Cache.type_environment cache (fun () ->
       Log.info "Starting type checking...";
       let configuration =
@@ -118,6 +127,7 @@ let type_check ~scheduler ~configuration ~cache =
            schedule a type check for external files. *)
         { configuration with Configuration.Analysis.analyze_external_sources = true }
       in
+      let () = Analysis.DecoratorPreprocessing.setup_preprocessing decorator_configuration in
       let errors_environment =
         Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
         |> Analysis.ErrorsEnvironment.create
@@ -316,7 +326,6 @@ let run_taint_analysis
       ({
          Configuration.StaticAnalysis.configuration;
          repository_root;
-         inline_decorators;
          use_cache;
          limit_entrypoints;
          _;
@@ -329,7 +338,9 @@ let run_taint_analysis
 
   (* Parse taint models to find decorators to inline or discard. This must be done early because
      inlining is a preprocessing phase of type-checking. *)
-  let () = setup_decorator_preprocessing ~inline_decorators configuration in
+  let decorator_configuration =
+    parse_decorator_preprocessing_configuration ~static_analysis_configuration
+  in
 
   let cache = Cache.try_load ~scheduler ~configuration ~enabled:use_cache in
 
@@ -338,7 +349,7 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
-  let environment = type_check ~scheduler ~configuration ~cache in
+  let environment = type_check ~scheduler ~configuration ~decorator_configuration ~cache in
 
   compact_ocaml_heap ~name:"after type check";
 

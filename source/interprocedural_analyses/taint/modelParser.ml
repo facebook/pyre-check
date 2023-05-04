@@ -3491,8 +3491,10 @@ let create
 let parse_decorator_modes ~path ~source =
   let open Result in
   let update_actions actions decorator action =
-    Reference.Map.update actions decorator ~f:(function
-        | None -> action
+    Reference.SerializableMap.update
+      decorator
+      (function
+        | None -> Some action
         | Some existing_action ->
             let () =
               Log.warning
@@ -3504,7 +3506,8 @@ let parse_decorator_modes ~path ~source =
                 (DecoratorPreprocessing.Action.to_mode existing_action)
                 (DecoratorPreprocessing.Action.to_mode action)
             in
-            action)
+            Some action)
+      actions
   in
   let parse_statement actions = function
     | { Node.value = Statement.Define { signature = { name; decorators; _ }; _ }; _ } ->
@@ -3527,16 +3530,16 @@ let parse_decorator_modes ~path ~source =
   try
     String.split ~on:'\n' source
     |> Parser.parse
-    >>| List.fold ~init:Reference.Map.empty ~f:parse_statement
+    >>| List.fold ~init:Reference.SerializableMap.empty ~f:parse_statement
     |> Result.ok
-    |> Option.value ~default:Reference.Map.empty
+    |> Option.value ~default:Reference.SerializableMap.empty
   with
   | exn ->
       Log.warning
         "Ignoring `%s` when trying to get decorators to skip because of exception: %s"
         (PyrePath.show path)
         (Exn.to_string exn);
-      Reference.Map.empty
+      Reference.SerializableMap.empty
 
 
 let get_model_sources ~paths =

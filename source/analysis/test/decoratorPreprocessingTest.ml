@@ -109,9 +109,7 @@ let test_find_decorator_body context =
 let get_expected_actual_sources ~context ~additional_sources ~handle source expected =
   Memory.reset_shared_memory ();
   DecoratorPreprocessing.setup_preprocessing
-    ~decorator_actions:Reference.Map.empty
-    ~enable_inlining:true
-    ~enable_discarding:true;
+    { actions = Reference.SerializableMap.empty; enable_inlining = true; enable_discarding = true };
   let ast_environment =
     ScratchProject.setup ~context ~external_sources:additional_sources [handle, source]
     |> ScratchProject.build_ast_environment

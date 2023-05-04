@@ -69,6 +69,7 @@ if __name__ == "__main__":
             "--noninteractive",
             "analyze",
             "--check-invariants",
+            "--inline-decorators",
         ]
         if arguments.save_results_to is not None:
             command.extend(["--save-results-to", arguments.save_results_to])

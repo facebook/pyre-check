@@ -7255,7 +7255,7 @@ let test_parse_decorator_modes _ =
     let source = trim_extra_indentation source in
     let actual =
       ModelParser.parse_decorator_modes ~path:(PyrePath.create_absolute "/root/test.py") ~source
-      |> Ast.Reference.Map.to_alist ~key_order:`Increasing
+      |> Ast.Reference.SerializableMap.to_alist
     in
     assert_equal
       ~cmp:[%equal: (Ast.Reference.t * DecoratorPreprocessing.Action.t) list]

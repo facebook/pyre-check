@@ -1716,6 +1716,28 @@
     "stop_line": 403
   },
   {
+    "code": 5001,
+    "column": 8,
+    "define": "integration_test.decorator.bar",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 35,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/decorator.py",
+    "stop_column": 16,
+    "stop_line": 35
+  },
+  {
+    "code": 5001,
+    "column": 9,
+    "define": "integration_test.decorator.bar",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 36,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/decorator.py",
+    "stop_column": 17,
+    "stop_line": 36
+  },
+  {
     "code": 5015,
     "column": 32,
     "define": "integration_test.exit_flow.test_to_response",
