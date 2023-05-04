@@ -203,11 +203,6 @@ module State (Context : Context) = struct
         |> Option.value ~default:empty_result
     | Name (Name.Attribute { base; attribute; _ } as name) ->
         let ({ reachable_globals; errors } as sub_expression_result) = forward_expression base in
-        let reachable_globals =
-          Context.get_non_builtin_global_reference ~resolution name
-          >>| (fun global -> { global; expression_type = expression_type () } :: reachable_globals)
-          |> Option.value ~default:reachable_globals
-        in
         if is_known_mutation_method ~resolution base attribute then
           {
             reachable_globals = [];
@@ -219,7 +214,24 @@ module State (Context : Context) = struct
                 reachable_globals
                 errors;
           }
+        else if String.equal attribute "__getitem__" then
+          { sub_expression_result with reachable_globals }
         else
+          let reachable_globals =
+            match reachable_globals with
+            | [] ->
+                Context.get_non_builtin_global_reference ~resolution name
+                >>| (fun global -> [{ global; expression_type = expression_type () }])
+                |> Option.value ~default:[]
+            | _ ->
+                List.map
+                  ~f:(fun reachable_global ->
+                    {
+                      global = Reference.create ~prefix:reachable_global.global attribute;
+                      expression_type = expression_type ();
+                    })
+                  reachable_globals
+          in
           { sub_expression_result with reachable_globals }
     | Call
         {

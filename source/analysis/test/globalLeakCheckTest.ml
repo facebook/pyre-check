@@ -1308,8 +1308,8 @@ let test_object_global_leaks context =
         MyClass.my_list.append(1)
     |}
     [
-      "Leak to a class variable [3103]: Data write to global variable `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a mutable datastructure [3101]: Data write to global variable \
+       `test.MyClass.my_list` of type `typing.List[int]`.";
     ];
   assert_global_leak_errors
     ~other_sources:
@@ -1407,8 +1407,8 @@ let test_object_global_leaks context =
         get_class().x.append(5)
     |}
     [
-      "Leak to a class variable [3103]: Data write to global variable `test.MyClass` of type \
-       `typing.Type[test.MyClass]`.";
+      "Leak to a mutable datastructure [3101]: Data write to global variable `test.MyClass.x` of \
+       type `typing.List[int]`.";
     ];
   assert_global_leak_errors
     (* Returning a class from a function will still find a global leak. *)
@@ -1536,6 +1536,39 @@ let test_object_global_leaks context =
         (my_global1, my_global2)[1].x = 5
     |}
     [ (* TODO (T142189949): attribute write via tuple access should be detected. *) ];
+  assert_global_leak_errors
+    {|
+      class MyClass:
+        x: int
+        def __init__(self, x: int) -> None:
+          self.x = x
+
+      my_global: MyClass = MyClass(1)
+
+      def foo() -> None:
+        my_global.x, my_local = 2, 4
+    |}
+    [
+      "Leak to a primitive global [3102]: Data write to global variable `test.my_global.x` of type \
+       `int`.";
+    ];
+  assert_global_leak_errors
+    {|
+      class MyClass:
+        x: int
+        def __init__(self, x: int) -> None:
+          self.x = x
+
+      my_global: List[MyClass] = [MyClass(1)]
+
+      def foo() -> None:
+        my_global[0].x = 1
+    |}
+    (* TODO (T142189949): This error should be fixed to find the right type of the attribute x. *)
+    [
+      "Leak to other types [3104]: Data write to global variable `test.my_global.x` of type \
+       `unknown`.";
+    ];
   ()
 
 
@@ -1611,8 +1644,8 @@ let test_global_statements context =
         my_local = my_global.x
     |}
     [
-      "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
-       `test.MyClass` via alias to local `my_local`.";
+      "Leak via local variable [3106]: Potential data leak to global `test.my_global.x` of type \
+       `int` via alias to local `my_local`.";
     ];
   assert_global_leak_errors
     {|
@@ -2335,8 +2368,8 @@ let test_global_returns context =
         return my_global.x
     |}
     [
-      "Leak via method return [3108]: Potential data leak to global `test.my_global` of type \
-       `test.MyClass`.";
+      "Leak via method return [3108]: Potential data leak to global `test.my_global.x` of type \
+       `int`.";
     ];
   ()
 
