@@ -1750,6 +1750,61 @@
   },
   {
     "code": 5001,
+    "column": 16,
+    "define": "integration_test.functools.test_cached_eval",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 23,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/functools.py",
+    "stop_column": 34,
+    "stop_line": 23
+  },
+  {
+    "code": 5001,
+    "column": 10,
+    "define": "integration_test.functools.test_cached_eval_inner",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 31,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/functools.py",
+    "stop_column": 28,
+    "stop_line": 31
+  },
+  {
+    "code": 5001,
+    "column": 12,
+    "define": "integration_test.functools.test_cached_eval_higher_order_function",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 39,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/functools.py",
+    "stop_column": 17,
+    "stop_line": 39
+  },
+  {
+    "code": 5001,
+    "column": 29,
+    "define": "integration_test.functools.test_cached_eval_with_maxsize",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 48,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/functools.py",
+    "stop_column": 47,
+    "stop_line": 48
+  },
+  {
+    "code": 5001,
+    "column": 9,
+    "define": "integration_test.functools.test_wraps",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 66,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/functools.py",
+    "stop_column": 18,
+    "stop_line": 66
+  },
+  {
+    "code": 5001,
     "column": 20,
     "define": "integration_test.list_comprehension.take_input",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",

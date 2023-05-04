@@ -317,11 +317,11 @@ def run_test_changed_models(
         "column": 9,
         "define": "integration_test.functools.test_cached_sanitizer",
         "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-        "line": 20,
+        "line": 58,
         "name": "Possible shell injection",
         "path": "fixture_source/integration_test/functools.py",
         "stop_column": 18,
-        "stop_line": 20,
+        "stop_line": 58,
     }
 
     returncode = run_and_check_output(
