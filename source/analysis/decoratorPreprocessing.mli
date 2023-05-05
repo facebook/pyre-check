@@ -25,6 +25,9 @@ module Configuration : sig
     enable_inlining: bool;
     enable_discarding: bool;
   }
+  [@@deriving eq]
+
+  val disable_preprocessing : t
 end
 
 val setup_preprocessing : Configuration.t -> unit

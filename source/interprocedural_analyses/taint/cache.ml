@@ -53,6 +53,7 @@ type cached = { type_environment: TypeEnvironment.t }
 
 type error =
   | InvalidByCodeChange
+  | InvalidByDecoratorChange
   | LoadError
   | NotFound
   | Disabled
@@ -128,13 +129,33 @@ let load_type_environment ~scheduler ~configuration =
       Error InvalidByCodeChange
 
 
-let try_load ~scheduler ~configuration ~enabled =
+let check_decorator_invalidation ~decorator_configuration:current_configuration =
+  let open Analysis in
+  match DecoratorPreprocessing.get_configuration () with
+  | Some cached_configuration
+    when DecoratorPreprocessing.Configuration.equal cached_configuration current_configuration ->
+      Ok ()
+  | Some _ ->
+      (* We need to invalidate the cache since decorator modes (e.g, `@IgnoreDecorator` and
+         `@SkipDecoratorInlining`) are implemented as an AST preprocessing step. Any change could
+         lead to a change in the AST, which could lead to a different type environement and so
+         on. *)
+      let () = Log.warning "Changes to decorator modes detected, ignoring existing cache." in
+      Error InvalidByDecoratorChange
+  | None ->
+      let () = Log.warning "Could not find cached decorator modes, ignoring existing cache." in
+      Error LoadError
+
+
+let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
   if not enabled then
     { cache = Error Disabled; save_cache = false; scheduler; configuration }
   else
     let open Result in
     let type_environment =
       initialize_shared_memory ~configuration
+      >>= fun () ->
+      check_decorator_invalidation ~decorator_configuration
       >>= fun () -> load_type_environment ~scheduler ~configuration
     in
     let cache =

@@ -396,6 +396,68 @@ def run_test_changed_source_files(
         sys.exit(returncode)
 
 
+def run_test_changed_decorators(
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+) -> None:
+    # Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
+    # Pysa should detect that the decorator modes have changed and fall back
+    # to doing a clean run.
+    LOG.info("Testing cache invalidation after decorator mode change:")
+
+    new_model_path = Path("test_taint/test_decorator.pysa")
+    try:
+        new_model_path.unlink()
+    except FileNotFoundError:
+        pass
+
+    with open(new_model_path, "w") as f:
+        f.write(
+            "@IgnoreDecorator\ndef integration_test.cache.ignore_decorator(): ...\n"
+        )
+
+    # Expected should have an additional issue from ignoring the decorator
+    new_issue = {
+        "code": 5001,
+        "column": 19,
+        "define": "integration_test.cache.test_ignore_decorator",
+        "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+        "line": 23,
+        "name": "Possible shell injection",
+        "path": "fixture_source/integration_test/cache.py",
+        "stop_column": 27,
+        "stop_line": 23,
+    }
+
+    returncode = run_and_check_output(
+        [
+            "pyre",
+            "--dot-pyre-directory",
+            str(get_dot_pyre_directory_from_cache_path(cache_path)),
+            "--typeshed",
+            f"{typeshed_path}",
+            "--noninteractive",
+            "analyze",
+            "--use-cache",
+            "--check-invariants",
+            "--inline-decorators",
+        ],
+        expected + [new_issue],
+        "result.cache8",
+    )
+
+    # Clean up
+    try:
+        new_model_path.unlink()
+    except FileNotFoundError:
+        LOG.warning(f"Could not clean up {new_model_path.absolute()} after test run.")
+        pass
+
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
+    else:
+        sys.exit(returncode)
+
+
 def run_tests() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"

@@ -10,7 +10,12 @@ open Interprocedural
 
 type t
 
-val try_load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> enabled:bool -> t
+val try_load
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  decorator_configuration:Analysis.DecoratorPreprocessing.Configuration.t ->
+  enabled:bool ->
+  t
 
 val save : t -> unit
 

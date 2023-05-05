@@ -342,7 +342,9 @@ let run_taint_analysis
     parse_decorator_preprocessing_configuration ~static_analysis_configuration
   in
 
-  let cache = Cache.try_load ~scheduler ~configuration ~enabled:use_cache in
+  let cache =
+    Cache.try_load ~scheduler ~configuration ~decorator_configuration ~enabled:use_cache
+  in
 
   (* We should NOT store anything in memory before calling `Cache.try_load` *)
   let taint_configuration_shared_memory =

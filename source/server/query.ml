@@ -792,7 +792,14 @@ let rec process_request ~type_environment ~build_system request =
     in
     let setup_and_execute_model_queries model_queries =
       let scheduler_wrapper scheduler =
-        let cache = Taint.Cache.try_load ~scheduler ~configuration ~enabled:false in
+        let cache =
+          Taint.Cache.try_load
+            ~scheduler
+            ~configuration
+            ~decorator_configuration:
+              Analysis.DecoratorPreprocessing.Configuration.disable_preprocessing
+            ~enabled:false
+        in
         let initial_callables =
           Taint.Cache.initial_callables cache (fun () ->
               let timer = Timer.start () in

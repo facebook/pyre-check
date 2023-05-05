@@ -35,6 +35,14 @@ module Configuration = struct
     enable_inlining: bool;
     enable_discarding: bool;
   }
+  [@@deriving eq]
+
+  let disable_preprocessing =
+    {
+      actions = Reference.SerializableMap.empty;
+      enable_inlining = false;
+      enable_discarding = false;
+    }
 end
 
 module ConfigurationSharedMemory =
