@@ -9,6 +9,7 @@
 
 open Base
 open Analysis
+open Pyre
 
 module ServerInternal = struct
   type t = {
@@ -161,17 +162,29 @@ let handle_superclasses
           }
     | None -> None
   in
-
+  let as_exported_class_reference resolved =
+    let open UnannotatedGlobalEnvironment.ResolvedReference in
+    match resolved with
+    | ModuleAttribute
+        { from; name; remaining = []; export = Exported Ast.Module.Export.Name.Class; _ } ->
+        Some (Ast.Reference.create ~prefix:from name)
+    | _ -> None
+  in
   match get_module_by_name module_ with
   | None ->
       Response.ErrorKind.InvalidRequest (Format.sprintf "Cannot find module with name `%s`" module_)
       |> Result.fail
-  | Some module_name ->
-      let class_name =
+  | Some module_name -> (
+      let class_reference =
         Ast.Reference.combine module_name (Ast.Reference.create qualified_name)
-        |> Ast.Reference.show
       in
-      if not (GlobalResolution.class_exists global_resolution class_name) then
+      let resolved_class_name =
+        GlobalResolution.resolve_exports global_resolution class_reference
+        >>| as_exported_class_reference
+        |> Option.join
+        >>| Ast.Reference.show
+      in
+      let invalid_request =
         Response.ErrorKind.InvalidRequest
           (Format.asprintf
              "Cannot find class `%s` in module `%a`."
@@ -179,13 +192,16 @@ let handle_superclasses
              Ast.Reference.pp
              module_name)
         |> Result.fail
-      else
-        let superclasses =
-          class_name
-          |> GlobalResolution.successors ~resolution:global_resolution
-          |> List.filter_map ~f:to_class_expression
-        in
-        Response.Superclasses { superclasses } |> Result.return
+      in
+      match resolved_class_name with
+      | None -> invalid_request
+      | Some resolved_class_name ->
+          let superclasses =
+            resolved_class_name
+            |> GlobalResolution.successors ~resolution:global_resolution
+            |> List.filter_map ~f:to_class_expression
+          in
+          Response.Superclasses { superclasses } |> Result.return)
 
 
 let with_broadcast ~subscriptions ~status f =
