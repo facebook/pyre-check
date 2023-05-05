@@ -74,7 +74,7 @@ def run_and_check_output(
 
 
 def run_test_no_cache(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
     # Run Pysa without the cache argument.
     LOG.info("Testing with no --use-cache flag:")
@@ -91,7 +91,7 @@ def run_test_no_cache(
             "--inline-decorators",
         ],
         expected,
-        "result.no_cache",
+        output_file_name,
     )
     if returncode == 0:
         LOG.info("Run produced expected results\n")
@@ -100,7 +100,7 @@ def run_test_no_cache(
 
 
 def run_test_cache_first_and_second_runs(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_names: List[str]
 ) -> None:
     # Ensure the cache file doesn't already exist for a clean run.
     try:
@@ -125,7 +125,7 @@ def run_test_cache_first_and_second_runs(
             "--inline-decorators",
         ],
         expected,
-        "result.cache1",
+        output_file_names[0],
     )
     if returncode == 0:
         LOG.info("Run produced expected results\n")
@@ -149,7 +149,7 @@ def run_test_cache_first_and_second_runs(
             "--inline-decorators",
         ],
         expected,
-        "result.cache2",
+        output_file_names[1],
     )
     if returncode == 0:
         LOG.info("Run produced expected results\n")
@@ -158,7 +158,7 @@ def run_test_cache_first_and_second_runs(
 
 
 def run_test_invalid_cache_file(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
     LOG.info("Testing fallback behavior with invalid cache file:")
 
@@ -185,7 +185,7 @@ def run_test_invalid_cache_file(
             "--inline-decorators",
         ],
         expected,
-        "result.cache3",
+        output_file_name,
     )
 
     if returncode == 0:
@@ -195,7 +195,7 @@ def run_test_invalid_cache_file(
 
 
 def run_test_changed_pysa_file(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
     # Run Pysa after adding a new Pysa model and ensure the cache is not
     # invalidated.
@@ -223,7 +223,7 @@ def run_test_changed_pysa_file(
             "--inline-decorators",
         ],
         expected,
-        "result.cache4",
+        output_file_name,
     )
 
     # Clean up
@@ -240,7 +240,7 @@ def run_test_changed_pysa_file(
 
 
 def run_test_changed_taint_config_file(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
     # Run Pysa after adding a new Pysa model and ensure the cache is not
     # invalidated.
@@ -277,7 +277,7 @@ def run_test_changed_taint_config_file(
             "--inline-decorators",
         ],
         expected,
-        "result.cache5",
+        output_file_name,
     )
 
     # Clean up
@@ -296,7 +296,7 @@ def run_test_changed_taint_config_file(
 
 
 def run_test_changed_models(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
     # Run Pysa after adding a new Pysa model and ensure the cache is not
     # invalidated.
@@ -339,7 +339,7 @@ def run_test_changed_models(
             "--inline-decorators",
         ],
         expected + [new_issue],
-        "result.cache7",
+        output_file_name,
     )
 
     # Restore the original model file
@@ -352,7 +352,7 @@ def run_test_changed_models(
 
 
 def run_test_changed_source_files(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
     # Run Pysa after adding a new file to test cache invalidation.
     # Pysa should detect that the source has changed and fall back
@@ -381,7 +381,7 @@ def run_test_changed_source_files(
             "--inline-decorators",
         ],
         expected,
-        "result.cache6",
+        output_file_name,
     )
 
     # Clean up
@@ -398,7 +398,7 @@ def run_test_changed_source_files(
 
 
 def run_test_changed_decorators(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
     # Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
     # Pysa should detect that the decorator modes have changed and fall back
@@ -443,7 +443,7 @@ def run_test_changed_decorators(
             "--inline-decorators",
         ],
         expected + [new_issue],
-        "result.cache8",
+        output_file_name,
     )
 
     # Clean up
@@ -460,7 +460,7 @@ def run_test_changed_decorators(
 
 
 def run_test_changed_overrides(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
     # Run Pysa after removing a @SkipOverrides model to test cache invalidation.
     # Pysa should detect that the override graph has changed and fall back
@@ -533,15 +533,15 @@ def run_tests() -> None:
     with open("result.json") as file:
         expected = json.load(file)
 
-    run_test_no_cache(typeshed_path, cache_path, expected)
-    run_test_cache_first_and_second_runs(typeshed_path, cache_path, expected)
-    run_test_invalid_cache_file(typeshed_path, cache_path, expected)
-    run_test_changed_pysa_file(typeshed_path, cache_path, expected)
-    run_test_changed_taint_config_file(typeshed_path, cache_path, expected)
-    run_test_changed_models(typeshed_path, cache_path, expected)
-    run_test_changed_source_files(typeshed_path, cache_path, expected)
-    run_test_changed_decorators(typeshed_path, cache_path, expected)
-    run_test_changed_overrides(typeshed_path, cache_path, expected)
+    run_test_no_cache(typeshed_path, cache_path, expected, "result.no_cache")
+    run_test_cache_first_and_second_runs(typeshed_path, cache_path, expected, ["result.cache1", "result.cache2"])
+    run_test_invalid_cache_file(typeshed_path, cache_path, expected, "result.cache3")
+    run_test_changed_pysa_file(typeshed_path, cache_path, expected, "result.cache4")
+    run_test_changed_taint_config_file(typeshed_path, cache_path, expected, "result.cache5")
+    run_test_changed_models(typeshed_path, cache_path, expected, "result.cache7")
+    run_test_changed_source_files(typeshed_path, cache_path, expected, "result.cache6")
+    run_test_changed_decorators(typeshed_path, cache_path, expected, "result.cache8")
+    run_test_changed_overrides(typeshed_path, cache_path, expected, "result.cache9")
 
     LOG.info("All runs produced expected output.")
 
