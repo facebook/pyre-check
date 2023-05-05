@@ -304,6 +304,7 @@ def run_test_changed_models(
 
     # Remove a test taint file
     test_model_path = Path("test_taint/sanitize.pysa")
+    # Save contents for cleanup phase
     original_content = open(test_model_path).read()
     try:
         test_model_path.unlink()
@@ -458,6 +459,63 @@ def run_test_changed_decorators(
         sys.exit(returncode)
 
 
+def run_test_changed_overrides(
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]]
+) -> None:
+    # Run Pysa after removing a @SkipOverrides model to test cache invalidation.
+    # Pysa should detect that the override graph has changed and fall back
+    # to doing a clean run.
+    LOG.info("Testing cache invalidation after skip override change:")
+
+    # Remove a test taint file
+    test_model_path = Path("test_taint/skip_overrides.pysa")
+    # Save contents for cleanup phase
+    original_content = open(test_model_path).read()
+    try:
+        test_model_path.unlink()
+    except FileNotFoundError:
+        LOG.warning(f"Could not remove up {test_model_path.absolute()}.")
+        pass
+
+    # Expected should have an additional issue from not skipping overrides
+    new_issue = {
+        "code": 5001,
+        "column": 20,
+        "define": "integration_test.cache.test_skip_overrides",
+        "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+        "line": 37,
+        "name": "Possible shell injection",
+        "path": "fixture_source/integration_test/cache.py",
+        "stop_column": 28,
+        "stop_line": 37,
+    }
+
+    returncode = run_and_check_output(
+        [
+            "pyre",
+            "--dot-pyre-directory",
+            str(get_dot_pyre_directory_from_cache_path(cache_path)),
+            "--typeshed",
+            f"{typeshed_path}",
+            "--noninteractive",
+            "analyze",
+            "--use-cache",
+            "--check-invariants",
+            "--inline-decorators",
+        ],
+        expected + [new_issue],
+        "result.cache9",
+    )
+
+    # Restore the original model file
+    open(test_model_path, "w").write(original_content)
+
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
+    else:
+        sys.exit(returncode)
+
+
 def run_tests() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
@@ -482,6 +540,8 @@ def run_tests() -> None:
     run_test_changed_taint_config_file(typeshed_path, cache_path, expected)
     run_test_changed_models(typeshed_path, cache_path, expected)
     run_test_changed_source_files(typeshed_path, cache_path, expected)
+    run_test_changed_decorators(typeshed_path, cache_path, expected)
+    run_test_changed_overrides(typeshed_path, cache_path, expected)
 
     LOG.info("All runs produced expected output.")
 

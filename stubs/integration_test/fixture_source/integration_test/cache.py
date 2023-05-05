@@ -21,3 +21,17 @@ def test_ignore_decorator():
 
     # This issue is found when using `@IgnoreDecorator` on `ignore_decorator`.
     decorated_sink(source())
+
+
+class Base:
+    def method(self, x):
+        pass
+
+
+class Override(Base):
+    def method(self, x):
+        sink(x)
+
+
+def test_skip_overrides(instance: Base):
+    instance.method(source())

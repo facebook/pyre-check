@@ -138,12 +138,11 @@ let check_decorator_invalidation ~decorator_configuration:current_configuration 
   | Some _ ->
       (* We need to invalidate the cache since decorator modes (e.g, `@IgnoreDecorator` and
          `@SkipDecoratorInlining`) are implemented as an AST preprocessing step. Any change could
-         lead to a change in the AST, which could lead to a different type environement and so
-         on. *)
-      let () = Log.warning "Changes to decorator modes detected, ignoring existing cache." in
+         lead to a change in the AST, which could lead to a different type environment and so on. *)
+      Log.warning "Changes to decorator modes detected, ignoring existing cache.";
       Error InvalidByDecoratorChange
   | None ->
-      let () = Log.warning "Could not find cached decorator modes, ignoring existing cache." in
+      Log.warning "Could not find cached decorator modes, ignoring existing cache.";
       Error LoadError
 
 
