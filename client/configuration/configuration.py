@@ -170,6 +170,7 @@ class PartialConfiguration:
             "allow_shadow_language_server",
             "create_open_source_configuration",
             "saved_state",
+            "saved_state_metadata",
             "stable_client",
             "taint_models_path",
             "unstable_client",
